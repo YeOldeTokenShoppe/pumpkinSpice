@@ -1,103 +1,160 @@
+"use client";
+
+import React, { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import SimpleLoader from '@/components/SimpleLoader';
+import PalmTreeDrive from '@/components/PalmTreeDrive';
+
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  
+  const [isSceneLoading, setIsSceneLoading] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [is80sMode, setIs80sMode] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    // Detect if device is actually a phone (not tablet or desktop)
+    const detectMobileDevice = useCallback(() => {
+        // Get all the info for debugging
+        const userAgent = navigator.userAgent;
+        const lowerUA = userAgent.toLowerCase();
+        
+        // More comprehensive mobile detection
+        const isIPhone = /iphone/i.test(lowerUA);
+        const isIPad = /ipad/i.test(lowerUA);
+        const isAndroid = /android/i.test(lowerUA);
+        const hasMobileKeyword = /mobile/i.test(lowerUA);
+        
+        // Check screen properties
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+        const innerWidth = window.innerWidth;
+        const innerHeight = window.innerHeight;
+        const pixelRatio = window.devicePixelRatio || 1;
+        
+        // Physical screen size (accounting for pixel ratio)
+        const physicalWidth = screenWidth / pixelRatio;
+        const physicalHeight = screenHeight / pixelRatio;
+        
+        // Touch capability
+        const hasTouch = 'ontouchstart' in window || 
+                        navigator.maxTouchPoints > 0 || 
+                        navigator.maxTouchPoints > 0;
+        
+        // Simple phone detection: iPhone or (Android + Mobile keyword)
+        const isPhoneUA = isIPhone || (isAndroid && hasMobileKeyword);
+        
+        // Size check: viewport OR physical size small enough
+        const hasPhoneSize = Math.min(innerWidth, innerHeight) < 600 || 
+                            Math.min(physicalWidth, physicalHeight) < 400;
+        
+        // Final decision
+        const isMobile = isPhoneUA && hasTouch && hasPhoneSize;
+        
+        
+        return isMobile;
+      }, []);
+
+  // Track initial load - set to false after first scene load completes
+  useEffect(() => {
+    if (!isSceneLoading && isInitialLoad) {
+      setIsInitialLoad(false);
+    }
+  }, [isSceneLoading, isInitialLoad]);
+
+  return (
+    <div style={{ width: '100vw', minHeight: '100vh', zIndex: '10000' }}>
+      <style jsx global>{`
+        @font-face {
+          font-family: 'UnifrakturMaguntia';
+          src: url('/fonts/UnifrakturMaguntia-Regular.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+
+        }
+      `}</style>
+         <div style={{
+          position: "fixed",
+          top: "20px", 
+          left: "20px",
+          zIndex: 10000, // Increased to ensure it stays on top
+          borderRadius: "8px",
+          padding: "10px",
+          pointerEvents: "auto",
+          opacity: isSceneLoading ? 0 : 1,
+          transition: "opacity 0.5s ease-in-out"
+        }}>
+          <div 
+            id="text"
+            style={{
+              position: "relative",
+              fontFamily: "'UnifrakturMaguntia', serif",
+              fontSize: isMobileView ? "3rem" : "4rem",
+              color: "#ffffff",
+              cursor: "pointer",
+              zIndex: 10000,
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <Link href="/gallery" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
+              RL80
+            </Link>
+            {Array.from({length: 100}).map((_, i) => {
+              const index = i + 1;
+              return (
+                <div
+                  key={index}
+                  className="text__copy"
+                  style={{
+                    position: "absolute",
+                    pointerEvents: "none",
+                    zIndex: -1,
+                    top: 0,
+                    left: 0,
+                    color: is80sMode 
+                      ? `rgba(${201 - index * 2}, ${55 - index * 3}, ${256 - index * 2})` 
+                      : `rgba(${255 - index * 2}, ${255 - index * 3}, ${255 - index * 2})`,
+
+                    filter: "blur(0.1rem)",
+                    transform: `translate(
+                      ${index * 0.1}rem, 
+                      ${index * 0.1}rem
+                    ) scale(${1 + index * 0.01})`,
+                    opacity: (1 / index) * 1.5,
+                  }}
+                >
+                  RL80
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        
+
+      
+      {/* Show AppLoader when scene is loading */}
+      {isSceneLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#000',
+          zIndex: 9999
+        }}>
+          <SimpleLoader />
+
+        </div>
+      )}
+      
+      <PalmTreeDrive 
+        onLoadingChange={setIsSceneLoading}
+      />
+    
     </div>
   );
 }
