@@ -81,7 +81,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    value: G-EC5Y9K7F5E
+    value: G-6KQBJ5XW5X
     availability:
       - BUILD
       - RUNTIME
