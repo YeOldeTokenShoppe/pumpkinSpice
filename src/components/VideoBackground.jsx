@@ -31,7 +31,7 @@ const VideoBackground = ({ is80sMode = false }) => {
     
     // Create video element
     const video = document.createElement('video');
-    video.src = '/83.mov';
+    video.src = '/videos/83.mov';
     video.loop = true;
     video.muted = true;
     video.playsInline = true;

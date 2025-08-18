@@ -442,7 +442,7 @@ const ThreeDVotiveStand = forwardRef(({
         }}
       >
         {/* Add basic lighting to ensure scene is visible */}
-        {/* <ambientLight intensity={1} /> */}
+        <ambientLight intensity={1} />
         {/* <directionalLight position={[10, 10, 5]} intensity={1} />
         <pointLight position={[0, 10, 0]} intensity={1} /> */}
         

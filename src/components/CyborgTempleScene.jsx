@@ -12,6 +12,8 @@ import AnnotationSystem from "@/components/AnnotationSystem";
 import { useFirestoreResults } from "@/utilities/useFirestoreResults";
 import FloatingCandleViewer from "@/components/CandleInteraction";
 
+import HolographicStatue4 from "@/components/HolographicStatue4";
+
 function CyborgTempleScene({ 
   onLoad, 
   position = [0, 0, 0],
@@ -21,6 +23,7 @@ function CyborgTempleScene({
   rotate = false,
   isPlaying = false,
   is80sMode = false,
+  showAnnotations = true, // Add prop to control annotation visibility
   candleData = [], // Array of user data for candles - can be passed from parent or will use Firestore data
   onCandleClick = null, // Callback when candle is clicked
   onPaginationReady = null, // Callback to expose pagination controls
@@ -247,7 +250,7 @@ function CyborgTempleScene({
 
     let isCurrentInstance = true;
 
-    loader.load("/models/templeScene2.glb", (gltf) => {
+    loader.load("/models/templeScene3.glb", (gltf) => {
       if (!isCurrentInstance) return;
 
       const templeScene = gltf.scene;
@@ -668,16 +671,16 @@ function CyborgTempleScene({
 
   // Define annotation points - adjust positions based on your temple scene
   const annotations = [
-    {
-      position: [0, 0, 0], // Near the main altar/center
-      text: "Sacred Altar\nThe heart of the cyborg temple",
-      customCamera: {
-        position: [2, -0.8, -0.3], // Camera moved right and lower
-        lookAt: [0, -0.5, 0], // Look outward toward the characters
-        distance: 2 // Slightly increased distance for better framing
-      },
-      annotationOffset: [20, 150] // [x, y] offset in pixels from center
-    },
+    // {
+    //   position: [0, 0, 0], // Near the main altar/center
+    //   text: "Sacred Altar\nThe heart of the cyborg temple",
+    //   customCamera: {
+    //     position: [2, -0.8, -0.3], // Camera moved right and lower
+    //     lookAt: [0, -0.5, 0], // Look outward toward the characters
+    //     distance: 2 // Slightly increased distance for better framing
+    //   },
+    //   annotationOffset: [20, 150] // [x, y] offset in pixels from center
+    // },
     // {
     //   position: [2, 0, -2], // Right side
     //   text: "Digital Offering Station\nPlace virtual candles here"
@@ -713,7 +716,8 @@ function CyborgTempleScene({
       {modelLoaded && <TickerDisplay3 is80sMode={is80sMode} />}
       {modelLoaded && <VideoScreens />}
       {modelLoaded && <SimpleGlitchTint />}
-      {modelLoaded && <AnnotationSystem 
+      {modelLoaded && <HolographicStatue4 is80sMode={is80sMode} />}
+      {modelLoaded && showAnnotations && <AnnotationSystem 
         annotations={annotations} 
         is80sMode={is80sMode} 
         onAnnotationClick={onAnnotationClick}

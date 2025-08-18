@@ -21,11 +21,12 @@ import CandleInteractionHint from '@/components/CandleInteractionHint';
 
 
 
-export default function CyborgTemple({ is80sMode, setIs80sMode }) {
+export default function CyborgTemple() {
   const [showMobileMusicPlayer, setShowMobileMusicPlayer] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [musicPlayerVisible, setMusicPlayerVisible] = useState(false);
+  const [is80sMode, setIs80sMode] = useState(false);
   const videoRef = useRef(null);
 //   const { setIsPlaying: setContextIsPlaying, setShowSpotify: setContextShowSpotify } = useMusic();
   const musicPlayerRef = useRef(null);
@@ -94,11 +95,9 @@ export default function CyborgTemple({ is80sMode, setIs80sMode }) {
 
   // Handle 80s mode video playback
   useEffect(() => {
-    if (is80sMode && videoRef.current) {
-      videoRef.current.play().catch(err => {
-        console.log('Video autoplay failed:', err);
-      });
-    } else if (!is80sMode && videoRef.current) {
+    // Video autoplay is now handled in the video element's onLoadedData
+    // Just pause and reset when 80s mode is turned off
+    if (!is80sMode && videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
     }
@@ -224,27 +223,58 @@ export default function CyborgTemple({ is80sMode, setIs80sMode }) {
       />
       
       {/* 80s Mode Video Background */}
-      {/* {is80sMode && (
-        <video
-          ref={videoRef}
-          src="/videos/83.mov"
-          loop
-          muted
-          playsInline
+      {is80sMode && (
+        <div
           style={{
-            position: 'absolute',
+            position: "fixed",
             top: 0,
             left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            opacity: 0.3,
+            width: "100%",
+            height: "100%",
             zIndex: 1,
-            mixBlendMode: 'screen',
-            pointerEvents: 'none'
+            pointerEvents: "none",
           }}
-        />
-      )} */}
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              minWidth: "100%",
+              minHeight: "100%",
+              width: "auto",
+              height: "auto",
+              transform: "translate(-50%, -50%)",
+              objectFit: "cover",
+              opacity: 0.15,
+              filter: "saturate(2) hue-rotate(15deg) brightness(0.8)",
+            }}
+            onLoadedData={(e) => {
+              console.log("80s video loaded:", e.target.src);
+              e.target.play().catch(err => console.log("Video autoplay failed:", err));
+            }}
+            onError={(e) => {
+              if (e.target.error) {
+                console.error("80s video failed to load:", {
+                  src: e.target.src,
+                  errorCode: e.target.error?.code,
+                  errorMessage: e.target.error?.message
+                });
+              }
+            }}
+          >
+            <source src="/videos/83.mov" type="video/quicktime" />
+            <source src="/videos/83.mov" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      )}
       
       {/* Main content */}
       <div style={{
@@ -366,7 +396,7 @@ export default function CyborgTemple({ is80sMode, setIs80sMode }) {
             maxPolarAngle={Math.PI / 1.9}
             zoomToCursor={true}
             autoRotate={true}
-            autoRotateSpeed={0.4}
+            autoRotateSpeed={0.2}
             target={[0, 0, 0]}
           />
         </Suspense>
@@ -541,31 +571,33 @@ export default function CyborgTemple({ is80sMode, setIs80sMode }) {
           top: isMobileView ? "10rem" : "10.5rem",
           right: isMobileView ? "20px" : "2rem",
           zIndex: 1100,
-          color: is80sMode ? "#00ff41" : "white",
-          background: "transparent",
-          border: "none",
+          width: isMobileView ? "40px" : "48px",
+          height: isMobileView ? "40px" : "48px",
+          borderRadius: "50%",
+          backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.3)" : "rgba(0, 0, 0, 0.7)",
+          border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
+          color: is80sMode ? "#67e8f9" : "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           cursor: "pointer",
-          padding: "0.5rem",
-          transition: "all 0.3s ease"
+          transition: "all 0.3s ease",
+          backdropFilter: "blur(10px)",
+          boxShadow: is80sMode ? "0 0 20px rgba(217, 70, 239, 0.5)" : "0 2px 8px rgba(0, 0, 0, 0.3)",
         }}
         aria-label="Toggle 80s Mode"
+        title={is80sMode ? "Disable 80s Mode" : "Enable 80s Mode"}
         onClick={() => setIs80sMode(!is80sMode)}
       >
-        <svg width={isMobileView ? "30" : "40"} height={isMobileView ? "30" : "40"} viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill={is80sMode ? "currentColor" : "none"}/>
-          <text 
-            x="12" 
-            y="12" 
-            textAnchor="middle" 
-            dominantBaseline="middle" 
-            fontSize="10" 
-            fontWeight="bold"
-            fontFamily="'Rajdhani', sans-serif"
-            fill={is80sMode ? "#000" : "currentColor"}
-          >
-            80s
-          </text>
-        </svg>
+        <span style={{ 
+          fontSize: "20px", 
+          fontWeight: "bold",
+          color: is80sMode ? "#00ff41" : "#67e8f9",
+          textShadow: is80sMode ? "0 0 10px #00ff41" : "none",
+          fontFamily: "monospace"
+        }}>
+          80s
+        </span>
       </button>
       
       {/* Annotations Toggle */}
