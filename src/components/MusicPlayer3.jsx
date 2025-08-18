@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { storage } from "../utilities/firebaseClient";
+import { storage } from "@/utilities/firebaseClient";
 import { ref as storageRefUtil, getDownloadURL } from "firebase/storage";
 import { useMusic } from "@/components/MusicContext";
 

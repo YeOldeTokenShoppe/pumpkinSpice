@@ -14,7 +14,6 @@ import { BlendFunction, GlitchMode } from "postprocessing";
 
 // Set default is80sMode to false so component can be used without props
 const PostProcessingEffects = ({ is80sMode = false }) => {
-  // Move all hooks to the top, before any conditional logic
   const { scene, gl, camera } = useThree();
   const composerRef = useRef();
   const timeRef = useRef(0);
@@ -35,32 +34,15 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
         if (!mounted) return;
         
         try {
-          // Check if gl exists and has required properties
-          if (!gl || !gl.domElement) {
+          // Check if gl exists and has getContext method
+          if (!gl || typeof gl.getContext !== 'function') {
             console.warn('PostProcessingEffects: WebGL renderer not ready');
             checkTimer = setTimeout(checkContext, 100);
             return;
           }
           
-          // Check if renderer has a render target with alpha property
-          // This is what EffectComposer needs
-          if (!gl._currentRenderTarget && (!gl.getRenderTarget || !gl.getRenderTarget())) {
-            // Create a simple check by trying to access the properties EffectComposer needs
-            const testTarget = gl.getRenderTarget ? gl.getRenderTarget() : null;
-            if (!testTarget && (!gl.capabilities || !gl.capabilities.isWebGL2)) {
-              console.warn('PostProcessingEffects: Render target not ready');
-              checkTimer = setTimeout(checkContext, 100);
-              return;
-            }
-          }
-          
-          // Check if gl.getContext exists and works
-          let webglContext = null;
-          if (typeof gl.getContext === 'function') {
-            webglContext = gl.getContext();
-          } else if (gl.domElement && gl.domElement.getContext) {
-            webglContext = gl.domElement.getContext('webgl2') || gl.domElement.getContext('webgl');
-          }
+          // Check if WebGL context has required properties
+          const webglContext = gl.getContext();
           
           // Additional null check for the context itself
           if (!webglContext) {
@@ -210,23 +192,12 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
     </>
   );
 
-  // Don't render effects until WebGL context is ready
-  if (!isReady || !gl || !camera || !scene) {
-    console.log('PostProcessingEffects: Not ready yet, skipping render');
-    return null;
-  }
-
-  // Additional safety check for render target
-  const hasValidRenderTarget = gl.getRenderTarget || gl._currentRenderTarget || 
-                                (gl.capabilities && gl.capabilities.isWebGL2);
-  
-  if (!hasValidRenderTarget) {
-    console.warn('PostProcessingEffects: No valid render target available');
-    return null;
-  }
-
-  // Wrap the return in a try-catch for safety, but not the hooks
   try {
+    // Don't render effects until WebGL context is ready
+    if (!isReady) {
+      return null;
+    }
+
     return (
       <EffectComposer 
         ref={composerRef}

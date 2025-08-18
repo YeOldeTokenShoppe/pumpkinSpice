@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import SimpleLoader from '@/components/SimpleLoader';
 import PalmTreeDrive from '@/components/PalmTreeDrive';

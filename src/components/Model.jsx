@@ -2,18 +2,18 @@ import React, { useEffect, useState, useRef, Suspense, useCallback } from "react
 import { useThree, useFrame } from "@react-three/fiber";
 import { useGLTF, useProgress, Text, Environment, useTexture, Plane, useAnimations } from "@react-three/drei";
 import * as THREE from "three";
-import { useFirestoreResults } from "/src/utilities/useFirestoreResults";
+import { useFirestoreResults } from "@/utilities/useFirestoreResults";
 import DarkClouds from "@/components/Clouds";
 import ParticleTrail from "@/components/ParticleTrail";
 
 import { ref, getDownloadURL } from "firebase/storage";
-import { storage } from "/src/utilities/firebaseClient"; // Import storage directly
+import { storage } from "@/utilities/firebaseClient"; // Import storage directly
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { InstancedMesh, DynamicDrawUsage } from "three";
 import { collection, addDoc, updateDoc, doc, getDocs } from "firebase/firestore";
-import { db } from "/src/utilities/firebaseClient";
+import { db } from "@/utilities/firebaseClient";
 import { gsap } from "gsap";
 
 // Configure draco loader for useGLTF
@@ -1684,7 +1684,7 @@ function Model({
 
 
   // Add flame flickering animation using useFrame
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     // Update video textures - more aggressive update
     if (gltf && gltf.scene) {
       gltf.scene.traverse(child => {
@@ -1712,6 +1712,46 @@ function Model({
         } else if (child.userData.videoTexture) {
           // Update other video textures
           child.userData.videoTexture.needsUpdate = true;
+        }
+      });
+    }
+    
+    // Animate flickering materials for candle flames
+    if (flickeringMaterials.size > 0) {
+      const time = state.clock.elapsedTime;
+      
+      flickeringMaterials.forEach((data) => {
+        const { object, material, baseData } = data;
+        
+        // Calculate flicker using multiple sine waves for more realistic effect
+        const flicker1 = Math.sin((time + baseData.randomOffset) * 10) * 0.5 + 0.5;
+        const flicker2 = Math.sin((time + baseData.randomOffset) * 23) * 0.3 + 0.7;
+        const flicker3 = Math.sin((time + baseData.randomOffset) * 7) * 0.2 + 0.8;
+        
+        // Combine flickers for complex pattern
+        const combinedFlicker = (flicker1 * flicker2 * flicker3);
+        
+        // Apply to emissive intensity
+        if (material.emissiveIntensity !== undefined) {
+          material.emissiveIntensity = baseData.originalEmissiveIntensity * 
+            (1 - baseData.flickerRange + combinedFlicker * baseData.flickerRange);
+        }
+        
+        // Optional: Also animate scale for more visible effect
+        if (object && object.scale && baseData.originalScale) {
+          const scaleVariation = 1 + (combinedFlicker - 0.5) * 0.1; // ±5% scale variation
+          object.scale.set(
+            baseData.originalScale.x * scaleVariation,
+            baseData.originalScale.y * scaleVariation,
+            baseData.originalScale.z * scaleVariation
+          );
+        }
+        
+        // In 80s mode, also shift the color slightly
+        if (is80sMode && material.emissive) {
+          const hueShift = Math.sin((time + baseData.randomOffset) * 5) * 0.1;
+          const baseHue = material.emissive.getHSL({}).h;
+          material.emissive.setHSL(baseHue + hueShift, 1.0, 0.5);
         }
       });
     }
