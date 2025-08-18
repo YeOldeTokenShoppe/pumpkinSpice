@@ -1,0 +1,109 @@
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
+runConfig:
+  minInstances: 0
+  # maxInstances: 100
+  # concurrency: 80
+  # cpu: 1
+  # memoryMiB: 512
+
+# Environment variables and secrets.
+env:
+  # Clerk Authentication
+  - variable: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    value: pk_test_bmV1dHJhbC11cmNoaW4tOC5jbGVyay5hY2NvdW50cy5kZXYk
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: CLERK_SECRET_KEY
+    secret: CLERK_SECRET_KEY
+    
+  # ThirdWeb
+  - variable: NEXT_PUBLIC_THIRDWEB_CLIENT_ID
+    value: f2ebab44eccad7efe22c48f73c19e347
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: AUTH_PRIVATE_KEY
+    value: b172299c1275054a6e586516f01e4205850d93b307dc14eae6584cff1cf729e4
+    
+  # Web3
+  - variable: NEXT_PUBLIC_PROJECT_ID
+    value: f8c4e7edfc108c9176ce36b583d36323
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_INFURA_KEY
+    value: 8fda6cbb77cb4fdbb31f040686992fea
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_COINBASE_PROJECT_ID
+    value: f6066fa7-bf99-4bb1-ac32-630bc622fd13
+    availability:
+      - BUILD
+      - RUNTIME
+    
+  # Firebase
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyCTfNk-F92lXgcyvpu1FILXCFzZMn-ABs0
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: hailmary-3ff6c.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_DATABASE_URL
+    value: https://hailmary-3ff6c-default-rtdb.firebaseio.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: hailmary-3ff6c
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: hailmary-3ff6c.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "454753598575"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:454753598575:web:296da6b6e30c80b179219a"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: G-EC5Y9K7F5E
+    availability:
+      - BUILD
+      - RUNTIME
+    
+  # APIs
+  - variable: NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY
+    value: D3DKU2TQVH136ZIJ
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FMP
+    value: kUsgBNt4QQmJzi0TFe0MHLIg1NlpWnsR
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_COINMARKETCAP
+    value: fef814d1-76f9-4c4e-b2ef-b409ac3e7b9d
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FINNHUB
+    value: d06onahr01qg26s9a1f0d06onahr01qg26s9a1fg
+    availability:
+      - BUILD
+      - RUNTIME

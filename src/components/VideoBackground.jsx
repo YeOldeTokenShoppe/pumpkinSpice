@@ -57,7 +57,7 @@ const VideoBackground = ({ is80sMode = false }) => {
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.format = THREE.RGBFormat;
-    texture.encoding = THREE.sRGBEncoding;
+    texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(8, 4); // Repeat the texture 4 times horizontally, 2 times vertically

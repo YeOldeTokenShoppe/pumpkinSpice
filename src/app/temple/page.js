@@ -12,11 +12,12 @@ import { useMusic } from '@/components/MusicContext';
 import Link from 'next/link';
 import { Lights } from '@/components/Lights';
 import CyberCalloutOverlay from '@/components/CyberCalloutOverlay';
-import SimpleLoader from '@/components/SimpleLoader';
-import CandleInteractionHint from '@/components/CandleInteractionHint';
 const MusicPlayer3 = dynamic(() => import('@/components/MusicPlayer3'), {
   ssr: false,
 });
+import SimpleLoader from '@/components/SimpleLoader';
+import CandleInteractionHint from '@/components/CandleInteractionHint';
+
 
 
 
@@ -198,14 +199,14 @@ export default function CyborgTemple({ is80sMode, setIs80sMode }) {
           <CandleInteractionHint isMobileView={isMobileView} />
 
           <div 
-            style={{
-              width: "100%",
-              height: "100vh",
-              background: "#000",
-              position: "relative",
-              overflow: "hidden"
-            }}
-          >
+      style={{
+        width: "100%",
+        height: "100vh",
+        background: "#000",
+        position: "relative",
+        overflow: "hidden"
+      }}
+    >
       {/* Cyber Callout Overlay */}
       <CyberCalloutOverlay
         title="CYBORG TEMPLE"
@@ -267,7 +268,7 @@ export default function CyborgTemple({ is80sMode, setIs80sMode }) {
               cursor: "pointer",
             }}
           >
-            <Link href="/home" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
+            <Link href="/gallery" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
               RL80
             </Link>
             {Array.from({length: 100}).map((_, i) => {
