@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SimpleLoader from '@/components/SimpleLoader';
 import PalmTreeDrive from '@/components/PalmTreeDrive';
 import { useMusic } from '@/components/MusicContext';
+import Link from 'next/link';
 
 
 export default function Home() {
   
   const [isSceneLoading, setIsSceneLoading] = useState(true);
+  const [fontLoaded, setFontLoaded] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
   
   // Get music context functions
   const { 
@@ -22,6 +25,29 @@ export default function Home() {
   
   // Show music controls if music is already playing
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
+  
+  // Check if font is loaded
+  useEffect(() => {
+    const checkFont = async () => {
+      try {
+        await document.fonts.load("1em 'UnifrakturMaguntia'");
+        setFontLoaded(true);
+      } catch (e) {
+        setTimeout(() => setFontLoaded(true), 100);
+      }
+    };
+    checkFont();
+  }, []);
+  
+  // Check if mobile view
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileView(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <div style={{ width: '100vw', minHeight: '100vh' }}>
@@ -47,8 +73,15 @@ export default function Home() {
         onLoadingChange={setIsSceneLoading}
       />
       
-      {/* Add inline keyframes for spin animation */}
+      {/* Add inline keyframes for spin animation and font */}
       <style jsx>{`
+        @font-face {
+          font-family: 'UnifrakturMaguntia';
+          src: url('/fonts/UnifrakturMaguntia-Regular.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+          font-display: block;
+        }
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -58,8 +91,65 @@ export default function Home() {
         }
       `}</style>
       
-      {/* Music Controls - Bottom Right */}
-      {!showMusicControls ? (
+      {/* RL80 Logo - Top Left */}
+      {!isSceneLoading && (
+        <div style={{
+          position: "fixed",
+          top: "20px", 
+          left: "20px",
+          borderRadius: "8px",
+          padding: "10px",
+          pointerEvents: "auto",
+          opacity: fontLoaded ? 1 : 0,
+          transition: "opacity 0.3s ease-in-out",
+          zIndex: 10000,
+        }}>
+          <div 
+            id="text"
+            style={{
+              position: "relative",
+              fontFamily: "'UnifrakturMaguntia', serif",
+              fontSize: isMobileView ? "3rem" : "4rem",
+              color: "#ffffff",
+              cursor: "pointer",
+            }}
+          >
+            <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
+              RL80
+            </Link>
+            {Array.from({length: 100}).map((_, i) => {
+              const index = i + 1;
+              return (
+                <div
+                  key={index}
+                  className="text__copy"
+                  style={{
+                    position: "absolute",
+                    pointerEvents: "none",
+                    zIndex: -1,
+                    top: 0,
+                    left: 0,
+                    color: is80sMode 
+                      ? `rgba(${201 - index * 2}, ${55 - index * 3}, ${256 - index * 2})` 
+                      : `rgba(${255 - index * 2}, ${255 - index * 3}, ${255 - index * 2})`,
+                    filter: "blur(0.1rem)",
+                    transform: `translate(
+                      ${index * 0.1}rem, 
+                      ${index * 0.1}rem
+                    ) scale(${1 + index * 0.01})`,
+                    opacity: (1 / index) * 1.5,
+                  }}
+                >
+                  RL80
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      
+      {/* Music Controls - Bottom Right (only show after scene loads) */}
+      {!isSceneLoading && !showMusicControls ? (
         <button
           onClick={() => {
             setShowMusicControls(true);
@@ -103,8 +193,8 @@ export default function Home() {
             <circle cx="18" cy="16" r="3" />
           </svg>
         </button>
-      ) : (
-        // Compact Music Player Controls
+      ) : !isSceneLoading ? (
+        // Compact Music Player Controls (only show after scene loads)
         <div
           style={{
             position: "fixed",
@@ -190,7 +280,7 @@ export default function Home() {
             </svg>
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

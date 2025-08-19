@@ -193,7 +193,7 @@ export default function GalleryPage() {
     setTimeout(() => {
       isToggling80sRef.current = false;
     }, 100);
-  }, []);
+  }, [is80sMode, setContext80sMode]);
 
 
  
@@ -201,15 +201,14 @@ export default function GalleryPage() {
     <div
       style={{
         backgroundColor: "#000000",
-        minHeight: "100vh",
+        height: "100vh",
         width: "100vw",
-        maxWidth: "100%",
         margin: 0,
         padding: 0,
-        position: "relative", // Changed from fixed to relative
+        position: "fixed",
         left: 0,
         top: 0,
-        overflow: "visible", // Changed from auto to visible
+        overflow: "hidden",
       }}
     >
       <style jsx global>{`
@@ -352,8 +351,8 @@ export default function GalleryPage() {
         </div>
       )}
           
-          {/* Desktop controls for Music and 80s Mode */}
-          {
+          {/* Desktop controls for Music and 80s Mode (only show after loading) */}
+          {!isLoading && (
         <>
           {!showMusicControls ? (
             <button
@@ -547,9 +546,7 @@ export default function GalleryPage() {
             </span>
           </button>
           </>
-          }
-        </>
-      )}
+          )}
       
       {/* 3D Scene - Always render but hide with opacity while loading */}
       <div style={{
@@ -563,7 +560,8 @@ export default function GalleryPage() {
           is80sMode={is80sMode}
         />
       </div>
-
+      </>
+      )}
     </div>
   );
 }

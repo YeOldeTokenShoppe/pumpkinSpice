@@ -216,7 +216,17 @@ export default function CyborgTemple() {
   
 
   return (
-    <>
+    <div style={{ 
+      width: '100vw', 
+      height: '100vh', 
+      margin: 0, 
+      padding: 0, 
+      overflow: 'hidden',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      backgroundColor: '#000'
+    }}>
       <style jsx global>{`
         @font-face {
           font-family: 'UnifrakturMaguntia';
@@ -346,7 +356,11 @@ export default function CyborgTemple() {
         gl={{ antialias: true, alpha: true }}
         style={{ 
           background: 'transparent', 
-          position: 'relative', 
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
           zIndex: 2,
           opacity: isLoading ? 0 : 1,
           transition: 'opacity 0.5s ease-in-out'
@@ -440,8 +454,8 @@ export default function CyborgTemple() {
       />
       
       
-      {/* Music Icon Button */}
-      {!showMobileMusicPlayer && (
+      {/* Music Icon Button (only show after loading) */}
+      {!isLoading && !showMobileMusicPlayer && (
         <button
           style={{
             position: "fixed",
@@ -487,8 +501,8 @@ export default function CyborgTemple() {
         </div>
       )}
       
-      {/* Minimal Music Player UI */}
-      {showMobileMusicPlayer && (
+      {/* Minimal Music Player UI (only show after loading) */}
+      {!isLoading && showMobileMusicPlayer && (
         <div
           style={{
             position: "fixed",
@@ -750,6 +764,6 @@ export default function CyborgTemple() {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }
