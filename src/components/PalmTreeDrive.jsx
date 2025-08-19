@@ -10,7 +10,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useMusic } from '/src/components/MusicContext';
 // import { IconButton, div } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 
 // MusicPlayer3 removed - using global instance from _app.jsx
@@ -338,6 +337,29 @@ const PalmsScene = ({ onLoadingChange }) => {
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
   const previousCameraStage = useRef(0);
+  
+  // Detect if device is mobile for routing
+  const detectMobileDevice = useCallback(() => {
+    const userAgent = navigator.userAgent;
+    const lowerUA = userAgent.toLowerCase();
+    
+    const isIPhone = /iphone/i.test(lowerUA);
+    const isAndroid = /android/i.test(lowerUA);
+    const hasMobileKeyword = /mobile/i.test(lowerUA);
+    
+    const innerWidth = window.innerWidth;
+    const innerHeight = window.innerHeight;
+    const pixelRatio = window.devicePixelRatio || 1;
+    const physicalWidth = window.screen.width / pixelRatio;
+    const physicalHeight = window.screen.height / pixelRatio;
+    
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isPhoneUA = isIPhone || (isAndroid && hasMobileKeyword);
+    const hasPhoneSize = Math.min(innerWidth, innerHeight) < 600 || 
+                        Math.min(physicalWidth, physicalHeight) < 400;
+    
+    return isPhoneUA && hasTouch && hasPhoneSize;
+  }, []);
 
   
 
@@ -2631,7 +2653,9 @@ const PalmsScene = ({ onLoadingChange }) => {
         // console.log('Mary intersects found:', intersects.length);
         
         if (intersects.length > 0) {
-          console.log('Mary clicked! Navigating to gallery...');
+          const isMobile = detectMobileDevice();
+          const destination = isMobile ? '/gallery' : '/temple';
+          console.log(`Mary clicked! Navigating to ${destination}...`);
           
           // Add fade out transition before navigating
           gsap.to(mountRef.current, {
@@ -2639,7 +2663,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             duration: 1.5,
             ease: "power2.inOut",
             onComplete: () => {
-              router.push('/gallery');
+              router.push(destination);
             }
           });
           return;
@@ -2658,7 +2682,9 @@ const PalmsScene = ({ onLoadingChange }) => {
             const distance = intersect.point.distanceTo(maryPos);
             // console.log('Intersection distance from Mary position:', distance);
             if (distance < 2) { // Within 2 units of Mary's position
-              console.log('Close to Mary! Navigating to gallery...');
+              const isMobile = detectMobileDevice();
+              const destination = isMobile ? '/gallery' : '/temple';
+              console.log(`Close to Mary! Navigating to ${destination}...`);
               
               // Add fade out transition before navigating
               gsap.to(mountRef.current, {
@@ -2666,7 +2692,7 @@ const PalmsScene = ({ onLoadingChange }) => {
                 duration: 1.5,
                 ease: "power2.inOut",
                 onComplete: () => {
-                  router.push('/gallery');
+                  router.push(destination);
                 }
               });
               return;
@@ -2728,6 +2754,43 @@ const PalmsScene = ({ onLoadingChange }) => {
 
   return (
     <div ref={intersectionRef} style={{ position: 'relative', width: '100%', backgroundColor: 'black' }}>
+      <style jsx global>{`
+        @font-face {
+          font-family: 'UnifrakturMaguntia';
+          src: url('/fonts/UnifrakturMaguntia-Regular.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+        
+        .scroll-text-line {
+          display: inline-block;
+          transition: all 0.3s ease;
+        }
+        .scroll-text-line:hover {
+          color: #67e8f9;
+          text-shadow: 0 0 30px #67e8f9;
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 0.5;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+      `}</style>
       {/* Fixed viewport for Three.js scene */}
       <div style={{
         position: 'fixed',
@@ -2749,38 +2812,6 @@ const PalmsScene = ({ onLoadingChange }) => {
           transition: 'opacity 0.5s ease-in-out'
         }}>
           
-          <style jsx>{`
-          @keyframes fadeIn {
-            from {
-              opacity: 0;
-              transform: translate(-50%, -50%) scale(0.9);
-            }
-            to {
-              opacity: 1;
-              transform: translate(-50%, -50%) scale(1);
-            }
-          }
-        `}</style>
-        
-        <style jsx global>{`
-          .scroll-text-line {
-            display: inline-block;
-            transition: all 0.3s ease;
-          }
-          .scroll-text-line:hover {
-            color: #67e8f9;
-            text-shadow: 0 0 30px #67e8f9;
-          }
-          
-          @keyframes pulse {
-            0%, 100% {
-              opacity: 0.5;
-            }
-            50% {
-              opacity: 0.8;
-            }
-          }
-        `}</style>
         
         <div 
           ref={mountRef} 
@@ -3024,100 +3055,34 @@ const PalmsScene = ({ onLoadingChange }) => {
               pointerEvents: 'auto',
               touchAction: 'auto',
             }}>
-              <style jsx>{`
-                .cyberpunk, .cyberpunk::after {
-                  padding: 12px 20px;
-                  text-decoration: none;
-                  font-size: 20px;
-                  font-family: 'Bebas Neue', monospace;
-                  display: inline-block;
-                  background: linear-gradient(45deg, transparent 5%, #FF013C 5%);
-                  border: 0;
-                  color: #fff;
-                  letter-spacing: 2px;
-                  box-shadow: 4px 0px 0px #00E6F6;
-                  outline: transparent;
-                  position: relative;
-                  cursor: pointer;
-                  z-index: 10001;
-                }
-
-                .cyberpunk::after {
-                  --slice-0: inset(50% 50% 50% 50%);
-                  --slice-1: inset(80% -6px 0 0);
-                  --slice-2: inset(50% -6px 30% 0);
-                  --slice-3: inset(10% -6px 85% 0);
-                  --slice-4: inset(40% -6px 43% 0);
-                  --slice-5: inset(80% -6px 5% 0);
-                  
-                  content: 'TAKE ME THERE';
-                  display: block;
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  right: 0;
-                  bottom: 0;
-                  background: linear-gradient(45deg, transparent 3%, #00E6F6 3%, #00E6F6 5%, #FF013C 5%);
-                  text-shadow: -2px -2px 0px #F8F005, 2px 2px 0px #00E6F6;
-                  clip-path: var(--slice-0);
-                  pointer-events: none;
-                }
-
-                .cyberpunk:hover::after {
-                  animation: 1s glitch;
-                  animation-timing-function: steps(2, end);
-                }
-
-                @keyframes glitch {
-                  0% {
-                    clip-path: var(--slice-1);
-                    transform: translate(-20px, -10px);
-                  }
-                  10% {
-                    clip-path: var(--slice-3);
-                    transform: translate(10px, 10px);
-                  }
-                  20% {
-                    clip-path: var(--slice-1);
-                    transform: translate(-10px, 10px);
-                  }
-                  30% {
-                    clip-path: var(--slice-3);
-                    transform: translate(0px, 5px);
-                  }
-                  40% {
-                    clip-path: var(--slice-2);
-                    transform: translate(-5px, 0px);
-                  }
-                  50% {
-                    clip-path: var(--slice-3);
-                    transform: translate(5px, 0px);
-                  }
-                  60% {
-                    clip-path: var(--slice-4);
-                    transform: translate(5px, 10px);
-                  }
-                  70% {
-                    clip-path: var(--slice-2);
-                    transform: translate(-10px, 10px);
-                  }
-                  80% {
-                    clip-path: var(--slice-5);
-                    transform: translate(20px, -10px);
-                  }
-                  90% {
-                    clip-path: var(--slice-1);
-                    transform: translate(-10px, 0px);
-                  }
-                  100% {
-                    clip-path: var(--slice-1);
-                    transform: translate(0);
-                  }
-                }
-              `}</style>
-              <Link href="/gallery" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
-                <span className="cyberpunk">TAKE ME THERE</span>
-              </Link>
+              <button
+                onClick={() => {
+                  const isMobile = detectMobileDevice();
+                  const destination = isMobile ? '/gallery' : '/temple';
+                  router.push(destination);
+                }}
+                style={{
+                  padding: "15px 40px",
+                  fontSize: "1.2rem",
+                  fontFamily: "'UnifrakturMaguntia', serif",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  color: "#ffffff",
+                  border: "2px solid #ffffff",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+                  e.target.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+                  e.target.style.transform = "scale(1)";
+                }}
+              >
+                Enter
+              </button>
             </div>
           )}
           

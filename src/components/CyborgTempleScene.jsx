@@ -983,13 +983,13 @@ function CyborgTempleScene({
 
     {
       position: [0.3, -1.6, 2], 
-      text: "Neural Chandelier\nSyncs with collective thoughts",
+      text: "",
       customCamera: {
         position: [0, -1.8, 1.8], // Camera moved right and lower
         lookAt: [0, -1.6, 1.6], // Look outward toward the characters
         distance: 2 // Slightly increased distance for better framing
       },
-      annotationOffset: [20, 150] // [x, y] offset in pixels from center
+      annotationOffset: [920, 950] // [x, y] offset in pixels from center
     },
     {
       position: [-2, -0.99, 0.3], // Left side

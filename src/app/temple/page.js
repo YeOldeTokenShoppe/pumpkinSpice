@@ -24,13 +24,26 @@ import CandleMarquee from '@/components/CandleMarquee';
 
 
 export default function CyborgTemple() {
-  const [showMobileMusicPlayer, setShowMobileMusicPlayer] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  // Get music context functions first
+  const { 
+    play, 
+    pause, 
+    isPlaying: contextIsPlaying, 
+    nextTrack,
+    currentTrack,
+    currentTrackIndex,
+    is80sMode: context80sMode, 
+    setIs80sMode: setContext80sMode 
+  } = useMusic();
+  
+  // Show music player if music is already playing
+  const [showMobileMusicPlayer, setShowMobileMusicPlayer] = useState(contextIsPlaying);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [musicPlayerVisible, setMusicPlayerVisible] = useState(false);
-  const [is80sMode, setIs80sMode] = useState(false);
-  const videoRef = useRef(null);
-//   const { setIsPlaying: setContextIsPlaying, setShowSpotify: setContextShowSpotify } = useMusic();
+  const [musicPlayerVisible, setMusicPlayerVisible] = useState(contextIsPlaying);
+  
+  // Use context values instead of local state
+  const isPlaying = contextIsPlaying;
+  const is80sMode = context80sMode;
   const musicPlayerRef = useRef(null);
   
   // FloatingCandleViewer state (shared for both temple and marquee candles)
@@ -135,15 +148,7 @@ export default function CyborgTemple() {
   }, []);
   
 
-  // Handle 80s mode video playback
-  useEffect(() => {
-    // Video autoplay is now handled in the video element's onLoadedData
-    // Just pause and reset when 80s mode is turned off
-    if (!is80sMode && videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-  }, [is80sMode]);
+  // 80s mode video is now handled by VideoBackground component in CyborgTempleScene
 
 
 
@@ -279,59 +284,7 @@ export default function CyborgTemple() {
         }}
       />
       
-      {/* 80s Mode Video Background */}
-      {is80sMode && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            zIndex: 1,
-            pointerEvents: "none",
-          }}
-        >
-          <video
-            ref={videoRef}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              minWidth: "100%",
-              minHeight: "100%",
-              width: "auto",
-              height: "auto",
-              transform: "translate(-50%, -50%)",
-              objectFit: "cover",
-              opacity: 0.15,
-              filter: "saturate(2) hue-rotate(15deg) brightness(0.8)",
-            }}
-            onLoadedData={(e) => {
-              console.log("80s video loaded:", e.target.src);
-              e.target.play().catch(err => console.log("Video autoplay failed:", err));
-            }}
-            onError={(e) => {
-              if (e.target.error) {
-                console.error("80s video failed to load:", {
-                  src: e.target.src,
-                  errorCode: e.target.error?.code,
-                  errorMessage: e.target.error?.message
-                });
-              }
-            }}
-          >
-            <source src="/videos/83.mov" type="video/quicktime" />
-            <source src="/videos/83.mov" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-      )}
+      {/* 80s Mode Video Background is rendered in CyborgTempleScene via VideoBackground component */}
       
       {/* Main content */}
       <div style={{
@@ -465,16 +418,17 @@ export default function CyborgTemple() {
         </Suspense>
       </Canvas>
       
-      {/* Vertical Candle Marquee - pulls from Firestore */}
+      {/* Horizontal Candle Marquee at bottom - pulls from Firestore */}
       <CandleMarquee
-        direction="vertical"
+        direction="horizontal"
         scrollSpeed={0.05}
         style={{
           position: 'fixed',
-          left: '100px',
-          top: '20%',
-          height: '80%',
-          width: '150px',
+          bottom: '0',
+          left: '0',
+          right: '0',
+          height: '25vh',  // Bottom 15% of viewport
+          width: '20vw',
           zIndex: 100,
           pointerEvents: 'auto'
         }}
@@ -504,7 +458,9 @@ export default function CyborgTemple() {
           onClick={() => {
             setShowMobileMusicPlayer(true);
             setMusicPlayerVisible(true);
-            // setContextShowSpotify(true);
+            if (!contextIsPlaying) {
+              play();
+            }
           }}
         >
           <svg width={isMobileView ? "24" : "40"} height={isMobileView ? "24" : "40"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -586,9 +542,20 @@ export default function CyborgTemple() {
               borderRadius: "4px",
               cursor: "pointer"
             }}
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               console.log('🎵 Skip button clicked');
-              // Add skip functionality when music controls are available
+              console.log('nextTrack function:', nextTrack);
+              console.log('Current track:', currentTrack);
+              console.log('Current track index:', currentTrackIndex);
+              console.log('Is 80s mode:', context80sMode);
+              if (nextTrack) {
+                nextTrack();
+                console.log('nextTrack called');
+              } else {
+                console.log('nextTrack is not available');
+              }
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -608,11 +575,15 @@ export default function CyborgTemple() {
               borderRadius: "4px",
               cursor: "pointer"
             }}
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Close button clicked');
               setShowMobileMusicPlayer(false);
               setMusicPlayerVisible(false);
-              // setContextShowSpotify(false);
-              // Add pause functionality when music controls are available
+              if (pause) {
+                pause();
+              }
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -670,7 +641,7 @@ export default function CyborgTemple() {
         }}
         aria-label="Toggle 80s Mode"
         title={is80sMode ? "Disable 80s Mode" : "Enable 80s Mode"}
-        onClick={() => setIs80sMode(!is80sMode)}
+        onClick={() => setContext80sMode(!is80sMode)}
       >
         <span style={{ 
           fontSize: "20px", 

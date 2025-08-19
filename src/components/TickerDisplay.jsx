@@ -1021,8 +1021,8 @@ const TickerDisplay = ({ modelRef, isMobileView, ...props }) => {
       // Firebase Function URL for Alpha Vantage data
       const alphaVantageURL = "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getAlphaVantageData";
       
-      // Firebase Function URL for FMP data (Dollar Index using UUP)
-      const fmpURL = "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getFMPData";
+      // Firebase Function URL for Treasury data
+      const treasuryURL = "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getFMPTreasury";
       
       // Fetch oil data from dedicated Oil endpoint
 
@@ -1068,7 +1068,7 @@ const TickerDisplay = ({ modelRef, isMobileView, ...props }) => {
       // Fetch 10Y Treasury Yield data
 
       try {
-        const treasuryResponse = await fetch(`${fmpURL}/TREASURY`, {
+        const treasuryResponse = await fetch(treasuryURL, {
           // Add a cache-busting parameter to avoid getting cached responses
           headers: {
             'Cache-Control': 'no-cache',

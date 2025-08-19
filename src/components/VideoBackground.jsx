@@ -69,7 +69,7 @@ const VideoBackground = ({ is80sMode = false }) => {
       map: texture,
       side: THREE.BackSide, // Render on the inside of the sphere
       transparent: true,
-      opacity: 0.6, // Adjusted opacity for visibility
+      opacity: 0.08, // Reduced opacity for subtle effect
     });
     
     const mesh = new THREE.Mesh(geometry, material);

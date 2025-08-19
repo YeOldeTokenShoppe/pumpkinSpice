@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-// import { useMusic } from "@/components/MusicContext";
+import { useMusic } from "@/components/MusicContext";
 import SimpleLoader from "@/components/SimpleLoader";
 import CandleInteractionHint from "@/components/CandleInteractionHint";
 
@@ -19,18 +19,21 @@ const ThreeDVotiveStand = dynamic(() => import("@/components/index.jsx"), {
 export default function GalleryPage() {
 
 
-  const musicPlayerRef = useRef(null); // Local ref for music player if needed
+  // Get music context functions
+  const { play, pause, isPlaying: contextIsPlaying, nextTrack, currentTrackIndex, currentTrack, is80sMode: context80sMode, setIs80sMode: setContext80sMode } = useMusic();
   const isTogglingRef = useRef(false); // Prevent multiple rapid toggles
   const isToggling80sRef = useRef(false); // Track 80s mode toggle state
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [is80sMode, setIs80sMode] = useState(false);
+  // Use context 80s mode instead of local state
+  const is80sMode = context80sMode;
   
 
   const [isMobileView, setIsMobileView] = useState(false);
   const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(false); // Lock mobile view for phones
   const [isSceneLoading, setIsSceneLoading] = useState(true);
-  const [showSpotify, setShowSpotify] = useState(false); // Add missing state for music player
+  // Show music controls if music is already playing
+  const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
   const [fontLoaded, setFontLoaded] = useState(false);
 
 
@@ -149,8 +152,8 @@ export default function GalleryPage() {
   useEffect(() => {
     console.log('Gallery page - isLoading:', isLoading);
     console.log('Gallery page - isMobileView:', isMobileView);
-    console.log('Gallery page - showSpotify:', showSpotify);
-  }, [isLoading, isMobileView, showSpotify]);
+    console.log('Gallery page - showMusicControls:', showMusicControls);
+  }, [isLoading, isMobileView, showMusicControls]);
 
   // Fallback timeout to ensure loader doesn't stay forever
   useEffect(() => {
@@ -165,13 +168,12 @@ export default function GalleryPage() {
   }, []);
 
   // Handle music toggle
-  // const handleMusicToggle = useCallback((show) => {
-  //   setShowSpotify(show);
-  //   if (show && contextIsPlaying) {
-  //     // If music is playing when opening the player, ensure it continues
-  //     playMusic();
-  //   }
-  // }, [contextIsPlaying, playMusic]);
+  const handleMusicToggle = useCallback((show) => {
+    setShowMusicControls(show);
+    if (show && !contextIsPlaying) {
+      play();
+    }
+  }, [contextIsPlaying, play]);
 
   // Modify toggle80sMode to respect mobile view
   const toggle80sMode = useCallback(() => {
@@ -183,17 +185,14 @@ export default function GalleryPage() {
     isToggling80sRef.current = true;
     console.log("🎨 Gallery: toggle80sMode called, current:", is80sMode);
     
-    setIs80sMode(prev => {
-      const newMode = !prev;
-      console.log("🎨 Gallery: Setting 80s mode from", prev, "to", newMode);
-      
-      // Reset toggle flag after state update
-      setTimeout(() => {
-        isToggling80sRef.current = false;
-      }, 100);
-      
-      return newMode;
-    });
+    const newMode = !is80sMode;
+    console.log("🎨 Gallery: Setting 80s mode from", is80sMode, "to", newMode);
+    setContext80sMode(newMode);
+    
+    // Reset toggle flag after state update
+    setTimeout(() => {
+      isToggling80sRef.current = false;
+    }, 100);
   }, []);
 
 
@@ -356,7 +355,7 @@ export default function GalleryPage() {
           {/* Desktop controls for Music and 80s Mode */}
           {
         <>
-          {!showSpotify ? (
+          {!showMusicControls ? (
             <button
               onClick={() => handleMusicToggle(true)}
               style={{
@@ -417,17 +416,29 @@ export default function GalleryPage() {
                   backgroundImage: "url('/virginRecords.jpg')",
                   backgroundSize: "cover",
                   backgroundPosition: "center",
-                  animation: showSpotify ? "spin 3s linear infinite" : "none",
+                  animation: contextIsPlaying ? "spin 3s linear infinite" : "none",
                 }}
               />
               
               {/* Skip Button */}
               <button
-                onClick={() => {
-                  if (contextNextTrack) {
-                    contextNextTrack();
-                  } else if (musicPlayerRef.current && musicPlayerRef.current.nextTrack) {
-                    musicPlayerRef.current.nextTrack();
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Skip button clicked');
+                  console.log('nextTrack function:', nextTrack);
+                  console.log('Current track:', currentTrack);
+                  console.log('Current track index:', currentTrackIndex);
+                  console.log('Is 80s mode:', context80sMode);
+                  if (nextTrack) {
+                    nextTrack();
+                    console.log('nextTrack called');
+                    setTimeout(() => {
+                      console.log('After skip - new track:', currentTrack);
+                      console.log('After skip - new index:', currentTrackIndex);
+                    }, 500);
+                  } else {
+                    console.log('nextTrack is not available');
                   }
                 }}
                 style={{
@@ -453,7 +464,15 @@ export default function GalleryPage() {
               
               {/* Close Button */}
               <button
-                onClick={() => handleMusicToggle(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Close button clicked');
+                  handleMusicToggle(false);
+                  if (pause) {
+                    pause();
+                  }
+                }}
                 style={{
                   width: "28px",
                   height: "28px",

@@ -847,7 +847,8 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
       const alphaVantageURL = "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getAlphaVantageData";
       
       // Firebase Function URL for FMP data (Dollar Index using UUP)
-      const fmpURL = "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getFMPData";
+      // Firebase Cloud Functions endpoint
+      const treasuryURL = "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getFMPTreasury";
       
       // Fetch oil data from dedicated Oil endpoint
 
@@ -870,30 +871,12 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
         console.error("Error fetching oil data:", error);
       }
       
-      // Fetch dollar index data from FMP
-
-      try {
-        const dollarResponse = await fetch(`${fmpURL}/DOLLAR`);
-        const dollarData = await dollarResponse.json();
-        
-        if (dollarData && dollarData.price && !isNaN(dollarData.price)) {
-          results.push({
-            name: "Dollar Index",
-            symbol: "DX-Y.NYB",
-            price: dollarData.price,
-            changePercent: dollarData.changePercent,
-          });
-        } else {
-          console.error("Invalid dollar data:", dollarData);
-        }
-      } catch (error) {
-        console.error("Error fetching dollar data:", error);
-      }
+      // Dollar index data removed for now
       
       // Fetch 10Y Treasury Yield data
 
       try {
-        const treasuryResponse = await fetch(`${fmpURL}/TREASURY`, {
+        const treasuryResponse = await fetch(treasuryURL, {
           // Add a cache-busting parameter to avoid getting cached responses
           headers: {
             'Cache-Control': 'no-cache',
