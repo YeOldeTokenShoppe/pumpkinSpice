@@ -17,6 +17,8 @@ const MusicPlayer3 = dynamic(() => import('@/components/MusicPlayer3'), {
 });
 import SimpleLoader from '@/components/SimpleLoader';
 import CandleInteractionHint from '@/components/CandleInteractionHint';
+import CandleMarquee from '@/components/CandleMarquee';
+
 
 
 
@@ -31,7 +33,7 @@ export default function CyborgTemple() {
 //   const { setIsPlaying: setContextIsPlaying, setShowSpotify: setContextShowSpotify } = useMusic();
   const musicPlayerRef = useRef(null);
   
-  // FloatingCandleViewer state
+  // FloatingCandleViewer state (shared for both temple and marquee candles)
   const [showFloatingViewer, setShowFloatingViewer] = useState(false);
   const [selectedCandleData, setSelectedCandleData] = useState(null);
   const [viewerCandleIndex, setViewerCandleIndex] = useState(0);
@@ -41,6 +43,9 @@ export default function CyborgTemple() {
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [sceneLoaded, setSceneLoaded] = useState(false);
+  const [canvasReady, setCanvasReady] = useState(false);
+  const loadingTimeoutRef = useRef(null);
 
   // Check if font is loaded
   useEffect(() => {
@@ -57,6 +62,43 @@ export default function CyborgTemple() {
     checkFont();
   }, []);
 
+  // Mark canvas as ready after a delay to ensure it's mounted
+  useEffect(() => {
+    const canvasTimeout = setTimeout(() => {
+      setCanvasReady(true);
+    }, 500);
+    return () => clearTimeout(canvasTimeout);
+  }, []);
+
+  // Wait for everything to be ready
+  useEffect(() => {
+    if (sceneLoaded && fontLoaded && canvasReady) {
+      console.log('All components ready, waiting for renders to complete...');
+      
+      // Clear any existing timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      
+      // Use requestAnimationFrame to wait for next paint, then add delay
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Wait additional time for child components and textures to fully load
+          loadingTimeoutRef.current = setTimeout(() => {
+            console.log('Hiding loader - all components fully loaded');
+            setIsLoading(false);
+          }, 2500); // Increased delay to ensure everything is rendered
+        });
+      });
+    }
+    
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [sceneLoaded, fontLoaded, canvasReady]);
+
   // Fallback timeout to ensure loader doesn't stay forever
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -64,7 +106,7 @@ export default function CyborgTemple() {
         console.log('Temple loading timeout reached, forcing complete');
         setIsLoading(false);
       }
-    }, 10000); // 10 second timeout
+    }, 20000); // 20 second timeout
 
     return () => clearTimeout(timeout);
   }, []);
@@ -116,7 +158,7 @@ export default function CyborgTemple() {
   
   const handleSceneLoad = useCallback(() => {
     console.log('Cyborg Temple Scene loaded');
-    setIsLoading(false);
+    setSceneLoaded(true);
   }, []);
   
   // Function to close the floating viewer
@@ -151,6 +193,19 @@ export default function CyborgTemple() {
     setSelectedCandleData(candleData);
     setViewerCandleIndex(index);
     setAllCandlesData(allCandles);
+    setShowFloatingViewer(true);
+  }, []);
+  
+  // Handle marquee candle click - reuse the same viewer
+  const handleMarqueeCandleClick = useCallback((candleData) => {
+    console.log('Marquee candle clicked:', candleData);
+    setSelectedCandleData({
+      ...candleData,
+      candleId: `marquee-candle-${Date.now()}`,
+      candleTimestamp: Date.now(),
+    });
+    setViewerCandleIndex(0);
+    setAllCandlesData([candleData]); // Single candle, no navigation needed
     setShowFloatingViewer(true);
   }, []);
   
@@ -203,7 +258,9 @@ export default function CyborgTemple() {
         height: "100vh",
         background: "#000",
         position: "relative",
-        overflow: "hidden"
+        overflow: "hidden",
+        opacity: isLoading ? 0 : 1,
+        transition: 'opacity 0.5s ease-in-out'
       }}
     >
       {/* Cyber Callout Overlay */}
@@ -334,7 +391,13 @@ export default function CyborgTemple() {
         key="cyborg-temple-canvas"
         camera={{ position: [0, -1.2, 8.5], fov: 40 }}
         gl={{ antialias: true, alpha: true }}
-        style={{ background: 'transparent', position: 'relative', zIndex: 2 }}
+        style={{ 
+          background: 'transparent', 
+          position: 'relative', 
+          zIndex: 2,
+          opacity: isLoading ? 0 : 1,
+          transition: 'opacity 0.5s ease-in-out'
+        }}
       >
         <fog attach="fog" args={['#000000', 20, 200]} />
         <Suspense fallback={null}>
@@ -401,6 +464,26 @@ export default function CyborgTemple() {
           />
         </Suspense>
       </Canvas>
+      
+      {/* Vertical Candle Marquee - pulls from Firestore */}
+      <CandleMarquee
+        direction="vertical"
+        scrollSpeed={0.05}
+        style={{
+          position: 'fixed',
+          left: '100px',
+          top: '20%',
+          height: '80%',
+          width: '150px',
+          zIndex: 100,
+          pointerEvents: 'auto'
+        }}
+        canvasStyle={{
+          background: 'transparent'
+        }}
+        onCandleClick={handleMarqueeCandleClick}
+        useFirestore={true}
+      />
       
       
       {/* Music Icon Button */}
@@ -681,7 +764,7 @@ export default function CyborgTemple() {
       )} */}
       
       
-      {/* FloatingCandleViewer - rendered outside the Canvas */}
+      {/* FloatingCandleViewer - shared for both temple and marquee candles */}
       {showFloatingViewer && selectedCandleData && (
         <FloatingCandleViewer
           key={`candle-viewer-${selectedCandleData.candleId}-${selectedCandleData.candleTimestamp}`}

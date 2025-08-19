@@ -88,7 +88,7 @@ function HolographicStatue4({
         float fresnel = dot(viewDirection, normal) + 1.0;
         fresnel = pow(fresnel, 1.2);
 
-        float falloff = smoothstep(0.8, 0.2, fresnel);
+        float falloff = smoothstep(0.8, 0.0, fresnel);
 
         float holographic = stripes * fresnel;
         holographic += fresnel * 2.25;
@@ -134,7 +134,7 @@ function HolographicStatue4({
         float glitchTime = uTime - modelPosition.y;
         float glitchStrength = sin(glitchTime) + sin(glitchTime * 3.45) + sin(glitchTime * 8.76) * 1.1;
         glitchStrength /= 3.0;
-        glitchStrength = smoothstep(0.9, 1.0, glitchStrength);
+        glitchStrength = smoothstep(0.3, 1.0, glitchStrength);
         glitchStrength *= 0.1; // Same as main material
         modelPosition.x += (random2D(modelPosition.xz + uTime).x - 0.5) * glitchStrength;
         modelPosition.z += (random2D(modelPosition.zx + uTime).x - 0.5) * glitchStrength;

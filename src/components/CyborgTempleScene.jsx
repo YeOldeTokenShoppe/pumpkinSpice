@@ -10,7 +10,8 @@ import VideoBackground from "@/components/VideoBackground";
 import SimpleGlitchTint from "@/components/SimpleGlitchTint";
 import AnnotationSystem from "@/components/AnnotationSystem";
 import { useFirestoreResults } from "@/utilities/useFirestoreResults";
-import FloatingCandleViewer from "@/components/CandleInteraction";
+import CandleMarquee from "./CandleMarquee";
+
 
 import HolographicStatue4 from "@/components/HolographicStatue4";
 
@@ -352,6 +353,145 @@ function CyborgTempleScene({
         console.log('[CyborgTempleScene] ChandelierMain not found in scene');
       }
       
+      // Video texture configuration for goldCircuit
+      const videoTextureConfig = {
+        path: "/videos/circuit1.mp4",
+        repeat: { x: 1, y: 1 },
+        offset: { x: 0, y: 0 },
+        anisotropy: 16,
+        rotation: 0,
+        emissive: true,
+        emissiveIntensity: 0.3,
+      };
+      
+      // Apply video texture to goldCircuit
+      let videoElement = null;
+      let videoTexture = null;
+      
+      templeScene.traverse(child => {
+        if (child.isMesh && (child.name === "goldCircuit" || child.name.includes("goldCircuit"))) {
+          console.log('🎬 Found goldCircuit mesh:', child.name);
+          
+          // Store original material if not already stored
+          if (!child.userData.originalTexture && child.material) {
+            if (child.material.map) {
+              child.userData.originalTexture = child.material.map;
+            }
+            child.userData.originalMaterial = child.material.clone();
+          }
+          
+          // Ensure goldCircuit is visible
+          child.visible = true;
+          
+          // Create video element
+          videoElement = document.createElement('video');
+          videoElement.src = videoTextureConfig.path;
+          videoElement.loop = true;
+          videoElement.muted = true;
+          videoElement.playsInline = true;
+          videoElement.autoplay = true;
+          videoElement.crossOrigin = "anonymous";
+          videoElement.setAttribute('webkit-playsinline', 'webkit-playsinline');
+          
+          // Add event listeners for debugging
+          videoElement.addEventListener('loadeddata', () => {
+            console.log('🎬 Video loaded successfully');
+            if (videoTexture) {
+              videoTexture.needsUpdate = true;
+            }
+          });
+          
+          videoElement.addEventListener('playing', () => {
+            console.log('🎬 Video is playing');
+          });
+          
+          videoElement.addEventListener('error', (e) => {
+            console.error('🎬 Video loading error:', e);
+            console.error('🎬 Video src:', videoElement.src);
+          });
+          
+          // Start playing the video only after it's ready
+          const playVideo = () => {
+            if (!videoElement.paused) {
+              console.log('🎬 Video already playing');
+              return;
+            }
+            
+            if (videoElement.readyState >= 2) {
+              videoElement.play().catch(err => {
+                console.warn('🎬 Video autoplay failed:', err);
+              });
+            } else {
+              console.log('🎬 Video not ready yet, waiting for canplay event');
+            }
+          };
+          
+          videoElement.addEventListener('canplay', playVideo);
+          
+          // Function to create and apply texture once video is ready
+          const createAndApplyTexture = () => {
+            console.log('🎬 Creating video texture for goldCircuit');
+            
+            // Create video texture
+            videoTexture = new THREE.VideoTexture(videoElement);
+            videoTexture.colorSpace = THREE.SRGBColorSpace;
+            videoTexture.wrapS = THREE.RepeatWrapping;
+            videoTexture.wrapT = THREE.RepeatWrapping;
+            videoTexture.repeat.set(videoTextureConfig.repeat.x, videoTextureConfig.repeat.y);
+            videoTexture.offset.set(videoTextureConfig.offset.x, videoTextureConfig.offset.y);
+            videoTexture.anisotropy = videoTextureConfig.anisotropy;
+            videoTexture.rotation = videoTextureConfig.rotation;
+            videoTexture.minFilter = THREE.LinearFilter;
+            videoTexture.magFilter = THREE.LinearFilter;
+            videoTexture.format = THREE.RGBFormat;
+            videoTexture.needsUpdate = true;
+            
+            // Apply video texture to material
+            const applyVideoMaterial = mat => {
+              mat.map = videoTexture;
+              mat.emissive = new THREE.Color(0xffffff);
+              mat.emissiveMap = videoTexture;
+              mat.emissiveIntensity = videoTextureConfig.emissiveIntensity;
+              mat.roughness = 0.6;
+              mat.metalness = 0.3;
+              mat.transparent = false;
+              mat.opacity = 1;
+              mat.side = THREE.DoubleSide;
+              mat.needsUpdate = true;
+              
+              console.log('🎬 Applied video texture to goldCircuit material');
+            };
+            
+            if (Array.isArray(child.material)) {
+              child.material.forEach(applyVideoMaterial);
+            } else {
+              applyVideoMaterial(child.material);
+            }
+            
+            // Store video element and texture
+            child.userData.videoElement = videoElement;
+            child.userData.videoTexture = videoTexture;
+            
+            // Try to play the video
+            playVideo();
+          };
+          
+          // Wait for video to have metadata before creating texture
+          if (videoElement.readyState >= 1) {
+            console.log('🎬 Video already has metadata, creating texture immediately');
+            createAndApplyTexture();
+          } else {
+            console.log('🎬 Waiting for video metadata before creating texture');
+            videoElement.addEventListener('loadedmetadata', createAndApplyTexture, { once: true });
+          }
+          
+          // Store references for cleanup
+          child.userData.videoElement = videoElement;
+          child.userData.playVideoHandler = playVideo;
+          child.userData.createTextureHandler = createAndApplyTexture;
+        }
+      });
+      
       // Find and store candle references
       const foundCandles = [];
       templeScene.traverse((child) => {
@@ -393,10 +533,12 @@ function CyborgTempleScene({
       hasLoadedRef.current = true;
       setModelLoaded(true); // Signal that model is loaded
 
-      // Notify parent that scene is loaded and ready
-      if (onLoad) {
-        onLoad();
-      }
+      // Delay notifying parent to allow child components to initialize
+      setTimeout(() => {
+        if (onLoad) {
+          onLoad();
+        }
+      }, 100);
     });
 
     // Cleanup function
@@ -418,6 +560,28 @@ function CyborgTempleScene({
       // Remove the scene and dispose of resources
       if (groupRef.current?.anchor) {
         groupRef.current.anchor.traverse((child) => {
+          // Clean up video texture for goldCircuit
+          if (child.userData.videoElement) {
+            console.log('🧹 Cleaning up goldCircuit video element');
+            if (child.userData.playVideoHandler) {
+              child.userData.videoElement.removeEventListener('canplay', child.userData.playVideoHandler);
+            }
+            if (child.userData.createTextureHandler) {
+              child.userData.videoElement.removeEventListener('loadedmetadata', child.userData.createTextureHandler);
+            }
+            child.userData.videoElement.pause();
+            child.userData.videoElement.removeAttribute('src');
+            child.userData.videoElement.load();
+            child.userData.videoElement = null;
+            child.userData.playVideoHandler = null;
+            child.userData.createTextureHandler = null;
+          }
+          if (child.userData.videoTexture) {
+            console.log('🧹 Disposing goldCircuit video texture');
+            child.userData.videoTexture.dispose();
+            child.userData.videoTexture = null;
+          }
+          
           if (child.isMesh) {
             if (child.geometry) {
               child.geometry.dispose();
@@ -443,6 +607,8 @@ function CyborgTempleScene({
       hasLoadedRef.current = false;
     };
   }, [scene, loader]); // Remove props from dependencies to prevent reloading
+
+  
   
   // Effect to handle animation switching when isPlaying changes
   useEffect(() => {
@@ -656,6 +822,135 @@ function CyborgTempleScene({
     }
   }, [results, candleRefs, currentCandlePage, updateCandleVisibility]);
 
+  // Toggle floor textures when 80s mode changes
+  useEffect(() => {
+    if (!sceneRef.current) return;
+
+    // Create a texture loader
+    const textureLoader = new THREE.TextureLoader();
+
+    // Texture configuration for 80s carpet
+    const textureConfig = {
+      path: "/80carpet.png", // Path to texture file
+      repeat: { x: 4, y: 4 }, // Tiling (higher numbers = smaller pattern)
+      offset: { x: 0.5, y: 0.5 }, // Offset (0-1 range)
+      anisotropy: 16, // Texture quality at angles (higher = better quality)
+      rotation: 0, // Rotation in radians
+      emissive: true, // Enable emissive effect for neon glow
+      emissiveIntensity: 0.6, // Intensity of the glow (0-1 range)
+    };
+
+    // Function to apply texture with settings
+    const applyTextureWithSettings = (texture, config) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(config.repeat.x, config.repeat.y);
+      texture.offset.set(config.offset.x, config.offset.y);
+      texture.anisotropy = config.anisotropy;
+      texture.rotation = config.rotation;
+      texture.needsUpdate = true;
+      return texture;
+    };
+
+    let floorFound = false;
+
+    sceneRef.current.traverse(child => {
+      // Check for any mesh with "Floor" in its name, but exclude goldCircuit
+      if (child.isMesh && 
+          (child.name === "Floor" || child.name === "Floor2.002" || child.name.includes("Floor2")) &&
+          !child.name.includes("goldCircuit")) {
+        floorFound = true;
+        
+        console.log('🏠 Found floor mesh:', child.name);
+        
+        // Store the original texture if we haven't already
+        if (!child.userData.originalTexture && child.material) {
+          if (child.material.map) {
+            child.userData.originalTexture = child.material.map;
+          }
+          child.userData.originalMaterial = child.material.clone();
+        }
+
+        // Toggle between original and 80s texture
+        if (is80sMode) {
+          console.log('🎨 Applying 80s carpet texture to floor');
+          textureLoader.load(
+            textureConfig.path, 
+            // Success callback
+            texture => {
+              console.log('✅ 80s carpet texture loaded successfully');
+              
+              // Apply texture settings
+              const configuredTexture = applyTextureWithSettings(texture, textureConfig);
+              
+              // Apply to material
+              const applyMaterial = mat => {
+                mat.map = configuredTexture;
+                
+                if (textureConfig.emissive) {
+                  mat.emissive = new THREE.Color(0xffffff);
+                  mat.emissiveMap = configuredTexture;
+                  mat.emissiveIntensity = textureConfig.emissiveIntensity;
+                }
+                
+                mat.needsUpdate = true;
+              };
+
+              // If the material is an array, update all materials
+              if (Array.isArray(child.material)) {
+                child.material.forEach(applyMaterial);
+              } else {
+                // Single material
+                applyMaterial(child.material);
+              }
+            },
+            // Progress callback
+            progress => {
+              // Optional: log progress
+            },
+            // Error callback
+            error => {
+              console.error('❌ Failed to load 80s carpet texture:', error);
+              console.error('❌ Texture path was:', textureConfig.path);
+            }
+          );
+        } else if (child.userData.originalMaterial) {
+          // Restore original material
+          console.log('🔄 Restoring original floor texture');
+          
+          if (Array.isArray(child.material)) {
+            // For material arrays, we need to restore properties individually
+            child.material.forEach((mat, index) => {
+              if (Array.isArray(child.userData.originalMaterial)) {
+                const origMat = child.userData.originalMaterial[index];
+                mat.copy(origMat);
+              } else {
+                mat.map = child.userData.originalTexture;
+                mat.emissive = new THREE.Color(0x000000);
+                mat.emissiveIntensity = 0;
+                mat.emissiveMap = null;
+              }
+              mat.needsUpdate = true;
+            });
+          } else {
+            // Single material
+            if (Array.isArray(child.userData.originalMaterial)) {
+              child.material.copy(child.userData.originalMaterial[0]);
+            } else {
+              child.material.copy(child.userData.originalMaterial);
+            }
+            child.material.needsUpdate = true;
+          }
+        }
+      }
+    });
+    
+    if (!floorFound) {
+      console.warn('⚠️ Floor object not found in the model');
+    }
+  }, [is80sMode]); // Re-run when is80sMode changes
+
   // Expose pagination controls to parent
   useEffect(() => {
     if (onPaginationReady && candleRefs.length > 0) {
@@ -716,7 +1011,7 @@ function CyborgTempleScene({
       {modelLoaded && <TickerDisplay3 is80sMode={is80sMode} />}
       {modelLoaded && <VideoScreens />}
       {modelLoaded && <SimpleGlitchTint />}
-      {modelLoaded && <HolographicStatue4 is80sMode={is80sMode} />}
+      {modelLoaded && <HolographicStatue4/>}
       {modelLoaded && showAnnotations && <AnnotationSystem 
         annotations={annotations} 
         is80sMode={is80sMode} 
@@ -724,6 +1019,7 @@ function CyborgTempleScene({
         scale={0.8}
         textScale={0.8}
       />}
+
     </>
   );
 }
