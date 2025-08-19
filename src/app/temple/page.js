@@ -329,7 +329,7 @@ export default function CyborgTemple() {
             <Link href="/gallery" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
               RL80
             </Link>
-            {Array.from({length: 100}).map((_, i) => {
+            {Array.from({length: isMobileView ? 15 : 30}).map((_, i) => {
               const index = i + 1;
               return (
                 <div
@@ -361,7 +361,16 @@ export default function CyborgTemple() {
       <Canvas
         key="cyborg-temple-canvas"
         camera={{ position: [0, -1.2, 8.5], fov: 40 }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ 
+          antialias: !isMobileView,
+          alpha: true,
+          powerPreference: isMobileView ? "low-power" : "high-performance",
+          precision: isMobileView ? "mediump" : "highp",
+          stencil: false,
+          depth: true
+        }}
+        dpr={isMobileView ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio}
+        performance={{ min: 0.5 }}
         style={{ 
           background: 'transparent', 
           position: 'fixed',
@@ -379,14 +388,14 @@ export default function CyborgTemple() {
           <ambientLight intensity={0.3} />
           {/* <directionalLight position={[5, 10, 5]} intensity={1} /> */}
              {/* Starry background */}
-             <StarField radius={150} count1={500} count2={300} is80sMode={is80sMode} />
+             <StarField radius={150} count1={isMobileView ? 200 : 500} count2={isMobileView ? 150 : 300} is80sMode={is80sMode} />
              {/* <StarrySky /> */}
           <ConstellationModel  groupScale={[10, 10, 10]} groupPosition={[0, 15, -80]}    isVisible={true} />
-          <Environment frames={Infinity} resolution={512} blur={0.5}> 
+          <Environment frames={Infinity} resolution={isMobileView ? 256 : 512} blur={0.5}> 
             <Lights />
             {/* Removed the mesh that was blocking the view */}
           </Environment>
-          <PostProcessingEffects is80sMode={is80sMode} />
+          {!isMobileView && <PostProcessingEffects is80sMode={is80sMode} />}
           
        
           
