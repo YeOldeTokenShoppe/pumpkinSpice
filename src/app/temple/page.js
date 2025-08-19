@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic';
 import { useMusic } from '@/components/MusicContext';
 import Link from 'next/link';
 import { Lights } from '@/components/Lights';
+import BuyTokenFAB from '@/components/BuyTokenFAB';
 import CyberCalloutOverlay from '@/components/CyberCalloutOverlay';
 const MusicPlayer3 = dynamic(() => import('@/components/MusicPlayer3'), {
   ssr: false,
@@ -74,8 +75,10 @@ export default function CyborgTemple() {
       try {
         // Check if the font is available
         await document.fonts.load("1em 'UnifrakturMaguntia'");
+        console.log('Font loaded successfully');
         setFontLoaded(true);
       } catch (e) {
+        console.log('Font load failed, using fallback');
         // Fallback: set as loaded after a short delay
         setTimeout(() => setFontLoaded(true), 100);
       }
@@ -86,6 +89,7 @@ export default function CyborgTemple() {
   // Mark canvas as ready after a delay to ensure it's mounted
   useEffect(() => {
     const canvasTimeout = setTimeout(() => {
+      console.log('Canvas marked as ready');
       setCanvasReady(true);
     }, 500);
     return () => clearTimeout(canvasTimeout);
@@ -94,30 +98,14 @@ export default function CyborgTemple() {
   // Wait for everything to be ready
   useEffect(() => {
     if (sceneLoaded && fontLoaded && canvasReady) {
-      console.log('All components ready, waiting for renders to complete...');
+      console.log('All components ready, hiding loader');
+      // Shorter delay - 500ms is enough
+      const timeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
       
-      // Clear any existing timeout
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
-      
-      // Use requestAnimationFrame to wait for next paint, then add delay
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          // Wait additional time for child components and textures to fully load
-          loadingTimeoutRef.current = setTimeout(() => {
-            console.log('Hiding loader - all components fully loaded');
-            setIsLoading(false);
-          }, 2500); // Increased delay to ensure everything is rendered
-        });
-      });
+      return () => clearTimeout(timeout);
     }
-    
-    return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
-    };
   }, [sceneLoaded, fontLoaded, canvasReady]);
 
   // Fallback timeout to ensure loader doesn't stay forever
@@ -127,7 +115,7 @@ export default function CyborgTemple() {
         console.log('Temple loading timeout reached, forcing complete');
         setIsLoading(false);
       }
-    }, 20000); // 20 second timeout
+    }, 8000); // 8 second timeout
 
     return () => clearTimeout(timeout);
   }, []);
@@ -241,7 +229,11 @@ export default function CyborgTemple() {
           src: url('/fonts/UnifrakturMaguntia-Regular.ttf') format('truetype');
           font-weight: normal;
           font-style: normal;
-          font-display: block; /* Ensures font loads before text renders */
+          font-display: swap;
+        }
+        
+        #text, .text__copy {
+          font-family: 'UnifrakturMaguntia', serif !important;
         }
         
         @keyframes spin {
@@ -281,13 +273,11 @@ export default function CyborgTemple() {
         height: "100vh",
         background: "#000",
         position: "relative",
-        overflow: "hidden",
-        opacity: isLoading ? 0 : 1,
-        transition: 'opacity 0.5s ease-in-out'
+        overflow: "hidden"
       }}
     >
       {/* Cyber Callout Overlay */}
-      <CyberCalloutOverlay
+      {/* <CyberCalloutOverlay
         title="CYBORG TEMPLE"
         subtitle="DIGITAL SANCTUARY"
         description="Welcome to the sacred nexus where consciousness meets code. Light a virtual candle and join the collective meditation."
@@ -300,7 +290,7 @@ export default function CyborgTemple() {
           setShowCalloutOverlay(false);
           // Add any temple entry logic here
         }}
-      />
+      /> */}
       
       {/* 80s Mode Video Background is rendered in CyborgTempleScene via VideoBackground component */}
       
@@ -316,7 +306,7 @@ export default function CyborgTemple() {
         transition: "opacity 0.3s ease-in-out",
         zIndex: 10000, // Increased z-index to ensure visibility
       }}>
-          <div 
+         <div 
             id="text"
             style={{
               position: "relative",
@@ -326,10 +316,10 @@ export default function CyborgTemple() {
               cursor: "pointer",
             }}
           >
-            <Link href="/gallery" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
+            <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
               RL80
             </Link>
-            {Array.from({length: isMobileView ? 15 : 30}).map((_, i) => {
+            {Array.from({length: 100}).map((_, i) => {
               const index = i + 1;
               return (
                 <div
@@ -338,7 +328,7 @@ export default function CyborgTemple() {
                   style={{
                     position: "absolute",
                     pointerEvents: "none",
-                    zIndex: -1, // No quotes needed for negative numbers
+                    zIndex: -1,
                     top: 0,
                     left: 0,
                     color: is80sMode 
@@ -373,14 +363,12 @@ export default function CyborgTemple() {
         performance={{ min: 0.5 }}
         style={{ 
           background: 'transparent', 
-          position: 'fixed',
+          position: 'absolute',
           top: 0,
           left: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: 2,
-          opacity: isLoading ? 0 : 1,
-          transition: 'opacity 0.5s ease-in-out'
+          width: '100%',
+          height: '100%',
+          zIndex: 2
         }}
       >
         <fog attach="fog" args={['#000000', 20, 200]} />
@@ -750,7 +738,7 @@ export default function CyborgTemple() {
       </button>
       
       {/* Buy Token FAB */}
-      {/* <BuyTokenFAB is80sMode={is80sMode} /> */}
+      <BuyTokenFAB is80sMode={is80sMode} />
       
       {/* Candle Pagination UI */}
       {/* {paginationControls && (

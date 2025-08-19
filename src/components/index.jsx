@@ -425,12 +425,13 @@ const ThreeDVotiveStand = forwardRef(({
         frameloop={frameloop}
         gl={{ 
           alpha: true,
-          antialias: true,
-          preserveDrawingBuffer: true,
-          powerPreference: "high-performance",
+          antialias: !isMobileView,
+          preserveDrawingBuffer: false,
+          powerPreference: isMobileView ? "low-power" : "high-performance",
           failIfMajorPerformanceCaveat: false,
           depth: true,
-          stencil: false
+          stencil: false,
+          precision: isMobileView ? "mediump" : "highp"
         }}
         onCreated={({ gl, camera: createdCamera }) => {
           sceneCameraRef.current = createdCamera;

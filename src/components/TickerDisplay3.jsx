@@ -53,12 +53,7 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
   // Use mock market data with a timer for updates
   useEffect(() => {
     mockMarketData(); // Initially populate with mock data
-    fetchAlphaVantageData(); // Fetch real data for oil and dollar index
-    
-    // Update real data every 30 minutes
-    const realDataInterval = setInterval(() => {
-      fetchAlphaVantageData();
-    }, 1800000);
+    // fetchAlphaVantageData(); // Disabled due to CORS issues
     
     // Update mock data every 5 minutes for other items
     const mockDataInterval = setInterval(() => {
@@ -67,17 +62,16 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
     
     return () => {
       clearInterval(mockDataInterval);
-      clearInterval(realDataInterval);
     };
   }, []);
 
-  // Fear & Greed Index effect
-  useEffect(() => {
-    fetchFearGreedIndex();
-    // Fetch Fear & Greed index every 2 hours
-    const interval = setInterval(fetchFearGreedIndex, 7200000);
-    return () => clearInterval(interval);
-  }, []);
+  // Fear & Greed Index effect - disabled due to CORS
+  // useEffect(() => {
+  //   fetchFearGreedIndex();
+  //   // Fetch Fear & Greed index every 2 hours
+  //   const interval = setInterval(fetchFearGreedIndex, 7200000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // Crypto data effect
   useEffect(() => {
@@ -87,13 +81,13 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Alpha Vantage data effect
-  useEffect(() => {
-    fetchAlphaVantageData();
-    // Fetch Alpha Vantage data every 30 minutes
-    const interval = setInterval(fetchAlphaVantageData, 1800000);
-    return () => clearInterval(interval);
-  }, []);
+  // Alpha Vantage data effect - disabled due to CORS
+  // useEffect(() => {
+  //   fetchAlphaVantageData();
+  //   // Fetch Alpha Vantage data every 30 minutes
+  //   const interval = setInterval(fetchAlphaVantageData, 1800000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // Instead of searching for ticker, just use a fixed position
   useEffect(() => {
@@ -383,81 +377,9 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
 
   // Simplified Fear and Greed Index function using mock data
   const fetchFearGreedIndex = async () => {
-    try {
-      // Try to fetch from Firebase Cloud Function that proxies CoinMarketCap
-
-      const cmcResponse = await fetch(
-        // Using the actual Firebase project ID
-        "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getFearAndGreed"
-      );
-      
-      if (cmcResponse.ok) {
-        const cmcData = await cmcResponse.json();
-        
-        setFearGreed({
-          name: "Fear & Greed",
-          value: cmcData.value,
-          classification: cmcData.classification,
-          isSentiment: true
-        });
-        
-
-        return;
-      } else {
-        console.warn("Failed to fetch from CoinMarketCap Fear & Greed API via Firebase, trying alternative.me...");
-      }
-
-      // Fallback to alternative.me API
-
-      const altResponse = await fetch("https://api.alternative.me/fng/");
-      
-      if (!altResponse.ok) {
-        throw new Error("Failed to fetch from alternative.me");
-      }
-      
-      const altJson = await altResponse.json();
-      const altData = altJson.data[0];
-      
-      setFearGreed({
-        name: "Fear & Greed",
-        value: altData.value,
-        classification: altData.value_classification,
-        isSentiment: true
-      });
-      
-
-    } catch (error) {
-      console.error("Error fetching Fear & Greed index:", error);
-      
-      // Generate realistic mock Fear & Greed data
-      const today = new Date();
-      const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
-      
-      // Use the day of year as a seed for a semi-random value that changes daily
-      // but remains consistent within the same day
-      const baseMockValue = ((dayOfYear * 7) % 100);
-      
-      // Add a small hourly variation
-      const hourVariation = (today.getHours() % 4) - 2; // -2 to +1 range
-      const mockValue = Math.max(1, Math.min(99, baseMockValue + hourVariation));
-      
-      // Map to classification
-      let mockClassification = "Neutral";
-      if (mockValue <= 20) mockClassification = "Extreme Fear";
-      else if (mockValue <= 40) mockClassification = "Fear";
-      else if (mockValue <= 60) mockClassification = "Neutral";
-      else if (mockValue <= 80) mockClassification = "Greed";
-      else mockClassification = "Extreme Greed";
-      
-      setFearGreed({
-        name: "Fear & Greed",
-        value: mockValue,
-        classification: mockClassification,
-        isSentiment: true
-      });
-      
-
-    }
+    // API calls disabled due to CORS issues
+    // Will be re-enabled when proper backend proxy is implemented
+    console.log("Fear & Greed index fetch disabled");
   };
 
   // Format large numbers
@@ -834,134 +756,11 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
     }
   };
 
-  // Add a function to fetch Alpha Vantage data for Oil and FMP data for Dollar Index
+  // Disabled Alpha Vantage data fetching due to CORS issues
   const fetchAlphaVantageData = async () => {
-    try {
-      // Create a map to store results
-      const results = [];
-      
-      // Firebase Function URL for dedicated Oil data
-      const oilURL = "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getOilData";
-      
-      // Firebase Function URL for Alpha Vantage data
-      const alphaVantageURL = "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getAlphaVantageData";
-      
-      // Firebase Function URL for FMP data (Dollar Index using UUP)
-      // Firebase Cloud Functions endpoint
-      const treasuryURL = "https://us-central1-hailmary-3ff6c.cloudfunctions.net/getFMPTreasury";
-      
-      // Fetch oil data from dedicated Oil endpoint
-
-      try {
-        const oilResponse = await fetch(oilURL);
-        const oilData = await oilResponse.json();
-        
-        if (oilData && oilData.price && !isNaN(oilData.price)) {
-          results.push({
-            name: "Oil",
-            symbol: "CL=F",
-            price: oilData.price,
-            changePercent: oilData.changePercent,
-          });
-
-        } else {
-          console.error("Invalid oil data:", oilData);
-        }
-      } catch (error) {
-        console.error("Error fetching oil data:", error);
-      }
-      
-      // Dollar index data removed for now
-      
-      // Fetch 10Y Treasury Yield data
-
-      try {
-        const treasuryResponse = await fetch(treasuryURL, {
-          // Add a cache-busting parameter to avoid getting cached responses
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          }
-        });
-        
-        if (treasuryResponse.ok) {
-          const treasuryData = await treasuryResponse.json();
-          
-          if (treasuryData && treasuryData.price !== undefined && !isNaN(treasuryData.price)) {
-
-            results.push({
-              name: "10Y Treasury Yield",
-              symbol: "^TNX",
-              price: treasuryData.price,
-              changePercent: treasuryData.changePercent,
-            });
-          } else {
-            console.error("Invalid treasury data format:", treasuryData);
-            // Will fall back to mock data below
-          }
-        } else {
-          const errorText = await treasuryResponse.text();
-          console.error(`Error response from Treasury endpoint: ${treasuryResponse.status} - ${errorText}`);
-          // Will fall back to mock data below
-        }
-      } catch (error) {
-        console.error("Error fetching treasury data:", error);
-        // Will fall back to mock data below
-      }
-      
-      // If we don't have Treasury data yet, use mock data
-      if (!results.some(item => item.symbol === "^TNX")) {
-
-        // Use getMockPrice to get a consistent base yield number
-        const baseYield = getMockPrice("^TNX");
-        // Create a small daily variation
-        const today = new Date();
-        const dayOffset = (today.getDate() + today.getMonth() * 30) % 10;
-        const hourOffset = today.getHours() % 6;
-        // Calculate variation based on day and hour for realism
-        const yieldVariation = (dayOffset - 5) * 0.02 + (hourOffset - 3) * 0.005;
-        const treasuryYield = baseYield + yieldVariation;
-        
-        // Create a plausible change percentage
-        const changePercent = (yieldVariation / baseYield) * 100;
-        
-        results.push({
-          name: "10Y Treasury Yield",
-          symbol: "^TNX",
-          price: parseFloat(treasuryYield.toFixed(3)),
-          changePercent: parseFloat(changePercent.toFixed(2)),
-        });
-      }
-      
-      // Note: VIX and major indices (S&P 500, Dow Jones, Nasdaq) are not available on the free FMP plan
-      // They will be provided by mockMarketData() which runs separately
-      
-      // Only update the market data if we have valid entries
-      if (results.length > 0) {
-        setMarketData((prevData) => {
-          // Keep crypto data (Bitcoin and Ethereum) from CoinGecko
-          const cryptoData = prevData.filter(
-            item => item.name === "Bitcoin" || item.name === "Ethereum"
-          );
-          
-          // Keep other market data that isn't being updated
-          const otherData = prevData.filter(
-            (item) => 
-              // Keep items that aren't being updated and aren't crypto
-              item.symbol !== "CL=F" && // Remove existing Oil data
-              item.symbol !== "DX-Y.NYB" && // Remove existing Dollar Index data
-              item.symbol !== "^TNX" && // Remove existing Treasury data
-              item.name !== "Bitcoin" && 
-              item.name !== "Ethereum" &&
-              item.name !== "Oil" // Explicitly filter out any existing Oil entries
-          );
-          
-          return [...cryptoData, ...otherData, ...results];
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching API data:", error);
-    }
+    // API calls disabled due to CORS issues
+    // Will be re-enabled when proper backend proxy is implemented
+    console.log("Alpha Vantage data fetch disabled");
   };
 
   return null;

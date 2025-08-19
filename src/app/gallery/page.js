@@ -23,6 +23,7 @@ export default function GalleryPage() {
   const { play, pause, isPlaying: contextIsPlaying, nextTrack, currentTrackIndex, currentTrack, is80sMode: context80sMode, setIs80sMode: setContext80sMode } = useMusic();
   const isTogglingRef = useRef(false); // Prevent multiple rapid toggles
   const isToggling80sRef = useRef(false); // Track 80s mode toggle state
+  const videoRef = useRef(null); // Reference for 80s video cleanup
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Use context 80s mode instead of local state
@@ -173,6 +174,18 @@ export default function GalleryPage() {
 
     return () => clearTimeout(timeout);
   }, []);
+  
+  // Cleanup video when 80s mode changes or component unmounts
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = '';
+        videoRef.current.load();
+        videoRef.current = null;
+      }
+    };
+  }, [is80sMode]);
 
   // Handle music toggle
   const handleMusicToggle = useCallback((show) => {
@@ -224,9 +237,19 @@ export default function GalleryPage() {
           src: url('/fonts/UnifrakturMaguntia-Regular.ttf') format('truetype');
           font-weight: normal;
           font-style: normal;
-          font-display: block; /* Ensures font loads before text renders */
+          font-display: swap;
+        }
+        
+        #text, .text__copy {
+          font-family: 'UnifrakturMaguntia', serif !important;
+        }
+        
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
+
       {/* Loader with progress */}
       {isLoading ? (
         <div style={{
@@ -248,18 +271,18 @@ export default function GalleryPage() {
           {/* Candle Interaction Hint */}
           <CandleInteractionHint isMobileView={isMobileView} />
 
-          {/* Main content - RL80 Logo */}
-          <div style={{
-        position: "fixed",
-        top: "20px", 
-        left: "20px",
-        borderRadius: "8px",
-        padding: "10px",
-        pointerEvents: "auto",
-        opacity: fontLoaded ? 1 : 0, // Only show when font is loaded
-        transition: "opacity 0.3s ease-in-out",
-        zIndex: 10000, // Increased z-index to ensure visibility
-      }}>
+
+        <div style={{
+          position: "fixed",
+          top: "20px", 
+          left: "20px",
+          borderRadius: "8px",
+          padding: "10px",
+          pointerEvents: "auto",
+          opacity: fontLoaded ? 1 : 0,
+          transition: "opacity 0.3s ease-in-out",
+          zIndex: 10000,
+        }}>
           <div 
             id="text"
             style={{
@@ -270,7 +293,7 @@ export default function GalleryPage() {
               cursor: "pointer",
             }}
           >
-            <Link href="/gallery" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
+            <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
               RL80
             </Link>
             {Array.from({length: 100}).map((_, i) => {
@@ -282,7 +305,7 @@ export default function GalleryPage() {
                   style={{
                     position: "absolute",
                     pointerEvents: "none",
-                    zIndex: -1, // No quotes needed for negative numbers
+                    zIndex: -1,
                     top: 0,
                     left: 0,
                     color: is80sMode 
@@ -301,7 +324,8 @@ export default function GalleryPage() {
               );
             })}
           </div>
-          </div>
+        </div>
+
 
           {/* 80s Mode Video Background for Desktop */}
           {!isMobileView && is80sMode && (
@@ -317,11 +341,12 @@ export default function GalleryPage() {
           }}
         >
           <video
+            ref={videoRef}
             autoPlay
             loop
             muted
             playsInline
-            preload="auto"
+            preload="metadata"
             style={{
               position: "absolute",
               top: "50%",
@@ -415,16 +440,32 @@ export default function GalleryPage() {
             >
               {/* Spinning Album Art */}
               <div
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  backgroundImage: "url('/virginRecords.jpg')",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  animation: contextIsPlaying ? "spin 3s linear infinite" : "none",
-                }}
-              />
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              overflow: "hidden",
+              animation: isPlaying ? "spin 4s linear infinite" : "none",
+              cursor: "pointer"
+            }}
+            onClick={() => {
+              if (contextIsPlaying) {
+                pause();
+              } else {
+                play();
+              }
+            }}
+          >
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                backgroundImage: "url('/virginRecords.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center"
+              }}
+            />
+          </div>
               
               {/* Skip Button */}
               <button

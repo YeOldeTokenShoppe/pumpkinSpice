@@ -98,14 +98,19 @@ export default function Home() {
       />
       
       {/* Add inline keyframes for spin animation and font */}
-      <style jsx>{`
+      <style jsx global>{`
         @font-face {
           font-family: 'UnifrakturMaguntia';
           src: url('/fonts/UnifrakturMaguntia-Regular.ttf') format('truetype');
           font-weight: normal;
           font-style: normal;
-          font-display: block;
+          font-display: swap;
         }
+        
+        #text, .text__copy {
+          font-family: 'UnifrakturMaguntia', serif !important;
+        }
+        
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -128,7 +133,7 @@ export default function Home() {
           transition: "opacity 0.3s ease-in-out",
           zIndex: 10000,
         }}>
-          <div 
+        <div 
             id="text"
             style={{
               position: "relative",

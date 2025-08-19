@@ -257,12 +257,6 @@ function CyborgTempleScene({
       const templeScene = gltf.scene;
       
       // Debug: Log all objects in the scene
-      console.log('[CyborgTempleScene] Loaded scene:', templeScene);
-      templeScene.traverse((child) => {
-        if (child.name) {
-          console.log('[CyborgTempleScene] Found object:', child.name, 'type:', child.type, 'isMesh:', child.isMesh);
-        }
-      });
 
       // Create and store the animation mixer
       const mixer = new THREE.AnimationMixer(templeScene);
@@ -270,7 +264,7 @@ function CyborgTempleScene({
 
       // Play specific animations based on character
       if (gltf.animations.length > 0) {
-        console.log('Available animations:', gltf.animations.map(a => a.name));
+   
         
         // Store all actions for later use
         gltf.animations.forEach((animation) => {
@@ -544,6 +538,14 @@ function CyborgTempleScene({
     // Cleanup function
     return () => {
       isCurrentInstance = false;
+
+      // Dispose of cached textures
+      textureCache.current.forEach((texture, key) => {
+        if (texture && texture.dispose) {
+          texture.dispose();
+        }
+      });
+      textureCache.current.clear();
 
       // Clear any pending timeouts
       if (danceTimeoutRef.current) {
@@ -869,13 +871,36 @@ function CyborgTempleScene({
           if (child.material.map) {
             child.userData.originalTexture = child.material.map;
           }
-          child.userData.originalMaterial = child.material.clone();
         }
 
         // Toggle between original and 80s texture
         if (is80sMode) {
           console.log('🎨 Applying 80s carpet texture to floor');
-          textureLoader.load(
+          
+          // Check if texture is already cached
+          if (textureCache.current.has('80carpet')) {
+            const configuredTexture = textureCache.current.get('80carpet');
+            // Apply to material
+            const applyMaterial = mat => {
+              mat.map = configuredTexture;
+              
+              if (textureConfig.emissive) {
+                mat.emissive = new THREE.Color(0xffffff);
+                mat.emissiveMap = configuredTexture;
+                mat.emissiveIntensity = textureConfig.emissiveIntensity;
+              }
+              
+              mat.needsUpdate = true;
+            };
+            
+            if (Array.isArray(child.material)) {
+              child.material.forEach(applyMaterial);
+            } else {
+              applyMaterial(child.material);
+            }
+          } else {
+            // Load texture only if not cached
+            textureLoader.load(
             textureConfig.path, 
             // Success callback
             texture => {
@@ -883,6 +908,9 @@ function CyborgTempleScene({
               
               // Apply texture settings
               const configuredTexture = applyTextureWithSettings(texture, textureConfig);
+              
+              // Cache the texture
+              textureCache.current.set('80carpet', configuredTexture);
               
               // Apply to material
               const applyMaterial = mat => {
@@ -915,32 +943,23 @@ function CyborgTempleScene({
               console.error('❌ Texture path was:', textureConfig.path);
             }
           );
-        } else if (child.userData.originalMaterial) {
-          // Restore original material
+          }
+        } else if (child.userData.originalTexture) {
+          // Restore original material more efficiently
           console.log('🔄 Restoring original floor texture');
           
+          const restoreMaterial = (mat) => {
+            mat.map = child.userData.originalTexture;
+            mat.emissive = new THREE.Color(0x000000);
+            mat.emissiveIntensity = 0;
+            mat.emissiveMap = null;
+            mat.needsUpdate = true;
+          };
+          
           if (Array.isArray(child.material)) {
-            // For material arrays, we need to restore properties individually
-            child.material.forEach((mat, index) => {
-              if (Array.isArray(child.userData.originalMaterial)) {
-                const origMat = child.userData.originalMaterial[index];
-                mat.copy(origMat);
-              } else {
-                mat.map = child.userData.originalTexture;
-                mat.emissive = new THREE.Color(0x000000);
-                mat.emissiveIntensity = 0;
-                mat.emissiveMap = null;
-              }
-              mat.needsUpdate = true;
-            });
+            child.material.forEach(restoreMaterial);
           } else {
-            // Single material
-            if (Array.isArray(child.userData.originalMaterial)) {
-              child.material.copy(child.userData.originalMaterial[0]);
-            } else {
-              child.material.copy(child.userData.originalMaterial);
-            }
-            child.material.needsUpdate = true;
+            restoreMaterial(child.material);
           }
         }
       }
