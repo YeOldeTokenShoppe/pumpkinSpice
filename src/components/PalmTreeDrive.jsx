@@ -526,8 +526,13 @@ const PalmsScene = ({ onLoadingChange }) => {
     camera.updateProjectionMatrix();
     cameraRef.current = camera;
     
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: !isMobileDevice, // Disable antialiasing on mobile for performance
+      powerPreference: isMobileDevice ? "low-power" : "high-performance"
+    });
+    // Reduce pixel ratio on mobile for better performance
+    const pixelRatio = isMobileDevice ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio;
+    renderer.setPixelRatio(pixelRatio);
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
     rendererRef.current = renderer;
     mountRef.current.appendChild(renderer.domElement);
@@ -738,6 +743,11 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     loadingManager.onError = (url) => {
       console.error(`Error loading: ${url}`);
+      // Don't let errors prevent scene from showing
+      // Force complete after error
+      setTimeout(() => {
+        setIsSceneLoading(false);
+      }, 1000);
     };
     
     // Set up DRACO loader for compressed models

@@ -41,6 +41,14 @@ export default function CyborgTemple() {
   const [isMobileView, setIsMobileView] = useState(false);
   const [musicPlayerVisible, setMusicPlayerVisible] = useState(contextIsPlaying);
   
+  // Sync music player visibility with playing state when it changes
+  useEffect(() => {
+    if (contextIsPlaying && !showMobileMusicPlayer) {
+      setShowMobileMusicPlayer(true);
+      setMusicPlayerVisible(true);
+    }
+  }, [contextIsPlaying]);
+  
   // Use context values instead of local state
   const isPlaying = contextIsPlaying;
   const is80sMode = context80sMode;

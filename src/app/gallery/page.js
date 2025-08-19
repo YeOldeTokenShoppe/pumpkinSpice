@@ -35,6 +35,13 @@ export default function GalleryPage() {
   // Show music controls if music is already playing
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
   const [fontLoaded, setFontLoaded] = useState(false);
+  
+  // Sync showMusicControls with playing state when it changes
+  useEffect(() => {
+    if (contextIsPlaying && !showMusicControls) {
+      setShowMusicControls(true);
+    }
+  }, [contextIsPlaying]);
 
 
   
