@@ -62,12 +62,12 @@ function VideoScreens() {
           
           // Start video playback
           video1.play().catch(e => {
-            console.log('[VideoScreens] Video 1 autoplay failed, waiting for user interaction');
+            // console.log('[VideoScreens] Video 1 autoplay failed, waiting for user interaction');
           });
         }
         
         if (child.isMesh && child.name === 'Screen2' && !screen2Found) {
-          console.log('[VideoScreens] Found Screen2:', child);
+          // console.log('[VideoScreens] Found Screen2:', child);
           
           // Create material with video texture
           const material = new THREE.MeshBasicMaterial({
@@ -82,16 +82,16 @@ function VideoScreens() {
           
           // Start video playback
           video2.play().catch(e => {
-            console.log('[VideoScreens] Video 2 autoplay failed, waiting for user interaction');
+            // console.log('[VideoScreens] Video 2 autoplay failed, waiting for user interaction');
           });
         }
       });
 
       if (!screen1Found || !screen2Found) {
-        console.log(`[VideoScreens] Screens found: Screen1=${screen1Found}, Screen2=${screen2Found}. Retrying...`);
+        // console.log(`[VideoScreens] Screens found: Screen1=${screen1Found}, Screen2=${screen2Found}. Retrying...`);
         setTimeout(findAndSetupScreens, 500);
       } else {
-        console.log('[VideoScreens] Both screens setup complete');
+        // console.log('[VideoScreens] Both screens setup complete');
         
         // Add click handler to start videos if autoplay fails
         const handleInteraction = () => {

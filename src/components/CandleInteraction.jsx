@@ -160,6 +160,10 @@
             canvas.width = targetWidth;
             canvas.height = targetHeight;
 
+            // Fill canvas with black background first (for transparent PNGs)
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, targetWidth, targetHeight);
+
             // Center the image on the canvas
             const offsetX = (targetWidth - drawWidth) / 2;
             const offsetY = (targetHeight - drawHeight) / 2;

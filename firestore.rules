@@ -13,6 +13,16 @@ service cloud.firestore {
       allow write: if false;
     }
     
+    // Allow public read/write to results collection (candles)
+    match /results/{document} {
+      allow read: if true;
+      allow write: if true;
+      // For production, you might want to add:
+      // allow write: if request.resource.data.username != null
+      //   && request.resource.data.message != null
+      //   && request.resource.data.message.size() <= 500;
+    }
+    
     // Default rules for other documents
     match /{document=**} {
       allow read: if true;  // Anyone can read

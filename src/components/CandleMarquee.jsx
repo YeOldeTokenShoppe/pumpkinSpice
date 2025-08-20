@@ -17,28 +17,66 @@ const applyTextureToClone = (candleObject, imageUrl) => {
   
   if (!labelMesh) return;
   
-  // Create texture synchronously from image URL
-  const textureLoader = new THREE.TextureLoader();
-  textureLoader.crossOrigin = "anonymous";
+  // Create a canvas to process the image with black background
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const targetSize = 512; // Resolution for texture
   
-  // Use simpler direct texture loading for initial setup
-  const texture = textureLoader.load(imageUrl);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.flipY = false;
-  texture.needsUpdate = true;
+  canvas.width = targetSize;
+  canvas.height = targetSize;
   
-  // Apply material directly
-  labelMesh.material = new THREE.MeshStandardMaterial({
-    map: texture,
-    transparent: true,
-    side: THREE.DoubleSide,
-    emissive: new THREE.Color(0xffffff),
-    emissiveIntensity: 0.5,
-    emissiveMap: texture,
-    metalness: 0.3,
-    roughness: 0.2,
-  });
-  labelMesh.material.needsUpdate = true;
+  // Load image and apply to canvas with black background
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  
+  img.onload = () => {
+    // Fill canvas with black background first
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, targetSize, targetSize);
+    
+    // Calculate aspect ratio to maintain proportions
+    const aspectRatio = img.width / img.height;
+    let drawWidth = targetSize;
+    let drawHeight = targetSize;
+    
+    if (aspectRatio > 1) {
+      drawHeight = targetSize / aspectRatio;
+    } else {
+      drawWidth = targetSize * aspectRatio;
+    }
+    
+    // Center the image on the canvas
+    const offsetX = (targetSize - drawWidth) / 2;
+    const offsetY = (targetSize - drawHeight) / 2;
+    
+    // Draw image on top of black background
+    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+    
+    // Create texture from canvas
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.flipY = false;
+    texture.needsUpdate = true;
+    
+    // Apply material with the processed texture
+    labelMesh.material = new THREE.MeshStandardMaterial({
+      map: texture,
+      transparent: true,
+      side: THREE.DoubleSide,
+      emissive: new THREE.Color(0xffffff),
+      emissiveIntensity: 0.5,
+      emissiveMap: texture,
+      metalness: 0.3,
+      roughness: 0.2,
+    });
+    labelMesh.material.needsUpdate = true;
+  };
+  
+  img.onerror = (error) => {
+    console.warn('Failed to load texture:', error);
+  };
+  
+  img.src = imageUrl;
 };
 
 // Helper function to apply text to Label1

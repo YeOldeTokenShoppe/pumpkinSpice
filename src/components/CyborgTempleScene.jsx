@@ -11,6 +11,7 @@ import SimpleGlitchTint from "@/components/SimpleGlitchTint";
 import AnnotationSystem from "@/components/AnnotationSystem";
 import { useFirestoreResults } from "@/utilities/useFirestoreResults";
 import CandleMarquee from "./CandleMarquee";
+import { vcandlePositions } from "@/data/vcandlePositions";
 
 
 import HolographicStatue4 from "@/components/HolographicStatue4";
@@ -29,7 +30,10 @@ function CyborgTempleScene({
   onCandleClick = null, // Callback when candle is clicked
   onPaginationReady = null, // Callback to expose pagination controls
   onAnnotationClick = null, // Callback when annotation is clicked
-  onViewerStateChange = null // Callback to notify parent about viewer state
+  onViewerStateChange = null, // Callback to notify parent about viewer state
+  onDroneDeliveryReady = null, // Callback to expose drone delivery function
+  pendingCandleDelivery = null, // New candle waiting to be delivered
+  onDeliveryComplete = null // Callback when delivery is complete
 }) {
   // console.log('[CyborgTempleScene] Component rendered with isPlaying:', isPlaying);
   const sceneRef = useRef();
@@ -48,9 +52,25 @@ function CyborgTempleScene({
   const chandelierInitialRotation = useRef();
   const danceTimeoutRef = useRef(null);
   
+  // Drone control state
+  const droneRef = useRef();
+  const droneCandleRef = useRef(); // Reference to the candle carried by drone
+  const [droneTargetPosition, setDroneTargetPosition] = useState(0); // Index of target candle
+  const [isDroneMoving, setIsDroneMoving] = useState(false);
+  const [isDroneLowering, setIsDroneLowering] = useState(false);
+  const [isDroneRising, setIsDroneRising] = useState(false);
+  const [isDroneReturning, setIsDroneReturning] = useState(false); // Returning to home position
+  const [pendingDeliveryTimestamp, setPendingDeliveryTimestamp] = useState(null); // Track newly created candle
+  const droneBaseHeight = 3.2; // Normal flying height (reduced to be closer to floor)
+  const droneLowerHeight = 2.4; // Height when dropping candle (near floor level)
+  const droneLateralOffset = { x: 0, z: 0 }; // No lateral offset - deliver directly to candle position
+  const droneInspectionTimeRef = useRef(null);
+  const droneHomePosition = { x: 10, y: 0, z: 0 }; // Off-screen starting position (adjust as needed)
+  
   // Candle pagination state
   const [currentCandlePage, setCurrentCandlePage] = useState(0);
   const [candleRefs, setCandleRefs] = useState([]);
+  const candleRefsRef = useRef([]); // Store candle refs in a ref as well
   const [hoveredCandle, setHoveredCandle] = useState(null);
   const candlesPerPage = 8;
   const totalCandlePages = Math.ceil(results.length / candlesPerPage);
@@ -91,7 +111,10 @@ function CyborgTempleScene({
     const img = new Image();
     img.crossOrigin = "anonymous";
     
+    // Add event listeners before setting src
     img.onload = () => {
+      console.log(`[loadOptimizedTexture] Image loaded successfully: ${url} (${img.width}x${img.height})`);
+      
       // Calculate aspect ratio to maintain proportions
       const aspectRatio = img.width / img.height;
       let drawWidth = targetSize;
@@ -127,25 +150,45 @@ function CyborgTempleScene({
       // Cache the texture
       textureCache.current.set(url, texture);
       
+      console.log(`[loadOptimizedTexture] Texture created and cached for: ${url}`);
+      
       // Call the callback with the optimized texture
       onLoad(texture);
     };
     
     img.onerror = (error) => {
-      console.warn('Failed to load image:', url, error);
+      console.error('[loadOptimizedTexture] Failed to load image:', url, error);
     };
     
+    // Set src after event listeners are attached
+    console.log(`[loadOptimizedTexture] Attempting to load image from: ${url}`);
     img.src = url;
   }, []);
 
   // Function to apply user image to candle labels
   const applyUserImageToLabel = useCallback((candle, user) => {
-    if (!user?.image) return;
-    
-    loadOptimizedTexture(user.image, (texture) => {
+    try {
+      if (!user?.image) {
+        console.log(`[applyUserImageToLabel] No image for user ${user?.userName}`);
+        return;
+      }
+      
+      console.log(`[applyUserImageToLabel] Loading image for ${user.userName}: ${user.image}`);
+      console.log(`[applyUserImageToLabel] loadOptimizedTexture function exists:`, typeof loadOptimizedTexture);
+      
+      if (typeof loadOptimizedTexture !== 'function') {
+        console.error('[applyUserImageToLabel] loadOptimizedTexture is not a function!');
+        return;
+      }
+      
+      loadOptimizedTexture(user.image, (texture) => {
+      console.log(`[applyUserImageToLabel] Texture callback received for ${candle.name}`);
+      let labelFound = false;
       candle.traverse((child) => {
-        // Only apply to Label2 objects (keep Label1 blank for messages in viewer)
-        if (child.name?.includes('Label2') && child.isMesh) {
+        // Apply to Label1 instead of Label2
+        if (child.name?.includes('Label1') && child.isMesh) {
+          labelFound = true;
+          console.log(`[applyUserImageToLabel] Found Label1 mesh in ${candle.name}`);
           if (child.material) {
             // Dispose of old material to free memory
             if (child.material.map) {
@@ -160,40 +203,79 @@ function CyborgTempleScene({
             child.material.map = texture;
             child.material.transparent = true;
             child.material.needsUpdate = true;
+            console.log(`[applyUserImageToLabel] Applied texture to Label1 in ${candle.name}, material:`, child.material);
           }
         }
-        // Keep Label1 blank - it will be used for messages in the FloatingCandleViewer
-        else if (child.name?.includes('Label1') && child.isMesh) {
-          // Optionally, you could set Label1 to a blank/default texture or color
+        // Keep Label2 for potential other use
+        else if (child.name?.includes('Label2') && child.isMesh) {
+          // Optionally set Label2 to a blank color
           if (child.material) {
             child.material = child.material.clone();
-            // Keep the original material or set a blank color
             child.material.color = new THREE.Color(0xf5f5dc); // Parchment color
             child.material.needsUpdate = true;
           }
         }
       });
+      
+      if (!labelFound) {
+        console.warn(`[applyUserImageToLabel] No Label1 found in ${candle.name}`);
+      }
     });
+    } catch (error) {
+      console.error('[applyUserImageToLabel] Error:', error);
+    }
   }, [loadOptimizedTexture]);
 
-  const updateCandleVisibility = useCallback((candles, page) => {
-    // Sort results by burnedAmount (highest first)
-    const sortedResults = [...results].sort((a, b) => 
-      (b.burnedAmount || 0) - (a.burnedAmount || 0)
-    );
+  const updateCandleVisibility = useCallback((candles, skipNewest = false) => {
+    // Sort results by createdAt (oldest first for consistent placement)
+    const sortedResults = [...results].sort((a, b) => {
+      const aTime = a.createdAt?.getTime ? a.createdAt.getTime() : 0;
+      const bTime = b.createdAt?.getTime ? b.createdAt.getTime() : 0;
+      return aTime - bTime; // Oldest first
+    });
     
-    const start = page * candlesPerPage;
-    const end = start + candlesPerPage;
-    const pageResults = sortedResults.slice(start, end);
+    console.log(`[updateCandleVisibility] Showing ${Math.min(candles.length, sortedResults.length)} of ${candles.length} candles for ${sortedResults.length} users`);
     
+    let visibleCount = 0;
+    
+    // Show as many candles as we have user data
     candles.forEach((candle, index) => {
-      // Only show candles that have corresponding user data
-      const userData = pageResults[index];
-      const shouldBeVisible = index < pageResults.length;
+      // Skip null entries in the array
+      if (!candle) return;
       
+      const userData = sortedResults[index];
+      let shouldBeVisible = index < sortedResults.length;
+      
+      // Skip showing the newest candle if it was just created (will be delivered by drone)
+      if (skipNewest && index === sortedResults.length - 1) {
+        shouldBeVisible = false;
+      }
+      
+      // Count and log visible candles
+      if (shouldBeVisible) {
+        visibleCount++;
+        console.log(`[updateCandleVisibility] SHOWING: ${candle.name} (index ${index}) with user: ${userData?.userName || 'Unknown'}`);
+      }
+      
+      // Set visibility for the candle and all its children
       candle.visible = shouldBeVisible;
+      candle.traverse((child) => {
+        child.visible = shouldBeVisible;
+      });
       
       if (shouldBeVisible && userData) {
+        // Skip updating drone-delivered candles - they already have their data
+        if (candle.userData?.isDroneDelivered) {
+          console.log(`[updateCandleVisibility] Skipping drone-delivered candle ${candle.name}`);
+          return; // Don't update drone-delivered candles
+        }
+        
+        console.log(`[updateCandleVisibility] Processing userData for ${candle.name}:`, {
+          userName: userData.userName || userData.username,
+          hasImage: !!userData.image,
+          imageUrl: userData.image?.substring(0, 50)
+        });
+        
         // Apply user data to the candle
         candle.userData = { 
           ...candle.userData, 
@@ -208,33 +290,40 @@ function CyborgTempleScene({
         };
         
         // Apply user image to candle labels
+        console.log(`[updateCandleVisibility] Applying image for ${userData.userName || userData.username || 'Anonymous'} to ${candle.name}`);
         applyUserImageToLabel(candle, userData);
-      } else {
-        // Hide candles without user data
-        candle.visible = false;
       }
     });
+    
+    console.log(`[updateCandleVisibility] TOTAL VISIBLE CANDLES: ${visibleCount}`);
+    if (visibleCount !== sortedResults.length) {
+      console.warn(`[updateCandleVisibility] Mismatch! Expected ${sortedResults.length} visible candles but showing ${visibleCount}`);
+    }
   }, [results, applyUserImageToLabel]);
   
 
   // Handle candle click - notify parent to show the FloatingCandleViewer
   const handleCandleClick = (candleIndex) => {
-    const sortedResults = [...results].sort((a, b) => 
-      (b.burnedAmount || 0) - (a.burnedAmount || 0)
-    );
-    const actualIndex = currentCandlePage * candlesPerPage + candleIndex;
-    const candleData = sortedResults[actualIndex];
+    // Use the same sorting as updateCandleVisibility (oldest first)
+    const sortedResults = [...results].sort((a, b) => {
+      const aTime = a.createdAt?.getTime ? a.createdAt.getTime() : 0;
+      const bTime = b.createdAt?.getTime ? b.createdAt.getTime() : 0;
+      return aTime - bTime; // Oldest first, same as display order
+    });
+    
+    // The clicked candle index directly corresponds to the sorted results
+    const candleData = sortedResults[candleIndex];
     
     if (candleData && onCandleClick) {
       // Pass the candle data to parent to handle viewer display
       const viewerData = {
         ...candleData,
-        candleId: `candle-${actualIndex}`,
+        candleId: `candle-${candleIndex}`,
         candleTimestamp: Date.now(),
       };
       
       // Pass all necessary data to parent
-      onCandleClick(actualIndex, viewerData, sortedResults);
+      onCandleClick(candleIndex, viewerData, sortedResults);
     }
   };
   
@@ -245,6 +334,139 @@ function CyborgTempleScene({
       updateCandleVisibility(candleRefs, newPage);
     }
   };
+  
+  // Function to start drone delivery to a specific candle position
+  const startDroneDelivery = useCallback((candleIndex, specificUserData = null) => {
+    // If no index specified, find the next available slot based on results
+    let targetIndex = candleIndex;
+    if (targetIndex === undefined || targetIndex === null) {
+      // Use the number of existing results as the next index
+      targetIndex = results.length;
+      console.log(`[Drone] Auto-selected position ${targetIndex} for delivery (next available slot)`);
+    }
+    
+    // Get the actual VCANDLE position for this index
+    const targetCandleName = `VCANDLE${String(targetIndex).padStart(3, '0')}`;
+    let targetPosition = null;
+    
+    // Check if we have stored VCANDLE positions
+    if (window.vcandlePositions && window.vcandlePositions[targetIndex]) {
+      targetPosition = window.vcandlePositions[targetIndex].position;
+      console.log(`[Drone] Using stored VCANDLE position for ${targetCandleName}:`, targetPosition);
+    } else {
+      // Try to find the VCANDLE in the scene
+      if (sceneRef.current) {
+        sceneRef.current.traverse((child) => {
+          if (child.name === targetCandleName) {
+            const worldPos = new THREE.Vector3();
+            child.getWorldPosition(worldPos);
+            targetPosition = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
+            console.log(`[Drone] Found ${targetCandleName} in scene at:`, targetPosition);
+          }
+        });
+      }
+    }
+    
+    // Fallback to ideal positions if no VCANDLE found
+    if (!targetPosition) {
+      const idealPositions = window.idealCandlePositions || [
+        { x: 0, y: -1.88, z: 2.0 },
+        { x: 0.3, y: -1.88, z: 2.05 },
+        { x: -0.3, y: -1.88, z: 2.05 },
+        { x: 0.6, y: -1.88, z: 2.1 },
+        { x: -0.6, y: -1.88, z: 2.1 }
+      ];
+      targetPosition = idealPositions[targetIndex] || idealPositions[0];
+      console.log(`[Drone] Using fallback position for index ${targetIndex}:`, targetPosition);
+    }
+    
+    if (droneRef.current && targetPosition) {
+      const targetCandle = {
+        name: targetCandleName,
+        position: targetPosition
+      };
+      
+      console.log(`[Drone] Delivering to ${targetCandle.name} at position:`, targetCandle.position);
+      
+      // Clear any inspection timeout if moving to new candle
+      if (droneInspectionTimeRef.current) {
+        clearTimeout(droneInspectionTimeRef.current);
+        droneInspectionTimeRef.current = null;
+      }
+      
+      // Make sure DroneCandle is visible at start of delivery
+      if (droneCandleRef.current) {
+        droneCandleRef.current.traverse((child) => {
+          child.visible = true;
+        });
+        
+        // Mark pending delivery IMMEDIATELY to prevent duplicate candle
+        setPendingDeliveryTimestamp(Date.now());
+        
+        // Apply the user's image to DroneCandle immediately if we have specific user data
+        if (specificUserData || pendingCandleDelivery) {
+          const userData = specificUserData || pendingCandleDelivery;
+          
+          if (userData && userData.image) {
+            console.log(`[Drone] Applying user image to DroneCandle for ${userData.username || userData.userName || 'New User'}`);
+            
+            // Apply image to DroneCandle's Label2
+            loadOptimizedTexture(userData.image, (texture) => {
+              if (droneCandleRef.current) {
+                droneCandleRef.current.traverse((child) => {
+                  if (child.name?.includes('Label2') && child.isMesh) {
+                    if (child.material) {
+                      child.material = child.material.clone();
+                      child.material.map = texture;
+                      child.material.transparent = true;
+                      child.material.needsUpdate = true;
+                      console.log(`[Drone] Applied user image to DroneCandle Label2`);
+                    }
+                  }
+                });
+              }
+            });
+          }
+        } else {
+          // Fallback: Get the newest user from results if no specific data
+          const sortedResults = [...results].sort((a, b) => {
+            const aTime = a.createdAt?.getTime ? a.createdAt.getTime() : 0;
+            const bTime = b.createdAt?.getTime ? b.createdAt.getTime() : 0;
+            return bTime - aTime; // Newest first
+          });
+          const userData = sortedResults[0];
+          
+          if (userData && userData.image) {
+            console.log(`[Drone] Applying newest user image to DroneCandle for ${userData.userName || 'New User'}`);
+            
+            loadOptimizedTexture(userData.image, (texture) => {
+              if (droneCandleRef.current) {
+                droneCandleRef.current.traverse((child) => {
+                  if (child.name?.includes('Label2') && child.isMesh) {
+                    if (child.material) {
+                      child.material = child.material.clone();
+                      child.material.map = texture;
+                      child.material.transparent = true;
+                      child.material.needsUpdate = true;
+                    }
+                  }
+                });
+              }
+            });
+          }
+        }
+      }
+      
+      // Reset states and start movement from home
+      setDroneTargetPosition(targetIndex);
+      setIsDroneMoving(true);
+      setIsDroneLowering(false);
+      setIsDroneRising(false);
+      setIsDroneReturning(false);
+      
+      console.log(`[Drone] Starting delivery to ${targetCandle.name}`);
+    }
+  }, [results, loadOptimizedTexture, candleRefs, pendingCandleDelivery, sceneRef]);
 
   useEffect(() => {
     if (hasLoadedRef.current) return;
@@ -396,18 +618,18 @@ function CyborgTempleScene({
           });
           
           videoElement.addEventListener('playing', () => {
-            console.log('🎬 Video is playing');
+            // console.log('🎬 Video is playing');
           });
           
           videoElement.addEventListener('error', (e) => {
-            console.error('🎬 Video loading error:', e);
-            console.error('🎬 Video src:', videoElement.src);
+            // console.error('🎬 Video loading error:', e);
+            // console.error('🎬 Video src:', videoElement.src);
           });
           
           // Start playing the video only after it's ready
           const playVideo = () => {
             if (!videoElement.paused) {
-              console.log('🎬 Video already playing');
+              // console.log('🎬 Video already playing');
               return;
             }
             
@@ -416,7 +638,7 @@ function CyborgTempleScene({
                 console.warn('🎬 Video autoplay failed:', err);
               });
             } else {
-              console.log('🎬 Video not ready yet, waiting for canplay event');
+              // console.log('🎬 Video not ready yet, waiting for canplay event');
             }
           };
           
@@ -424,7 +646,7 @@ function CyborgTempleScene({
           
           // Function to create and apply texture once video is ready
           const createAndApplyTexture = () => {
-            console.log('🎬 Creating video texture for goldCircuit');
+            // console.log('🎬 Creating video texture for goldCircuit');
             
             // Create video texture
             videoTexture = new THREE.VideoTexture(videoElement);
@@ -453,7 +675,7 @@ function CyborgTempleScene({
               mat.side = THREE.DoubleSide;
               mat.needsUpdate = true;
               
-              console.log('🎬 Applied video texture to goldCircuit material');
+              // console.log('🎬 Applied video texture to goldCircuit material');
             };
             
             if (Array.isArray(child.material)) {
@@ -472,10 +694,10 @@ function CyborgTempleScene({
           
           // Wait for video to have metadata before creating texture
           if (videoElement.readyState >= 1) {
-            console.log('🎬 Video already has metadata, creating texture immediately');
+            // console.log('🎬 Video already has metadata, creating texture immediately');
             createAndApplyTexture();
           } else {
-            console.log('🎬 Waiting for video metadata before creating texture');
+            // console.log('🎬 Waiting for video metadata before creating texture');
             videoElement.addEventListener('loadedmetadata', createAndApplyTexture, { once: true });
           }
           
@@ -486,34 +708,270 @@ function CyborgTempleScene({
         }
       });
       
+      // Find and store the drone object
+      const drone = templeScene.getObjectByName('Drone');
+      if (drone) {
+        droneRef.current = drone;
+        // console.log('[CyborgTempleScene] Found drone:', drone.name);
+        
+        // Set initial drone position to home (off-screen)
+        drone.position.set(
+          droneHomePosition.x,
+          droneHomePosition.y + droneBaseHeight,
+          droneHomePosition.z
+        );
+        // console.log('[CyborgTempleScene] Drone starting at home position');
+        
+        // Find and store DroneCandle object
+        const droneCandle = drone.getObjectByName('DroneCandle');
+        if (droneCandle) {
+          droneCandleRef.current = droneCandle;
+          // console.log('[CyborgTempleScene] Found DroneCandle object');
+          
+          // Make sure DroneCandle is visible initially
+          droneCandle.traverse((child) => {
+            child.visible = true;
+          });
+        } else {
+          // console.log('[CyborgTempleScene] DroneCandle not found in drone');
+        }
+        
+        // Play drone hovering animation if it exists
+        const droneHoverAnim = gltf.animations.find(anim => anim.name === 'DroneHover');
+        if (droneHoverAnim && mixer) {
+          const droneHoverAction = mixer.clipAction(droneHoverAnim, drone);
+          droneHoverAction.play();
+          // console.log('[CyborgTempleScene] Playing drone hover animation: DroneHover');
+        }
+      } else {
+        // console.log('[CyborgTempleScene] Drone not found in scene');
+      }
+      
       // Find and store candle references
       const foundCandles = [];
+      const candlePositions = []; // Array to store positions
+      
+      // Search for all VCANDLE objects in the scene
+      const existingVCandles = [];
       templeScene.traverse((child) => {
-        if (child.name && child.name.startsWith('VCANDLE')) {
-          foundCandles.push(child);
-          console.log('[CyborgTempleScene] Found candle:', child.name);
-          
-          // Make candles interactive
-          child.userData.isCandle = true;
-          child.userData.originalScale = child.scale.clone();
-          
-          // Add click handler to candle
-          child.traverse((subChild) => {
-            if (subChild.isMesh) {
-              subChild.userData.candleIndex = foundCandles.length - 1;
-              subChild.userData.candleName = child.name;
-            }
-          });
+        // Check for VCANDLE with 3-digit format (VCANDLE000, VCANDLE001, etc.)
+        if (child.name && child.name.match(/^VCANDLE\d{3}$/)) {
+          existingVCandles.push(child);
+        }
+      });
+      console.log(`[CyborgTempleScene] Found ${existingVCandles.length} VCANDLEs in the scene`);
+      
+      // Sort VCANDLEs by their number (VCANDLE000, VCANDLE001, etc.)
+      existingVCandles.sort((a, b) => {
+        const numA = parseInt(a.name.replace('VCANDLE', '')) || 0;
+        const numB = parseInt(b.name.replace('VCANDLE', '')) || 0;
+        return numA - numB;
+      });
+      
+      // Extract candle positions from Empty objects or markers
+      const idealCandlePositions = [];
+      const floorObject = templeScene.getObjectByName('Floor');
+      
+      // First, try to find Empty objects or marker meshes
+      const candleMarkers = [];
+      templeScene.traverse((child) => {
+        // Look for Empty objects - specifically CandleLocation_*
+        if (child.name && (
+          child.name.startsWith('CandleLocation_') || 
+          child.name.startsWith('CandleSpot_') || 
+          child.name.startsWith('CandleMarker_')
+        )) {
+          candleMarkers.push(child);
+          // console.log(`[CyborgTempleScene] Found candle marker: ${child.name} at`, child.position);
         }
       });
       
-      // Sort candles by name to ensure consistent ordering
-      foundCandles.sort((a, b) => a.name.localeCompare(b.name));
-      setCandleRefs(foundCandles);
-      console.log(`[CyborgTempleScene] Found ${foundCandles.length} candles`);
+      if (candleMarkers.length > 0) {
+        // console.log(`[CyborgTempleScene] Found ${candleMarkers.length} candle markers`);
+        
+        // Sort markers by name to maintain order
+        candleMarkers.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Use marker positions
+        candleMarkers.forEach((marker, i) => {
+          const worldPos = new THREE.Vector3();
+          marker.getWorldPosition(worldPos);
+          
+          idealCandlePositions.push({
+            x: worldPos.x,
+            y: worldPos.y,
+            z: worldPos.z,
+            name: marker.name
+          });
+          // console.log(`[CyborgTempleScene] Candle position ${i + 1} from marker:`, worldPos);
+        });
+      } else if (floorObject) {
+        // console.log('[CyborgTempleScene] No markers found, using Floor perimeter positions');
+        
+        // Get floor bounds to understand its dimensions
+        const bounds = new THREE.Box3().setFromObject(floorObject);
+        // console.log('[CyborgTempleScene] Floor bounds:', bounds);
+        
+        // Define positions on the PERIMETER of the floor
+        const perimeterPositions = [];
+        const numPositions = 15;
+        
+        // Calculate perimeter positions in a rectangle/circle around the floor
+        for (let i = 0; i < numPositions; i++) {
+          const angle = (i / numPositions) * Math.PI * 2;
+          const radiusX = (bounds.max.x - bounds.min.x) * 0.4; // 80% of half-width
+          const radiusZ = (bounds.max.z - bounds.min.z) * 0.4; // 80% of half-depth
+          
+          perimeterPositions.push({
+            x: bounds.min.x + (bounds.max.x - bounds.min.x) / 2 + Math.cos(angle) * radiusX,
+            z: bounds.min.z + (bounds.max.z - bounds.min.z) / 2 + Math.sin(angle) * radiusZ
+          });
+        }
+        
+        // Raycast to find exact floor positions
+        const raycaster = new THREE.Raycaster();
+        
+        perimeterPositions.forEach((pos, i) => {
+          const rayOrigin = new THREE.Vector3(pos.x, bounds.max.y + 1, pos.z);
+          const rayDirection = new THREE.Vector3(0, -1, 0);
+          
+          raycaster.set(rayOrigin, rayDirection);
+          const intersects = raycaster.intersectObject(floorObject, true);
+          
+          if (intersects.length > 0) {
+            const point = intersects[0].point;
+            idealCandlePositions.push({
+              x: point.x,
+              y: point.y + 0.001, // Slightly above floor
+              z: point.z,
+              name: `CandleSpot_${String(i + 1).padStart(3, '0')}`
+            });
+            // console.log(`[CyborgTempleScene] Candle position ${i + 1} on floor perimeter:`, point);
+          } else {
+            // Fallback if raycast fails - use bounds height
+            idealCandlePositions.push({
+              x: pos.x,
+              y: bounds.max.y,
+              z: pos.z,
+              name: `CandleSpot_${String(i + 1).padStart(3, '0')}`
+            });
+          }
+        });
+        
+        // console.log(`[CyborgTempleScene] Created ${idealCandlePositions.length} candle positions on Floor perimeter`);
+      } else {
+        // console.log('[CyborgTempleScene] No markers or Floor found, using fallback positions');
+        // Fallback positions
+        for (let i = 0; i < 15; i++) {
+          idealCandlePositions.push({
+            x: (i % 5 - 2) * 0.4,
+            y: -2.0 + Math.floor(i / 5) * 0.07,
+            z: 2.0 - Math.floor(i / 5) * 0.3,
+            name: `CandleSpot_${String(i + 1).padStart(3, '0')}`
+          });
+        }
+      }
       
-      // Apply initial candle visibility based on pagination
-      updateCandleVisibility(foundCandles, 0);
+      // Store ideal positions globally for drone delivery
+      window.idealCandlePositions = idealCandlePositions;
+      
+      // Process all existing VCANDLEs
+      existingVCandles.forEach((candle, index) => {
+        // Initially hide all VCANDLEs
+        candle.visible = false;
+        candle.traverse((subChild) => {
+          subChild.visible = false;
+        });
+        
+        // Extract world position for reference
+        const worldPosition = new THREE.Vector3();
+        candle.getWorldPosition(worldPosition);
+        
+        candlePositions.push({
+          name: candle.name,
+          position: {
+            x: worldPosition.x,
+            y: worldPosition.y,
+            z: worldPosition.z
+          },
+          localPosition: {
+            x: candle.position.x,
+            y: candle.position.y,
+            z: candle.position.z
+          }
+        });
+        
+        // Make candles interactive
+        candle.userData.isCandle = true;
+        candle.userData.originalScale = candle.scale.clone();
+        candle.userData.candleIndex = index;
+        
+        // Debug: Check what's inside each candle
+        if (index === 0) { // Only log for first candle to avoid spam
+          console.log(`[CyborgTempleScene] Contents of ${candle.name}:`);
+          candle.traverse((child) => {
+            if (child.name && child !== candle) {
+              console.log(`  - ${child.name} (${child.type})`);
+            }
+          });
+        }
+        
+        // Add click handler to candle meshes
+        candle.traverse((subChild) => {
+          if (subChild.isMesh) {
+            subChild.userData.candleIndex = index;
+            subChild.userData.candleName = candle.name;
+          }
+        });
+        
+        // Store the candle in our references array
+        foundCandles.push(candle);
+        
+        console.log(`[CyborgTempleScene] Processed ${candle.name} at position:`, worldPosition);
+      });
+      
+      // Store first VCANDLE as template for drone delivery if it exists
+      const templateCandle = existingVCandles[0];
+      if (templateCandle) {
+        window.candleTemplate = templateCandle;
+        window.candleOriginalScale = templateCandle.scale.clone();
+        
+        // Create clean template for drone delivery only (not added to scene)
+        const cleanTemplate = templateCandle.clone();
+        cleanTemplate.visible = true;
+        cleanTemplate.position.set(0, 0, 0);
+        cleanTemplate.traverse((subChild) => {
+          subChild.visible = true;
+        });
+        window.candleCloneTemplate = cleanTemplate;
+        
+        console.log(`[CyborgTempleScene] Stored ${templateCandle.name} as template for drone delivery`);
+      }
+      
+      // Initialize candleRefs with ONLY the existing VCANDLEs found in the scene
+      setCandleRefs(foundCandles);
+      candleRefsRef.current = foundCandles; // Also store in ref
+      console.log(`[CyborgTempleScene] Found ${foundCandles.length} existing VCANDLEs in the scene`);
+      
+      // Log all candle positions as an array
+      console.log('[CyborgTempleScene] All VCANDLE positions:', candlePositions);
+      
+      // Store positions in window for easy access in console
+      window.vcandlePositions = candlePositions;
+      
+      // Apply initial candle visibility based on available data
+      // Note: Results might not be loaded yet on initial mount, 
+      // but the useEffect will update visibility when they arrive
+      if (foundCandles.length > 0) {
+        console.log(`[CyborgTempleScene] Found ${foundCandles.length} VCANDLEs in scene, will show based on ${results.length} Firestore users`);
+        console.log(`[CyborgTempleScene] VCANDLEs found:`, foundCandles.map(c => c.name).join(', '));
+        if (results.length > 0) {
+          console.log(`[CyborgTempleScene] Will show first ${Math.min(results.length, foundCandles.length)} candles`);
+        }
+        updateCandleVisibility(foundCandles);
+      } else {
+        console.warn(`[CyborgTempleScene] No VCANDLEs found in the scene!`);
+      }
      
       // Create grid ground
       const gridHelper = new THREE.GridHelper(50, 50, 0x00ff41, 0x00ff41);
@@ -654,6 +1112,7 @@ function CyborgTempleScene({
           if (actions[danceAnim]) {
             actions[danceAnim].reset();
             
+            
             // Set different starting times based on animation name
             if (danceAnim === 'Dance.001') {
               actions[danceAnim].time = Math.random() * actions[danceAnim].getClip().duration; // Random offset
@@ -718,6 +1177,261 @@ function CyborgTempleScene({
     if (mixerRef.current) {
       mixerRef.current.update(delta);
     }
+    
+    // Animate drone movement
+    if (droneRef.current) {
+      // Get the actual target position for the drone
+      const targetCandleName = `VCANDLE${String(droneTargetPosition).padStart(3, '0')}`;
+      let targetPosition = null;
+      
+      // Check stored VCANDLE positions first
+      if (window.vcandlePositions && window.vcandlePositions[droneTargetPosition]) {
+        targetPosition = window.vcandlePositions[droneTargetPosition].position;
+      }
+      
+      // Fallback to ideal positions if needed
+      if (!targetPosition) {
+        const idealPositions = window.idealCandlePositions || [];
+        if (idealPositions[droneTargetPosition]) {
+          targetPosition = idealPositions[droneTargetPosition];
+        } else {
+          // Ultimate fallback
+          targetPosition = { x: 0, y: -1.88, z: 2.0 };
+        }
+      }
+      
+      const targetCandle = {
+        name: targetCandleName,
+        position: targetPosition
+      };
+      
+      if (isDroneMoving) {
+        // First phase: Move to position above candle (with lateral offset)
+        const targetPos = new THREE.Vector3(
+          targetPosition.x + droneLateralOffset.x,
+          targetPosition.y + droneBaseHeight,
+          targetPosition.z + droneLateralOffset.z
+        );
+        
+        // Smooth movement using lerp - reduced speed for better visibility
+        const lerpSpeed = 1.5 * delta; // Reduced from 3 to 1.5
+        droneRef.current.position.x = THREE.MathUtils.lerp(
+          droneRef.current.position.x,
+          targetPos.x,
+          lerpSpeed
+        );
+        droneRef.current.position.y = THREE.MathUtils.lerp(
+          droneRef.current.position.y,
+          targetPos.y,
+          lerpSpeed
+        );
+        droneRef.current.position.z = THREE.MathUtils.lerp(
+          droneRef.current.position.z,
+          targetPos.z,
+          lerpSpeed
+        );
+        
+        // Check if drone has reached target position
+        const distance = droneRef.current.position.distanceTo(targetPos);
+        if (distance < 0.1) {
+          setIsDroneMoving(false);
+          setIsDroneLowering(true);
+          console.log(`[Drone] Reached ${targetCandle.name}, now lowering...`);
+        }
+      } else if (isDroneLowering) {
+        // Second phase: Lower to inspect candle (with lateral offset)
+        const lowerPos = new THREE.Vector3(
+          targetPosition.x + droneLateralOffset.x,
+          targetPosition.y + droneLowerHeight,
+          targetPosition.z + droneLateralOffset.z
+        );
+        
+        // Slower descent for inspection - even slower for visibility
+        const lowerSpeed = 1 * delta; // Reduced from 2 to 1
+        droneRef.current.position.y = THREE.MathUtils.lerp(
+          droneRef.current.position.y,
+          lowerPos.y,
+          lowerSpeed
+        );
+        
+        // Check if drone has lowered to inspection height
+        const yDistance = Math.abs(droneRef.current.position.y - lowerPos.y);
+        if (yDistance < 0.05) {
+          setIsDroneLowering(false);
+          console.log(`[Drone] Inspecting ${targetCandle.name}`);
+          
+          // Clear any existing timeout
+          if (droneInspectionTimeRef.current) {
+            clearTimeout(droneInspectionTimeRef.current);
+          }
+          
+          // Hide DroneCandle (drop it off) and rise back up after 0.5 seconds
+          droneInspectionTimeRef.current = setTimeout(() => {
+            // Hide the DroneCandle
+            if (droneCandleRef.current) {
+              droneCandleRef.current.traverse((child) => {
+                child.visible = false;
+              });
+              console.log(`[Drone] Candle delivered to position ${droneTargetPosition}`);
+            }
+            
+            // Place a new candle at the delivery position
+            const idealPositions = window.idealCandlePositions || [];
+            console.log(`[Drone] Checking placement conditions:`);
+            console.log(`  - droneTargetPosition: ${droneTargetPosition}`);
+            console.log(`  - idealPositions.length: ${idealPositions.length}`);
+            console.log(`  - window.candleCloneTemplate exists: ${!!window.candleCloneTemplate}`);
+            console.log(`  - sceneRef.current exists: ${!!sceneRef.current}`);
+            
+            // Look for pre-placed VCANDLE at this position (VCANDLE000, VCANDLE001, etc.)
+            const targetCandleName = `VCANDLE${String(droneTargetPosition).padStart(3, '0')}`; // VCANDLE000 for position 0, etc.
+            let placedCandle = null;
+            
+            sceneRef.current.traverse((child) => {
+              if (child.name === targetCandleName) {
+                placedCandle = child;
+                console.log(`[Drone] Found pre-placed candle: ${targetCandleName}`);
+              }
+            });
+            
+            if (placedCandle) {
+              // Make the pre-placed candle visible
+              placedCandle.visible = true;
+              placedCandle.traverse((subChild) => {
+                subChild.visible = true;
+              });
+              
+              // Get the candle's actual world position for the drone to fly to
+              const candleWorldPos = new THREE.Vector3();
+              placedCandle.getWorldPosition(candleWorldPos);
+              
+              console.log(`[Drone] Made ${targetCandleName} visible at position:`, candleWorldPos);
+              
+              // Update the ideal position so the drone goes to the right place
+              idealPositions[droneTargetPosition] = {
+                x: candleWorldPos.x,
+                y: candleWorldPos.y,
+                z: candleWorldPos.z,
+                name: targetCandleName
+              };
+              
+              // Store reference to the visible candle
+              // Make sure candleRefs array is large enough
+              while (candleRefs.length <= droneTargetPosition) {
+                candleRefs.push(null);
+              }
+              candleRefs[droneTargetPosition] = placedCandle;
+              
+              // Set up userData for the pre-placed candle
+              placedCandle.userData.isCandle = true;
+              placedCandle.userData.isDroneDelivered = true;
+              placedCandle.userData.originalScale = placedCandle.scale.clone();
+              
+              // Apply the correct user data to the delivered candle
+              // Use the candle at the target position
+              const sortedResults = [...results].sort((a, b) => {
+                // Sort by createdAt timestamp (oldest first, matching display order)
+                const aTime = a.createdAt?.getTime ? a.createdAt.getTime() : 0;
+                const bTime = b.createdAt?.getTime ? b.createdAt.getTime() : 0;
+                return aTime - bTime; // Oldest first to match candle placement order
+              });
+              const userData = sortedResults[droneTargetPosition]; // Get the candle for this position
+              
+              if (userData && placedCandle) {
+                // Apply user data to the candle
+                placedCandle.userData = { 
+                  ...userData,
+                  hasUser: true,
+                  userName: userData.userName || userData.username || 'Anonymous',
+                  userId: userData.id,
+                  burnedAmount: userData.burnedAmount || 0,
+                  image: userData.image,
+                  message: userData.message,
+                  createdAt: userData.createdAt,
+                  deliveredByDrone: true,
+                  isDroneDelivered: true,
+                  position: candleWorldPos // Store the actual position with the candle
+                };
+                
+                // Apply user image to the actual candle's Label2
+                if (userData.image) {
+                  applyUserImageToLabel(placedCandle, userData);
+                  console.log(`[Drone] Applied user data and image to delivered candle`);
+                }
+                
+                console.log(`[Drone] Candle delivered with user: ${userData.userName || 'Anonymous'}`);
+              }
+              
+              console.log(`[Drone] Candle ${droneTargetPosition} placed at position:`, candleWorldPos);
+              console.log(`[Drone] Candle userData:`, targetCandle?.userData);
+            } else {
+              console.warn(`[Drone] Could not place candle at index ${droneTargetPosition} - check template or positions`);
+            }
+            
+            // Start rising
+            console.log(`[Drone] Delivery complete, rising back up`);
+            setIsDroneLowering(false);  // Stop lowering
+            setIsDroneRising(true);      // Start rising
+          }, 1500); // Increased to 1.5 seconds for better visibility
+        }
+      } else if (isDroneRising) {
+        // Third phase: Rise back to normal height
+        const risePos = new THREE.Vector3(
+          targetPosition.x,
+          targetPosition.y + droneBaseHeight,
+          targetPosition.z
+        );
+        
+        // Rise at slower speed for visibility
+        const riseSpeed = 1 * delta; // Reduced from 2 to 1
+        droneRef.current.position.y = THREE.MathUtils.lerp(
+          droneRef.current.position.y,
+          risePos.y,
+          riseSpeed
+        );
+        
+        // Check if drone has risen back to base height
+        const yDistance = Math.abs(droneRef.current.position.y - risePos.y);
+        if (yDistance < 0.05) {
+          setIsDroneRising(false);
+          setIsDroneReturning(true); // Start returning home
+          console.log(`[Drone] Back at patrol height, returning home`);
+        }
+      } else if (isDroneReturning) {
+        // Fourth phase: Return to home position
+        const homePos = new THREE.Vector3(
+          droneHomePosition.x,
+          droneHomePosition.y + droneBaseHeight,
+          droneHomePosition.z
+        );
+        
+        // Moderate return speed for visibility
+        const returnSpeed = 2 * delta; // Reduced from 4 to 2
+        droneRef.current.position.x = THREE.MathUtils.lerp(
+          droneRef.current.position.x,
+          homePos.x,
+          returnSpeed
+        );
+        droneRef.current.position.y = THREE.MathUtils.lerp(
+          droneRef.current.position.y,
+          homePos.y,
+          returnSpeed
+        );
+        droneRef.current.position.z = THREE.MathUtils.lerp(
+          droneRef.current.position.z,
+          homePos.z,
+          returnSpeed
+        );
+        
+        // Check if drone has reached home
+        const distance = droneRef.current.position.distanceTo(homePos);
+        if (distance < 0.1) {
+          setIsDroneReturning(false);
+          setPendingDeliveryTimestamp(null); // Clear pending delivery now that it's complete
+          console.log(`[Drone] Returned to home, delivery complete!`);
+        }
+      }
+    }
 
     // Apply gentle sway to chandelier
     if (chandelierRef.current && chandelierInitialRotation.current) {
@@ -740,12 +1454,17 @@ function CyborgTempleScene({
       // Cast ray from pointer
       raycaster.setFromCamera(pointer, camera);
       
-      // Check for intersections with visible candles
-      const visibleCandles = candleRefs.filter(c => c.visible);
+      // Check for intersections with visible candles (skip null entries)
+      const visibleCandles = candleRefs.filter((c, idx) => c && c.visible && idx < results.length);
       const meshes = [];
-      visibleCandles.forEach(candle => {
+      visibleCandles.forEach((candle, visibleIndex) => {
+        // Get the actual index in the full candleRefs array
+        const actualIndex = candleRefs.indexOf(candle);
         candle.traverse(child => {
-          if (child.isMesh && child.userData.candleIndex !== undefined) {
+          if (child.isMesh) {
+            // Store the actual index for proper data lookup
+            child.userData.candleIndex = actualIndex;
+            child.userData.candleName = candle.name;
             meshes.push(child);
           }
         });
@@ -765,19 +1484,22 @@ function CyborgTempleScene({
       }
       
       // Apply hover animation to candles
-      visibleCandles.forEach((candle, index) => {
-        const isHovered = hoveredCandle === index;
+      visibleCandles.forEach((candle) => {
+        const actualIndex = candleRefs.indexOf(candle);
+        const isHovered = hoveredCandle === actualIndex;
         const targetScale = isHovered ? 1.1 : 1;
         
-        // Smooth scale animation
-        candle.scale.x = THREE.MathUtils.lerp(candle.scale.x, candle.userData.originalScale.x * targetScale, delta * 5);
-        candle.scale.y = THREE.MathUtils.lerp(candle.scale.y, candle.userData.originalScale.y * targetScale, delta * 5);
-        candle.scale.z = THREE.MathUtils.lerp(candle.scale.z, candle.userData.originalScale.z * targetScale, delta * 5);
+        // Smooth scale animation (with safety check)
+        if (candle.userData?.originalScale) {
+          candle.scale.x = THREE.MathUtils.lerp(candle.scale.x, candle.userData.originalScale.x * targetScale, delta * 5);
+          candle.scale.y = THREE.MathUtils.lerp(candle.scale.y, candle.userData.originalScale.y * targetScale, delta * 5);
+          candle.scale.z = THREE.MathUtils.lerp(candle.scale.z, candle.userData.originalScale.z * targetScale, delta * 5);
+        }
         
         // Flame flicker effect
         candle.traverse((child) => {
           if (child.name?.toLowerCase().includes('flame') && child.isMesh) {
-            const flicker = Math.sin(state.clock.elapsedTime * 10 + index) * 0.1 + 0.9;
+            const flicker = Math.sin(state.clock.elapsedTime * 10 + actualIndex) * 0.1 + 0.9;
             if (child.material && child.material.emissiveIntensity !== undefined) {
               child.material.emissiveIntensity = flicker * (isHovered ? 1.5 : 1);
             }
@@ -790,8 +1512,8 @@ function CyborgTempleScene({
       // Apply hover animation to the anchor group only if hover is enabled
       // if (hover) {
       //   groupRef.current.anchor.position.y =
-      //     initialY.current + Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
-      // }
+      //     initialY.current + Math.sin(state
+      
 
       // Apply rotation to the rotation group only if rotate is enabled
       // if (rotate) {
@@ -816,13 +1538,116 @@ function CyborgTempleScene({
       gl.domElement.removeEventListener('click', handleClick);
     };
   }, [gl, hoveredCandle, modelLoaded, candleRefs]);
-
-  // Re-update candle visibility when results change
+  
+  // Add keyboard controls for drone movement
   useEffect(() => {
-    if (candleRefs.length > 0 && results.length > 0) {
-      updateCandleVisibility(candleRefs, currentCandlePage);
+    if (!modelLoaded || !droneRef.current) return;
+    
+    const handleKeyPress = (event) => {
+      // Safety check for event.key
+      if (!event || !event.key) return;
+      
+      const key = event.key.toLowerCase();
+      
+      if (key === 'arrowright' || key === 'd') {
+        // Deliver to next candle
+        const nextIndex = (droneTargetPosition + 1) % 30;
+        startDroneDelivery(nextIndex);
+      } else if (key === 'arrowleft' || key === 'a') {
+        // Deliver to previous candle
+        const prevIndex = (droneTargetPosition - 1 + 30) % 30;
+        startDroneDelivery(prevIndex);
+      } else if (key >= '1' && key <= '9') {
+        // Deliver to specific candle (1-9 maps to VCANDLE001-009)
+        startDroneDelivery(parseInt(key) - 1);  // Subtract 1 to convert to 0-based index
+      } else if (key === '0') {
+        // Key 0 maps to VCANDLE010
+        startDroneDelivery(9);
+      } else if (key === 'r') {
+        // Deliver to random candle
+        const randomIndex = Math.floor(Math.random() * 30);
+        startDroneDelivery(randomIndex);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [modelLoaded, droneTargetPosition, startDroneDelivery]);
+
+  // Re-update candle visibility when results change or scene is loaded
+  useEffect(() => {
+    const candles = candleRefsRef.current.length > 0 ? candleRefsRef.current : candleRefs;
+    if (candles.length > 0 && modelLoaded) {
+      console.log(`[CyborgTempleScene] Updating visibility for ${candles.length} candles with ${results.length} Firestore results`);
+      console.log(`[CyborgTempleScene] Using candles from:`, candleRefsRef.current.length > 0 ? 'ref' : 'state');
+      
+      // Check if we have a pending delivery for the newest candle
+      let skipNewest = false;
+      if (pendingDeliveryTimestamp) {
+        // Always skip the newest candle if we have a pending delivery
+        skipNewest = true;
+        console.log('[CyborgTempleScene] Skipping newest candle - will be delivered by drone');
+      }
+      
+      updateCandleVisibility(candles, skipNewest);
     }
-  }, [results, candleRefs, currentCandlePage, updateCandleVisibility]);
+  }, [results, candleRefs, updateCandleVisibility, pendingDeliveryTimestamp, modelLoaded]);
+
+  // Monitor for pending candle to appear in Firestore results
+  useEffect(() => {
+    if (!pendingCandleDelivery || !modelLoaded) return;
+    
+    console.log('[Drone] Checking for pending candle in results:', {
+      pendingUsername: pendingCandleDelivery.username,
+      pendingTimestamp: pendingCandleDelivery.timestamp,
+      resultsCount: results.length
+    });
+    
+    // Check if the pending candle has appeared in the results
+    const foundCandle = results.find(r => {
+      // Match by username and check if created recently (within last 10 seconds)
+      const isMatch = r.username === pendingCandleDelivery.username || 
+                      r.userName === pendingCandleDelivery.username;
+      const createdTime = r.createdAt?.getTime ? r.createdAt.getTime() : 0;
+      const isRecent = Math.abs(createdTime - pendingCandleDelivery.timestamp) < 10000; // 10 second window
+      
+      return isMatch && isRecent;
+    });
+    
+    if (foundCandle) {
+      console.log('[Drone] Found pending candle in Firestore results! Triggering delivery...');
+      
+      // Calculate the position for this candle (it should be the newest, so last position)
+      const sortedResults = [...results].sort((a, b) => {
+        const aTime = a.createdAt?.getTime ? a.createdAt.getTime() : 0;
+        const bTime = b.createdAt?.getTime ? b.createdAt.getTime() : 0;
+        return aTime - bTime; // Oldest first
+      });
+      
+      // Find the index of our new candle
+      const candleIndex = sortedResults.findIndex(r => 
+        (r.username === pendingCandleDelivery.username || r.userName === pendingCandleDelivery.username)
+      );
+      
+      console.log(`[Drone] New candle will be at position ${candleIndex}`);
+      
+      // Add a 2 second delay before starting drone delivery for better visibility
+      console.log(`[Drone] Waiting 2 seconds before starting delivery...`);
+      setTimeout(() => {
+        // Trigger drone delivery to the correct position with the found candle's data
+        startDroneDelivery(candleIndex, foundCandle);
+        console.log(`[Drone] Delivery triggered to position ${candleIndex}`);
+      }, 2000); // 2 second delay
+      
+      // Clear the pending delivery
+      if (onDeliveryComplete) {
+        onDeliveryComplete();
+      }
+    }
+  }, [pendingCandleDelivery, results, modelLoaded, startDroneDelivery, onDeliveryComplete]);
 
   // Toggle floor textures when 80s mode changes
   useEffect(() => {
@@ -982,6 +1807,15 @@ function CyborgTempleScene({
       });
     }
   }, [onPaginationReady, currentCandlePage, totalCandlePages, results.length, candleRefs.length]);
+  
+  // Expose drone delivery function to parent
+  useEffect(() => {
+    if (onDroneDeliveryReady) {
+      onDroneDeliveryReady({
+        triggerDelivery: startDroneDelivery
+      });
+    }
+  }, [onDroneDeliveryReady, startDroneDelivery]);
 
   // Define annotation points - adjust positions based on your temple scene
   const annotations = [

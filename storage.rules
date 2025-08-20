@@ -8,6 +8,14 @@ service firebase.storage {
       allow write: if false;
     }
     
+    // Allow users to upload and read candle images
+    match /candles/{allPaths=**} {
+      allow read: if true;
+      allow write: if true;
+      // For production, you might want to add:
+      // allow write: if request.resource.size < 5 * 1024 * 1024; // Max 5MB
+    }
+    
     // Keep other paths restricted by default
     match /{allPaths=**} {
       allow read, write: if false;

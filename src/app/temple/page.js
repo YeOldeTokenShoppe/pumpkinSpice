@@ -19,6 +19,7 @@ const MusicPlayer3 = dynamic(() => import('@/components/MusicPlayer3'), {
 import SimpleLoader from '@/components/SimpleLoader';
 import CandleInteractionHint from '@/components/CandleInteractionHint';
 import CandleMarquee from '@/components/CandleMarquee';
+import CreateCandleModal from '@/components/CreateCandleModal';
 
 
 
@@ -68,6 +69,9 @@ export default function CyborgTemple() {
   const [sceneLoaded, setSceneLoaded] = useState(false);
   const [canvasReady, setCanvasReady] = useState(false);
   const loadingTimeoutRef = useRef(null);
+  const [showCreateCandleModal, setShowCreateCandleModal] = useState(false);
+  const templeSceneRef = useRef(null);
+  const [pendingCandleDelivery, setPendingCandleDelivery] = useState(null);
 
   // Check if font is loaded
   useEffect(() => {
@@ -208,6 +212,21 @@ export default function CyborgTemple() {
     setViewerCandleIndex(0);
     setAllCandlesData([candleData]); // Single candle, no navigation needed
     setShowFloatingViewer(true);
+  }, []);
+  
+  // Store drone delivery function
+  const droneDeliveryRef = useRef(null);
+  
+  // Handle candle creation - mark for drone delivery
+  const handleCandleCreated = useCallback((newCandle) => {
+    console.log('New candle created:', newCandle);
+    
+    // Mark that we're waiting for this candle to appear in Firestore
+    setPendingCandleDelivery({
+      ...newCandle,
+      timestamp: Date.now()
+    });
+    console.log('Marked candle for drone delivery once it appears in Firestore');
   }, []);
   
 
@@ -398,6 +417,8 @@ export default function CyborgTemple() {
             is80sMode={is80sMode}
             showAnnotations={showAnnotations}
             onAnnotationClick={() => setShowCalloutOverlay(false)}
+            pendingCandleDelivery={pendingCandleDelivery}
+            onDeliveryComplete={() => setPendingCandleDelivery(null)}
             candleData={[
               // Sample candle data - replace with actual user data
               // { name: "User 1", image: "/path/to/image1.jpg", burnAmount: 0.5 },
@@ -415,6 +436,9 @@ export default function CyborgTemple() {
             onCandleClick={handleCandleClick}
             onPaginationReady={(controls) => {
               setPaginationControls(controls);
+            }}
+            onDroneDeliveryReady={(controls) => {
+              droneDeliveryRef.current = controls;
             }}
           />
           
@@ -739,6 +763,47 @@ export default function CyborgTemple() {
       
       {/* Buy Token FAB */}
       <BuyTokenFAB is80sMode={is80sMode} />
+      
+      {/* Light a Candle Button */}
+      <button
+        onClick={() => setShowCreateCandleModal(true)}
+        style={{
+          position: 'fixed',
+          bottom: '100px',
+          right: '20px',
+          padding: '12px 24px',
+          background: 'linear-gradient(135deg, #00ff41 0%, #00cc33 100%)',
+          color: '#000',
+          border: 'none',
+          borderRadius: '50px',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          boxShadow: '0 4px 20px rgba(0, 255, 65, 0.4)',
+          transition: 'all 0.3s ease',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.transform = 'translateY(-2px)';
+          e.target.style.boxShadow = '0 6px 30px rgba(0, 255, 65, 0.6)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '0 4px 20px rgba(0, 255, 65, 0.4)';
+        }}
+      >
+        🕯️ Light a Candle
+      </button>
+      
+      {/* Create Candle Modal */}
+      <CreateCandleModal
+        isOpen={showCreateCandleModal}
+        onClose={() => setShowCreateCandleModal(false)}
+        onCandleCreated={handleCandleCreated}
+      />
       
       {/* Candle Pagination UI */}
       {/* {paginationControls && (
