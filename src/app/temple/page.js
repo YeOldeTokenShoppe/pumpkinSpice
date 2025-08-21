@@ -19,9 +19,11 @@ const MusicPlayer3 = dynamic(() => import('@/components/MusicPlayer3'), {
 import SimpleLoader from '@/components/SimpleLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+import * as THREE from 'three';
 import CandleInteractionHint from '@/components/CandleInteractionHint';
 import CandleMarquee from '@/components/CandleMarquee';
 import CreateCandleModal from '@/components/CreateCandleModal';
+import MemoryMonitor from '@/components/MemoryMonitor';
 
 
 
@@ -72,8 +74,12 @@ export default function CyborgTemple() {
   const [canvasReady, setCanvasReady] = useState(false);
   const [modelPreloaded, setModelPreloaded] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [detailedProgress, setDetailedProgress] = useState(null);
+  const [sceneRendered, setSceneRendered] = useState(false);
+  const renderCheckTimeoutRef = useRef(null);
   const loadingTimeoutRef = useRef(null);
   const preloadedModelRef = useRef(null);
+  const preloadedAssetsRef = useRef({});
   const [showCreateCandleModal, setShowCreateCandleModal] = useState(false);
   const templeSceneRef = useRef(null);
   const [pendingCandleDelivery, setPendingCandleDelivery] = useState(null);
@@ -89,42 +95,133 @@ export default function CyborgTemple() {
     console.log('[Temple] Cleared all delivery state on mount');
   }, []);
   
-  // Preload the 3D model
+  // Track if component is mounted
+  const isMountedRef = useRef(true);
+  
+  // Cleanup on unmount
   useEffect(() => {
-    const preloadModel = async () => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  
+  // Comprehensive asset preloading
+  useEffect(() => {
+    const preloadAllAssets = async () => {
       try {
+        const assets = [
+          { type: 'model', path: '/models/templeScene3.glb', weight: 30, name: 'Temple' },
+          { type: 'model', path: '/models/singleCandleAnimatedFlame.glb', weight: 15, name: 'Candle' },
+          { type: 'model', path: '/models/marketFight.glb', weight: 10, name: 'Market Scene' },
+          { type: 'model', path: '/models/whale.glb', weight: 10, name: 'Whale' },
+          { type: 'texture', path: '/80carpet.png', weight: 5, name: '80s Carpet' },
+          { type: 'texture', path: '/virginRecords.jpg', weight: 5, name: 'Album Art' },
+        ];
+        
+        const totalWeight = assets.reduce((sum, asset) => sum + asset.weight, 0);
+        let completedWeight = 0;
+        
         const gltfLoader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('/draco/');
         gltfLoader.setDRACOLoader(dracoLoader);
         
-        // Preload the main temple model
-        gltfLoader.load(
-          '/models/templeScene3.glb',
-          (gltf) => {
-            console.log('Temple model preloaded successfully');
-            preloadedModelRef.current = gltf;
-            setModelPreloaded(true);
-            setLoadingProgress(prev => prev + 40); // Model is 40% of loading
-          },
-          (progress) => {
-            // Progress callback
-            const percentComplete = (progress.loaded / progress.total) * 40;
-            setLoadingProgress(percentComplete);
-          },
-          (error) => {
-            console.error('Failed to preload model:', error);
-            // Still mark as loaded to prevent infinite loading
-            setModelPreloaded(true);
-          }
-        );
-      } catch (error) {
-        console.error('Error setting up model preload:', error);
+        const textureLoader = new THREE.TextureLoader();
+        
+        // Create a proper loading queue
+        const loadAsset = (asset) => {
+          return new Promise((resolve, reject) => {
+            setDetailedProgress({ 
+              currentTask: `Loading ${asset.name}...`,
+              details: `${Math.round((completedWeight / totalWeight) * 100)}% complete`
+            });
+            
+            if (asset.type === 'model') {
+              let lastProgress = 0;
+              gltfLoader.load(
+                asset.path,
+                (gltf) => {
+                  console.log(`✓ Loaded model: ${asset.name}`);
+                  // Don't store all models in memory, just the main one
+                  if (asset.path === '/models/templeScene3.glb') {
+                    preloadedModelRef.current = gltf;
+                    preloadedAssetsRef.current[asset.path] = gltf;
+                  }
+                  completedWeight += asset.weight;
+                  const overallProgress = (completedWeight / totalWeight) * 75;
+                  setLoadingProgress(Math.round(overallProgress));
+                  resolve(gltf);
+                },
+                (progress) => {
+                  if (progress.total > 0) {
+                    const assetProgress = (progress.loaded / progress.total);
+                    const progressDelta = assetProgress - lastProgress;
+                    const weightedProgress = progressDelta * asset.weight;
+                    
+                    if (weightedProgress > 0) {
+                      lastProgress = assetProgress;
+                      const currentTotal = completedWeight + (assetProgress * asset.weight);
+                      const overallProgress = (currentTotal / totalWeight) * 75;
+                      setLoadingProgress(Math.round(overallProgress));
+                      
+                      setDetailedProgress({ 
+                        currentTask: `Loading ${asset.name}...`,
+                        details: `${Math.round(assetProgress * 100)}% of ${asset.name}`
+                      });
+                    }
+                  }
+                },
+                (error) => {
+                  console.error(`✗ Failed to load ${asset.name}:`, error);
+                  completedWeight += asset.weight;
+                  const overallProgress = (completedWeight / totalWeight) * 75;
+                  setLoadingProgress(Math.round(overallProgress));
+                  resolve(null); // Resolve anyway to continue loading
+                }
+              );
+            } else if (asset.type === 'texture') {
+              textureLoader.load(
+                asset.path,
+                (texture) => {
+                  console.log(`✓ Loaded texture: ${asset.name}`);
+                  // Don't store textures in memory unless necessary
+                  // They'll be loaded again when needed
+                  completedWeight += asset.weight;
+                  const overallProgress = (completedWeight / totalWeight) * 75;
+                  setLoadingProgress(Math.round(overallProgress));
+                  resolve(texture);
+                },
+                undefined,
+                (error) => {
+                  console.error(`✗ Failed to load ${asset.name}:`, error);
+                  completedWeight += asset.weight;
+                  const overallProgress = (completedWeight / totalWeight) * 75;
+                  setLoadingProgress(Math.round(overallProgress));
+                  resolve(null);
+                }
+              );
+            }
+          });
+        };
+        
+        // Load assets sequentially for better progress tracking
+        console.log('Starting asset preload...');
+        for (const asset of assets) {
+          await loadAsset(asset);
+        }
+        
+        console.log('✓ All assets preloaded');
+        setDetailedProgress({ currentTask: 'Initializing scene...', details: null });
         setModelPreloaded(true);
+        setLoadingProgress(90);  // Increased to 90% when assets are done
+      } catch (error) {
+        console.error('Error during asset preload:', error);
+        setModelPreloaded(true);
+        setLoadingProgress(80);
       }
     };
     
-    preloadModel();
+    preloadAllAssets();
   }, []);
   
   // Check if font is loaded
@@ -135,43 +232,55 @@ export default function CyborgTemple() {
         await document.fonts.load("1em 'UnifrakturMaguntia'");
         console.log('Font loaded successfully');
         setFontLoaded(true);
-        setLoadingProgress(prev => Math.min(100, prev + 20)); // Font is 20% of loading
+        // Don't add progress here, let the asset loading drive it
       } catch (e) {
         console.log('Font load failed, using fallback');
         // Fallback: set as loaded after a short delay
         setTimeout(() => {
           setFontLoaded(true);
-          setLoadingProgress(prev => Math.min(100, prev + 20));
         }, 100);
       }
     };
     checkFont();
   }, []);
   
-  // Preload critical images
+  // Preload additional critical assets
   useEffect(() => {
-    const imagesToPreload = [
-      '/virginRecords.jpg',
-      '/fonts/UnifrakturMaguntia-Regular.ttf'
-    ];
-    
-    let loadedCount = 0;
-    const totalImages = imagesToPreload.length;
-    
-    imagesToPreload.forEach(src => {
-      if (src.endsWith('.jpg') || src.endsWith('.png')) {
-        const img = new Image();
-        img.onload = () => {
-          loadedCount++;
-          setLoadingProgress(prev => Math.min(100, prev + (20 / totalImages))); // Images are 20% of loading
-        };
-        img.onerror = () => {
-          loadedCount++;
-          setLoadingProgress(prev => Math.min(100, prev + (20 / totalImages)));
-        };
-        img.src = src;
+    const preloadAdditionalAssets = async () => {
+      try {
+        // Preload video elements if needed for 80s mode
+        const videoSources = [
+          '/videos/80s-bg.mp4' // If you have a background video
+        ];
+        
+        videoSources.forEach(src => {
+          const video = document.createElement('video');
+          video.preload = 'metadata';
+          video.src = src;
+          video.load();
+        });
+        
+        // Ensure Draco decoder WASM files are cached
+        const dracoFiles = [
+          '/draco/draco_decoder.wasm',
+          '/draco/draco_wasm_wrapper.js',
+          '/draco/draco_decoder.js'
+        ];
+        
+        dracoFiles.forEach(async (file) => {
+          try {
+            await fetch(file, { cache: 'force-cache' });
+            console.log(`Cached: ${file}`);
+          } catch (e) {
+            console.log(`Could not cache ${file}`);
+          }
+        });
+      } catch (error) {
+        console.error('Error preloading additional assets:', error);
       }
-    });
+    };
+    
+    preloadAdditionalAssets();
   }, []);
 
   // Mark canvas as ready after a delay to ensure it's mounted
@@ -179,34 +288,56 @@ export default function CyborgTemple() {
     const canvasTimeout = setTimeout(() => {
       console.log('Canvas marked as ready');
       setCanvasReady(true);
-      setLoadingProgress(prev => Math.min(100, prev + 20)); // Canvas ready is 20% of loading
+      // Don't add progress here, let the asset loading drive it
     }, 500);
     return () => clearTimeout(canvasTimeout);
   }, []);
 
-  // Wait for everything to be ready including model preload
+  // Wait for everything to be ready including scene rendering
   useEffect(() => {
-    if (sceneLoaded && fontLoaded && canvasReady && modelPreloaded) {
-      console.log('All components ready including model, hiding loader');
-      setLoadingProgress(100);
-      // Shorter delay - 300ms for smooth transition
-      const timeout = setTimeout(() => {
-        setIsLoading(false);
-      }, 300);
+    if (sceneLoaded && fontLoaded && canvasReady && modelPreloaded && sceneRendered) {
+      console.log('All components ready and scene rendered, finalizing...');
+      setDetailedProgress({ currentTask: 'Preparing temple...', details: 'Almost ready!' });
       
-      return () => clearTimeout(timeout);
+      // Gradually increase to 100%
+      const finalizeLoading = () => {
+        setLoadingProgress(prev => {
+          if (prev < 100) {
+            const next = Math.min(prev + 5, 100);
+            if (next < 100) {
+              setTimeout(finalizeLoading, 50);
+            } else {
+              // Add extra delay to ensure everything is visible
+              setTimeout(() => {
+                console.log('Hiding loader, scene fully ready');
+                setIsLoading(false);
+              }, 500);
+            }
+            return next;
+          }
+          return prev;
+        });
+      };
+      
+      finalizeLoading();
+    } else if (sceneLoaded && fontLoaded && canvasReady && modelPreloaded && !sceneRendered) {
+      // Scene is loaded but not yet rendered
+      setDetailedProgress({ currentTask: 'Initializing lights...', details: 'Setting up scene' });
     }
-  }, [sceneLoaded, fontLoaded, canvasReady, modelPreloaded]);
+  }, [sceneLoaded, fontLoaded, canvasReady, modelPreloaded, sceneRendered]);
 
   // Fallback timeout to ensure loader doesn't stay forever
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoading) {
         console.log('Temple loading timeout reached, forcing complete');
+        setSceneRendered(true); // Force scene as rendered
         setLoadingProgress(100);
-        setIsLoading(false);
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 500);
       }
-    }, 15000); // 15 second timeout for large model
+    }, 20000); // 20 second timeout for large model and rendering
 
     return () => clearTimeout(timeout);
   }, []);
@@ -249,8 +380,27 @@ export default function CyborgTemple() {
   }, [showMobileMusicPlayer]);
   
   const handleSceneLoad = useCallback(() => {
-    console.log('Cyborg Temple Scene loaded');
+    console.log('Cyborg Temple Scene loaded, waiting for render...');
     setSceneLoaded(true);
+    
+    // Give the scene time to render and lights to initialize
+    // Check multiple frames to ensure stability
+    let frameCount = 0;
+    const checkRender = () => {
+      frameCount++;
+      if (frameCount < 10) {
+        // Wait for 10 frames to ensure scene is stable
+        requestAnimationFrame(checkRender);
+      } else {
+        console.log('Scene fully rendered and stable');
+        setSceneRendered(true);
+      }
+    };
+    
+    // Start checking after a brief delay to let lights initialize
+    setTimeout(() => {
+      requestAnimationFrame(checkRender);
+    }, 500);
   }, []);
   
   // Function to close the floating viewer
@@ -371,10 +521,13 @@ export default function CyborgTemple() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <SimpleLoader progress={loadingProgress} />
+          <SimpleLoader progress={loadingProgress} detailedProgress={detailedProgress} />
         </div>
       ) : (
         <>
+          {/* Memory Monitor - Remove this in production */}
+          <MemoryMonitor show={true} />
+          
           {/* Candle Interaction Hint */}
           <CandleInteractionHint isMobileView={isMobileView} />
 
@@ -514,6 +667,10 @@ export default function CyborgTemple() {
             orbitControlsRef={orbitControlsRef}
             isModalOpen={showCreateCandleModal}
             preloadedModel={preloadedModelRef.current}
+            onSceneReady={() => {
+              // Additional callback when scene internals are ready
+              console.log('Scene internals ready');
+            }}
             candleData={[
               // Sample candle data - replace with actual user data
               // { name: "User 1", image: "/path/to/image1.jpg", burnAmount: 0.5 },

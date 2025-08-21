@@ -118,27 +118,27 @@ function CyborgTempleScene({
   }, []);
   
   // Update candle visibility based on current page
-  // Texture cache to avoid reloading the same images (with size limit)
+  // Texture cache with size limit for memory management
   const textureCache = useRef(new Map());
-  const MAX_TEXTURE_CACHE_SIZE = 50; // Limit cache to 50 textures
+  const MAX_TEXTURE_CACHE_SIZE = 30; // Reduced cache size
   
-  // Optimized texture loading for better performance with many images
+  // Optimized texture loading with memory management
   const loadOptimizedTexture = useCallback((url, onLoad) => {
+    console.log(`[loadOptimizedTexture] Starting load for URL: ${url}`);
+    
     // Check cache first
     if (textureCache.current.has(url)) {
+      console.log(`[loadOptimizedTexture] Using cached texture for: ${url}`);
       onLoad(textureCache.current.get(url));
       return;
     }
     
-    // Create a canvas for image processing and resizing
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    
-    // Use 128x128 for efficient memory usage with dozens of candles
-    // This is sufficient for candle labels and keeps memory usage low
-    const targetSize = 128; 
+    // Create canvas for image processing - 128x128 for memory efficiency
+    const targetSize = 128;
+    const canvas = document.createElement('canvas');
     canvas.width = targetSize;
     canvas.height = targetSize;
+    const ctx = canvas.getContext("2d");
     
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -182,7 +182,7 @@ function CyborgTempleScene({
       texture.magFilter = THREE.LinearFilter;
       texture.needsUpdate = true;
       
-      // Cache the texture with size limit
+      // Cache management with size limit
       if (textureCache.current.size >= MAX_TEXTURE_CACHE_SIZE) {
         // Remove oldest entry when cache is full
         const firstKey = textureCache.current.keys().next().value;
@@ -195,6 +195,11 @@ function CyborgTempleScene({
       textureCache.current.set(url, texture);
       
       console.log(`[loadOptimizedTexture] Texture created and cached for: ${url}`);
+      console.log(`[loadOptimizedTexture] Texture properties:`, {
+        image: texture.image,
+        needsUpdate: texture.needsUpdate,
+        format: texture.format
+      });
       
       // Remove from tracking since it's loaded
       loadingImagesRef.current.delete(url);
@@ -232,34 +237,48 @@ function CyborgTempleScene({
       
       loadOptimizedTexture(user.image, (texture) => {
       console.log(`[applyUserImageToLabel] Texture callback received for ${candle.name}`);
+      console.log(`[applyUserImageToLabel] Texture object:`, texture);
       let labelFound = false;
       candle.traverse((child) => {
         // Apply to Label1 instead of Label2
         if (child.name?.includes('Label1') && child.isMesh) {
           labelFound = true;
           console.log(`[applyUserImageToLabel] Found Label1 mesh in ${candle.name}`);
+          console.log(`[applyUserImageToLabel] Label1 material before:`, child.material);
+          
           if (child.material) {
-            // Dispose of old material to free memory
-            if (child.material.map) {
-              // Don't dispose cached textures
-              if (!textureCache.current.has(user.image)) {
-                child.material.map.dispose();
-              }
+            // Clone material only if not already cloned for this candle
+            if (!child.userData.materialCloned) {
+              console.log(`[applyUserImageToLabel] Cloning material for ${child.name}`);
+              child.material = child.material.clone();
+              child.userData.materialCloned = true;
             }
-            
-            // Create new material with the texture
-            child.material = child.material.clone();
+            // Update the texture
             child.material.map = texture;
             child.material.transparent = true;
             child.material.needsUpdate = true;
-            console.log(`[applyUserImageToLabel] Applied texture to Label1 in ${candle.name}, material:`, child.material);
+            
+            // Force update
+            if (texture) {
+              texture.needsUpdate = true;
+            }
+            
+            console.log(`[applyUserImageToLabel] Applied texture to Label1 in ${candle.name}`);
+            console.log(`[applyUserImageToLabel] Material after:`, {
+              map: child.material.map,
+              transparent: child.material.transparent,
+              needsUpdate: child.material.needsUpdate
+            });
           }
         }
         // Keep Label2 for potential other use
         else if (child.name?.includes('Label2') && child.isMesh) {
           // Optionally set Label2 to a blank color
           if (child.material) {
-            child.material = child.material.clone();
+            if (!child.userData.materialCloned) {
+              child.material = child.material.clone();
+              child.userData.materialCloned = true;
+            }
             child.material.color = new THREE.Color(0xf5f5dc); // Parchment color
             child.material.needsUpdate = true;
           }
@@ -474,7 +493,10 @@ function CyborgTempleScene({
                 droneCandleRef.current.traverse((child) => {
                   if (child.name?.includes('Label2') && child.isMesh) {
                     if (child.material) {
-                      child.material = child.material.clone();
+                      if (!child.userData.materialCloned) {
+                        child.material = child.material.clone();
+                        child.userData.materialCloned = true;
+                      }
                       child.material.map = texture;
                       child.material.transparent = true;
                       child.material.needsUpdate = true;
@@ -1135,12 +1157,23 @@ function CyborgTempleScene({
       hasLoadedRef.current = true;
       setModelLoaded(true); // Signal that model is loaded
 
-      // Delay notifying parent to allow child components to initialize
-      setTimeout(() => {
+      // Immediately update materials to ensure they're ready
+      templeScene.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.needsUpdate = true;
+          if (child.material.map) {
+            child.material.map.needsUpdate = true;
+          }
+        }
+      });
+      
+      // Notify parent quickly - just wait for one frame to ensure scene is rendered
+      requestAnimationFrame(() => {
         if (onLoad) {
+          console.log('Scene loaded and ready');
           onLoad();
         }
-      }, 100);
+      });
     });
 
     // Cleanup function
@@ -1179,13 +1212,13 @@ function CyborgTempleScene({
       });
       loadingImagesRef.current.clear();
 
-      // Dispose of cached textures properly
-      textureCache.current.forEach((texture, key) => {
+      // Dispose of cached textures
+      textureCache.current.forEach((texture) => {
         if (texture && texture.dispose) {
           texture.dispose();
         }
       });
-      textureCache.current.clear()
+      textureCache.current.clear();
 
       // Stop all animations
       if (mixerRef.current) {
@@ -1404,9 +1437,8 @@ function CyborgTempleScene({
       }
       
       // When transition is complete
-      if (progress >= 1) {
+      if (progress >= 1 && cameraTransitionStartRef.current) {
         console.log('[Camera] Transition complete, camera locked in place');
-        cameraTransitionStartRef.current = null;
         
         // Re-enable controls after transition
         if (orbitControlsRef?.current) {
@@ -1416,7 +1448,8 @@ function CyborgTempleScene({
           orbitControlsRef.current.enableZoom = true;
         }
         
-        // Camera stays at delivery location, stop following
+        // Clear transition data and stop following (this prevents re-entry)
+        cameraTransitionStartRef.current = null;
         setIsCameraFollowingDrone(false);
       }
     }
