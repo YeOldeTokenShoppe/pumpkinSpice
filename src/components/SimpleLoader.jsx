@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 
-const SimpleLoader = () => {
+const SimpleLoader = ({ progress = 0 }) => {
   useEffect(() => {
     // Inject keyframes into the document if not already present
     const styleId = 'simple-loader-keyframes';
@@ -72,35 +72,67 @@ const SimpleLoader = () => {
     backgroundColor: '#10b981'
   };
 
+  const progressBarContainerStyle = {
+    width: '200px',
+    height: '4px',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderRadius: '2px',
+    marginTop: '24px',
+    overflow: 'hidden'
+  };
+
+  const progressBarStyle = {
+    width: `${Math.min(100, Math.max(0, progress))}%`,
+    height: '100%',
+    backgroundColor: '#10b981',
+    transition: 'width 0.3s ease',
+    borderRadius: '2px'
+  };
+
+  const progressTextStyle = {
+    marginTop: '12px',
+    color: '#10b981',
+    fontSize: '12px',
+    fontFamily: 'monospace'
+  };
+
   return (
     <div style={containerStyle}>
-      <div style={wrapperStyle}>
-        <div style={{
-          ...columnStyle,
-          animation: 'simple-loader-bounce 1s ease-in-out infinite 0.1s'
-        }}>
-          <div style={topBarStyle} />
-          <div style={middleBarStyle} />
-          <div style={bottomBarStyle} />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={wrapperStyle}>
+          <div style={{
+            ...columnStyle,
+            animation: 'simple-loader-bounce 1s ease-in-out infinite 0.1s'
+          }}>
+            <div style={topBarStyle} />
+            <div style={middleBarStyle} />
+            <div style={bottomBarStyle} />
+          </div>
+          <div style={{
+            ...columnStyle,
+            bottom: '16px',
+            animation: 'simple-loader-bounce 1s ease-in-out infinite 0.2s'
+          }}>
+            <div style={topBarStyle} />
+            <div style={middleBarStyle} />
+            <div style={bottomBarStyle} />
+          </div>
+          <div style={{
+            ...columnStyle,
+            bottom: '32px',
+            animation: 'simple-loader-bounce 1s ease-in-out infinite 0.1s'
+          }}>
+            <div style={topBarStyle} />
+            <div style={middleBarStyle} />
+            <div style={bottomBarStyle} />
+          </div>
         </div>
-        <div style={{
-          ...columnStyle,
-          bottom: '16px',
-          animation: 'simple-loader-bounce 1s ease-in-out infinite 0.2s'
-        }}>
-          <div style={topBarStyle} />
-          <div style={middleBarStyle} />
-          <div style={bottomBarStyle} />
-        </div>
-        <div style={{
-          ...columnStyle,
-          bottom: '32px',
-          animation: 'simple-loader-bounce 1s ease-in-out infinite 0.1s'
-        }}>
-          <div style={topBarStyle} />
-          <div style={middleBarStyle} />
-          <div style={bottomBarStyle} />
-        </div>
+        {/* <div style={progressBarContainerStyle}>
+          <div style={progressBarStyle} />
+        </div> */}
+        {/* <div style={progressTextStyle}>
+          Loading Temple... {Math.round(progress)}%
+        </div> */}
       </div>
     </div>
   );

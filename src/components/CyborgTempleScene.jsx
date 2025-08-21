@@ -33,7 +33,9 @@ function CyborgTempleScene({
   onViewerStateChange = null, // Callback to notify parent about viewer state
   onDroneDeliveryReady = null, // Callback to expose drone delivery function
   pendingCandleDelivery = null, // New candle waiting to be delivered
-  onDeliveryComplete = null // Callback when delivery is complete
+  onDeliveryComplete = null, // Callback when delivery is complete
+  orbitControlsRef = null, // Reference to OrbitControls from parent
+  isModalOpen = false // Track if the create candle modal is open
 }) {
   // console.log('[CyborgTempleScene] Component rendered with isPlaying:', isPlaying);
   const sceneRef = useRef();
@@ -56,6 +58,7 @@ function CyborgTempleScene({
   const droneRef = useRef();
   const droneCandleRef = useRef(); // Reference to the candle carried by drone
   const [droneTargetPosition, setDroneTargetPosition] = useState(0); // Index of target candle
+  const [isDroneStaging, setIsDroneStaging] = useState(false); // Coming to front of screen
   const [isDroneMoving, setIsDroneMoving] = useState(false);
   const [isDroneLowering, setIsDroneLowering] = useState(false);
   const [isDroneRising, setIsDroneRising] = useState(false);
@@ -65,7 +68,35 @@ function CyborgTempleScene({
   const droneLowerHeight = 2.4; // Height when dropping candle (near floor level)
   const droneLateralOffset = { x: 0, z: 0 }; // No lateral offset - deliver directly to candle position
   const droneInspectionTimeRef = useRef(null);
-  const droneHomePosition = { x: 10, y: 0, z: 0 }; // Off-screen starting position (adjust as needed)
+  const droneHomePosition = { x: 10, y: 0, z: 0 }; // Off-screen starting position
+  const droneStagingPosition = { x: 0, y: 3, z: 5 }; // Front center of screen for showcase
+  
+  // Waypoint navigation for drone
+  const droneWaypointsRef = useRef([]);
+  const currentWaypointIndexRef = useRef(0);
+  const templeRadius = 4.5; // Radius to fly around temple (adjust based on your temple size)
+  
+  // Store reference to startDroneDelivery
+  const startDroneDeliveryRef = useRef(null);
+  
+  // Fixed camera positioning values (previously from GUI)
+  const cameraControls = {
+    behindDistance: 3, // How far behind target
+    sideDistance: 3, // How far to the side
+    cameraHeight: 0 // Camera height
+  };
+  
+  // Camera tracking for drone delivery
+  const [isCameraFollowingDrone, setIsCameraFollowingDrone] = useState(false);
+  const originalCameraPositionRef = useRef(null);
+  const originalCameraTargetRef = useRef(null);
+  const cameraFollowStartTimeRef = useRef(null);
+  const cameraAnimationFrameRef = useRef(null); // Track animation frame for cleanup
+  const pendingTimeoutsRef = useRef(new Set()); // Track all timeouts for cleanup
+  const cameraTransitionStartRef = useRef(null); // For smooth camera transition
+  const cameraTransitionDuration = 4500; // 4.5 seconds - slower to better sync with drone arrival
+  const loadingImagesRef = useRef(new Map()); // Track loading images for cleanup
+  const processedCandleIdsRef = useRef(new Set()); // Track which candles have been processed for drone delivery
   
   // Candle pagination state
   const [currentCandlePage, setCurrentCandlePage] = useState(0);
@@ -87,8 +118,9 @@ function CyborgTempleScene({
   }, []);
   
   // Update candle visibility based on current page
-  // Texture cache to avoid reloading the same images
+  // Texture cache to avoid reloading the same images (with size limit)
   const textureCache = useRef(new Map());
+  const MAX_TEXTURE_CACHE_SIZE = 50; // Limit cache to 50 textures
   
   // Optimized texture loading for better performance with many images
   const loadOptimizedTexture = useCallback((url, onLoad) => {
@@ -110,6 +142,9 @@ function CyborgTempleScene({
     
     const img = new Image();
     img.crossOrigin = "anonymous";
+    
+    // Track this image for cleanup
+    loadingImagesRef.current.set(url, img);
     
     // Add event listeners before setting src
     img.onload = () => {
@@ -147,10 +182,22 @@ function CyborgTempleScene({
       texture.magFilter = THREE.LinearFilter;
       texture.needsUpdate = true;
       
-      // Cache the texture
+      // Cache the texture with size limit
+      if (textureCache.current.size >= MAX_TEXTURE_CACHE_SIZE) {
+        // Remove oldest entry when cache is full
+        const firstKey = textureCache.current.keys().next().value;
+        const oldTexture = textureCache.current.get(firstKey);
+        if (oldTexture && oldTexture.dispose) {
+          oldTexture.dispose();
+        }
+        textureCache.current.delete(firstKey);
+      }
       textureCache.current.set(url, texture);
       
       console.log(`[loadOptimizedTexture] Texture created and cached for: ${url}`);
+      
+      // Remove from tracking since it's loaded
+      loadingImagesRef.current.delete(url);
       
       // Call the callback with the optimized texture
       onLoad(texture);
@@ -158,6 +205,8 @@ function CyborgTempleScene({
     
     img.onerror = (error) => {
       console.error('[loadOptimizedTexture] Failed to load image:', url, error);
+      // Remove from tracking on error too
+      loadingImagesRef.current.delete(url);
     };
     
     // Set src after event listeners are attached
@@ -337,6 +386,15 @@ function CyborgTempleScene({
   
   // Function to start drone delivery to a specific candle position
   const startDroneDelivery = useCallback((candleIndex, specificUserData = null) => {
+    console.log(`[startDroneDelivery] Called with candleIndex: ${candleIndex}, droneRef:`, !!droneRef.current);
+    console.log(`[startDroneDelivery] Current drone states:`, {
+      isDroneStaging,
+      isDroneMoving,
+      isDroneLowering,
+      isDroneRising,
+      isDroneReturning
+    });
+    
     // If no index specified, find the next available slot based on results
     let targetIndex = candleIndex;
     if (targetIndex === undefined || targetIndex === null) {
@@ -457,16 +515,98 @@ function CyborgTempleScene({
         }
       }
       
-      // Reset states and start movement from home
+      // Make drone visible when starting delivery
+      if (droneRef.current) {
+        droneRef.current.visible = true;
+        console.log('[Drone] Made visible for delivery');
+      }
+      
+      // Reset states and start with staging phase
+      console.log(`[Drone] About to start delivery sequence - setting drone states`);
       setDroneTargetPosition(targetIndex);
-      setIsDroneMoving(true);
+      setIsDroneStaging(true); // Start with staging
+      setIsDroneMoving(false);
       setIsDroneLowering(false);
       setIsDroneRising(false);
       setIsDroneReturning(false);
+      console.log(`[Drone] States set - isDroneStaging should now be true`);
       
-      console.log(`[Drone] Starting delivery to ${targetCandle.name}`);
+      // Reset staging flags on drone
+      if (droneRef.current) {
+        droneRef.current.stagingPauseComplete = false;
+        droneRef.current.stagingStartTime = null;
+      }
+      
+      // Store original camera position and target BEFORE moving
+      if (camera) {
+        originalCameraPositionRef.current = camera.position.clone();
+        // Store the current OrbitControls target
+        if (orbitControlsRef?.current) {
+          originalCameraTargetRef.current = orbitControlsRef.current.target.clone();
+          
+          // Stop auto-rotation during drone delivery
+          orbitControlsRef.current.autoRotate = false;
+        } else {
+          originalCameraTargetRef.current = new THREE.Vector3(0, 0, 0); // Default fallback
+        }
+      }
+      
+      // Position camera relative to target's direction from center with smooth transition
+      if (camera && targetPosition) {
+        console.log(`[Camera] Starting smooth transition to target at:`, targetPosition);
+        
+        // Calculate direction from center to target
+        const center = new THREE.Vector3(0, 0, 0);
+        const directionToTarget = new THREE.Vector3(
+          targetPosition.x - center.x,
+          0, // Ignore Y for direction calculation
+          targetPosition.z - center.z
+        ).normalize();
+        
+        // Calculate perpendicular direction (for side offset)
+        const perpendicular = new THREE.Vector3(
+          -directionToTarget.z,
+          0,
+          directionToTarget.x
+        );
+        
+        // Position camera behind and to the side of target
+        const behindDistance = cameraControls.behindDistance;
+        const sideDistance = cameraControls.sideDistance;
+        
+        const targetCameraPos = new THREE.Vector3(
+          targetPosition.x + (directionToTarget.x * behindDistance) + (perpendicular.x * sideDistance),
+          cameraControls.cameraHeight,
+          targetPosition.z + (directionToTarget.z * behindDistance) + (perpendicular.z * sideDistance)
+        );
+        
+        // Store transition data for smooth animation
+        cameraTransitionStartRef.current = {
+          startTime: Date.now(),
+          startPosition: camera.position.clone(),
+          targetPosition: targetCameraPos,
+          startLookAt: orbitControlsRef?.current?.target.clone() || new THREE.Vector3(0, 0, 0),
+          targetLookAt: new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z)
+        };
+        
+        // Temporarily disable controls during transition
+        if (orbitControlsRef?.current) {
+          orbitControlsRef.current.enabled = false;
+          orbitControlsRef.current.autoRotate = false;
+        }
+      }
+      
+      // Start camera transition
+      setIsCameraFollowingDrone(true);
+      
+      console.log(`[Drone] Starting delivery to ${targetCandle.name} with camera tracking`);
     }
-  }, [results, loadOptimizedTexture, candleRefs, pendingCandleDelivery, sceneRef]);
+  }, [results, loadOptimizedTexture, candleRefs, pendingCandleDelivery, sceneRef, camera, orbitControlsRef, cameraControls]);
+
+  // Store reference for drone delivery
+  useEffect(() => {
+    startDroneDeliveryRef.current = startDroneDelivery;
+  }, [startDroneDelivery]);
 
   useEffect(() => {
     if (hasLoadedRef.current) return;
@@ -712,7 +852,15 @@ function CyborgTempleScene({
       const drone = templeScene.getObjectByName('Drone');
       if (drone) {
         droneRef.current = drone;
-        // console.log('[CyborgTempleScene] Found drone:', drone.name);
+        console.log('[CyborgTempleScene] Found drone:', drone.name);
+        
+        // Make drone invisible initially
+        drone.visible = false;
+        console.log('[Drone] Set to invisible until delivery starts');
+        
+        // Log drone's initial orientation and children to identify front
+        console.log('[Drone] Initial rotation:', drone.rotation);
+        console.log('[Drone] Children:', drone.children.map(c => c.name));
         
         // Set initial drone position to home (off-screen)
         drone.position.set(
@@ -720,7 +868,9 @@ function CyborgTempleScene({
           droneHomePosition.y + droneBaseHeight,
           droneHomePosition.z
         );
-        // console.log('[CyborgTempleScene] Drone starting at home position');
+        
+        // Keep drone's original rotation from the model
+        console.log('[CyborgTempleScene] Drone starting at home position');
         
         // Find and store DroneCandle object
         const droneCandle = drone.getObjectByName('DroneCandle');
@@ -997,19 +1147,45 @@ function CyborgTempleScene({
     return () => {
       isCurrentInstance = false;
 
-      // Dispose of cached textures
+      // Cancel any ongoing camera animation
+      if (cameraAnimationFrameRef.current) {
+        cancelAnimationFrame(cameraAnimationFrameRef.current);
+        cameraAnimationFrameRef.current = null;
+      }
+
+      // Clear all pending timeouts
+      pendingTimeoutsRef.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      pendingTimeoutsRef.current.clear();
+
+      // Clear drone inspection timeout
+      if (droneInspectionTimeRef.current) {
+        clearTimeout(droneInspectionTimeRef.current);
+        droneInspectionTimeRef.current = null;
+      }
+
+      // Clear any pending dance timeout
+      if (danceTimeoutRef.current) {
+        clearTimeout(danceTimeoutRef.current);
+        danceTimeoutRef.current = null;
+      }
+
+      // Cancel and clean up any loading images
+      loadingImagesRef.current.forEach((img, url) => {
+        img.onload = null;
+        img.onerror = null;
+        img.src = ''; // Cancel loading
+      });
+      loadingImagesRef.current.clear();
+
+      // Dispose of cached textures properly
       textureCache.current.forEach((texture, key) => {
         if (texture && texture.dispose) {
           texture.dispose();
         }
       });
-      textureCache.current.clear();
-
-      // Clear any pending timeouts
-      if (danceTimeoutRef.current) {
-        clearTimeout(danceTimeoutRef.current);
-        danceTimeoutRef.current = null;
-      }
+      textureCache.current.clear()
 
       // Stop all animations
       if (mixerRef.current) {
@@ -1043,14 +1219,27 @@ function CyborgTempleScene({
           }
           
           if (child.isMesh) {
+            // Dispose geometry
             if (child.geometry) {
               child.geometry.dispose();
             }
+            
+            // Dispose materials and their textures
             if (child.material) {
+              const disposeMaterial = (material) => {
+                // Dispose all texture maps
+                ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'alphaMap', 'aoMap', 'bumpMap', 'displacementMap', 'envMap', 'lightMap'].forEach(mapName => {
+                  if (material[mapName] && material[mapName].dispose) {
+                    material[mapName].dispose();
+                  }
+                });
+                material.dispose();
+              };
+              
               if (Array.isArray(child.material)) {
-                child.material.forEach((material) => material.dispose());
+                child.material.forEach(disposeMaterial);
               } else {
-                child.material.dispose();
+                disposeMaterial(child.material);
               }
             }
           }
@@ -1178,8 +1367,86 @@ function CyborgTempleScene({
       mixerRef.current.update(delta);
     }
     
+    // Handle smooth camera transition
+    if (isCameraFollowingDrone && cameraTransitionStartRef.current) {
+      const transition = cameraTransitionStartRef.current;
+      const elapsed = Date.now() - transition.startTime;
+      const progress = Math.min(elapsed / cameraTransitionDuration, 1);
+      
+      // Use easing function for smooth motion (ease-in-out)
+      const easeProgress = progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      // Interpolate camera position
+      camera.position.lerpVectors(
+        transition.startPosition,
+        transition.targetPosition,
+        easeProgress
+      );
+      
+      // Interpolate look-at target
+      if (orbitControlsRef?.current) {
+        const currentTarget = new THREE.Vector3().lerpVectors(
+          transition.startLookAt,
+          transition.targetLookAt,
+          easeProgress
+        );
+        orbitControlsRef.current.target.copy(currentTarget);
+        orbitControlsRef.current.update();
+      }
+      
+      // Log progress for debugging (only first and last)
+      if (progress < 0.01) {
+        console.log('[Camera] Transition started');
+      } else if (progress >= 0.99 && progress < 1) {
+        console.log('[Camera] Transition nearly complete');
+      }
+      
+      // When transition is complete
+      if (progress >= 1) {
+        console.log('[Camera] Transition complete, camera locked in place');
+        cameraTransitionStartRef.current = null;
+        
+        // Re-enable controls after transition
+        if (orbitControlsRef?.current) {
+          orbitControlsRef.current.enabled = true;
+          orbitControlsRef.current.enableRotate = true;
+          orbitControlsRef.current.enablePan = true;
+          orbitControlsRef.current.enableZoom = true;
+        }
+        
+        // Camera stays at delivery location, stop following
+        setIsCameraFollowingDrone(false);
+      }
+    }
+    
+    // Only update camera for slider changes if NOT in transition and delivery is active
+    if (droneRef.current && (isDroneStaging || isDroneMoving || isDroneLowering || isDroneRising || isDroneReturning) && 
+        !isCameraFollowingDrone && !cameraTransitionStartRef.current) {
+      // This block is now disabled during camera transition
+      // It will only run if user manually adjusts sliders after transition completes
+    }
+    
     // Animate drone movement
     if (droneRef.current) {
+      // Log drone animation state once per state change
+      if (!window.lastDroneState || 
+          window.lastDroneState.staging !== isDroneStaging ||
+          window.lastDroneState.moving !== isDroneMoving) {
+        console.log(`[useFrame Drone] Animation states:`, {
+          hasRef: !!droneRef.current,
+          isDroneStaging,
+          isDroneMoving,
+          isDroneLowering,
+          dronePosition: droneRef.current?.position
+        });
+        window.lastDroneState = {
+          staging: isDroneStaging,
+          moving: isDroneMoving
+        };
+      }
+      
       // Get the actual target position for the drone
       const targetCandleName = `VCANDLE${String(droneTargetPosition).padStart(3, '0')}`;
       let targetPosition = null;
@@ -1205,38 +1472,174 @@ function CyborgTempleScene({
         position: targetPosition
       };
       
-      if (isDroneMoving) {
-        // First phase: Move to position above candle (with lateral offset)
-        const targetPos = new THREE.Vector3(
-          targetPosition.x + droneLateralOffset.x,
-          targetPosition.y + droneBaseHeight,
-          targetPosition.z + droneLateralOffset.z
+      if (isDroneStaging) {
+        // First phase: Move to staging position (front center)
+        const stagingPos = new THREE.Vector3(
+          droneStagingPosition.x,
+          droneStagingPosition.y,
+          droneStagingPosition.z
         );
         
-        // Smooth movement using lerp - reduced speed for better visibility
-        const lerpSpeed = 1.5 * delta; // Reduced from 3 to 1.5
+        // Move to staging position
+        const stagingSpeed = 2 * delta;
         droneRef.current.position.x = THREE.MathUtils.lerp(
           droneRef.current.position.x,
-          targetPos.x,
-          lerpSpeed
+          stagingPos.x,
+          stagingSpeed
         );
         droneRef.current.position.y = THREE.MathUtils.lerp(
           droneRef.current.position.y,
-          targetPos.y,
-          lerpSpeed
+          stagingPos.y,
+          stagingSpeed
         );
         droneRef.current.position.z = THREE.MathUtils.lerp(
           droneRef.current.position.z,
-          targetPos.z,
-          lerpSpeed
+          stagingPos.z,
+          stagingSpeed
         );
         
-        // Check if drone has reached target position
-        const distance = droneRef.current.position.distanceTo(targetPos);
-        if (distance < 0.1) {
-          setIsDroneMoving(false);
-          setIsDroneLowering(true);
-          console.log(`[Drone] Reached ${targetCandle.name}, now lowering...`);
+        // Removed rotation - was causing sideways/upside down flight
+        
+        // Check if reached staging position
+        const distanceToStaging = droneRef.current.position.distanceTo(stagingPos);
+        if (distanceToStaging < 0.1 && !droneRef.current.stagingPauseComplete) {
+          console.log(`[Drone] Reached staging position, pausing for showcase...`);
+          
+          // Pause at staging position for 2 seconds
+          if (!droneRef.current.stagingStartTime) {
+            droneRef.current.stagingStartTime = Date.now();
+          }
+          
+          const stagingElapsed = Date.now() - droneRef.current.stagingStartTime;
+          if (stagingElapsed > 2000) { // 2 second pause
+            console.log(`[Drone] Showcase complete, now moving to candle`);
+            droneRef.current.stagingPauseComplete = true;
+            droneRef.current.stagingStartTime = null;
+            
+            // Calculate waypoints to avoid flying through temple
+            const currentPos = droneRef.current.position.clone();
+            const finalTarget = new THREE.Vector3(
+              targetPosition.x + droneLateralOffset.x,
+              targetPosition.y + droneBaseHeight,
+              targetPosition.z + droneLateralOffset.z
+            );
+            
+            // Calculate angles for current and target positions
+            const currentAngle = Math.atan2(currentPos.z, currentPos.x);
+            const targetAngle = Math.atan2(finalTarget.z, finalTarget.x);
+            
+            // Calculate angular difference
+            let angleDiff = targetAngle - currentAngle;
+            // Normalize to [-PI, PI]
+            while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+            
+            // Clear previous waypoints
+            droneWaypointsRef.current = [];
+            currentWaypointIndexRef.current = 0;
+            
+            // If target is roughly opposite (more than 90 degrees away), fly around temple
+            if (Math.abs(angleDiff) > Math.PI / 2) {
+              console.log(`[Drone] Target is on opposite side, creating arc path`);
+              
+              // Determine direction (clockwise or counter-clockwise)
+              const goClockwise = angleDiff < 0;
+              
+              // Create intermediate waypoints along an arc
+              const numWaypoints = 3; // Number of intermediate points
+              for (let i = 1; i <= numWaypoints; i++) {
+                const progress = i / (numWaypoints + 1);
+                const intermediateAngle = currentAngle + (angleDiff * progress);
+                
+                // Position waypoint on circle around temple
+                const waypointX = Math.cos(intermediateAngle) * templeRadius;
+                const waypointZ = Math.sin(intermediateAngle) * templeRadius;
+                
+                droneWaypointsRef.current.push(new THREE.Vector3(
+                  waypointX,
+                  droneBaseHeight,
+                  waypointZ
+                ));
+              }
+            }
+            
+            // Add final target as last waypoint
+            droneWaypointsRef.current.push(finalTarget);
+            
+            console.log(`[Drone] Created ${droneWaypointsRef.current.length} waypoints for navigation`);
+            
+            setIsDroneStaging(false);
+            setIsDroneMoving(true);
+          }
+        }
+      } else if (isDroneMoving) {
+        // Navigate through waypoints
+        if (droneWaypointsRef.current.length > 0 && currentWaypointIndexRef.current < droneWaypointsRef.current.length) {
+          const currentWaypoint = droneWaypointsRef.current[currentWaypointIndexRef.current];
+          
+          // Smooth movement using lerp - reduced speed for better visibility
+          const lerpSpeed = 1.5 * delta; // Reduced from 3 to 1.5
+          droneRef.current.position.x = THREE.MathUtils.lerp(
+            droneRef.current.position.x,
+            currentWaypoint.x,
+            lerpSpeed
+          );
+          droneRef.current.position.y = THREE.MathUtils.lerp(
+            droneRef.current.position.y,
+            currentWaypoint.y,
+            lerpSpeed
+          );
+          droneRef.current.position.z = THREE.MathUtils.lerp(
+            droneRef.current.position.z,
+            currentWaypoint.z,
+            lerpSpeed
+          );
+          
+          // Check if drone has reached current waypoint
+          const distance = droneRef.current.position.distanceTo(currentWaypoint);
+          if (distance < 0.2) { // Slightly larger threshold for waypoints
+            currentWaypointIndexRef.current++;
+            
+            // Check if this was the last waypoint
+            if (currentWaypointIndexRef.current >= droneWaypointsRef.current.length) {
+              setIsDroneMoving(false);
+              setIsDroneLowering(true);
+              console.log(`[Drone] Reached ${targetCandle.name}, now lowering...`);
+            } else {
+              console.log(`[Drone] Reached waypoint ${currentWaypointIndexRef.current}, continuing to next...`);
+            }
+          }
+        } else {
+          // Fallback: direct movement if no waypoints
+          const targetPos = new THREE.Vector3(
+            targetPosition.x + droneLateralOffset.x,
+            targetPosition.y + droneBaseHeight,
+            targetPosition.z + droneLateralOffset.z
+          );
+          
+          const lerpSpeed = 1.5 * delta;
+          droneRef.current.position.x = THREE.MathUtils.lerp(
+            droneRef.current.position.x,
+            targetPos.x,
+            lerpSpeed
+          );
+          droneRef.current.position.y = THREE.MathUtils.lerp(
+            droneRef.current.position.y,
+            targetPos.y,
+            lerpSpeed
+          );
+          droneRef.current.position.z = THREE.MathUtils.lerp(
+            droneRef.current.position.z,
+            targetPos.z,
+            lerpSpeed
+          );
+          
+          const distance = droneRef.current.position.distanceTo(targetPos);
+          if (distance < 0.1) {
+            setIsDroneMoving(false);
+            setIsDroneLowering(true);
+            console.log(`[Drone] Reached ${targetCandle.name}, now lowering...`);
+          }
         }
       } else if (isDroneLowering) {
         // Second phase: Lower to inspect candle (with lateral offset)
@@ -1368,6 +1771,9 @@ function CyborgTempleScene({
               console.warn(`[Drone] Could not place candle at index ${droneTargetPosition} - check template or positions`);
             }
             
+            // Camera already stopped tracking and stays at delivery location
+            console.log(`[Drone] Candle placed! Camera remains at delivery location.`);
+            
             // Start rising
             console.log(`[Drone] Delivery complete, rising back up`);
             setIsDroneLowering(false);  // Stop lowering
@@ -1405,8 +1811,8 @@ function CyborgTempleScene({
           droneHomePosition.z
         );
         
-        // Moderate return speed for visibility
-        const returnSpeed = 2 * delta; // Reduced from 4 to 2
+        // Slower return speed for better visibility
+        const returnSpeed = 0.8 * delta; // Slower speed for graceful exit
         droneRef.current.position.x = THREE.MathUtils.lerp(
           droneRef.current.position.x,
           homePos.x,
@@ -1423,12 +1829,17 @@ function CyborgTempleScene({
           returnSpeed
         );
         
+        // Removed rotation - was causing sideways/upside down flight
+        
         // Check if drone has reached home
         const distance = droneRef.current.position.distanceTo(homePos);
         if (distance < 0.1) {
           setIsDroneReturning(false);
           setPendingDeliveryTimestamp(null); // Clear pending delivery now that it's complete
-          console.log(`[Drone] Returned to home, delivery complete!`);
+          
+          // Hide drone after returning home
+          droneRef.current.visible = false;
+          console.log(`[Drone] Returned to home, now invisible, delivery complete!`);
         }
       }
     }
@@ -1547,6 +1958,12 @@ function CyborgTempleScene({
       // Safety check for event.key
       if (!event || !event.key) return;
       
+      // CRITICAL: Don't trigger drone if modal is open (user is typing!)
+      if (isModalOpen) {
+        console.log('[Drone Keyboard] Ignoring key press - modal is open');
+        return;
+      }
+      
       const key = event.key.toLowerCase();
       
       if (key === 'arrowright' || key === 'd') {
@@ -1575,7 +1992,7 @@ function CyborgTempleScene({
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [modelLoaded, droneTargetPosition, startDroneDelivery]);
+  }, [modelLoaded, droneTargetPosition, startDroneDelivery, isModalOpen]);
 
   // Re-update candle visibility when results change or scene is loaded
   useEffect(() => {
@@ -1598,9 +2015,41 @@ function CyborgTempleScene({
 
   // Monitor for pending candle to appear in Firestore results
   useEffect(() => {
-    if (!pendingCandleDelivery || !modelLoaded) return;
+    console.log('[Drone Monitor] Effect running with:', {
+      hasPendingCandle: !!pendingCandleDelivery,
+      pendingCandle: pendingCandleDelivery,
+      isModalOpen,
+      isDroneStaging,
+      isDroneMoving,
+      modelLoaded,
+      resultsCount: results.length
+    });
     
-    console.log('[Drone] Checking for pending candle in results:', {
+    if (pendingCandleDelivery) {
+      console.log('[Drone Monitor] Pending candle details:', pendingCandleDelivery);
+    }
+    
+    // Multiple safety checks
+    if (!pendingCandleDelivery || !modelLoaded) {
+      if (!pendingCandleDelivery) console.log('[Drone Monitor] No pending candle, exiting');
+      if (!modelLoaded) console.log('[Drone Monitor] Model not loaded, exiting');
+      return;
+    }
+    
+    // Don't trigger while modal is still open
+    if (isModalOpen) {
+      console.log('[Drone Monitor] ❌ MODAL IS OPEN - NOT STARTING DRONE');
+      return;
+    }
+    
+    // Additional safety: Check if we're already processing a delivery
+    if (isDroneStaging || isDroneMoving || isDroneLowering || isDroneRising || isDroneReturning) {
+      console.log('[Drone Monitor] ❌ DRONE ALREADY BUSY - NOT STARTING NEW DELIVERY');
+      return;
+    }
+    
+    console.log('[Drone Monitor] ✅ All conditions met, checking for candle in Firestore:', {
+      pendingId: pendingCandleDelivery.id,
       pendingUsername: pendingCandleDelivery.username,
       pendingTimestamp: pendingCandleDelivery.timestamp,
       resultsCount: results.length
@@ -1608,17 +2057,37 @@ function CyborgTempleScene({
     
     // Check if the pending candle has appeared in the results
     const foundCandle = results.find(r => {
-      // Match by username and check if created recently (within last 10 seconds)
+      // Match by document ID if available (most reliable)
+      if (pendingCandleDelivery.id && r.id) {
+        return r.id === pendingCandleDelivery.id;
+      }
+      
+      // Fallback: Match by username AND timestamp (less reliable but needed for backwards compatibility)
       const isMatch = r.username === pendingCandleDelivery.username || 
                       r.userName === pendingCandleDelivery.username;
       const createdTime = r.createdAt?.getTime ? r.createdAt.getTime() : 0;
-      const isRecent = Math.abs(createdTime - pendingCandleDelivery.timestamp) < 10000; // 10 second window
+      const isRecent = Math.abs(createdTime - pendingCandleDelivery.timestamp) < 2000; // Tighter 2 second window
       
       return isMatch && isRecent;
     });
     
     if (foundCandle) {
-      console.log('[Drone] Found pending candle in Firestore results! Triggering delivery...');
+      console.log('[Drone Monitor] 🎯 FOUND CANDLE IN FIRESTORE:', foundCandle);
+      
+      // Check if we've already processed this candle
+      const candleKey = foundCandle.id || `${foundCandle.username}_${foundCandle.createdAt?.getTime()}`;
+      if (processedCandleIdsRef.current.has(candleKey)) {
+        console.log('[Drone Monitor] ❌ Candle already processed, skipping:', candleKey);
+        // Clear the pending delivery since we've already handled this
+        if (onDeliveryComplete) {
+          onDeliveryComplete();
+        }
+        return;
+      }
+      
+      // Mark this candle as processed
+      processedCandleIdsRef.current.add(candleKey);
+      console.log('[Drone Monitor] 🚁 STARTING DRONE DELIVERY SEQUENCE!');
       
       // Calculate the position for this candle (it should be the newest, so last position)
       const sortedResults = [...results].sort((a, b) => {
@@ -1634,20 +2103,36 @@ function CyborgTempleScene({
       
       console.log(`[Drone] New candle will be at position ${candleIndex}`);
       
-      // Add a 2 second delay before starting drone delivery for better visibility
-      console.log(`[Drone] Waiting 2 seconds before starting delivery...`);
-      setTimeout(() => {
+      // Add a 3 second delay to ensure modal is fully closed and visible
+      console.log(`[Drone] Modal closed. Waiting 3 seconds before starting delivery for better visibility...`);
+      const timeoutId = setTimeout(() => {
+        console.log(`[Drone] 3 second delay complete, calling startDroneDelivery...`);
+        console.log(`[Drone] Drone state before delivery:`, {
+          isDroneStaging,
+          isDroneMoving,
+          isDroneLowering,
+          isDroneRising,
+          isDroneReturning,
+          droneRef: !!droneRef.current
+        });
+        
         // Trigger drone delivery to the correct position with the found candle's data
         startDroneDelivery(candleIndex, foundCandle);
-        console.log(`[Drone] Delivery triggered to position ${candleIndex}`);
-      }, 2000); // 2 second delay
-      
-      // Clear the pending delivery
-      if (onDeliveryComplete) {
-        onDeliveryComplete();
-      }
+        console.log(`[Drone] startDroneDelivery called for position ${candleIndex}`);
+        
+        // Clear the pending delivery AFTER starting the drone
+        // This prevents the same candle from triggering again
+        if (onDeliveryComplete) {
+          console.log(`[Drone] Calling onDeliveryComplete to clear pending delivery`);
+          onDeliveryComplete();
+        }
+        
+        pendingTimeoutsRef.current.delete(timeoutId);
+      }, 3000); // 3 second delay for modal to fully close
+      pendingTimeoutsRef.current.add(timeoutId);
     }
-  }, [pendingCandleDelivery, results, modelLoaded, startDroneDelivery, onDeliveryComplete]);
+  }, [pendingCandleDelivery, results, modelLoaded, startDroneDelivery, onDeliveryComplete, isModalOpen, 
+      isDroneStaging, isDroneMoving, isDroneLowering, isDroneRising, isDroneReturning]);
 
   // Toggle floor textures when 80s mode changes
   useEffect(() => {

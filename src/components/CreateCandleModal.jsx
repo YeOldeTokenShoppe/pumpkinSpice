@@ -5,6 +5,12 @@ import { db, storage } from '@/utilities/firebaseClient';
 import './CreateCandleModal.css';
 
 export default function CreateCandleModal({ isOpen, onClose, onCandleCreated }) {
+  try {
+    console.log('[CreateCandleModal] Component rendered, isOpen:', isOpen);
+  } catch (e) {
+    console.error('[CreateCandleModal] Error in component:', e);
+  }
+  
   const [formData, setFormData] = useState({
     username: '',
     message: '',
@@ -59,21 +65,31 @@ export default function CreateCandleModal({ isOpen, onClose, onCandleCreated }) 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Form submitted successfully
+    console.log('[CreateCandleModal] Form submitted with data:', formData);
     
     if (!formData.username.trim()) {
       setError('Please enter your name');
+      // Validation: username required
+      console.log('[CreateCandleModal] Validation failed: no username');
       return;
     }
 
     if (!formData.message.trim()) {
       setError('Please enter a message');
+      // Validation: message required
+      console.log('[CreateCandleModal] Validation failed: no message');
       return;
     }
 
+    // Validation passed, saving to Firestore
+    console.log('[CreateCandleModal] Validation passed, starting save...');
     setIsSubmitting(true);
     setError('');
 
     try {
+      // Saving to Firestore
+      console.log('[CreateCandleModal] Beginning Firestore save...');
       // Upload image if provided
       let imageUrl = null;
       if (imageFile) {
@@ -95,6 +111,12 @@ export default function CreateCandleModal({ isOpen, onClose, onCandleCreated }) 
 
       // Notify parent component
       if (onCandleCreated) {
+        console.log('[CreateCandleModal] Calling onCandleCreated with:', {
+          ...docData,
+          id: docRef.id,
+          createdAt: new Date()
+        });
+        // Candle saved, notifying parent
         onCandleCreated({
           ...docData,
           id: docRef.id,
@@ -112,8 +134,11 @@ export default function CreateCandleModal({ isOpen, onClose, onCandleCreated }) 
       setImagePreview(null);
       
       // Close modal
+      console.log('[CreateCandleModal] Calling onClose after successful save');
+      // Closing modal after successful save
       onClose();
     } catch (err) {
+      console.error(`Error creating candle: ${err.message}`);
       console.error('Error creating candle:', err);
       setError('Failed to create candle. Please try again.');
     } finally {
@@ -217,6 +242,7 @@ export default function CreateCandleModal({ isOpen, onClose, onCandleCreated }) 
               type="submit" 
               className="btn-submit"
               disabled={isSubmitting}
+              // Submit button click handled by form onSubmit
             >
               {isSubmitting ? (
                 <>

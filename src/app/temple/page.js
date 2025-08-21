@@ -17,6 +17,8 @@ const MusicPlayer3 = dynamic(() => import('@/components/MusicPlayer3'), {
   ssr: false,
 });
 import SimpleLoader from '@/components/SimpleLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import CandleInteractionHint from '@/components/CandleInteractionHint';
 import CandleMarquee from '@/components/CandleMarquee';
 import CreateCandleModal from '@/components/CreateCandleModal';
@@ -68,11 +70,63 @@ export default function CyborgTemple() {
   const [isLoading, setIsLoading] = useState(true);
   const [sceneLoaded, setSceneLoaded] = useState(false);
   const [canvasReady, setCanvasReady] = useState(false);
+  const [modelPreloaded, setModelPreloaded] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingTimeoutRef = useRef(null);
+  const preloadedModelRef = useRef(null);
   const [showCreateCandleModal, setShowCreateCandleModal] = useState(false);
   const templeSceneRef = useRef(null);
   const [pendingCandleDelivery, setPendingCandleDelivery] = useState(null);
+  const orbitControlsRef = useRef(null);
+  const tempCandleRef = useRef(null); // Temporarily store candle until modal closes
+  const candleWasSavedRef = useRef(false); // Use ref instead of state to avoid closure issues
 
+  // Clear any stale pending delivery on mount
+  useEffect(() => {
+    setPendingCandleDelivery(null);
+    tempCandleRef.current = null;
+    candleWasSavedRef.current = false;
+    console.log('[Temple] Cleared all delivery state on mount');
+  }, []);
+  
+  // Preload the 3D model
+  useEffect(() => {
+    const preloadModel = async () => {
+      try {
+        const gltfLoader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('/draco/');
+        gltfLoader.setDRACOLoader(dracoLoader);
+        
+        // Preload the main temple model
+        gltfLoader.load(
+          '/models/templeScene3.glb',
+          (gltf) => {
+            console.log('Temple model preloaded successfully');
+            preloadedModelRef.current = gltf;
+            setModelPreloaded(true);
+            setLoadingProgress(prev => prev + 40); // Model is 40% of loading
+          },
+          (progress) => {
+            // Progress callback
+            const percentComplete = (progress.loaded / progress.total) * 40;
+            setLoadingProgress(percentComplete);
+          },
+          (error) => {
+            console.error('Failed to preload model:', error);
+            // Still mark as loaded to prevent infinite loading
+            setModelPreloaded(true);
+          }
+        );
+      } catch (error) {
+        console.error('Error setting up model preload:', error);
+        setModelPreloaded(true);
+      }
+    };
+    
+    preloadModel();
+  }, []);
+  
   // Check if font is loaded
   useEffect(() => {
     const checkFont = async () => {
@@ -81,13 +135,43 @@ export default function CyborgTemple() {
         await document.fonts.load("1em 'UnifrakturMaguntia'");
         console.log('Font loaded successfully');
         setFontLoaded(true);
+        setLoadingProgress(prev => Math.min(100, prev + 20)); // Font is 20% of loading
       } catch (e) {
         console.log('Font load failed, using fallback');
         // Fallback: set as loaded after a short delay
-        setTimeout(() => setFontLoaded(true), 100);
+        setTimeout(() => {
+          setFontLoaded(true);
+          setLoadingProgress(prev => Math.min(100, prev + 20));
+        }, 100);
       }
     };
     checkFont();
+  }, []);
+  
+  // Preload critical images
+  useEffect(() => {
+    const imagesToPreload = [
+      '/virginRecords.jpg',
+      '/fonts/UnifrakturMaguntia-Regular.ttf'
+    ];
+    
+    let loadedCount = 0;
+    const totalImages = imagesToPreload.length;
+    
+    imagesToPreload.forEach(src => {
+      if (src.endsWith('.jpg') || src.endsWith('.png')) {
+        const img = new Image();
+        img.onload = () => {
+          loadedCount++;
+          setLoadingProgress(prev => Math.min(100, prev + (20 / totalImages))); // Images are 20% of loading
+        };
+        img.onerror = () => {
+          loadedCount++;
+          setLoadingProgress(prev => Math.min(100, prev + (20 / totalImages)));
+        };
+        img.src = src;
+      }
+    });
   }, []);
 
   // Mark canvas as ready after a delay to ensure it's mounted
@@ -95,31 +179,34 @@ export default function CyborgTemple() {
     const canvasTimeout = setTimeout(() => {
       console.log('Canvas marked as ready');
       setCanvasReady(true);
+      setLoadingProgress(prev => Math.min(100, prev + 20)); // Canvas ready is 20% of loading
     }, 500);
     return () => clearTimeout(canvasTimeout);
   }, []);
 
-  // Wait for everything to be ready
+  // Wait for everything to be ready including model preload
   useEffect(() => {
-    if (sceneLoaded && fontLoaded && canvasReady) {
-      console.log('All components ready, hiding loader');
-      // Shorter delay - 500ms is enough
+    if (sceneLoaded && fontLoaded && canvasReady && modelPreloaded) {
+      console.log('All components ready including model, hiding loader');
+      setLoadingProgress(100);
+      // Shorter delay - 300ms for smooth transition
       const timeout = setTimeout(() => {
         setIsLoading(false);
-      }, 500);
+      }, 300);
       
       return () => clearTimeout(timeout);
     }
-  }, [sceneLoaded, fontLoaded, canvasReady]);
+  }, [sceneLoaded, fontLoaded, canvasReady, modelPreloaded]);
 
   // Fallback timeout to ensure loader doesn't stay forever
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoading) {
         console.log('Temple loading timeout reached, forcing complete');
+        setLoadingProgress(100);
         setIsLoading(false);
       }
-    }, 8000); // 8 second timeout
+    }, 15000); // 15 second timeout for large model
 
     return () => clearTimeout(timeout);
   }, []);
@@ -217,16 +304,21 @@ export default function CyborgTemple() {
   // Store drone delivery function
   const droneDeliveryRef = useRef(null);
   
-  // Handle candle creation - mark for drone delivery
+  // Handle candle creation - store temporarily until modal closes
   const handleCandleCreated = useCallback((newCandle) => {
-    console.log('New candle created:', newCandle);
+    // handleCandleCreated called successfully
+    console.log('[Temple Page] handleCandleCreated called with:', newCandle);
     
-    // Mark that we're waiting for this candle to appear in Firestore
-    setPendingCandleDelivery({
+    // Store temporarily - will be set as pending when modal closes
+    tempCandleRef.current = {
       ...newCandle,
       timestamp: Date.now()
-    });
-    console.log('Marked candle for drone delivery once it appears in Firestore');
+    };
+    console.log('[Temple Page] Stored in tempCandleRef:', tempCandleRef.current);
+    
+    candleWasSavedRef.current = true; // Mark that a save happened using ref
+    console.log('[Temple Page] Set candleWasSavedRef.current to true');
+    console.log('[Temple Page] Ready for drone delivery after modal closes');
   }, []);
   
 
@@ -279,7 +371,7 @@ export default function CyborgTemple() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <SimpleLoader />
+          <SimpleLoader progress={loadingProgress} />
         </div>
       ) : (
         <>
@@ -419,6 +511,9 @@ export default function CyborgTemple() {
             onAnnotationClick={() => setShowCalloutOverlay(false)}
             pendingCandleDelivery={pendingCandleDelivery}
             onDeliveryComplete={() => setPendingCandleDelivery(null)}
+            orbitControlsRef={orbitControlsRef}
+            isModalOpen={showCreateCandleModal}
+            preloadedModel={preloadedModelRef.current}
             candleData={[
               // Sample candle data - replace with actual user data
               // { name: "User 1", image: "/path/to/image1.jpg", burnAmount: 0.5 },
@@ -443,6 +538,7 @@ export default function CyborgTemple() {
           />
           
           <OrbitControls 
+            ref={orbitControlsRef}
             makeDefault
             enablePan={true}
             enableZoom={true}
@@ -766,7 +862,16 @@ export default function CyborgTemple() {
       
       {/* Light a Candle Button */}
       <button
-        onClick={() => setShowCreateCandleModal(true)}
+        onClick={() => {
+          // Drone delivery is now working!
+          console.log('[Temple Page] Light a Candle button clicked - resetting state');
+          setPendingCandleDelivery(null); // Clear any old pending delivery
+          tempCandleRef.current = null; // Clear any temp storage
+          candleWasSavedRef.current = false; // Reset save flag using ref
+          setShowCreateCandleModal(true);
+          console.log('[Temple Page] Modal opened, state reset');
+          console.log('[Temple Page] showCreateCandleModal is now:', true);
+        }}
         style={{
           position: 'fixed',
           bottom: '100px',
@@ -801,7 +906,34 @@ export default function CyborgTemple() {
       {/* Create Candle Modal */}
       <CreateCandleModal
         isOpen={showCreateCandleModal}
-        onClose={() => setShowCreateCandleModal(false)}
+        onClose={() => {
+          // Modal closing with saved candle state
+          console.log('[Temple Page] Modal onClose called');
+          console.log('[Temple Page] Current state:', {
+            candleWasSaved: candleWasSavedRef.current,
+            tempCandleRef: tempCandleRef.current,
+            showCreateCandleModal
+          });
+          
+          setShowCreateCandleModal(false);
+          
+          // Only set pending delivery if a save actually happened
+          if (candleWasSavedRef.current && tempCandleRef.current) {
+            // Triggering drone delivery
+            console.log('✅ Modal closed with saved candle, setting pending delivery:', tempCandleRef.current);
+            setPendingCandleDelivery(tempCandleRef.current);
+            console.log('✅ Called setPendingCandleDelivery with:', tempCandleRef.current);
+            tempCandleRef.current = null; // Clear temp storage
+            candleWasSavedRef.current = false; // Reset flag
+          } else {
+            // Modal closed without saving (cancelled) or no save occurred
+            console.log('❌ Modal closed without save, clearing any pending state');
+            console.log('candleWasSaved:', candleWasSavedRef.current, 'tempCandleRef.current:', tempCandleRef.current);
+            setPendingCandleDelivery(null);
+            tempCandleRef.current = null;
+            candleWasSavedRef.current = false;
+          }
+        }}
         onCandleCreated={handleCandleCreated}
       />
       
