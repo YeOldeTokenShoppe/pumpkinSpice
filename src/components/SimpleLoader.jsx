@@ -209,16 +209,16 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
           </div>
         </div>
         
-        <div style={progressTextStyle}>
+        {/* <div style={progressTextStyle}>
           Loading Temple... {Math.round(progress)}%
-        </div>
+        </div> */}
         
         <div style={taskTextStyle}>
           {currentTask}
         </div>
         
         {/* Detailed progress if available */}
-        {detailedProgress && detailedProgress.details && (
+        {/* {detailedProgress && detailedProgress.details && (
           <div style={{
             marginTop: '12px',
             fontSize: '10px',
@@ -228,7 +228,7 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
           }}>
             {detailedProgress.details}
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -120,7 +120,7 @@ function CyborgTempleScene({
   // Update candle visibility based on current page
   // Texture cache with size limit for memory management
   const textureCache = useRef(new Map());
-  const MAX_TEXTURE_CACHE_SIZE = 30; // Reduced cache size
+  const MAX_TEXTURE_CACHE_SIZE = 15; // Further reduced cache size to save memory
   
   // Optimized texture loading with memory management
   const loadOptimizedTexture = useCallback((url, onLoad) => {
@@ -133,8 +133,9 @@ function CyborgTempleScene({
       return;
     }
     
-    // Create canvas for image processing - 128x128 for memory efficiency
-    const targetSize = 128;
+    // Create canvas for image processing - 64x64 for aggressive memory savings
+    // This is still sufficient for candle labels
+    const targetSize = 64;
     const canvas = document.createElement('canvas');
     canvas.width = targetSize;
     canvas.height = targetSize;
@@ -176,10 +177,12 @@ function CyborgTempleScene({
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.flipY = false; // Keep original orientation
       
-      // Disable mipmaps for small textures to save memory
+      // Memory optimization for textures while keeping quality
       texture.generateMipmaps = false;
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
+      texture.anisotropy = 1; // Minimum anisotropy
+      // Keep RGBA format for transparency support
       texture.needsUpdate = true;
       
       // Cache management with size limit
@@ -255,7 +258,8 @@ function CyborgTempleScene({
             }
             // Update the texture
             child.material.map = texture;
-            child.material.transparent = true;
+            child.material.transparent = true; // Keep transparency for proper rendering
+            child.material.alphaTest = 0.5; // Use alpha testing for better performance than full transparency
             child.material.needsUpdate = true;
             
             // Force update
@@ -639,6 +643,30 @@ function CyborgTempleScene({
       if (!isCurrentInstance) return;
 
       const templeScene = gltf.scene;
+      
+      // Optimize all textures in the temple model
+      templeScene.traverse((child) => {
+        if (child.isMesh && child.material) {
+          // Optimize material textures
+          const material = child.material;
+          const textureProps = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap'];
+          
+          textureProps.forEach(prop => {
+            if (material[prop]) {
+              const texture = material[prop];
+              // Reduce texture quality for memory savings
+              texture.generateMipmaps = false;
+              texture.minFilter = THREE.LinearFilter;
+              texture.magFilter = THREE.LinearFilter;
+              texture.anisotropy = 1;
+              texture.needsUpdate = true;
+            }
+          });
+          
+          // Reduce material quality slightly
+          material.precision = 'lowp'; // Lower precision
+        }
+      });
       
       // Debug: Log all objects in the scene
 
@@ -2046,6 +2074,38 @@ function CyborgTempleScene({
     }
   }, [results, candleRefs, updateCandleVisibility, pendingDeliveryTimestamp, modelLoaded]);
 
+  // Periodic memory cleanup
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      // Clean up texture cache if it's getting too large
+      if (textureCache.current.size > 10) {
+        console.log('[Memory] Running periodic cleanup, cache size:', textureCache.current.size);
+        
+        // Keep only the 10 most recently used textures
+        const entries = Array.from(textureCache.current.entries());
+        const toKeep = entries.slice(-10);
+        const toRemove = entries.slice(0, -10);
+        
+        // Dispose old textures
+        toRemove.forEach(([key, texture]) => {
+          if (texture && texture.dispose) {
+            texture.dispose();
+          }
+        });
+        
+        // Rebuild cache with only recent textures
+        textureCache.current.clear();
+        toKeep.forEach(([key, texture]) => {
+          textureCache.current.set(key, texture);
+        });
+        
+        console.log('[Memory] Cleanup complete, new cache size:', textureCache.current.size);
+      }
+    }, 30000); // Run every 30 seconds
+    
+    return () => clearInterval(cleanupInterval);
+  }, []);
+  
   // Monitor for pending candle to appear in Firestore results
   useEffect(() => {
     console.log('[Drone Monitor] Effect running with:', {
