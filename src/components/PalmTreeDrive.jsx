@@ -2664,7 +2664,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         
         if (intersects.length > 0) {
           const isMobile = detectMobileDevice();
-          const destination = isMobile ? '/gallery' : '/temple';
+          const destination = isMobile ? '/gallery' : '/gallery';
           console.log(`Mary clicked! Navigating to ${destination}...`);
           
           // Add fade out transition before navigating
@@ -3068,7 +3068,7 @@ const PalmsScene = ({ onLoadingChange }) => {
               <button
                 onClick={() => {
                   const isMobile = detectMobileDevice();
-                  const destination = isMobile ? '/gallery' : '/temple';
+                  const destination = isMobile ? '/gallery' : '/gallery';
                   router.push(destination);
                 }}
                 style={{

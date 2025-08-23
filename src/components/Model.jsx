@@ -3,7 +3,6 @@ import { useThree, useFrame } from "@react-three/fiber";
 import { useGLTF, useProgress, Text, Environment, useTexture, Plane, useAnimations } from "@react-three/drei";
 import * as THREE from "three";
 import { useFirestoreResults } from "@/utilities/useFirestoreResults";
-import DarkClouds from "@/components/Clouds";
 import ParticleTrail from "@/components/ParticleTrail";
 
 import { ref, getDownloadURL } from "firebase/storage";
@@ -17,7 +16,7 @@ import { db } from "@/utilities/firebaseClient";
 import { gsap } from "gsap";
 
 // Configure draco loader for useGLTF
-useGLTF.preload("/models/alligatorStroll3.glb");
+useGLTF.preload("/models/alligatorStroll4.glb");
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("/draco/");
 // Set up GLTFLoader to use Draco compression
@@ -48,7 +47,6 @@ function Model({
 
   monsterMode,
   rocketModelVisible,
-  onDarkCloudsRef,
   cameraControlsRef,
   onCandleClick,
   onHoldStateChange,
@@ -57,7 +55,7 @@ function Model({
   onDesktopPaginationReady,
 }) {
   // STATE VARIABLES - consolidated in one place
-  const [modelUrl, setModelUrl] = useState("/models/alligatorStroll3.glb");
+  const [modelUrl, setModelUrl] = useState("/models/alligatorStroll4.glb");
   const { progress } = useProgress();
   const gltf = useGLTF(modelUrl, true);
   const { camera, scene } = useThree();
@@ -2063,15 +2061,6 @@ function Model({
         }}
       />
       <primitive ref={candleModelRef} object={new THREE.Group()} />
-      {window.innerWidth >= 768 && (
-        <DarkClouds 
-          ref={(ref) => {
-            if (ref && onDarkCloudsRef) {
-              onDarkCloudsRef(ref.sunRef);
-            }
-          }} 
-        />
-      )}
       
       {/* Render particle effects */}
       {activeParticles.map(particle => (

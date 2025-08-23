@@ -9,18 +9,8 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
     // Update current task based on progress
     if (detailedProgress) {
       setCurrentTask(detailedProgress.currentTask || 'Loading...');
-    } else if (progress < 20) {
-      setCurrentTask('Loading core assets...');
-    } else if (progress < 40) {
-      setCurrentTask('Loading temple model...');
-    } else if (progress < 60) {
-      setCurrentTask('Loading textures...');
-    } else if (progress < 80) {
-      setCurrentTask('Loading additional models...');
-    } else if (progress < 100) {
-      setCurrentTask('Finalizing scene...');
-    } else {
-      setCurrentTask('Ready!');
+
+
     }
   }, [progress, detailedProgress]);
   

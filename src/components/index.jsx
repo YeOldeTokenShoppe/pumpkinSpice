@@ -116,7 +116,6 @@ const ThreeDVotiveStand = forwardRef(({
   const [frameloop] = useState('always');
   const sceneCameraRef = useRef();
   const results = useFirestoreResults();
-  const [darkCloudsSunRef, setDarkCloudsSunRef] = useState(null);
   
   // Handle statue loaded
   useEffect(() => {
@@ -492,7 +491,6 @@ const ThreeDVotiveStand = forwardRef(({
   
           onHoldStateChange={handleHoldStateChange}
           isMobileView={isMobileView}
-          onDarkCloudsRef={setDarkCloudsSunRef}
      
     
           onDesktopPaginationReady={setDesktopPaginationControls}
@@ -526,13 +524,13 @@ const ThreeDVotiveStand = forwardRef(({
           <ConstellationModel 
  
             groupScale={[30, 30, 30]} // Original scale for 3DVotiveStand
-            groupPosition={[0, 0, -300]} // Original position for 3DVotiveStand
+            groupPosition={[0, 0, -200]} // Original position for 3DVotiveStand
           />
         </Suspense>
 
 
         <Suspense fallback={null}>
-          <PostProcessingEffects is80sMode={is80sMode} sunRef={darkCloudsSunRef} />
+          <PostProcessingEffects is80sMode={is80sMode} sunRef={null} />
         </Suspense>
 
 

@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from 'react';
-import Link from 'next/link';
 import CoinLoader from '@/components/CoinLoader';
 
 const BuyTokenFAB = ({ is80sMode = false }) => {
@@ -155,8 +154,7 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href="/buy-token" passHref style={{ textDecoration: 'none' }}>
-        <div
+      <div
           style={{
             position: "relative",
             display: "flex",
@@ -197,11 +195,10 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
                 display: isHovered ? "block" : "none"
               }}
             >
-              Buy $RL80
+              Light Candle
             </div>
           </div>
         </div>
-      </Link>
 
       {/* Pulse animation for attention */}
       {!isHovered && (

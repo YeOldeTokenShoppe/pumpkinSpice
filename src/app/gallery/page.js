@@ -7,6 +7,8 @@ import { useUser } from "@clerk/nextjs";
 import { useMusic } from "@/components/MusicContext";
 import SimpleLoader from "@/components/SimpleLoader";
 import CandleInteractionHint from "@/components/CandleInteractionHint";
+import BuyTokenFAB from "@/components/BuyTokenFAB";
+import CompactCandleModal from "@/components/CompactCandleModal";
 
 
 
@@ -30,12 +32,13 @@ export default function GalleryPage() {
   const is80sMode = context80sMode;
   
 
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(false); // Lock mobile view for phones
+  const [isMobileView, setIsMobileView] = useState(true); // Always use mobile view
+  const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(true); // Always treat as mobile
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   // Show music controls if music is already playing
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
   const [fontLoaded, setFontLoaded] = useState(false);
+  const [showCandleModal, setShowCandleModal] = useState(false);
   
   // Sync showMusicControls with playing state when it changes
   useEffect(() => {
@@ -46,99 +49,22 @@ export default function GalleryPage() {
 
 
   
-  // Detect if device is actually a phone (not tablet or desktop)
+  // No longer needed - always use mobile view
   const detectMobileDevice = useCallback(() => {
-    // Get all the info for debugging
-    const userAgent = navigator.userAgent || window.opera;
-    const lowerUA = userAgent.toLowerCase();
-    
-    // More comprehensive mobile detection
-    const isIPhone = /iphone/i.test(lowerUA);
-    const isIPad = /ipad/i.test(lowerUA);
-    const isAndroid = /android/i.test(lowerUA);
-    const hasMobileKeyword = /mobile/i.test(lowerUA);
-    
-    // Check screen properties
-    const screenWidth = window.screen.width;
-    const screenHeight = window.screen.height;
-    const innerWidth = window.innerWidth;
-    const innerHeight = window.innerHeight;
-    const pixelRatio = window.devicePixelRatio || 1;
-    
-    // Physical screen size (accounting for pixel ratio)
-    const physicalWidth = screenWidth / pixelRatio;
-    const physicalHeight = screenHeight / pixelRatio;
-    
-    // Touch capability
-    const hasTouch = 'ontouchstart' in window || 
-                    navigator.maxTouchPoints > 0 || 
-                    navigator.msMaxTouchPoints > 0;
-    
-    // Simple phone detection: iPhone or (Android + Mobile keyword)
-    const isPhoneUA = isIPhone || (isAndroid && hasMobileKeyword);
-    
-    // Size check: viewport OR physical size small enough
-    const hasPhoneSize = Math.min(innerWidth, innerHeight) < 600 || 
-                        Math.min(physicalWidth, physicalHeight) < 400;
-    
-    // Final decision
-    const isMobile = isPhoneUA && hasTouch && hasPhoneSize;
-    
-    
-    
-    return isMobile;
+    return true; // Always return true for mobile
   }, []);
 
-  // Initial detection - run once on mount
+  // Always use mobile view on mount
   useEffect(() => {
-    // Check for force mobile parameter (for testing)
-    const urlParams = new URLSearchParams(window.location.search);
-    const forceMobile = urlParams.get('mobile') === 'true';
-    
-    if (forceMobile) {
-
-      setIsDefinitelyPhone(true);
-      setIsMobileView(true);
-      return;
-    }
-    
-    // Use the same strict detection on initial load
-    const isMobile = detectMobileDevice();
-    
-    if (isMobile) {
-
-      setIsDefinitelyPhone(true);
-      setIsMobileView(true);
-    } else {
-
-      setIsDefinitelyPhone(false);
-      setIsMobileView(false);
-    }
+    setIsDefinitelyPhone(true);
+    setIsMobileView(true);
   }, []);
 
-  // Handle window resize
+  // No longer need resize handlers - always mobile view
   useEffect(() => {
-    const handleResize = () => {
-      // If we've already determined it's a phone, keep mobile view
-      if (isDefinitelyPhone) {
-        setIsMobileView(true);
-        return;
-      }
-      
-      // Otherwise, do normal detection
-      const isMobile = detectMobileDevice();
-      setIsMobileView(isMobile);
-      // Remove automatic showSpotify setting
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("orientationchange", handleResize); // Also listen for orientation changes
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
-    };
-  }, [isDefinitelyPhone]);
+    // Always keep mobile view
+    setIsMobileView(true);
+  }, []);
 
 
   // Check if font is loaded
@@ -288,7 +214,7 @@ export default function GalleryPage() {
             style={{
               position: "relative",
               fontFamily: "'UnifrakturMaguntia', serif",
-              fontSize: isMobileView ? "3rem" : "4rem",
+              fontSize: "3rem", // Always use mobile size
               color: "#ffffff",
               cursor: "pointer",
             }}
@@ -327,8 +253,8 @@ export default function GalleryPage() {
         </div>
 
 
-          {/* 80s Mode Video Background for Desktop */}
-          {!isMobileView && is80sMode && (
+          {/* 80s Mode Video Background - disabled since we're always in mobile view */}
+          {false && is80sMode && (
         <div
           style={{
             position: "fixed",
@@ -445,7 +371,7 @@ export default function GalleryPage() {
               height: "40px",
               borderRadius: "50%",
               overflow: "hidden",
-              animation: isPlaying ? "spin 4s linear infinite" : "none",
+              animation: contextIsPlaying ? "spin 4s linear infinite" : "none",
               cursor: "pointer"
             }}
             onClick={() => {
@@ -608,6 +534,21 @@ export default function GalleryPage() {
           is80sMode={is80sMode}
         />
       </div>
+      
+      {/* Buy Token FAB - Opens Candle Modal */}
+      <div onClick={() => setShowCandleModal(true)}>
+        <BuyTokenFAB is80sMode={is80sMode} />
+      </div>
+      
+      {/* Compact Candle Modal */}
+      <CompactCandleModal 
+        isOpen={showCandleModal}
+        onClose={() => setShowCandleModal(false)}
+        onCandleCreated={(candle) => {
+          console.log('New candle created:', candle);
+          // Optionally refresh the candles display
+        }}
+      />
       </>
       )}
     </div>

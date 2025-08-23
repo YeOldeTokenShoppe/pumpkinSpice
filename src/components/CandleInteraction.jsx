@@ -223,25 +223,27 @@
       const context = canvas.getContext("2d");
 
       // Clear canvas and set background
-      context.fillStyle = "#F5F5DC"; // Parchment color
+      context.fillStyle = "#FFFFFF"; // White background to match CompactCandleModal
       context.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add subtle border
+      context.strokeStyle = '#e0e0e0';
+      context.lineWidth = 2;
+      context.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
 
       // Save the context state
       context.save();
 
-      // Rotate the text 180 degrees to make it readable on the candle
-      context.translate(canvas.width / 2, canvas.height / 2);
-      context.rotate(Math.PI);
-      context.translate(-canvas.width / 2, -canvas.height / 2);
+      // Don't rotate - we'll handle orientation with texture settings
 
       // Set text properties
       context.fillStyle = "#000000";
       context.textAlign = "center";
       context.textBaseline = "middle";
 
-      // Use a more reliable font stack
-      const fontFamily = "serif";
-      context.font = `bold 48px ${fontFamily}`;
+      // Use same font as CompactCandleModal
+      const fontSize = text.length > 200 ? 40 : text.length > 100 ? 48 : 56;
+      context.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif`;
 
       // Use the text directly without replacement
       const formattedText = text;
@@ -287,6 +289,19 @@
       context.restore();
 
       const texture = new THREE.CanvasTexture(canvas);
+      
+      // Match CompactCandleModal texture settings
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.repeat.set(-1, -1);  // Flip both X and Y for Label1
+      texture.offset.set(1, 1);  // Adjust offset after flipping both axes
+      texture.flipY = false;  // Ensure texture is not flipped vertically
+      
+      // Improve texture quality settings
+      texture.minFilter = THREE.LinearMipMapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.anisotropy = 16;  // Maximum anisotropic filtering
+      texture.generateMipmaps = true;
       texture.needsUpdate = true;
 
       return texture;
@@ -354,10 +369,10 @@
             transparent: true,
             side: THREE.DoubleSide,
             emissive: new THREE.Color(0xffffff),
-            emissiveIntensity: 0.5,
+            emissiveIntensity: 0.05,  // Match CompactCandleModal
             emissiveMap: texture,
-            metalness: 0.2,
-            roughness: 0.8,
+            metalness: 0,  // Match CompactCandleModal
+            roughness: 0.9,  // Match CompactCandleModal
           });
 
           if (labelMesh.material) {
