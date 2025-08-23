@@ -299,7 +299,7 @@ export default function FountainPage() {
       )}
 
       {/* 80s Mode Toggle */}
-      <button
+      {/* <button
         onClick={() => toggle80sMode()}
         style={{
           position: "fixed",
@@ -333,7 +333,7 @@ export default function FountainPage() {
         }}>
           80s
         </span>
-      </button>
+      </button> */}
 
       {/* Buy Token FAB */}
       {/* <div onClick={() => setShowCandleModal(true)}>

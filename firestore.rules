@@ -23,6 +23,25 @@ service cloud.firestore {
       //   && request.resource.data.message.size() <= 500;
     }
     
+    // Allow public read/write to fountain_coins collection
+    match /fountain_coins/{document} {
+      allow read: if true;  // Anyone can read coins
+      allow create: if true  // Anyone can create new coins
+        && request.resource.data.keys().hasAll(['position', 'rotation', 'timestamp'])  // Must have required fields
+        && request.resource.data.position.keys().hasAll(['x', 'y', 'z'])  // Position must have x,y,z
+        && request.resource.data.rotation.keys().hasAll(['x', 'y', 'z']);  // Rotation must have x,y,z
+      allow update: if false;  // No one can update existing coins
+      allow delete: if true;  // Allow deletion for archiving (we'll handle abuse through rate limiting if needed)
+    }
+    
+    // Allow read and write access to fountain archives
+    match /fountain_archives/{document} {
+      allow read: if true;  // Anyone can read archive stats
+      allow create: if true;  // Allow creating archives
+      allow update: if false;  // Don't allow updating archives
+      allow delete: if false;  // Don't allow deleting archives
+    }
+    
     // Default rules for other documents
     match /{document=**} {
       allow read: if true;  // Anyone can read

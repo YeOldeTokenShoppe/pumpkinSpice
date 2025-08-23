@@ -41,6 +41,16 @@
 					max-width: 300px;
 					text-align: center;
 				}
+				
+				#coinCounter {
+					right: auto !important;
+					left: 50% !important;
+					transform: translateX(-50%) !important;
+					top: auto !important;
+					bottom: 160px !important;
+					width: auto;
+					max-width: 250px;
+				}
 			}
 		</style>
 	</head>
@@ -67,12 +77,46 @@
 			max-width: 25rem;
 		">
 			Click and Move mouse to disturb water. Click water and press button or 'c' to throw coin.
+		</div>
+		
+		<!-- Coin Counter Display -->
+		<div id="coinCounter" style="
+			position: absolute;
+			right: 30%;
+			top: calc(50% + 60px);
+			transform: translateY(-50%);
+			background: rgba(20, 20, 30, 0.9);
+			border: 2px solid #cebb43;
+			border-radius: 8px;
+			padding: 12px 20px;
+			color: #cebb43;
+			font-family: Arial, sans-serif;
+			font-size: 14px;
+			font-weight: bold;
+			box-shadow: 0 0 15px rgba(206, 187, 67, 0.4);
+			z-index: 1000;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		">
+			<div style="display: flex; align-items: center; gap: 8px;">
+				<span style="font-size: 18px;">🪙</span>
+				<span>Current: <span id="coinCount">0</span> / 200</span>
+			</div>
+			<div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(206, 187, 67, 0.3);">
+				<span style="font-size: 18px;">💰</span>
+				<span>Collected: <span id="collectedCount">0</span></span>
+			</div>
+			<div id="resetMessage" style="display: none; color: #30cfd0; font-size: 12px; text-align: center; margin-top: 8px;">
+				Resetting fountain...
+			</div>
 		</div> 
 
 		<script>
 			// Add mobile detection and positioning
 			function updateInfoPosition() {
 				const info = document.getElementById('info');
+				const coinCounter = document.getElementById('coinCounter');
 				if (window.innerWidth <= 768) {
 					// Mobile layout
 					info.style.right = 'auto';
@@ -83,6 +127,15 @@
 					info.style.width = '90%';
 					info.style.maxWidth = '300px';
 					info.style.textAlign = 'center';
+					
+					// Mobile coin counter position
+					if (coinCounter) {
+						coinCounter.style.right = 'auto';
+						coinCounter.style.left = '50%';
+						coinCounter.style.top = 'auto';
+						coinCounter.style.bottom = '110px';
+						coinCounter.style.transform = 'translateX(-50%)';
+					}
 				} else {
 					// Desktop layout
 					info.style.right = '30px';
@@ -93,6 +146,15 @@
 					info.style.width = 'auto';
 					info.style.maxWidth = '200px';
 					info.style.textAlign = 'left';
+					
+					// Desktop coin counter position (below info box)
+					if (coinCounter) {
+						coinCounter.style.right = '30px';
+						coinCounter.style.left = 'auto';
+						coinCounter.style.top = 'calc(50% + 100px)';
+						coinCounter.style.bottom = 'auto';
+						coinCounter.style.transform = 'translateY(-50%)';
+					}
 				}
 			}
 
@@ -251,6 +313,10 @@
 			}
 		</script>
 
+		<!-- Firebase Scripts -->
+		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
 		<script type="module">
 
 			import * as THREE from 'three';
@@ -262,6 +328,333 @@
 			import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
 			import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 			import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+
+			// --- Coin Material and Geometry (moved up for Firebase functions) ---
+			const baseCoinMaterial = new THREE.MeshStandardMaterial({
+				color: 0xcebb43, 
+				metalness: 0.0,  // High metalness for shine
+				roughness: 1, // Very low roughness for maximum shine
+				// emissive: 0xdfd86f, // Yellow emissive glow
+				// emissiveIntensity: 0.05, // Strong glow effect
+				transparent: false, 
+				opacity: 0.9,
+				depthWrite: true, // Don't write to depth buffer
+				depthTest: true, // Skip depth testing entirely
+				side: THREE.DoubleSide // Render both sides
+			});
+			// const coinGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.002, 16); // Small cylinder for coin
+			const coinGeometry = new THREE.CylinderGeometry(0.02 * 2, 0.02 * 2, 0.005 * 2, 8); // Octagon shape with 8 segments
+			coinGeometry.rotateX(Math.PI / 2); // Lay the coin flat
+
+			// Define coin dimensions for use in physics
+			const COIN_RADIUS = 0.02 * 1.5;
+			const COIN_THICKNESS = 0.002 * 1.5;
+
+			// --- Coin Counter and Performance Settings ---
+			let totalCoinCount = 0;
+			let collectedCoinCount = 0;
+			let isResetting = false;
+			let staticCoinInstancedMesh = null;
+			let staticCoinData = [];
+			const MAX_STATIC_COINS = 300; // Maximum coins to render for performance
+			const COINS_TO_LOAD = 200; // Load more recent coins from Firestore
+			const RESET_THRESHOLD = 200; // Reset fountain when this many coins are reached
+			
+			function updateCoinCounter() {
+				const coinCountElement = document.getElementById('coinCount');
+				const collectedCountElement = document.getElementById('collectedCount');
+				
+				if (coinCountElement) {
+					// Show actual count from database, even if we're only rendering some
+					coinCountElement.textContent = totalCoinCount;
+				}
+				
+				if (collectedCountElement) {
+					collectedCountElement.textContent = collectedCoinCount;
+				}
+			}
+			
+			// Load collected coins total from archives
+			async function loadCollectedTotal() {
+				try {
+					const response = await fetch('/api/archive-fountain-coins');
+					if (response.ok) {
+						const data = await response.json();
+						collectedCoinCount = data.cumulativeTotal || 0;
+						updateCoinCounter();
+					}
+				} catch (error) {
+					console.error('Error loading collected total:', error);
+				}
+			}
+			
+			// Archive and reset the fountain
+			async function archiveAndResetFountain() {
+				console.log('archiveAndResetFountain called, isResetting:', isResetting, 'totalCoinCount:', totalCoinCount);
+				
+				if (isResetting) {
+					console.log('Already resetting, skipping...');
+					return; // Prevent multiple resets
+				}
+				
+				isResetting = true;
+				const resetMessage = document.getElementById('resetMessage');
+				if (resetMessage) {
+					resetMessage.style.display = 'block';
+				}
+				
+				try {
+					console.log('Sending archive request to API...');
+					const response = await fetch('/api/archive-fountain-coins', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						}
+					});
+					
+					const data = await response.json();
+					console.log('Archive response:', response.status, data);
+					
+					if (response.ok) {
+						console.log('Fountain archived successfully:', data);
+						
+						// Update collected count
+						collectedCoinCount = data.cumulativeTotal || (collectedCoinCount + data.archivedCount);
+						totalCoinCount = 0;
+						updateCoinCounter();
+						
+						// Clear visual coins
+						staticCoinData = [];
+						createStaticCoinInstances();
+						
+						// Hide reset message after a moment
+						setTimeout(() => {
+							if (resetMessage) {
+								resetMessage.style.display = 'none';
+							}
+							isResetting = false;
+						}, 2000);
+					} else {
+						console.error('Failed to archive fountain:', data);
+						isResetting = false;
+						if (resetMessage) {
+							resetMessage.style.display = 'none';
+						}
+					}
+				} catch (error) {
+					console.error('Error archiving fountain:', error);
+					isResetting = false;
+					if (resetMessage) {
+						resetMessage.style.display = 'none';
+					}
+				}
+			}
+			
+			// Make archiveAndResetFountain globally accessible for debugging
+			window.archiveAndResetFountain = archiveAndResetFountain;
+			
+			// Create instanced mesh for static coins (huge performance boost)
+			function createStaticCoinInstances() {
+				// Remove old instanced mesh if it exists
+				if (staticCoinInstancedMesh) {
+					scene.remove(staticCoinInstancedMesh);
+					staticCoinInstancedMesh.geometry.dispose();
+					staticCoinInstancedMesh.material.dispose();
+				}
+				
+				if (staticCoinData.length === 0) return;
+				
+				// Create instanced mesh with capacity for all static coins
+				const instanceCount = Math.min(staticCoinData.length, MAX_STATIC_COINS);
+				staticCoinInstancedMesh = new THREE.InstancedMesh(
+					coinGeometry,
+					baseCoinMaterial,
+					instanceCount
+				);
+				
+				// Set up transform matrices for each coin
+				const matrix = new THREE.Matrix4();
+				const position = new THREE.Vector3();
+				const quaternion = new THREE.Quaternion();
+				const scale = new THREE.Vector3();
+				
+				for (let i = 0; i < instanceCount; i++) {
+					const coinInfo = staticCoinData[i];
+					position.copy(coinInfo.position);
+					quaternion.setFromEuler(coinInfo.rotation);
+					
+					// Scale underwater coins
+					if (coinInfo.underwater) {
+						scale.set(1.25, 1.25, 1.25);
+					} else {
+						scale.set(1, 1, 1);
+					}
+					
+					matrix.compose(position, quaternion, scale);
+					staticCoinInstancedMesh.setMatrixAt(i, matrix);
+				}
+				
+				staticCoinInstancedMesh.instanceMatrix.needsUpdate = true;
+				staticCoinInstancedMesh.renderOrder = 99;
+				scene.add(staticCoinInstancedMesh);
+				
+				console.log(`Created instanced mesh with ${instanceCount} coins`);
+			}
+			
+			// --- Firebase Configuration and Initialization ---
+			let db = null;
+			let coinsCollection = null;
+			
+			// Initialize Firebase
+			async function initializeFirebase() {
+				try {
+					// Fetch Firebase configuration from API endpoint
+					const response = await fetch('/api/firebase-config');
+					if (!response.ok) {
+						throw new Error('Failed to fetch Firebase configuration');
+					}
+					
+					const firebaseConfig = await response.json();
+					
+					// Validate that we have the required config
+					if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+						console.error('Invalid Firebase configuration received');
+						return;
+					}
+					
+					// Initialize Firebase
+					if (!firebase.apps.length) {
+						firebase.initializeApp(firebaseConfig);
+					}
+					
+					db = firebase.firestore();
+					coinsCollection = db.collection('fountain_coins');
+					
+					console.log("Firebase initialized successfully");
+					
+					// Load collected total first
+					await loadCollectedTotal();
+					
+					// Load existing coins
+					loadSavedCoins();
+					
+				} catch (error) {
+					console.error("Error initializing Firebase:", error);
+					// Continue without Firebase if initialization fails
+				}
+			}
+			
+			// Function to save a coin to Firestore
+			async function saveCoinToFirestore(coinData) {
+				if (!coinsCollection || !db) {
+					console.warn("Firestore not initialized, cannot save coin");
+					return;
+				}
+				
+				try {
+					const docRef = await coinsCollection.add({
+						position: {
+							x: coinData.position.x,
+							y: coinData.position.y,
+							z: coinData.position.z
+						},
+						rotation: {
+							x: coinData.rotation.x,
+							y: coinData.rotation.y,
+							z: coinData.rotation.z
+						},
+						timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+						isInUpperBowl: coinData.isInUpperBowl || false
+					});
+					console.log("Coin saved with ID: ", docRef.id);
+					return docRef.id;
+				} catch (error) {
+					console.error("Error saving coin: ", error);
+				}
+			}
+			
+			// Function to load saved coins from Firestore
+			async function loadSavedCoins() {
+				if (!coinsCollection || !db) {
+					console.warn("Firestore not initialized, cannot load coins");
+					return;
+				}
+				
+				try {
+					// Get total count more efficiently with a limited query
+					// For performance, we'll estimate if there are many coins
+					const countSnapshot = await coinsCollection.limit(1000).get();
+					totalCoinCount = countSnapshot.size;
+					if (countSnapshot.size === 1000) {
+						// If we hit the limit, show 1000+
+						totalCoinCount = "1000+";
+					}
+					updateCoinCounter();
+					
+					// Check if we need to reset the fountain on load
+					console.log('Checking fountain status - Count:', totalCoinCount, 'Threshold:', RESET_THRESHOLD);
+					if (totalCoinCount >= RESET_THRESHOLD && !isResetting) {
+						console.log('Fountain has ' + totalCoinCount + ' coins (threshold: ' + RESET_THRESHOLD + ') - triggering reset...');
+						await archiveAndResetFountain();
+						return; // Don't load coins since we're resetting
+					}
+					
+					// Then load the most recent coins for display
+					const snapshot = await coinsCollection
+						.orderBy('timestamp', 'desc')
+						.limit(COINS_TO_LOAD)
+						.get();
+					
+					// Clear existing static coin data
+					staticCoinData = [];
+					
+					snapshot.forEach((doc) => {
+						const data = doc.data();
+						if (data.position) {
+							staticCoinData.push({
+								position: new THREE.Vector3(data.position.x, data.position.y, data.position.z),
+								rotation: new THREE.Euler(data.rotation.x || 0, data.rotation.y || 0, data.rotation.z || 0),
+								underwater: data.position.y < -0.4,
+								id: doc.id
+							});
+						}
+					});
+					
+					// Create instanced mesh for all static coins
+					createStaticCoinInstances();
+					
+					console.log(`Total coins in fountain: ${totalCoinCount}, Rendering: ${Math.min(staticCoinData.length, MAX_STATIC_COINS)}`);
+				} catch (error) {
+					console.error("Error loading saved coins: ", error);
+				}
+			}
+			
+			// Function to add a new static coin to the instanced mesh
+			function addStaticCoinToInstances(position, rotation, firestoreId) {
+				// Check if scene is initialized
+				if (!scene) {
+					console.warn('Scene not initialized yet, cannot create static coin');
+					return;
+				}
+				
+				// Add to static coin data
+				staticCoinData.unshift({ // Add to beginning (most recent)
+					position: position,
+					rotation: rotation,
+					underwater: position.y < -0.4,
+					id: firestoreId
+				});
+				
+				// Limit the array size
+				if (staticCoinData.length > MAX_STATIC_COINS) {
+					staticCoinData = staticCoinData.slice(0, MAX_STATIC_COINS);
+				}
+				
+				// Recreate the instanced mesh with updated data
+				createStaticCoinInstances();
+			}
+			
+			// --- End Firebase Functions ---
 
 			// Texture width for simulation
 			const WIDTH = 512;
@@ -315,25 +708,6 @@
             const gravity = 0.03; // Simple gravity strength
             const coinSplashDuration = 75; // ms the splash force lasts
             let coinSplashTimeout = null; // Timeout ID for resetting splash
-            const baseCoinMaterial = new THREE.MeshStandardMaterial({
-                color: 0xcebb43, 
-                metalness: 0.0,  // High metalness for shine
-                roughness: 1, // Very low roughness for maximum shine
-                // emissive: 0xdfd86f, // Yellow emissive glow
-                // emissiveIntensity: 0.05, // Strong glow effect
-                transparent: false, 
-                opacity: 0.9,
-                depthWrite: true, // Don't write to depth buffer
-                depthTest: true, // Skip depth testing entirely
-                side: THREE.DoubleSide // Render both sides
-            });
-            // const coinGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.002, 16); // Small cylinder for coin
-			const coinGeometry = new THREE.CylinderGeometry(0.02 * 2, 0.02 * 2, 0.005 * 2, 8); // Octagon shape with 8 segments
-            coinGeometry.rotateX(Math.PI / 2); // Lay the coin flat
-
-            // Define coin dimensions for use in physics
-            const COIN_RADIUS = 0.02 * 1.5;
-            const COIN_THICKNESS = 0.002 * 1.5;
 
 			const fallingWaterUniforms = {
         iTime: { value: 0.0 }
@@ -706,6 +1080,9 @@
 				camera.lookAt( 0, 0, 0 );
 
 				scene = new THREE.Scene();
+				
+				// Initialize Firebase after scene is created
+				initializeFirebase();
 
 				sun = new THREE.DirectionalLight( 0xddb56e, 3.0 );
 				sun.position.set( - 1, 2.6, -1.4 );
@@ -1397,12 +1774,12 @@
 							const coordZ = (waterZ - 0.5) * BOUNDS;
 							
 							uniforms['mousePos'].value.set(coordX, coordZ);
-							console.log('Main water hit:', coordX, coordZ);
+					
 							
 						} else if (hitObject === upperMeshRay) {
 							// Upper bowl - just use world position for now
 							uniforms['mousePos'].value.set(point.x, point.z);
-							console.log('Upper bowl hit:', point.x, point.z);
+					
 						}
 						
 						if (controls.enabled) controls.enabled = false;
@@ -1608,6 +1985,36 @@
                                     // Add a random rotation around the normal for visual variety
                                     const randomAngle = Math.random() * Math.PI * 2;
                                     coin.rotateOnWorldAxis(surfaceNormal, randomAngle);
+                                    
+                                    // Save coin to Firestore if not already saved
+                                    if (!coin.userData.firestoreId && !coin.userData.isStatic) {
+                                        saveCoinToFirestore({
+                                            position: coin.position,
+                                            rotation: coin.rotation,
+                                            isInUpperBowl: isInUpperBowl
+                                        }).then(id => {
+                                            if (id) {
+                                                coin.userData.firestoreId = id;
+                                                totalCoinCount++;
+                                                updateCoinCounter();
+                                                
+                                                // Add to instanced mesh and remove individual mesh
+                                                addStaticCoinToInstances(coin.position.clone(), coin.rotation.clone(), id);
+                                                scene.remove(coin);
+                                                const coinIndex = coins.indexOf(coin);
+                                                if (coinIndex > -1) {
+                                                    coins.splice(coinIndex, 1);
+                                                }
+                                                
+                                                // Check if we've reached the reset threshold
+                                                console.log('Coin saved. Total count:', totalCoinCount, 'Threshold:', RESET_THRESHOLD);
+                                                if (totalCoinCount >= RESET_THRESHOLD && !isResetting) {
+                                                    console.log('Fountain full! Archiving and resetting...');
+                                                    archiveAndResetFountain();
+                                                }
+                                            }
+                                        });
+                                    }
                                 }
                                 
                                 // If coin is stopped, continue to next coin
@@ -1673,6 +2080,36 @@
                              // We might also want a random Z rotation so they don't all face the same way
                              coin.rotateZ(Math.random() * Math.PI * 2); // Add random rotation around world Z
                              // --- END ADJUSTMENT ---
+                             
+                             // Save coin to Firestore if not already saved
+                             if (!coin.userData.firestoreId && !coin.userData.isStatic) {
+                                 saveCoinToFirestore({
+                                     position: coin.position,
+                                     rotation: coin.rotation,
+                                     isInUpperBowl: isInUpperBowl
+                                 }).then(id => {
+                                     if (id) {
+                                         coin.userData.firestoreId = id;
+                                         totalCoinCount++;
+                                         updateCoinCounter();
+                                         
+                                         // Add to instanced mesh and remove individual mesh
+                                         addStaticCoinToInstances(coin.position.clone(), coin.rotation.clone(), id);
+                                         scene.remove(coin);
+                                         const coinIndex = coins.indexOf(coin);
+                                         if (coinIndex > -1) {
+                                             coins.splice(coinIndex, 1);
+                                         }
+                                         
+                                         // Check if we've reached the reset threshold
+                                         console.log('Coin saved. Total count:', totalCoinCount, 'Threshold:', RESET_THRESHOLD);
+                                         if (totalCoinCount >= RESET_THRESHOLD && !isResetting) {
+                                             console.log('Fountain full! Archiving and resetting...');
+                                             archiveAndResetFountain();
+                                         }
+                                     }
+                                 });
+                             }
                         }
                         
                         // --- Check if coin is stuck on statue ---
@@ -1933,6 +2370,13 @@
 		<script>
 			document.addEventListener('DOMContentLoaded', function() {
 				const text = document.getElementById('text');
+				
+				// Check if the text element exists before trying to modify it
+				if (!text) {
+					console.log('Text element not found, skipping glowing text effect');
+					return;
+				}
+				
 				const mainText = '<a href="/home" style="text-decoration: none; color: inherit;">RL80</a>';
 				
 				// Clear the existing content and set the main text with link
