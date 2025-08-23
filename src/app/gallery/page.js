@@ -317,7 +317,7 @@ export default function GalleryPage() {
               onClick={() => handleMusicToggle(true)}
               style={{
                 position: "fixed",
-                top: "20px",
+                top: "3rem",
                 right: "20px",
                 width: "48px",
                 height: "48px",
@@ -356,7 +356,7 @@ export default function GalleryPage() {
             <div
               style={{
                 position: "fixed",
-                top: "20px",
+                top: "3rem",
                 right: "20px",
                 zIndex: 9999,
                 display: "flex",
@@ -474,7 +474,7 @@ export default function GalleryPage() {
             onClick={() => toggle80sMode(!is80sMode)}
             style={{
               position: "fixed",
-              top: "80px",
+              top: "6rem",
               right: "20px",
               width: "48px",
               height: "48px",

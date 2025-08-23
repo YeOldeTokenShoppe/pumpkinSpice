@@ -92,7 +92,16 @@ const EtherealCloudsPage = ({ is80sMode, setIs80sMode }) => {
   }, []);
 
   return (
-<div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+<div style={{ 
+      position: "relative", 
+      width: "100vw", 
+      height: "100vh", 
+      overflow: "hidden",
+      margin: 0,
+      padding: 0,
+      border: "none",
+      boxSizing: "border-box"
+    }}>
       {/* Add inline keyframes for font */}
       <style jsx global>{`
         @font-face {
@@ -105,6 +114,28 @@ const EtherealCloudsPage = ({ is80sMode, setIs80sMode }) => {
         
         #text, .text__copy {
           font-family: 'UnifrakturMaguntia', serif !important;
+        }
+        
+        /* Remove all margins, padding and borders for clouds page */
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          border: 0 !important;
+          overflow: hidden !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+        
+        body > div {
+          margin: 0 !important;
+          padding: 0 !important;
+          border: 0 !important;
+        }
+        
+        #__next {
+          margin: 0 !important;
+          padding: 0 !important;
+          border: 0 !important;
         }
       `}</style>
 

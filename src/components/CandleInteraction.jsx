@@ -29,7 +29,7 @@
           justifyContent: "center",
           alignItems: window.innerWidth <= 768 ? "flex-start" : "center",
           paddingTop: window.innerWidth <= 768 ? "10vh" : "0",
-          zIndex: 10,
+          zIndex: 9999,
         }}
         onClick={handleClick}
       >
@@ -40,7 +40,7 @@
             height: window.innerWidth <= 768 ? '70vh' : '80vh',
             borderRadius: '10px',
             position: 'relative',
-            zIndex: 11, // Higher than background but lower than close button
+            zIndex: 10000, // Higher than background but lower than close button
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -50,7 +50,7 @@
               height: "100%",
               borderRadius: "10px",
               position: "relative",
-              zIndex: 11,
+              zIndex: 10000,
             }}
             gl={{ alpha: true }}
             camera={{ position: [0, 1, 5], fov: 45 }}
@@ -84,7 +84,7 @@
               alignItems: "center",
               justifyContent: "center",
               transition: "all 0.2s ease",
-              zIndex: 12,
+              zIndex: 10001,
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.background = "rgba(0, 0, 0, 0.8)";

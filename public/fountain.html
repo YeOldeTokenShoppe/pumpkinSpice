@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Char80 Fountain</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="/main.css">
+		<style>
+			@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap');
+
+			/* Loader styles */
+			.loader-container {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				background-color: #1b1724;
+				z-index: 9999;
+				transition: opacity 0.5s ease-out;
+			}
+
+			.loader-container.hidden {
+				opacity: 0;
+				pointer-events: none;
+			}
+
+			/* Mobile styles */
+			@media (max-width: 768px) {
+				#info {
+					right: auto;
+					left: 50%;
+					top: auto;
+					bottom: 100px;
+					transform: translateX(-50%);
+					width: 90%;
+					max-width: 300px;
+					text-align: center;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Loader -->
+		<div id="loaderContainer" class="loader-container">
+			<div id="magic8BallLoader"></div>
+		</div>
+
+		<div id="info" style="
+			position: absolute;
+			right: 30px;
+			top: 50%;
+			transform: translateY(-50%);
+			background: rgba(20, 20, 30, 0.8);
+			border: 2px solid #30cfd0;
+			border-radius: 8px;
+			padding: 15px;
+			color: white;
+			font-family: Arial, sans-serif;
+			font-size: 12px;
+			line-height: 1.4;
+			box-shadow: 0 0 15px rgba(48, 207, 208, 0.5);
+			z-index: 1000;
+			max-width: 25rem;
+		">
+			Click and Move mouse to disturb water. Click water and press button or 'c' to throw coin.
+		</div> 
+
+		<script>
+			// Add mobile detection and positioning
+			function updateInfoPosition() {
+				const info = document.getElementById('info');
+				if (window.innerWidth <= 768) {
+					// Mobile layout
+					info.style.right = 'auto';
+					info.style.left = '50%';
+					info.style.top = 'auto';
+					info.style.bottom = '50px';
+					info.style.transform = 'translateX(-50%)';
+					info.style.width = '90%';
+					info.style.maxWidth = '300px';
+					info.style.textAlign = 'center';
+				} else {
+					// Desktop layout
+					info.style.right = '30px';
+					info.style.left = 'auto';
+					info.style.top = '50%';
+					info.style.bottom = 'auto';
+					info.style.transform = 'translateY(-50%)';
+					info.style.width = 'auto';
+					info.style.maxWidth = '200px';
+					info.style.textAlign = 'left';
+				}
+			}
+
+			// Run on load and resize
+			window.addEventListener('load', updateInfoPosition);
+			window.addEventListener('resize', updateInfoPosition);
+		</script>
+
+		<!-- Glowing text effect - REMOVED to avoid duplication with parent page -->
+		<!-- RL80 logo is now handled by the parent Next.js page -->
+
+		<!-- Launch Button div from cyberpunk_mission_control.html -->
+		<!-- <div style="
+			position: absolute;
+			bottom: 30px;
+			right: 30px;
+			z-index: 10000;
+		">
+			<button id="launchButton" class="control-button" data-action="launch" style="
+				background: rgba(20, 20, 30, 0.8);
+				border: 2px solid #30cfd0;
+				border-radius: 8px;
+				box-shadow: 0 0 15px rgba(48, 207, 208, 0.5);
+				color: white;
+				cursor: pointer;
+				font-size: 39px;
+				height: 80px;
+				width: 80px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.3s ease;
+			">
+				<span class="button-label">🚀</span>
+			</button>
+		</div> -->
+
+		<!-- This is just a smoothing 'compute shader' for using manually: -->
+		<script id="smoothFragmentShader" type="x-shader/x-fragment">
+
+			uniform sampler2D smoothTexture;
+
+			void main()	{
+
+				vec2 cellSize = 1.0 / resolution.xy;
+
+				vec2 uv = gl_FragCoord.xy * cellSize;
+
+				// Computes the mean of texel and 4 neighbours
+				vec4 textureValue = texture2D( smoothTexture, uv );
+				textureValue += texture2D( smoothTexture, uv + vec2( 0.0, cellSize.y ) );
+				textureValue += texture2D( smoothTexture, uv + vec2( 0.0, - cellSize.y ) );
+				textureValue += texture2D( smoothTexture, uv + vec2( cellSize.x, 0.0 ) );
+				textureValue += texture2D( smoothTexture, uv + vec2( - cellSize.x, 0.0 ) );
+
+				textureValue /= 5.0;
+
+				gl_FragColor = textureValue;
+
+			}
+
+		</script>
+
+		<!-- This is a 'compute shader' to read the current level and normal of water at a point -->
+		<!-- It is used with a variable of size 1x1 -->
+		<script id="readWaterLevelFragmentShader" type="x-shader/x-fragment">
+
+			uniform vec2 point1;
+
+			uniform sampler2D levelTexture;
+
+			// Integer to float conversion from https://stackoverflow.com/questions/17981163/webgl-read-pixels-from-floating-point-render-target
+
+			float shift_right( float v, float amt ) {
+
+				v = floor( v ) + 0.5;
+				return floor( v / exp2( amt ) );
+
+			}
+
+			float shift_left( float v, float amt ) {
+
+				return floor( v * exp2( amt ) + 0.5 );
+
+			}
+
+			float mask_last( float v, float bits ) {
+
+				return mod( v, shift_left( 1.0, bits ) );
+
+			}
+
+			float extract_bits( float num, float from, float to ) {
+
+				from = floor( from + 0.5 ); to = floor( to + 0.5 );
+				return mask_last( shift_right( num, from ), to - from );
+
+			}
+
+			vec4 encode_float( float val ) {
+				if ( val == 0.0 ) return vec4( 0, 0, 0, 0 );
+				float sign = val > 0.0 ? 0.0 : 1.0;
+				val = abs( val );
+				float exponent = floor( log2( val ) );
+				float biased_exponent = exponent + 127.0;
+				float fraction = ( ( val / exp2( exponent ) ) - 1.0 ) * 8388608.0;
+				float t = biased_exponent / 2.0;
+				float last_bit_of_biased_exponent = fract( t ) * 2.0;
+				float remaining_bits_of_biased_exponent = floor( t );
+				float byte4 = extract_bits( fraction, 0.0, 8.0 ) / 255.0;
+				float byte3 = extract_bits( fraction, 8.0, 16.0 ) / 255.0;
+				float byte2 = ( last_bit_of_biased_exponent * 128.0 + extract_bits( fraction, 16.0, 23.0 ) ) / 255.0;
+				float byte1 = ( sign * 128.0 + remaining_bits_of_biased_exponent ) / 255.0;
+				return vec4( byte4, byte3, byte2, byte1 );
+			}
+
+			void main()	{
+
+				vec2 cellSize = 1.0 / resolution.xy;
+				float waterLevel = texture2D( levelTexture, point1 ).x;
+
+				vec2 normal = vec2(
+					( texture2D( levelTexture, point1 + vec2( - cellSize.x, 0 ) ).x - texture2D( levelTexture, point1 + vec2( cellSize.x, 0 ) ).x ) * WIDTH / BOUNDS,
+					( texture2D( levelTexture, point1 + vec2( 0, - cellSize.y ) ).x - texture2D( levelTexture, point1 + vec2( 0, cellSize.y ) ).x ) * WIDTH / BOUNDS );
+
+
+				if ( gl_FragCoord.x < 1.5 ) {
+
+					gl_FragColor = encode_float( waterLevel );
+
+				} else if ( gl_FragCoord.x < 2.5 ) {
+
+					gl_FragColor = encode_float( normal.x );
+
+				} else if ( gl_FragCoord.x < 3.5 ) {
+
+					gl_FragColor = encode_float( normal.y );
+
+				} else {
+
+					gl_FragColor = encode_float( 0.0 );
+
+				}
+
+			}
+
+		</script>
+
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+					"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import Stats from 'three/addons/libs/stats.module.js';
+			// import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+			import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
+			import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
+			import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+
+			// Texture width for simulation
+			const WIDTH = 512;
+
+			// Water size in system units
+			const BOUNDS = 2.65;
+			const BOUNDS_HALF = BOUNDS * 0.5;
+
+			let tmpHeightmap = null;
+			const tmpQuat = new THREE.Quaternion();
+			const tmpQuatX = new THREE.Quaternion();
+			const tmpQuatZ = new THREE.Quaternion();
+			// let duckModel = null;
+
+			let container;
+			let camera, scene, renderer, controls;
+			let mousedown = false;
+			const mouseCoords = new THREE.Vector2();
+			const raycaster = new THREE.Raycaster();
+
+			let sun;
+			let waterMesh;
+			let upperWaterMesh;
+			let poolBorder;
+			let meshRay;
+			let upperMeshRay;
+			let gpuCompute;
+			let heightmapVariable;
+			let smoothShader;
+			let readWaterLevelShader;
+			let readWaterLevelRenderTarget;
+			let readWaterLevelImage;
+			const waterNormal = new THREE.Vector3();
+
+			// --- NEW: 3D UI Elements ---
+			let tossCoinButton3D;
+			let instructionText3D;
+			// --- END NEW ---
+
+			// --- NEW: Splash Particle System Variables ---
+			let splashParticleSystem;
+			let splashParticles = [];
+			const maxSplashParticles = 500;
+			const splashParticlePool = [];
+			// --- END NEW ---
+
+			const simplex = new SimplexNoise();
+
+			let frame = 0;
+            const coins = []; // Array to hold active coins
+            const gravity = 0.03; // Simple gravity strength
+            const coinSplashDuration = 75; // ms the splash force lasts
+            let coinSplashTimeout = null; // Timeout ID for resetting splash
+            const baseCoinMaterial = new THREE.MeshStandardMaterial({
+                color: 0xcebb43, 
+                metalness: 0.0,  // High metalness for shine
+                roughness: 1, // Very low roughness for maximum shine
+                // emissive: 0xdfd86f, // Yellow emissive glow
+                // emissiveIntensity: 0.05, // Strong glow effect
+                transparent: false, 
+                opacity: 0.9,
+                depthWrite: true, // Don't write to depth buffer
+                depthTest: true, // Skip depth testing entirely
+                side: THREE.DoubleSide // Render both sides
+            });
+            // const coinGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.002, 16); // Small cylinder for coin
+			const coinGeometry = new THREE.CylinderGeometry(0.02 * 2, 0.02 * 2, 0.005 * 2, 8); // Octagon shape with 8 segments
+            coinGeometry.rotateX(Math.PI / 2); // Lay the coin flat
+
+            // Define coin dimensions for use in physics
+            const COIN_RADIUS = 0.02 * 1.5;
+            const COIN_THICKNESS = 0.002 * 1.5;
+
+			const fallingWaterUniforms = {
+        iTime: { value: 0.0 }
+        // We might add a noise texture sampler here later if needed
+        // WN_TEX: { value: null }
+    };
+
+			const effectController = {
+				mouseSize: 0.08,
+				mouseDeep: 0.003,
+				viscosity: 0.9,
+				speed: 5,
+				// ducksEnabled: ducksEnabled,
+				wireframe: false,
+				shadow: false,
+			};
+
+			            // --- NEW: Falling Water Shaders ---
+
+						const fallingWaterVertexShader = `
+                varying vec2 vUv;
+                varying vec3 vWorldPosition; // Pass world position to fragment shader
+
+                void main() {
+                    vUv = uv;
+                    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                    vWorldPosition = worldPosition.xyz;
+                    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+                }
+            `;
+
+            const fallingWaterFragmentShader = `
+                uniform float iTime;
+                // uniform sampler2D WN_TEX; // If using texture noise later
+
+                varying vec2 vUv;
+                varying vec3 vWorldPosition;
+
+                // --- Include waterNoise function ---
+                float waterNoise( in vec2 p ) {
+                    // Simplified version without texture for now, using time-based trig
+                    // You can replace this with the texture version if you set up WN_TEX
+                    float r = sin((length(p)*40.0)-iTime*20.0)*0.003; // Increased amplitude slightly
+                    r += cos((length(p)*25.0)+iTime*20.0)*0.003;
+                    r += sin(p.x * 50.0 + iTime * 5.0) * 0.001; // Add some vertical movement/variation
+                    r += cos(p.y * 30.0 - iTime * 8.0) * 0.0015;
+                    return r;
+                    // --- Original Texture Version (Requires WN_TEX uniform) ---
+                    // float r = sin((length(p)*40.0)-iTime*20.0)*.0003;
+                    // r += cos((length(p)*25.0)+iTime*20.0)*.0003;
+                    // // Requires sampler WN_TEX (typically bound to iChannel1 or similar)
+                    // r += texture(WN_TEX,p+iTime*.25).r*.00125;
+                    // return r + texture(WN_TEX,(p*2.0)-iTime*.125).r*.0025;
+                }
+                // --- End waterNoise function ---
+
+                void main() {
+                    // --- Basic Flowing Effect using UVs and Time ---
+                    vec2 scrollingUv = vUv + vec2(0.0, iTime * 0.3); // Keep vertical scroll for downward motion
+
+                    // --- Add Noise ---
+                    float noiseVal = waterNoise(vWorldPosition.xz * 0.5);
+                    noiseVal += waterNoise(vUv * 5.0 + vec2(0.0, iTime * 0.5));
+
+                    // --- Base Color & Transparency ---
+                    vec3 baseColor = vec3(0.6, 0.8, 0.95);
+                    float baseAlpha = 0.6;
+
+                    // --- Modulate Alpha with Noise & Scrolling UV ---
+                    // --- ADJUSTMENT: Use X component for pattern ---
+                    // Use the horizontal UV coordinate (scrollingUv.x or vUv.x) for the repeating pattern
+                    // Multiply by a larger number for more vertical streaks
+                    float alphaPattern = fract(scrollingUv.x * 15.0 + noiseVal * 10.0); // Using .x now!
+                    // --- END ADJUSTMENT ---
+
+                    float finalAlpha = baseAlpha * smoothstep(0.1, 0.9, alphaPattern); // Apply pattern
+
+                    // Discard fully transparent fragments (optional)
+                    if (finalAlpha < 0.05) discard;
+
+                    gl_FragColor = vec4(baseColor, finalAlpha);
+                }
+            `;
+            // --- END NEW ---
+
+            // --- NEW: Helper function to create 3D text using CanvasTexture and Sprite ---
+            function createTextSprite(text, position, fontSize = 32, textColor = 'white', scale = new THREE.Vector3(2, 1, 1)) {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                const font = `${fontSize}px Arial`;
+                context.font = font;
+                const metrics = context.measureText(text);
+                const textWidth = metrics.width;
+                // Add padding for better appearance
+                canvas.width = textWidth + fontSize; // Padding
+                canvas.height = fontSize + fontSize / 2; // Padding
+
+                // Re-apply font after resizing canvas
+                context.font = font;
+                context.fillStyle = textColor;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.needsUpdate = true;
+
+                const material = new THREE.SpriteMaterial({ 
+                    map: texture, 
+                    transparent: true, 
+                    depthTest: false, // Render on top
+                    depthWrite: false
+                });
+                const sprite = new THREE.Sprite(material);
+                sprite.position.copy(position);
+                // Adjust scale based on canvas aspect ratio
+                sprite.scale.set(scale.x * (canvas.width / canvas.height), scale.y, scale.z);
+                
+                return sprite;
+            }
+
+            // --- NEW: Helper function to create 3D button using CanvasTexture and Plane Mesh ---
+            function createButtonMesh(labelText, position, size = { width: 0.8, height: 0.25 }, fontSize = 64, bgColor = '#f0ad4e', textColor = 'white') {
+                const canvas = document.createElement('canvas');
+                // High resolution canvas for clarity
+                canvas.width = 512;
+                canvas.height = Math.round(canvas.width * (size.height / size.width)); 
+                const context = canvas.getContext('2d');
+
+                // Background
+                context.fillStyle = bgColor;
+                // Rounded corners
+                const cornerRadius = canvas.height * 0.2;
+                context.beginPath();
+                context.moveTo(cornerRadius, 0);
+                context.lineTo(canvas.width - cornerRadius, 0);
+                context.arcTo(canvas.width, 0, canvas.width, cornerRadius, cornerRadius);
+                context.lineTo(canvas.width, canvas.height - cornerRadius);
+                context.arcTo(canvas.width, canvas.height, canvas.width - cornerRadius, canvas.height, cornerRadius);
+                context.lineTo(cornerRadius, canvas.height);
+                context.arcTo(0, canvas.height, 0, canvas.height - cornerRadius, cornerRadius);
+                context.lineTo(0, cornerRadius);
+                context.arcTo(0, 0, cornerRadius, 0, cornerRadius);
+                context.closePath();
+                context.fill();
+
+                // Text
+                context.font = `bold ${fontSize}px Arial`;
+                context.fillStyle = textColor;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(labelText, canvas.width / 2, canvas.height / 2);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.needsUpdate = true;
+
+                const geometry = new THREE.PlaneGeometry(size.width, size.height);
+                const material = new THREE.MeshBasicMaterial({ 
+                    map: texture, 
+                    transparent: true,
+                    depthTest: false, // Render on top
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.copy(position);
+                mesh.userData.isTossButton = true; // Identifier for raycasting
+                // Optionally make it face the camera
+                // mesh.lookAt(camera.position);
+
+                return mesh;
+            }
+            // --- END NEW ---
+
+			// --- NEW: Splash Particle System Functions ---
+			function initSplashParticleSystem() {
+				// Create particle geometry
+				const particleGeometry = new THREE.BufferGeometry();
+				const particleCount = maxSplashParticles;
+				
+				const positions = new Float32Array(particleCount * 3);
+				const velocities = new Float32Array(particleCount * 3);
+				const lifetimes = new Float32Array(particleCount);
+				const sizes = new Float32Array(particleCount);
+				
+				// Initialize all particles as inactive
+				for (let i = 0; i < particleCount; i++) {
+					positions[i * 3] = 0;
+					positions[i * 3 + 1] = -0.42; // Hide below scene
+					positions[i * 3 + 2] = 0;
+					velocities[i * 3] = 0;
+					velocities[i * 3 + 1] = 0;
+					velocities[i * 3 + 2] = 0;
+					lifetimes[i] = 0;
+					sizes[i] = 0;
+				}
+				
+				particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+				particleGeometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+				particleGeometry.setAttribute('lifetime', new THREE.BufferAttribute(lifetimes, 1));
+				particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+				
+				// Create particle material with custom shader
+				const particleMaterial = new THREE.ShaderMaterial({
+					uniforms: {
+						color: { value: new THREE.Color(0xffffff) },
+						opacity: { value: 0.3 },
+						pointTexture: { value: new THREE.TextureLoader().load('/cloud.png') }
+					},
+					vertexShader: `
+						attribute float size;
+						attribute float lifetime;
+						varying float vLifetime;
+						
+						void main() {
+							vLifetime = lifetime;
+							vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+							gl_PointSize = size * (300.0 / -mvPosition.z);
+							gl_Position = projectionMatrix * mvPosition;
+						}
+					`,
+					fragmentShader: `
+						uniform vec3 color;
+						uniform float opacity;
+						uniform sampler2D pointTexture;
+						varying float vLifetime;
+						
+						void main() {
+							if (vLifetime <= 0.0) discard;
+
+      vec2 uv = vec2(gl_PointCoord.x, 1.0 - gl_PointCoord.y);
+      vec4 textureColor = texture2D(pointTexture, uv);
+
+      // Fade out based on lifetime
+      float alpha = opacity * vLifetime * textureColor.a;
+
+      // Discard pixels that are too transparent
+      if (alpha < 0.01) discard;
+
+      gl_FragColor = vec4(color, alpha);
+						}
+					`,
+					blending: THREE.NormalBlending,
+  depthWrite: true,
+  depthTest: true,
+  transparent: true,
+  opacity: 0.1,
+  alphaTest: 0.1,
+  renderOrder: 999
+				});
+				
+				splashParticleSystem = new THREE.Points(particleGeometry, particleMaterial);
+				scene.add(splashParticleSystem);
+			}
+			
+			function emitSplashParticles(centerX, centerZ, radius, particleCount = 20) {
+				const positions = splashParticleSystem.geometry.attributes.position.array;
+				const velocities = splashParticleSystem.geometry.attributes.velocity.array;
+				const lifetimes = splashParticleSystem.geometry.attributes.lifetime.array;
+				const sizes = splashParticleSystem.geometry.attributes.size.array;
+				
+				let particlesEmitted = 0;
+				
+				// Find inactive particles and activate them
+				for (let i = 0; i < maxSplashParticles && particlesEmitted < particleCount; i++) {
+					if (lifetimes[i] <= 0) {
+						// Generate position on the ring
+						const angle = Math.random() * Math.PI * 2;
+						const r = radius + (Math.random() - 0.5) * 0.41; // Some variation in radius
+				
+						positions[i * 3] = centerX + Math.cos(angle) * r;
+						positions[i * 3 + 1] = -0.489; // Water surface level
+						positions[i * 3 + 2] = centerZ + Math.sin(angle) * r;
+						
+						// Generate upward and outward velocity
+						const speed = 0.2 + Math.random() * 0.002;;
+						const upwardBias = 0.05 + Math.random() * 0.02;
+						
+						velocities[i * 3] = Math.cos(angle) * speed * (1 - upwardBias);
+						velocities[i * 3 + 1] = speed * upwardBias * 0.008;
+						velocities[i * 3 + 2] = Math.sin(angle) * speed * (1 - upwardBias);
+						
+						lifetimes[i] = 1.0;
+						sizes[i] = 1.5;
+						
+						particlesEmitted++;
+					}
+				}
+				
+				// Mark attributes as needing update
+				splashParticleSystem.geometry.attributes.position.needsUpdate = true;
+				splashParticleSystem.geometry.attributes.velocity.needsUpdate = true;
+				splashParticleSystem.geometry.attributes.lifetime.needsUpdate = true;
+				splashParticleSystem.geometry.attributes.size.needsUpdate = true;
+			}
+			
+			function updateSplashParticles(deltaTime) {
+				const positions = splashParticleSystem.geometry.attributes.position.array;
+				const velocities = splashParticleSystem.geometry.attributes.velocity.array;
+				const lifetimes = splashParticleSystem.geometry.attributes.lifetime.array;
+				
+				for (let i = 0; i < maxSplashParticles; i++) {
+					if (lifetimes[i] > 0) {
+						// Update position
+						positions[i * 3] += velocities[i * 3] * deltaTime;
+						positions[i * 3 + 1] += velocities[i * 3 + 1] * deltaTime;
+						positions[i * 3 + 2] += velocities[i * 3 + 2] * deltaTime;
+						
+						// Apply gravity
+						velocities[i * 3 + 1] -= gravity * deltaTime * 0.5;
+						
+						// Apply air resistance
+						velocities[i * 3] *= 0.98;
+						velocities[i * 3 + 1] *= 0.98;
+						velocities[i * 3 + 2] *= 0.98;
+						
+						// Update lifetime
+						lifetimes[i] -= deltaTime * 2.0; // Particles live for ~0.5 seconds
+						
+						// Hide particle if it falls below water
+						if (positions[i * 3 + 1] < -0.5) {
+							lifetimes[i] = 0;
+						}
+					}
+				}
+				
+				// Mark attributes as needing update
+				splashParticleSystem.geometry.attributes.position.needsUpdate = true;
+				splashParticleSystem.geometry.attributes.velocity.needsUpdate = true;
+				splashParticleSystem.geometry.attributes.lifetime.needsUpdate = true;
+			}
+			// --- END NEW ---
+
+			// Add loading state management
+			let isLoading = true;
+			let loadingProgress = 0;
+
+			// Function to update loading progress
+			function updateLoadingProgress(progress) {
+				loadingProgress = progress;
+				// Update the loader if needed
+				const loader = document.getElementById('magic8BallLoader');
+				if (loader) {
+					loader.setAttribute('data-progress', progress);
+				}
+			}
+
+			// Function to hide loader
+			function hideLoader() {
+				const loaderContainer = document.getElementById('loaderContainer');
+				if (loaderContainer) {
+					loaderContainer.classList.add('hidden');
+					setTimeout(() => {
+						loaderContainer.style.display = 'none';
+					}, 500);
+				}
+			}
+
+			init();
+
+
+			async function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
+				camera.position.set( 0, 0.5, 4 );
+				camera.lookAt( 0, 0, 0 );
+
+				scene = new THREE.Scene();
+
+				sun = new THREE.DirectionalLight( 0xddb56e, 3.0 );
+				sun.position.set( - 1, 2.6, -1.4 );
+				scene.add( sun );
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 0.5;
+				container.appendChild( renderer.domElement );
+
+				controls = new OrbitControls( camera, container );
+				controls.zoomToCursor = true;
+				controls.minPolarAngle = 0;
+				controls.maxPolarAngle = Math.PI / 2;
+
+				// stats = new Stats();
+				// container.appendChild( stats.dom );
+
+				container.style.touchAction = 'none';
+				container.addEventListener( 'pointermove', onPointerMove );
+				container.addEventListener( 'pointerdown', onPointerDown );
+				container.addEventListener( 'pointerup', onPointerUp );
+
+				window.addEventListener( 'resize', onWindowResize );
+                window.addEventListener( 'keydown', onKeyDown );
+          
+				const rgbeLoader = new RGBELoader().setPath( './' );
+				
+				// --- NEW: Add Button Listener ---
+                const tossCoinButton = document.getElementById('tossCoinButton');
+                if (tossCoinButton) {
+                    tossCoinButton.addEventListener('pointerdown', (event) => {
+                        event.stopPropagation(); // Prevent triggering water disturbance
+                        triggerCoinToss();
+                    });
+                }
+                // --- END NEW ---
+
+				const env = await rgbeLoader.loadAsync( 'blouberg_sunrise_2_1k.hdr' );
+				env.mapping = THREE.EquirectangularReflectionMapping;
+				scene.environment = env; // Keep HDR for reflections
+				scene.environmentIntensity = 1.15; // Slightly reduced for better balance with new background
+
+				// Create sublime dawn gradient background - completely new implementation
+				// Create a simple gradient using a large mesh with gradient texture
+				const gradientCanvas = document.createElement('canvas');
+				gradientCanvas.width = 2;
+				gradientCanvas.height = 512;
+				const context = gradientCanvas.getContext('2d');
+				
+				// Create gradient - TOP to BOTTOM
+				const gradient = context.createLinearGradient(0, 0, 0, 512);
+				gradient.addColorStop(0.0, '#0000ff'); // Blue at top
+				gradient.addColorStop(0.3, '#030c4d'); // Deep blue
+				gradient.addColorStop(0.5, '#f25c54'); // Bright orange-red in middle
+				gradient.addColorStop(1.0, '#ffeadb'); // Light peach at bottom
+				
+				// Fill gradient
+				context.fillStyle = gradient;
+				context.fillRect(0, 0, 2, 512);
+				
+				// Create texture
+				const gradientTexture = new THREE.CanvasTexture(gradientCanvas);
+				gradientTexture.needsUpdate = true;
+				
+				// Create a large background sphere with inside-out faces
+				const skyGeo = new THREE.SphereGeometry(400, 32, 32);
+				const skyMat = new THREE.MeshBasicMaterial({
+					map: gradientTexture,
+					side: THREE.BackSide,
+					depthWrite: false,
+				});
+				
+				// Add the sky sphere
+				const sky = new THREE.Mesh(skyGeo, skyMat);
+				scene.add(sky);
+				
+				// Adjust sun for dawn atmosphere
+				sun.color.set(0xffeedd); // Warmer sunlight color
+				sun.position.set(-1.3, 2.2, -1.8); // Adjust sun position 
+				sun.intensity = 2.8; // Adjusted intensity
+
+				// --- NEW: Initialize Splash Particle System ---
+				initSplashParticleSystem();
+				// --- END NEW ---
+
+				// --- NEW: Load Fountain GLB ---
+				const loader = new GLTFLoader();
+				loader.load(
+					// Resource URL - REPLACE WITH YOUR FILE PATH
+					'/models/fountain.glb',
+					// Called when the resource is loaded
+					function ( gltf ) {
+						const fountainModel = gltf.scene;
+						const fallRadius = 0.32; // Match the inner radius of the SDF's roundCyl
+                const fallHeight = 0.94; // Match the height from the SDF (bowl bottom to top water level approx)
+                const fallSegments = 64; // Resolution
+
+                // console.log("Searching for GoldCoin in model...");
+                let goldCoin = null;
+                // Log the full model structure to see all available objects
+                // console.log("Full model structure:", gltf.scene);
+                
+                fountainModel.traverse(function(node) {
+                    // console.log("Found node:", node.name, node.type);
+                    
+                    // Look for GoldCoin by name (case insensitive to be safe)
+                    if (node.name.toLowerCase().includes("coin") || node.name.toLowerCase().includes("gold")) {
+                        // console.log("FOUND POTENTIAL COIN OBJECT:", node.name);
+                        // console.log("Position:", node.position);
+                        // console.log("Rotation:", node.rotation);
+                        // console.log("Scale:", node.scale);
+                        // console.log("Visible:", node.visible);
+                        // console.log("Full details:", node);
+                        
+                        // Store a reference
+                        goldCoin = node;
+                        
+                        // Optional: Highlight the coin by changing material
+                        if (node.isMesh) {
+                            // Keep original material to restore later
+                            node.userData.originalMaterial = node.material;
+                            
+                            // Apply a glowing material to make it obvious
+                            node.material = new THREE.MeshBasicMaterial({ 
+                                // color: 0xff00ff, // Bright magenta to stand out
+                                // emissive: 0xff00ff,
+                                // emissiveIntensity: 1
+                            });
+                        }
+                    }
+
+                    // Make each part of the fountain model available for raycasting
+                    if (node.isMesh) {
+                        node.userData.isFountainPart = true;
+                    }
+                });
+                
+                // Store model reference for collision detection
+                window.fountainModel = fountainModel;
+
+                const fallingWaterGeometry = new THREE.CylinderGeometry(fallRadius, fallRadius, fallHeight, fallSegments, 1, true); // Open ended cylinder
+                // Position it: Center X/Z, Y position depends on where the water should start falling from
+                // Example: If bowl bottom is at y=2.9, center the cylinder below it
+                const bowlExitY = 0.4; // Adjusted to match new water level (-0.5 offset)
+                fallingWaterGeometry.translate(0.052, bowlExitY - fallHeight / 2, -0.01); // Center it vertically
+
+                const fallingWaterMaterial = new THREE.ShaderMaterial({
+                    uniforms: fallingWaterUniforms, // Use the uniforms we defined earlier
+                    vertexShader: fallingWaterVertexShader,
+                    fragmentShader: fallingWaterFragmentShader,
+                    transparent: true, // Needed for alpha
+                    side: THREE.DoubleSide,// Render inside and outside
+					
+                    // depthWrite: false // Sometimes needed for transparency sorting issues
+                });
+
+                const fallingWaterMesh = new THREE.Mesh(fallingWaterGeometry, fallingWaterMaterial);
+                // Ensure it doesn't cast shadows itself, but might receive them
+                fallingWaterMesh.castShadow = false;
+                fallingWaterMesh.receiveShadow = true; // Or false if preferred
+
+                scene.add(fallingWaterMesh);
+                console.log("Falling water cylinder added.");
+
+						// --- Adjust position, scale, rotation as needed ---
+						// Center it roughly where the water is
+						fountainModel.position.set(0, -0.5, 0); // Adjust Y if needed so base is at water level or slightly below
+
+						// Scale the model to fit the water BOUNDS
+						// You'll need to determine the original size of your model
+						// and calculate the scale factor. Example assumes model's
+						// inner diameter should match BOUNDS. Measure your model!
+						const modelOriginalSize = 10; // EXAMPLE: Replace with your model's approximate diameter
+						const desiredScale = BOUNDS / modelOriginalSize;
+						// fountainModel.scale.set(desiredScale, desiredScale, desiredScale); // Uniform scale
+						// Or scale non-uniformly if needed:
+						 fountainModel.scale.set(0.8, 0.8, 0.8); // Example scale - ADJUST THIS!
+
+						 // Rotate if necessary (e.g., if it loads sideways)
+						 // fountainModel.rotation.y = Math.PI / 8; // Example: Rotate slightly if needed
+
+
+						// Enable shadows on all meshes within the loaded model
+						fountainModel.traverse( function ( child ) {
+							if ( child.isMesh ) {
+								child.castShadow = true;
+								child.receiveShadow = true;
+								// Optional: Adjust material properties if needed
+								// child.material.metalness = 0.4;
+								// child.material.roughness = 0.6;
+							}
+						} );
+
+						scene.add( fountainModel );
+						console.log("Fountain model loaded and added.");
+
+					},
+					// Called while loading is progressing
+					function ( xhr ) {
+						console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+					},
+					// Called when loading has errors
+					function ( error ) {
+						console.error( 'An error happened loading the fountain model:', error );
+					}
+				);
+				// --- END NEW ---
+
+
+				// Skip duck model loading
+				// duckModel = null;
+
+
+				// Comment out GUI code - remove control panel
+				// const gui = new GUI();
+				// gui.domElement.style.right = '0px';
+
+				const valuesChanger = function () {
+					heightmapVariable.material.uniforms[ 'mouseSize' ].value = effectController.mouseSize;
+					heightmapVariable.material.uniforms[ 'deep' ].value = effectController.mouseDeep;
+					heightmapVariable.material.uniforms[ 'viscosity' ].value = effectController.viscosity;
+				};
+
+				// --- NEW: Create 3D UI elements ---
+				// const textContent = "Tap water to aim, tap button or press 'c' to toss coin";
+				// instructionText3D = createTextSprite(textContent, new THREE.Vector3(0, 1.5, 0), 32, 'white', new THREE.Vector3(4, 2, 1)); // Adjust position/scale as needed
+				// scene.add(instructionText3D);
+
+				tossCoinButton3D = createButtonMesh("Toss Coin", new THREE.Vector3(0.1, -0.4, 1.5), {width: 0.3, height: 0.1}); // Adjust position/size as needed
+				scene.add(tossCoinButton3D);
+				// --- END NEW ---
+
+				initWater();
+
+				valuesChanger();
+
+				renderer.setAnimationLoop( animate );
+
+				updateLoadingProgress(100);
+				isLoading = false;
+				hideLoader();
+
+			}
+
+
+			function initWater() {
+
+				const geometry = new THREE.PlaneGeometry( BOUNDS, BOUNDS, WIDTH - 1, WIDTH - 1 );
+
+				// --- NEW: Load Alpha Mask Texture ---
+				const textureLoader = new THREE.TextureLoader();
+				// IMPORTANT: Replace 'path/to/your/fountain_mask.png' with the actual path
+				const alphaMaskTexture = textureLoader.load('/octagon.png',
+					(texture) => {
+						console.log("Alpha mask loaded successfully.");
+						// Optional: Configure texture wrapping/filtering if needed
+						// texture.wrapS = THREE.ClampToEdgeWrapping;
+						// texture.wrapT = THREE.ClampToEdgeWrapping;
+					},
+					undefined, // onProgress callback (optional)
+					(err) => {
+						console.error("Error loading alpha mask texture:", err);					}
+				);
+				// --- END NEW ---
+
+				// Generate a circular mask for the upper bowl water
+				const circleCanvas = document.createElement('canvas');
+				circleCanvas.width = 256;
+				circleCanvas.height = 256;
+				const circleContext = circleCanvas.getContext('2d');
+				
+				// Draw a white circle on black background
+				circleContext.fillStyle = 'black';
+				circleContext.fillRect(0, 0, 256, 256);
+				circleContext.fillStyle = 'white';
+				circleContext.beginPath();
+				circleContext.arc(128, 128, 120, 0, Math.PI * 2);
+				circleContext.fill();
+				
+				// Create the circle texture
+				const circleTexture = new THREE.CanvasTexture(circleCanvas);
+				circleTexture.needsUpdate = true;
+
+				const material = new WaterMaterial( {
+					color: 0x9bd2ec,
+					metalness: 0.9,
+					roughness: 0,
+					transparent: true, // Make sure transparency is enabled
+					opacity: 0.8, // Make water more transparent
+					alphaTest: 0.6, // Lower alphaTest value
+					side: THREE.DoubleSide,
+					depthTest: true,
+					depthWrite: false, // Don't write to depth buffer
+					// --- NEW: Apply Alpha Map ---
+					alphaMap: alphaMaskTexture,
+					// --- END NEW ---
+				} );
+
+				waterMesh = new THREE.Mesh( geometry, material );
+				waterMesh.rotation.x = - Math.PI * 0.5;
+				waterMesh.position.y = -0.5; // Lower the water mesh by 0.2 units
+				waterMesh.matrixAutoUpdate = true; // Enable matrix auto-update
+				waterMesh.updateMatrix();
+
+				waterMesh.receiveShadow = true;
+				waterMesh.castShadow = true;
+
+				scene.add( waterMesh );
+
+				// Create a second, smaller water mesh for the upper bowl
+				const upperBowlSize = 0.6; // Smaller size for the upper bowl
+				const upperBowlGeometry = new THREE.PlaneGeometry( upperBowlSize, upperBowlSize, WIDTH/4 - 1, WIDTH/4 - 1 );
+				
+				// Create a duplicate of water material for upper bowl
+				const upperWaterMaterial = new WaterMaterial( {
+					color: 0x9bd2ec,
+					metalness: 0.9,
+					roughness: 0,
+					transparent: true,
+					opacity: 0.8,
+					alphaTest: 0.6,
+					side: THREE.DoubleSide,
+					depthTest: true,
+					depthWrite: false,
+					// Using a circle alpha mask for the upper bowl
+					alphaMap: circleTexture,
+				} );
+				
+				// Create and position the upper water mesh
+				upperWaterMesh = new THREE.Mesh( upperBowlGeometry, upperWaterMaterial );
+				upperWaterMesh.rotation.x = - Math.PI * 0.5;
+				upperWaterMesh.position.set(0.05, 0.4, -0.01); // Position at the upper bowl
+				upperWaterMesh.matrixAutoUpdate = true;
+				upperWaterMesh.updateMatrix();
+				
+				upperWaterMesh.receiveShadow = true;
+				upperWaterMesh.castShadow = true;
+				
+				scene.add( upperWaterMesh );
+
+				// THREE.Mesh just for mouse raycasting
+				const geometryRay = new THREE.PlaneGeometry( BOUNDS, BOUNDS, 1, 1 );
+				meshRay = new THREE.Mesh( geometryRay, new THREE.MeshBasicMaterial( { color: 0xFFFFFF, visible: false } ) );
+				meshRay.rotation.x = - Math.PI / 2;
+				meshRay.position.y = -0.5; // Match the water mesh position
+				meshRay.matrixAutoUpdate = true;
+				meshRay.updateMatrix();
+				scene.add( meshRay );
+				
+				// Ray mesh for upper bowl
+				const upperGeometryRay = new THREE.PlaneGeometry( upperBowlSize, upperBowlSize, 1, 1 );
+				upperMeshRay = new THREE.Mesh( upperGeometryRay, new THREE.MeshBasicMaterial( { color: 0xFFFFFF, visible: false } ) );
+				upperMeshRay.rotation.x = - Math.PI / 2;
+				upperMeshRay.position.copy(upperWaterMesh.position);
+				upperMeshRay.matrixAutoUpdate = true;
+				upperMeshRay.updateMatrix();
+				upperMeshRay.userData.isUpperBowl = true; // Mark this as upper bowl for raycasting
+				scene.add( upperMeshRay );
+
+
+				// Creates the gpu computation class and sets it up
+
+				gpuCompute = new GPUComputationRenderer( WIDTH, WIDTH, renderer );
+
+				const heightmap0 = gpuCompute.createTexture();
+
+				fillTexture( heightmap0 );
+
+				heightmapVariable = gpuCompute.addVariable( 'heightmap', shaderChange.heightmap_frag, heightmap0 );
+
+				gpuCompute.setVariableDependencies( heightmapVariable, [ heightmapVariable ] );
+
+				heightmapVariable.material.uniforms[ 'mousePos' ] = { value: new THREE.Vector2( 10000, 10000 ) };
+				heightmapVariable.material.uniforms[ 'mouseSize' ] = { value: 0.2 };
+				heightmapVariable.material.uniforms[ 'viscosity' ] = { value: 0.93 };
+				heightmapVariable.material.uniforms[ 'deep' ] = { value: 0.01 };
+				heightmapVariable.material.uniforms[ 'time' ] = { value: 0.0 };
+				heightmapVariable.material.uniforms[ 'fallingWaterCenter' ] = { value: new THREE.Vector2( 0.052, -0.01 ) };
+				heightmapVariable.material.uniforms[ 'fallingWaterSize' ] = { value: 0.1 };
+				heightmapVariable.material.uniforms[ 'fallingWaterDeep' ] = { value: 0.001 };
+				heightmapVariable.material.defines.BOUNDS = BOUNDS.toFixed( 1 );
+
+				const error = gpuCompute.init(); 
+				if ( error !== null ) console.error( error );
+
+				// Create compute shader to smooth the water surface and velocity
+				smoothShader = gpuCompute.createShaderMaterial( document.getElementById( 'smoothFragmentShader' ).textContent, { smoothTexture: { value: null } } );
+
+				// Create compute shader to read water level
+				readWaterLevelShader = gpuCompute.createShaderMaterial( document.getElementById( 'readWaterLevelFragmentShader' ).textContent, {
+					point1: { value: new THREE.Vector2() },
+					levelTexture: { value: null }
+				} );
+				readWaterLevelShader.defines.WIDTH = WIDTH.toFixed( 1 );
+				readWaterLevelShader.defines.BOUNDS = BOUNDS.toFixed( 1 );
+
+				// Create a 4x1 pixel image and a render target (Uint8, 4 channels, 1 byte per channel) to read water height and orientation
+				readWaterLevelImage = new Uint8Array( 4 * 1 * 4 );
+
+				readWaterLevelRenderTarget = new THREE.WebGLRenderTarget( 4, 1, {
+					wrapS: THREE.ClampToEdgeWrapping,
+					wrapT: THREE.ClampToEdgeWrapping,
+					minFilter: THREE.NearestFilter,
+					magFilter: THREE.NearestFilter,
+					format: THREE.RGBAFormat,
+					type: THREE.UnsignedByteType,
+					depthBuffer: false
+				} );
+
+			}
+
+			function fillTexture( texture ) {
+
+				const waterMaxHeight = 0.1;
+
+				function noise( x, y ) {
+
+					let multR = waterMaxHeight;
+					let mult = 0.025;
+					let r = 0;
+					for ( let i = 0; i < 15; i ++ ) {
+
+						r += multR * simplex.noise( x * mult, y * mult );
+						multR *= 0.53 + 0.025 * i;
+						mult *= 1.25;
+
+					}
+
+					return r;
+
+				}
+
+				const pixels = texture.image.data;
+
+				let p = 0;
+				for ( let j = 0; j < WIDTH; j ++ ) {
+
+					for ( let i = 0; i < WIDTH; i ++ ) {
+
+						const x = i * 128 / WIDTH;
+						const y = j * 128 / WIDTH;
+
+						pixels[ p + 0 ] = noise( x, y );
+						pixels[ p + 1 ] = pixels[ p + 0 ];
+						pixels[ p + 2 ] = 0;
+						pixels[ p + 3 ] = 1;
+
+						p += 4;
+
+					}
+
+				}
+
+			}
+
+			function addShadow( v ) {
+
+				renderer.shadowMap.enabled = v;
+				sun.castShadow = v;
+
+				if ( v ) {
+
+					renderer.shadowMap.type = THREE.VSMShadowMap;
+					const shadow = sun.shadow;
+					shadow.mapSize.width = shadow.mapSize.height = 2048;
+					shadow.radius = 2;
+					shadow.bias = - 0.0005;
+					const shadowCam = shadow.camera, s = 5;
+					shadowCam.near = 0.1;
+					shadowCam.far = 6;
+					shadowCam.right = shadowCam.top	= s;
+					shadowCam.left = shadowCam.bottom = - s;
+
+				} else {
+
+					if ( sun.shadow ) sun.shadow.dispose();
+
+				}
+
+				// debug shadow
+				//scene.add(  new THREE.CameraHelper(shadowCam) );
+
+			}
+
+			function smoothWater() {
+
+				const currentRenderTarget = gpuCompute.getCurrentRenderTarget( heightmapVariable );
+				const alternateRenderTarget = gpuCompute.getAlternateRenderTarget( heightmapVariable );
+
+				for ( let i = 0; i < 10; i ++ ) {
+
+					smoothShader.uniforms[ 'smoothTexture' ].value = currentRenderTarget.texture;
+					gpuCompute.doRenderTarget( smoothShader, alternateRenderTarget );
+
+					smoothShader.uniforms[ 'smoothTexture' ].value = alternateRenderTarget.texture;
+					gpuCompute.doRenderTarget( smoothShader, currentRenderTarget );
+
+				}
+
+			}
+
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function onPointerDown( event ) {
+				// --- Update mouseCoords here --- 
+				const dom = renderer.domElement;
+				const pointerX = ( event.clientX / dom.clientWidth ) * 2 - 1;
+				const pointerY = - ( event.clientY / dom.clientHeight ) * 2 + 1;
+				const currentPointerCoords = new THREE.Vector2(pointerX, pointerY); // Use temporary vector for this event
+				
+				console.log("[Pointer Down] Event Coords:", currentPointerCoords.x.toFixed(2), currentPointerCoords.y.toFixed(2));
+
+				raycaster.setFromCamera( currentPointerCoords, camera ); 
+
+				// --- Modified Raycasting Logic ---
+				const objectsToIntersect = [meshRay, upperMeshRay, tossCoinButton3D];
+				const intersects = raycaster.intersectObjects( objectsToIntersect );
+				console.log(`[Pointer Down] Intersected ${intersects.length} objects.`);
+
+				let buttonClicked = false;
+				let waterClicked = false;
+
+				if (intersects.length > 0) {
+					const firstHit = intersects[0].object;
+
+					if (firstHit.userData.isTossButton) {
+						console.log("[Pointer Down] Toss Button 3D clicked!");
+						triggerCoinToss();
+						buttonClicked = true;
+					} else if (firstHit === meshRay || firstHit === upperMeshRay) {
+						console.log("[Pointer Down] Water interaction plane clicked.");
+						// Update the main mouseCoords only when water is clicked
+						mouseCoords.copy(currentPointerCoords); 
+						console.log(`[Pointer Down] Updated global mouseCoords: (${mouseCoords.x.toFixed(2)}, ${mouseCoords.y.toFixed(2)})`);
+						mousedown = true; // Enable water disturbance via raycast() function
+						waterClicked = true;
+						
+						// Optional: Log hit point for debugging water interaction itself
+						console.log("Water raycast successful on click at:", intersects[0].point);
+					}
+				}
+				
+				// Only disable controls if water was clicked to allow dragging
+				if (waterClicked && controls.enabled) {
+					controls.enabled = false;
+				}
+				// --- End Modified Logic ---
+			}
+            function onKeyDown( event ) {
+                if ( event.key.toLowerCase() === 'c' ) {
+                    console.log("'c' key pressed - Tossing coin");
+                    triggerCoinToss(); // Use the refactored function
+                }
+            }
+
+            function triggerCoinToss() {
+                // Use the last known mouse coordinates to determine target
+                console.log(`[Coin Toss] Using mouseCoords: (${mouseCoords.x.toFixed(2)}, ${mouseCoords.y.toFixed(2)})`); // Log coords
+                raycaster.setFromCamera( mouseCoords, camera );
+
+                // Raycast towards the invisible water plane (meshRay)
+                console.log(`[Coin Toss] Raycasting against meshRay at position: (${meshRay.position.x.toFixed(2)}, ${meshRay.position.y.toFixed(2)}, ${meshRay.position.z.toFixed(2)})`); // Log mesh position
+                console.log(`[Coin Toss] Camera position: (${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)})`); // Log camera position
+
+                const intersects = raycaster.intersectObject( meshRay );
+                console.log(`[Coin Toss] Intersection results count: ${intersects.length}`); // Log intersections count
+
+                if ( intersects.length > 0 ) {
+                    const targetPoint = intersects[0].point; // Where the coin should land (approx)
+                    console.log(`[Coin Toss] Target point determined: (${targetPoint.x.toFixed(2)}, ${targetPoint.y.toFixed(2)}, ${targetPoint.z.toFixed(2)})`);
+
+                    // --- Calculate Starting Position & Velocity ---
+                    // Start slightly above and in front of the camera, aimed towards the target
+                    const startPosition = new THREE.Vector3();
+                    camera.getWorldPosition(startPosition); // Get camera's world position
+
+                    // Move start position slightly forward from camera towards target
+                    const directionToTarget = new THREE.Vector3().subVectors(targetPoint, startPosition).normalize();
+                    startPosition.addScaledVector(directionToTarget, 1.5); // Start 1.5 units in front of camera
+                    startPosition.y += 0.5; // Start slightly higher
+
+                    // Calculate initial velocity vector
+                    const initialVelocity = new THREE.Vector3();
+                    const throwSpeed = 1.7; 
+                    const upwardAngle = 0.6; 
+                    initialVelocity.subVectors(targetPoint, startPosition).normalize(); // Direction
+                    initialVelocity.multiplyScalar(throwSpeed * Math.cos(upwardAngle)); // Horizontal speed component
+                    initialVelocity.y = throwSpeed * Math.sin(upwardAngle); // Vertical speed component
+
+                    createCoin(startPosition, initialVelocity);
+
+                } else {
+                    console.log("[Coin Toss] Cannot determine target point for coin toss.");
+                }
+            }
+        
+
+          
+            function isWithinFountainWater(position) {
+                // Get distance from center of fountain
+                const centerX = 0;
+                const centerZ = 0;
+                const distanceFromCenter = Math.sqrt(
+                    Math.pow(position.x - centerX, 2) + 
+                    Math.pow(position.z - centerZ, 2)
+                );
+                
+
+                const fountainWaterRadius = 1.15;
+                
+                // Return true if position is within the circular boundary
+                return distanceFromCenter < fountainWaterRadius;
+            }
+
+            function createCoin( startPosition, initialVelocity ) {
+                const coinMaterialInstance = baseCoinMaterial.clone();
+                const coin = new THREE.Mesh( coinGeometry, coinMaterialInstance );
+                coin.position.copy( startPosition );
+                coin.userData.velocity = initialVelocity.clone();
+                coin.userData.rotationAxis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+                coin.userData.rotationSpeed = (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1) ;
+                coin.userData.underwater = false;
+                coin.userData.stopped = false;
+                coin.renderOrder = 99; // Extremely high render order to ensure it renders last
+                scene.add( coin );
+                coins.push( coin );
+                console.log("Coin created at", startPosition.x.toFixed(2), startPosition.y.toFixed(2), startPosition.z.toFixed(2), "with velocity", initialVelocity.x.toFixed(2), initialVelocity.y.toFixed(2), initialVelocity.z.toFixed(2) );
+            }
+
+			function onPointerUp() {
+
+				mousedown = false;
+				controls.enabled = true;
+
+			}
+
+			function onPointerMove( event ) {
+
+				const dom = renderer.domElement;
+				// Update mouseCoords continuously for water interaction aiming and visual effect
+				mouseCoords.set( ( event.clientX / dom.clientWidth ) * 2 - 1, - ( event.clientY / dom.clientHeight ) * 2 + 1 );
+				// We don't need to raycast here unless we want hover effects on the button
+			}
+
+			function raycast() {
+
+				// Set uniforms: mouse interaction
+				const uniforms = heightmapVariable.material.uniforms;
+				if ( mousedown ) {
+
+					raycaster.setFromCamera( mouseCoords, camera );
+
+					// Check for both water meshes
+					const allWaterObjects = [meshRay, upperMeshRay];
+					const intersects = raycaster.intersectObjects(allWaterObjects);
+
+					if ( intersects.length > 0 ) {
+						// Record which mesh was hit
+						const hitObject = intersects[0].object;
+						const point = intersects[0].point;
+
+						if (hitObject === meshRay) {
+							// Main water - convert to normalized position relative to water bounds
+							// BOUNDS is the water size (e.g. 2.7)
+							// Water is centered at origin in XZ, so point ranges from -BOUNDS/2 to +BOUNDS/2
+							// Convert to 0-1 range for the heightmap
+							const waterX = (point.x + BOUNDS_HALF) / BOUNDS;
+							const waterZ = (point.z + BOUNDS_HALF) / BOUNDS;
+							
+							// Convert 0-1 range back to world space for the shader
+							const coordX = (waterX - 0.5) * BOUNDS;
+							const coordZ = (waterZ - 0.5) * BOUNDS;
+							
+							uniforms['mousePos'].value.set(coordX, coordZ);
+							console.log('Main water hit:', coordX, coordZ);
+							
+						} else if (hitObject === upperMeshRay) {
+							// Upper bowl - just use world position for now
+							uniforms['mousePos'].value.set(point.x, point.z);
+							console.log('Upper bowl hit:', point.x, point.z);
+						}
+						
+						if (controls.enabled) controls.enabled = false;
+						
+					} else {
+						uniforms['mousePos'].value.set(10000, 10000);
+					}
+
+				} else {
+					uniforms['mousePos'].value.set(10000, 10000);
+				}
+			}
+
+			let lastTime = 0;
+			function animate(currentTime) {
+				const deltaTime = Math.min((currentTime - lastTime) * 0.001, 0.1); // Convert to seconds, cap at 0.1s
+				lastTime = currentTime;
+				
+				fallingWaterUniforms.iTime.value = performance.now() / 1000.0; // Pass time in seconds
+                // --- END NEW ---
+				if (heightmapVariable) { // Check if initialized
+                    heightmapVariable.material.uniforms['time'].value = performance.now() / 1000.0;
+                }
+
+				// --- NEW: Update splash particles ---
+				updateSplashParticles(deltaTime);
+				
+				// Continuously emit particles at the water intersection
+				const fallingWaterCenter = heightmapVariable.material.uniforms['fallingWaterCenter'].value;
+				const fallingWaterRadius = heightmapVariable.material.uniforms['fallingWaterSize'].value;
+				
+				// Emit a few particles each frame
+				if (Math.random() < 0.95) { // 80% chance each frame
+					emitSplashParticles(
+						fallingWaterCenter.x, 
+						fallingWaterCenter.y, 
+						fallingWaterRadius, 
+						Math.floor(2 + Math.random() * 6) // 2-4 particles per emission
+					);
+				}
+				// --- END NEW ---
+
+				render();
+				// stats.update();
+
+			}
+
+			function render() {
+
+                if (coinSplashTimeout === null) {
+                    raycast(); // Process mouse interaction only if no coin splash is resetting
+                 }
+
+                 const dt = 1/60;
+                const waterLevel = -0.5; // Adjusted to match water mesh position
+                const bottomDepth = -0.78; // Adjusted bottom depth (-0.28 - 0.5)
+                const waterDamping = 0.70;
+                const underwaterGravityFactor = 0.35;
+                const uniforms = heightmapVariable.material.uniforms;
+
+                // Temporary raycaster for coin collision detection
+                const coinRaycaster = new THREE.Raycaster();
+                // Collection of fountain parts for collision testing
+                const fountainParts = [];
+                
+                // Get all fountain model parts for collision detection
+                if (window.fountainModel) {
+                    window.fountainModel.traverse(function(node) {
+                        if (node.isMesh && node.userData.isFountainPart) {
+                            fountainParts.push(node);
+                        }
+                    });
+                }
+
+                for ( let i = coins.length - 1; i >= 0; i-- ) {
+                    const coin = coins[i];
+                    const velocity = coin.userData.velocity;
+                    const isUnderwater = coin.userData.underwater;
+                    const hasStopped = coin.userData.stopped;
+
+                    if (!hasStopped) {
+                        // --- Apply Spin ---
+                        coin.rotateOnWorldAxis(coin.userData.rotationAxis, coin.userData.rotationSpeed);
+
+                        // --- Apply Gravity / Damping ---
+                        if (isUnderwater) {
+                            // Apply overall damping
+                            velocity.multiplyScalar(waterDamping);
+                            // Apply a small residual downward force (gravity - buoyancy approx)
+                            velocity.y -= gravity * underwaterGravityFactor; // Ensures it continues sinking
+                        } else {
+                            // Apply normal gravity above water
+                            velocity.y -= gravity;
+                        }
+
+                        // Calculate next position before applying it
+                        const nextPosition = coin.position.clone().add(velocity.clone().multiplyScalar(dt));
+                        
+                        // --- Check for Fountain Collision ---
+                        if (fountainParts.length > 0 && !isUnderwater) {
+                            // Create a ray from current position to next position
+                            const rayDirection = nextPosition.clone().sub(coin.position).normalize();
+                            coinRaycaster.set(coin.position, rayDirection);
+                            
+                            // Check distance to travel this frame
+                            const distanceToTravel = coin.position.distanceTo(nextPosition);
+                            
+                            // Set max distance to slightly more than we'd travel this frame
+                            const intersects = coinRaycaster.intersectObjects(fountainParts, false);
+                            
+                            // If we hit something within our travel distance
+                            if (intersects.length > 0 && intersects[0].distance < distanceToTravel + 0.01) {
+                                console.log("Coin hit fountain part:", intersects[0].object.name);
+                                
+                                // Get normal of the surface hit
+                                const surfaceNormal = intersects[0].face.normal.clone();
+                                
+                                // Transform normal to world space
+                                surfaceNormal.transformDirection(intersects[0].object.matrixWorld);
+                                
+                                // Calculate the bounce effect
+                                const impactSpeed = velocity.length();
+                                const bounceCoefficient = 0.3; // How much the coin bounces (0-1)
+                                const minSpeedForBounce = 0.03; // Minimum speed needed to bounce
+                                
+                                // Position coin near point of impact but offset along normal to prevent penetration
+                                // Use coin half-thickness plus a small buffer for the offset
+                                const offsetDistance = COIN_THICKNESS/2 + 0.003; // Ensure no embedding
+                                const impactPoint = intersects[0].point.clone();
+                                coin.position.copy(impactPoint.add(surfaceNormal.clone().multiplyScalar(offsetDistance)));
+                                
+                                // Only bounce if impact speed is significant enough
+                                if (impactSpeed > minSpeedForBounce) {
+                                    // Reflect velocity vector along normal (bounce) and reduce magnitude
+                                    velocity.reflect(surfaceNormal).multiplyScalar(bounceCoefficient);
+                                    
+                                    // Add some randomness to bounce to make it more natural
+                                    velocity.x += (Math.random() - 0.5) * 0.01;
+                                    velocity.z += (Math.random() - 0.5) * 0.01;
+                                    
+                                    // Add a small rolling effect on angled surfaces
+                                    const surfaceAngle = surfaceNormal.angleTo(new THREE.Vector3(0, 1, 0));
+                                    if (surfaceAngle > 0.2) { // Only roll on sufficiently angled surfaces
+                                        // Calculate a vector along the slope direction
+                                        const slopeDirection = new THREE.Vector3(surfaceNormal.x, 0, surfaceNormal.z).normalize();
+                                        const rollForce = 0.02 * Math.sin(surfaceAngle);
+                                        velocity.add(slopeDirection.multiplyScalar(-rollForce)); // Roll downhill
+                                    }
+                                    
+                                    // Increase spin based on impact
+                                    coin.userData.rotationSpeed *= 1.5;
+                                } else {
+                                    // If impact speed is too low, the coin comes to rest on this surface
+                                    velocity.set(0, 0, 0);
+                                    coin.userData.stopped = true;
+                                    
+                                    // Align coin with surface - ensure the FLAT side is parallel to surface
+                                    // First reset rotation
+                                    coin.rotation.set(0, 0, 0);
+                                    
+                                    // Then create rotation to align coin's up vector with surface normal
+                                    // Since coin was initially rotated PI/2 on X, its "up" is now along Z axis
+                                    const coinUpVector = new THREE.Vector3(0, 0, 1);
+                                    const quaternion = new THREE.Quaternion().setFromUnitVectors(coinUpVector, surfaceNormal);
+                                    coin.quaternion.copy(quaternion);
+                                    
+                                    // Add a random rotation around the normal for visual variety
+                                    const randomAngle = Math.random() * Math.PI * 2;
+                                    coin.rotateOnWorldAxis(surfaceNormal, randomAngle);
+                                }
+                                
+                                // If coin is stopped, continue to next coin
+                                if (coin.userData.stopped) {
+                                    continue;
+                                }
+                            }
+                        }
+
+                        // --- Update Position ---
+                        coin.position.copy(nextPosition);
+
+                        // --- Check for Water Entry ---
+                        // Trigger splash FIRST, then slow down
+                        if (!isUnderwater && coin.position.y <= waterLevel && velocity.y < 0 && isWithinFountainWater(coin.position)) {
+                            console.log("Coin entered water at", coin.position.x.toFixed(2), coin.position.y.toFixed(2), coin.position.z.toFixed(2), "water level:", waterLevel);
+
+                            // --- Trigger Splash Immediately ---
+                            const impactX = coin.position.x;
+                            const impactZ = coin.position.z;
+                            uniforms['mousePos'].value.set( impactX, impactZ );
+                            console.log("Setting splash at", impactX, impactZ);
+
+                            if ( coinSplashTimeout !== null ) clearTimeout( coinSplashTimeout );
+                            coinSplashTimeout = setTimeout( () => {
+                                if (heightmapVariable) uniforms['mousePos'].value.set( 10000, 10000 );
+                                coinSplashTimeout = null;
+                            }, coinSplashDuration );
+
+                            // --- THEN Modify State & Physics for Underwater ---
+                            coin.userData.underwater = true;
+                            coin.material.opacity = 0.6; // Set opacity
+                            // Increase emissive intensity underwater to make coin more visible
+                            // coin.material.emissiveIntensity = 0.05; // Maximum glow underwater
+                            // Make the coin slightly larger underwater for better visibility
+                            coin.scale.set(1.25, 1.25, 1.25);
+                            velocity.multiplyScalar(0.5); // Reduce velocity upon entry
+
+                        }
+
+                        // --- Check for Reaching Bottom ---
+                        if (isUnderwater && coin.position.y <= bottomDepth + 0.01) { // Check if close to or past bottom
+                             console.log("Coin reached bottom");
+                             coin.position.y = bottomDepth; // Settle exactly at bottom
+                             coin.userData.stopped = true;
+                             velocity.set(0, 0, 0); // Stop all movement
+
+                             // --- ADJUSTMENT: Set rotation to flat on XZ plane ---
+                             // Apply rotation relative to the mesh's current state to align with world XZ plane
+                             // Since geometry was rotated PI/2 on X, we rotate mesh -PI/2 on X
+                             coin.rotation.set(-Math.PI / 2, 0, 0);
+                             // We might also want a random Z rotation so they don't all face the same way
+                             coin.rotateZ(Math.random() * Math.PI * 2); // Add random rotation around world Z
+                             // --- END ADJUSTMENT ---
+                        }
+                    } // end if (!hasStopped)
+
+                    // --- Cleanup Check ---
+                    if ( coin.position.y < -10 ) {
+                         console.log("Coin out of bounds, removing");
+                         scene.remove( coin );
+                         coins.splice( i, 1 );
+                    }
+                }
+       
+
+				frame ++;
+
+				if ( frame >= 7 - effectController.speed ) {
+
+					// Do the gpu computation
+					gpuCompute.compute();
+					tmpHeightmap = gpuCompute.getCurrentRenderTarget( heightmapVariable ).texture;
+
+					// if ( ducksEnabled ) duckDynamics();
+
+					// Get compute output in custom uniform
+					if ( waterMesh ) waterMesh.material.heightmap = tmpHeightmap;
+					// Also apply to upper water mesh
+					if ( upperWaterMesh ) upperWaterMesh.material.heightmap = tmpHeightmap;
+
+					frame = 0;
+
+				}
+
+				// Render
+				renderer.render( scene, camera );
+
+			}
+
+
+			//----------------------
+
+			class WaterMaterial extends THREE.MeshStandardMaterial {
+
+				constructor( parameters ) {
+
+					super();
+
+					this.defines = {
+
+						'STANDARD': '',
+						'USE_UV': '',
+						'WIDTH': WIDTH.toFixed( 1 ),
+						'BOUNDS': BOUNDS.toFixed( 1 ),
+
+					};
+
+					this.extra = {};
+
+					this.addParameter( 'heightmap', null );
+
+					this.setValues( parameters );
+
+				}
+
+				addParameter( name, value ) {
+
+					this.extra[ name ] = value;
+					Object.defineProperty( this, name, {
+						get: () => ( this.extra[ name ] ),
+						set: ( v ) => {
+
+							this.extra[ name ] = v;
+							if ( this.userData.shader ) this.userData.shader.uniforms[ name ].value = this.extra[ name ];
+
+						}
+					} );
+
+				}
+
+				onBeforeCompile( shader ) {
+
+					for ( const name in this.extra ) {
+
+						shader.uniforms[ name ] = { value: this.extra[ name ] };
+
+					}
+
+					shader.vertexShader = shader.vertexShader.replace( '#include <common>', shaderChange.common );
+					//shader.vertexShader = 'uniform sampler2D heightmap;\n' + shader.vertexShader;
+					shader.vertexShader = shader.vertexShader.replace( '#include <beginnormal_vertex>', shaderChange.beginnormal_vertex );
+					shader.vertexShader = shader.vertexShader.replace( '#include <begin_vertex>', shaderChange.begin_vertex );
+
+					this.userData.shader = shader;
+
+				}
+
+			}
+
+
+			const shaderChange = {
+
+				heightmap_frag: /* glsl */`
+				#include <common>
+
+				uniform vec2 mousePos;
+				uniform float mouseSize;
+				uniform float viscosity;
+				uniform float deep;
+				uniform float time;
+				uniform vec2 fallingWaterCenter;
+				uniform float fallingWaterSize;
+				uniform float fallingWaterDeep;
+
+				// Simple pseudo-random function (hash)
+				float hash(vec2 p) {
+					// Simple 2D hash function
+					return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453123);
+				}
+
+				// Basic procedural noise using hash
+				float noise(vec2 p) {
+					vec2 i = floor(p);
+					vec2 f = fract(p);
+					// Smooth interpolation (smoothstep can be used too)
+					vec2 u = f * f * (3.0 - 2.0 * f);
+					// Mix corners
+					return mix(mix(hash(i + vec2(0.0, 0.0)),
+								   hash(i + vec2(1.0, 0.0)), u.x),
+							   mix(hash(i + vec2(0.0, 1.0)),
+								   hash(i + vec2(1.0, 1.0)), u.x), u.y);
+				}
+
+				void main()	{
+					vec2 cellSize = 1.0 / resolution.xy;
+					vec2 uv = gl_FragCoord.xy * cellSize;
+
+					vec4 heightmapValue = texture2D( heightmap, uv );
+
+					// Get neighbours
+					vec4 north = texture2D( heightmap, uv + vec2( 0.0, cellSize.y ) );
+					vec4 south = texture2D( heightmap, uv + vec2( 0.0, - cellSize.y ) );
+					vec4 east = texture2D( heightmap, uv + vec2( cellSize.x, 0.0 ) );
+					vec4 west = texture2D( heightmap, uv + vec2( - cellSize.x, 0.0 ) );
+
+					// Calculate base new height using simulation equation
+					float newHeight = ( ( north.x + south.x + east.x + west.x ) * 0.5 - heightmapValue.y ) * viscosity;
+
+					// --- ADD CONTINUOUS PROCEDURAL NOISE TO PREVENT FLATTENING ---
+					float noiseFrequency = 8.0;   // Controls the scale of the noise pattern
+					float noiseSpeed = 0.2;       // Controls how fast the noise pattern evolves
+					float noiseStrength = 0.0008; // <<< VERY IMPORTANT: TUNE THIS CAREFULLY! Start small.
+
+					// Calculate noise based on UV coordinates and time
+					float noiseVal = noise(uv * noiseFrequency + vec2(time * noiseSpeed));
+
+					// Add the noise (scaled to [-1, 1] range) to the height calculation
+					// This continuously perturbs the surface away from perfect flatness
+					newHeight += (noiseVal * 2.0 - 1.0) * noiseStrength;
+					// --- END NOISE ---
+
+					// --- Mouse/Coin influence ---
+					// Apply the user/coin interaction force
+					vec2 mouseInfluencePos = vec2(mousePos.x, -mousePos.y); // Use the flipped coord for calculation
+					float mousePhase = clamp( length( ( uv - vec2( 0.5 ) ) * BOUNDS - mouseInfluencePos ) * PI / mouseSize, 0.0, PI );
+					newHeight -= ( cos( mousePhase ) + 1.0 ) * deep; // Subtract influence
+
+					// --- Falling water continuous splash ---
+					vec2 worldPos = (uv - vec2(0.5)) * BOUNDS;
+  float distToCenter = length(worldPos - fallingWaterCenter);
+
+  // Create expanding ripples from center
+  float rippleSpeed = 4.0; // How fast ripples expand
+  float rippleFrequency = 15.0; // How many ripples
+  float rippleDecay = 2.0; // How quickly ripples fade with distance
+
+  // Create outward moving ripples
+  float ripplePhase = distToCenter * rippleFrequency - time * rippleSpeed;
+  float rippleAmplitude = exp(-distToCenter * rippleDecay) * fallingWaterDeep;
+
+  // Single clean ripple pattern
+  float ripple = sin(ripplePhase) * rippleAmplitude;
+
+  // Only apply ripples within a certain radius
+  float maxRadius = 1.2; // Maximum ripple distance
+  ripple *= smoothstep(maxRadius, 0.0, distToCenter);
+
+  newHeight += ripple;
+					// --- END falling water splash ---
+
+					// Update height history
+					heightmapValue.y = heightmapValue.x;
+					heightmapValue.x = newHeight;
+
+					gl_FragColor = heightmapValue;
+				}
+				`,
+				// FOR MATERIAL
+				common: /* glsl */`				#include <common>
+				uniform sampler2D heightmap;
+				`,
+				beginnormal_vertex: /* glsl */`
+				vec2 cellSize = vec2( 1.0 / WIDTH, 1.0 / WIDTH );
+				vec3 objectNormal = vec3(
+				( texture2D( heightmap, uv + vec2( - cellSize.x, 0 ) ).x - texture2D( heightmap, uv + vec2( cellSize.x, 0 ) ).x ) * WIDTH / BOUNDS,
+				( texture2D( heightmap, uv + vec2( 0, - cellSize.y ) ).x - texture2D( heightmap, uv + vec2( 0, cellSize.y ) ).x ) * WIDTH / BOUNDS,
+				1.0 );
+				#ifdef USE_TANGENT
+					vec3 objectTangent = vec3( tangent.xyz );
+				#endif
+				`,
+				begin_vertex: /* glsl */`
+				float heightValue = texture2D( heightmap, uv ).x;
+				vec3 transformed = vec3( position.x, position.y, heightValue );
+				#ifdef USE_ALPHAHASH
+					vPosition = vec3( position );
+				#endif
+				`,
+			};
+
+		</script>
+
+		<!-- Script for glowing text effect -->
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				const text = document.getElementById('text');
+				const mainText = '<a href="/home" style="text-decoration: none; color: inherit;">RL80</a>';
+				
+				// Clear the existing content and set the main text with link
+				text.innerHTML = mainText;
+				
+				// Create 100 copies with varying styles exactly like the React version
+				Array.from({length: 100}).forEach((_, i) => {
+					const index = i + 1;
+					const textCopy = document.createElement('div');
+					textCopy.className = 'text__copy';
+					textCopy.innerHTML = mainText; // Use innerHTML to preserve the link
+					
+					// Apply the exact same styles as in the React component
+					Object.assign(textCopy.style, {
+						position: 'absolute',
+						pointerEvents: 'none',
+						zIndex: '-1',
+						top: '0',
+						left: '0',
+						color: `rgba(${255 - index * 2}, ${255 - index * 3}, ${255 - index * 2})`,
+						filter: 'blur(0.1rem)',
+						transform: `translate(${index * 0.1}rem, ${index * 0.1}rem) scale(${1 + index * 0.01})`,
+						opacity: (1 / index) * 1.5
+					});
+					
+					text.appendChild(textCopy);
+				});
+				
+				// Use event delegation instead of direct button manipulation
+				// This avoids any issues with the button being removed or changed
+				document.addEventListener('click', function(event) {
+					// Find if the click was on the launch button or any of its children
+					let target = event.target;
+					let isLaunchButton = false;
+					
+					// Check if the target or any of its parents is the launch button
+					while (target && target !== document) {
+						if (target.id === 'launchButton' || 
+							(target.classList && target.classList.contains('control-button') && 
+							 target.getAttribute('data-action') === 'launch')) {
+							isLaunchButton = true;
+							break;
+						}
+						target = target.parentNode;
+					}
+					
+					// If launch button was clicked
+					if (isLaunchButton) {
+						console.log('Launch button clicked, sending ROCKET_LAUNCH message');
+						
+						// Generate unique ID and timestamp
+						const messageId = Date.now();
+						const timestamp = new Date().toISOString();
+						
+						// Send message to parent React component
+						if (window.parent && window.parent !== window) {
+							// Try direct function call first
+							if (window.parent.rocketLaunch && typeof window.parent.rocketLaunch === 'function') {
+								window.parent.rocketLaunch();
+							} else {
+								console.log('parent.rocketLaunch not available');
+								
+								// Fall back to postMessage
+								window.parent.postMessage({ 
+									type: 'ROCKET_LAUNCH',
+									id: messageId,
+									timestamp: timestamp
+								}, '*');
+								console.log('Launch message sent with ID:', messageId);
+							}
+						}
+						
+						// Don't try to manipulate the button's style at all!
+						// Let CSS handle the visual feedback via :active state
+					}
+				});
+				
+				console.log('Launch button event delegation set up');
+			});
+		</script>
+
+		<!-- Additional CSS for button animation -->
+		<style>
+			#launchButton:active {
+				transform: scale(0.95);
+				box-shadow: 0 0 25px rgba(48, 207, 208, 0.8);
+			}
+		</style>
+	</body>
+</html>
