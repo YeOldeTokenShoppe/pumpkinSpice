@@ -46,13 +46,12 @@
 	</head>
 	<body>
 		<!-- Loader -->
-		<div id="loaderContainer" class="loader-container">
-			<div id="magic8BallLoader"></div>
-		</div>
+
+
 
 		<div id="info" style="
 			position: absolute;
-			right: 30px;
+			right: 30%;
 			top: 50%;
 			transform: translateY(-50%);
 			background: rgba(20, 20, 30, 0.8);
@@ -497,7 +496,7 @@
                     transparent: true,
                     depthTest: false, // Render on top
                     depthWrite: false,
-                    side: THREE.DoubleSide
+                    side: THREE.FrontSide
                 });
 
                 const mesh = new THREE.Mesh(geometry, material);
@@ -938,8 +937,14 @@
 				// instructionText3D = createTextSprite(textContent, new THREE.Vector3(0, 1.5, 0), 32, 'white', new THREE.Vector3(4, 2, 1)); // Adjust position/scale as needed
 				// scene.add(instructionText3D);
 
-				tossCoinButton3D = createButtonMesh("Toss Coin", new THREE.Vector3(0.1, -0.4, 1.5), {width: 0.3, height: 0.1}); // Adjust position/size as needed
-				scene.add(tossCoinButton3D);
+				tossCoinButton3D = createButtonMesh(
+      "Click to Toss Coin",
+      new THREE.Vector3(0.03, -0.38, 1.4),
+      {width: 0.3, height: 0.07},
+      32,                    // fontSize
+      '#30cfd0',            // bgColor (cyan to match the UI theme)
+      'black'               // textColor     
+  );				scene.add(tossCoinButton3D);
 				// --- END NEW ---
 
 				initWater();
@@ -1452,8 +1457,14 @@
                  }
 
                  const dt = 1/60;
-                const waterLevel = -0.5; // Adjusted to match water mesh position
-                const bottomDepth = -0.78; // Adjusted bottom depth (-0.28 - 0.5)
+                // Lower bowl water levels
+                const lowerWaterLevel = -0.5; // Adjusted to match water mesh position
+                const lowerBottomDepth = -0.78; // Adjusted bottom depth (-0.28 - 0.5)
+                
+                // Upper bowl water levels
+                const upperWaterLevel = 0.4; // Match upper water mesh Y position
+                const upperBottomDepth = 0.3; // Upper bowl bottom (adjust this value based on your fountain model)
+                
                 const waterDamping = 0.70;
                 const underwaterGravityFactor = 0.35;
                 const uniforms = heightmapVariable.material.uniforms;
@@ -1475,6 +1486,36 @@
                 for ( let i = coins.length - 1; i >= 0; i-- ) {
                     const coin = coins[i];
                     const velocity = coin.userData.velocity;
+                    
+                    // --- Track if coin is stuck ---
+                    if (!coin.userData.lastPositions) {
+                        coin.userData.lastPositions = [];
+                        coin.userData.stuckTimer = 0;
+                    }
+                    
+                    // --- Determine which bowl the coin is in FIRST ---
+                    // Upper bowl center is at (0.05, 0.4, -0.01) with size 0.6
+                    const upperBowlRadius = 0.25; // Slightly smaller than half to ensure we're inside
+                    const distanceFromUpperCenter = Math.sqrt(
+                        Math.pow(coin.position.x - 0.05, 2) + 
+                        Math.pow(coin.position.z + 0.01, 2)
+                    );
+                    const isInUpperBowl = coin.position.y > 0.2 && distanceFromUpperCenter < upperBowlRadius;
+                    
+                    // Calculate dynamic bottom depth for upper bowl based on distance from center
+                    let bottomDepth;
+                    if (isInUpperBowl) {
+                        // Create a parabolic bowl shape: deeper in center, shallower at edges
+                        const normalizedDistance = distanceFromUpperCenter / upperBowlRadius; // 0 at center, 1 at edge
+                        const bowlCurve = normalizedDistance * normalizedDistance; // Quadratic curve
+                        // Interpolate between center depth (0.3) and edge depth (0.38)
+                        bottomDepth = 0.3 + (bowlCurve * 0.08); // Ranges from 0.3 to 0.38
+                    } else {
+                        bottomDepth = lowerBottomDepth;
+                    }
+                    
+                    const waterLevel = isInUpperBowl ? upperWaterLevel : lowerWaterLevel;
+                    
                     const isUnderwater = coin.userData.underwater;
                     const hasStopped = coin.userData.stopped;
 
@@ -1580,9 +1621,20 @@
                         coin.position.copy(nextPosition);
 
                         // --- Check for Water Entry ---
+                        // Check if coin is within the appropriate bowl's water area
+                        let isInWaterArea = false;
+                        if (isInUpperBowl) {
+                            // For upper bowl, we already checked the radius in isInUpperBowl
+                            // Double-check we're still within bounds
+                            isInWaterArea = distanceFromUpperCenter < upperBowlRadius;
+                        } else {
+                            // For lower bowl, use the existing function
+                            isInWaterArea = isWithinFountainWater(coin.position);
+                        }
+                        
                         // Trigger splash FIRST, then slow down
-                        if (!isUnderwater && coin.position.y <= waterLevel && velocity.y < 0 && isWithinFountainWater(coin.position)) {
-                            console.log("Coin entered water at", coin.position.x.toFixed(2), coin.position.y.toFixed(2), coin.position.z.toFixed(2), "water level:", waterLevel);
+                        if (!isUnderwater && coin.position.y <= waterLevel && velocity.y < 0 && isInWaterArea) {
+                            console.log("Coin entered water at", coin.position.x.toFixed(2), coin.position.y.toFixed(2), coin.position.z.toFixed(2), "water level:", waterLevel, "in", isInUpperBowl ? "upper" : "lower", "bowl");
 
                             // --- Trigger Splash Immediately ---
                             const impactX = coin.position.x;
@@ -1621,6 +1673,43 @@
                              // We might also want a random Z rotation so they don't all face the same way
                              coin.rotateZ(Math.random() * Math.PI * 2); // Add random rotation around world Z
                              // --- END ADJUSTMENT ---
+                        }
+                        
+                        // --- Check if coin is stuck on statue ---
+                        // Track position history
+                        coin.userData.lastPositions.push(coin.position.clone());
+                        if (coin.userData.lastPositions.length > 60) { // Keep last 1 second of positions (60 fps)
+                            coin.userData.lastPositions.shift();
+                        }
+                        
+                        // Check if coin has barely moved in the last second
+                        if (coin.userData.lastPositions.length >= 60) {
+                            const oldPos = coin.userData.lastPositions[0];
+                            const movement = coin.position.distanceTo(oldPos);
+                            
+                            // If coin is above water, not stopped, and barely moving
+                            if (!isUnderwater && !coin.userData.stopped && movement < 0.02 && coin.position.y > waterLevel) {
+                                coin.userData.stuckTimer += dt;
+                                
+                                // If stuck for more than 0.5 seconds on the statue area (high up)
+                                if (coin.userData.stuckTimer > 0.5 && coin.position.y > 0.5) {
+                                    console.log("Coin stuck on statue, applying slide");
+                                    // Apply a small random sideways velocity to make it slide off
+                                    velocity.x += (Math.random() - 0.5) * 0.3;
+                                    velocity.z += (Math.random() - 0.5) * 0.3;
+                                    velocity.y = -0.2; // Small downward velocity
+                                    coin.userData.stuckTimer = 0; // Reset timer
+                                }
+                                
+                                // If stuck for too long anywhere, just drop it
+                                if (coin.userData.stuckTimer > 2.0) {
+                                    console.log("Coin stuck too long, forcing drop");
+                                    velocity.y = -1.0; // Force it to fall
+                                    coin.userData.stuckTimer = 0;
+                                }
+                            } else {
+                                coin.userData.stuckTimer = 0; // Reset if moving normally
+                            }
                         }
                     } // end if (!hasStopped)
 
