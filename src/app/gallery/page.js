@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { useMusic } from "@/components/MusicContext";
 import SimpleLoader from "@/components/SimpleLoader";
 import CandleInteractionHint from "@/components/CandleInteractionHint";
 import BuyTokenFAB from "@/components/BuyTokenFAB";
 import CompactCandleModal from "@/components/CompactCandleModal";
+import CyberNav from "@/components/CyberNav";
 
 
 
@@ -19,7 +20,11 @@ const ThreeDVotiveStand = dynamic(() => import("@/components/index.jsx"), {
 });
 
 export default function GalleryPage() {
-
+  // Get user from Clerk
+  const { user, isSignedIn } = useUser();
+  
+  // Track if we're on a mobile device for responsive layout
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   // Get music context functions
   const { play, pause, isPlaying: contextIsPlaying, nextTrack, currentTrackIndex, currentTrack, is80sMode: context80sMode, setIs80sMode: setContext80sMode } = useMusic();
@@ -54,10 +59,18 @@ export default function GalleryPage() {
     return true; // Always return true for mobile
   }, []);
 
-  // Always use mobile view on mount
+  // Always use mobile view on mount + check for actual mobile device
   useEffect(() => {
     setIsDefinitelyPhone(true);
     setIsMobileView(true);
+    
+    // Check if actually on mobile for icon layout
+    const checkMobileDevice = () => {
+      setIsMobileDevice(window.innerWidth <= 768);
+    };
+    checkMobileDevice();
+    window.addEventListener('resize', checkMobileDevice);
+    return () => window.removeEventListener('resize', checkMobileDevice);
   }, []);
 
   // No longer need resize handlers - always mobile view
@@ -309,19 +322,91 @@ export default function GalleryPage() {
         </div>
       )}
           
-          {/* Desktop controls for Music and 80s Mode (only show after loading) */}
+          {/* Integrated Icon Bar - Menu, Music, and 80s Mode */}
           {!isLoading && (
         <>
-          {!showMusicControls ? (
+          {/* CyberNav Menu */}
+          <CyberNav is80sMode={is80sMode} />
+          
+          {/* Music, 80s Mode, and User Controls Container */}
+          <div style={{
+            position: "fixed",
+            top: isMobileDevice ? "70px" : "20px", // Below menu on mobile
+            right: isMobileDevice ? "20px" : "72px", // Aligned with menu on mobile, spaced on desktop
+            display: "flex",
+            flexDirection: isMobileDevice ? "column" : "row", // Vertical on mobile, horizontal on desktop
+            gap: "10px",
+            alignItems: isMobileDevice ? "flex-end" : "center",
+            zIndex: 9999
+          }}>
+            {/* User Account Icon - Show on desktop or at bottom on mobile */}
+            {(!isMobileDevice || isMobileDevice) && (
+              <div style={{ order: isMobileDevice ? 3 : 0 }}>
+                {isSignedIn ? (
+                  <UserButton 
+                    afterSignOutUrl="/"
+                    appearance={{
+                      elements: {
+                        avatarBox: {
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "8px",
+                          border: "2px solid rgba(255, 255, 255, 0.2)",
+                          backgroundColor: "rgba(0, 0, 0, 0.7)",
+                          backdropFilter: "blur(10px)",
+                          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <SignInButton mode="modal">
+                    <button
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "8px",
+                        backgroundColor: "rgba(0, 0, 0, 0.7)",
+                        border: "2px solid rgba(255, 255, 255, 0.2)",
+                        color: "#ffffff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        backdropFilter: "blur(10px)",
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                      }}
+                      title="Sign In"
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </button>
+                  </SignInButton>
+                )}
+              </div>
+            )}
+            
+            {/* Music Controls */}
+            <div style={{ order: isMobileDevice ? 1 : 1 }}>
+            {!showMusicControls ? (
             <button
               onClick={() => handleMusicToggle(true)}
               style={{
-                position: "fixed",
-                top: "3rem",
-                right: "20px",
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                borderRadius: "8px",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
                 color: "#ffffff",
@@ -332,13 +417,12 @@ export default function GalleryPage() {
                 transition: "all 0.3s ease",
                 backdropFilter: "blur(10px)",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-                zIndex: 9999,
               }}
               title="Toggle Music"
             >
               <svg
-                width="24"
-                height="24"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -352,13 +436,9 @@ export default function GalleryPage() {
               </svg>
             </button>
           ) : (
-            // Compact Music Player Controls (matching mobile)
+            // Compact Music Player Controls
             <div
               style={{
-                position: "fixed",
-                top: "3rem",
-                right: "20px",
-                zIndex: 9999,
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
@@ -367,8 +447,8 @@ export default function GalleryPage() {
               {/* Spinning Album Art */}
               <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: "36px",
+              height: "36px",
               borderRadius: "50%",
               overflow: "hidden",
               animation: contextIsPlaying ? "spin 4s linear infinite" : "none",
@@ -415,8 +495,8 @@ export default function GalleryPage() {
                   }
                 }}
                 style={{
-                  width: "32px",
-                  height: "32px",
+                  width: "30px",
+                  height: "30px",
                   borderRadius: "4px",
                   backgroundColor: "rgba(255, 255, 255, 0.1)",
                   border: "none",
@@ -447,8 +527,8 @@ export default function GalleryPage() {
                   }
                 }}
                 style={{
-                  width: "28px",
-                  height: "28px",
+                  width: "26px",
+                  height: "26px",
                   borderRadius: "4px",
                   backgroundColor: "rgba(255, 255, 255, 0.1)",
                   border: "1px solid rgba(255, 255, 255, 0.3)",
@@ -468,17 +548,16 @@ export default function GalleryPage() {
               </button>
             </div>
           )}
-          
-          {/* 80s Mode Toggle Icon - positioned below music controls */}
-          <button
-            onClick={() => toggle80sMode(!is80sMode)}
-            style={{
-              position: "fixed",
-              top: "6rem",
-              right: "20px",
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
+            </div>
+            
+            {/* 80s Mode Toggle Icon */}
+            <div style={{ order: isMobileDevice ? 2 : 2 }}>
+            <button
+              onClick={() => toggle80sMode(!is80sMode)}
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "8px",
               backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.3)" : "rgba(0, 0, 0, 0.7)",
               border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
               color: is80sMode ? "#67e8f9" : "#ffffff",
@@ -491,7 +570,6 @@ export default function GalleryPage() {
               boxShadow: is80sMode 
                 ? "0 0 20px rgba(217, 70, 239, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)" 
                 : "0 2px 8px rgba(0, 0, 0, 0.3)",
-              zIndex: 9999,
             }}
             onMouseEnter={(e) => {
               if (is80sMode) {
@@ -519,6 +597,8 @@ export default function GalleryPage() {
               80s
             </span>
           </button>
+            </div>
+          </div>
           </>
           )}
       

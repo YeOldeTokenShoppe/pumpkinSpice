@@ -5,6 +5,13 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<link type="text/css" rel="stylesheet" href="/main.css">
+		<script>
+			// Redirect to Next.js page if accessed directly (not in iframe)
+			if (window.self === window.top) {
+				// Not in an iframe, redirect to the Next.js page
+				window.location.replace('/fountain');
+			}
+		</script>
 		<style>
 			@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap');
 
@@ -29,27 +36,55 @@
 				pointer-events: none;
 			}
 
+			/* Hide mobile/desktop specific text */
+			.mobile-text { display: none; }
+			.desktop-text { display: inline; }
+			
 			/* Mobile styles */
 			@media (max-width: 768px) {
+				.mobile-text { display: inline; }
+				.desktop-text { display: none; }
+				
 				#info {
-					right: auto;
-					left: 50%;
-					top: auto;
-					bottom: 100px;
-					transform: translateX(-50%);
-					width: 90%;
-					max-width: 300px;
-					text-align: center;
+					position: fixed !important;
+					right: 10px !important;
+					left: 160px !important;
+					top: auto !important;
+					bottom: 20px !important;
+					transform: none !important;
+					width: auto !important;
+					max-width: none !important;
+					text-align: left;
+					padding: 5px 8px !important;
+					font-size: 11px !important;
+					line-height: 1.3 !important;
+					background: rgba(20, 20, 30, 0.8) !important;
+					border-width: 1px !important;
+					height: fit-content;
+					min-height: 50px;
+					display: flex;
+					align-items: center;
+					box-sizing: border-box;
+					overflow: hidden;
+					word-wrap: break-word;
 				}
 				
 				#coinCounter {
 					right: auto !important;
-					left: 50% !important;
-					transform: translateX(-50%) !important;
+					left: 10px !important;
+					transform: none !important;
 					top: auto !important;
-					bottom: 160px !important;
+					bottom: 20px !important;
+					padding: 5px 8px !important;
+					font-size: 11px !important;
 					width: auto;
-					max-width: 250px;
+					max-width: 140px;
+					background: rgba(20, 20, 30, 0.8) !important;
+					border-width: 1px !important;
+				}
+				
+				.coin-emoji {
+					font-size: 12px !important;
 				}
 			}
 		</style>
@@ -76,7 +111,8 @@
 			z-index: 1000;
 			max-width: 25rem;
 		">
-			Click and Move mouse to disturb water. Click water and press button or 'c' to throw coin.
+			<span class="mobile-text">Tap water to disturb • Press button or 'c' on keyboard to throw coin</span>
+			<span class="desktop-text">Click and Move mouse to disturb water. Click water and press button or 'c' to throw coin.</span>
 		</div>
 		
 		<!-- Coin Counter Display -->
@@ -100,12 +136,12 @@
 			gap: 8px;
 		">
 			<div style="display: flex; align-items: center; gap: 8px;">
-				<span style="font-size: 18px;">🪙</span>
-				<span>Current: <span id="coinCount">0</span> / 200</span>
+				<span class="coin-emoji" style="font-size: 18px;">🪙</span>
+				<span><span class="desktop-text">Current: </span><span id="coinCount">0</span> / 200</span>
 			</div>
 			<div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(206, 187, 67, 0.3);">
-				<span style="font-size: 18px;">💰</span>
-				<span>Collected: <span id="collectedCount">0</span></span>
+				<span class="coin-emoji" style="font-size: 18px;">💰</span>
+				<span><span class="desktop-text">Collected: </span><span id="collectedCount">0</span></span>
 			</div>
 			<div id="resetMessage" style="display: none; color: #30cfd0; font-size: 12px; text-align: center; margin-top: 8px;">
 				Resetting fountain...

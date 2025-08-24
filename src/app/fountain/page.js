@@ -7,6 +7,8 @@ import { useMusic } from '@/components/MusicContext';
 import SimpleLoader from '@/components/SimpleLoader';
 import BuyTokenFAB from '@/components/BuyTokenFAB';
 import CompactCandleModal from '@/components/CompactCandleModal';
+import CyberNav from '@/components/CyberNav';
+import { useUser, UserButton, SignInButton } from '@clerk/nextjs';
 
 // Dynamic import for the FountainFrame component
 const FountainFrame = dynamic(() => import('@/components/FountainFrame'), {
@@ -15,19 +17,25 @@ const FountainFrame = dynamic(() => import('@/components/FountainFrame'), {
 });
 
 export default function FountainPage() {
+  // Get user from Clerk
+  const { user, isSignedIn } = useUser();
+  
   const { play, pause, isPlaying: contextIsPlaying, nextTrack, is80sMode: context80sMode, setIs80sMode: setContext80sMode } = useMusic();
   const [isLoading, setIsLoading] = useState(true);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
   const [showCandleModal, setShowCandleModal] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const is80sMode = context80sMode;
   const isToggling80sRef = useRef(false);
 
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobileView(window.innerWidth <= 768);
+      const isMobile = window.innerWidth <= 768;
+      setIsMobileView(isMobile);
+      setIsMobileDevice(isMobile);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -183,17 +191,77 @@ export default function FountainPage() {
         </div>
       </div>
 
-      {/* Music Controls */}
+      {/* Icon Bar - CyberNav Menu, User, Music, and 80s Mode */}
+      <CyberNav is80sMode={is80sMode} />
+      
+      {/* Music, 80s Mode, and User Controls Container */}
+      <div style={{
+        position: "fixed",
+        top: isMobileDevice ? "70px" : "20px",
+        right: isMobileDevice ? "20px" : "72px",
+        display: "flex",
+        flexDirection: isMobileDevice ? "column" : "row",
+        gap: "10px",
+        alignItems: isMobileDevice ? "flex-end" : "center",
+        zIndex: 10002
+      }}>
+        {/* User Account Icon */}
+        <div style={{ order: isMobileDevice ? 3 : 0 }}>
+          {isSignedIn ? (
+            <UserButton 
+              afterSignOutUrl="/"
+              appearance={{
+                elements: {
+                  avatarBox: {
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "8px",
+                    border: "2px solid rgba(255, 255, 255, 0.2)",
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    backdropFilter: "blur(10px)",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
+                  }
+                }
+              }}
+            />
+          ) : (
+            <SignInButton mode="modal">
+              <button
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "8px",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  border: "2px solid rgba(255, 255, 255, 0.2)",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  backdropFilter: "blur(10px)",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                }}
+                title="Sign In"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </button>
+            </SignInButton>
+          )}
+        </div>
+        
+        {/* Music Controls */}
+        <div style={{ order: isMobileDevice ? 1 : 1 }}>
       {!showMusicControls ? (
         <button
           onClick={() => handleMusicToggle(true)}
           style={{
-            position: "fixed",
-            top: "3rem",
-            right: "20px",
-            width: "48px",
-            height: "48px",
-            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            borderRadius: "8px",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             border: "2px solid rgba(255, 255, 255, 0.2)",
             color: "#ffffff",
@@ -204,11 +272,10 @@ export default function FountainPage() {
             transition: "all 0.3s ease",
             backdropFilter: "blur(10px)",
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-            zIndex: 10001,
           }}
           title="Toggle Music"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 18V5l12-2v13" />
             <circle cx="6" cy="18" r="3" />
             <circle cx="18" cy="16" r="3" />
@@ -216,10 +283,6 @@ export default function FountainPage() {
         </button>
       ) : (
         <div style={{
-          position: "fixed",
-          top: "3rem",
-          right: "20px",
-          zIndex: 10001,
           display: "flex",
           alignItems: "center",
           gap: "8px",
@@ -297,17 +360,16 @@ export default function FountainPage() {
           </button>
         </div>
       )}
-
-      {/* 80s Mode Toggle */}
-      {/* <button
-        onClick={() => toggle80sMode()}
-        style={{
-          position: "fixed",
-          top: "6rem",
-          right: "20px",
-          width: "48px",
-          height: "48px",
-          borderRadius: "50%",
+        </div>
+        
+        {/* 80s Mode Toggle */}
+        <div style={{ order: isMobileDevice ? 2 : 2 }}>
+          <button
+            onClick={() => toggle80sMode()}
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "8px",
           backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.3)" : "rgba(0, 0, 0, 0.7)",
           border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
           color: is80sMode ? "#67e8f9" : "#ffffff",
@@ -320,7 +382,6 @@ export default function FountainPage() {
           boxShadow: is80sMode
             ? "0 0 20px rgba(217, 70, 239, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)"
             : "0 2px 8px rgba(0, 0, 0, 0.3)",
-          zIndex: 10001,
         }}
         title={is80sMode ? "Disable 80s Mode" : "Enable 80s Mode"}
       >
@@ -331,9 +392,11 @@ export default function FountainPage() {
           textShadow: is80sMode ? "0 0 10px #00ff41" : "none",
           fontFamily: "monospace"
         }}>
-          80s
-        </span>
-      </button> */}
+              80s
+            </span>
+          </button>
+        </div>
+      </div>
 
       {/* Buy Token FAB */}
       {/* <div onClick={() => setShowCandleModal(true)}>

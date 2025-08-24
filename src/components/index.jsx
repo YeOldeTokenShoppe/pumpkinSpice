@@ -1,6 +1,6 @@
 // index.jsx
 import React, { useState, useRef, useEffect, useCallback, useMemo, Suspense, lazy, forwardRef, useImperativeHandle } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
 import TickerDisplay from "@/components/TickerDisplay";
@@ -28,6 +28,19 @@ import { useMusic } from "@/components/MusicContext";
 // Add constants for scale management
 const MIN_MODEL_SCALE = 10;
 const DEFAULT_MODEL_SCALE = 11;
+
+// Rotating Sky Component
+const RotatingSky = ({ children }) => {
+  const groupRef = useRef();
+  
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.02; // Slow rotation
+    }
+  });
+  
+  return <group ref={groupRef}>{children}</group>;
+};
 
 
 
@@ -446,15 +459,15 @@ const ThreeDVotiveStand = forwardRef(({
         {/* <directionalLight position={[10, 10, 5]} intensity={1} />
         <pointLight position={[0, 10, 0]} intensity={1} /> */}
         
-        {/* Add OrbitControls */}
+        {/* Add OrbitControls - Rotation disabled to keep statue facing viewer */}
         <OrbitControls
           enabled={true}
-          autoRotate={true}
-          autoRotateSpeed={0.2}
+          autoRotate={false}
+          autoRotateSpeed={-0.1}
           enableDamping={true}
           enablePan={true}
           enableZoom={!isMobileView}
-          enableRotate={true}
+          enableRotate={false}  // Disabled to keep statue fixed
           minDistance={isMobileView ? 0.001 : 1}
           maxDistance={isMobileView ? 75 : 100}
           minPolarAngle={0}
@@ -519,24 +532,24 @@ const ThreeDVotiveStand = forwardRef(({
         </Suspense>
 
 
-        {/* Add the constellation model before the star field */}
-        <Suspense fallback={null}>
-          <ConstellationModel 
- 
-            groupScale={[30, 30, 30]} // Original scale for 3DVotiveStand
-            groupPosition={[0, 0, -200]} // Original position for 3DVotiveStand
-          />
-        </Suspense>
+        {/* Rotating sky group - contains constellation and stars */}
+        <RotatingSky>
+          {/* Add the constellation model before the star field */}
+          <Suspense fallback={null}>
+            <ConstellationModel 
+              groupScale={[30, 30, 30]} // Original scale for 3DVotiveStand
+              groupPosition={[0, 0, -200]} // Original position for 3DVotiveStand
+            />
+          </Suspense>
 
+          {/* Render the stars last */}
+          <Suspense fallback={null}>
+            <StarField is80sMode={is80sMode} />
+          </Suspense>
+        </RotatingSky>
 
         <Suspense fallback={null}>
           <PostProcessingEffects is80sMode={is80sMode} sunRef={null} />
-        </Suspense>
-
-
-        {/* Render the stars last */}
-        <Suspense fallback={null}>
-          <StarField is80sMode={is80sMode} />
         </Suspense>
 
         

@@ -3,16 +3,29 @@
 import React, { useEffect, useState } from 'react';
 
 const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
-  const [currentTask, setCurrentTask] = useState('Initializing...');
+  const [currentTask, setCurrentTask] = useState('Perpetu8ing...');
   
   useEffect(() => {
     // Update current task based on progress
     if (detailedProgress) {
-      setCurrentTask(detailedProgress.currentTask || 'Loading...');
-
-
+      setCurrentTask(detailedProgress.currentTask || 'Perpetu8ing...');
     }
   }, [progress, detailedProgress]);
+  
+  // Rotate through different loading texts
+  useEffect(() => {
+    const loadingTexts = ['Perpetu8ing...', 'Integr8ing...', 'Ascending...', 'Illumin8ing..'];
+    let index = 0;
+    
+    const interval = setInterval(() => {
+      index = (index + 1) % loadingTexts.length;
+      if (!detailedProgress || !detailedProgress.currentTask) {
+        setCurrentTask(loadingTexts[index]);
+      }
+    }, 2000); // Change text every 2 seconds
+    
+    return () => clearInterval(interval);
+  }, [detailedProgress]);
   
   useEffect(() => {
     // Inject keyframes into the document if not already present
@@ -76,52 +89,23 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
 
   const topBarStyle = {
     width: '4px',
-    height: '24px',
-    backgroundColor: '#10b981'
+    height: '12px',
+    backgroundColor: '#fbbf24'
   };
 
   const middleBarStyle = {
     width: '12px',
-    height: '48px',
+    height: '60px',
     backgroundColor: '#10b981',
     borderRadius: '2px'
   };
 
   const bottomBarStyle = {
     width: '4px',
-    height: '24px',
+    height: '12px',
     backgroundColor: '#10b981'
   };
 
-  const progressBarContainerStyle = {
-    width: '280px',
-    height: '6px',
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    borderRadius: '3px',
-    marginTop: '32px',
-    overflow: 'hidden',
-    position: 'relative'
-  };
-
-  const progressBarStyle = {
-    width: `${Math.min(100, Math.max(0, progress))}%`,
-    height: '100%',
-    background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
-    transition: 'width 0.3s ease',
-    borderRadius: '3px',
-    position: 'relative',
-    overflow: 'hidden'
-  };
-
-  const progressBarShineStyle = {
-    position: 'absolute',
-    top: 0,
-    left: '-100%',
-    width: '100%',
-    height: '100%',
-    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
-    animation: progress > 0 && progress < 100 ? 'shine 1.5s infinite' : 'none'
-  };
 
   const progressTextStyle = {
     marginTop: '16px',
@@ -141,25 +125,6 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
     animation: 'simple-loader-pulse 2s ease-in-out infinite'
   };
 
-  // Add shine animation
-  useEffect(() => {
-    const styleId = 'simple-loader-shine';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.textContent = `
-        @keyframes shine {
-          0% {
-            left: -100%;
-          }
-          100% {
-            left: 200%;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);
 
   return (
     <div style={containerStyle}>
@@ -190,12 +155,6 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
             <div style={topBarStyle} />
             <div style={middleBarStyle} />
             <div style={bottomBarStyle} />
-          </div>
-        </div>
-        
-        <div style={progressBarContainerStyle}>
-          <div style={progressBarStyle}>
-            <div style={progressBarShineStyle} />
           </div>
         </div>
         

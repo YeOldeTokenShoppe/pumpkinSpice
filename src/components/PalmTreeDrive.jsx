@@ -3073,22 +3073,25 @@ const PalmsScene = ({ onLoadingChange }) => {
                 }}
                 style={{
                   padding: "15px 40px",
-                  fontSize: "1.2rem",
+                  fontSize: "1.8rem",
                   fontFamily: "'UnifrakturMaguntia', serif",
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  color: "#ffffff",
-                  border: "2px solid #ffffff",
+                  backgroundColor: "#000000",
+                  color: "#ff00ee",
+                  border: "2px solid #ff00ee",
                   borderRadius: "8px",
                   cursor: "pointer",
                   transition: "all 0.3s ease",
+                  boxShadow: "0 0 20px rgba(255, 0, 238, 0.5)",
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+                  e.target.style.backgroundColor = "#1a001a";
                   e.target.style.transform = "scale(1.05)";
+                  e.target.style.boxShadow = "0 0 30px rgba(255, 0, 238, 0.8)";
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+                  e.target.style.backgroundColor = "#000000";
                   e.target.style.transform = "scale(1)";
+                  e.target.style.boxShadow = "0 0 20px rgba(255, 0, 238, 0.5)";
                 }}
               >
                 Enter
