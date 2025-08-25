@@ -14,7 +14,7 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
   
   // Rotate through different loading texts
   useEffect(() => {
-    const loadingTexts = ['Perpetu8ing...', 'Integr8ing...', 'Ascending...', 'Illumin8ing..'];
+    const loadingTexts = ['Initi8ing...', 'Perpetu8ing...', 'Integr8ing...', 'Specul8ing...', 'Illumin8ing..'];
     let index = 0;
     
     const interval = setInterval(() => {
@@ -70,7 +70,7 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: '#000000',
     flexDirection: 'column'
   };
 

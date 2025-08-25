@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap');
+
 .compact-modal-overlay {
   position: fixed;
   top: 0;
@@ -74,10 +76,11 @@
   top: 20px;
   left: 20px;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0.5px;
   z-index: 5;
+  font-family: 'UnifrakturMaguntia', serif;
 }
 
 .canvas-container {
@@ -96,9 +99,10 @@
 .compact-form-section h2 {
   color: #ffffff;
   margin: 0 0 24px 0;
-  font-size: 24px;
-  font-weight: 300;
-  letter-spacing: -0.5px;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  font-family: 'UnifrakturMaguntia', serif;
 }
 
 .compact-form-group {
@@ -291,10 +295,11 @@
 .compact-prayer-selector label {
   display: block;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0.5px;
   margin-bottom: 8px;
+  font-family: 'UnifrakturMaguntia', serif;
 }
 
 .prayer-buttons {

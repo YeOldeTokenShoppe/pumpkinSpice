@@ -490,7 +490,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
 
           {/* Right side - Form */}
           <div className="compact-form-section">
-            <h2>Light Your Candle</h2>
+            <h2>Get Lit with RL80</h2>
             
             <form onSubmit={handleSubmit}>
               <div className="compact-form-group">

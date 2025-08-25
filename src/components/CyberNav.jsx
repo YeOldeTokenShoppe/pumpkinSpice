@@ -4,14 +4,22 @@ import { usePathname } from 'next/navigation';
 
 const CyberNav = ({ is80sMode = false }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hoveredId, setHoveredId] = useState(null);
   const pathname = usePathname();
+  
+  // Reset hoveredId when menu closes
+  React.useEffect(() => {
+    if (!isMenuOpen) {
+      setHoveredId(null);
+    }
+  }, [isMenuOpen]);
 
   const navItems = [
     // { id: '01', date: '01', title: 'HOME', path: '/home', thumbnail: '/rl80logo.png' },
-    { id: '01', date: 'THE ILLUMIN80', title: 'Get lit with RL80', path: '/gallery', thumbnail: '/sacred.png' },
-    { id: '02', date: 'HIGH SOCI80', title: 'Defy Grav80 with RL80', path: '/clouds', thumbnail: '/cloud.png' },
-    { id: '03', date: 'PROSPER80 FOUNTAIN', title: 'Make a wish with RL80', path: '/fountain', thumbnail: '/fountain.png' },
-    // { id: '04', date: 'PROBABIL80', title: 'A digital infinity', path: '/sci-fi-lab', thumbnail: '/vvv.jpg' },
+    { id: '01', date: 'THE ILLUMIN80', title: 'Get Lit With RL80', path: '/gallery', thumbnail: '/sacred.png' },
+    { id: '02', date: 'CLOUD 80', title: 'Defy GRAV80 with RL80', path: '/clouds', thumbnail: '/cloud.png' },
+    { id: '03', date: 'INFIN80 FOUNTAIN', title: 'Get CLAR80 or Give CHAR80', path: '/fountain', thumbnail: '/fountain.png' },
+    { id: '04', date: 'PROSPER80 GOSPEL', title: 'The Illumin8ed Charts of St. GR80', path: '/model-viewer', thumbnail: '/vvv.jpg' },
   ];
 
   // Always use mobile-style menu
@@ -38,7 +46,10 @@ const CyberNav = ({ is80sMode = false }) => {
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
           }}
           aria-label="Menu"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          onClick={() => {
+            setIsMenuOpen(!isMenuOpen);
+            setHoveredId(null);
+          }}
           onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(0, 0, 0, 0.8)"}
           onMouseLeave={(e) => e.target.style.backgroundColor = "rgba(0, 0, 0, 0.7)"}
         >
@@ -76,11 +87,13 @@ const CyberNav = ({ is80sMode = false }) => {
               gap: "20px",
               padding: "20px"
             }}
+            onMouseLeave={() => setHoveredId(null)}
           >
-            {navItems.map((item) => {
+            {navItems.map((item, index) => {
               const isActive = pathname === item.path;
+              
               return (
-                <Link key={item.id} href={item.path} passHref>
+                <Link key={item.id} href={item.path} passHref style={{ textDecoration: 'none' }}>
                   <div
                     style={{
                       display: "flex",
@@ -90,12 +103,24 @@ const CyberNav = ({ is80sMode = false }) => {
                       cursor: "pointer",
                       padding: "20px",
                       borderRadius: "10px",
-                      backgroundColor: isActive ? (is80sMode ? "#67e8f9" : "#c896ff") : "transparent",
+                      backgroundColor: isActive 
+                        ? (is80sMode ? "#67e8f9" : "#c896ff")
+                        : "transparent",
                       transition: "background-color 0.3s ease"
                     }}
-                    onClick={() => setIsMenuOpen(false)}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = is80sMode ? "#67e8f9" : "#c896ff"}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isActive ? (is80sMode ? "#67e8f9" : "#c896ff") : "transparent"}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = "rgb(200, 150, 255)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }
+                    }}
                   >
                     <div style={{ width: "50px", height: "50px", overflow: "hidden", borderRadius: "5px", flexShrink: "0" }}>
                       <img
