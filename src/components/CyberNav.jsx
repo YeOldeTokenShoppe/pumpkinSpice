@@ -16,9 +16,9 @@ const CyberNav = ({ is80sMode = false }) => {
 
   const navItems = [
     // { id: '01', date: '01', title: 'HOME', path: '/home', thumbnail: '/rl80logo.png' },
-    { id: '01', date: 'GET LIT WITH RL80', title: 'Light a Candle for Luck', path: '/gallery', thumbnail: '/sacred.png' },
+    { id: '01', date: 'JOIN THE ILLUMIN80', title: 'Pay Homage to the Patron Saint', path: '/gallery', thumbnail: '/sacred.png' },
     { id: '02', date: 'MARKET ACTIV80', title: 'Good And Evil Index', path: '/clouds', thumbnail: '/lightning.png' },
-    { id: '03', date: 'INFIN80 FOUNTAIN', title: 'Toss A Coin - Make A Wish', path: '/fountain', thumbnail: '/fountain.png' },
+    { id: '03', date: 'INFIN80 FOUNTAIN', title: 'Toss A Coin for Prosper80', path: '/fountain', thumbnail: '/fountain.png' },
     { id: '04', date: 'MORAL AUTHOR80', title: 'The Scrolls of St. GR80', path: '/model-viewer', thumbnail: '/vvv.jpg' },
   ];
 

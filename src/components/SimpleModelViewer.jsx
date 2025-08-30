@@ -960,8 +960,8 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
       <div
         style={{
           position: 'absolute',
-          top: windowWidth <= 480 ? '25px' : windowWidth <= 768 ? '30px' : '30px',
-          left: windowWidth <= 480 ? '25px' : windowWidth <= 768 ? '30px' : '30px',
+          top: windowWidth <= 480 ? '3rem' : windowWidth <= 768 ? '30px' : '30px',
+          left: windowWidth <= 480 ? '2rem' : windowWidth <= 768 ? '30px' : '30px',
           zIndex: 10,
           textAlign: 'left',
           pointerEvents: 'none'
@@ -970,7 +970,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         <h1 style={{ 
           color: '#8e662b',
           textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #8e662b, 0 0 20px turquoise, 0 0 25px turquoise, 2px 2px 3px rgba(0, 0, 0, 0.5)',
-          fontSize: windowWidth <= 480 ? '2rem' : windowWidth <= 768 ? '4rem' : '4rem',
+          fontSize: windowWidth <= 480 ? '3rem' : windowWidth <= 768 ? '4rem' : '4rem',
           fontWeight: 900,
           lineHeight: 1,
           transform: 'rotate(-8deg) skew(-15deg)',
@@ -984,8 +984,8 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         src="/scroll.html"
         style={{
           position: 'absolute',
-          bottom: windowWidth <= 768 ? '0' : '-1rem',
-          left: windowWidth <= 768 ? '0' : '-1rem',
+          bottom: windowWidth <= 480 ? '4rem' : windowWidth <= 768 ? '0' : '0rem',
+          left: windowWidth <= 768 ? '0' : '0rem',
           width: windowWidth <= 480 ? '125%' : windowWidth <= 768 ? '75%' : '50%',
           height: windowWidth <= 480 ? '50%' : windowWidth <= 768 ? '45%' : '50%',
           border: 'none',
