@@ -7,13 +7,20 @@
 		<link type="text/css" rel="stylesheet" href="/main.css">
 		<script>
 			// Redirect to Next.js page if accessed directly (not in iframe)
-			if (window.self === window.top) {
-				// Not in an iframe, redirect to the Next.js page
+			// Only redirect if we're not already on the /fountain page to avoid loops
+			if (window.self === window.top && !window.location.pathname.includes('/fountain')) {
 				window.location.replace('/fountain');
 			}
 		</script>
 		<style>
 			@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap');
+
+			body {
+				margin: 0;
+				padding: 0;
+				background: linear-gradient(to bottom, #1a0033, #000000);
+				overflow: hidden;
+			}
 
 			/* Loader styles */
 			.loader-container {
@@ -87,9 +94,134 @@
 					font-size: 12px !important;
 				}
 			}
+
+		/* Charity Modal Styles */
+		.charity-modal {
+			display: none;
+			position: fixed !important;
+			z-index: 2147483647 !important;  /* Maximum z-index value to ensure it's on top */
+			left: 0 !important;
+			top: 0 !important;
+			width: 100% !important;
+			height: 100% !important;
+			background-color: rgba(0, 0, 0, 0.6);
+			backdrop-filter: blur(5px);
+			/* Ensure modal is in root stacking context */
+			isolation: isolate;
+		}
+
+		.charity-modal-content {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			margin: 15% auto;
+			padding: 30px;
+			border: none;
+			border-radius: 20px;
+			width: 90%;
+			max-width: 400px;
+			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+			text-align: center;
+			color: white;
+			animation: modalSlideIn 0.3s ease-out;
+			position: relative;
+			z-index: 2147483647 !important;
+		}
+
+		@keyframes modalSlideIn {
+			from {
+				transform: translateY(-50px);
+				opacity: 0;
+			}
+			to {
+				transform: translateY(0);
+				opacity: 1;
+			}
+		}
+
+		.charity-modal h2 {
+			margin-bottom: 20px;
+			font-size: 28px;
+			font-weight: bold;
+		}
+
+		.charity-modal p {
+			margin-bottom: 25px;
+			font-size: 16px;
+			opacity: 0.95;
+		}
+
+		.charity-options {
+			display: flex;
+			flex-direction: column;
+			gap: 15px;
+			margin-bottom: 20px;
+		}
+
+		.charity-button {
+			background: rgba(255, 255, 255, 0.2);
+			border: 2px solid rgba(255, 255, 255, 0.5);
+			color: white;
+			padding: 15px 20px;
+			font-size: 18px;
+			border-radius: 10px;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			font-weight: 600;
+		}
+
+		.charity-button:hover {
+			background: rgba(255, 255, 255, 0.3);
+			transform: translateY(-2px);
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+		}
+
+		.charity-button:active {
+			transform: translateY(0);
+		}
+
+		.modal-cancel {
+			background: rgba(0, 0, 0, 0.3);
+			border: 1px solid rgba(255, 255, 255, 0.3);
+			color: white;
+			padding: 10px 20px;
+			font-size: 14px;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+
+		.modal-cancel:hover {
+			background: rgba(0, 0, 0, 0.5);
+		}
+		
+		/* Override any parent page elements when modal is active */
+		.charity-modal ~ * {
+			z-index: 1 !important;
+		}
+		
+		/* Ensure modal stays on top of everything */
+		body.modal-open > *:not(.charity-modal) {
+			z-index: 1 !important;
+		}
 		</style>
 	</head>
 	<body>
+		<!-- Charity Selection Modal -->
+		<div id="charityModal" class="charity-modal">
+			<div class="charity-modal-content">
+				<h2>Choose Your Charity</h2>
+				<p>Your coin toss will support one of these amazing organizations:</p>
+				<div class="charity-options">
+					<button class="charity-button" data-charity="world-central-kitchen">
+						🍽️ World Central Kitchen
+					</button>
+					<button class="charity-button" data-charity="aspca">
+						🐾 ASPCA
+					</button>
+				</div>
+				<button class="modal-cancel">Cancel</button>
+			</div>
+		</div>
+
 		<!-- Loader -->
 
 
@@ -111,8 +243,8 @@
 			z-index: 1000;
 			max-width: 25rem;
 		">
-			<span class="mobile-text">Tap water to disturb • Press button or 'c' on keyboard to throw coin</span>
-			<span class="desktop-text">Click and Move mouse to disturb water. Click water and press button or 'c' to throw coin.</span>
+			<span class="mobile-text">Click water to aim. Then, press blue button to throw a virtual coin or orange button to donate a real coin.</span>
+			<span class="desktop-text">Click water to aim. Then, press blue button to throw a virtual coin or orange button to donate a real coin to charity.</span>
 		</div>
 		
 		<!-- Coin Counter Display -->
@@ -354,9 +486,9 @@
 		<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 		<script type="module">
-
+			console.log('Fountain module script starting...');
+			
 			import * as THREE from 'three';
-
 			import Stats from 'three/addons/libs/stats.module.js';
 			// import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -364,6 +496,8 @@
 			import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
 			import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 			import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+			
+			console.log('Fountain imports successful!');
 
 			// --- Coin Material and Geometry (moved up for Firebase functions) ---
 			const baseCoinMaterial = new THREE.MeshStandardMaterial({
@@ -600,9 +734,13 @@
 							z: coinData.rotation.z
 						},
 						timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-						isInUpperBowl: coinData.isInUpperBowl || false
+						isInUpperBowl: coinData.isInUpperBowl || false,
+						charity: coinData.charity || null
 					});
 					console.log("Coin saved with ID: ", docRef.id);
+					if (coinData.charity) {
+						console.log("Supporting charity:", coinData.charity);
+					}
 					return docRef.id;
 				} catch (error) {
 					console.error("Error saving coin: ", error);
@@ -709,6 +847,7 @@
 			let camera, scene, renderer, controls;
 			let mousedown = false;
 			const mouseCoords = new THREE.Vector2();
+			const aimedCoords = new THREE.Vector2(); // Separate variable for aimed coin position
 			const raycaster = new THREE.Raycaster();
 
 			let sun;
@@ -727,8 +866,13 @@
 
 			// --- NEW: 3D UI Elements ---
 			let tossCoinButton3D;
+			let localCoinButton3D;
 			let instructionText3D;
 			// --- END NEW ---
+
+			// Charity modal variables
+			let selectedCharity = null;
+			let pendingCoinToss = null;
 
 			// --- NEW: Splash Particle System Variables ---
 			let splashParticleSystem;
@@ -869,7 +1013,7 @@
             function createButtonMesh(labelText, position, size = { width: 0.8, height: 0.25 }, fontSize = 64, bgColor = '#f0ad4e', textColor = 'white') {
                 const canvas = document.createElement('canvas');
                 // High resolution canvas for clarity
-                canvas.width = 512;
+                canvas.width = 1024;  // Doubled canvas resolution for sharper text
                 canvas.height = Math.round(canvas.width * (size.height / size.width)); 
                 const context = canvas.getContext('2d');
 
@@ -890,12 +1034,23 @@
                 context.closePath();
                 context.fill();
 
-                // Text
-                context.font = `bold ${fontSize}px Arial`;
+                // Text - handle multi-line
+                // Scale font size for the canvas resolution
+                const scaledFontSize = fontSize * (canvas.width / 512);  // Scale based on canvas width
+                context.font = `bold ${scaledFontSize}px Arial`;
                 context.fillStyle = textColor;
                 context.textAlign = 'center';
                 context.textBaseline = 'middle';
-                context.fillText(labelText, canvas.width / 2, canvas.height / 2);
+                
+                // Split text by newline characters
+                const lines = labelText.split('\n');
+                const lineHeight = scaledFontSize * 1.2;
+                const totalHeight = lines.length * lineHeight;
+                const startY = (canvas.height - totalHeight) / 2 + lineHeight / 2;
+                
+                lines.forEach((line, index) => {
+                    context.fillText(line, canvas.width / 2, startY + index * lineHeight);
+                });
 
                 const texture = new THREE.CanvasTexture(canvas);
                 texture.needsUpdate = true;
@@ -1106,8 +1261,125 @@
 			init();
 
 
-			async function init() {
+			// Function to update button text
+			function updateButtonText(buttonMesh, newText) {
+				if (!buttonMesh) return;
+				
+				// Get the original button properties
+				const position = buttonMesh.position.clone();
+				const size = { width: 0.25, height: 0.07 };
+				const fontSize = 38;  // Match the original button's font size
+				const bgColor = '#ffa100';
+				const textColor = 'black';
+				
+				// Remove old button
+				scene.remove(buttonMesh);
+				
+				// Create new button with updated text
+				const newButton = createButtonMesh(newText, position, size, fontSize, bgColor, textColor);
+				newButton.userData.isTossButton = true;
+				newButton.userData.isLocalCoin = false;
+				
+				// Update the reference
+				tossCoinButton3D = newButton;
+				scene.add(tossCoinButton3D);
+			}
 
+			// Track if modal is being shown to prevent immediate close
+			let modalJustOpened = false;
+
+			// Charity Modal Functions
+			function showCharityModal() {
+				const modal = document.getElementById('charityModal');
+				modal.style.display = 'block';
+				document.body.classList.add('modal-open');
+				modalJustOpened = true;
+				
+				// Tell parent window to hide UI elements
+				if (window.parent !== window) {
+					window.parent.postMessage({ type: 'hideUIElements' }, '*');
+				}
+				
+				// Prevent immediate close on mobile
+				setTimeout(() => {
+					modalJustOpened = false;
+				}, 300);
+			}
+
+			function hideCharityModal() {
+				if (modalJustOpened) return; // Prevent immediate close
+				const modal = document.getElementById('charityModal');
+				modal.style.display = 'none';
+				document.body.classList.remove('modal-open');
+				
+				// Tell parent window to show UI elements again
+				if (window.parent !== window) {
+					window.parent.postMessage({ type: 'showUIElements' }, '*');
+				}
+				
+				// Don't clear selectedCharity here - keep it for the next coin toss
+				pendingCoinToss = null;
+			}
+
+			function setupCharityModalListeners() {
+				const modal = document.getElementById('charityModal');
+				const charityButtons = modal.querySelectorAll('.charity-button');
+				const cancelButton = modal.querySelector('.modal-cancel');
+
+				// Handle charity selection with both click and touch events
+				charityButtons.forEach(button => {
+					const handleSelection = (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						selectedCharity = e.currentTarget.getAttribute('data-charity');
+						const charityName = e.currentTarget.textContent.trim();
+						console.log('Charity selected:', selectedCharity);
+						
+						// Update button text to show selected charity
+						if (tossCoinButton3D) {
+							updateButtonText(tossCoinButton3D, `Toss Coin for\n${charityName}`);
+						}
+						
+						// Small delay before hiding to ensure touch event completes
+						setTimeout(() => {
+							hideCharityModal();
+						}, 100);
+					};
+					
+					button.addEventListener('click', handleSelection);
+					button.addEventListener('touchend', handleSelection);
+				});
+
+				// Handle cancel with both click and touch events
+				const handleCancel = (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					selectedCharity = null; // Clear selection on cancel
+					setTimeout(() => {
+						hideCharityModal();
+					}, 100);
+				};
+				cancelButton.addEventListener('click', handleCancel);
+				cancelButton.addEventListener('touchend', handleCancel);
+
+				// Close modal when clicking outside
+				const handleBackdropClick = (e) => {
+					if (e.target === modal && !modalJustOpened) {
+						selectedCharity = null; // Clear selection when clicking outside
+						hideCharityModal();
+					}
+				};
+				modal.addEventListener('click', handleBackdropClick);
+				modal.addEventListener('touchend', handleBackdropClick);
+				
+				// Prevent modal content from closing modal on touch
+				const modalContent = modal.querySelector('.charity-modal-content');
+				modalContent.addEventListener('click', (e) => e.stopPropagation());
+				modalContent.addEventListener('touchend', (e) => e.stopPropagation());
+			}
+
+			async function init() {
+				
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
 
@@ -1146,6 +1418,9 @@
 
 				window.addEventListener( 'resize', onWindowResize );
                 window.addEventListener( 'keydown', onKeyDown );
+                
+                // Setup charity modal listeners
+                setupCharityModalListeners();
           
 				const rgbeLoader = new RGBELoader().setPath( './' );
 				
@@ -1350,14 +1625,27 @@
 				// instructionText3D = createTextSprite(textContent, new THREE.Vector3(0, 1.5, 0), 32, 'white', new THREE.Vector3(4, 2, 1)); // Adjust position/scale as needed
 				// scene.add(instructionText3D);
 
-				tossCoinButton3D = createButtonMesh(
+				localCoinButton3D = createButtonMesh(
       "Click to Toss Coin",
-      new THREE.Vector3(0.03, -0.38, 1.4),
-      {width: 0.3, height: 0.07},
-      32,                    // fontSize
+      new THREE.Vector3(-0.13, -0.38, 1.4),
+      {width: 0.25, height: 0.07},
+      42,                    // fontSize
       '#30cfd0',            // bgColor (cyan to match the UI theme)
       'black'               // textColor     
-  );				scene.add(tossCoinButton3D);
+  );
+  localCoinButton3D.userData.isLocalCoin = true; // Mark as local coin button
+  scene.add(localCoinButton3D);
+
+  tossCoinButton3D = createButtonMesh(
+      "Click to Connect Wallet\nand Toss Real Coin",
+      new THREE.Vector3(0.23, -0.38, 1.4),
+      {width: 0.25, height: 0.07},  // Increased height for two lines
+      36,                    // Larger fontSize for better readability
+      '#ffa100',            // bgColor (orange to match the UI theme)
+      'black'               // textColor     
+  );
+  tossCoinButton3D.userData.isLocalCoin = false; // Mark as real coin button
+  scene.add(tossCoinButton3D);
 				// --- END NEW ---
 
 				initWater();
@@ -1640,6 +1928,12 @@
 			}
 
 			function onPointerDown( event ) {
+				// Don't process 3D interactions if modal is open
+				const modal = document.getElementById('charityModal');
+				if (modal && modal.style.display === 'block') {
+					return;
+				}
+				
 				// --- Update mouseCoords here --- 
 				const dom = renderer.domElement;
 				const pointerX = ( event.clientX / dom.clientWidth ) * 2 - 1;
@@ -1651,30 +1945,59 @@
 				raycaster.setFromCamera( currentPointerCoords, camera ); 
 
 				// --- Modified Raycasting Logic ---
-				const objectsToIntersect = [meshRay, upperMeshRay, tossCoinButton3D];
-				const intersects = raycaster.intersectObjects( objectsToIntersect );
-				console.log(`[Pointer Down] Intersected ${intersects.length} objects.`);
-
+				// First check for button clicks
+				const buttonIntersects = raycaster.intersectObjects( [tossCoinButton3D, localCoinButton3D] );
 				let buttonClicked = false;
-				let waterClicked = false;
-
-				if (intersects.length > 0) {
-					const firstHit = intersects[0].object;
-
-					if (firstHit.userData.isTossButton) {
-						console.log("[Pointer Down] Toss Button 3D clicked!");
-						triggerCoinToss();
-						buttonClicked = true;
-					} else if (firstHit === meshRay || firstHit === upperMeshRay) {
-						console.log("[Pointer Down] Water interaction plane clicked.");
-						// Update the main mouseCoords only when water is clicked
-						mouseCoords.copy(currentPointerCoords); 
-						console.log(`[Pointer Down] Updated global mouseCoords: (${mouseCoords.x.toFixed(2)}, ${mouseCoords.y.toFixed(2)})`);
-						mousedown = true; // Enable water disturbance via raycast() function
-						waterClicked = true;
+				
+				if (buttonIntersects.length > 0) {
+					const button = buttonIntersects[0].object;
+					if (button.userData.isTossButton) {
+						const isLocalCoin = button.userData.isLocalCoin || false;
+						console.log(`[Pointer Down] ${isLocalCoin ? 'Local' : 'Real'} Coin Button clicked!`);
 						
-						// Optional: Log hit point for debugging water interaction itself
-						console.log("Water raycast successful on click at:", intersects[0].point);
+						if (!isLocalCoin) {
+							// Check if charity is already selected
+							if (selectedCharity) {
+								// Charity selected - toss the coin
+								console.log(`Tossing coin for charity: ${selectedCharity}`);
+								triggerCoinToss(isLocalCoin);
+								
+								// Reset button text and clear charity after toss
+								setTimeout(() => {
+									selectedCharity = null;
+									updateButtonText(tossCoinButton3D, "Click to Connect Wallet\nand Toss Real Coin");
+								}, 100);
+							} else {
+								// No charity selected - show modal
+								showCharityModal();
+							}
+						} else {
+							// Local coin - toss immediately
+							triggerCoinToss(isLocalCoin);
+						}
+						buttonClicked = true;
+					}
+				}
+
+				// Only check for water interaction if button wasn't clicked
+				let waterClicked = false;
+				if (!buttonClicked) {
+					const waterIntersects = raycaster.intersectObjects( [meshRay, upperMeshRay] );
+					if (waterIntersects.length > 0) {
+						const firstHit = waterIntersects[0].object;
+						if (firstHit === meshRay || firstHit === upperMeshRay) {
+							console.log("[Pointer Down] Water interaction plane clicked.");
+							// Update both mouseCoords (for water effect) and aimedCoords (for coin aiming)
+							mouseCoords.copy(currentPointerCoords); 
+							aimedCoords.copy(currentPointerCoords); // Save aimed position for coin tosses
+							console.log(`[Pointer Down] Updated global mouseCoords: (${mouseCoords.x.toFixed(2)}, ${mouseCoords.y.toFixed(2)})`);
+							console.log(`[Pointer Down] Updated aimedCoords: (${aimedCoords.x.toFixed(2)}, ${aimedCoords.y.toFixed(2)})`);
+							mousedown = true; // Enable water disturbance via raycast() function
+							waterClicked = true;
+							
+							// Optional: Log hit point for debugging water interaction itself
+							console.log("Water raycast successful on click at:", waterIntersects[0].point);
+						}
 					}
 				}
 				
@@ -1691,10 +2014,11 @@
                 }
             }
 
-            function triggerCoinToss() {
-                // Use the last known mouse coordinates to determine target
-                console.log(`[Coin Toss] Using mouseCoords: (${mouseCoords.x.toFixed(2)}, ${mouseCoords.y.toFixed(2)})`); // Log coords
-                raycaster.setFromCamera( mouseCoords, camera );
+            function triggerCoinToss(isLocalCoin = false) {
+                // Use the aimed coordinates (set when water was clicked) to determine target
+                console.log(`[Coin Toss] Using aimedCoords: (${aimedCoords.x.toFixed(2)}, ${aimedCoords.y.toFixed(2)})`); // Log coords
+                console.log(`[Coin Toss] Local coin: ${isLocalCoin}`);
+                raycaster.setFromCamera( aimedCoords, camera );
 
                 // Raycast towards the invisible water plane (meshRay)
                 console.log(`[Coin Toss] Raycasting against meshRay at position: (${meshRay.position.x.toFixed(2)}, ${meshRay.position.y.toFixed(2)}, ${meshRay.position.z.toFixed(2)})`); // Log mesh position
@@ -1725,7 +2049,7 @@
                     initialVelocity.multiplyScalar(throwSpeed * Math.cos(upwardAngle)); // Horizontal speed component
                     initialVelocity.y = throwSpeed * Math.sin(upwardAngle); // Vertical speed component
 
-                    createCoin(startPosition, initialVelocity);
+                    createCoin(startPosition, initialVelocity, isLocalCoin);
 
                 } else {
                     console.log("[Coin Toss] Cannot determine target point for coin toss.");
@@ -1750,7 +2074,7 @@
                 return distanceFromCenter < fountainWaterRadius;
             }
 
-            function createCoin( startPosition, initialVelocity ) {
+            function createCoin( startPosition, initialVelocity, isLocalCoin = false ) {
                 const coinMaterialInstance = baseCoinMaterial.clone();
                 const coin = new THREE.Mesh( coinGeometry, coinMaterialInstance );
                 coin.position.copy( startPosition );
@@ -1759,10 +2083,15 @@
                 coin.userData.rotationSpeed = (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1) ;
                 coin.userData.underwater = false;
                 coin.userData.stopped = false;
+                coin.userData.isLocalCoin = isLocalCoin; // Mark if this is a local-only coin
+                coin.userData.charity = isLocalCoin ? null : selectedCharity; // Store selected charity for real coins
                 coin.renderOrder = 99; // Extremely high render order to ensure it renders last
                 scene.add( coin );
                 coins.push( coin );
-                console.log("Coin created at", startPosition.x.toFixed(2), startPosition.y.toFixed(2), startPosition.z.toFixed(2), "with velocity", initialVelocity.x.toFixed(2), initialVelocity.y.toFixed(2), initialVelocity.z.toFixed(2) );
+                console.log(`${isLocalCoin ? 'Local' : 'Real'} coin created at`, startPosition.x.toFixed(2), startPosition.y.toFixed(2), startPosition.z.toFixed(2), "with velocity", initialVelocity.x.toFixed(2), initialVelocity.y.toFixed(2), initialVelocity.z.toFixed(2) );
+                if (!isLocalCoin && selectedCharity) {
+                    console.log(`Coin will support: ${selectedCharity}`);
+                }
             }
 
 			function onPointerUp() {
@@ -2022,12 +2351,13 @@
                                     const randomAngle = Math.random() * Math.PI * 2;
                                     coin.rotateOnWorldAxis(surfaceNormal, randomAngle);
                                     
-                                    // Save coin to Firestore if not already saved
-                                    if (!coin.userData.firestoreId && !coin.userData.isStatic) {
+                                    // Save coin to Firestore if not already saved (skip for local coins)
+                                    if (!coin.userData.firestoreId && !coin.userData.isStatic && !coin.userData.isLocalCoin) {
                                         saveCoinToFirestore({
                                             position: coin.position,
                                             rotation: coin.rotation,
-                                            isInUpperBowl: isInUpperBowl
+                                            isInUpperBowl: isInUpperBowl,
+                                            charity: coin.userData.charity
                                         }).then(id => {
                                             if (id) {
                                                 coin.userData.firestoreId = id;
@@ -2117,12 +2447,13 @@
                              coin.rotateZ(Math.random() * Math.PI * 2); // Add random rotation around world Z
                              // --- END ADJUSTMENT ---
                              
-                             // Save coin to Firestore if not already saved
-                             if (!coin.userData.firestoreId && !coin.userData.isStatic) {
+                             // Save coin to Firestore if not already saved (skip for local coins)
+                             if (!coin.userData.firestoreId && !coin.userData.isStatic && !coin.userData.isLocalCoin) {
                                  saveCoinToFirestore({
                                      position: coin.position,
                                      rotation: coin.rotation,
-                                     isInUpperBowl: isInUpperBowl
+                                     isInUpperBowl: isInUpperBowl,
+                                     charity: coin.userData.charity
                                  }).then(id => {
                                      if (id) {
                                          coin.userData.firestoreId = id;
@@ -2402,104 +2733,6 @@
 
 		</script>
 
-		<!-- Script for glowing text effect -->
-		<script>
-			document.addEventListener('DOMContentLoaded', function() {
-				const text = document.getElementById('text');
-				
-				// Check if the text element exists before trying to modify it
-				if (!text) {
-					console.log('Text element not found, skipping glowing text effect');
-					return;
-				}
-				
-				const mainText = '<a href="/home" style="text-decoration: none; color: inherit;">RL80</a>';
-				
-				// Clear the existing content and set the main text with link
-				text.innerHTML = mainText;
-				
-				// Create 100 copies with varying styles exactly like the React version
-				Array.from({length: 100}).forEach((_, i) => {
-					const index = i + 1;
-					const textCopy = document.createElement('div');
-					textCopy.className = 'text__copy';
-					textCopy.innerHTML = mainText; // Use innerHTML to preserve the link
-					
-					// Apply the exact same styles as in the React component
-					Object.assign(textCopy.style, {
-						position: 'absolute',
-						pointerEvents: 'none',
-						zIndex: '-1',
-						top: '0',
-						left: '0',
-						color: `rgba(${255 - index * 2}, ${255 - index * 3}, ${255 - index * 2})`,
-						filter: 'blur(0.1rem)',
-						transform: `translate(${index * 0.1}rem, ${index * 0.1}rem) scale(${1 + index * 0.01})`,
-						opacity: (1 / index) * 1.5
-					});
-					
-					text.appendChild(textCopy);
-				});
-				
-				// Use event delegation instead of direct button manipulation
-				// This avoids any issues with the button being removed or changed
-				document.addEventListener('click', function(event) {
-					// Find if the click was on the launch button or any of its children
-					let target = event.target;
-					let isLaunchButton = false;
-					
-					// Check if the target or any of its parents is the launch button
-					while (target && target !== document) {
-						if (target.id === 'launchButton' || 
-							(target.classList && target.classList.contains('control-button') && 
-							 target.getAttribute('data-action') === 'launch')) {
-							isLaunchButton = true;
-							break;
-						}
-						target = target.parentNode;
-					}
-					
-					// If launch button was clicked
-					if (isLaunchButton) {
-						console.log('Launch button clicked, sending ROCKET_LAUNCH message');
-						
-						// Generate unique ID and timestamp
-						const messageId = Date.now();
-						const timestamp = new Date().toISOString();
-						
-						// Send message to parent React component
-						if (window.parent && window.parent !== window) {
-							// Try direct function call first
-							if (window.parent.rocketLaunch && typeof window.parent.rocketLaunch === 'function') {
-								window.parent.rocketLaunch();
-							} else {
-								console.log('parent.rocketLaunch not available');
-								
-								// Fall back to postMessage
-								window.parent.postMessage({ 
-									type: 'ROCKET_LAUNCH',
-									id: messageId,
-									timestamp: timestamp
-								}, '*');
-								console.log('Launch message sent with ID:', messageId);
-							}
-						}
-						
-						// Don't try to manipulate the button's style at all!
-						// Let CSS handle the visual feedback via :active state
-					}
-				});
-				
-				console.log('Launch button event delegation set up');
-			});
-		</script>
-
-		<!-- Additional CSS for button animation -->
-		<style>
-			#launchButton:active {
-				transform: scale(0.95);
-				box-shadow: 0 0 25px rgba(48, 207, 208, 0.8);
-			}
-		</style>
+		
 	</body>
 </html>

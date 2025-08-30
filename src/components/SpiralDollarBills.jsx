@@ -7,7 +7,8 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
   const { scene } = useGLTF('/models/100DollarBill.glb');
   const meshRef = useRef();
   const [billGeometry, setBillGeometry] = useState(null);
-  const [billTexture, setBillTexture] = useState(null);
+  const [frontTexture, setFrontTexture] = useState(null);
+  const [backTexture, setBackTexture] = useState(null);
   const shaderMaterialRef = useRef();
   
   const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -46,22 +47,69 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
   
   useEffect(() => {
     if (scene) {
-      let foundMesh = null;
+      let geometry = null;
+      let frontTex = null;
+      let backTex = null;
+      
       scene.traverse((child) => {
-        if (child.isMesh && !foundMesh) {
-          foundMesh = child;
-          setBillGeometry(child.geometry.clone());
+        if (child.isMesh) {
+          console.log('Mesh found:', child.name, 'Material:', child.material?.name);
           
-          // Store the texture from the original material
-          if (child.material.map) {
-            setBillTexture(child.material.map);
-            console.log('Texture found:', child.material.map);
+          // Get geometry from first mesh and subdivide it
+          if (!geometry) {
+            // Clone the geometry
+            geometry = child.geometry.clone();
+            
+            // Create a plane geometry with more subdivisions for better deformation
+            // Dollar bill proportions (roughly 6.14 × 2.61 inches, aspect ratio ~2.35:1)
+            const width = 2.35;  // Relative width
+            const height = 1.0;  // Relative height
+            const subdivisions = 24; // Good balance of performance and smoothness
+            
+            const planeGeometry = new THREE.PlaneGeometry(
+              width, 
+              height, 
+              subdivisions, 
+              Math.floor(subdivisions / 2.35) // Proportional subdivisions
+            );
+            
+            setBillGeometry(planeGeometry);
+            console.log('Created subdivided plane geometry:', width, 'x', height, 'with', subdivisions, 'subdivisions');
           }
           
-          console.log('Found dollar bill mesh:', child.name);
-          console.log('Material type:', child.material.type);
+          // Extract textures based on mesh/material names
+          if (child.name === 'Empty_1' && child.material?.name === 'Material.001') {
+            // Empty_1 with Material.001 is the front
+            if (child.material.map) {
+              frontTex = child.material.map;
+              console.log('Front texture found from Empty_1:', child.material.map.name || 'unnamed');
+            }
+          } else if (child.name === 'Empty' && child.material?.name === 'Empty') {
+            // Empty with Empty material is the back
+            if (child.material.map) {
+              backTex = child.material.map;
+              console.log('Back texture found from Empty:', child.material.map.name || 'unnamed');
+            }
+          }
         }
       });
+      
+      // Set the textures
+      if (frontTex && backTex) {
+        setFrontTexture(frontTex);
+        setBackTexture(backTex);
+        console.log('Both front and back textures set successfully!');
+      } else if (frontTex) {
+        setFrontTexture(frontTex);
+        setBackTexture(frontTex);
+        console.log('Only front texture found, using for both sides');
+      } else if (backTex) {
+        setFrontTexture(backTex);
+        setBackTexture(backTex);
+        console.log('Only back texture found, using for both sides');
+      } else {
+        console.log('Warning: No textures found in the model');
+      }
     }
   }, [scene]);
   
@@ -106,7 +154,7 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
       dummy.rotation.y = pos.flipY + pos.baseRotation + state.clock.elapsedTime * pos.rotationSpeed;
       dummy.rotation.z = Math.cos(state.clock.elapsedTime * pos.rotationSpeed + pos.phase) * 0.3;
       
-      dummy.scale.setScalar(1);
+      dummy.scale.setScalar(2);
       
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);
@@ -117,12 +165,13 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
   
   // Create shader material with bending effect
   const shaderMaterial = useMemo(() => {
-    if (!billTexture) return null;
+    if (!frontTexture || !backTexture) return null;
     return new THREE.ShaderMaterial({
       uniforms: {
-        map: { value: billTexture },
+        frontMap: { value: frontTexture },
+        backMap: { value: backTexture },
         time: { value: 0 },
-        bendAmount: { value: 1.8 }
+        bendAmount: { value: 0.4 }
       },
       vertexShader: `
         varying vec2 vUv;
@@ -133,20 +182,38 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
           vUv = uv;
           vec3 pos = position;
           
-          // Create a bending effect along the bill
-          float bend = sin(uv.x * 3.14159) * bendAmount;
-          float wave = sin(time * 3.0 + uv.y * 10.0) * 0.05;
-          float flutter = sin(time * 4.0 + uv.x * 15.0) * 0.03;
+          // Gentle U-shaped bend along the width
+          float mainBend = sin(uv.x * 3.14159) * bendAmount;
           
-          // Apply bending to z position - make it more pronounced
-          pos.z += bend * (0.5 + 0.5 * sin(time * 2.0));
-          pos.z += wave;
-          pos.y += flutter * (1.0 - uv.x); // More flutter on one side
+          // Subtle wave along the length
+          float lengthWave = sin(uv.y * 3.14159) * 0.05;
           
-          // Strong edge flutter
-          if (uv.x < 0.1 || uv.x > 0.9) {
-            pos.y += sin(time * 8.0 + uv.y * 20.0) * 0.05;
-            pos.z += cos(time * 6.0 + uv.y * 15.0) * 0.04;
+          // Light rippling effect
+          float ripple = sin(time * 2.0 + uv.x * 6.0 + uv.y * 4.0) * 0.001;
+          
+          // Very subtle corner curl
+          float cornerCurl = 0.0;
+          float dist1 = 1.0 - distance(uv, vec2(0.0, 0.0));
+          float dist2 = 1.0 - distance(uv, vec2(1.0, 1.0));
+          cornerCurl += pow(dist1, 6.0) * sin(time * 2.0) * 0.05;
+          cornerCurl += pow(dist2, 6.0) * cos(time * 1.8) * 0.05;
+          
+          // Apply gentle deformations
+          pos.z += mainBend * (0.8 + 0.2 * sin(time * 1.5));
+          pos.z += lengthWave * sin(time * 2.0);
+          pos.z += ripple;
+          pos.z += cornerCurl;
+          
+          // Subtle flutter
+          float flutter = sin(time * 3.0 + uv.x * 10.0) * 0.01;
+          pos.y += flutter;
+          
+          // Very light edge movement
+          float edgeDistance = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+          if (edgeDistance < 0.1) {
+            float edgeFlutter = (0.1 - edgeDistance) / 0.5;
+            pos.y += sin(time * 8.0 + uv.x * 15.0) * 0.02 * edgeFlutter;
+            pos.z += cos(time * 6.0 + uv.y * 12.0) * 0.015 * edgeFlutter;
           }
           
           // Apply instance transformation
@@ -155,18 +222,33 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
         }
       `,
       fragmentShader: `
-        uniform sampler2D map;
+        uniform sampler2D frontMap;
+        uniform sampler2D backMap;
         varying vec2 vUv;
         
         void main() {
-          vec4 texColor = texture2D(map, vUv);
+          // If the texture contains both sides, we might need to use different UV regions
+          // For now, showing the same texture on both sides
+          vec4 texColor;
+          if (gl_FrontFacing) {
+            // Front face - use normal UVs
+            texColor = texture2D(frontMap, vUv);
+          } else {
+            // Back face - flip horizontally for correct orientation
+            vec2 flippedUv = vec2(1.0 - vUv.x, vUv.y);
+            texColor = texture2D(backMap, flippedUv);
+          }
+          
+          // Discard transparent pixels to ensure clean edges
+          if (texColor.a < 0.1) discard;
+          
           gl_FragColor = texColor;
         }
       `,
       side: THREE.DoubleSide,
       transparent: true
     });
-  }, [billTexture]);
+  }, [frontTexture, backTexture]);
   
   // Store material ref for animation
   useEffect(() => {

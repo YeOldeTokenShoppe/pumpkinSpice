@@ -1,9 +1,11 @@
 import React, { Suspense, useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment, useAnimations } from '@react-three/drei';
+import { OrbitControls, useGLTF, Environment, useAnimations, } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Chart from 'chart.js/auto';
 import SimpleLoader from './SimpleLoader';
+import '../app/globals.css';
 
 function createChartTexture(data, chartType = 'line', label = '') {
   const canvas = document.createElement('canvas');
@@ -255,60 +257,115 @@ function createChartTexture(data, chartType = 'line', label = '') {
   return texture;
 }
 
-function FloatingChart({ position, chartData, chartType = 'line' }) {
+function FloatingChart({ position, chartData, chartType = 'line', chartLabel = '', index, onChartClick }) {
   const meshRef = useRef();
   const [texture, setTexture] = useState(null);
+  const [hovered, setHovered] = useState(false);
+  const [clicked, setClicked] = useState(false);
   
   useEffect(() => {
-    if (chartData) {
-      const newTexture = createChartTexture(chartData, chartType);
+    if (chartData && chartData.values && chartData.values.length > 0) {
+      if (texture) {
+        texture.dispose();
+      }
+      const newTexture = createChartTexture(chartData, chartType, chartLabel);
+      newTexture.needsUpdate = true;
       setTexture(newTexture);
     }
-  }, [chartData, chartType]);
+  }, [chartData, chartType, chartLabel]);
+  
+  // Change cursor on hover
+  useEffect(() => {
+    document.body.style.cursor = hovered ? 'pointer' : 'auto';
+    return () => {
+      document.body.style.cursor = 'auto';
+    };
+  }, [hovered]);
   
   useFrame(({ clock }) => {
     if (meshRef.current) {
       const time = clock.getElapsedTime();
-      meshRef.current.position.y = position[1] + Math.sin(time * 0.0005) * 0.002;
-      meshRef.current.rotation.y = Math.sin(time * 0.0003) * 0.001;
+      
+      // Gentle floating animation
+      const floatSpeed = clicked ? 0 : (hovered ? 0.3 : 1);
+      meshRef.current.position.y = position[1] + Math.sin(time * 0.5 * floatSpeed + index) * 0.1;
+      
+      // Subtle rotation
+      meshRef.current.rotation.y = Math.sin(time * 0.3 * floatSpeed) * 0.02;
+      meshRef.current.rotation.x = Math.sin(time * 0.2 * floatSpeed + index) * 0.01;
+      
+      // Scale effect on hover/click
+      const targetScale = clicked ? 1.15 : (hovered ? 1.08 : 1);
+      meshRef.current.scale.lerp(
+        new THREE.Vector3(targetScale, targetScale, targetScale),
+        0.15
+      );
     }
   });
   
   if (!texture) return null;
   
+  const glowColor = 
+    chartLabel === 'RSI' ? '#ffa500' :
+    chartLabel === 'Moving Averages' ? '#ffff00' :
+    chartLabel === 'Market Cap (B)' ? '#ff64ff' :
+    '#00ffff';
+  
   return (
     <group ref={meshRef} position={position}>
       {/* Glow backdrop */}
       <mesh position={[0, 0, -0.01]}>
-        <planeGeometry args={[3, 1.5]} />
+        <planeGeometry args={[2.2, 1.2]} />
         <meshBasicMaterial 
-          color="#00ffff"
-          transparent={false}
-          opacity={0.8}
+          color={glowColor}
+          transparent={true}
+          opacity={hovered ? 0.3 : 0.15}
           side={THREE.DoubleSide}
         />
       </mesh>
       
       {/* Main chart */}
-      <mesh>
-        <planeGeometry args={[3, 1.5]} />
+      <mesh
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setHovered(true);
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          setHovered(false);
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setClicked(!clicked);
+          if (onChartClick) {
+            onChartClick({
+              type: chartType,
+              data: chartData,
+              label: chartLabel,
+              index: index
+            });
+          }
+        }}
+      >
+        <planeGeometry args={[2, 1]} />
         <meshStandardMaterial 
           map={texture} 
-          transparent={false} 
+          transparent={true} 
           side={THREE.DoubleSide}
-          opacity={0.95}
-          emissive="#00ffff"
-          emissiveIntensity={4.8}
+          opacity={1}
+          alphaTest={0.01}
+          emissive={glowColor}
+          emissiveIntensity={hovered ? 2.5 : 1.5}
         />
       </mesh>
       
       {/* Edge glow */}
       <mesh position={[0, 0, 0.01]}>
-        <planeGeometry args={[3, 1.5]} />
+        <planeGeometry args={[2.05, 1.05]} />
         <meshBasicMaterial 
-          color="#00ffff"
-          transparent={false}
-          opacity={0.75}
+          color={glowColor}
+          transparent={true}
+          opacity={hovered ? 0.4 : 0.2}
           side={THREE.DoubleSide}
           blending={THREE.AdditiveBlending}
         />
@@ -324,7 +381,7 @@ function Model({ modelPath }) {
   
   useEffect(() => {
     // Play multiple animations simultaneously
-    const animationsToPlay = ['Experiment', 'HaloRotation'];
+    const animationsToPlay = ['Experiment', 'HaloRotation', 'writing', 'Animation'];
     
     if (actions && Object.keys(actions).length > 0) {
       // Play each animation if it exists
@@ -344,8 +401,28 @@ function Model({ modelPath }) {
         fallbackAnim.setLoop(THREE.LoopRepeat);
         console.log('Playing fallback animation');
       }
+      
+      // Play writing animation on Armature.001 if it exists
+      if (scene) {
+        const armature001 = scene.getObjectByName('Armature.001');
+        if (armature001 && actions['writing']) {
+          console.log('Found Armature.001, playing writing animation');
+          actions['writing'].play();
+          actions['writing'].setLoop(THREE.LoopRepeat);
+          actions['writing'].timeScale = 1;
+        }
+        
+        // Play Animation on Flame object if it exists
+        const flame = scene.getObjectByName('Flame');
+        if (flame && actions['Animation']) {
+          console.log('Found Flame, playing Animation');
+          actions['Animation'].play();
+          actions['Animation'].setLoop(THREE.LoopRepeat);
+          actions['Animation'].timeScale = 1;
+        }
+      }
     }
-  }, [actions]);
+  }, [actions, scene]);
   
   return (
     <group ref={group}>
@@ -354,7 +431,7 @@ function Model({ modelPath }) {
   );
 }
 
-function ChartCylinder({ radius = 2, height = 2, chartCount = 4, onChartClick }) {
+function FlatCharts({ onChartClick }) {
   const [priceChartData, setPriceChartData] = useState({
     timestamps: ['Loading...'],
     values: [0]
@@ -549,17 +626,19 @@ function ChartCylinder({ radius = 2, height = 2, chartCount = 4, onChartClick })
       ma: maChartData
     });
     
-    for (let i = 0; i < chartCount; i++) {
-      const angle = (i / chartCount) * Math.PI * 2;
-      const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius +1;
-      const y = height + (Math.sin(angle * 2) * 0.5); // Vary height slightly
-      
-      const chartConfig = chartTypes[i % chartTypes.length];
+    // Arrange charts in a 2x2 grid in front of the model
+    const positions = [
+      [-2.5, 1.5, 3],   // Top left
+      [2.5, 1.5, 3],    // Top right
+      [-2.5, -0.5, 3],  // Bottom left
+      [2.5, -0.5, 3]    // Bottom right
+    ];
+    
+    for (let i = 0; i < 4; i++) {
+      const chartConfig = chartTypes[i];
       
       chartsArray.push({
-        position: [x, y, z],
-        rotation: [0, -angle + Math.PI / 2, 0], // Face center
+        position: positions[i],
         data: chartConfig.data,
         type: chartConfig.type,
         label: chartConfig.label
@@ -567,15 +646,14 @@ function ChartCylinder({ radius = 2, height = 2, chartCount = 4, onChartClick })
     }
     console.log('Charts created:', chartsArray.map(c => c.label));
     return chartsArray;
-  }, [chartCount, radius, height, priceChartData, marketCapChartData, rsiChartData, maChartData]);
+  }, [priceChartData, marketCapChartData, rsiChartData, maChartData]);
   
   return (
     <>
       {charts.map((chart, index) => (
-        <FloatingChartCurved
+        <FloatingChart
           key={index}
           position={chart.position}
-          rotation={chart.rotation}
           chartData={chart.data}
           chartType={chart.type}
           chartLabel={chart.label}
@@ -587,134 +665,28 @@ function ChartCylinder({ radius = 2, height = 2, chartCount = 4, onChartClick })
   );
 }
 
-function FloatingChartCurved({ position, rotation, chartData, chartType = 'line', chartLabel = '', index, onChartClick }) {
-  const groupRef = useRef();
-  const radius = 1; // Match the radius from ChartCylinder
-  const [hovered, setHovered] = useState(false);
-  const [clicked, setClicked] = useState(false);
-  const [texture, setTexture] = useState(null);
-  
-  useEffect(() => {
-    if (chartData && chartData.values && chartData.values.length > 0) {
-      // Dispose of old texture if it exists
-      if (texture) {
-        texture.dispose();
-      }
-      const newTexture = createChartTexture(chartData, chartType, chartLabel);
-      newTexture.needsUpdate = true;
-      setTexture(newTexture);
-    }
-  }, [chartData, chartType, chartLabel]);
-  
-  // Change cursor on hover
-  useEffect(() => {
-    document.body.style.cursor = hovered ? 'pointer' : 'auto';
-    return () => {
-      document.body.style.cursor = 'auto';
-    };
-  }, [hovered]);
-  
-  useFrame(({ clock }) => {
-    if (groupRef.current) {
-      const time = clock.getElapsedTime();
-      
-      // Calculate original angle from position
-      const baseAngle = Math.atan2(position[2] - 1, position[0]);
-      
-      // Stop orbiting if clicked, slow down if hovered
-      const speedMultiplier = clicked ? 0 : (hovered ? 0.3 : 1);
-      const orbitSpeed = (0.05 + (index * 0.01)) * speedMultiplier;
-      const newAngle = baseAngle + (time * orbitSpeed);
-      
-      // Update position to orbit around cylinder
-      groupRef.current.position.x = Math.cos(newAngle) * radius;
-      groupRef.current.position.z = Math.sin(newAngle) * radius + 1;
-      
-      // Slower vertical movement when hovered, stop when clicked
-      const verticalSpeed = (0.2 + (index * 0.03)) * speedMultiplier;
-      const verticalOffset = Math.sin(time * verticalSpeed + index * 0.8) * 0.5;
-      groupRef.current.position.y = position[1] + verticalOffset;
-      
-      // Rotate to face center as it orbits
-      groupRef.current.rotation.y = -newAngle + Math.PI / 2;
-      
-      // Slower tilting motion
-      groupRef.current.rotation.x = Math.sin(time * 0.1 * speedMultiplier + index) * 0.05;
-      groupRef.current.rotation.z = Math.cos(time * 0.08 * speedMultiplier + index) * 0.03;
-      
-      // Scale effect on hover/click - reduced for smoother effect
-      const targetScale = clicked ? 1.1 : (hovered ? 1.05 : 1);
-      groupRef.current.scale.lerp(
-        new THREE.Vector3(targetScale, targetScale, targetScale),
-        0.15
-      );
-    }
-  });
-  
-  if (!texture) return null;
-  
-  // Create curved geometry for charts
-  const curveAngle = Math.PI / 6; // 30 degrees of curve
-  
-  return (
-    <group ref={groupRef} position={position} rotation={rotation}>
-      {/* Main chart - curved with interaction */}
-      <mesh
-        onPointerOver={(e) => {
-          e.stopPropagation();
-          setHovered(true);
-        }}
-        onPointerOut={(e) => {
-          e.stopPropagation();
-          setHovered(false);
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          setClicked(!clicked);
-          // Send chart data to parent component
-          if (onChartClick) {
-            onChartClick({
-              type: chartType,
-              data: chartData,
-              label: chartLabel,
-              index: index
-            });
-          }
-        }}
-      >
-        <cylinderGeometry 
-          args={[
-            radius,         // radiusTop
-            radius,         // radiusBottom
-            0.5,            // height
-            16,             // radialSegments
-            1,              // heightSegments
-            true,           // openEnded
-            -curveAngle/2,  // thetaStart
-            curveAngle      // thetaLength
-          ]} 
-        />
-        <meshStandardMaterial 
-          map={texture} 
-          transparent={true} 
-          side={THREE.DoubleSide}  // Visible from both sides
-          opacity={1}
-          alphaTest={0.01}
-          emissive={
-            chartLabel === 'RSI' ? "#ffa500" :
-            chartLabel === 'Moving Averages' ? "#ffff00" :
-            chartType === 'line' ? "#00ffff" : "#ff64ff"
-          }
-          emissiveIntensity={hovered ? 3.8 : 2.8}
-        />
-      </mesh>
-    </group>
-  );
-}
 
-export default function SimpleModelViewer({ modelPath = '/models/GR80.glb' }) {
+export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb' }) {
   const [selectedChart, setSelectedChart] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Load Google Fonts
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
   
   return (
     <div style={{ width: '100%', height: '100vh', background: '#000000', position: 'relative' }}>
@@ -738,10 +710,10 @@ export default function SimpleModelViewer({ modelPath = '/models/GR80.glb' }) {
         >
           <div 
             style={{
-              width: '80%',
-              maxWidth: '800px',
-              height: '60%',
-              maxHeight: '500px',
+              width: isMobile ? '95%' : isTablet ? '85%' : '80%',
+              maxWidth: isMobile ? '400px' : '800px',
+              height: isMobile ? '70%' : '60%',
+              maxHeight: isMobile ? '600px' : '500px',
               background: 'rgba(10, 10, 10, 0.95)',
               border: `3px solid ${selectedChart.type === 'line' ? '#00ffff' : '#ff64ff'}`,
               borderRadius: '20px',
@@ -765,7 +737,7 @@ export default function SimpleModelViewer({ modelPath = '/models/GR80.glb' }) {
                   selectedChart.label === 'RSI' ? '#ffa500' :
                   selectedChart.label === 'Moving Averages' ? '#ffff00' :
                   selectedChart.type === 'line' ? '#00ffff' : '#ff64ff',
-                fontSize: '28px',
+                fontSize: isMobile ? '20px' : '28px',
                 fontWeight: 'bold',
                 textShadow: `0 0 20px ${
                   selectedChart.label === 'RSI' ? 'rgba(255, 165, 0, 0.8)' :
@@ -781,10 +753,10 @@ export default function SimpleModelViewer({ modelPath = '/models/GR80.glb' }) {
                   background: 'transparent',
                   border: `2px solid ${selectedChart.type === 'line' ? '#00ffff' : '#ff64ff'}`,
                   color: selectedChart.type === 'line' ? '#00ffff' : '#ff64ff',
-                  padding: '10px 20px',
+                  padding: isMobile ? '8px 16px' : '10px 20px',
                   borderRadius: '8px',
                   cursor: 'pointer',
-                  fontSize: '16px',
+                  fontSize: isMobile ? '14px' : '16px',
                   fontWeight: 'bold',
                   transition: 'all 0.3s'
                 }}
@@ -955,25 +927,78 @@ export default function SimpleModelViewer({ modelPath = '/models/GR80.glb' }) {
         </div>
       )}
       <Canvas
-        camera={{ position: [-1, 1, 9], fov: 40 }}
+        camera={{ position: [-7, 1, 7], fov: 40 }}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
         onCreated={() => setIsLoading(false)}
       >
-        <ambientLight intensity={0.01} />
+        <ambientLight intensity={0.2} />
         {/* Multiple point lights around the cylinder */}
-        <pointLight position={[0, 3, 0]} color="#00ffff" intensity={0.3} />
+        {/* <pointLight position={[0, 3, 0]} color="#00ffff" intensity={0.3} />
         <pointLight position={[3, 2, 0]} color="#ff64ff" intensity={0.3} />
         <pointLight position={[-3, 2, 0]} color="#00ffff" intensity={0.3} />
         <pointLight position={[0, 2, 3]} color="#ff64ff" intensity={0.3} />
-        <pointLight position={[0, 2, -3]} color="#00ffff" intensity={0.3} />
+        <pointLight position={[0, 2, -3]} color="#00ffff" intensity={0.3} /> */}
         
         <Suspense fallback={null}>
           <Model modelPath={modelPath} />
           <Environment preset="night" />
-          <ChartCylinder radius={1.5} height={1} chartCount={4} onChartClick={setSelectedChart} />
+          {/* <FlatCharts onChartClick={setSelectedChart} /> */}
         </Suspense>
-        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} autoRotate={true} autoRotateSpeed={0.3}/>
+        <OrbitControls enablePan={true} enableZoom={false} enableRotate={true} autoRotate={false} autoRotateSpeed={0.3}     maxPolarAngle = {Math.PI * 0.5} // Initial limit - will be dynamic
+    minPolarAngle = {0} />
+        <EffectComposer>
+          <Bloom 
+            intensity={0.9}
+            luminanceThreshold={0.5}
+            luminanceSmoothing={0.9}
+            radius={0.3}
+          />
+        </EffectComposer>
       </Canvas>
+      
+      {/* Heading overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          top: windowWidth <= 480 ? '25px' : windowWidth <= 768 ? '30px' : '30px',
+          left: windowWidth <= 480 ? '25px' : windowWidth <= 768 ? '30px' : '30px',
+          zIndex: 10,
+          textAlign: 'left',
+          pointerEvents: 'none'
+        }}
+      >
+        <h1 style={{ 
+          color: '#8e662b',
+          textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #8e662b, 0 0 20px turquoise, 0 0 25px turquoise, 2px 2px 3px rgba(0, 0, 0, 0.5)',
+          fontSize: windowWidth <= 480 ? '2rem' : windowWidth <= 768 ? '4rem' : '4rem',
+          fontWeight: 900,
+          lineHeight: 1,
+          transform: 'rotate(-8deg) skew(-15deg)',
+          margin: 0,
+          fontFamily: '"UnifrakturCook", serif'
+        }}>The Scrolls <br/>of St. GR80</h1>
+      </div>
+      
+      {/* Transparent scroll overlay */}
+      <iframe
+        src="/scroll.html"
+        style={{
+          position: 'absolute',
+          bottom: windowWidth <= 768 ? '0' : '-1rem',
+          left: windowWidth <= 768 ? '0' : '-1rem',
+          width: windowWidth <= 480 ? '125%' : windowWidth <= 768 ? '75%' : '50%',
+          height: windowWidth <= 480 ? '50%' : windowWidth <= 768 ? '45%' : '50%',
+          border: 'none',
+          pointerEvents: 'auto',
+          background: 'transparent',
+          zIndex: 5,
+          opacity: 0.9,
+          mixBlendMode: 'screen',
+          transform: windowWidth <= 480 ? 'scale(0.7)' : 'scale(1)',
+          transformOrigin: 'bottom left'
+        }}
+        title="Scroll Overlay"
+      />
     </div>
   );
 }

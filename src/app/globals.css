@@ -4,11 +4,12 @@
 
 /* Fix for white border around canvas pages */
 html, body {
-  margin: 0;
-  padding: 0;
+  margin: 0 !important;
+  padding: 0 !important;
   width: 100%;
   height: 100%;
   overflow-x: hidden;
+  background: #000000;
 }
 
 /* Specific fix for React Three Fiber Canvas */
@@ -17,6 +18,12 @@ body > div:first-child {
   height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+/* Remove any default margins from Next.js app wrapper */
+#__next {
+  margin: 0;
+  padding: 0;
 }
 
 /* Ensure canvas takes full space */

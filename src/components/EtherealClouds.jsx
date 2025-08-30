@@ -13,7 +13,7 @@ import FallingDiamonds from '@/components/FallingDiamonds';
 
 // Madonna Model Component
 const MadonnaModel = ({ position = [0, -1, 1], scale = 1, goldCoinRef, coinsRef }) => {
-  const { scene } = useGLTF('/models/madonnina-static-pose-no-animations.glb');
+  const { scene } = useGLTF('/models/madonna_skates.glb');
   
   React.useEffect(() => {
     // Log all meshes to identify the duplicate feet
@@ -175,7 +175,7 @@ const MadonnaModel = ({ position = [0, -1, 1], scale = 1, goldCoinRef, coinsRef 
 };
 
 // Preload the model
-useGLTF.preload('/madonnina-static-pose-no-animations.glb');
+useGLTF.preload('/madonna_skates.glb');
 
 const EtherealClouds = () => {
   const goldCoinRef = React.useRef();
@@ -284,7 +284,7 @@ const EtherealClouds = () => {
       <MadonnaModel position={[1, 15, -9]} scale={15} goldCoinRef={goldCoinRef} coinsRef={coinsRef} />
       
       {/* Coin streams from both hands */}
-      <CoinStream 
+      {/* <CoinStream 
         startPosition={[-12.8, 16, -1]}  // Left hand position (adjusted for model scale/position)
         endPosition={[0, -20, 0]}
         coinCount={20}
@@ -294,9 +294,9 @@ const EtherealClouds = () => {
         gravity={-8}
         initialVelocity={[-4, 2, 7]}
         coinMesh={coinTemplate}
-      />
+      /> */}
       
-      <CoinStream 
+      {/* <CoinStream 
         startPosition={[12, 16, 4]}   // Right hand position (adjusted for model scale/position)
         endPosition={[0, -20, 0]}
         coinCount={20}
@@ -306,7 +306,7 @@ const EtherealClouds = () => {
         gravity={-8}
         initialVelocity={[2, 3, 2]}
         coinMesh={coinTemplate}
-      />
+      /> */}
       {/* <FallingDiamonds 
         count={90}
         fallSpeed={0.8}

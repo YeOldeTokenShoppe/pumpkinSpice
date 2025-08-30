@@ -10,8 +10,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
-      <body suppressHydrationWarning>
+    <html lang="en" data-theme="dark" suppressHydrationWarning style={{ margin: 0, padding: 0 }}>
+      <body suppressHydrationWarning style={{ margin: 0, padding: 0, backgroundColor: '#000000' }}>
         <ClerkProvider>
           <MusicProvider>
             {children}
