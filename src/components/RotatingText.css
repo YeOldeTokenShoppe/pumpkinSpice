@@ -1,0 +1,64 @@
+.rotating-text-body {
+  font-family: "Bowlby One SC", "Bowlby One", sans-serif;
+  font-size: 2rem;
+
+  padding: 0.1rem 0 0 0;
+  display: flex;
+  align-items: stretch;
+
+  flex-direction: column;
+  font-weight: 700;
+  color: #8e662b;
+  text-align: center;
+
+  /* background: #1b1724; */
+  /* background-image: radial-gradient(#e85e3c, #7c1717); */
+  background-repeat: no-repeat;
+  /* height: 30vh; */
+  width: 100%;
+}
+
+.t3xts {
+  line-height: 1;
+  position: relative;
+  perspective: 1000px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.t3xt {
+  transform-style: preserve-3d;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.t3xt-out {
+  animation: text-out 0.5s ease;
+}
+
+.t3xt-in {
+  animation: text-in 0.5s ease;
+}
+
+@keyframes text-out {
+  to {
+    transform: rotateX(90deg);
+    opacity: 0;
+  }
+}
+
+@keyframes text-in {
+  from {
+    opacity: 0;
+    transform: rotateX(-90deg);
+  }
+  to {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+}

@@ -688,10 +688,97 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
     };
   }, []);
   
+  // Check if desktop (non-mobile/tablet)
+  const isDesktop = windowWidth > 768;
+  
   return (
-    <div style={{ width: '100%', height: '100vh', background: '#000000', position: 'relative' }}>
-      {/* Full Page Chart Overlay */}
-      {selectedChart && (
+    <div style={{ 
+      width: '100%', 
+      height: '100vh', 
+      background: '#000000', 
+      position: 'relative',
+      display: isDesktop ? 'flex' : 'block'
+    }}>
+      {/* Left Column - Heading and Scroll (Desktop only) */}
+      {isDesktop && (
+        <div style={{
+          width: '50%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '2rem',
+          position: 'relative'
+        }}>
+          {/* Heading */}
+          <div style={{
+            marginBottom: '2rem',
+            textAlign: 'center'
+          }}>
+            <h1 style={{ 
+              color: '#8e662b',
+              fontFamily: '"UnifrakturCook", serif',
+              textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
+              fontSize: '4rem',
+              fontWeight: 900,
+              lineHeight: 0.8,
+              transform: 'rotate(-8deg) skew(-15deg)',
+              margin: 0
+            }}>The Scrolls <br/>of St. GR80</h1>
+            
+            {/* Introduction text */}
+            <div style={{
+              marginTop: '1.5rem',
+              padding: '1rem',
+              backgroundColor: 'rgba(142, 102, 43, 0.1)',
+              border: '2px solid #8e662b',
+              borderRadius: '8px',
+              maxWidth: '400px',
+              margin: '1.5rem auto 0'
+            }}>
+              <p style={{
+                color: '#d4af37',
+                fontFamily: 'Georgia, serif',
+                fontSize: '1rem',
+                lineHeight: 1.6,
+                margin: 0,
+                textAlign: 'center',
+                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
+              }}>
+                Welcome to the sacred chronicles of Saint GR80, 
+                where ancient wisdom meets digital mysticism. 
+                Behold the illuminated manuscripts that bridge 
+                the eternal and the algorithmic.
+              </p>
+            </div>
+          </div>
+          
+          {/* Scroll iframe */}
+          <iframe
+            src="/scroll.html"
+            style={{
+              width: '100%',
+              height: '60%',
+              border: 'none',
+              pointerEvents: 'auto',
+              background: 'transparent',
+              opacity: 0.9,
+              mixBlendMode: 'screen'
+            }}
+            title="Scroll Overlay"
+          />
+        </div>
+      )}
+      
+      {/* Right Column - 3D Model (Desktop) or Full Width (Mobile) */}
+      <div style={{
+        width: isDesktop ? '60%' : '100%',
+        height: '100%',
+        position: 'relative'
+      }}>
+        {/* Full Page Chart Overlay */}
+        {selectedChart && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -956,49 +1043,78 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         </EffectComposer>
       </Canvas>
       
-      {/* Heading overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          top: windowWidth <= 480 ? '3rem' : windowWidth <= 768 ? '30px' : '30px',
-          left: windowWidth <= 480 ? '2rem' : windowWidth <= 768 ? '30px' : '30px',
-          zIndex: 10,
-          textAlign: 'left',
-          pointerEvents: 'none'
-        }}
-      >
-        <h1 style={{ 
-          color: '#8e662b',
-          textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #8e662b, 0 0 20px turquoise, 0 0 25px turquoise, 2px 2px 3px rgba(0, 0, 0, 0.5)',
-          fontSize: windowWidth <= 480 ? '3rem' : windowWidth <= 768 ? '4rem' : '4rem',
-          fontWeight: 900,
-          lineHeight: 1,
-          transform: 'rotate(-8deg) skew(-15deg)',
-          margin: 0,
-          fontFamily: '"UnifrakturCook", serif'
-        }}>The Scrolls <br/>of St. GR80</h1>
+      {/* Mobile overlays - only show on mobile/tablet */}
+      {!isDesktop && (
+        <>
+          {/* Heading overlay for mobile */}
+          <div
+            style={{
+              position: 'absolute',
+              top: windowWidth <= 480 ? '3rem' : '10%',
+              left: windowWidth <= 480 ? '2rem' : '15%',
+              zIndex: 1000,
+              textAlign: 'left',
+              pointerEvents: 'none'
+            }}
+          >
+            <h1 style={{ 
+              color: '#8e662b',
+              fontFamily: '"UnifrakturCook", serif',
+              textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
+              fontSize: windowWidth <= 480 ? '3rem' : '4rem',
+              fontWeight: 900,
+              lineHeight: 0.8,
+              transform: 'rotate(-8deg) skew(-15deg)',
+              margin: 0
+            }}>The Scrolls <br/>of St. GR80</h1>
+            
+            {/* Introduction text for mobile */}
+            <div style={{
+              marginTop: '1rem',
+              padding: '0.75rem',
+              backgroundColor: 'rgba(142, 102, 43, 0.15)',
+              border: '2px solid #8e662b',
+              borderRadius: '8px',
+              maxWidth: windowWidth <= 480 ? '280px' : '350px'
+            }}>
+              <p style={{
+                color: '#d4af37',
+                fontFamily: 'Georgia, serif',
+                fontSize: windowWidth <= 480 ? '0.9rem' : '1rem',
+                lineHeight: 1.5,
+                margin: 0,
+                textAlign: 'left',
+                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
+              }}>
+                Welcome to the sacred chronicles of Saint GR80, 
+                where ancient wisdom meets digital mysticism.
+              </p>
+            </div>
+          </div>
+          
+          {/* Scroll overlay for mobile */}
+          <iframe
+            src="/scroll.html"
+            style={{
+              position: 'absolute',
+              bottom: windowWidth <= 480 ? '4rem' : '0',
+              left: '0',
+              width: windowWidth <= 480 ? '125%' : '75%',
+              height: windowWidth <= 480 ? '50%' : '45%',
+              border: 'none',
+              pointerEvents: 'auto',
+              background: 'transparent',
+              zIndex: 5,
+              opacity: 0.9,
+              mixBlendMode: 'screen',
+              transform: windowWidth <= 480 ? 'scale(0.7)' : 'scale(1)',
+              transformOrigin: 'bottom left'
+            }}
+            title="Scroll Overlay"
+          />
+        </>
+      )}
       </div>
-      
-      {/* Transparent scroll overlay */}
-      <iframe
-        src="/scroll.html"
-        style={{
-          position: 'absolute',
-          bottom: windowWidth <= 480 ? '4rem' : windowWidth <= 768 ? '0' : '0rem',
-          left: windowWidth <= 768 ? '0' : '0rem',
-          width: windowWidth <= 480 ? '125%' : windowWidth <= 768 ? '75%' : '50%',
-          height: windowWidth <= 480 ? '50%' : windowWidth <= 768 ? '45%' : '50%',
-          border: 'none',
-          pointerEvents: 'auto',
-          background: 'transparent',
-          zIndex: 5,
-          opacity: 0.9,
-          mixBlendMode: 'screen',
-          transform: windowWidth <= 480 ? 'scale(0.7)' : 'scale(1)',
-          transformOrigin: 'bottom left'
-        }}
-        title="Scroll Overlay"
-      />
     </div>
   );
 }

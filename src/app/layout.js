@@ -2,10 +2,15 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MusicProvider } from "@/components/MusicContext";
 
+
 export const metadata = {
-  title: 'Our Lady of Perpetual Profit',
+  title: '𝓞𝖚𝖗 𝕷𝖆𝖉𝖞 𝔬𝔣 𝕻𝖊𝖗𝖕𝖊𝖙𝖚𝖆𝖑 𝕻𝖗𝖔𝖋𝖎𝖙',
   viewport: 'width=device-width',
   initialscale:'1',
+  icons: {
+    icon: '/favicon.svg', // or '/icon.png' if you use PNG
+    apple: '/apple-icon.png', // optional: for Apple devices
+  },
 };
 
 export default function RootLayout({ children }) {

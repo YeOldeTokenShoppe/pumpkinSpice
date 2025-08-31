@@ -66,7 +66,7 @@ const SlantedCarousel = ({
   useEffect(() => {
     if (autoPlay && !isHovered) {
       autoPlayRef.current = setInterval(() => {
-        nextSlide();
+        setCurrentSlide((prev) => (prev + 1) % totalSlides);
       }, autoPlayInterval);
 
       return () => {
@@ -79,7 +79,7 @@ const SlantedCarousel = ({
         clearInterval(autoPlayRef.current);
       }
     }
-  }, [currentSlide, isHovered, autoPlay, autoPlayInterval]);
+  }, [isHovered, autoPlay, autoPlayInterval, totalSlides]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -196,9 +196,10 @@ const SlantedCarousel = ({
       {showProgressBar && (
         <div 
           className="progress-bar"
+          key={currentSlide} // Force re-render on slide change
           style={{
-            transform: autoPlay && !isHovered ? 'scaleX(1)' : 'scaleX(0)',
-            transition: `transform ${autoPlayInterval}ms linear`
+            transform: 'scaleX(0)',
+            animation: autoPlay && !isHovered ? `progressAnimation ${autoPlayInterval}ms linear forwards` : 'none'
           }}
         />
       )}

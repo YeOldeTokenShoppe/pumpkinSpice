@@ -5,7 +5,7 @@ import { useThree } from "@react-three/fiber";
 // Preload the models
 useGLTF.preload("/models/marketFight.glb");
 useGLTF.preload("/models/whale.glb");
-// useGLTF.preload("/starCandles.glb");
+useGLTF.preload("/models/arrow.glb");
 // useGLTF.preload("/InfinityStars.glb");
 
 function ConstellationModel({ 
@@ -17,7 +17,7 @@ function ConstellationModel({
   const { camera } = useThree();
   const { scene: marketScene } = useGLTF("/models/marketFight.glb");
   const { scene: whaleScene } = useGLTF("/models/whale.glb");
-  // const { scene: starCandlesScene } = useGLTF("/starAndArrow.glb");
+  const { scene: arrowScene } = useGLTF("/models/arrow.glb");
   // const { scene: infinityStarsScene } = useGLTF("/InfinityStars.glb");
   const groupRef = useRef();
   const whaleModelRef = useRef();
@@ -32,7 +32,7 @@ function ConstellationModel({
 
     const marketClone = marketScene.clone();
     const whaleClone = whaleScene.clone();
-    // const starCandlesClone = starCandlesScene.clone();
+    const arrowClone = arrowScene.clone();
     // const infinityStarsClone = infinityStarsScene.clone();
 
     const processModel = (modelScene, namePrefix = "", position = [0, 0, 0], scale = [1, 1, 1]) => {
@@ -49,6 +49,16 @@ function ConstellationModel({
             } else {
               child.userData.isWhaleLine = true;
             }
+          } else if (modelScene === arrowClone) {
+            child.userData.isArrowModel = true;
+            // Check if this is a star or line mesh
+            if (child.name.toLowerCase().includes("star") || 
+                child.name.startsWith("RedStar") || 
+                child.name.startsWith("GreenStar")) {
+              child.userData.isArrowStar = true;
+            } else {
+              child.userData.isArrowLine = true;
+            }
           }
         }
       });
@@ -56,7 +66,7 @@ function ConstellationModel({
       modelScene.traverse(child => {
         if (
           child.isMesh &&
-          (child.name.startsWith("RedStar") || child.name.startsWith("GreenStar") || child.userData.isWhaleStar)
+          (child.name.startsWith("RedStar") || child.name.startsWith("GreenStar") || child.userData.isWhaleStar || child.userData.isArrowStar)
         ) {
           child.visible = true;
           if (child.material) {
@@ -66,11 +76,10 @@ function ConstellationModel({
             } else if (modelScene === marketClone) {
               child.userData.isBearStar = true;
               child.material.opacity = 0.05;
-            // } else if (modelScene === infinityStarsClone) {
-            //   child.userData.isInfinityStar = true;
-            //   child.material.opacity = 0.2;
-            // } else {
-            //   child.material.opacity = 0.01;
+            } else if (modelScene === arrowClone || child.userData.isArrowStar) {
+              child.material.opacity = 0.05;
+            } else {
+              child.material.opacity = 0.01;
             }
           }
         // }
@@ -89,19 +98,23 @@ function ConstellationModel({
           !child.name.startsWith("GreenStar") &&
           // !child.name.startsWith("Infinity") &&
           !child.userData.isWhaleStar &&
-          !child.userData.isBearStar 
-          // !child.userData.isInfinityStar
+          !child.userData.isBearStar &&
+          !child.userData.isArrowStar
         ) {
           child.castShadow = false;
           child.receiveShadow = false;
           child.renderOrder = -1; 
           
-          // For whale lines, handle visibility differently
-          if (child.userData.isWhaleLine) {
+          // For whale and arrow lines, handle visibility differently
+          if (child.userData.isWhaleLine || child.userData.isArrowLine) {
             child.visible = true; // Keep in scene graph
             if (child.material) {
               child.material.transparent = true;
-              child.material.opacity = isVisible ? 0.05 : 0; // Control via opacity
+              if (child.userData.isArrowLine) {
+                child.material.opacity = isVisible ? 0.05 : 0; // Control via opacity for arrow lines
+              } else {
+                child.material.opacity = isVisible ? 0.05 : 0; // Control via opacity for whale lines
+              }
             }
           } else {
             child.visible = isVisible;
@@ -112,9 +125,9 @@ function ConstellationModel({
               // } else if (modelScene === starCandlesClone) {
               //   child.material.opacity = isVisible ? 0.1 : 0;
               } else if (modelScene === whaleClone) {
-              //   child.material.opacity = isVisible ? 0.15 : 0;
-              // } else if (modelScene === infinityStarsClone) {
-                child.material.opacity = isVisible ? 0.002 : 0;
+                child.material.opacity = isVisible ? 0.05 : 0;
+              } else if (modelScene === arrowClone) {
+                child.material.opacity = isVisible ? 0.05 : 0;
               } else {
                 child.material.opacity = isVisible ? 0.02 : 0;
               }
@@ -132,12 +145,13 @@ function ConstellationModel({
     processModel(marketClone, "Market", [3, 0, 0], [1, 1, 1]);
     processModel(whaleClone, "Whale", [-9, 0.5, 7], [0.3, 0.3, 0.3]);
     // processModel(starCandlesClone, "StarCandles", [-15, -2, 30], [1.8 , 1.8, 1.8]);
-    // processModel(infinityStarsClone, "InfinityStars", [-10, 1, -12], [1.5, 1.5, 1.5]);
+    processModel(arrowClone, "ArrowStar", [-2, 1, 19], [1, 1, 1]);
 
     whaleModelRef.current = whaleClone;
     whaleClone.rotation.y = Math.PI / 4;
     whaleClone.rotation.x = Math.PI / 12;
-    // infinityStarsClone.rotation.z = Math.PI / 6;
+    arrowClone.rotation.y = Math.PI; // Flip 180 degrees to point right
+    arrowClone.rotation.z = Math.PI / -12;
     marketClone.rotation.y = Math.PI * 0.75;
 
     // Apply the new groupScale and groupPosition props
@@ -149,7 +163,7 @@ function ConstellationModel({
     groupRef.current.renderOrder = -500;
 
     return () => {
-      [marketClone, whaleClone].forEach(scene => {
+      [marketClone, whaleClone, arrowClone].forEach(scene => {
         if (groupRef.current && groupRef.current.children.includes(scene)) {
           groupRef.current.remove(scene);
         }
@@ -165,7 +179,7 @@ function ConstellationModel({
         });
       });
     };
-  }, [marketScene, whaleScene, isVisible, groupScale, groupPosition, groupRotation]); // Added groupScale, groupPosition and groupRotation to dependencies
+  }, [marketScene, whaleScene, arrowScene, isVisible, groupScale, groupPosition, groupRotation]); // Added groupScale, groupPosition and groupRotation to dependencies
 
   // Update visibility and opacity based on isVisible prop
   useEffect(() => {
@@ -173,7 +187,7 @@ function ConstellationModel({
 
     groupRef.current.traverse(child => {
       if (child.isMesh) {
-        if (child.name.startsWith("RedStar") || child.name.startsWith("GreenStar") || child.userData.isWhaleStar || child.userData.isBearStar || child.userData.isInfinityStar) {
+        if (child.name.startsWith("RedStar") || child.name.startsWith("GreenStar") || child.userData.isWhaleStar || child.userData.isBearStar || child.userData.isArrowStar) {
           child.visible = true; // Stars always visible in terms of object visibility
           if (child.material) {
             child.material.transparent = true;
@@ -182,25 +196,23 @@ function ConstellationModel({
               child.material.opacity = isVisible ? 0.06 : 0.02; // Dim whale stars when lines off
             } else if (child.userData.isBearStar) {
               child.material.opacity = isVisible ? 0.06 : 0.02; // Dim bear stars when lines off
-            // } else if (child.userData.isInfinityStar) {
-            //   child.material.opacity = isVisible ? 0.06 : 0.05; // Dim infinity stars when lines off
+            } else if (child.userData.isArrowStar) {
+              child.material.opacity = isVisible ? 0.06 : 0.02; // Dim arrow stars when lines off
             } else {
               child.material.opacity = isVisible ? 0.1 : 0.05; // Dim other stars when lines off
             }
           }
-        // } else if (child.name.startsWith("Infinity")) { // For Infinity lines
-        //   child.visible = true; // Lines are always part of the scene graph
-        //   if (child.material) {
-        //     child.material.transparent = true;
-        //     child.material.opacity = isVisible ? 0.3 : 0; // Opacity controlled by isVisible
-        //   }
         } else { // For all other meshes (parts of constellations)
-          // Special handling for whale lines
-          if (child.userData.isWhaleLine) {
+          // Special handling for whale and arrow lines
+          if (child.userData.isWhaleLine || child.userData.isArrowLine) {
             child.visible = true; // Keep in scene graph
             if (child.material) {
               child.material.transparent = true;
-              child.material.opacity = isVisible ? 0.1 : 0.1; // Control via opacity
+              if (child.userData.isArrowLine) {
+                child.material.opacity = isVisible ? 0.05 : 0; // Control via opacity for arrow lines
+              } else {
+                child.material.opacity = isVisible ? 0.1 : 0; // Control via opacity for whale lines  
+              }
             }
           } else {
             child.visible = isVisible;
@@ -213,8 +225,8 @@ function ConstellationModel({
               //   child.material.opacity = isVisible ? 0.03 : 0;
               } else if (child.parent?.name.includes("Whale") || child.userData.isWhaleModel) { // Check parent for Whale context
                 child.material.opacity = isVisible ? 0.07 : 0; // was 0.1
-              // } else if (child.parent?.name.includes("InfinityStars")) { // Check parent for InfinityStars context
-              //   child.material.opacity = isVisible ? 0.03 : 0;
+              } else if (child.parent?.name.includes("ArrowStar") || child.userData.isArrowModel) { // Check parent for Arrow context
+                child.material.opacity = isVisible ? 0.05 : 0;
               } else {
                 child.material.opacity = isVisible ? 0.03 : 0; // was 0.1
               }

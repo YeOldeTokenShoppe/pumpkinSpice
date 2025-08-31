@@ -338,3 +338,120 @@
 .compact-form-group textarea {
   min-height: 80px;
 }
+
+/* Message group with encryption button */
+.message-group {
+  position: relative;
+}
+
+.message-input-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.message-input-wrapper textarea {
+  padding: 12px;
+}
+
+.message-input-wrapper textarea:disabled {
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: not-allowed;
+}
+
+/* Message controls section */
+.message-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Bright, prominent encryption button */
+.encrypt-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+  border: 2px solid #00ff88;
+  border-radius: 20px;
+  color: #000000;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.encrypt-button:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 30px rgba(0, 255, 136, 0.6);
+  background: linear-gradient(135deg, #00ff88 0%, #00ff88 100%);
+}
+
+.encrypt-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  animation: none;
+  box-shadow: none;
+}
+
+.encrypt-button.is-encrypted {
+  background: linear-gradient(135deg, #ff6600 0%, #ff4400 100%);
+  border-color: #ff6600;
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.5);
+  animation: encryptedPulse 1.5s ease-in-out infinite;
+}
+
+.encrypt-button.is-encrypted:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff7700 0%, #ff5500 100%);
+  box-shadow: 0 4px 30px rgba(255, 102, 0, 0.7);
+}
+
+.encrypt-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: 14px;
+}
+
+/* Message status section */
+.message-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.encrypted-badge {
+  padding: 4px 8px;
+  background: rgba(255, 102, 0, 0.2);
+  border: 1px solid rgba(255, 102, 0, 0.4);
+  border-radius: 12px;
+  color: #ff6600;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Animations for the encrypt button */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+  }
+}
+
+@keyframes encryptedPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 102, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 102, 0, 0.7);
+  }
+}

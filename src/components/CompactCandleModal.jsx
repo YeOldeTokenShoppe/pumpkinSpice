@@ -5,7 +5,14 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/utilities/firebaseClient';
 import * as THREE from 'three';
+import { gsap } from 'gsap';
+import { ScrambleTextPlugin } from 'gsap/dist/ScrambleTextPlugin';
 import './CompactCandleModal.css';
+
+// Register GSAP plugin
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrambleTextPlugin);
+}
 
 // Pre-made prayers
 const PRAYERS = [
@@ -37,7 +44,7 @@ const PRAYERS = [
 ];
 
 // 3D Candle Component
-function CandlePreview({ imageUrl, message }) {
+function CandlePreview({ imageUrl, message, isEncrypted, username }) {
   const { scene } = useGLTF('/models/singleCandleAnimatedFlame.glb');
   const candleRef = useRef();
   const defaultTexture = useTexture('/defaultAvatar.png');
@@ -137,7 +144,28 @@ function CandlePreview({ imageUrl, message }) {
   
   // Create text texture for Label1
   useEffect(() => {
-    if (message && label1MeshRef.current) {
+    // Clear texture if no message
+    if (!message || !message.trim()) {
+      if (label1MeshRef.current && label1MeshRef.current.material) {
+        // Create a blank white texture
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const blankTexture = new THREE.CanvasTexture(canvas);
+        blankTexture.needsUpdate = true;
+        
+        label1MeshRef.current.material.map = blankTexture;
+        label1MeshRef.current.material.needsUpdate = true;
+      }
+      setTextTexture(null);
+      return;
+    }
+    
+    if (message && message.trim() && label1MeshRef.current) {
       // Create canvas for text
       const canvas = document.createElement('canvas');
       canvas.width = 1024;  // Higher resolution for smoother text
@@ -157,16 +185,43 @@ function CandlePreview({ imageUrl, message }) {
       ctx.lineWidth = 2;
       ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
       
+      // Add encryption header if encrypted
+      let displayMessage = message;
+      let headerHeight = 0;
+      
+      if (isEncrypted) {
+        // Draw encryption header
+        ctx.fillStyle = '#ff6600';
+        ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('This prayer has been encrypted:', canvas.width / 2, 120);
+        headerHeight = 160; // Space after header
+      }
+      
       // Configure text - black color with better rendering
       ctx.fillStyle = '#000000';
       // Adjust font size based on message length (scaled for higher res)
-      const fontSize = message.length > 200 ? 40 : message.length > 100 ? 48 : 56;
+      const fontSize = displayMessage.length > 200 ? 40 : displayMessage.length > 100 ? 48 : 56;
       ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
       // Word wrap function
       const wrapText = (text, maxWidth) => {
+        // For encrypted text (no spaces), break by character limit
+        if (isEncrypted && !text.includes(' ')) {
+          const lines = [];
+          const charsPerLine = Math.floor(maxWidth / (fontSize * 0.6)); // Approximate char width
+          
+          for (let i = 0; i < text.length; i += charsPerLine) {
+            lines.push(text.substring(i, i + charsPerLine));
+          }
+          
+          return lines;
+        }
+        
+        // Normal word wrapping for regular text
         const words = text.split(' ');
         const lines = [];
         let currentLine = '';
@@ -191,9 +246,9 @@ function CandlePreview({ imageUrl, message }) {
       };
       
       // Draw wrapped text with better quality
-      const lines = wrapText(message, canvas.width - 120);  // Adjusted for higher res
-      const lineHeight = message.length > 200 ? 60 : 80;  // Scaled for higher res
-      const startY = canvas.height / 2 - (lines.length - 1) * lineHeight / 2;
+      const lines = wrapText(displayMessage, canvas.width - 120);  // Adjusted for higher res
+      const lineHeight = displayMessage.length > 200 ? 60 : 80;  // Scaled for higher res
+      const startY = headerHeight > 0 ? headerHeight + 60 : canvas.height / 2 - (lines.length - 1) * lineHeight / 2;
       
       // Add subtle shadow for better text quality
       ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
@@ -222,7 +277,7 @@ function CandlePreview({ imageUrl, message }) {
       
       setTextTexture(texture);
     }
-  }, [message]);
+  }, [message, isEncrypted]);
   
   // Apply text texture to Label1
   useEffect(() => {
@@ -244,52 +299,96 @@ function CandlePreview({ imageUrl, message }) {
     }
   }, [textTexture]);
   
-  // Apply texture to Label2 when texture changes
+  // Create combined texture with image and username for Label2
   useEffect(() => {
     if (label2MeshRef.current) {
-      const textureToUse = userTexture || defaultTexture;
-      console.log('Updating Label2 texture, using:', userTexture ? 'user texture' : 'default texture');
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
       
-      // Dispose of old texture from material if switching textures
-      if (label2MeshRef.current.material && label2MeshRef.current.material.map && 
-          label2MeshRef.current.material.map !== textureToUse) {
-        // Don't dispose default texture as it's shared
-        if (label2MeshRef.current.material.map !== defaultTexture) {
-          label2MeshRef.current.material.map.dispose();
+      // Fill background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Function to draw image and username
+      const drawImageWithName = (img) => {
+        // Draw the image (leave space at bottom for name)
+        const imageHeight = username ? canvas.height * 0.9 : canvas.height;
+        ctx.drawImage(img, 0, 0, canvas.width, imageHeight);
+        
+        // Draw username if provided
+        if (username && username.trim()) {
+          // Create gradient background for text
+          const gradient = ctx.createLinearGradient(0, imageHeight, 0, canvas.height);
+          gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+          gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, imageHeight, canvas.width, canvas.height - imageHeight);
+          
+          // Draw the username
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          // Just the name, no prefix
+          const nameText = username;
+          const textY = imageHeight + (canvas.height - imageHeight) / 2;
+          
+          // Add text shadow for better readability
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+          ctx.shadowBlur = 4;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 2;
+          
+          ctx.fillText(nameText, canvas.width / 2, textY);
         }
-      }
+        
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.repeat.set(1, -1);
+        texture.offset.set(0, 1);
+        texture.minFilter = THREE.LinearMipMapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = 16;
+        texture.generateMipmaps = true;
+        texture.needsUpdate = true;
+        
+        // Apply texture to Label2
+        if (label2MeshRef.current.material) {
+          label2MeshRef.current.material.map = texture;
+          label2MeshRef.current.material.needsUpdate = true;
+        } else {
+          label2MeshRef.current.material = new THREE.MeshStandardMaterial({
+            map: texture,
+            emissive: new THREE.Color(0xff6600),
+            emissiveIntensity: 0.15,
+            roughness: 0.7,
+            metalness: 0.2,
+            envMapIntensity: 0.5,
+            side: THREE.FrontSide,
+          });
+        }
+      };
       
-      // Update existing material's map instead of creating new material
-      if (label2MeshRef.current.material) {
-        label2MeshRef.current.material.map = textureToUse;
-        label2MeshRef.current.material.needsUpdate = true;
-      } else {
-        // Create high quality material if it doesn't exist
-        label2MeshRef.current.material = new THREE.MeshStandardMaterial({
-          map: textureToUse,
-          emissive: new THREE.Color(0xff6600),
-          emissiveIntensity: 0.15,
-          roughness: 0.7,
-          metalness: 0.2,
-          envMapIntensity: 0.5,
-          side: THREE.FrontSide,
-        });
-      }
+      // Load and draw the appropriate image
+      const img = new Image();
+      img.onload = () => drawImageWithName(img);
       
-      // Ensure the geometry uses proper UV mapping
-      if (label2MeshRef.current.geometry) {
-        label2MeshRef.current.geometry.computeBoundingBox();
-        label2MeshRef.current.geometry.computeBoundingSphere();
+      if (userTexture) {
+        // Use user texture's image source
+        img.src = userTexture.image.src;
+      } else if (defaultTexture) {
+        // Use default texture's image source
+        img.src = defaultTexture.image.src;
       }
     }
-  }, [userTexture, defaultTexture]);
+  }, [userTexture, defaultTexture, username]);
   
-  // Gentle rotation animation
-  useFrame((state, delta) => {
-    if (candleRef.current) {
-      candleRef.current.rotation.y += delta * 0.3;
-    }
-  });
+  // Removed auto-rotation - user can control with OrbitControls
   
   return (
     <primitive 
@@ -312,7 +411,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isEncrypted, setIsEncrypted] = useState(false);
+  const [originalMessage, setOriginalMessage] = useState('');
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
   
   // Reset form when modal opens
   useEffect(() => {
@@ -327,6 +429,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setImagePreview(null);
       setError('');
       setIsSubmitting(false);
+      setIsEncrypted(false);
+      setOriginalMessage('');
       
       // Clear the file input
       if (fileInputRef.current) {
@@ -341,6 +445,65 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       ...prev,
       [name]: value
     }));
+    
+    // Reset encryption state when message is manually changed
+    if (name === 'message' && isEncrypted) {
+      setIsEncrypted(false);
+      setOriginalMessage('');
+    }
+  };
+
+  const toggleEncryption = () => {
+    if (!textareaRef.current) return;
+    
+    if (isEncrypted) {
+      // Decrypt: restore original message
+      gsap.to(textareaRef.current, {
+        duration: 1.5,
+        scrambleText: {
+          text: originalMessage,
+          chars: 'upperAndLowerCase',
+          revealDelay: 0.5,
+          speed: 1,
+        },
+        onUpdate: function() {
+          setFormData(prev => ({ ...prev, message: textareaRef.current.value }));
+        },
+        onComplete: function() {
+          setFormData(prev => ({ ...prev, message: originalMessage }));
+          setIsEncrypted(false);
+          setOriginalMessage('');
+        }
+      });
+    } else {
+      // Encrypt: scramble the message
+      const currentMessage = formData.message;
+      if (!currentMessage.trim()) return;
+      
+      setOriginalMessage(currentMessage);
+      
+      // Generate scrambled text
+      const scrambledText = currentMessage.split('').map(() => {
+        const chars = '@#$%&*!?^~';
+        return chars[Math.floor(Math.random() * chars.length)];
+      }).join('');
+      
+      gsap.to(textareaRef.current, {
+        duration: 1,
+        scrambleText: {
+          text: scrambledText,
+          chars: '@#$%&*!?^~',
+          speed: 0.3,
+        },
+        onUpdate: function() {
+          setFormData(prev => ({ ...prev, message: textareaRef.current.value }));
+        },
+        onComplete: function() {
+          setFormData(prev => ({ ...prev, message: scrambledText }));
+          setIsEncrypted(true);
+        }
+      });
+    }
   };
 
   const handleImageChange = (e) => {
@@ -379,7 +542,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     e.preventDefault();
     
     if (!formData.username.trim()) {
-      setError('Please enter your name');
+      setError('Please enter a name');
       return;
     }
 
@@ -387,6 +550,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setError('Please enter a message');
       return;
     }
+
+    // Use original message if encrypted, otherwise use current message
+    const messageToSave = isEncrypted ? originalMessage : formData.message;
 
     setIsSubmitting(true);
     setError('');
@@ -399,7 +565,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
 
       const docData = {
         username: formData.username,
-        message: formData.message,
+        message: messageToSave,
         burnedAmount: parseInt(formData.burnedAmount) || 1,
         image: imageUrl,
         staked: false,
@@ -475,14 +641,17 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   <CandlePreview 
                     imageUrl={imagePreview || '/defaultAvatar.png'} 
                     message={formData.message}
+                    isEncrypted={isEncrypted}
+                    username={formData.username}
                   />
                 </Suspense>
                 <OrbitControls
-                  enablePan={false}
+                  enablePan={true}
                   enableZoom={true}
                   minPolarAngle={Math.PI / 3}
                   maxPolarAngle={Math.PI / 2}
                   autoRotate={false}
+                  zoomToCursor={true}
                 />
               </Canvas>
             </div>
@@ -499,7 +668,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   name="username"
                   value={formData.username}
                   onChange={handleInputChange}
-                  placeholder="Your name"
+                  placeholder="Dedication Name"
                   maxLength={50}
                   required
                 />
@@ -536,51 +705,53 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 </div>
               </div>
 
-              <div className="compact-form-group">
-                <textarea
-                  name="message"
-                  value={formData.message}
-                  onChange={(e) => {
-                    handleInputChange(e);
-                    // If user edits a pre-made prayer, mark as custom
-                    if (selectedPrayer && PRAYERS.find(p => p.id === selectedPrayer)?.text !== e.target.value) {
-                      setSelectedPrayer(null);
-                    }
-                  }}
-                  placeholder={selectedPrayer ? "Edit the prayer or write your own..." : "Write your prayer or message..."}
-                  rows={3}
-                  maxLength={400}
-                  required
-                />
-                <span className="compact-char-count">{formData.message.length}/400</span>
+              <div className="compact-form-group message-group">
+                <div className="message-input-wrapper">
+                  <textarea
+                    ref={textareaRef}
+                    name="message"
+                    value={formData.message}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      // If user edits a pre-made prayer, mark as custom
+                      if (selectedPrayer && PRAYERS.find(p => p.id === selectedPrayer)?.text !== e.target.value) {
+                        setSelectedPrayer(null);
+                      }
+                    }}
+                    placeholder={selectedPrayer ? "Edit the prayer or write your own..." : "Write a prayer, wish, dedication, or confession"}
+                    rows={3}
+                    maxLength={400}
+                    required
+                    disabled={isEncrypted}
+                  />
+                </div>
+                <div className="message-controls">
+                  <button
+                    type="button"
+                    className={`encrypt-button ${isEncrypted ? 'is-encrypted' : ''}`}
+                    onClick={toggleEncryption}
+                    disabled={!formData.message.trim()}
+                  >
+                    <span className="encrypt-text">{isEncrypted ? 'DECRYPT' : 'ENCRYPT?'}</span>
+                  </button>
+                  <div className="message-status">
+                    <span className="compact-char-count">{formData.message.length}/400</span>
+                    {isEncrypted && <span className="encrypted-badge">ENCRYPTED</span>}
+                  </div>
+                </div>
               </div>
 
-              <div className="compact-form-row">
-                <div className="compact-form-group half">
-                  <select
-                    name="burnedAmount"
-                    value={formData.burnedAmount}
-                    onChange={handleInputChange}
-                  >
-                    <option value="1">Small (1)</option>
-                    <option value="5">Medium (5)</option>
-                    <option value="10">Large (10)</option>
-                    <option value="25">Grand (25)</option>
-                  </select>
-                </div>
-
-                <div className="compact-form-group half">
-                  <label className="compact-file-label">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="compact-file-input"
-                    />
-                    <span>{imageFile ? '✓ Image' : '+ Image'}</span>
-                  </label>
-                </div>
+              <div className="compact-form-group">
+                <label className="compact-file-label">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="compact-file-input"
+                  />
+                  <span>{imageFile ? '✓ Image' : '+ Image'}</span>
+                </label>
               </div>
 
               {error && <div className="compact-error">{error}</div>}
