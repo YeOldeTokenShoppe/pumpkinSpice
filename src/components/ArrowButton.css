@@ -1,0 +1,90 @@
+/* Arrow Button Styles for Encrypt/Decrypt */
+
+.arrow-button {
+  display: inline-block;
+  position: relative;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #444;
+  background: #39F879;
+  padding: 14px 20px 14px 35px; /* Reversed padding for left arrow */
+  border-radius: 20px;
+  transition: linear .3s;
+  box-shadow: 1px 1px 7px 1px #3F3F3F;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.arrow-button:hover {
+  opacity: .8;
+}
+
+.arrow-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.arrow-button.encrypted {
+  background: rgba(57, 248, 121, 0.7);
+}
+
+.arrow-button.processing {
+  background: rgba(57, 248, 121, 0.3);
+  color: #39F879;
+}
+
+.arrow {
+  position: absolute;
+  top: 7px;
+  left: 9px; /* Changed from right to left for left-pointing arrow */
+  width: 30px;
+  height: 30px;
+  background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/PjxzdmcgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDQ4IDQ4IiB3aWR0aD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTMwLjgzIDMyLjkybC05LjE3LTkuMTcgOS4xNy05LjE3LTIuODMtMi44My0xMiAxMiAxMiAxMnoiLz48cGF0aCBkPSJNMC0uMjVoNDh2NDhoLTQ4eiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==) no-repeat;
+  background-size: contain;
+  animation: bounce-left 1.4s linear infinite;
+}
+
+@keyframes bounce-left {
+  0%, 100% {
+    transform: none;
+    animation-timing-function: cubic-bezier(.215, .61, .355, 1);
+  }
+  50% {
+    transform: translateX(-5px); /* Changed from 5px to -5px for left bounce */
+    animation-timing-function: cubic-bezier(.55, .055, .675, 2);
+  }
+}
+
+/* Mobile styles - regular button without arrow */
+@media (max-width: 768px) {
+  .arrow-button {
+    padding: 0.2rem 0.5rem;
+    margin-top: -30rem;
+    border-radius: 35px;
+    font-size: 1.3rem;
+    font-family: 'Cyber', monospace;
+  }
+  
+  .arrow-button .arrow {
+    display: none;
+  }
+  
+  .arrow-button.processing {
+    color: #00ff00;
+  }
+  
+  .arrow-button:not(.processing) {
+    background: #00ff00;
+    color: #000000;
+    box-shadow: 0 0 30px rgba(0, 255, 0, 0.8), 0 0 50px rgba(0, 255, 0, 0.5);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.9), 0 0 20px rgba(255, 255, 255, 0.7), 0 0 30px rgba(255, 255, 255, 0.5);
+  }
+  
+  .arrow-button.encrypted:not(.processing) {
+    background: rgba(0, 255, 0, 0.7);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+  }
+}

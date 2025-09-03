@@ -1,0 +1,265 @@
+/* Encrypted Message Viewer Styles */
+
+/* Label Mode - Compact display for candle labels */
+.encrypted-label-viewer {
+  position: relative;
+  width: 100%;
+  color: #000;
+}
+
+.encrypted-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px;
+}
+
+.scrambled-text {
+  font-family: monospace;
+  color: #ff6600;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-shadow: 0 0 2px rgba(255, 102, 0, 0.3);
+}
+
+.unlock-button,
+.lock-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.2s ease;
+}
+
+.unlock-button:hover,
+.lock-button:hover {
+  transform: scale(1.2);
+}
+
+.decrypted-message {
+  padding: 8px;
+  animation: fadeIn 0.5s ease;
+}
+
+.password-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(26, 26, 26, 0.95);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 4px;
+  z-index: 1000;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.password-popup input {
+  flex: 1;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+}
+
+.password-popup input:focus {
+  outline: none;
+  border-color: #ff6600;
+}
+
+.password-popup button {
+  padding: 6px 10px;
+  background: #ff6600;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.password-popup button:hover:not(:disabled) {
+  background: #ff8833;
+}
+
+.password-popup button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.password-popup button:last-child {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 6px 8px;
+}
+
+.decrypt-error {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff4444;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+/* Full Display Mode - Detailed view */
+.encrypted-message-viewer {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  border-radius: 8px;
+}
+
+.encrypted-content,
+.decrypted-content {
+  width: 100%;
+}
+
+.encrypt-header,
+.decrypt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.encrypt-status,
+.decrypt-status {
+  color: #ff6600;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.decrypt-status {
+  color: #00ff88;
+}
+
+.scrambled-preview {
+  font-family: monospace;
+  font-size: 16px;
+  color: #ff6600;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+  text-align: center;
+  text-shadow: 0 0 4px rgba(255, 102, 0, 0.4);
+}
+
+.decrypted-text {
+  padding: 16px;
+  background: rgba(0, 255, 136, 0.05);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 6px;
+  color: white;
+  line-height: 1.6;
+}
+
+.decrypt-btn,
+.re-encrypt-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #ff6600 0%, #ff8833 100%);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.decrypt-btn:hover,
+.re-encrypt-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 102, 0, 0.4);
+}
+
+.re-encrypt-btn {
+  background: linear-gradient(135deg, #666 0%, #888 100%);
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.decrypt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.password-input {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: #ff6600;
+  box-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
+}
+
+.decrypt-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.confirm-decrypt,
+.cancel-decrypt {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-decrypt {
+  background: linear-gradient(135deg, #ff6600 0%, #ff8833 100%);
+  color: white;
+}
+
+.confirm-decrypt:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 102, 0, 0.4);
+}
+
+.confirm-decrypt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancel-decrypt {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cancel-decrypt:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

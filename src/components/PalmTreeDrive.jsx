@@ -71,7 +71,7 @@ const PalmsScene = ({ onLoadingChange }) => {
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
   const materialShadersRef = useRef([]);
-  const clockRef = useRef(new THREE.Clock());
+  const clockRef = useRef(null);
   // Cinematic states removed for production
   const [isSceneLoadingInternal, setIsSceneLoadingInternal] = useState(true); // Loading state
   
@@ -148,6 +148,7 @@ const PalmsScene = ({ onLoadingChange }) => {
   // Refs for scroll camera
   const scrollCameraEnabledRef = useRef(true); // Initialize as true to match state
   const scrollProgressRef = useRef(0); // Start at 0 for aerial view
+  const animationFrameRef = useRef(null); // Track animation frame ID for cleanup
 
   // Force initial scroll position on mount and page load
   useEffect(() => {
@@ -406,6 +407,12 @@ const PalmsScene = ({ onLoadingChange }) => {
   useEffect(() => {
     if (!mountRef.current) return;
 
+    // Create a fresh clock for this mount
+    clockRef.current = new THREE.Clock();
+    
+    // Reset material shaders array
+    materialShadersRef.current = [];
+
     // Noise shader function
     const noise = `
     vec3 mod289(vec3 x) {
@@ -535,6 +542,11 @@ const PalmsScene = ({ onLoadingChange }) => {
     renderer.setPixelRatio(pixelRatio);
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
     rendererRef.current = renderer;
+    
+    // Clear any existing children before adding the new renderer
+    while (mountRef.current.firstChild) {
+      mountRef.current.removeChild(mountRef.current.firstChild);
+    }
     mountRef.current.appendChild(renderer.domElement);
 
 
@@ -1448,196 +1460,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       carModelRef.current = carScene; // Save reference for potential scroll-based animations
       
       // GUI initialization removed for production
-      if (false) {
-        // GUI code disabled
-        const carSpotlightFolder = null;
-        carSpotlightFolder.addColor(lightSettings.carSpotlight, 'color').onChange((value) => {
-          carSpotlightRef.current.color.set(value);
-        });
-        carSpotlightFolder.add(lightSettings.carSpotlight, 'intensity', 0, 5).onChange((value) => {
-          carSpotlightRef.current.intensity = value;
-        });
-        carSpotlightFolder.add(lightSettings.carSpotlight, 'distance', 0, 50).onChange((value) => {
-          carSpotlightRef.current.distance = value;
-        });
-        carSpotlightFolder.add(lightSettings.carSpotlight, 'angle', 0, Math.PI).onChange((value) => {
-          carSpotlightRef.current.angle = value;
-        });
-        carSpotlightFolder.add(lightSettings.carSpotlight, 'penumbra', 0, 1).onChange((value) => {
-          carSpotlightRef.current.penumbra = value;
-        });
-        carSpotlightFolder.add(lightSettings.carSpotlight.position, 'x', -10, 10).onChange((value) => {
-          carSpotlightRef.current.position.x = value;
-        });
-        carSpotlightFolder.add(lightSettings.carSpotlight.position, 'y', 0, 10).onChange((value) => {
-          carSpotlightRef.current.position.y = value;
-        });
-        carSpotlightFolder.add(lightSettings.carSpotlight.position, 'z', 0, 10).onChange((value) => {
-          carSpotlightRef.current.position.z = value;
-        });
-        
-        // Rim Light Controls
-        const rimLightFolder = guiRef.current.addFolder('Rim Light');
-        rimLightFolder.addColor(lightSettings.rimLight, 'color').onChange((value) => {
-          rimLightRef.current.color.set(value);
-        });
-        rimLightFolder.add(lightSettings.rimLight, 'intensity', 0, 5).onChange((value) => {
-          rimLightRef.current.intensity = value;
-        });
-        rimLightFolder.add(lightSettings.rimLight.position, 'x', -10, 10).onChange((value) => {
-          rimLightRef.current.position.x = value;
-        });
-        rimLightFolder.add(lightSettings.rimLight.position, 'y', 0, 10).onChange((value) => {
-          rimLightRef.current.position.y = value;
-        });
-        rimLightFolder.add(lightSettings.rimLight.position, 'z', -10, 10).onChange((value) => {
-          rimLightRef.current.position.z = value;
-        });
-        
-        // Underglow Controls
-        const underglowFolder = guiRef.current.addFolder('Underglow');
-        underglowFolder.addColor(lightSettings.underglow, 'color').onChange((value) => {
-          underglowLightRef.current.color.set(value);
-        });
-        underglowFolder.add(lightSettings.underglow, 'intensity', 0, 5).onChange((value) => {
-          underglowLightRef.current.intensity = value;
-        });
-        underglowFolder.add(lightSettings.underglow, 'distance', 0, 10).onChange((value) => {
-          underglowLightRef.current.distance = value;
-        });
-        
-        // Headlights Controls
-        const headlightsFolder = guiRef.current.addFolder('Headlights');
-        headlightsFolder.addColor(lightSettings.headlights, 'color').onChange((value) => {
-          headlightLeftRef.current.color.set(value);
-          headlightRightRef.current.color.set(value);
-        });
-        headlightsFolder.add(lightSettings.headlights, 'intensity', 0, 5).onChange((value) => {
-          headlightLeftRef.current.intensity = value;
-          headlightRightRef.current.intensity = value;
-        });
-        headlightsFolder.add(lightSettings.headlights, 'distance', 0, 50).onChange((value) => {
-          headlightLeftRef.current.distance = value;
-          headlightRightRef.current.distance = value;
-        });
-        headlightsFolder.add(lightSettings.headlights, 'angle', 0, Math.PI).onChange((value) => {
-          headlightLeftRef.current.angle = value;
-          headlightRightRef.current.angle = value;
-        });
-        headlightsFolder.add(lightSettings.headlights, 'penumbra', 0, 1).onChange((value) => {
-          headlightLeftRef.current.penumbra = value;
-          headlightRightRef.current.penumbra = value;
-        });
-        
-        // Car Accent Light Controls
-        const carAccentLightFolder = guiRef.current.addFolder('Car Accent Light');
-        carAccentLightFolder.addColor(lightSettings.carAccentLight, 'color').onChange((value) => {
-          carAccentLightRef.current.color.set(value);
-        });
-        carAccentLightFolder.add(lightSettings.carAccentLight, 'intensity', 0, 5).onChange((value) => {
-          carAccentLightRef.current.intensity = value;
-        });
-        carAccentLightFolder.add(lightSettings.carAccentLight, 'distance', 0, 50).onChange((value) => {
-          carAccentLightRef.current.distance = value;
-        });
-        carAccentLightFolder.add(lightSettings.carAccentLight, 'angle', 0, Math.PI).onChange((value) => {
-          carAccentLightRef.current.angle = value;
-        });
-        carAccentLightFolder.add(lightSettings.carAccentLight, 'penumbra', 0, 1).onChange((value) => {
-          carAccentLightRef.current.penumbra = value;
-        });
-        carAccentLightFolder.add(lightSettings.carAccentLight.position, 'x', -10, 10).onChange((value) => {
-          carAccentLightRef.current.position.x = value;
-        });
-        carAccentLightFolder.add(lightSettings.carAccentLight.position, 'y', 0, 10).onChange((value) => {
-          carAccentLightRef.current.position.y = value;
-        });
-        carAccentLightFolder.add(lightSettings.carAccentLight.position, 'z', 0, 10).onChange((value) => {
-          carAccentLightRef.current.position.z = value;
-        });
-        
-        // GUI keyboard shortcut removed
 
-        // Add Save Settings button
-        const saveSettings = () => {
-          const settings = {
-            carSpotlight: {
-              color: lightSettings.carSpotlight.color,
-              intensity: lightSettings.carSpotlight.intensity,
-              distance: lightSettings.carSpotlight.distance,
-              angle: lightSettings.carSpotlight.angle,
-              penumbra: lightSettings.carSpotlight.penumbra,
-              position: { ...lightSettings.carSpotlight.position }
-            },
-            rimLight: {
-              color: lightSettings.rimLight.color,
-              intensity: lightSettings.rimLight.intensity,
-              position: { ...lightSettings.rimLight.position }
-            },
-            carAccentLight: {
-              color: lightSettings.carAccentLight.color,
-              intensity: lightSettings.carAccentLight.intensity,
-              distance: lightSettings.carAccentLight.distance,
-              angle: lightSettings.carAccentLight.angle,
-              penumbra: lightSettings.carAccentLight.penumbra,
-              position: { ...lightSettings.carAccentLight.position }
-            },
-            underglow: {
-              color: lightSettings.underglow.color,
-              intensity: lightSettings.underglow.intensity,
-              distance: lightSettings.underglow.distance,
-              position: { ...lightSettings.underglow.position }
-            },
-            headlights: {
-              color: lightSettings.headlights.color,
-              intensity: lightSettings.headlights.intensity,
-              distance: lightSettings.headlights.distance,
-              angle: lightSettings.headlights.angle,
-              penumbra: lightSettings.headlights.penumbra
-            }
-          };
-
-          // console.log('Current Light Settings:', JSON.stringify(settings, null, 2));
-          
-          // Create a text area with the settings
-          const textArea = document.createElement('textarea');
-          textArea.value = JSON.stringify(settings, null, 2);
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-          
-          // Show a temporary message
-          const message = document.createElement('div');
-          message.textContent = 'Settings copied to clipboard!';
-          message.style.position = 'fixed';
-          message.style.top = '20px';
-          message.style.left = '50%';
-          message.style.transform = 'translateX(-50%)';
-          message.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-          message.style.color = 'white';
-          message.style.padding = '10px 20px';
-          message.style.borderRadius = '5px';
-          message.style.zIndex = '1000';
-          document.body.appendChild(message);
-          
-          setTimeout(() => {
-            document.body.removeChild(message);
-          }, 2000);
-        };
-
-        // Add Save Settings button to GUI
-        guiRef.current.add({ saveSettings }, 'saveSettings').name('💾 Save Settings');
-
-        // Add video controls to GUI
-        // const videoFolder = guiRef.current.addFolder('Video Controls');
-        // videoFolder.add({ play: () => video.play() }, 'play').name('▶️ Play');
-        // videoFolder.add({ pause: () => video.pause() }, 'pause').name('⏸️ Pause');
-        // videoFolder.add({ restart: () => {
-        //   video.currentTime = 0;
-        //   video.play();
-        // }}, 'restart').name('🔄 Restart');
-      }
     }, 
     // Progress callback (optional)
     (progress) => {
@@ -1953,10 +1776,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     // Simple scroll-based camera animation using GSAP ScrollTrigger
     // Create a virtual scroll container for smooth animation
     const setupScrollAnimation = () => {
-      console.log('Setting up scroll animation...');
-      console.log('Camera exists:', !!cameraRef.current);
-      console.log('Controls exist:', !!controlsRef.current);
-      console.log('Intersection ref exists:', !!intersectionRef.current);
+
       
       if (!cameraRef.current || !controlsRef.current) {
         console.log('Camera or controls not ready, retrying...');
@@ -1982,7 +1802,6 @@ const PalmsScene = ({ onLoadingChange }) => {
         return (isIPhone || isAndroid) && hasSmallScreen && hasTouch;
       })();
       
-      console.log('Mobile device detected:', isMobile);
       
       // Set initial camera position based on device type
       const initialPos = isMobile 
@@ -2174,7 +1993,7 @@ const PalmsScene = ({ onLoadingChange }) => {
           
           // Also update the ref for consistency
           if (cameraRef.current && cameraRef.current !== camera) {
-            console.warn('[WARNING] cameraRef.current is different from camera!');
+
             cameraRef.current.position.copy(camera.position);
             cameraRef.current.fov = camera.fov;
             cameraRef.current.updateProjectionMatrix();
@@ -2192,8 +2011,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       
       // Add completion callback to ensure final position is set
       tl.eventCallback("onComplete", () => {
-        console.log('[Timeline onComplete] Called! Setting final camera position...');
-        console.log(`[Timeline onComplete] Current showEnterButton state: ${showEnterButton}`);
+
         if (camera) {
           // Force final position - matching the last waypoint for each platform
           const finalPos = isMobile 
@@ -2220,7 +2038,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         // Show the "Take me there" button after a short delay
         console.log('[Timeline onComplete] Starting 1.5s timer to show button...');
         setTimeout(() => {
-          console.log('[Timeline onComplete] Timer fired - Setting showEnterButton to true');
+
           setShowEnterButton(true);
         }, 1500); // 1.5 second delay after reaching Mary
       });
@@ -2242,7 +2060,6 @@ const PalmsScene = ({ onLoadingChange }) => {
           // Debug logging to track scroll progress and timeline
           if (self.progress > 0.9 || self.progress === 0 || Math.abs(self.progress - 0.5) < 0.01 || Math.abs(self.progress - 0.25) < 0.01 || Math.abs(self.progress - 0.75) < 0.01) {
             const tlProg = tl.progress();
-            console.log(`[ScrollTrigger] Scroll: ${(self.progress * 100).toFixed(1)}%, Timeline: ${(tlProg * 100).toFixed(1)}%, Camera Z: ${cameraRef.current?.position.z.toFixed(2)}`);
             
             // Manually set timeline progress to match scroll (debugging)
             if (Math.abs(tlProg - self.progress) > 0.01) {
@@ -2252,10 +2069,7 @@ const PalmsScene = ({ onLoadingChange }) => {
           }
           scrollProgressRef.current = self.progress;
           
-          // Debug logging for mobile
-          if (isMobile && (self.progress > 0.9 || self.progress === 1)) {
-            console.log(`Mobile scroll progress: ${self.progress.toFixed(3)}, Stage: ${currentCameraStage}`);
-          }
+
           
           // Update camera stage based on progress for text changes
           let stage = 0;
@@ -2268,60 +2082,44 @@ const PalmsScene = ({ onLoadingChange }) => {
           
           setCurrentCameraStage(stage);
           
-          // Debug log stage changes
-          if (stage === 4 && !window.stage4Logged) {
-            console.log(`[Stage 4 Reached] Progress: ${(self.progress * 100).toFixed(1)}%, isMobile: ${isMobile}`);
-            window.stage4Logged = true;
-          }
+
           
           // Show button when we reach final stage on mobile
           if (isMobile && stage === 4 && !window.mobileButtonTriggered) {
             console.log('[Mobile] Reached final stage 4, showing button');
             window.mobileButtonTriggered = true;
             setTimeout(() => {
-              console.log('[Mobile] Setting showEnterButton to true');
               setShowEnterButton(true);
             }, 1500);
           }
           
           // Show button when we're very close to the end (desktop)
           if (!isMobile && self.progress >= 0.95 && !window.buttonTriggered) {
-            console.log(`[Desktop] Progress >= 95% (${(self.progress * 100).toFixed(1)}%), triggering button show`);
             window.buttonTriggered = true;
             setTimeout(() => {
-              console.log('[Desktop] Setting showEnterButton to true from progress check');
               setShowEnterButton(true);
             }, 1500);
           }
           
           // Additional fallback: Check if animation is nearly complete (99% or higher)
           if (self.progress >= 0.99 && !window.completeButtonTriggered) {
-            console.log(`[Fallback] Animation ${(self.progress * 100).toFixed(1)}% complete, ensuring button shows`);
             window.completeButtonTriggered = true;
             setTimeout(() => {
-              console.log('[Fallback] Setting showEnterButton to true');
+
               setShowEnterButton(true);
             }, 1500);
           }
           
           // Secondary fallback for high progress
           if (self.progress >= 0.95 && !window.highProgressTriggered) {
-            console.log(`[High Progress Trigger] Progress: ${(self.progress * 100).toFixed(1)}%, triggering button`);
             window.highProgressTriggered = true;
             setTimeout(() => {
-              console.log('[High Progress] Setting showEnterButton to true');
               setShowEnterButton(true);
             }, 1500);
           }
         }
       });
       
-      console.log('ScrollTrigger created:', st);
-      console.log(`Initial state - isMobile: ${isMobile}, showEnterButton: ${showEnterButton}`);
-      console.log('Timeline duration:', tl.duration());
-      console.log('Timeline paused state:', tl.paused());
-      console.log('Timeline totalDuration:', tl.totalDuration());
-      console.log('Number of timeline children:', tl.getChildren().length);
       
       // Log the first few timeline tweens to verify they exist
       const children = tl.getChildren();
@@ -2385,139 +2183,11 @@ const PalmsScene = ({ onLoadingChange }) => {
       setupScrollAnimation();
     }, 100);
     
-    // Test if page is scrollable
-    setTimeout(() => {
-      console.log('Document body height:', document.body.scrollHeight);
-      console.log('Window height:', window.innerHeight);
-      console.log('Is scrollable?', document.body.scrollHeight > window.innerHeight);
-      console.log('Scroll container exists?', !!document.getElementById('scroll-container'));
-      console.log('Current scroll position:', window.scrollY);
-    }, 1500);
-    
-    // Old scroll handler - keeping for fallback
-    const handleScroll = (event) => {
-      // Disabled - using ScrollTrigger instead
-      return;
-      
-      // Determine current stage based on progress
-      let currentStage = 0;
-      const easedProg = 1 - Math.pow(1 - scrollProgressRef.current, 3);
-      if (easedProg < 0.2) currentStage = 0;
-      else if (easedProg < 0.4) currentStage = 1;
-      else if (easedProg < 0.6) currentStage = 2;
-      else if (easedProg < 0.8) currentStage = 3;
-      else currentStage = 4;
-      
-      // Enhanced debug logging
-      // console.log('Scroll event:', {
-      //   deltaY: event.deltaY,
-      //   rawProgress: rawProgress.toFixed(3),
-      //   scrollProgress: scrollProgressRef.current.toFixed(3),
-      //   isAtStickyPoint: isAtStickyPoint,
-      //   currentStage: currentStage,
-      //   enabled: scrollCameraEnabledRef.current,
-      //   controlsEnabled: controlsRef.current ? controlsRef.current.enabled : 'N/A',
-      //   cameraActualPos: cameraRef.current ? `(${cameraRef.current.position.x.toFixed(2)}, ${cameraRef.current.position.y.toFixed(2)}, ${cameraRef.current.position.z.toFixed(2)})` : 'N/A'
-      // });
-      
-      // Define camera path keyframes - from aerial to Mary's face
-      const startPos = new THREE.Vector3(10.4429, 12.8459, 48.9003); // High aerial view (starting position)
-      const midPos1 = new THREE.Vector3(2.4008, 2.6902, 46.3190); // Behind car view
-      const midPos2 = new THREE.Vector3(2.5441, 1.2363, 30.7488); // License plate view
-      const midPos3 = new THREE.Vector3(2.2983, 1.2680, 26.2786); // Full interior view position
-      const midPos4 = new THREE.Vector3(2.4564, 1.2084, 24.3895); // Close-up Mary position
-      const endPos = new THREE.Vector3(2.4564, 1.2084, 24.3895); // Final position (Mary close-up)
-      
-      const startTarget = new THREE.Vector3(0.2783, 12.8459, 24.1190); // Looking down at scene
-      const midTarget1 = new THREE.Vector3(4.7090, 0.1080, 25.6604); // Looking at car from behind
-      const midTarget2 = new THREE.Vector3(2.6723, 0.6909, 25.8858); // Looking at license plate
-      const midTarget3 = new THREE.Vector3(2.6041, 1.2667, 22.1906); // Looking at interior
-      const midTarget4 = new THREE.Vector3(2.5729, 1.0383, 22.2069); // Looking at Mary
-      const endTarget = new THREE.Vector3(2.5729, 1.0383, 22.2069); // Final target (Mary)
-      
-      const startFov = 45; // Aerial FOV
-      const midFov1 = 44.99702846471359; // FOV for behind view
-      const midFov2 = 44.99445463822931; // FOV for license plate
-      const midFov3 = 44.81375073518518; // FOV for full interior
-      const midFov4 = 20; // Close-up FOV
-      const endFov = 20; // Final FOV (close-up)
-      
-      // Apply easing function for smoother movement
-      const easedProgress = 1 - Math.pow(1 - scrollProgressRef.current, 3); // Cubic ease-out
-      
-      // Six-stage interpolation
-      let currentPos, currentTarget, currentFov;
-      let stage = 0;
-      
-      if (easedProgress < 0.2) {
-        // Stage 1: Aerial view to behind car (0-20% of scroll)
-        stage = 0;
-        const stage1Progress = easedProgress * 5; // Map 0-0.2 to 0-1
-        currentPos = new THREE.Vector3().lerpVectors(startPos, midPos1, stage1Progress);
-        currentTarget = new THREE.Vector3().lerpVectors(startTarget, midTarget1, stage1Progress);
-        currentFov = startFov + (midFov1 - startFov) * stage1Progress;
-      } else if (easedProgress < 0.4) {
-        // Stage 2: Behind car to license plate (20-40% of scroll)
-        stage = 1;
-        const stage2Progress = (easedProgress - 0.2) * 5; // Map 0.2-0.4 to 0-1
-        currentPos = new THREE.Vector3().lerpVectors(midPos1, midPos2, stage2Progress);
-        currentTarget = new THREE.Vector3().lerpVectors(midTarget1, midTarget2, stage2Progress);
-        currentFov = midFov1 + (midFov2 - midFov1) * stage2Progress;
-      } else if (easedProgress < 0.6) {
-        // Stage 3: License plate to full interior (40-60% of scroll)
-        stage = 2;
-        const stage3Progress = (easedProgress - 0.4) * 5; // Map 0.4-0.6 to 0-1
-        currentPos = new THREE.Vector3().lerpVectors(midPos2, midPos3, stage3Progress);
-        currentTarget = new THREE.Vector3().lerpVectors(midTarget2, midTarget3, stage3Progress);
-        currentFov = midFov2 + (midFov3 - midFov2) * stage3Progress;
-      } else if (easedProgress < 0.8) {
-        // Stage 4: Full interior to close-up Mary (60-80% of scroll)
-        stage = 3;
-        const stage4Progress = (easedProgress - 0.6) * 5; // Map 0.6-0.8 to 0-1
-        currentPos = new THREE.Vector3().lerpVectors(midPos3, midPos4, stage4Progress);
-        currentTarget = new THREE.Vector3().lerpVectors(midTarget3, midTarget4, stage4Progress);
-        currentFov = midFov3 + (midFov4 - midFov3) * stage4Progress;
-      } else {
-        // Stage 5: Final approach to Mary's face (80-100% of scroll)
-        stage = 4;
-        const stage5Progress = (easedProgress - 0.8) * 5; // Map 0.8-1.0 to 0-1
-        currentPos = new THREE.Vector3().lerpVectors(midPos4, endPos, stage5Progress);
-        currentTarget = new THREE.Vector3().lerpVectors(midTarget4, endTarget, stage5Progress);
-        currentFov = midFov4 + (endFov - midFov4) * stage5Progress;
-      }
-      
-      // Update current stage
-      setCurrentCameraStage(stage);
-      
-      // Apply the interpolated values
-      cameraRef.current.position.copy(currentPos);
-      cameraRef.current.lookAt(currentTarget);
-      cameraRef.current.fov = currentFov;
-      cameraRef.current.updateProjectionMatrix();
-      
-      // Update controls target but DON'T call update() when scroll camera is enabled
-      if (controlsRef.current) {
-        controlsRef.current.target.copy(currentTarget);
-        // Don't call update() here as it would override our camera position
-      }
-    };
-    
-    // Toggle scroll camera removed - always active
-    
-    // Add scroll listener to multiple elements to ensure it's captured
-    window.addEventListener('wheel', handleScroll, { passive: false });
-    if (renderer.domElement) {
-      renderer.domElement.addEventListener('wheel', handleScroll, { passive: false });
-    }
-    if (mountRef.current) {
-      mountRef.current.addEventListener('wheel', handleScroll, { passive: false });
-    }
-    // Also add to document as a fallback
-    document.addEventListener('wheel', handleScroll, { passive: false });
+
     
     // Animation loop
     const animate = () => {
-      requestAnimationFrame(animate);
+      animationFrameRef.current = requestAnimationFrame(animate);
       
       // Get delta time once per frame
       const delta = clockRef.current.getDelta();
@@ -2664,7 +2334,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         
         if (intersects.length > 0) {
           const isMobile = detectMobileDevice();
-          const destination = isMobile ? '/gallery' : '/gallery';
+          const destination = isMobile ? '/home' : '/home';
           console.log(`Mary clicked! Navigating to ${destination}...`);
           
           // Add fade out transition before navigating
@@ -2693,7 +2363,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             // console.log('Intersection distance from Mary position:', distance);
             if (distance < 2) { // Within 2 units of Mary's position
               const isMobile = detectMobileDevice();
-              const destination = isMobile ? '/gallery' : '/temple';
+              const destination = isMobile ? '/home' : '/home';
               console.log(`Close to Mary! Navigating to ${destination}...`);
               
               // Add fade out transition before navigating
@@ -2718,24 +2388,19 @@ const PalmsScene = ({ onLoadingChange }) => {
 
     // Cleanup
     return () => {
+      // Cancel animation frame to stop the animation loop
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      
       // Kill all ScrollTriggers
       ScrollTrigger.getAll().forEach(t => t.kill());
       
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('click', handleClick);
-      window.removeEventListener('wheel', handleScroll);
       window.removeEventListener('keydown', handleKeyPress);
-      document.removeEventListener('wheel', handleScroll);
-      
-      // Also remove from renderer and mount if they exist
-      if (renderer.domElement) {
-        renderer.domElement.removeEventListener('wheel', handleScroll);
-      }
-      if (mountRef.current) {
-        mountRef.current.removeEventListener('wheel', handleScroll);
-      }
-      
+
       // Kill GSAP timeline
       if (cinematicTimelineRef.current) {
         cinematicTimelineRef.current.kill();
@@ -2756,8 +2421,30 @@ const PalmsScene = ({ onLoadingChange }) => {
           mountRef.current.removeChild(renderer.domElement);
         }
       }
+      
+      // Dispose of scene objects
+      if (sceneRef.current) {
+        sceneRef.current.traverse((object) => {
+          if (object.geometry) object.geometry.dispose();
+          if (object.material) {
+            if (Array.isArray(object.material)) {
+              object.material.forEach(mat => mat.dispose());
+            } else {
+              object.material.dispose();
+            }
+          }
+        });
+        sceneRef.current.clear();
+      }
+      
       controls.dispose();
       renderer.dispose();
+      
+      // Clear refs
+      sceneRef.current = null;
+      rendererRef.current = null;
+      clockRef.current = null;
+      materialShadersRef.current = [];
     };
   }, []);
 
@@ -3068,7 +2755,7 @@ const PalmsScene = ({ onLoadingChange }) => {
               <button
                 onClick={() => {
                   const isMobile = detectMobileDevice();
-                  const destination = isMobile ? '/gallery' : '/gallery';
+                  const destination = isMobile ? '/home' : '/home';
                   router.push(destination);
                 }}
                 style={{

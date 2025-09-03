@@ -36,7 +36,7 @@
   position: absolute;
   transform-style: preserve-3d;
   transform-origin: 50%;
-  animation: spin var(--spin-speed) infinite linear;
+  animation: spinCoin var(--spin-speed) infinite linear;
 }
 
 /* Faces -------------------- */
@@ -186,7 +186,7 @@
 } */
 
 /* Just an animation */
-@keyframes spin {
+@keyframes spinCoin {
   from {
     transform: rotateY(0deg);
   }

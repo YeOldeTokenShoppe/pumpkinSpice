@@ -7,6 +7,7 @@ import { db, storage } from '@/utilities/firebaseClient';
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { ScrambleTextPlugin } from 'gsap/dist/ScrambleTextPlugin';
+import { encryptMessage, generateScrambledDisplay } from '@/utilities/encryption';
 import './CompactCandleModal.css';
 
 // Register GSAP plugin
@@ -127,6 +128,10 @@ function CandlePreview({ imageUrl, message, isEncrypted, username }) {
   // Find Label meshes once when scene loads
   useEffect(() => {
     if (scene) {
+      // Reset refs first
+      label1MeshRef.current = null;
+      label2MeshRef.current = null;
+      
       scene.traverse((child) => {
         if (child.isMesh) {
           if (child.name === 'Label1' || child.name.includes('Label1')) {
@@ -140,51 +145,40 @@ function CandlePreview({ imageUrl, message, isEncrypted, username }) {
         }
       });
     }
-  }, [scene]);
+  }, [scene]); // Re-find labels when scene changes
   
   // Create text texture for Label1
   useEffect(() => {
-    // Clear texture if no message
-    if (!message || !message.trim()) {
-      if (label1MeshRef.current && label1MeshRef.current.material) {
-        // Create a blank white texture
-        const canvas = document.createElement('canvas');
-        canvas.width = 1024;
-        canvas.height = 1024;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        const blankTexture = new THREE.CanvasTexture(canvas);
-        blankTexture.needsUpdate = true;
-        
-        label1MeshRef.current.material.map = blankTexture;
-        label1MeshRef.current.material.needsUpdate = true;
-      }
-      setTextTexture(null);
-      return;
-    }
+    if (!label1MeshRef.current) return;
     
-    if (message && message.trim() && label1MeshRef.current) {
-      // Create canvas for text
-      const canvas = document.createElement('canvas');
-      canvas.width = 1024;  // Higher resolution for smoother text
-      canvas.height = 1024;
-      const ctx = canvas.getContext('2d');
-      
-      // Enable better text rendering
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      
-      // Fill white background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Add subtle border
-      ctx.strokeStyle = '#e0e0e0';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-      
+    // Create canvas for text
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+    
+    // Enable better text rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    // Fill white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add subtle border
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+    
+    // Check if we have a message to display
+    if (!message || !message.trim()) {
+      // Show placeholder text when empty
+      ctx.fillStyle = '#cccccc';
+      ctx.font = 'italic 48px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Your message here', canvas.width / 2, canvas.height / 2);
+    } else {
       // Add encryption header if encrypted
       let displayMessage = message;
       let headerHeight = 0;
@@ -259,25 +253,25 @@ function CandlePreview({ imageUrl, message, isEncrypted, username }) {
       lines.forEach((line, index) => {
         ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
       });
-      
-      // Create high-quality texture from canvas
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.repeat.set(-1, -1);  // Flip both X and Y for Label1
-      texture.offset.set(1, 1);  // Adjust offset after flipping both axes
-      texture.flipY = false;  // Ensure texture is not flipped vertically
-      
-      // Improve texture quality settings
-      texture.minFilter = THREE.LinearMipMapLinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.anisotropy = 16;  // Maximum anisotropic filtering
-      texture.generateMipmaps = true;
-      texture.needsUpdate = true;
-      
-      setTextTexture(texture);
     }
-  }, [message, isEncrypted]);
+    
+    // Create high-quality texture from canvas
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.repeat.set(-1, -1);  // Flip both X and Y for Label1
+    texture.offset.set(1, 1);  // Adjust offset after flipping both axes
+    texture.flipY = false;  // Ensure texture is not flipped vertically
+    
+    // Improve texture quality settings
+    texture.minFilter = THREE.LinearMipMapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = 16;  // Maximum anisotropic filtering
+    texture.generateMipmaps = true;
+    texture.needsUpdate = true;
+    
+    setTextTexture(texture);
+  }, [message, isEncrypted]); // Recreate texture when message or encryption changes
   
   // Apply text texture to Label1
   useEffect(() => {
@@ -405,16 +399,47 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [formData, setFormData] = useState({
     username: '',
     message: '',
-    burnedAmount: 1,
+    burnedAmount: 1000,
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isEncrypted, setIsEncrypted] = useState(false);
-  const [originalMessage, setOriginalMessage] = useState('');
+  const [encryptionPassword, setEncryptionPassword] = useState('');
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [scrambledDisplay, setScrambledDisplay] = useState('');
+  const [canvasKey, setCanvasKey] = useState(0);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  
+  // Helper function to format numbers with commas
+  const formatNumberWithCommas = (num) => {
+    if (!num && num !== 0) return '';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+  
+  // Helper function to parse formatted numbers
+  const parseFormattedNumber = (str) => {
+    if (!str) return 0;
+    const cleaned = str.replace(/[^0-9]/g, '');
+    return parseInt(cleaned) || 0;
+  };
+  
+  // Handle amount input changes
+  const handleAmountChange = (e) => {
+    const rawValue = e.target.value;
+    const numericValue = parseFormattedNumber(rawValue);
+    
+    // Limit to reasonable maximum (e.g., 999 trillion)
+    if (numericValue <= 999999999999999) {
+      setFormData(prev => ({
+        ...prev,
+        burnedAmount: numericValue || 1000
+      }));
+    }
+  };
   
   // Reset form when modal opens
   useEffect(() => {
@@ -422,7 +447,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setFormData({
         username: '',
         message: '',
-        burnedAmount: 1,
+        burnedAmount: 1000,
       });
       setSelectedPrayer(null);
       setImageFile(null);
@@ -430,7 +455,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setError('');
       setIsSubmitting(false);
       setIsEncrypted(false);
-      setOriginalMessage('');
+      setEncryptionPassword('');
+      setShowPasswordDialog(false);
+      setScrambledDisplay('');
+      // Force Canvas to recreate by changing key
+      setCanvasKey(prev => prev + 1);
       
       // Clear the file input
       if (fileInputRef.current) {
@@ -449,7 +478,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     // Reset encryption state when message is manually changed
     if (name === 'message' && isEncrypted) {
       setIsEncrypted(false);
-      setOriginalMessage('');
+      setEncryptionPassword('');
+      setScrambledDisplay('');
     }
   };
 
@@ -457,53 +487,59 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     if (!textareaRef.current) return;
     
     if (isEncrypted) {
-      // Decrypt: restore original message
+      // Remove encryption
       gsap.to(textareaRef.current, {
         duration: 1.5,
         scrambleText: {
-          text: originalMessage,
+          text: formData.message,
           chars: 'upperAndLowerCase',
           revealDelay: 0.5,
           speed: 1,
         },
         onUpdate: function() {
-          setFormData(prev => ({ ...prev, message: textareaRef.current.value }));
+          setScrambledDisplay(textareaRef.current.value);
         },
         onComplete: function() {
-          setFormData(prev => ({ ...prev, message: originalMessage }));
           setIsEncrypted(false);
-          setOriginalMessage('');
+          setEncryptionPassword('');
+          setScrambledDisplay('');
         }
       });
     } else {
-      // Encrypt: scramble the message
+      // Show password dialog for encryption
       const currentMessage = formData.message;
       if (!currentMessage.trim()) return;
       
-      setOriginalMessage(currentMessage);
-      
-      // Generate scrambled text
-      const scrambledText = currentMessage.split('').map(() => {
-        const chars = '@#$%&*!?^~';
-        return chars[Math.floor(Math.random() * chars.length)];
-      }).join('');
-      
-      gsap.to(textareaRef.current, {
-        duration: 1,
-        scrambleText: {
-          text: scrambledText,
-          chars: '@#$%&*!?^~',
-          speed: 0.3,
-        },
-        onUpdate: function() {
-          setFormData(prev => ({ ...prev, message: textareaRef.current.value }));
-        },
-        onComplete: function() {
-          setFormData(prev => ({ ...prev, message: scrambledText }));
-          setIsEncrypted(true);
-        }
-      });
+      setShowPasswordDialog(true);
     }
+  };
+
+  const handleEncryptWithPassword = () => {
+    if (!encryptionPassword || encryptionPassword.length < 4) {
+      setError('Password must be at least 4 characters');
+      return;
+    }
+    
+    const currentMessage = formData.message;
+    const scrambled = generateScrambledDisplay(currentMessage.length);
+    
+    // Animate to scrambled text
+    gsap.to(textareaRef.current, {
+      duration: 1,
+      scrambleText: {
+        text: scrambled,
+        chars: '@#$%&*!?^~◊†‡§¶∞≈Ω∆∑π',
+        speed: 0.3,
+      },
+      onUpdate: function() {
+        setScrambledDisplay(textareaRef.current.value);
+      },
+      onComplete: function() {
+        setScrambledDisplay(scrambled);
+        setIsEncrypted(true);
+        setShowPasswordDialog(false);
+      }
+    });
   };
 
   const handleImageChange = (e) => {
@@ -538,21 +574,32 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     return downloadURL;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     
+    // Don't submit if we're showing other dialogs
+    if (showPasswordDialog) {
+      return;
+    }
+    
+    // Validate fields
     if (!formData.username.trim()) {
-      setError('Please enter a name');
+      setError('Please enter a dedication name');
       return;
     }
 
     if (!formData.message.trim()) {
-      setError('Please enter a message');
+      setError('Please enter a message or select a prayer');
       return;
     }
-
-    // Use original message if encrypted, otherwise use current message
-    const messageToSave = isEncrypted ? originalMessage : formData.message;
+    
+    // Show confirmation dialog instead of immediately saving
+    setShowConfirmDialog(true);
+  };
+  
+  const handleConfirmedSave = async () => {
+    setShowConfirmDialog(false);
 
     setIsSubmitting(true);
     setError('');
@@ -563,14 +610,33 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         imageUrl = await uploadImage();
       }
 
-      const docData = {
-        username: formData.username,
-        message: messageToSave,
-        burnedAmount: parseInt(formData.burnedAmount) || 1,
-        image: imageUrl,
-        staked: false,
-        createdAt: serverTimestamp()
-      };
+      let docData;
+      
+      if (isEncrypted && encryptionPassword) {
+        // Encrypt the message before saving
+        const encryptedData = await encryptMessage(formData.message, encryptionPassword);
+        docData = {
+          username: formData.username,
+          encrypted: encryptedData.encrypted,
+          salt: encryptedData.salt,
+          iv: encryptedData.iv,
+          isEncrypted: true,
+          burnedAmount: parseInt(formData.burnedAmount) || 1,
+          image: imageUrl,
+          staked: false,
+          createdAt: serverTimestamp()
+        };
+      } else {
+        // Save unencrypted message
+        docData = {
+          username: formData.username,
+          message: formData.message,
+          burnedAmount: parseInt(formData.burnedAmount) || 1,
+          image: imageUrl,
+          staked: false,
+          createdAt: serverTimestamp()
+        };
+      }
 
       const docRef = await addDoc(collection(db, 'results'), docData);
 
@@ -586,7 +652,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setFormData({
         username: '',
         message: '',
-        burnedAmount: 1,
+        burnedAmount: 1000,
       });
       setImageFile(null);
       setImagePreview(null);
@@ -603,7 +669,20 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   if (!isOpen) return null;
 
   return (
-    <div className="compact-modal-overlay" onClick={onClose}>
+    <div className="compact-modal-overlay" onClick={(e) => {
+      // Only close if clicking directly on overlay, not when dialogs are open
+      if (showPasswordDialog || showConfirmDialog) {
+        return; // Don't close if any dialog is open
+      }
+      // Optional: Ask for confirmation before closing if there's unsaved data
+      if (formData.username.trim() || formData.message.trim() || imageFile) {
+        if (window.confirm('Are you sure you want to close? Your candle data will be lost.')) {
+          onClose();
+        }
+      } else {
+        onClose();
+      }
+    }}>
       <div className="compact-modal-content" onClick={e => e.stopPropagation()}>
         <button className="compact-modal-close" onClick={onClose}>×</button>
         
@@ -613,6 +692,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             <div className="preview-label">Your Candle Preview</div>
             <div className="canvas-container">
               <Canvas
+                key={canvasKey}
                 camera={{ position: [0, 2, 5], fov: 45 }}
                 style={{ background: 'transparent' }}
                 dpr={[1, 2]} // Higher pixel ratio for better quality
@@ -640,7 +720,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 <Suspense fallback={null}>
                   <CandlePreview 
                     imageUrl={imagePreview || '/defaultAvatar.png'} 
-                    message={formData.message}
+                    message={isEncrypted ? scrambledDisplay : formData.message}
                     isEncrypted={isEncrypted}
                     username={formData.username}
                   />
@@ -668,7 +748,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   name="username"
                   value={formData.username}
                   onChange={handleInputChange}
-                  placeholder="Dedication Name"
+                  onKeyDown={(e) => {
+                    // Prevent Enter key from submitting form
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="Name (on behalf of)"
                   maxLength={50}
                   required
                 />
@@ -723,26 +809,71 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     maxLength={400}
                     required
                     disabled={isEncrypted}
+                    onKeyDown={(e) => {
+                      // Prevent Enter key from submitting form in textarea
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        // Allow Shift+Enter for new lines
+                        if (e.shiftKey) {
+                          return;
+                        }
+                      }
+                    }}
                   />
+                  <span className="compact-char-count">{formData.message.length}/400</span>
                 </div>
                 <div className="message-controls">
+                  <div style={{ display: 'flex', flexDirection: 'column', marginRight: '10px' }}>
+                    <label style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)', marginBottom: '4px' }}>
+                      RL80 tokens to burn
+                    </label>
+                    <input
+                      type="text"
+                      name="burnedAmount"
+                      value={formatNumberWithCommas(formData.burnedAmount)}
+                      onChange={handleAmountChange}
+                      onKeyDown={(e) => {
+                        // Prevent Enter key from submitting form
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                        }
+                      }}
+                      placeholder="1,000"
+                      className="amount-input"
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                        color: '#fff',
+                        fontSize: '14px',
+                        width: '140px'
+                      }}
+                    />
+                  </div>
                   <button
                     type="button"
                     className={`encrypt-button ${isEncrypted ? 'is-encrypted' : ''}`}
                     onClick={toggleEncryption}
                     disabled={!formData.message.trim()}
+                    style={{ alignSelf: 'flex-end' }}
                   >
                     <span className="encrypt-text">{isEncrypted ? 'DECRYPT' : 'ENCRYPT?'}</span>
                   </button>
-                  <div className="message-status">
-                    <span className="compact-char-count">{formData.message.length}/400</span>
-                    {isEncrypted && <span className="encrypted-badge">ENCRYPTED</span>}
-                  </div>
+                  {isEncrypted && (
+                    <div className="message-status" style={{ alignSelf: 'flex-end' }}>
+                      <span className="encrypted-badge">ENCRYPTED</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="compact-form-group">
-                <label className="compact-file-label">
+                <label className="compact-file-label" style={{
+                  backgroundColor: imageFile ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 102, 0, 0.1)',
+                  border: imageFile ? '1px solid rgba(0, 255, 0, 0.3)' : '1px solid rgba(255, 102, 0, 0.3)',
+                  cursor: 'pointer'
+                }}>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -750,9 +881,137 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     onChange={handleImageChange}
                     className="compact-file-input"
                   />
-                  <span>{imageFile ? '✓ Image' : '+ Image'}</span>
+                  <span style={{ 
+                    color: imageFile ? '#00ff00' : '#ff6600',
+                    fontWeight: imageFile ? 'normal' : 'bold'
+                  }}>
+                    {imageFile ? '✓ Image Added' : '📷 Add Image (Recommended)'}
+                  </span>
                 </label>
               </div>
+
+              {/* Password Dialog for Encryption - moved outside confirmation dialog */}
+              {showPasswordDialog && (
+                <div className="encryption-password-dialog" onClick={(e) => e.stopPropagation()}>
+                  <div className="password-dialog-content">
+                    <h3>Set Encryption Password</h3>
+                    <p>Others will need this password to read your message</p>
+                    <input
+                      type="password"
+                      value={encryptionPassword}
+                      onChange={(e) => setEncryptionPassword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (encryptionPassword && encryptionPassword.length >= 4) {
+                            handleEncryptWithPassword();
+                          }
+                        }
+                      }}
+                      placeholder="Enter password (min 4 characters)"
+                      minLength={4}
+                      autoFocus
+                    />
+                    <div className="password-dialog-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPasswordDialog(false);
+                          setEncryptionPassword('');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleEncryptWithPassword}
+                        disabled={!encryptionPassword || encryptionPassword.length < 4}
+                      >
+                        Encrypt Message
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Confirmation Dialog - shown only when user clicks submit */}
+              {showConfirmDialog && (
+                <div className="confirmation-dialog-overlay" onClick={(e) => e.stopPropagation()}>
+                  <div className="confirmation-dialog">
+                    <h3> <span style={{
+          display: 'inline-block',
+          position: 'relative',
+          width: '20px',
+          height: '40px',
+          marginLeft: '15px',
+          marginRight: '15px',
+          verticalAlign: 'middle'
+        }}>
+          {/* Top wick */}
+          <span style={{
+            position: 'absolute',
+            left: '50%',
+            top: '0',
+            width: '2px',
+            height: '10px',
+            backgroundColor: '#00ff00',
+            transform: 'translateX(-50%)'
+          }}></span>
+          {/* Candle body */}
+          <span style={{
+            position: 'absolute',
+            left: '50%',
+            top: '10px',
+            width: '12px',
+            height: '20px',
+            backgroundColor: '#00ff00',
+            transform: 'translateX(-50%)'
+          }}></span>
+          {/* Bottom wick */}
+          <span style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: '0',
+            width: '2px',
+            height: '10px',
+            backgroundColor: '#00ff00',
+            transform: 'translateX(-50%)'
+          }}></span>
+        </span> Ready to Light Your Candle?</h3>
+                    <div className="confirmation-details">
+                      <p><strong>Name:</strong> {formData.username}</p>
+                      <p><strong>Amount:</strong> {formatNumberWithCommas(formData.burnedAmount)}</p>
+                      <p><strong>Message:</strong> {formData.message.substring(0, 50)}{formData.message.length > 50 ? '...' : ''}</p>
+                      {isEncrypted && <p className="encryption-notice">🔒 This message will be encrypted</p>}
+                      <p style={{ 
+                        color: imageFile ? 'inherit' : '#ff6600',
+                        fontWeight: imageFile ? 'normal' : 'bold'
+                      }}>
+                        <strong>Image:</strong> {imageFile ? '✓ Attached' : '⚠️ No image attached (using default)'}
+                      </p>
+                    </div>
+                    <p className="confirmation-warning">Once lit, your candle cannot be changed or removed.</p>
+                    <div className="confirmation-actions">
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmDialog(false)}
+                        className="confirm-cancel"
+                      >
+                        Review More
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmedSave}
+                        className="confirm-save"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? 'Lighting...' : 'Light Candle 🔥'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {error && <div className="compact-error">{error}</div>}
 
@@ -768,12 +1027,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 <button 
                   type="submit" 
                   className="compact-btn-submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !formData.username.trim() || !formData.message.trim()}
+                  title={!formData.username.trim() || !formData.message.trim() ? 'Please fill in all required fields' : 'Review and light your candle'}
                 >
                   {isSubmitting ? (
                     <span>Creating...</span>
                   ) : (
-                    <span>🕯️ Light Candle</span>
+                    <span>🕯️ Review & Light</span>
                   )}
                 </button>
               </div>

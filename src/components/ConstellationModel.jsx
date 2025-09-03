@@ -145,7 +145,7 @@ function ConstellationModel({
     processModel(marketClone, "Market", [3, 0, 0], [1, 1, 1]);
     processModel(whaleClone, "Whale", [-9, 0.5, 7], [0.3, 0.3, 0.3]);
     // processModel(starCandlesClone, "StarCandles", [-15, -2, 30], [1.8 , 1.8, 1.8]);
-    processModel(arrowClone, "ArrowStar", [-2, 1, 19], [1, 1, 1]);
+    processModel(arrowClone, "ArrowStar", [-2, 1, 25], [1, 1, 1]);
 
     whaleModelRef.current = whaleClone;
     whaleClone.rotation.y = Math.PI / 4;

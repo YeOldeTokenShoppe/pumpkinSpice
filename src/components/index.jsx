@@ -128,7 +128,8 @@ const ThreeDVotiveStand = forwardRef(({
   const [currentDpr] = useState(1);
   const [frameloop] = useState('always');
   const sceneCameraRef = useRef();
-  const results = useFirestoreResults();
+  const [sortBy, setSortBy] = useState('burnedAmount'); // 'burnedAmount' or 'newest'
+  const results = useFirestoreResults(sortBy);
   
   // Handle statue loaded
   useEffect(() => {
@@ -507,6 +508,7 @@ const ThreeDVotiveStand = forwardRef(({
      
     
           onDesktopPaginationReady={setDesktopPaginationControls}
+          sortBy={sortBy}
         />
         </Suspense>
 
@@ -518,6 +520,7 @@ const ThreeDVotiveStand = forwardRef(({
               modelRef={modelRef}
               onPaginationChange={handlePaginationChange}
               isViewerOpen={showFloatingViewer}
+              sortBy={sortBy}
             />
           </Suspense>
         )}
@@ -586,6 +589,32 @@ const ThreeDVotiveStand = forwardRef(({
           gap: '4px',
           zIndex: 1001,
         }}>
+          {/* Sorting Toggle Button */}
+          <button
+            onClick={() => setSortBy(sortBy === 'burnedAmount' ? 'newest' : sortBy === 'newest' ? 'smallest' : 'burnedAmount')}
+            style={{
+              background: 'rgba(0, 0, 0, 0.7)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: '#fff',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              marginBottom: '8px',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
+              e.currentTarget.style.borderColor = '1px solid rgba(255, 255, 255, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            }}
+          >
+            Sort by: {sortBy === 'burnedAmount' ? 'Top Burned' : sortBy === 'newest' ? 'Newest' : 'Smallest'}
+          </button>
+          
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -671,7 +700,7 @@ const ThreeDVotiveStand = forwardRef(({
                 pointerEvents: 'none',
               }}
             >
-              THE ILLUMIN80
+              {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'newest' ? 'THE COMMUN80' : 'THE NOBIL80'}
             </div>
             
             {/* Right Arrow */}
@@ -777,6 +806,32 @@ const ThreeDVotiveStand = forwardRef(({
           zIndex: 100,
           pointerEvents: 'none',
         }}>
+          {/* Sorting Toggle Button for Desktop */}
+          <button
+            onClick={() => setSortBy(sortBy === 'burnedAmount' ? 'newest' : sortBy === 'newest' ? 'smallest' : 'burnedAmount')}
+            style={{
+              background: 'rgba(0, 0, 0, 0.7)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: '#fff',
+              padding: '10px 20px',
+              borderRadius: '25px',
+              fontSize: '1rem',
+              cursor: 'pointer',
+              marginBottom: '1rem',
+              transition: 'all 0.3s ease',
+              pointerEvents: 'auto',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            }}
+          >
+            Sort by: {sortBy === 'burnedAmount' ? 'Top Burned' : sortBy === 'newest' ? 'Newest' : 'Smallest'}
+          </button>
    
           <div 
             className={!is80sMode ? "thelma1" : ""}
@@ -811,7 +866,7 @@ const ThreeDVotiveStand = forwardRef(({
               pointerEvents: 'none',
             }}
           >
-              THE ILLUMIN80
+              {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'newest' ? 'THE LAI80' : 'THE NOBIL80'}
             {is80sMode && (
               <div style={{
                 content: "'THE ILLUMIN80'",
@@ -827,7 +882,7 @@ const ThreeDVotiveStand = forwardRef(({
                 opacity: 0.7,
                 pointerEvents: 'none',
               }}>
-                THE ILLUMIN80
+                {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'newest' ? 'THE LAI80' : 'THE NOBIL80'}
               </div>
             )}
           </div>

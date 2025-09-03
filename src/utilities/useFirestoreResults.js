@@ -1,12 +1,24 @@
 import { useState, useEffect } from "react";
-import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy, limit } from "firebase/firestore";
 import { db } from "./firebaseClient";
 
-export function useFirestoreResults() {
+export function useFirestoreResults(sortBy = "burnedAmount") {
   const [results, setResults] = useState([]);
 
   useEffect(() => {
-    const q = query(collection(db, "results"), orderBy("createdAt", "desc"));
+    // Create query based on sort option
+    let q;
+    if (sortBy === "newest") {
+      // Sort by newest (createdAt descending)
+      q = query(collection(db, "results"), orderBy("createdAt", "desc"), limit(80));
+    } else if (sortBy === "smallest") {
+      // Sort by smallest burnedAmount (ascending) for NOBIL80
+      q = query(collection(db, "results"), orderBy("burnedAmount", "asc"), limit(80));
+    } else {
+      // Default: Sort by burnedAmount (top 80 for Illumin80)
+      q = query(collection(db, "results"), orderBy("burnedAmount", "desc"), limit(80));
+    }
+    
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedResults = querySnapshot.docs.map((doc) => ({
         id: doc.id, // 🔍 Check this format
@@ -28,7 +40,7 @@ export function useFirestoreResults() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [sortBy]);
 
   return results;
 }

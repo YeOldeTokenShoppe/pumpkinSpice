@@ -111,8 +111,10 @@
     const spotlightRef = useRef();
     const flamePointLightRef = useRef();
     const mixerRef = useRef(null);
+    const texturesRef = useRef([]);
+    const materialsRef = useRef([]);
 
-    const applyUserImageToLabel = useCallback((scene, imageUrl) => {
+    const applyUserImageToLabel = useCallback((scene, imageUrl, userData) => {
       if (!scene || !imageUrl) return;
 
       let labelMesh = null;
@@ -124,7 +126,8 @@
       });
 
       if (labelMesh) {
-        const textureLoader = new THREE.TextureLoader();
+        // Get username from userData
+        const username = userData?.username || userData?.userName || userData?.name || '';
 
         // For the closeup viewer, we can use a higher resolution but still apply
         // some optimization techniques to prevent excessive memory usage
@@ -142,34 +145,48 @@
           img.crossOrigin = "anonymous";
 
           img.onload = () => {
-            // Calculate aspect ratio to maintain proportions
-            const aspectRatio = img.width / img.height;
-            let drawWidth = targetWidth;
-            let drawHeight = targetHeight;
-
-            // Adjust dimensions to maintain aspect ratio
-            if (aspectRatio > 1) {
-              // Landscape image
-              drawHeight = targetWidth / aspectRatio;
-            } else {
-              // Portrait or square image
-              drawWidth = targetHeight * aspectRatio;
-            }
-
             // Resize using canvas
             canvas.width = targetWidth;
             canvas.height = targetHeight;
 
-            // Fill canvas with black background first (for transparent PNGs)
-            ctx.fillStyle = 'black';
+            // Fill canvas with white background first
+            ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, targetWidth, targetHeight);
 
-            // Center the image on the canvas
-            const offsetX = (targetWidth - drawWidth) / 2;
-            const offsetY = (targetHeight - drawHeight) / 2;
+            // Calculate image area (leave space for username if present)
+            const imageHeight = username ? targetHeight * 0.9 : targetHeight;
+            
+            // Draw image to fill the entire width/height (same as MobileCandleOrbital)
+            ctx.drawImage(img, 0, 0, targetWidth, imageHeight);
 
-            // Draw with proper centering
-            ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+            // Draw username if provided
+            if (username && username.trim()) {
+              // Create gradient background for text
+              const gradient = ctx.createLinearGradient(0, imageHeight, 0, targetHeight);
+              gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+              gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+              ctx.fillStyle = gradient;
+              ctx.fillRect(0, imageHeight, targetWidth, targetHeight - imageHeight);
+              
+              // Draw the username
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              
+              const textY = imageHeight + (targetHeight - imageHeight) / 2;
+              
+              // Add text shadow for better readability
+              ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+              ctx.shadowBlur = 4;
+              ctx.shadowOffsetX = 2;
+              ctx.shadowOffsetY = 2;
+              
+              ctx.fillText(username, targetWidth / 2, textY);
+              
+              // Reset shadow
+              ctx.shadowColor = 'transparent';
+            }
 
             // Create texture from canvas
             const texture = new THREE.CanvasTexture(canvas);
@@ -180,6 +197,11 @@
             texture.generateMipmaps = true;
             texture.anisotropy = 4; // Medium anisotropy for better quality without excessive memory
             texture.needsUpdate = true;
+            
+            // Track texture for cleanup
+            if (texturesRef.current) {
+              texturesRef.current.push(texture);
+            }
 
             // Call the callback with the optimized texture
             onLoad(texture);
@@ -212,6 +234,11 @@
 
           labelMesh.material = material;
           labelMesh.material.needsUpdate = true;
+          
+          // Track material for cleanup
+          if (materialsRef.current) {
+            materialsRef.current.push(material);
+          }
         });
       }
     }, []);
@@ -303,6 +330,11 @@
       texture.anisotropy = 16;  // Maximum anisotropic filtering
       texture.generateMipmaps = true;
       texture.needsUpdate = true;
+      
+      // Track texture for cleanup
+      if (texturesRef.current) {
+        texturesRef.current.push(texture);
+      }
 
       return texture;
     }, []);
@@ -384,6 +416,11 @@
 
           labelMesh.material = material;
           labelMesh.material.needsUpdate = true;
+          
+          // Track material for cleanup
+          if (materialsRef.current) {
+            materialsRef.current.push(material);
+          }
         }
       },
       [createDynamicTextTexture]
@@ -421,6 +458,22 @@
     });
 
     useEffect(() => {
+      // Clear any existing textures on labels when mounting
+      if (scene) {
+        scene.traverse((child) => {
+          if (child.name.includes("Label1") || child.name.includes("Label2")) {
+            if (child.material) {
+              // Reset material to default white
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                transparent: true
+              });
+              child.material.needsUpdate = true;
+            }
+          }
+        });
+      }
+      
       if (!candleRef.current) return;
 
       const box = new THREE.Box3().setFromObject(candleRef.current);
@@ -443,7 +496,7 @@
       }
 
       if (userData?.image) {
-        applyUserImageToLabel(scene, userData.image);
+        applyUserImageToLabel(scene, userData.image, userData);
       }
 
       applyDynamicTextToLabel(scene, userData);
@@ -551,6 +604,51 @@
           child.visible = hasCustomUserImage;
         }
       });
+      
+      // Cleanup function
+      return () => {
+        // Dispose of all tracked textures
+        if (texturesRef.current) {
+          texturesRef.current.forEach(texture => {
+            if (texture && texture.dispose) {
+              texture.dispose();
+            }
+          });
+          texturesRef.current = [];
+        }
+        
+        // Dispose of all tracked materials
+        if (materialsRef.current) {
+          materialsRef.current.forEach(material => {
+            if (material && material.dispose) {
+              material.dispose();
+            }
+          });
+          materialsRef.current = [];
+        }
+        
+        // Clean up scene labels - reset to default
+        if (scene) {
+          scene.traverse((child) => {
+            if (child.name.includes("Label1") || child.name.includes("Label2")) {
+              if (child.material) {
+                // Reset to basic white material
+                child.material = new THREE.MeshStandardMaterial({
+                  color: 0xffffff,
+                  transparent: true
+                });
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+        }
+        
+        // Dispose of the mixer
+        if (mixerRef.current) {
+          mixerRef.current.stopAllAction();
+          mixerRef.current = null;
+        }
+      };
     }, [
       scene,
       userData,

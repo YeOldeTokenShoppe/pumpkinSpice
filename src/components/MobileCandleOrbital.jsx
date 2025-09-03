@@ -32,10 +32,68 @@ function OrbitalCandle({ angle, radius, candleObject, userData, index, onClick, 
         hasUser: true
       };
       
-      // Apply user image to labels if available
-      if (userData.image) {
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load(userData.image, (texture) => {
+      // Apply user image with username to labels if available
+      if (userData.image || userData.username || userData.userName) {
+        // Create canvas for combined image and username
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+        
+        // Fill background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Get username (check multiple possible fields)
+        const username = userData.username || userData.userName || userData.name || '';
+        
+        // Function to create texture with image and name
+        const createCombinedTexture = (img) => {
+          // Clear canvas
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw the image (leave space at bottom for name if username exists)
+          const imageHeight = username ? canvas.height * 0.9 : canvas.height;
+          ctx.drawImage(img, 0, 0, canvas.width, imageHeight);
+          
+          // Draw username if provided
+          if (username && username.trim()) {
+            // Create gradient background for text
+            const gradient = ctx.createLinearGradient(0, imageHeight, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, imageHeight, canvas.width, canvas.height - imageHeight);
+            
+            // Draw the username
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const textY = imageHeight + (canvas.height - imageHeight) / 2;
+            
+            // Add text shadow for better readability
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            
+            ctx.fillText(username, canvas.width / 2, textY);
+          }
+          
+          // Create texture from canvas
+          const texture = new THREE.CanvasTexture(canvas);
+          texture.wrapS = THREE.ClampToEdgeWrapping;
+          texture.wrapT = THREE.ClampToEdgeWrapping;
+          texture.minFilter = THREE.LinearMipMapLinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.anisotropy = 16;
+          texture.generateMipmaps = true;
+          texture.needsUpdate = true;
+          
+          // Apply texture to both labels
           candleObject.traverse((child) => {
             // Apply to Label1 objects (flipped)
             if (child.name?.includes('Label1')) {
@@ -53,19 +111,41 @@ function OrbitalCandle({ angle, radius, candleObject, userData, index, onClick, 
               }
             }
             // Apply to Label2 objects (normal)
-            else if (child.name?.startsWith('Label1')) {
+            else if (child.name?.includes('Label2')) {
               if (child.material) {
                 child.material = child.material.clone();
-                child.material.map = texture;
+                
+                // Use the texture directly (not flipped) for Label2
+                child.material.map = texture.clone();
+                child.material.needsUpdate = true;
+                
                 // Add subtle emissive glow to Label2
                 child.material.emissive = new THREE.Color(0xffffff);
-                child.material.emissiveMap = texture;
+                child.material.emissiveMap = child.material.map;
                 child.material.emissiveIntensity = 0.2; // Subtle glow
-                child.material.needsUpdate = true;
               }
             }
           });
-        });
+        };
+        
+        // Load and apply the image
+        if (userData.image) {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => createCombinedTexture(img);
+          img.onerror = () => {
+            // If image fails to load, create texture with just the name
+            const defaultImg = new Image();
+            defaultImg.onload = () => createCombinedTexture(defaultImg);
+            defaultImg.src = '/defaultAvatar.png';
+          };
+          img.src = userData.image;
+        } else {
+          // No image provided, use default
+          const defaultImg = new Image();
+          defaultImg.onload = () => createCombinedTexture(defaultImg);
+          defaultImg.src = '/defaultAvatar.png';
+        }
       }
     }
     
@@ -244,7 +324,7 @@ function OrbitalCandle({ angle, radius, candleObject, userData, index, onClick, 
 }
 
 // Main orbital system to be added to existing scene
-export default function MobileCandleOrbital({ candleData = [], onCandleClick, modelRef, onPaginationChange, isViewerOpen = false }) {
+export default function MobileCandleOrbital({ candleData = [], onCandleClick, modelRef, onPaginationChange, isViewerOpen = false, sortBy }) {
   const groupRef = useRef();
   const [vcandleObjects, setVcandleObjects] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -317,11 +397,12 @@ export default function MobileCandleOrbital({ candleData = [], onCandleClick, mo
     setVcandleObjects(extractedCandles);
   }, [modelRef]);
   
-  // Get all sorted user data (up to 80 for Illumin80)
+  // Get all sorted user data (up to 80 for Illumin80/LAI80)
   const allSortedData = React.useMemo(() => {
     if (candleData.length > 0) {
-      const realData = [...candleData]
-        .sort((a, b) => (b.burnedAmount || 0) - (a.burnedAmount || 0));
+      // Data is already sorted by the hook based on sortBy prop
+      // No need to re-sort here since useFirestoreResults handles it
+      const realData = [...candleData];
       
       // For testing: Add mock data to make pagination visible
       const mockData = Array(20).fill(null).map((_, i) => ({
@@ -342,7 +423,7 @@ export default function MobileCandleOrbital({ candleData = [], onCandleClick, mo
       burnedAmount: Math.floor(Math.random() * 1000),
       image: i % 2 === 0 ? '/vvv.jpg' : '/vsClown.jpg'
     }));
-  }, [candleData]);
+  }, [candleData, sortBy]);
 
   // Calculate total pages
   const totalPages = Math.ceil(allSortedData.length / VISIBLE_CANDLES);

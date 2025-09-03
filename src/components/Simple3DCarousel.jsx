@@ -55,7 +55,7 @@ function CarouselImage({ texture, index, total, radius, groupRotation }) {
   });
 
   return (
-    <mesh ref={meshRef} position={[x, 0, z]}>
+    <mesh ref={meshRef} position={[x, 0, z]} scale={[-1, 1, 1]}>
       <planeGeometry args={[width, baseHeight]} />
       <meshBasicMaterial map={texture} transparent side={THREE.DoubleSide} />
     </mesh>

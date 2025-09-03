@@ -540,7 +540,7 @@ const MusicPlayer3 = React.forwardRef(
     const glowColor = is80sMode ? "0 0 15px rgba(255, 113, 206, 0.7)" : "0 0 15px rgba(29, 185, 84, 0.5)";
     
     // Album spin animation
-    const albumAnimation = isPlaying ? "spin 20s linear infinite" : "none";
+    const albumAnimation = isPlaying ? "rotateAlbumArt 20s linear infinite" : "none";
     
     return (
       <div 
@@ -576,7 +576,9 @@ const MusicPlayer3 = React.forwardRef(
                 boxShadow: `0 0 20px rgba(0,0,0,0.5), ${glowColor}`,
                 animation: albumAnimation,
                 cursor: 'pointer',
-                border: `3px solid ${accentColor}40`
+                border: `3px solid ${accentColor}40`,
+                transform: 'rotateZ(0deg)',
+                transformStyle: 'flat'
               }}
               onClick={togglePlayPause}
             >
@@ -763,12 +765,16 @@ const MusicPlayer3 = React.forwardRef(
         </div>
         
         {/* Define CSS animation for spinning album */}
-        <style jsx>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        {/* <style jsx>{`
+          @keyframes spinRecord {
+            from { 
+              transform: rotate(0deg);
+            }
+            to { 
+              transform: rotate(360deg);
+            }
           }
-        `}</style>
+        `}</style> */}
       </div>
     );
   }

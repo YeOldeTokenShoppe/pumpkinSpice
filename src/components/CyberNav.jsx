@@ -15,7 +15,7 @@ const CyberNav = ({ is80sMode = false }) => {
   }, [isMenuOpen]);
 
   const navItems = [
-    { id: '00', date: 'THE NATIV80', title: 'Home', path: '/home', thumbnail: '/rl80logo.png' },
+    { id: '00', date: 'I-80', title: 'The Road to Prosper80', path: '/', thumbnail: '/I80.png' },
     { id: '01', date: 'JOIN THE ILLUMIN80', title: 'Bless Us, RL80', path: '/gallery', thumbnail: '/sacred.png' },
     { id: '02', date: 'MARKET ACTIV80', title: 'Good And Evil Index', path: '/clouds', thumbnail: '/lightning.png' },
     { id: '03', date: 'INFIN80 FOUNTAIN', title: 'Toss A Coin for Prosper80', path: '/fountain', thumbnail: '/fountain.png' },

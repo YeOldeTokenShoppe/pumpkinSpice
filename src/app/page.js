@@ -111,12 +111,13 @@ export default function Home() {
           font-family: 'UnifrakturMaguntia', serif !important;
         }
         
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes rotateVinyl {
+          0% { transform: rotateZ(0deg); }
+          100% { transform: rotateZ(360deg); }
         }
         .spinning-record {
-          animation: spin 3s linear infinite;
+          animation: rotateVinyl 3s linear infinite;
+          transform: rotateZ(0deg);
         }
       `}</style>
       

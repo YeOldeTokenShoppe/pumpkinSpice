@@ -22,7 +22,8 @@
   padding: 0;
   width: 90%;
   max-width: 720px;
-  max-height: 480px;
+  max-height: 85vh; /* Increased from 480px for better visibility */
+  height: auto;
   position: relative;
   z-index: 100001;
   box-shadow: 
@@ -30,6 +31,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   animation: slideUp 0.3s ease;
   overflow: hidden;
+  margin: 20px auto; /* Add margin to prevent edge cutoff */
 }
 
 .compact-modal-close {
@@ -58,7 +60,9 @@
 
 .compact-modal-layout {
   display: flex;
-  height: 480px;
+  height: auto;
+  min-height: 550px;
+  max-height: calc(85vh - 20px);
 }
 
 /* 3D Preview Section */
@@ -92,8 +96,11 @@
 .compact-form-section {
   flex: 1;
   padding: 32px;
+  padding-bottom: 40px; /* Extra padding at bottom for buttons */
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  max-height: calc(85vh - 20px);
 }
 
 .compact-form-section h2 {
@@ -137,12 +144,20 @@
   font-family: inherit;
 }
 
-.compact-char-count {
+.message-input-wrapper {
+  position: relative;
+}
+
+.message-input-wrapper .compact-char-count {
   position: absolute;
   bottom: 8px;
   right: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 11px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
 }
 
 .compact-form-row {
@@ -192,7 +207,9 @@
 .compact-form-actions {
   display: flex;
   gap: 12px;
-  margin-top: auto;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .compact-btn-cancel,
@@ -453,5 +470,275 @@
   }
   50% {
     box-shadow: 0 0 30px rgba(255, 102, 0, 0.7);
+  }
+}
+
+/* Password Dialog Styles */
+.encryption-password-dialog {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  backdrop-filter: blur(4px);
+}
+
+.password-dialog-content {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 320px;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(255, 102, 0, 0.1);
+}
+
+.password-dialog-content h3 {
+  color: #ff6600;
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  text-align: center;
+}
+
+.password-dialog-content p {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 16px 0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.password-dialog-content input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.password-dialog-content input[type="password"]:focus {
+  outline: none;
+  border-color: #ff6600;
+  box-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
+}
+
+.password-dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.password-dialog-actions button {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.password-dialog-actions button:first-child {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.password-dialog-actions button:first-child:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.password-dialog-actions button:last-child {
+  background: linear-gradient(135deg, #ff6600 0%, #ff8833 100%);
+  color: white;
+}
+
+.password-dialog-actions button:last-child:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 102, 0, 0.4);
+}
+
+.password-dialog-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Confirmation Dialog Styles */
+.confirmation-dialog-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.2s ease;
+}
+
+.confirmation-dialog {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border: 2px solid rgba(255, 102, 0, 0.5);
+  border-radius: 16px;
+  padding: 32px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.8),
+    0 0 120px rgba(255, 102, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: slideUp 0.3s ease;
+}
+
+.confirmation-dialog h3 {
+  color: #ff6600;
+  margin: 0 0 20px 0;
+  font-size: 24px;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(255, 102, 0, 0.3);
+}
+
+.confirmation-details {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.confirmation-details p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 8px 0;
+  font-size: 14px;
+  word-wrap: break-word;
+}
+
+.confirmation-details strong {
+  color: #ff6600;
+  margin-right: 8px;
+}
+
+.encryption-notice {
+  color: #ffaa00 !important;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 12px !important;
+}
+
+.confirmation-warning {
+  color: rgba(255, 100, 100, 0.9);
+  text-align: center;
+  font-size: 13px;
+  font-style: italic;
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(255, 0, 0, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.confirm-cancel,
+.confirm-save {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.confirm-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.confirm-cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.confirm-save {
+  background: linear-gradient(135deg, #ff6600 0%, #ff8833 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.confirm-save::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.confirm-save:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 102, 0, 0.5);
+}
+
+.confirm-save:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.confirm-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Update the submit button to be more cautious */
+.compact-btn-submit {
+  background: linear-gradient(135deg, #ff6600 0%, #ff8833 100%);
+  position: relative;
+}
+
+.compact-btn-submit:disabled {
+  background: linear-gradient(135deg, #666 0%, #888 100%);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }

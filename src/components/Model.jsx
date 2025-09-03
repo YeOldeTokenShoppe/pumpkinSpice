@@ -4,6 +4,7 @@ import { useGLTF, useProgress, Text, Environment, useTexture, Plane, useAnimatio
 import * as THREE from "three";
 import { useFirestoreResults } from "@/utilities/useFirestoreResults";
 import ParticleTrail from "@/components/ParticleTrail";
+import { generateScrambledDisplay, isMessageEncrypted } from "@/utilities/encryption";
 
 import { ref, getDownloadURL } from "firebase/storage";
 import { storage } from "@/utilities/firebaseClient"; // Import storage directly
@@ -53,6 +54,7 @@ function Model({
   onModelDataLoaded,
   isMobileView,
   onDesktopPaginationReady,
+  sortBy,
 }) {
   // STATE VARIABLES - consolidated in one place
   const [modelUrl, setModelUrl] = useState("/models/alligatorStroll4.glb");
@@ -1342,9 +1344,79 @@ function Model({
     }
   }, [gltf, is80sMode]); // Re-run when is80sMode changes
 
+  // Create text texture for messages
+  const createMessageTexture = (message, isEncrypted) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Configure text
+    ctx.fillStyle = isEncrypted ? '#ff6600' : '#000000';
+    const fontSize = message && message.length > 100 ? 24 : 32;
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Display scrambled text if encrypted, otherwise show message
+    const displayText = isEncrypted ? generateScrambledDisplay(30) : (message || '');
+    
+    // Word wrap
+    const words = displayText.split(' ');
+    const lines = [];
+    let currentLine = '';
+    const maxWidth = canvas.width - 40;
+    
+    if (isEncrypted && !displayText.includes(' ')) {
+      // For encrypted text, break by character limit
+      const charsPerLine = Math.floor(maxWidth / (fontSize * 0.6));
+      for (let i = 0; i < displayText.length; i += charsPerLine) {
+        lines.push(displayText.substring(i, i + charsPerLine));
+      }
+    } else {
+      // Normal word wrapping
+      words.forEach(word => {
+        const testLine = currentLine + (currentLine ? ' ' : '') + word;
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      });
+      if (currentLine) lines.push(currentLine);
+    }
+    
+    // Draw text
+    const lineHeight = fontSize * 1.4;
+    const startY = canvas.height / 2 - (lines.length - 1) * lineHeight / 2;
+    
+    if (isEncrypted) {
+      // Add encryption header
+      ctx.fillStyle = '#ff6600';
+      ctx.font = 'bold 20px Arial';
+      ctx.fillText('🔒 ENCRYPTED', canvas.width / 2, 40);
+      ctx.font = `bold ${fontSize}px Arial`;
+    }
+    
+    lines.forEach((line, index) => {
+      const y = isEncrypted ? startY + 20 + index * lineHeight : startY + index * lineHeight;
+      ctx.fillText(line, canvas.width / 2, y);
+    });
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  };
+
   // Modify your applyUserImageToLabel function
   const applyUserImageToLabel = (candle, user) => {
-    if (!user?.image) return;
+    if (!user) return;
 
     // Find both labels, but keep them in separate arrays
     const label1Objects = candle.children.filter(child => child.name.includes("Label1"));
@@ -1355,10 +1427,42 @@ function Model({
 
     if (label1Objects.length === 0 && label2Objects.length === 0) return;
 
-    // Use our optimized texture loader instead of direct loading
+    // Apply message texture to Label1
+    const isEncrypted = isMessageEncrypted(user);
+    const messageToDisplay = isEncrypted ? null : user.message;
+    const messageTexture = createMessageTexture(messageToDisplay, isEncrypted);
+    
+    label1Objects.forEach(label => {
+      if (label.material) {
+        if (label.material.map) {
+          label.material.map.dispose();
+        }
+        label.material.dispose();
+        
+        // Apply message texture with proper flipping
+        const flippedTexture = messageTexture.clone();
+        flippedTexture.center.set(0.5, 0.5);
+        flippedTexture.repeat.set(1, -1);
+        flippedTexture.wrapS = THREE.RepeatWrapping;
+        flippedTexture.wrapT = THREE.RepeatWrapping;
+        flippedTexture.needsUpdate = true;
+        
+        label.material = new THREE.MeshStandardMaterial({
+          map: flippedTexture,
+          transparent: true,
+          side: THREE.DoubleSide,
+        });
+        label.material.needsUpdate = true;
+      }
+    });
+    
+    // Only load image texture if user has an image
+    if (!user.image) return;
+    
+    // Use our optimized texture loader for Label2 (user image)
     loadOptimizedTexture(user.image, texture => {
-      // Apply to Label1 objects (flipped on both X and Y axes)
-      label1Objects.forEach(label => {
+      // Apply to Label2 objects (user image, no flipping needed)
+      label2Objects.forEach(label => {
         if (label.material) {
           // Properly dispose of existing materials/textures
           if (label.material.map) {
@@ -1366,43 +1470,7 @@ function Model({
           }
           label.material.dispose();
 
-          // Clone the texture for this specific label to avoid affecting other uses
-          const flippedTexture = texture.clone();
-
-          // Set rotation center to middle of texture
-          flippedTexture.center.set(0.5, 0.5);
-
-          // Rotate by 180 degrees
-          flippedTexture.rotation = 0;
-
-          // To flip on Y axis, we invert the repeat.y value
-          flippedTexture.repeat.set(1, -1);
-
-          // Ensure wrapping is set correctly for the flipped texture
-          flippedTexture.wrapS = THREE.RepeatWrapping;
-          flippedTexture.wrapT = THREE.RepeatWrapping;
-
-          flippedTexture.needsUpdate = true;
-
-          // Create new material with the flipped texture
-          label.material = new THREE.MeshStandardMaterial({
-            map: flippedTexture,
-            transparent: true,
-            side: THREE.DoubleSide,
-          });
-          label.material.needsUpdate = true;
-        }
-      });
-
-      // Apply to Label2 objects (normal orientation)
-      label2Objects.forEach(label => {
-        if (label.material) {
-          if (label.material.map) {
-            label.material.map.dispose();
-          }
-          label.material.dispose();
-
-          // Use the original texture without flipping
+          // Use the texture directly without flipping for Label2
           label.material = new THREE.MeshStandardMaterial({
             map: texture,
             transparent: true,
@@ -1434,11 +1502,15 @@ function Model({
         candle.userData = {
           ...candle.userData,
           hasUser: true,
-          userName: user.userName,
+          userName: user.userName || user.username,
           userId: user.id,
           burnedAmount: user.burnedAmount,
           image: user.image,
           message: user.message,
+          encrypted: user.encrypted,
+          salt: user.salt,
+          iv: user.iv,
+          isEncrypted: user.isEncrypted,
           createdAt: user.createdAt,
         };
 
@@ -1486,13 +1558,23 @@ function Model({
   useEffect(() => {
     if (!results || !gltf.scene || isMobileView) return;
 
-    // Sort all results by burned amount
-    const sortedByBurnedAmount = [...(results || [])].sort(
-      (a, b) => b.burnedAmount - a.burnedAmount
-    );
+    // Sort results based on sortBy prop
+    let sortedResults;
+    if (sortBy === 'newest') {
+      // Sort by newest (createdAt descending) - already sorted from Firestore
+      sortedResults = [...results];
+    } else if (sortBy === 'smallest') {
+      // Sort by smallest burnedAmount (ascending) for NOBIL80 - already sorted from Firestore
+      sortedResults = [...results];
+    } else {
+      // Default: Sort by burned amount (for Illumin80)
+      sortedResults = [...results].sort(
+        (a, b) => b.burnedAmount - a.burnedAmount
+      );
+    }
 
     // Add default users if needed to have enough for pagination
-    let allUsers = [...sortedByBurnedAmount];
+    let allUsers = [...sortedResults];
     while (allUsers.length < CANDLES_PER_PAGE) {
       allUsers.push(createDefaultUser(allUsers.length));
     }
@@ -1508,7 +1590,7 @@ function Model({
 
     // Update the candles with the current page data
     updateCandlesWithData(pageData);
-  }, [results, gltf.scene, desktopCandlePage, isMobileView, updateCandlesWithData]);
+  }, [results, gltf.scene, desktopCandlePage, isMobileView, updateCandlesWithData, sortBy]);
 
   // Add this effect near the other effects
   useEffect(() => {
