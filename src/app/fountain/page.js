@@ -385,15 +385,18 @@ export default function FountainPage() {
         }}
         title={is80sMode ? "Disable 80s Mode" : "Enable 80s Mode"}
       >
-        <span style={{
-          fontSize: "20px",
-          fontWeight: "bold",
-          color: is80sMode ? "#00ff41" : "#67e8f9",
-          textShadow: is80sMode ? "0 0 10px #00ff41" : "none",
-          fontFamily: "monospace"
-        }}>
-              80s
-            </span>
+        <span 
+          translate="no"
+          style={{
+            fontSize: "20px",
+            fontWeight: "bold",
+            color: is80sMode ? "#00ff41" : "#67e8f9",
+            textShadow: is80sMode ? "0 0 10px #00ff41" : "none",
+            fontFamily: "monospace"
+          }}
+        >
+          80s
+        </span>
           </button>
         </div>
       </div>

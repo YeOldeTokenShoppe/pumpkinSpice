@@ -17,7 +17,7 @@ import { db } from "@/utilities/firebaseClient";
 import { gsap } from "gsap";
 
 // Configure draco loader for useGLTF
-useGLTF.preload("/models/alligatorStroll4.glb");
+useGLTF.preload("/models/alligatorStroll5.glb");
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("/draco/");
 // Set up GLTFLoader to use Draco compression
@@ -57,7 +57,7 @@ function Model({
   sortBy,
 }) {
   // STATE VARIABLES - consolidated in one place
-  const [modelUrl, setModelUrl] = useState("/models/alligatorStroll4.glb");
+  const [modelUrl, setModelUrl] = useState("/models/alligatorStroll5.glb");
   const { progress } = useProgress();
   const gltf = useGLTF(modelUrl, true);
   const { camera, scene } = useThree();
@@ -211,6 +211,9 @@ function Model({
       const circleWalkAnim = gltf.animations.find(anim => 
         anim.name === "CircleWalk" || anim.name.includes("Circle"));
       
+      const experimentAnim = gltf.animations.find(anim => 
+        anim.name === "Experiment.001" || anim.name.includes("Experiment"));
+      
       if (walkSequenceAnim) {
 
       }
@@ -218,17 +221,21 @@ function Model({
       if (circleWalkAnim) {
 
       }
+      
+      if (experimentAnim) {
+        console.log("Found Experiment animation:", experimentAnim.name);
+      }
     }
     
     if (actions) {
 
-      // Updated animation names
-      const animationsToPlay = ["WALK_SEQUENCE", "CircleWalk"];
+      // Updated animation names - added "Experiment" and other animations
+      const animationsToPlay = ["WALK_SEQUENCE", "CircleWalk", "Experiment", "Experiment.001", "Animation"];
       
       animationsToPlay.forEach(animName => {
         // Try direct access first
         if (actions[animName]) {
-
+          console.log(`Playing animation: ${animName}`);
           actions[animName].reset().play();
           actions[animName].loop = THREE.LoopRepeat;
         } else {
@@ -239,11 +246,11 @@ function Model({
           );
           
           if (matchingAnim) {
-
+            console.log(`Playing matched animation: ${matchingAnim[0]}`);
             matchingAnim[1].reset().play();
             matchingAnim[1].loop = THREE.LoopRepeat;
           } else {
-
+            console.log(`Animation not found: ${animName}`);
           }
         }
       });

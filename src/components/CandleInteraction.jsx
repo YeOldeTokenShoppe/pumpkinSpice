@@ -263,7 +263,23 @@
 
       // Don't rotate - we'll handle orientation with texture settings
 
-      // Set text properties
+      // Add heading "Prayer to Our Lady of Perpetual Profit"
+      context.fillStyle = "#000000";
+      context.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText('Prayer to Our Lady', canvas.width / 2, 80);
+      context.fillText('of Perpetual Profit', canvas.width / 2, 130);
+      
+      // Add divider line
+      context.strokeStyle = '#333333';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(100, 165);
+      context.lineTo(canvas.width - 100, 165);
+      context.stroke();
+
+      // Set text properties for main content
       context.fillStyle = "#000000";
       context.textAlign = "center";
       context.textBaseline = "middle";
@@ -297,7 +313,8 @@
       lines.push(currentLine);
 
       // Draw text with shadow for better visibility
-      const startY = (canvas.height - lines.length * lineHeight) / 2;
+      // Adjust startY to account for the heading taking up space at top
+      const startY = 200 + ((canvas.height - 200) - lines.length * lineHeight) / 2;
       lines.forEach((line, index) => {
         // Add shadow
         context.shadowColor = "rgba(0, 0, 0, 0.5)";
@@ -372,7 +389,7 @@
           if (isDefaultCandle) {
             // For default candles
             userName = "Anonymous";
-            message = "Stake RL80 to dedicate a votive candle.";
+            message = "Your message here!";
           } else {
             // For user candles with custom images
             userName = userData.userName || "Friend";

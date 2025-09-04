@@ -10,6 +10,7 @@ import CandleInteractionHint from "@/components/CandleInteractionHint";
 import BuyTokenFAB from "@/components/BuyTokenFAB";
 import CompactCandleModal from "@/components/CompactCandleModal";
 import CyberNav from "@/components/CyberNav";
+import SocialBar from "@/components/SocialBar";
 
 
 
@@ -587,16 +588,24 @@ export default function GalleryPage() {
             }}
             title={is80sMode ? "Disable 80s Mode" : "Enable 80s Mode"}
           >
-            <span style={{ 
-              fontSize: "20px", 
-              fontWeight: "bold",
-              color: is80sMode ? "#00ff41" : "#67e8f9",
-              textShadow: is80sMode ? "0 0 10px #00ff41" : "none",
-              fontFamily: "monospace"
-            }}>
+            <span 
+              translate="no"
+              style={{ 
+                fontSize: "20px", 
+                fontWeight: "bold",
+                color: is80sMode ? "#00ff41" : "#67e8f9",
+                textShadow: is80sMode ? "0 0 10px #00ff41" : "none",
+                fontFamily: "monospace"
+              }}
+            >
               80s
             </span>
           </button>
+            </div>
+            
+            {/* Social Bar Icon */}
+            <div style={{ order: isMobileDevice ? 4 : 3 }}>
+              <SocialBar is80sMode={is80sMode} />
             </div>
           </div>
           </>

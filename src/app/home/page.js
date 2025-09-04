@@ -215,7 +215,7 @@ function SingleCandleModel({ prayerText = '', encryptedText = '', isTyping = fal
     } else if (prayerText) {
       // Show original prayer
       context.font = 'bold 32px serif';
-      context.fillText('A PRAYER', canvas.width / 2, 100);
+      context.fillText('Prayer to RL80', canvas.width / 2, 100);
       
       // Word wrap the prayer text with smaller font and more margin
       context.font = '20px serif';
@@ -355,7 +355,7 @@ function SingleCandleModel({ prayerText = '', encryptedText = '', isTyping = fal
 useGLTF.preload('/models/singleCandleAnimatedFlame.glb');
 
 // EncryptionDemo component for the prayer encryption feature
-function EncryptionDemo({ onPrayerChange, onEncryptedChange, onTypingChange, onEncryptingChange, isMobile = false }) {
+function EncryptionDemo({ onPrayerChange, onEncryptedChange, onTypingChange, onEncryptingChange, isMobile = false, onToggle, buttonRef }) {
   // Predefined sample prayer for demo
   const samplePrayer = "Oh Lady of Limit Orders, forgive me for buying the top again. Grant me the humility to average down, and the courage to tell no one.";
   
@@ -389,6 +389,13 @@ function EncryptionDemo({ onPrayerChange, onEncryptedChange, onTypingChange, onE
       onEncryptingChange(isAnimating);
     }
   }, [isAnimating, onEncryptingChange]);
+  
+  // Expose button state to parent
+  useEffect(() => {
+    if (onToggle) {
+      onToggle({ handleToggle, isAnimating, isEncrypted });
+    }
+  }, [isAnimating, isEncrypted, encryptionKey]);
   
   const handleToggle = async () => {
     // Check if key is present
@@ -506,31 +513,23 @@ function EncryptionDemo({ onPrayerChange, onEncryptedChange, onTypingChange, onE
     }, 50);
   };
   
+  // Store button element in ref if provided
+  useEffect(() => {
+    if (buttonRef && buttonRef.current) {
+      buttonRef.current = {
+        handleToggle,
+        isAnimating,
+        isEncrypted
+      };
+    }
+  }, [buttonRef, handleToggle, isAnimating, isEncrypted]);
+  
   return (
     <div style={{ 
       position: 'relative',
       width: '100%' // Ensure full width
     }}>
-      {/* Toggle Button */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '1rem',
-          alignItems: 'center'
-        }}>
-          <button
-            onClick={handleToggle}
-            disabled={isAnimating}
-            className={`arrow-button ${isAnimating ? 'processing' : ''} ${isEncrypted && !isAnimating ? 'encrypted' : ''}`}
-            style={isMobile ? {
-              marginTop: '-30rem'
-            } : {}}
-          >
-            {isAnimating ? 'Processing...' : 
-             isEncrypted ? 'Decrypt' : 'Encrypt it!'}
-            {!isMobile && <span className="arrow"></span>}
-          </button>
-        </div>
+      {/* Button has been moved to parent component */}
     </div>
   );
 }
@@ -549,6 +548,9 @@ export default function HomePage() {
   const [currentEncrypted, setCurrentEncrypted] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isEncrypting, setIsEncrypting] = useState(false);
+  
+  // State for encryption button
+  const [encryptionButton, setEncryptionButton] = useState(null);
   
   // Get user from Clerk
   const { user, isSignedIn } = useUser();
@@ -616,10 +618,12 @@ export default function HomePage() {
           if (element.classList.contains('action-text') || element.classList.contains('action-text-mobile')) {
             if (targetWord === "Declare") {
               element.style.color = '#d4af37';
+              element.style.fontFamily = '"UnifrakturCook", serif';
               element.style.textShadow = '0 0 10px #d4af37, 0 0 20px #d4af37';
             } else {
               element.style.color = '#00ff00';
               element.style.textShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+              element.style.fontFamily = 'Cyber, sans-serif';
             }
           }
         }
@@ -988,7 +992,7 @@ export default function HomePage() {
           borderRadius: '12px',
           border: '1px solid rgba(212, 175, 55, 0.3)',
           color: '#ffffff',
-          fontSize: '1rem',
+          // fontSize: '1rem',
           
           lineHeight: 1.6,
           textAlign: 'left'
@@ -1071,6 +1075,47 @@ export default function HomePage() {
                 />
               </Suspense>
             </Canvas>
+            
+            {/* Encrypt/Decrypt Button - Positioned below the candle */}
+            <div style={{
+              position: 'absolute',
+              bottom: '5%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 10,
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              {encryptionButton && (
+                <button
+                  onClick={encryptionButton.handleToggle}
+                  disabled={encryptionButton.isAnimating}
+                  style={{
+                    fontSize: '0.85rem',
+                    padding: '0.5rem 0.5rem',
+                    backgroundColor: encryptionButton.isEncrypted ? 'rgba(212, 175, 55, 0.1)' : 'rgba(0, 255, 0, 0.1)',
+                    border: encryptionButton.isEncrypted ? '2px solid #d4af37' : '2px solid #00ff00',
+                    borderRadius: '20px',
+                    color: encryptionButton.isEncrypted ? '#d4af37' : '#00ff00',
+                    fontFamily: 'Cyber, monospace',
+                    fontWeight: 'bold',
+                    cursor: encryptionButton.isAnimating ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: encryptionButton.isEncrypted 
+                      ? '0 0 10px rgba(212, 175, 55, 0.3)' 
+                      : '0 0 10px rgba(0, 255, 0, 0.3)',
+                    textShadow: encryptionButton.isEncrypted
+                      ? '0 0 3px rgba(212, 175, 55, 0.5)'
+                      : '0 0 3px rgba(0, 255, 0, 0.5)',
+                    opacity: encryptionButton.isAnimating ? 0.7 : 1
+                  }}
+                >
+                  {encryptionButton.isAnimating ? 'Processing...' : 
+                   encryptionButton.isEncrypted ? 'Decrypt' : 'Encrypt it!'}
+                </button>
+              )}
+            </div>
+            
             {/* Shadow effect underneath the candle */}
             <div style={{
               position: 'absolute',
@@ -1150,14 +1195,15 @@ export default function HomePage() {
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
                 display: 'inline'
               }}>Our Lady of Perpetual Profit</span>
-              {' '}through the blockchain! Top token burners are inducted into <span style={{
+              {' '}through the blockchain! 
+              {/* Top token burners are inducted into <span style={{
                 fontFamily: 'UnifrakturCook, serif',
                 fontWeight: 'bold',
                 fontSize: '1.1em',
                 color: '#d4af37',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
                 display: 'inline'
-              }}>The Illumin80 Soci80</span>.
+              }}>The Illumin80 Soci80</span>. */}
             </p>
             
             {/* Mobile Encryption Demo */}
@@ -1166,6 +1212,7 @@ export default function HomePage() {
               onEncryptedChange={setCurrentEncrypted}
               onTypingChange={setIsTyping}
               onEncryptingChange={setIsEncrypting}
+              onToggle={setEncryptionButton}
               isMobile={true}
             />
             
@@ -1195,7 +1242,7 @@ export default function HomePage() {
                   border: '2px solid #d4af37',
                   borderRadius: '25px',
                   color: '#d4af37',
-                  fontSize: '1.1rem',
+                  // fontSize: '1.1rem',
                   fontFamily: 'Cyber, monospace',
                   fontWeight: 'bold',
                   textDecoration: 'none',
@@ -1388,7 +1435,7 @@ export default function HomePage() {
                 fontSize: '1.1em',
                 color: '#d4af37',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-              }}>Our Lady of Perpetual Profit</span> guides seekers through the digital realm, 
+              }}> Our Lady of Perpetual Profit</span> guides seekers through the digital realm, 
               offering enlightenment through carefully curated experiences.
             </p>
           </div>
@@ -1441,6 +1488,29 @@ export default function HomePage() {
                   <SingleCandleModel prayerText={currentPrayer} encryptedText={currentEncrypted} isTyping={isTyping} isEncrypting={isEncrypting} />
                 </Suspense>
               </Canvas>
+              
+              {/* Encrypt/Decrypt Button - Positioned below the candle */}
+              <div style={{
+                position: 'absolute',
+                bottom: '10%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 10,
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
+                {encryptionButton && (
+                  <button
+                    onClick={encryptionButton.handleToggle}
+                    disabled={encryptionButton.isAnimating}
+                    className={`arrow-button ${encryptionButton.isAnimating ? 'processing' : ''} ${encryptionButton.isEncrypted && !encryptionButton.isAnimating ? 'encrypted' : ''}`}
+                  >
+                    {encryptionButton.isAnimating ? 'Processing...' : 
+                     encryptionButton.isEncrypted ? 'Decrypt' : 'Encrypt it!'}
+                  </button>
+                )}
+              </div>
+              
               {/* Shadow effect underneath the candle */}
               <div style={{
                 position: 'absolute',
@@ -1533,20 +1603,21 @@ export default function HomePage() {
                 fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem',
                 textAlign: 'center'
               }}>
-                Invite good fortune and devote a green candle to <span style={{
+                Devote a virtual green candle to <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit</span> through the blockchain! Top burners are inducted into  <span style={{
+                }}>Our Lady of Perpetual Profit</span> through the blockchain!
+                 {/* Top burners are inducted into  <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
                   display: 'inline'
-                }}>The Illumin80 Soci80</span>.
+                }}>The Illumin80</span>. */}
               </p>
               
               <EncryptionDemo 
@@ -1554,13 +1625,13 @@ export default function HomePage() {
                 onEncryptedChange={setCurrentEncrypted}
                 onTypingChange={setIsTyping}
                 onEncryptingChange={setIsEncrypting}
+                onToggle={setEncryptionButton}
               />
               
               {/* Call to Action - Create Candle */}
               <div style={{
-                marginTop: '3rem',
+                marginTop: '-2rem',
                 paddingTop: '2rem',
-                borderTop: '1px solid rgba(212, 175, 55, 0.2)',
                 textAlign: 'center'
               }}>
                 {/* <p style={{
