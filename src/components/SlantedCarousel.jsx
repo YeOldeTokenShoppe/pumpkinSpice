@@ -21,8 +21,8 @@ const SlantedCarousel = ({
   const defaultSlides = slides.length > 0 ? slides : [
     {
       id: 1,
-      backgroundImage: 'https://picsum.photos/1920/1080?random=1',
-      image: 'https://picsum.photos/400/300?random=1',
+      backgroundImage: '/face.png',
+      image: '/face.png',
       number: '01',
       title: 'Cosmic Dreams',
       description: 'Journey through infinite possibilities where reality bends and imagination soars beyond the stars.'
@@ -163,7 +163,6 @@ const SlantedCarousel = ({
             />
             <div className="slide-overlay" />
             <div className="slide-content">
-              <div className="slide-number">{slide.number}</div>
               <h2 className="slide-title">{slide.title}</h2>
               <p className="slide-description">{slide.description}</p>
             </div>

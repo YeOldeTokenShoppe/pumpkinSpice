@@ -34,12 +34,39 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
       const style = document.createElement('style');
       style.id = styleId;
       style.textContent = `
-        @keyframes simple-loader-bounce {
+        @keyframes simple-loader-rise {
+          0% {
+            transform: translateY(40px) scaleY(0.1);
+            opacity: 0;
+          }
+          15% {
+            transform: translateY(30px) scaleY(0.4);
+            opacity: 0.4;
+          }
+          30% {
+            transform: translateY(15px) scaleY(0.7);
+            opacity: 0.7;
+          }
+          45% {
+            transform: translateY(5px) scaleY(0.9);
+            opacity: 0.9;
+          }
+          60% {
+            transform: translateY(0) scaleY(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(0) scaleY(1);
+            opacity: 1;
+          }
+        }
+
+        @keyframes simple-loader-glow {
           0%, 100% {
-            transform: translateY(0);
+            filter: brightness(1);
           }
           50% {
-            transform: translateY(-20px);
+            filter: brightness(1.3);
           }
         }
         
@@ -84,26 +111,30 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    position: 'relative'
+    position: 'relative',
+    transformOrigin: 'bottom'
   };
 
   const topBarStyle = {
     width: '4px',
     height: '12px',
-    backgroundColor: '#fbbf24'
+    backgroundColor: '#fbbf24',
+    transition: 'all 0.3s ease'
   };
 
   const middleBarStyle = {
     width: '12px',
     height: '60px',
     backgroundColor: '#10b981',
-    borderRadius: '2px'
+    borderRadius: '2px',
+    transition: 'all 0.3s ease'
   };
 
   const bottomBarStyle = {
     width: '4px',
     height: '12px',
-    backgroundColor: '#10b981'
+    backgroundColor: '#10b981',
+    transition: 'all 0.3s ease'
   };
 
 
@@ -132,16 +163,21 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
         <div style={wrapperStyle}>
           <div style={{
             ...columnStyle,
-            animation: 'simple-loader-bounce 1s ease-in-out infinite 0.1s'
+            animation: 'simple-loader-rise 3s ease-out infinite',
+            animationFillMode: 'both'
           }}>
-            <div style={topBarStyle} />
+            <div style={{
+              ...topBarStyle,
+              animation: 'simple-loader-glow 3s ease-in-out infinite'
+            }} />
             <div style={middleBarStyle} />
             <div style={bottomBarStyle} />
           </div>
           <div style={{
             ...columnStyle,
             bottom: '16px',
-            animation: 'simple-loader-bounce 1s ease-in-out infinite 0.2s'
+            animation: 'simple-loader-rise 3s ease-out infinite 0.4s',
+            animationFillMode: 'both'
           }}>
             <div style={topBarStyle} />
             <div style={middleBarStyle} />
@@ -150,9 +186,13 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
           <div style={{
             ...columnStyle,
             bottom: '32px',
-            animation: 'simple-loader-bounce 1s ease-in-out infinite 0.1s'
+            animation: 'simple-loader-rise 3s ease-out infinite 0.8s',
+            animationFillMode: 'both'
           }}>
-            <div style={topBarStyle} />
+            <div style={{
+              ...topBarStyle,
+              animation: 'simple-loader-glow 3s ease-in-out infinite 0.8s'
+            }} />
             <div style={middleBarStyle} />
             <div style={bottomBarStyle} />
           </div>

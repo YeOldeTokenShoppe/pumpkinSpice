@@ -4,18 +4,18 @@ import { usePathname } from 'next/navigation';
 
 const CyberNav = ({ is80sMode = false }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [hoveredId, setHoveredId] = useState(null);
+  const [hoveredItemPath, setHoveredItemPath] = useState(null);
   const pathname = usePathname();
   
-  // Reset hoveredId when menu closes
+  // Reset hover state when menu closes
   React.useEffect(() => {
     if (!isMenuOpen) {
-      setHoveredId(null);
+      setHoveredItemPath(null);
     }
   }, [isMenuOpen]);
 
   const navItems = [
-    { id: '00', date: 'INTERSTATE 80', title: "Future Nostalgia", path: '/', thumbnail: '/I80.png' },
+    { id: '00', date: 'AN ICON ON I-80', title: "Patron Saint of Prosper80", path: '/', thumbnail: '/I80.jpg' },
     { id: '01', date: 'SECRET SOCI80', title: 'Bless Us, RL80', path: '/gallery', thumbnail: '/sacred.png' },
     { id: '02', date: 'MARKET ACTIV80', title: 'Good And Evil Index', path: '/clouds', thumbnail: '/lightning.png' },
     { id: '03', date: 'INFIN80 FOUNTAIN', title: 'Toss A Coin for Char80', path: '/fountain', thumbnail: '/fountain.png' },
@@ -48,7 +48,6 @@ const CyberNav = ({ is80sMode = false }) => {
           aria-label="Menu"
           onClick={() => {
             setIsMenuOpen(!isMenuOpen);
-            setHoveredId(null);
           }}
           onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(0, 0, 0, 0.8)"}
           onMouseLeave={(e) => e.target.style.backgroundColor = "rgba(0, 0, 0, 0.7)"}
@@ -87,13 +86,18 @@ const CyberNav = ({ is80sMode = false }) => {
               gap: "20px",
               padding: "20px"
             }}
-            onMouseLeave={() => setHoveredId(null)}
+            onMouseLeave={() => setHoveredItemPath(null)}
           >
             {navItems.map((item, index) => {
-              const isActive = pathname === item.path;
+              // Handle both '/' and '/home' as the same route for the first nav item
+              const isActive = item.path === '/' 
+                ? (pathname === '/' || pathname === '/home')
+                : pathname === item.path;
+              
+              const isHovered = hoveredItemPath === item.path;
               
               return (
-                <Link key={item.id} href={item.path} passHref style={{ textDecoration: 'none' }}>
+                <Link key={`${item.id}-${pathname}`} href={item.path} passHref style={{ textDecoration: 'none' }}>
                   <div
                     style={{
                       display: "flex",
@@ -105,21 +109,19 @@ const CyberNav = ({ is80sMode = false }) => {
                       borderRadius: "10px",
                       backgroundColor: isActive 
                         ? (is80sMode ? "#67e8f9" : "#c896ff")
-                        : "transparent",
+                        : (isHovered ? "rgb(200, 150, 255)" : "transparent"),
                       transition: "background-color 0.3s ease"
                     }}
                     onClick={() => {
                       setIsMenuOpen(false);
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={() => {
                       if (!isActive) {
-                        e.currentTarget.style.backgroundColor = "rgb(200, 150, 255)";
+                        setHoveredItemPath(item.path);
                       }
                     }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }
+                    onMouseLeave={() => {
+                      setHoveredItemPath(null);
                     }}
                   >
                     <div style={{ width: "50px", height: "50px", overflow: "hidden", borderRadius: "5px", flexShrink: "0" }}>

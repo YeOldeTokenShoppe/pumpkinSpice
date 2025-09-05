@@ -374,8 +374,8 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     
-    // Fill white background
-    ctx.fillStyle = '#ffffff';
+    // Fill parchment background
+    ctx.fillStyle = '#F4E8D0';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Add subtle border
@@ -1220,7 +1220,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
                   onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
                 >
-                  ✨ AI Prayer Generator ({remainingPrayers} left today)
+                  ✨ AI Prayer Generator
+                   {/* ({remainingPrayers} left today) */}
                 </button>
               </div>
 

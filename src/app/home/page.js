@@ -13,11 +13,13 @@ import '@/components/RotatingText.css';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
-import { encryptMessage, decryptMessage, generateScrambledDisplay } from '@/utilities/encryption';
 import TextMarquee from '@/components/TextMarquee';
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
+import { db } from '@/utilities/firebaseClient';
+import { collection, query, getDocs, limit, orderBy } from 'firebase/firestore';
 import '@/components/ArrowButton.css';
+import Numerology from '@/components/Numerology';
 
 // Register GSAP TextPlugin
 if (typeof window !== 'undefined') {
@@ -31,7 +33,7 @@ const Simple3DCarousel = dynamic(() => import('@/components/Simple3DCarousel'), 
 });
 
 // SingleCandleModel component for the two-column section
-function SingleCandleModel({ prayerText = '', encryptedText = '', isTyping = false, isEncrypting = false }) {
+function SingleCandleModel({ candleData = null }) {
   const { scene, animations } = useGLTF('/models/singleCandleAnimatedFlame.glb');
   const { actions } = useAnimations(animations, scene);
   const modelRef = useRef();
@@ -39,42 +41,21 @@ function SingleCandleModel({ prayerText = '', encryptedText = '', isTyping = fal
   const [label2Mesh, setLabel2Mesh] = useState(null);
   const targetRotationRef = useRef(0);
   const currentRotationRef = useRef(0);
-  const [delayRotation, setDelayRotation] = useState(false);
-  const delayTimerRef = useRef(null);
   
   // Clone the scene to avoid conflicts with other instances
   const clonedScene = React.useMemo(() => {
     const cloned = scene.clone();
-    
-    // Load and apply texture to labels
-    const textureLoader = new THREE.TextureLoader();
-    const vvvTexture = textureLoader.load('/vvv.jpg');
-    // Remove deprecated sRGBEncoding - Three.js now uses colorSpace
-    if (vvvTexture.colorSpace !== undefined) {
-      vvvTexture.colorSpace = THREE.SRGBColorSpace;
-    }
     
     // Traverse the cloned scene to find and update specific meshes
     cloned.traverse((child) => {
       if (child.isMesh) {
         console.log('Found mesh:', child.name);
         
-        // Apply texture to Label1
+        // Store Label1 reference for message display
         if (child.name === 'Label1') {
-          console.log('Applying vvv.jpg to Label1');
-          
-          // Keep normal orientation for image
-          vvvTexture.wrapS = THREE.RepeatWrapping;
-          vvvTexture.wrapT = THREE.RepeatWrapping;
-          vvvTexture.repeat.set(1, 1); // Normal orientation
-          vvvTexture.offset.set(0, 0);
-          
-          child.material = new THREE.MeshStandardMaterial({
-            map: vvvTexture,
-            side: THREE.DoubleSide,
-            metalness: 0.2,
-            roughness: 0.8
-          });
+          console.log('Found Label1 for message display');
+          // Store the mesh reference on the cloned scene
+          cloned.userData.label1Mesh = child;
         }
         
         // Setup Label2 for text
@@ -118,22 +99,16 @@ function SingleCandleModel({ prayerText = '', encryptedText = '', isTyping = fal
     return cloned;
   }, [scene]);
   
-  // Update Label2 with prayer text
+  // Update Label2 with candle data (image)
   useEffect(() => {
     // Get the label2 mesh from the cloned scene
     const label2 = clonedScene?.userData?.label2Mesh;
     
-    console.log('Updating Label2:', { 
-      prayerText, 
-      encryptedText, 
-      hasLabel2: !!label2,
-      prayerLength: prayerText?.length,
-      encryptedLength: encryptedText?.length 
-    });
+    console.log('Updating Label2 with candle data:', candleData);
     
     if (!label2) return;
     
-    // Create a canvas to draw text
+    // Create a canvas to draw image or username
     const canvas = document.createElement('canvas');
     canvas.width = 512; // Higher resolution
     canvas.height = 512;
@@ -144,111 +119,87 @@ function SingleCandleModel({ prayerText = '', encryptedText = '', isTyping = fal
     context.translate(0, canvas.height);
     context.scale(1, -1); // Flip on Y-axis
     
-    // Dark background with gold border
-    context.fillStyle = '#1a1a1a';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Add gold border with more margin
-    context.strokeStyle = '#d4af37';
-    context.lineWidth = 4;
-    context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
-    
-    // Set text styling
-    context.fillStyle = '#d4af37';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    
-    if (encryptedText) {
-      // Check if this is an error message
-      if (encryptedText.startsWith('Error:')) {
-        // Show error message
-        context.font = 'bold 30px monospace';
-        context.fillStyle = '#ff4444';
-        context.fillText('⚠️ ERROR ⚠️', canvas.width / 2, 100);
+    if (candleData && candleData.image) {
+      // Load and display the user's image
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        // Draw image to fill the canvas
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        context.font = '20px monospace';
-        context.fillStyle = '#ffffff';
-        
-        // Word wrap the error message
-        const words = encryptedText.split(' ');
-        let line = '';
-        let y = 180;
-        const maxWidth = canvas.width - 80;
-        
-        for (let n = 0; n < words.length; n++) {
-          const testLine = line + words[n] + ' ';
-          const metrics = context.measureText(testLine);
+        // Add username overlay if available
+        if (candleData.username) {
+          // Add semi-transparent background for text
+          context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          context.fillRect(0, canvas.height - 80, canvas.width, 80);
           
-          if (metrics.width > maxWidth && n > 0) {
-            context.fillText(line, canvas.width / 2, y);
-            line = words[n] + ' ';
-            y += 35;
-          } else {
-            line = testLine;
-          }
-        }
-        if (line) {
-          context.fillText(line, canvas.width / 2, y);
-        }
-      } else {
-        // Show encrypted text
-        context.font = 'bold 40px monospace';
-        context.fillText('ENCRYPTED:', canvas.width / 2, 80);
-        
-        // Show the actual encrypted text
-        context.font = '24px monospace';
-        context.fillStyle = '#ffffff';
-        
-        // Break encrypted text into lines
-        const charsPerLine = 20;
-        const lines = [];
-        for (let i = 0; i < encryptedText.length; i += charsPerLine) {
-          lines.push(encryptedText.substring(i, i + charsPerLine));
+          // Draw username
+          context.fillStyle = '#d4af37';
+          context.font = 'bold 32px serif';
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+          context.fillText(candleData.username, canvas.width / 2, canvas.height - 40);
         }
         
-        // Display up to 8 lines
-        lines.slice(0, 8).forEach((line, index) => {
-          context.fillText(line, canvas.width / 2, 150 + (index * 35));
+        // Create texture and apply to mesh
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.flipY = false;
+        
+        label2.material = new THREE.MeshStandardMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+          emissive: new THREE.Color(0xffffff),
+          emissiveIntensity: 0.1,
+          emissiveMap: texture,
+          metalness: 0.2,
+          roughness: 0.8
         });
-      }
+        label2.material.needsUpdate = true;
+      };
       
-    } else if (prayerText) {
-      // Show original prayer
-      context.font = 'bold 32px serif';
-      context.fillText('Prayer to RL80', canvas.width / 2, 100);
+      img.onerror = () => {
+        console.error('Failed to load candle image:', candleData.image);
+        // Fallback to text display
+        displayDefaultLabel();
+      };
       
-      // Word wrap the prayer text with smaller font and more margin
-      context.font = '20px serif';
-      context.fillStyle = '#ffffff';
-      
-      const words = prayerText.split(' ');
-      let line = '';
-      let y = 180;
-      let lineCount = 0;
-      const maxWidth = canvas.width - 220; // Even more margin for better spacing
-      
-      for (let n = 0; n < words.length && lineCount < 7; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = context.measureText(testLine);
-        
-        if (metrics.width > maxWidth && n > 0) {
-          context.fillText(line, canvas.width / 2, y);
-          line = words[n] + ' ';
-          y += 40; // More line spacing
-          lineCount++;
-        } else {
-          line = testLine;
-        }
-      }
-      if (lineCount < 7 && line) {
-        context.fillText(line, canvas.width / 2, y);
-      }
+      img.src = candleData.image;
       
     } else {
-      // Default state
+      // No candle data, show default
+      displayDefaultLabel();
+    }
+    
+    function displayDefaultLabel() {
+      // Dark background with gold border
+      context.fillStyle = '#1a1a1a';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add gold border with more margin
+      context.strokeStyle = '#d4af37';
+      context.lineWidth = 4;
+      context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+      
+      // Set text styling
+      context.fillStyle = '#d4af37';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
       context.font = 'bold 50px serif';
-      context.fillText('Your', canvas.width / 2, canvas.height / 2 - 30);
-      context.fillText('Message', canvas.width / 2, canvas.height / 2 + 30);
+      context.fillText('Featured', canvas.width / 2, canvas.height / 2 - 30);
+      context.fillText('Candle', canvas.width / 2, canvas.height / 2 + 30);
+      
+      // Create texture and apply to mesh
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.flipY = false;
+      
+      label2.material = new THREE.MeshStandardMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
+        metalness: 0.1,
+        roughness: 0.9
+      });
+      label2.material.needsUpdate = true;
     }
     
     // Restore context
@@ -276,7 +227,94 @@ function SingleCandleModel({ prayerText = '', encryptedText = '', isTyping = fal
     label2.material.roughness = 0.9;
     
     console.log('Texture applied to Label2:', texture, label2);
-  }, [prayerText, encryptedText, clonedScene]);
+  }, [candleData, clonedScene]);
+  
+  // Update Label1 with message
+  useEffect(() => {
+    // Get the label1 mesh from the cloned scene
+    const label1 = clonedScene?.userData?.label1Mesh;
+    
+    console.log('Updating Label1 with candle message:', candleData);
+    
+    if (!label1) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const context = canvas.getContext('2d');
+    
+    // White background
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add border
+    context.strokeStyle = '#e0e0e0';
+    context.lineWidth = 2;
+    context.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+    
+    // Add heading
+    context.fillStyle = '#000000';
+    context.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText('Prayer to Our Lady', canvas.width / 2, 80);
+    context.fillText('of Perpetual Profit', canvas.width / 2, 130);
+    
+    // Add divider
+    context.strokeStyle = '#333333';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(100, 165);
+    context.lineTo(canvas.width - 100, 165);
+    context.stroke();
+    
+    // Display message - check if candleData exists
+    const message = candleData?.message || 'May your gains be eternal and your losses forgotten.';
+    context.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+    context.fillStyle = '#000000';
+    
+    // Word wrap
+    const words = message.split(' ');
+    let line = '';
+    let y = 250;
+    const maxWidth = canvas.width - 200;
+    
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = context.measureText(testLine);
+      
+      if (metrics.width > maxWidth && n > 0) {
+        context.fillText(line, canvas.width / 2, y);
+        line = words[n] + ' ';
+        y += 50;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) {
+      context.fillText(line, canvas.width / 2, y);
+    }
+    
+    // Create and apply texture
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.repeat.set(-1, -1);  // Flip both X and Y for Label1
+    texture.offset.set(1, 1);  // Adjust offset after flipping
+    texture.flipY = false;
+    
+    // Apply directly to label1
+    label1.material = new THREE.MeshStandardMaterial({
+      map: texture,
+      side: THREE.DoubleSide,
+      emissive: new THREE.Color(0xffffff),
+      emissiveIntensity: 0.05,
+      emissiveMap: texture,
+      metalness: 0,
+      roughness: 0.9
+    });
+    label1.material.needsUpdate = true;
+  }, [candleData, clonedScene]);
   
   // Play animations if they exist
   useEffect(() => {
@@ -286,59 +324,13 @@ function SingleCandleModel({ prayerText = '', encryptedText = '', isTyping = fal
     }
   }, [actions]);
   
-  // Handle delay after encryption completes
-  useEffect(() => {
-    if (!isEncrypting && delayRotation) {
-      // Encryption just finished, keep rotation paused
-      // This state is already set, no action needed
-    } else if (isEncrypting && !delayRotation) {
-      // Encryption started, set delay flag
-      setDelayRotation(true);
-      
-      // Clear any existing timer
-      if (delayTimerRef.current) {
-        clearTimeout(delayTimerRef.current);
-      }
-    } else if (!isEncrypting && !isTyping && delayRotation) {
-      // Encryption finished and not typing, start delay timer
-      if (delayTimerRef.current) {
-        clearTimeout(delayTimerRef.current);
-      }
-      
-      delayTimerRef.current = setTimeout(() => {
-        setDelayRotation(false);
-      }, 5000); // 5 second delay
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      if (delayTimerRef.current) {
-        clearTimeout(delayTimerRef.current);
-      }
-    };
-  }, [isEncrypting, isTyping, delayRotation]);
   
-  // Handle rotation based on typing, encrypting, and delay state
+  // Simple auto-rotation to show all sides of the candle
   useFrame((state, delta) => {
     if (!modelRef.current) return;
     
-    if (isTyping || isEncrypting || delayRotation) {
-      // When typing, encrypting, or in delay period, rotate to show Label2 (text label)
-      // Label2 is typically on the back, so rotate to Math.PI (180 degrees)
-      // You can adjust this value through trial and error
-      targetRotationRef.current = 0; // Start with 180 degrees, adjust as needed
-      
-      // Smooth transition to target rotation
-      const rotationDiff = targetRotationRef.current - currentRotationRef.current;
-      currentRotationRef.current += rotationDiff * delta * 3; // Smooth lerp
-      modelRef.current.rotation.y = currentRotationRef.current;
-    } else {
-      // When not typing, encrypting, or in delay, continue auto-rotation from current position
-      currentRotationRef.current += delta * 0.5;
-      modelRef.current.rotation.y = currentRotationRef.current;
-      // Update target to match current for smooth transition back
-      targetRotationRef.current = currentRotationRef.current;
-    }
+    // Continuous slow rotation
+    modelRef.current.rotation.y += delta * 0.3;
   });
   
   return (
@@ -354,186 +346,6 @@ function SingleCandleModel({ prayerText = '', encryptedText = '', isTyping = fal
 // Preload the candle model
 useGLTF.preload('/models/singleCandleAnimatedFlame.glb');
 
-// EncryptionDemo component for the prayer encryption feature
-function EncryptionDemo({ onPrayerChange, onEncryptedChange, onTypingChange, onEncryptingChange, isMobile = false, onToggle, buttonRef }) {
-  // Predefined sample prayer for demo
-  const samplePrayer = "Oh Lady of Limit Orders, forgive me for buying the top again. Grant me the humility to average down, and the courage to tell no one.";
-  
-  const [displayText, setDisplayText] = useState(samplePrayer);
-  const [isEncrypted, setIsEncrypted] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [encryptionKey, setEncryptionKey] = useState("pineapple");
-  const [usedKey, setUsedKey] = useState("");
-  const [showKeyInput, setShowKeyInput] = useState(true);
-  
-  // Update parent component based on state
-  useEffect(() => {
-    if (!isEncrypted && !isAnimating) {
-      // Show original prayer
-      if (onPrayerChange) onPrayerChange(samplePrayer);
-      if (onEncryptedChange) onEncryptedChange('');
-    } else if (isEncrypted && !isAnimating) {
-      // Show encrypted text or error message
-      if (onPrayerChange) onPrayerChange('');
-      if (onEncryptedChange) onEncryptedChange(displayText);
-    } else if (isEncrypted && isAnimating && displayText.includes("Error:")) {
-      // Show error message during animation
-      if (onPrayerChange) onPrayerChange('');
-      if (onEncryptedChange) onEncryptedChange(displayText);
-    }
-  }, [isEncrypted, isAnimating, displayText, samplePrayer, onPrayerChange, onEncryptedChange]);
-  
-  // Update parent component when animating
-  useEffect(() => {
-    if (onEncryptingChange) {
-      onEncryptingChange(isAnimating);
-    }
-  }, [isAnimating, onEncryptingChange]);
-  
-  // Expose button state to parent
-  useEffect(() => {
-    if (onToggle) {
-      onToggle({ handleToggle, isAnimating, isEncrypted });
-    }
-  }, [isAnimating, isEncrypted, encryptionKey]);
-  
-  const handleToggle = async () => {
-    // Check if key is present
-    if (!encryptionKey) {
-      // Show error briefly if no key
-      setDisplayText("⚠️ KEY REQUIRED ⚠️");
-      setTimeout(() => {
-        setDisplayText(isEncrypted ? displayText : samplePrayer);
-      }, 1500);
-      return;
-    }
-    
-    setIsAnimating(true);
-    
-    // Show scrambling animation
-    let scrambleInterval;
-    let iterations = 0;
-    const maxIterations = 20;
-    
-    scrambleInterval = setInterval(async () => {
-      setDisplayText(generateScrambledDisplay(samplePrayer.length));
-      iterations++;
-      
-      if (iterations >= maxIterations) {
-        clearInterval(scrambleInterval);
-        
-        if (!isEncrypted) {
-          // Encrypt with real encryption
-          try {
-            // Require a key for encryption
-            if (!encryptionKey) {
-              setDisplayText("⚠️ KEY REQUIRED ⚠️");
-              setTimeout(() => {
-                setDisplayText(samplePrayer);
-                setIsAnimating(false);
-              }, 1500);
-              return;
-            }
-            
-            const keyToUse = encryptionKey;
-            const encrypted = await encryptMessage(samplePrayer, keyToUse);
-            
-            // Store the encrypted data but show a visual representation
-            const visualEncrypted = generateScrambledDisplay(Math.min(samplePrayer.length * 1.5, 120), 
-              keyToUse.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0));
-            
-            setDisplayText(visualEncrypted);
-            setIsEncrypted(true);
-            setUsedKey(keyToUse);
-            setShowKeyInput(true);  // Keep key input visible
-            
-            // Store actual encrypted data for real decryption
-            window.encryptedData = encrypted;
-            setIsAnimating(false);
-          } catch (error) {
-            console.error('Encryption failed:', error);
-            setDisplayText("⚠️ ENCRYPTION FAILED ⚠️");
-            setIsAnimating(false);
-            setTimeout(() => {
-              setDisplayText(samplePrayer);
-            }, 1500);
-            return;
-          }
-        } else {
-          // Decrypt with real decryption
-          const keyToUse = encryptionKey || "default-key-2024";
-          
-          if (window.encryptedData) {
-            const result = await decryptMessage(
-              window.encryptedData.encrypted,
-              window.encryptedData.salt,
-              window.encryptedData.iv,
-              keyToUse
-            );
-            
-            if (result.success) {
-              setDisplayText(result.message);
-              setIsEncrypted(false);
-              setUsedKey("");
-              // Keep the encryption key so user can re-encrypt with same key
-              setShowKeyInput(true);
-              window.encryptedData = null;
-              setIsAnimating(false);
-            } else {
-              // Wrong key or corrupted data - show user-friendly error
-              // Store the encrypted visual for restoration
-              const encryptedVisual = displayText;
-              
-              // Show user-friendly error message
-              const errorMsg = "Error: Invalid encrypted text or wrong key";
-              setDisplayText(errorMsg);
-              
-              // Force immediate update to parent
-              if (onEncryptedChange) onEncryptedChange(errorMsg);
-              
-              // Keep encrypted state but stop animation
-              setIsAnimating(false);
-              
-              setTimeout(() => {
-                // Restore the encrypted visual
-                setDisplayText(encryptedVisual);
-                if (onEncryptedChange) onEncryptedChange(encryptedVisual);
-                setShowKeyInput(true);
-              }, 2500);
-              return;
-            }
-          } else {
-            // No encrypted data stored
-            setDisplayText("No encrypted data!");
-            setIsAnimating(false);
-            return;
-          }
-        }
-      }
-    }, 50);
-  };
-  
-  // Store button element in ref if provided
-  useEffect(() => {
-    if (buttonRef && buttonRef.current) {
-      buttonRef.current = {
-        handleToggle,
-        isAnimating,
-        isEncrypted
-      };
-    }
-  }, [buttonRef, handleToggle, isAnimating, isEncrypted]);
-  
-  return (
-    <div style={{ 
-      position: 'relative',
-      width: '100%' // Ensure full width
-    }}>
-      {/* Button has been moved to parent component */}
-    </div>
-  );
-}
-
 export default function HomePage() {
   const [fontLoaded, setFontLoaded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
@@ -543,14 +355,45 @@ export default function HomePage() {
   const [viewportHeight, setViewportHeight] = useState(0);
   const coinRef = useRef(null);
   
-  // Shared state for prayer encryption demo
-  const [currentPrayer, setCurrentPrayer] = useState('');
-  const [currentEncrypted, setCurrentEncrypted] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [isEncrypting, setIsEncrypting] = useState(false);
+  // State for featured candle
+  const [featuredCandle, setFeaturedCandle] = useState(null);
+  const [isLoadingCandle, setIsLoadingCandle] = useState(false);
   
-  // State for encryption button
-  const [encryptionButton, setEncryptionButton] = useState(null);
+  // Function to fetch a random candle from Firestore
+  const fetchRandomCandle = async () => {
+    setIsLoadingCandle(true);
+    try {
+      // Get all candles (limited to 100 for performance)
+      const q = query(collection(db, 'results'), limit(100));
+      const snapshot = await getDocs(q);
+      
+      if (!snapshot.empty) {
+        const candles = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          // Only include candles with images
+          if (data.image) {
+            candles.push({ id: doc.id, ...data });
+          }
+        });
+        
+        if (candles.length > 0) {
+          // Select a random candle
+          const randomIndex = Math.floor(Math.random() * candles.length);
+          setFeaturedCandle(candles[randomIndex]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching random candle:', error);
+    } finally {
+      setIsLoadingCandle(false);
+    }
+  };
+  
+  // Fetch initial random candle on mount
+  useEffect(() => {
+    fetchRandomCandle();
+  }, []);
   
   // Get user from Clerk
   const { user, isSignedIn } = useUser();
@@ -809,40 +652,65 @@ export default function HomePage() {
   const carouselSlides = [
     {
       id: 1,
-      backgroundImage: '/sacred.png',
-      image: '/sacred.png',
+      backgroundImage: '/images/face.png',
+      image: '/images/face.png',
       number: '01',
       title: 'Sacred Spaces',
       description: 'Enter the divine realm of perpetual profit.'
     },
     {
       id: 2,
-      backgroundImage: '/vvv.jpg',
-      image: '/vvv.jpg',
+      backgroundImage: '/images/deejay.jpg',
+      image: '/images/deejay.jpg',
       number: '02',
       title: 'Digital Visions',
       description: 'Where technology meets spiritual transcendence.'
     },
     {
       id: 3,
-      backgroundImage: '/nosferatu.png',
-      image: '/nosferatu.png',
+      backgroundImage: '/images/rl80vsMonster.png',
+      image: '/images/rl80vsMonster.png',
       number: '03',
       title: 'Gothic Dreams',
       description: 'Ancient mysteries in modern manifestation.'
     },
     {
       id: 4,
-      backgroundImage: '/fountain.png',
-      image: '/fountain.png',
+      backgroundImage: '/images/bullrider.jpg',
+      image: '/images/bullrider.jpg',
       number: '04',
       title: 'Eternal Flow',
       description: 'The fountain of perpetual abundance.'
     },
     {
       id: 5,
-      backgroundImage: '/vsClown.jpg',
-      image: '/vsClown.jpg',
+      backgroundImage: '/images/lowrider.jpg',
+      image: '/images/lowrider.jpg',
+      number: '05',
+      title: 'Cosmic Jest',
+      description: 'Where humor meets the divine comedy.'
+    },
+    {
+      id: 6,
+      backgroundImage: '/images/mosaic.jpg',
+      image: '/images/mosaic.jpg',
+      number: '05',
+      title: 'Cosmic Jest',
+      description: 'Where humor meets the divine comedy.'
+    },
+    
+    {
+      id: 7,
+      backgroundImage: '/images/teknoir.jpg',
+      image: '/images/teknoir.jpg',
+      number: '05',
+      title: 'Cosmic Jest',
+      description: 'Where humor meets the divine comedy.'
+    },
+    {
+      id: 8,
+      backgroundImage: '/images/toast.jpg',
+      image: '/images/toast.jpg',
       number: '05',
       title: 'Cosmic Jest',
       description: 'Where humor meets the divine comedy.'
@@ -880,6 +748,65 @@ export default function HomePage() {
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+          0% {
+            transform: translateX(-50%) scale(1);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+          }
+          50% {
+            transform: translateX(-50%) scale(1.05);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
+          }
+          100% {
+            transform: translateX(-50%) scale(1);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+          }
+        }
+        
+        .featured-banner {
+          position: absolute;
+          left: 50%;
+          display: block;
+          margin: 0 -110px;
+          width: 220px;
+          height: 40px;
+          border: 1px solid #8a6701;
+          font: bold 18px/40px 'Cyber', monospace;
+          text-align: center;
+          color: #2a1f0a;
+          background: linear-gradient(135deg, #c48901 0%, #d4af37 100%);
+          border-radius: 4px;
+          box-shadow: 0 0 30px rgba(0, 0, 0, 0.15) inset,
+                      0 6px 10px rgba(0, 0, 0, 0.3);
+          text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+          letter-spacing: 0.1em;
+        }
+
+        .featured-banner::before,
+        .featured-banner::after {
+          content: '';
+          position: absolute;
+          z-index: -1;
+          left: -40px;
+          top: 16px;
+          display: block;
+          width: 24px;
+          height: 0px;
+          border: 20px solid #c48901;
+          border-right: 12px solid #a57201;
+          border-bottom-color: #b57f01;
+          border-left-color: transparent;
+          transform: rotate(-5deg);
+        }
+
+        .featured-banner::after {
+          left: auto;
+          right: -40px;
+          border-left: 12px solid #a57201;
+          border-right: 20px solid transparent;
+          transform: rotate(5deg);
         }
         
         .spinning-record {
@@ -1067,62 +994,45 @@ export default function HomePage() {
                 rotateSpeed={0.5}
               />
               <Suspense fallback={null}>
-                <SingleCandleModel 
-                  prayerText={currentPrayer} 
-                  encryptedText={currentEncrypted} 
-                  isTyping={isTyping} 
-                  isEncrypting={isEncrypting} 
-                />
+                <SingleCandleModel candleData={featuredCandle} />
               </Suspense>
             </Canvas>
             
-            {/* Encrypt/Decrypt Button - Positioned below the candle */}
-            <div style={{
-              position: 'absolute',
-              bottom: '5%',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 10,
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
-              {encryptionButton && (
-                <button
-                  onClick={encryptionButton.handleToggle}
-                  disabled={encryptionButton.isAnimating}
-                  style={{
-                    fontSize: '0.85rem',
-                    padding: '0.5rem 0.5rem',
-                    backgroundColor: encryptionButton.isEncrypted ? 'rgba(212, 175, 55, 0.1)' : 'rgba(0, 255, 0, 0.1)',
-                    border: encryptionButton.isEncrypted ? '2px solid #d4af37' : '2px solid #00ff00',
-                    borderRadius: '20px',
-                    color: encryptionButton.isEncrypted ? '#d4af37' : '#00ff00',
-                    fontFamily: 'Cyber, monospace',
-                    fontWeight: 'bold',
-                    cursor: encryptionButton.isAnimating ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: encryptionButton.isEncrypted 
-                      ? '0 0 10px rgba(212, 175, 55, 0.3)' 
-                      : '0 0 10px rgba(0, 255, 0, 0.3)',
-                    textShadow: encryptionButton.isEncrypted
-                      ? '0 0 3px rgba(212, 175, 55, 0.5)'
-                      : '0 0 3px rgba(0, 255, 0, 0.5)',
-                    opacity: encryptionButton.isAnimating ? 0.7 : 1
-                  }}
-                >
-                  {encryptionButton.isAnimating ? 'Processing...' : 
-                   encryptionButton.isEncrypted ? 'Decrypt' : 'Encrypt it!'}
-                </button>
-              )}
-            </div>
+            {/* Refresh Button for Random Candle */}
+            <button
+              onClick={fetchRandomCandle}
+              disabled={isLoadingCandle}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                border: '2px solid #d4af37',
+                color: '#d4af37',
+                cursor: isLoadingCandle ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px',
+                transition: 'all 0.3s ease',
+                opacity: isLoadingCandle ? 0.5 : 1,
+                zIndex: 10
+              }}
+              title="Load new random candle"
+            >
+              {isLoadingCandle ? '⌛' : '🔄'}
+            </button>
             
             {/* Shadow effect underneath the candle */}
             <div style={{
               position: 'absolute',
               bottom: '15%',
               left: '50%',
-              transform: 'translateX(-50%)',
-              width: '60%',
+              // transform: 'translateX(-50%)',
+              width: '50%',
               height: '20px',
               background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, transparent 70%)',
               filter: 'blur(8px)',
@@ -1130,10 +1040,25 @@ export default function HomePage() {
             }} />
           </div>
           
+          {/* Featured Candle Caption - Below Candle */}
+          <div style={{
+            position: 'relative',
+            height: '50px',
+            marginTop: '-1rem',
+            marginBottom: '1rem'
+          }}>
+            <div className="featured-banner" style={{
+              bottom: '0'
+            }}>
+              ✨ Featured Candle ✨
+            </div>
+          </div>
+          
           {/* Encryption Section */}
           <div style={{
             textAlign: 'center',
-            padding: '0 0.5rem'
+            padding: '0 0.5rem',
+            marginTop: '-2rem',
           }}>
             <h5 style={{
               fontSize: '2rem',
@@ -1143,7 +1068,7 @@ export default function HomePage() {
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              gap: '0.3rem'
+              // gap: '0.3rem'
             }}>
               <span style={{ 
                 minWidth: 'fit-content',
@@ -1160,7 +1085,7 @@ export default function HomePage() {
                 <span style={{ 
                   color: '#00ff00',
                   textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
-                }}>Your:</span>
+                }}>Your</span>
               </span>
               <span className="scramble-text-mobile" style={{ 
                 minWidth: '250px', 
@@ -1172,7 +1097,7 @@ export default function HomePage() {
             
             <p style={{
               fontSize: '0.95rem',
-              lineHeight: 1.5,
+              lineHeight: 1.1,
               marginBottom: '1rem',
               marginTop: '0.5rem',
               color: '#ffffff',
@@ -1186,7 +1111,7 @@ export default function HomePage() {
               whiteSpace: 'normal',
               wordWrap: 'break-word'
             }}>
-              Send a message to{' '}
+              Devote a virtual candle for{' '}
               <span style={{
                 fontFamily: 'UnifrakturCook, serif',
                 fontWeight: 'bold',
@@ -1195,7 +1120,7 @@ export default function HomePage() {
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
                 display: 'inline'
               }}>Our Lady of Perpetual Profit</span>
-              {' '}through the blockchain! 
+              {' '}on the blockchain! 
               {/* Top token burners are inducted into <span style={{
                 fontFamily: 'UnifrakturCook, serif',
                 fontWeight: 'bold',
@@ -1205,16 +1130,22 @@ export default function HomePage() {
                 display: 'inline'
               }}>The Illumin80 Soci80</span>. */}
             </p>
-            
-            {/* Mobile Encryption Demo */}
-            <EncryptionDemo 
-              onPrayerChange={setCurrentPrayer}
-              onEncryptedChange={setCurrentEncrypted}
-              onTypingChange={setIsTyping}
-              onEncryptingChange={setIsEncrypting}
-              onToggle={setEncryptionButton}
-              isMobile={true}
-            />
+            <p style={{
+              fontSize: '0.65rem',
+              lineHeight: 1,
+              marginBottom: '1rem',
+              marginTop: '0.5rem',
+              color: '#ffffff',
+              opacity: 0.9,
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              letterSpacing: '0.02em',
+              padding: '0 1rem',
+              display: 'block',
+              width: '100%',
+              whiteSpace: 'normal',
+              wordWrap: 'break-word'
+            }}></p>
             
             {/* Call to Action - Mobile */}
             <div style={{
@@ -1242,7 +1173,7 @@ export default function HomePage() {
                   border: '2px solid #d4af37',
                   borderRadius: '25px',
                   color: '#d4af37',
-                  // fontSize: '1.1rem',
+                  fontSize: '1.1rem',
                   fontFamily: 'Cyber, monospace',
                   fontWeight: 'bold',
                   textDecoration: 'none',
@@ -1251,42 +1182,47 @@ export default function HomePage() {
                   textShadow: '0 0 5px rgba(212, 175, 55, 0.5)'
                 }}
               >
-                <span style={{
-                  display: 'inline-block',
-                  position: 'relative',
-                  width: '15px',
-                  height: '30px',
-                  verticalAlign: 'middle'
-                }}>
-                  <span style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: '0',
-                    width: '2px',
-                    height: '8px',
-                    backgroundColor: '#00ff00',
-                    transform: 'translateX(-50%)'
-                  }}></span>
-                  <span style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: '8px',
-                    width: '10px',
-                    height: '15px',
-                    backgroundColor: '#00ff00',
-                    transform: 'translateX(-50%)'
-                  }}></span>
-                  <span style={{
-                    position: 'absolute',
-                    left: '50%',
-                    bottom: '0',
-                    width: '2px',
-                    height: '7px',
-                    backgroundColor: '#00ff00',
-                    transform: 'translateX(-50%)'
-                  }}></span>
-                </span>
-                <span>Devote A Candle</span>
+              <span style={{
+          display: 'inline-block',
+          position: 'relative',
+          width: '20px',
+          height: '40px',
+          marginLeft: '15px',
+          marginRight: '15px',
+          verticalAlign: 'middle'
+        }}>
+          {/* Top wick */}
+          <span style={{
+            position: 'absolute',
+            left: '50%',
+            top: '0',
+            width: '2px',
+            height: '10px',
+            backgroundColor: '#00ff00',
+            transform: 'translateX(-50%)'
+          }}></span>
+          {/* Candle body */}
+          <span style={{
+            position: 'absolute',
+            left: '50%',
+            top: '10px',
+            width: '12px',
+            height: '20px',
+            backgroundColor: '#00ff00',
+            transform: 'translateX(-50%)'
+          }}></span>
+          {/* Bottom wick */}
+          <span style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: '0',
+            width: '2px',
+            height: '10px',
+            backgroundColor: '#00ff00',
+            transform: 'translateX(-50%)'
+          }}></span>
+        </span>
+                <span>Get Lit With RL80</span>
               </Link>
             </div>
           </div>
@@ -1298,36 +1234,135 @@ export default function HomePage() {
         <TextMarquee />
       )}
       
+      {/* Mobile Numerology Component */}
+      {isClient && isMobileView && (
+        <div style={{
+          marginTop: '2rem',
+          marginBottom: '2rem',
+          padding: '1.5rem',
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '12px',
+          border: '1px solid rgba(212, 175, 55, 0.2)'
+        }}>
+          <Numerology />
+          
+          {/* Caption and explanatory text for 8-ball */}
+          <div style={{
+            marginTop: '1.5rem',
+            textAlign: 'center',
+            color: '#ffffff'
+          }}>
+            <h3 style={{
+              color: '#d4af37',
+              fontSize: '1.8rem',
+              marginBottom: '0.5rem',
+              fontFamily: 'UnifrakturCook, serif',
+              textShadow: '0 0 10px rgba(212, 175, 55, 0.5)'
+            }}>
+              The Oracle of RL80
+            </h3>
+            <p style={{
+              fontSize: '1rem',
+              lineHeight: 1.6,
+              marginBottom: '0.5rem',
+              opacity: 0.9,
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              letterSpacing: '0.02em',
+              padding: '0 1rem'
+            }}>
+              Consult the mystical oracle for guidance on your path to perpetual profit. 
+              Ask your burning questions about investments, life choices, or divine timing.
+            </p>
+            <p style={{
+              fontSize: '0.9rem',
+              fontStyle: 'italic',
+              opacity: 0.7,
+              color: '#d4af37'
+            }}>
+              Shake or tap to reveal your destiny
+            </p>
+          </div>
+        </div>
+      )}
+      
       {/* Mobile Coin Component - repositioned to flow after candle */}
       {isClient && isMobileView && (
-        <div style={{ 
-          position: "relative",
+        <div style={{
           marginTop: "2rem",
           marginBottom: "2rem",
-          display: "flex",
-          justifyContent: "center"
+          padding: '1.5rem',
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '12px',
+          border: '1px solid rgba(212, 175, 55, 0.2)'
         }}>
-          <div
-            ref={isMobileView ? coinRef : null}
-            style={{ 
-              position: "relative", 
-              width: "25rem", 
-              height: "25rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "visible"
-            }}
-          >
-            <Link href="#" className="coin-link" style={{ 
-              position: "relative", 
-              zIndex: 10,
-              display: "block",
-              width: "9rem",
-              height: "9rem"
+          <div style={{ 
+            position: "relative",
+            display: "flex",
+            justifyContent: "center"
+          }}>
+            <div
+              ref={isMobileView ? coinRef : null}
+              style={{ 
+                position: "relative", 
+                width: "25rem", 
+                height: "25rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "visible"
+              }}
+            >
+              <Link href="#" className="coin-link" style={{ 
+                position: "relative", 
+                zIndex: 10,
+                display: "block",
+                width: "9rem",
+                height: "9rem"
+              }}>
+                <Coin />
+              </Link>
+            </div>
+          </div>
+          
+          {/* Caption and explanatory text for Coin */}
+          <div style={{
+            marginTop: '1.5rem',
+            textAlign: 'center',
+            color: '#ffffff'
+          }}>
+            <h3 style={{
+              color: '#d4af37',
+              fontSize: '1.8rem',
+              marginBottom: '0.5rem',
+              fontFamily: 'Cyber, monospace',
+              textShadow: '0 0 10px rgba(212, 175, 55, 0.5)'
             }}>
-              <Coin />
-            </Link>
+              Sacred Token of Prosper80
+            </h3>
+            <p style={{
+              fontSize: '1rem',
+              lineHeight: 1.6,
+              marginBottom: '0.5rem',
+              opacity: 0.9,
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              letterSpacing: '0.02em',
+              padding: '0 1rem'
+            }}>
+              The golden coin of infinite abundance spins eternally, channeling cosmic 
+              energy and divine fortune to all who witness its radiant glow.
+            </p>
+            <p style={{
+              fontSize: '0.9rem',
+              fontStyle: 'italic',
+              opacity: 0.7,
+              color: '#d4af37'
+            }}>
+              Click to flip between realms of possibility
+            </p>
           </div>
         </div>
       )}
@@ -1401,6 +1436,29 @@ export default function HomePage() {
                 }}>
                   <Coin />
                 </Link>
+                
+                {/* Click to Buy callout */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '5rem',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  backgroundColor: '#d4af37',
+                  color: '#000',
+                  padding: '0.5rem 1.2rem',
+                  borderRadius: '25px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  fontFamily: 'Cyber, monospace',
+                  boxShadow: '0 0 20px rgba(212, 175, 55, 0.6)',
+                  whiteSpace: 'nowrap',
+                  zIndex: 15,
+                  animation: 'pulse 2s infinite',
+                  cursor: 'pointer',
+                  pointerEvents: 'none'
+                }}>
+                  ↑ Click to Buy! ↑
+                </div>
               </div>
             </div>
           </div>
@@ -1430,7 +1488,7 @@ export default function HomePage() {
             }}>
               Experience the convergence of ancient wisdom and modern technology. 
               <span style={{
-                fontFamily: 'UnifrakturCook, serif',
+                fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
                 fontWeight: 'bold',
                 fontSize: '1.1em',
                 color: '#d4af37',
@@ -1461,7 +1519,9 @@ export default function HomePage() {
             <div style={{
               position: "relative",
               height: "35rem",
-              overflow: "visible"
+              overflow: "visible",
+              display: 'flex',
+              flexDirection: 'column'
             }}>
               <Canvas
                 camera={{ position: [0, 2, 8], fov: 45 }}  // Raised camera Y position and increased FOV
@@ -1485,31 +1545,48 @@ export default function HomePage() {
                   rotateSpeed={0.5}      // Slower rotation for better control
                 />
                 <Suspense fallback={null}>
-                  <SingleCandleModel prayerText={currentPrayer} encryptedText={currentEncrypted} isTyping={isTyping} isEncrypting={isEncrypting} />
+                  <SingleCandleModel candleData={featuredCandle} />
                 </Suspense>
               </Canvas>
               
-              {/* Encrypt/Decrypt Button - Positioned below the candle */}
-              <div style={{
-                position: 'absolute',
-                bottom: '10%',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 10,
-                display: 'flex',
-                justifyContent: 'center'
-              }}>
-                {encryptionButton && (
-                  <button
-                    onClick={encryptionButton.handleToggle}
-                    disabled={encryptionButton.isAnimating}
-                    className={`arrow-button ${encryptionButton.isAnimating ? 'processing' : ''} ${encryptionButton.isEncrypted && !encryptionButton.isAnimating ? 'encrypted' : ''}`}
-                  >
-                    {encryptionButton.isAnimating ? 'Processing...' : 
-                     encryptionButton.isEncrypted ? 'Decrypt' : 'Encrypt it!'}
-                  </button>
-                )}
-              </div>
+              {/* Refresh Button for Random Candle */}
+              <button
+                onClick={fetchRandomCandle}
+                disabled={isLoadingCandle}
+                style={{
+                  position: 'absolute',
+                  top: '15px',
+                  right: '15px',
+                  width: '45px',
+                  height: '45px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                  border: '2px solid #d4af37',
+                  color: '#d4af37',
+                  cursor: isLoadingCandle ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '24px',
+                  transition: 'all 0.3s ease',
+                  opacity: isLoadingCandle ? 0.5 : 1,
+                  zIndex: 10,
+                  boxShadow: '0 0 10px rgba(212, 175, 55, 0.3)'
+                }}
+                title="Load new random candle"
+                onMouseEnter={(e) => {
+                  if (!isLoadingCandle) {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.5)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 10px rgba(212, 175, 55, 0.3)';
+                }}
+              >
+                {isLoadingCandle ? '⌛' : '🔄'}
+              </button>
               
               {/* Shadow effect underneath the candle */}
               <div style={{
@@ -1523,6 +1600,14 @@ export default function HomePage() {
                 filter: 'blur(8px)',
                 zIndex: -1
               }} />
+              
+              {/* Featured Candle Caption - Below Candle */}
+              <div className="featured-banner" style={{
+                bottom: '30px',
+                // transform: 'translateX(-50%)'
+              }}>
+                ✨ Featured Candle ✨
+              </div>
             </div>
             
             {/* Right Column - Encryption Demo */}
@@ -1584,7 +1669,7 @@ export default function HomePage() {
                   <span style={{ 
                     color: '#00ff00',
                     textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
-                  }}>Your:</span>
+                  }}>Your</span>
                 </span>
                 <span className="scramble-text" style={{ 
                   minWidth: '350px', 
@@ -1603,13 +1688,13 @@ export default function HomePage() {
                 fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem',
                 textAlign: 'center'
               }}>
-                Devote a virtual green candle to <span style={{
+                Prime your portfolio for prosper80 and devote a virtual green candle to <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit</span> through the blockchain!
+                }}>Our Lady of Perpetual Profit</span> - saved for etern80 on the blockchain!
                  {/* Top burners are inducted into  <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
@@ -1620,13 +1705,6 @@ export default function HomePage() {
                 }}>The Illumin80</span>. */}
               </p>
               
-              <EncryptionDemo 
-                onPrayerChange={setCurrentPrayer}
-                onEncryptedChange={setCurrentEncrypted}
-                onTypingChange={setIsTyping}
-                onEncryptingChange={setIsEncrypting}
-                onToggle={setEncryptionButton}
-              />
               
               {/* Call to Action - Create Candle */}
               <div style={{
@@ -1673,7 +1751,7 @@ export default function HomePage() {
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                 <span style={{
+                  <span style={{
           display: 'inline-block',
           position: 'relative',
           width: '20px',
@@ -1713,7 +1791,7 @@ export default function HomePage() {
             transform: 'translateX(-50%)'
           }}></span>
         </span>
-                  <span>Create Your Candle</span>
+                  <span>Get Lit With RL80</span>
                 </Link>
               </div>
             </div>
@@ -1722,6 +1800,100 @@ export default function HomePage() {
           {/* Text Marquee Component */}
           <TextMarquee />
           
+          {/* Desktop Numerology Section - 2 Column Layout */}
+          <div style={{
+            marginTop: '4rem',
+            marginBottom: '4rem',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '3rem',
+            alignItems: 'center',
+            padding: '2rem',
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '12px',
+            border: '1px solid rgba(212, 175, 55, 0.2)'
+          }}>
+            {/* Left Column - Text Content */}
+            <div style={{
+              padding: '0 2rem',
+              color: '#ffffff'
+            }}>
+              <h2 style={{
+                color: '#d4af37',
+                fontSize: '3rem',
+                marginBottom: '1rem',
+                fontFamily: 'UnifrakturCook, serif',
+                textAlign: 'center',
+                textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
+                lineHeight: 1.2
+              }}>
+                The Oracle of RL80
+              </h2>
+              <p style={{
+                fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '1.5rem',
+                lineHeight: 1.6,
+                marginBottom: '1.5rem',
+                opacity: 0.9,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                fontWeight: 400,
+                letterSpacing: '0.02em'
+              }}>
+                Peer into the mystical realm where ancient wisdom meets iconic modernity. 
+                Our quantum-entangled oracle channels divine guidance and market analysis.
+              </p>
+              <p style={{
+                fontSize: isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem',
+                lineHeight: 1.5,
+                opacity: 0.8,
+                fontStyle: 'italic',
+                color: '#d4af37'
+              }}>
+                Ask your question, shake the sphere of destiny, and receive wisdom from 
+                <span style={{
+                  fontFamily: 'UnifrakturCook, serif',
+                  fontWeight: 'bold',
+                  fontSize: '1.2em',
+                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+                  display: 'inline-block',
+                  marginLeft: '0.3rem'
+                }}>Our Lady of Perpetual Profit</span>
+              </p>
+              <div style={{
+                marginTop: '2rem',
+                padding: '1rem',
+                background: 'rgba(212, 175, 55, 0.1)',
+                borderLeft: '3px solid #d4af37',
+                borderRadius: '5px'
+              }}>
+                <p style={{
+                  fontSize: '1rem',
+                  fontFamily: 'Cyber, monospace',
+                  color: '#00ff00',
+                  textShadow: '0 0 5px #00ff00',
+                  margin: 0
+                }}>
+                  ✨ Tap or click to reveal your fortune ✨
+                </p>
+              </div>
+            </div>
+            
+            {/* Right Column - Numerology Component */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '500px'
+            }}>
+              <div style={{
+                width: '100%',
+                maxWidth: '400px',
+                height: '400px'
+              }}>
+                <Numerology />
+              </div>
+            </div>
+          </div> 
           {/* Rotating Text Component */}
           <div style={{
             position: "relative",
@@ -1751,7 +1923,7 @@ export default function HomePage() {
           </div>
         </div>
       )}
-      
+
       
       {/* Rotating Text Component - only shown on mobile below the coin */}
       {isClient && isMobileView && (
@@ -1825,6 +1997,100 @@ export default function HomePage() {
           <span style={{ marginLeft: "3rem" }}>Profit </span>
         </h1>
       )}
+      
+
+      
+      {/* Footer */}
+      <footer style={{
+        marginTop: '4rem',
+        padding: '3rem 2rem 2rem',
+        background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.8))',
+        borderTop: '1px solid rgba(212, 175, 55, 0.3)',
+        color: '#ffffff',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto'
+        }}>
+          {/* Footer Title */}
+          <h3 style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontSize: '2.5rem',
+            color: '#d4af37',
+            marginBottom: '1rem',
+            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)'
+          }}>
+            Our Lady of Perpetual Profit
+          </h3>
+          
+          {/* Divider */}
+          <div style={{
+            width: '100px',
+            height: '2px',
+            background: 'linear-gradient(90deg, transparent, #d4af37, transparent)',
+            margin: '1.5rem auto'
+          }} />
+          
+          {/* Contact Link */}
+          <div style={{
+            marginBottom: '2rem'
+          }}>
+            <Link href="/contact" style={{
+              color: '#d4af37',
+              textDecoration: 'none',
+              fontSize: '1.2rem',
+              fontFamily: 'Cyber, monospace',
+              transition: 'all 0.3s ease',
+              textShadow: '0 0 5px rgba(212, 175, 55, 0.3)',
+              display: 'inline-block',
+              padding: '0.5rem 1.5rem',
+              border: '1px solid rgba(212, 175, 55, 0.5)',
+              borderRadius: '20px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+              e.currentTarget.style.textShadow = '0 0 10px rgba(212, 175, 55, 0.7)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.textShadow = '0 0 5px rgba(212, 175, 55, 0.3)';
+            }}>
+              Contact
+            </Link>
+          </div>
+          
+          {/* Blessing Text */}
+          <p style={{
+            fontSize: '1rem',
+            fontStyle: 'italic',
+            opacity: 0.8,
+            marginBottom: '1.5rem',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+          }}>
+            "May your gains be eternal and your losses forgotten"
+          </p>
+          
+          {/* Copyright */}
+          <p style={{
+            fontSize: '0.9rem',
+            opacity: 0.6,
+            fontFamily: 'Cyber, monospace'
+          }}>
+            © 2024 Church of Perpetual Profit | Blessed by the Blockchain
+          </p>
+          
+          {/* Decorative Elements */}
+          <div style={{
+            marginTop: '1.5rem',
+            fontSize: '1.5rem',
+            color: '#d4af37',
+            opacity: 0.7
+          }}>
+            ✦ ✦ ✦
+          </div>
+        </div>
+      </footer>
       
       {/* CyberNav Menu */}
       <CyberNav is80sMode={is80sMode} />

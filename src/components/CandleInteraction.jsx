@@ -149,8 +149,8 @@
             canvas.width = targetWidth;
             canvas.height = targetHeight;
 
-            // Fill canvas with white background first
-            ctx.fillStyle = 'white';
+            // Fill canvas with parchment background first
+            ctx.fillStyle = '#F4E8D0';
             ctx.fillRect(0, 0, targetWidth, targetHeight);
 
             // Calculate image area (leave space for username if present)
@@ -250,7 +250,7 @@
       const context = canvas.getContext("2d");
 
       // Clear canvas and set background
-      context.fillStyle = "#FFFFFF"; // White background to match CompactCandleModal
+      context.fillStyle = "#F4E8D0"; // Parchment background to match CompactCandleModal
       context.fillRect(0, 0, canvas.width, canvas.height);
       
       // Add subtle border

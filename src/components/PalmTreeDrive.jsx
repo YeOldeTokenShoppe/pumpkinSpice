@@ -10,6 +10,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useMusic } from '/src/components/MusicContext';
 // import { IconButton, div } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
+import SynthwaveText from '/src/components/SynthwaveText';
 
 
 // MusicPlayer3 removed - using global instance from _app.jsx
@@ -1127,7 +1128,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     });
     
     // Load car model (now includes UFO)
-    loader.load('/models/lambo5k.glb', (gltf) => {
+    loader.load('/models/lambo5k3.glb', (gltf) => {
       const carScene = gltf.scene;
       
       // Enhanced logging for model contents
@@ -2291,7 +2292,7 @@ const PalmsScene = ({ onLoadingChange }) => {
           }
           if (maryMeshRef.current.material) {
             gsap.to(maryMeshRef.current.material, {
-              emissiveIntensity: 0.5,
+              emissiveIntensity: 0.7,
               duration: 0.3
             });
           }
@@ -2300,13 +2301,13 @@ const PalmsScene = ({ onLoadingChange }) => {
           // Return to normal glow
           if (maryLightRef.current) {
             gsap.to(maryLightRef.current, {
-              intensity: 2,
+              intensity: 3,
               duration: 0.3
             });
           }
           if (maryMeshRef.current.material) {
             gsap.to(maryMeshRef.current.material, {
-              emissiveIntensity: 0.3,
+              emissiveIntensity: 0.5,
               duration: 0.3
             });
           }
@@ -2681,6 +2682,16 @@ const PalmsScene = ({ onLoadingChange }) => {
             gap: '20px',
           }}
         >
+          <SynthwaveText 
+            text="A DIGITAL DREAM"
+            fontSize={300}
+            scale={isMobile ? 1.1 : 1}
+            spacingX={6}
+            outsideColor="rgba(0, 255, 255, 0)"
+            insideColor="rgba(255, 0, 255, 1)"
+            backgroundColor="rgba(0, 100, 255, 0.4)"
+            className="mb-4"
+          />
           <p 
             ref={scrollTextRef}
             style={{
