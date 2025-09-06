@@ -15,11 +15,11 @@ const CyberNav = ({ is80sMode = false }) => {
   }, [isMenuOpen]);
 
   const navItems = [
-    { id: '00', date: 'ICON ON I-80', title: "The Virtual Mary", path: '/', thumbnail: '/I80.jpg' },
+    { id: '00', date: 'ICON ON I-80', title: "Dashboard Dreams", path: '/', thumbnail: '/I80.jpg' },
     { id: '01', date: 'TOKEN UTIL80', title: 'Bless Us, RL80', path: '/gallery', thumbnail: '/sacred.png' },
     { id: '02', date: 'MARKET ACTIV80', title: 'Cloud Platform', path: '/clouds', thumbnail: '/lightning.png' },
-    { id: '03', date: 'INFIN80 FOUNTAIN', title: 'Toss A Coin for Char80', path: '/fountain', thumbnail: '/fountain.png' },
-    { id: '04', date: 'MORAL AUTHOR80', title: 'The Scrolls of St. GR80', path: '/model-viewer', thumbnail: '/vvv.jpg' },
+    { id: '03', date: 'INFIN80 FOUNTAIN', title: 'Coin Fountain', path: '/fountain', thumbnail: '/fountain.png' },
+    { id: '04', date: 'MORAL AUTHOR80', title: 'St. GR80\'s Scrolls', path: '/model-viewer', thumbnail: '/vvv.jpg' },
   ];
 
   // Always use mobile-style menu
