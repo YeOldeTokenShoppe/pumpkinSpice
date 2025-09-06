@@ -768,7 +768,7 @@ export default function HomePage() {
       image: '/images/face.png',
       number: '01',
       title: 'AVOID FALSE PROFITS',
-      description: 'Only worthy investments deserve your credulity.'
+      description: 'Only worthy investments deserve your credulity                                                                                                                                                                                                                                                                                                                                                                                                                    .'
     },
     {
       id: 2,
@@ -1075,8 +1075,9 @@ export default function HomePage() {
           padding: '1.5rem',
           background: 'rgba(0, 0, 0, 0.5)',
           backdropFilter: 'blur(10px)',
-          borderRadius: '12px',
-          border: '1px solid rgba(212, 175, 55, 0.2)'
+         borderRadius: '12px',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          color: '#ffffff',
         }}>
           {/* Candle Model Container */}
           <div style={{
@@ -1651,7 +1652,8 @@ export default function HomePage() {
             background: 'rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(10px)',
             borderRadius: '12px',
-            border: '1px solid rgba(212, 175, 55, 0.2)'
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            color: '#ffffff',
           }}>
             {/* Left Column - Candle Model */}
             <div style={{
@@ -1950,7 +1952,8 @@ export default function HomePage() {
             background: 'rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(10px)',
             borderRadius: '12px',
-            border: '1px solid rgba(212, 175, 55, 0.2)'
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            color: '#ffffff',
           }}>
             {/* Left Column - Text Content */}
             <div style={{
