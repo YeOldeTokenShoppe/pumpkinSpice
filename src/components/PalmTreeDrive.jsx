@@ -11,6 +11,7 @@ import { useMusic } from '/src/components/MusicContext';
 // import { IconButton, div } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import SynthwaveText from '/src/components/SynthwaveText';
+import MorphingSynthwaveText from '/src/components/MorphingSynthwaveText';
 
 
 // MusicPlayer3 removed - using global instance from _app.jsx
@@ -142,7 +143,7 @@ const PalmsScene = ({ onLoadingChange }) => {
   // Cinematic reverse removed
   const scrollCameraActive = true; // Scroll camera always active
   const [currentCameraStage, setCurrentCameraStage] = useState(0); // Track which camera position we're at
-  const [showEnterButton, setShowEnterButton] = useState(false); // Show "Take me there" button
+  const [showEnterButton, setShowEnterButton] = useState(true); // Show "Take me there" button immediately
   // Music player states
   const [userClosedMusic, setUserClosedMusic] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -373,6 +374,7 @@ const PalmsScene = ({ onLoadingChange }) => {
   }, [currentCameraStage, scrollCameraActive]);
   
   
+  
   // Music player close handler
   // const handleMusicPlayerClose = useCallback(() => {
   //   // console.log('🎵 Closing music player');
@@ -589,7 +591,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     // Start camera at aerial view position based on device type
     if (isMobileDevice) {
-      camera.position.set(17.5605, 12.0910, 55.1540);  // Mobile aerial view
+      camera.position.set(15.5605, 12.0910, 60.1540);  // Mobile aerial view - moved back and adjusted X
       camera.lookAt(3.0669, 6.0868, 20.1252);           // Mobile initial target
     } else {
       camera.position.set(16.2711, 5.8264, 40.5498);    // Desktop aerial view
@@ -696,7 +698,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     // Re-set camera position after OrbitControls creation to ensure it stays at aerial view
     if (isMobileDevice) {
-      camera.position.set(17.5605, 12.0910, 55.1540);  // Mobile aerial view
+      camera.position.set(15.5605, 12.0910, 60.1540);  // Mobile aerial view - moved back and adjusted X
       camera.lookAt(3.0669, 6.0868, 20.1252);           // Mobile initial target
     } else {
       camera.position.set(16.2711, 5.8264, 40.5498);    // Desktop aerial view
@@ -2734,38 +2736,63 @@ const PalmsScene = ({ onLoadingChange }) => {
             gap: '20px',
           }}
         >
-          <SynthwaveText 
-            text={synthwaveWords[currentCameraStage] || "DRIFT"}
-            fontSize={300}
-            scale={isMobile ? 1.1 : 1.2}
-            spacingX={6}
-            outsideColor="rgba(0, 255, 255, 0)"
-            insideColor="rgba(255, 0, 255, 1)"
-            backgroundColor="rgba(0, 100, 255, 0.4)"
-            className="mb-4"
-          />
-          <p 
-            ref={scrollTextRef}
-            lang="en"
-            translate="yes"
-            style={{
-              fontSize: isMobile ? '20px' : '28px',
-              color: 'white',
-              lineHeight: '1.6',
-              fontFamily: 'monospace',
-              margin: 0,
-              textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
-              fontWeight: '300',
-              textAlign: 'center',
-            }}
-          >
-            {textBlocks[currentCameraStage].map((line, index) => (
-              <React.Fragment key={index}>
-                <span className="scroll-text-line">{line}</span>
-                {index < textBlocks[currentCameraStage].length - 1 && <br />}
-              </React.Fragment>
-            ))}
-          </p>
+          <div style={{ marginBottom: isMobile ? '-20px' : '0', position: 'relative' }}>
+            {currentCameraStage === 4 ? (
+              <MorphingSynthwaveText 
+                startText="REAL80"
+                shouldMorph={true}
+                morphDelay={3000}
+                fontSize={300}
+                scale={1.25}  // Make REAL80/RL80 larger
+                spacingX={6}
+                outsideColor="rgba(0, 255, 255, 0)"
+                insideColor="rgba(255, 0, 255, 1)"
+                backgroundColor="rgba(0, 100, 255, 0.4)"
+                className="mb-4"
+                isMobile={isMobile}
+              />
+            ) : (
+              <SynthwaveText 
+                text={synthwaveWords[currentCameraStage] || "DRIFT"}
+                fontSize={300}
+                scale={currentCameraStage === 1 ? (isMobile ? 1.0 : 1.5) : (isMobile ? 0.8 : 1.2)}
+                spacingX={6}
+                outsideColor="rgba(0, 255, 255, 0)"
+                insideColor="rgba(255, 0, 255, 1)"
+                backgroundColor="rgba(0, 100, 255, 0.4)"
+                className="mb-4"
+              />
+            )}
+          </div>
+          <div style={{
+            minHeight: isMobile ? '280px' : '320px', // Fixed height for text container
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <p 
+              ref={scrollTextRef}
+              lang="en"
+              translate="yes"
+              style={{
+                fontSize: isMobile ? '20px' : '28px',
+                color: 'white',
+                lineHeight: '1.6',
+                fontFamily: 'monospace',
+                margin: 0,
+                textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
+                fontWeight: '300',
+                textAlign: 'center',
+              }}
+            >
+              {textBlocks[currentCameraStage].map((line, index) => (
+                <React.Fragment key={index}>
+                  <span className="scroll-text-line">{line}</span>
+                  {index < textBlocks[currentCameraStage].length - 1 && <br />}
+                </React.Fragment>
+              ))}
+            </p>
+          </div>
           
           {/* Progress indicators */}
           <div 
@@ -2792,32 +2819,32 @@ const PalmsScene = ({ onLoadingChange }) => {
             ))}
           </div>
           
-          {/* Scroll hint - hide when button appears */}
-          {!showEnterButton && (
-            <div style={{
-              marginTop: '30px',
-              fontSize: '12px',
-              color: 'white',
-              opacity: 0.5,
-              textAlign: 'center',
-              fontFamily: 'monospace',
-              animation: 'pulse 2s ease-in-out infinite',
-            }}>
-              scroll to continue
-            </div>
-          )}
+          {/* Scroll hint - always visible */}
+          <div style={{
+            marginTop: '1rem',
+            fontSize: '12px',
+            color: 'white',
+            opacity: 0.5,
+            textAlign: 'center',
+            fontFamily: 'monospace',
+            animation: 'pulse 2s ease-in-out infinite',
+          }}>
+            scroll up to continue
+          </div>
           
-          {/* "Take me there" button - inside text section container */}
-          {showEnterButton && (
-            <div style={{
-              marginTop: '30px',
-              opacity: showEnterButton ? 1 : 0,
-              transition: 'opacity 2s ease-in',
-              textAlign: 'center',
-              pointerEvents: 'auto',
-              touchAction: 'auto',
-            }}>
-              <button
+          {/* "Take me there" button - absolutely positioned */}
+          <div style={{
+            position: 'absolute',
+            bottom: '-3rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            opacity: 1,
+            transition: 'opacity 2s ease-in',
+            textAlign: 'center',
+            pointerEvents: 'auto',
+            touchAction: 'auto',
+          }}>
+            <button
                 onClick={() => {
                   const isMobile = detectMobileDevice();
                   const destination = isMobile ? '/home' : '/home';
@@ -2848,8 +2875,7 @@ const PalmsScene = ({ onLoadingChange }) => {
               >
                 Enter
               </button>
-            </div>
-          )}
+          </div>
           
         </div>
       )}

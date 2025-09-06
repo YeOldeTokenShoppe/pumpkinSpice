@@ -9,7 +9,7 @@ const CandleInteractionHint = ({ isMobileView }) => {
     const hasSeenHint = localStorage.getItem('hasSeenCandleHint');
     
     // For testing, you can uncomment the next line to always show the hint
-    // localStorage.removeItem('hasSeenCandleHint');
+    localStorage.removeItem('hasSeenCandleHint');
     
     if (!hasSeenHint) {
       // First, mount the component but keep it off-screen

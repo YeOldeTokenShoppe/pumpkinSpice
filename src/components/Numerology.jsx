@@ -31,14 +31,18 @@ const FluidBackground = styled.div`
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background: #000; /* Add black background as fallback */
+  border-radius: 2em; /* Match the clip-path rounded corners */
 
   &::after {
     --l: rgb(var(--r) var(--g) 0%),
       rgb(calc(100% - var(--r)) calc(100% - var(--g)) 0%);
     content: "";
     position: absolute;
-    margin: -2em;
-    inset: 0;
+    top: -2em;
+    left: -2em;
+    right: -2em;
+    bottom: -2em;
     background: radial-gradient(var(--l)), linear-gradient(var(--l)),
       conic-gradient(at 0 100%, var(--l) 25%);
     background-blend-mode: difference;
@@ -47,6 +51,8 @@ const FluidBackground = styled.div`
       ${gAnimation} 4.3s ease-in-out -2.37s infinite alternate;
     filter: url(#smoke) invert(1) saturate(2);
     z-index: 0;
+    transform: translateZ(0); /* Force GPU acceleration for better rendering */
+    will-change: transform, clip-path; /* Optimize for animation */
   }
 `;
 

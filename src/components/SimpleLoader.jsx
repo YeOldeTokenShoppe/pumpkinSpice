@@ -208,7 +208,8 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
   };
 
   const taskTextStyle = {
-    marginTop: '8px',
+    marginTop: '3rem',
+    marginBottom: '8px',
     color: 'rgba(16, 185, 129, 0.8)',
     fontSize: '12px',
     fontFamily: 'monospace',
