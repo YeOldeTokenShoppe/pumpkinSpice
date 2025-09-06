@@ -1910,7 +1910,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       
       // Use different camera paths for mobile vs desktop
       if (isMobile) {
-        // Mobile camera sequence - smooth flow without reversals
+        // Mobile camera sequence - using smoother transitions
         // Mobile waypoint 1: Approach from above
         tl.to(cameraPath, {
           x: 1.0987,
@@ -1921,7 +1921,7 @@ const PalmsScene = ({ onLoadingChange }) => {
           targetZ: 23.3133,
           fov: 44.995111,
           duration: 0.2,
-          ease: "power2.inOut"
+          ease: "none"  // Linear for smoother transitions
         })
         // Mobile waypoint 2: Dramatic side angle
         .to(cameraPath, {
@@ -1932,8 +1932,8 @@ const PalmsScene = ({ onLoadingChange }) => {
           targetY: 0.9371,
           targetZ: 22.4996,
           fov: 44.833105,
-          duration: 0.2,
-          ease: "power2.inOut"
+          duration: 0.25,
+          ease: "none"  // Linear for consistency
         })
         // Mobile waypoint 3: Move closer to interior
         .to(cameraPath, {
@@ -1944,28 +1944,15 @@ const PalmsScene = ({ onLoadingChange }) => {
           targetY: 1.5058,
           targetZ: 22.1126,
           fov: 44.832617,
-          duration: 0.15,
-          ease: "power2.inOut"
+          duration: 0.2,
+          ease: "none"  // Linear throughout
         })
-        // Mobile waypoint 4: Pull back for wider view
-        .to(cameraPath, {
-          x: 2.8681, y: 2.2216, z: 27.6469, targetX: 2.0688, targetY: 1.2227, targetZ: 24.1144,
-          fov: 44.832617,
-          duration: 0.15,
-          ease: "power2.inOut"
-        })
-        // Mobile final: Close-up Mary - smoother transition
-        .to(cameraPath, {
-          x: 2.5423, y: 1.3140, z: 25.2827, targetX: 2.4213, targetY: 1.2304, targetZ: 24.0603,
-          fov: 44.832617,
-          duration: 0.15,
-          ease: "power2.inOut"  // Smoother easing for the final approach
-        })
+        // Mobile final: Direct to final position at Mary
         .to(cameraPath, {
           x: 2.4853, y: 1.1738, z: 24.3400, targetX: 2.4593, targetY: 1.1558, targetZ: 24.0773,
           fov: 44.832617,
-          duration: 0.25,
-          ease: "power2.inOut"  // Smoother easing for the final approach
+          duration: 0.3,
+          ease: "power2.out"  // Only ease out at the very end
         });
         
         
@@ -2114,7 +2101,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         trigger: document.body,
         start: "top top",
         end: isMobile ? "bottom bottom" : "bottom bottom", // Use full document height
-        scrub: isMobile ? 2 : 0.5, // Increased scrub value for smoother touch scrolling
+        scrub: isMobile ? 0.3 : 0.5, // Lower scrub for more responsive mobile animation
         animation: tl,
         markers: false, // Hide markers for cleaner view
         immediateRender: false, // Don't jump to end

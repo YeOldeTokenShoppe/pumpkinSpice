@@ -889,9 +889,9 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           playsInline
           style={{
             position: 'absolute',
-            top: '20%',
-            left: '20%',
-            transform: 'translate(-50%, -50%) scale(0.4)',
+            top: isDesktop ? '20%' : '30%',
+            ...(isDesktop ? { left: '20%' } : { right: '30%' }),
+            transform: isDesktop ? 'translate(-50%, -50%) scale(0.4)' : 'translate(50%, -50%) scale(0.4)',
             width: '100%',
             height: '100%',
             objectFit: 'contain',

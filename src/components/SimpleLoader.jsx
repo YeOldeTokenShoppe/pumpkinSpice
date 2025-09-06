@@ -5,7 +5,11 @@ import React, { useEffect, useState, useRef } from 'react';
 const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
   const [currentTask, setCurrentTask] = useState('Perpetu8ing...');
   const animationRef = useRef(null);
-  const [candlePositions, setCandlePositions] = useState([0, 0, 0]);
+  const [candlePositions, setCandlePositions] = useState([
+    { yPosition: 40, opacity: 0 },
+    { yPosition: 40, opacity: 0 },
+    { yPosition: 40, opacity: 0 }
+  ]);
   
   useEffect(() => {
     // Update current task based on progress
@@ -43,18 +47,31 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
         const adjustedTime = Math.max(0, elapsed - delay);
         const progress = (adjustedTime % duration) / duration;
         
-        // Easing function for smooth rise
+        // Easing function for smooth rise and fall
         let yPosition = 0;
-        if (progress < 0.6) {
-          // Rising phase
-          const riseProgress = progress / 0.6;
+        let opacity = 1;
+        
+        if (progress < 0.4) {
+          // Rising phase (0-40% of cycle)
+          const riseProgress = progress / 0.4;
           yPosition = 40 * (1 - riseProgress * riseProgress); // Quadratic ease out
-        } else {
-          // Stay at top
+          opacity = 1; // Fully visible while rising
+        } else if (progress < 0.6) {
+          // Stay at top (40-60% of cycle)
           yPosition = 0;
+          opacity = 1; // Still visible at top
+        } else if (progress < 0.8) {
+          // Falling phase (60-80% of cycle) - fade out smoothly
+          const fallProgress = (progress - 0.6) / 0.2;
+          yPosition = 40 * fallProgress; // Fall back down
+          opacity = 1 - fallProgress; // Fade out smoothly from 1 to 0
+        } else {
+          // Reset at bottom (80-100% of cycle) - invisible
+          yPosition = 40;
+          opacity = 0; // Stay invisible at bottom
         }
         
-        return yPosition;
+        return { yPosition, opacity };
       });
       
       setCandlePositions(newPositions);
@@ -206,13 +223,13 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
         <div style={wrapperStyle}>
           <div style={{
             ...columnStyle,
-            transform: `translateY(${candlePositions[0]}px)`,
-            opacity: 1 - (candlePositions[0] / 40) * 0.6,
+            transform: `translateY(${candlePositions[0]?.yPosition || 0}px)`,
+            opacity: candlePositions[0]?.opacity || 0,
             transition: 'none'
           }}>
             <div style={{
               ...topBarStyle,
-              filter: candlePositions[0] < 5 ? 'brightness(1.3)' : 'brightness(1)'
+              filter: candlePositions[0]?.yPosition < 5 ? 'brightness(1.3)' : 'brightness(1)'
             }} />
             <div style={middleBarStyle} />
             <div style={bottomBarStyle} />
@@ -220,8 +237,8 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
           <div style={{
             ...columnStyle,
             bottom: '16px',
-            transform: `translateY(${candlePositions[1]}px)`,
-            opacity: 1 - (candlePositions[1] / 40) * 0.6,
+            transform: `translateY(${candlePositions[1]?.yPosition || 0}px)`,
+            opacity: candlePositions[1]?.opacity || 0,
             transition: 'none'
           }}>
             <div style={topBarStyle} />
@@ -231,13 +248,13 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
           <div style={{
             ...columnStyle,
             bottom: '32px',
-            transform: `translateY(${candlePositions[2]}px)`,
-            opacity: 1 - (candlePositions[2] / 40) * 0.6,
+            transform: `translateY(${candlePositions[2]?.yPosition || 0}px)`,
+            opacity: candlePositions[2]?.opacity || 0,
             transition: 'none'
           }}>
             <div style={{
               ...topBarStyle,
-              filter: candlePositions[2] < 5 ? 'brightness(1.3)' : 'brightness(1)'
+              filter: candlePositions[2]?.yPosition < 5 ? 'brightness(1.3)' : 'brightness(1)'
             }} />
             <div style={middleBarStyle} />
             <div style={bottomBarStyle} />

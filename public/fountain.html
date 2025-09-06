@@ -54,40 +54,51 @@
 				
 				#info {
 					position: fixed !important;
-					right: 10px !important;
-					left: 160px !important;
+					right: 20px !important;
+					left: 150px !important;  /* Leave space for coin counter */
 					top: auto !important;
-					bottom: 20px !important;
+					bottom: 30px !important;
 					transform: none !important;
 					width: auto !important;
 					max-width: none !important;
-					text-align: left;
-					padding: 5px 8px !important;
-					font-size: 11px !important;
-					line-height: 1.3 !important;
-					background: rgba(20, 20, 30, 0.8) !important;
-					border-width: 1px !important;
+					text-align: center;
+					padding: 12px 15px !important;
+					font-size: 14px !important;
+					line-height: 1.4 !important;
+					background: rgba(20, 20, 30, 0.9) !important;
+					border-width: 2px !important;
 					height: fit-content;
-					min-height: 50px;
+					min-height: 6rem;  /* Slightly taller */
+					height: 6rem;
 					display: flex;
 					align-items: center;
+					justify-content: center;
 					box-sizing: border-box;
 					overflow: hidden;
 					word-wrap: break-word;
 				}
 				
 				#coinCounter {
+					position: fixed !important;
+					left: 20px !important;
 					right: auto !important;
-					left: 10px !important;
 					transform: none !important;
 					top: auto !important;
-					bottom: 20px !important;
-					padding: 5px 8px !important;
-					font-size: 11px !important;
-					width: auto;
-					max-width: 140px;
-					background: rgba(20, 20, 30, 0.8) !important;
-					border-width: 1px !important;
+					bottom: 30px !important;  /* Same level as info box */
+					padding: 12px 15px !important;  /* Match info box padding */
+					font-size: 13px !important;  /* Slightly larger */
+					width: auto !important;
+					min-width: 100px !important;
+					max-width: 120px !important;
+					background: rgba(20, 20, 30, 0.9) !important;
+					border-width: 2px !important;
+					height: 6rem !important;  /* Fixed height to match info box */
+					min-height: 6rem !important;  /* Ensure minimum height */
+					display: flex !important;
+					align-items: center !important;
+					justify-content: center !important;
+					flex-direction: column !important;
+					box-sizing: border-box !important;
 				}
 				
 				.coin-emoji {
@@ -286,23 +297,34 @@
 				const info = document.getElementById('info');
 				const coinCounter = document.getElementById('coinCounter');
 				if (window.innerWidth <= 768) {
-					// Mobile layout
-					info.style.right = 'auto';
-					info.style.left = '50%';
+					// Mobile layout - side by side
+					info.style.right = '20px';
+					info.style.left = '150px';  // Leave space for coin counter
 					info.style.top = 'auto';
-					info.style.bottom = '50px';
-					info.style.transform = 'translateX(-50%)';
-					info.style.width = '90%';
-					info.style.maxWidth = '300px';
+					info.style.bottom = '30px';
+					info.style.transform = 'none';
+					info.style.width = 'auto';
+					info.style.maxWidth = 'none';
 					info.style.textAlign = 'center';
+					info.style.fontSize = '14px';
+					info.style.padding = '12px 15px';
+					info.style.minHeight = '6rem';
 					
-					// Mobile coin counter position
+					// Mobile coin counter position - left side
 					if (coinCounter) {
+						coinCounter.style.position = 'fixed';
+						coinCounter.style.left = '20px';
 						coinCounter.style.right = 'auto';
-						coinCounter.style.left = '50%';
 						coinCounter.style.top = 'auto';
-						coinCounter.style.bottom = '110px';
-						coinCounter.style.transform = 'translateX(-50%)';
+						coinCounter.style.bottom = '30px';
+						coinCounter.style.transform = 'none';
+						coinCounter.style.setProperty('height', '6rem', 'important');  // Force height with !important
+						coinCounter.style.setProperty('min-height', '6rem', 'important');  // Ensure minimum height
+						coinCounter.style.fontSize = '13px';
+						coinCounter.style.padding = '12px 15px';  // Match info box padding
+						coinCounter.style.display = 'flex';
+						coinCounter.style.alignItems = 'center';
+						coinCounter.style.justifyContent = 'center';
 					}
 				} else {
 					// Desktop layout
@@ -846,6 +868,8 @@
 			let container;
 			let camera, scene, renderer, controls;
 			let mousedown = false;
+			let hasAimed = false; // Track if user has clicked water to aim
+			let is80sMode = false; // Track 80s mode state
 			const mouseCoords = new THREE.Vector2();
 			const aimedCoords = new THREE.Vector2(); // Separate variable for aimed coin position
 			const raycaster = new THREE.Raycaster();
@@ -1262,33 +1286,115 @@
 
 
 			// Function to update button text
-			function updateButtonText(buttonMesh, newText) {
+			function updateButtonText(buttonMesh, newText, bgColorOverride = null, textColorOverride = null) {
 				if (!buttonMesh) return;
+				
+				// Store current text in userData
+				buttonMesh.userData.currentText = newText;
 				
 				// Get the original button properties
 				const position = buttonMesh.position.clone();
-				const size = { width: 0.25, height: 0.07 };
-				const fontSize = 38;  // Match the original button's font size
-				const bgColor = '#ffa100';
-				const textColor = 'black';
+				const isLocalCoin = buttonMesh.userData.isLocalCoin;
+				
+				// Determine button size based on screen
+				const isMobile = window.innerWidth <= 768;
+				const buttonWidth = isMobile ? 0.35 : 0.25;
+				const buttonHeight = isMobile ? 0.12 : 0.084;
+				
+				// Use override colors if provided, otherwise use original colors
+				let bgColor, textColor, fontSize;
+				if (isLocalCoin) {
+					bgColor = bgColorOverride || '#30cfd0';
+					textColor = textColorOverride || 'black';
+					fontSize = isMobile ? 48 : 42;
+				} else {
+					bgColor = bgColorOverride || '#ffa100';
+					textColor = textColorOverride || 'black';
+					fontSize = isMobile ? 42 : 36;
+				}
 				
 				// Remove old button
 				scene.remove(buttonMesh);
 				
-				// Create new button with updated text
-				const newButton = createButtonMesh(newText, position, size, fontSize, bgColor, textColor);
+				// Create new button with updated text and colors
+				const newButton = createButtonMesh(newText, position, {width: buttonWidth, height: buttonHeight}, fontSize, bgColor, textColor);
 				newButton.userData.isTossButton = true;
-				newButton.userData.isLocalCoin = false;
+				newButton.userData.isLocalCoin = isLocalCoin;
+				newButton.userData.currentText = newText;
 				
-				// Update the reference
-				tossCoinButton3D = newButton;
-				scene.add(tossCoinButton3D);
+				// Update the correct reference
+				if (isLocalCoin) {
+					localCoinButton3D = newButton;
+				} else {
+					tossCoinButton3D = newButton;
+				}
+				scene.add(newButton);
 			}
 
 			// Track if modal is being shown to prevent immediate close
 			let modalJustOpened = false;
 
 			// Charity Modal Functions
+			function showAimReminderModal() {
+				// Create a simple reminder popup
+				const existingReminder = document.getElementById('aimReminder');
+				if (existingReminder) {
+					existingReminder.remove();
+				}
+				
+				const reminder = document.createElement('div');
+				reminder.id = 'aimReminder';
+				reminder.style.cssText = `
+					position: fixed;
+					top: 50%;
+					left: 50%;
+					transform: translate(-50%, -50%);
+					background: rgba(20, 20, 30, 0.95);
+					border: 2px solid #30cfd0;
+					border-radius: 12px;
+					padding: 25px 30px;
+					color: white;
+					font-family: Arial, sans-serif;
+					font-size: 16px;
+					text-align: center;
+					z-index: 10001;
+					box-shadow: 0 0 30px rgba(48, 207, 208, 0.6);
+					max-width: 90%;
+					width: 300px;
+				`;
+				
+				reminder.innerHTML = `
+					<h3 style="margin: 0 0 15px 0; color: #30cfd0; font-size: 20px;">
+						⚠️ Aim First! ⚠️
+					</h3>
+					<p style="margin: 0 0 20px 0; line-height: 1.4;">
+						Please click on the water to aim where you want to toss your coin!
+					</p>
+					<button onclick="document.getElementById('aimReminder').remove()" style="
+						background: #30cfd0;
+						color: #000;
+						border: none;
+						padding: 10px 25px;
+						border-radius: 6px;
+						font-size: 16px;
+						font-weight: bold;
+						cursor: pointer;
+						transition: all 0.3s ease;
+					" onmouseover="this.style.background='#40dfe0'" onmouseout="this.style.background='#30cfd0'">
+						Got it!
+					</button>
+				`;
+				
+				document.body.appendChild(reminder);
+				
+				// Auto-remove after 3 seconds
+				setTimeout(() => {
+					if (document.getElementById('aimReminder')) {
+						document.getElementById('aimReminder').remove();
+					}
+				}, 3000);
+			}
+			
 			function showCharityModal() {
 				const modal = document.getElementById('charityModal');
 				modal.style.display = 'block';
@@ -1471,6 +1577,7 @@
 				
 				// Add the sky sphere
 				const sky = new THREE.Mesh(skyGeo, skyMat);
+				originalSky = sky; // Store reference for 80s mode toggling
 				scene.add(sky);
 				
 				// Adjust sun for dawn atmosphere
@@ -1625,11 +1732,19 @@
 				// instructionText3D = createTextSprite(textContent, new THREE.Vector3(0, 1.5, 0), 32, 'white', new THREE.Vector3(4, 2, 1)); // Adjust position/scale as needed
 				// scene.add(instructionText3D);
 
+				// Determine button sizes based on screen size
+				const isMobile = window.innerWidth <= 768;
+				const buttonWidth = isMobile ? 0.35 : 0.25;  // Larger width on mobile
+				const buttonHeight = isMobile ? 0.12 : 0.084;  // Uniform height for both buttons
+				const fontSize1 = isMobile ? 48 : 42;  // Larger font on mobile
+				const fontSize2 = isMobile ? 42 : 36;  // Larger font on mobile
+				const buttonSpacing = isMobile ? 0.20 : 0.18;  // Adjust spacing between buttons
+				
 				localCoinButton3D = createButtonMesh(
       "Click to Toss Coin",
-      new THREE.Vector3(-0.13, -0.38, 1.4),
-      {width: 0.25, height: 0.07},
-      42,                    // fontSize
+      new THREE.Vector3(-buttonSpacing, -0.38, 1.4),
+      {width: buttonWidth, height: buttonHeight},  // Same height as other button
+      fontSize1,                    // fontSize
       '#30cfd0',            // bgColor (cyan to match the UI theme)
       'black'               // textColor     
   );
@@ -1638,9 +1753,9 @@
 
   tossCoinButton3D = createButtonMesh(
       "Click to Connect Wallet\nand Toss Real Coin",
-      new THREE.Vector3(0.23, -0.38, 1.4),
-      {width: 0.25, height: 0.07},  // Increased height for two lines
-      36,                    // Larger fontSize for better readability
+      new THREE.Vector3(buttonSpacing, -0.38, 1.4),
+      {width: buttonWidth, height: buttonHeight},  // Same height now
+      fontSize2,                    // fontSize
       '#ffa100',            // bgColor (orange to match the UI theme)
       'black'               // textColor     
   );
@@ -1825,6 +1940,205 @@
 					depthBuffer: false
 				} );
 
+				// Listen for 80s mode messages from parent
+				window.addEventListener('message', (event) => {
+					if (event.data.type === '80sMode') {
+						toggle80sMode(event.data.value);
+					}
+				});
+
+			}
+
+			// Elements for 80s mode
+			let synthwaveBackground, neonGrid, retroSun, originalSky;
+			let originalStatueMaterials = new Map(); // Store original materials
+			
+			function toggle80sMode(enabled) {
+				is80sMode = enabled;
+				console.log('80s Mode:', enabled);
+				
+				if (enabled) {
+					enable80sMode();
+				} else {
+					disable80sMode();
+				}
+			}
+			
+			function enable80sMode() {
+				// Hide original sky
+				if (originalSky) originalSky.visible = false;
+				
+				// Create synthwave background
+				if (!synthwaveBackground) {
+					createSynthwaveBackground();
+				}
+				if (synthwaveBackground) synthwaveBackground.visible = true;
+				
+				// Create neon grid floor
+				if (!neonGrid) {
+					createNeonGrid();
+				}
+				if (neonGrid) neonGrid.visible = true;
+				
+				// Create retro sun
+				if (!retroSun) {
+					createRetroSun();
+				}
+				if (retroSun) retroSun.visible = true;
+				
+				// Modify water colors for neon effect
+				updateWaterFor80s(true);
+				
+				// Update button colors
+				updateButtonsFor80s(true);
+				
+				// Change scene fog for 80s atmosphere
+				scene.fog = new THREE.Fog(0x1a0033, 2, 20);
+			}
+			
+			function disable80sMode() {
+				// Restore original sky
+				if (originalSky) originalSky.visible = true;
+				
+				// Hide 80s elements
+				if (synthwaveBackground) synthwaveBackground.visible = false;
+				if (neonGrid) neonGrid.visible = false;
+				if (retroSun) retroSun.visible = false;
+				
+				// Restore original water colors
+				updateWaterFor80s(false);
+				
+				// Restore button colors
+				updateButtonsFor80s(false);
+				
+				// Clear fog - let the gradient sky show properly
+				scene.fog = null;
+			}
+			
+			function createSynthwaveBackground() {
+				// Create a large sphere for full background coverage (like the original sky)
+				const bgGeometry = new THREE.SphereGeometry(380, 32, 32);
+				const bgMaterial = new THREE.ShaderMaterial({
+					uniforms: {
+						topColor: { value: new THREE.Color(0x0a0a2e) }, // Dark blue-purple
+						bottomColor: { value: new THREE.Color(0x00d4ff) }, // Cyan
+						offset: { value: 0.5 }
+					},
+					vertexShader: `
+						varying vec2 vUv;
+						void main() {
+							vUv = uv;
+							gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+						}
+					`,
+					fragmentShader: `
+						uniform vec3 topColor;
+						uniform vec3 bottomColor;
+						uniform float offset;
+						varying vec2 vUv;
+						void main() {
+							float mixValue = smoothstep(0.0, 1.0, vUv.y);
+							vec3 color = mix(bottomColor, topColor, mixValue);
+							// Add horizontal scanlines
+							float scanline = sin(vUv.y * 100.0) * 0.02;
+							color += vec3(scanline);
+							gl_FragColor = vec4(color, 1.0);
+						}
+					`,
+					side: THREE.BackSide,
+					depthWrite: false
+				});
+				
+				synthwaveBackground = new THREE.Mesh(bgGeometry, bgMaterial);
+				synthwaveBackground.position.set(0, 0, 0); // Center it like the original sky
+				scene.add(synthwaveBackground);
+			}
+			
+			function createNeonGrid() {
+				// Create wireframe grid floor
+				const gridSize = 20;
+				const divisions = 30;
+				const gridHelper = new THREE.GridHelper(gridSize, divisions, 0x00ffff, 0xff00ff);
+				gridHelper.position.y = -1;
+				gridHelper.material.opacity = 0.8;
+				gridHelper.material.transparent = true;
+				
+				neonGrid = gridHelper;
+				scene.add(neonGrid);
+			}
+			
+			function createRetroSun() {
+				// Create retro sun with horizontal stripes
+				const sunGeometry = new THREE.CircleGeometry(2, 32);
+				const sunMaterial = new THREE.ShaderMaterial({
+					uniforms: {
+						time: { value: 0 }
+					},
+					vertexShader: `
+						varying vec2 vUv;
+						void main() {
+							vUv = uv;
+							gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+						}
+					`,
+					fragmentShader: `
+						varying vec2 vUv;
+						uniform float time;
+						void main() {
+							float stripe = step(0.5, fract(vUv.y * 10.0));
+							vec3 color1 = vec3(1.0, 0.4, 0.7); // Pink
+							vec3 color2 = vec3(1.0, 0.8, 0.0); // Yellow
+							vec3 finalColor = mix(color1, color2, stripe);
+							
+							// Add glow
+							float dist = distance(vUv, vec2(0.5));
+							float glow = 1.0 - smoothstep(0.0, 0.5, dist);
+							
+							gl_FragColor = vec4(finalColor * glow, glow);
+						}
+					`,
+					transparent: true,
+					depthWrite: false
+				});
+				
+				retroSun = new THREE.Mesh(sunGeometry, sunMaterial);
+				retroSun.position.set(0, 3, -10);
+				scene.add(retroSun);
+			}
+			
+			function updateWaterFor80s(enabled) {
+				if (waterMesh && waterMesh.material) {
+					if (enabled) {
+						// Neon cyan/pink water
+						waterMesh.material.color = new THREE.Color(0x00ffff);
+						waterMesh.material.emissive = new THREE.Color(0xff00ff);
+						waterMesh.material.emissiveIntensity = 0.3;
+					} else {
+						// Original water colors
+						waterMesh.material.color = new THREE.Color(0x4499bb);
+						waterMesh.material.emissive = new THREE.Color(0x000000);
+						waterMesh.material.emissiveIntensity = 0;
+					}
+				}
+			}
+			
+			function updateButtonsFor80s(enabled) {
+				// Update button colors for 80s neon look
+				if (tossCoinButton3D) {
+					if (enabled) {
+						updateButtonText(tossCoinButton3D, tossCoinButton3D.userData.currentText || "Click to Connect Wallet\nand Toss Real Coin", '#ff00ff', '#00ffff');
+					} else {
+						updateButtonText(tossCoinButton3D, tossCoinButton3D.userData.currentText || "Click to Connect Wallet\nand Toss Real Coin", '#ffa100', 'black');
+					}
+				}
+				
+				if (localCoinButton3D) {
+					if (enabled) {
+						updateButtonText(localCoinButton3D, "Click to Toss Coin", '#00ffff', '#ff00ff');
+					} else {
+						updateButtonText(localCoinButton3D, "Click to Toss Coin", '#30cfd0', 'black');
+					}
+				}
 			}
 
 			function fillTexture( texture ) {
@@ -1955,6 +2269,14 @@
 						const isLocalCoin = button.userData.isLocalCoin || false;
 						console.log(`[Pointer Down] ${isLocalCoin ? 'Local' : 'Real'} Coin Button clicked!`);
 						
+						// Check if user has aimed first
+						if (!hasAimed) {
+							// Show reminder to click water first
+							showAimReminderModal();
+							buttonClicked = true;
+							return;
+						}
+						
 						if (!isLocalCoin) {
 							// Check if charity is already selected
 							if (selectedCharity) {
@@ -1990,6 +2312,7 @@
 							// Update both mouseCoords (for water effect) and aimedCoords (for coin aiming)
 							mouseCoords.copy(currentPointerCoords); 
 							aimedCoords.copy(currentPointerCoords); // Save aimed position for coin tosses
+							hasAimed = true; // Mark that user has aimed
 							console.log(`[Pointer Down] Updated global mouseCoords: (${mouseCoords.x.toFixed(2)}, ${mouseCoords.y.toFixed(2)})`);
 							console.log(`[Pointer Down] Updated aimedCoords: (${aimedCoords.x.toFixed(2)}, ${aimedCoords.y.toFixed(2)})`);
 							mousedown = true; // Enable water disturbance via raycast() function
@@ -2543,6 +2866,33 @@
 
 					frame = 0;
 
+				}
+				
+				// 80s Mode Animations
+				if (is80sMode) {
+					// Animate neon grid
+					if (neonGrid) {
+						neonGrid.rotation.y += 0.001;
+						// Pulse grid opacity
+						const pulse = Math.sin(Date.now() * 0.002) * 0.2 + 0.8;
+						neonGrid.material.opacity = pulse;
+					}
+					
+					// Animate retro sun
+					if (retroSun) {
+						// Slowly move sun up and down
+						retroSun.position.y = 3 + Math.sin(Date.now() * 0.0005) * 0.5;
+						// Update time uniform for shader animation
+						if (retroSun.material.uniforms && retroSun.material.uniforms.time) {
+							retroSun.material.uniforms.time.value = Date.now() * 0.001;
+						}
+					}
+					
+					// Pulse water glow
+					if (waterMesh && waterMesh.material) {
+						const glow = Math.sin(Date.now() * 0.003) * 0.15 + 0.3;
+						waterMesh.material.emissiveIntensity = glow;
+					}
 				}
 
 				// Render

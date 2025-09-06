@@ -792,7 +792,7 @@ export default function HomePage() {
       image: '/images/bullrider.jpg',
       number: '04',
       title: 'ASCENDING TRENDS',
-      description: 'Your guide you up and to the right.'
+      description: 'Your guide up and to the right.'
     },
     {
       id: 5,
@@ -1989,7 +1989,8 @@ export default function HomePage() {
                 lineHeight: 1.2,
                 opacity: 0.8,
                 fontStyle: 'italic',
-                color: '#d4af37'
+                color: '#d4af37',
+                textAlign: 'center'
               }}>
                 Ask your question, shake the sphere of destiny, and receive wisdom from 
                 <span style={{
@@ -2090,7 +2091,7 @@ export default function HomePage() {
               zIndex: 1,
             }}
           />
-          <div style={{ marginBottom: "2.25rem", marginTop: "19rem" }}>
+          <div style={{ marginBottom: "2.25rem", marginTop: "2rem" }}>
             <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
               <div
                 style={{
