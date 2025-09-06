@@ -467,82 +467,99 @@ export default function HomePage() {
   useEffect(() => {
     if (!isClient) return;
 
-    // Get both desktop and mobile elements
-    const scrambleElements = document.querySelectorAll('.scramble-text, .scramble-text-mobile');
-    const actionElements = document.querySelectorAll('.action-text, .action-text-mobile');
-    
-    if (scrambleElements.length === 0 || actionElements.length === 0) return;
+    let messageTimer;
+    let actionTimer;
 
-    // Use the first element's data attributes (they all have the same words)
-    const messageWords = JSON.parse(scrambleElements[0].getAttribute('data-words'));
-    const actionWords = JSON.parse(actionElements[0].getAttribute('data-words'));
-    let messageIndex = 0;
-    let actionIndex = 0;
-
-    // Function to scramble text with optional color
-    const scrambleText = (element, targetWord, isGold = false) => {
-      const chars = "!@#$%^&*()_+{}[]|:;<>?/~";
-      let iterations = 0;
-      const maxIterations = 20;
+    // Small delay to ensure DOM elements are rendered
+    const timeoutId = setTimeout(() => {
+      // Get both desktop and mobile elements
+      const scrambleElements = document.querySelectorAll('.scramble-text, .scramble-text-mobile');
+      const actionElements = document.querySelectorAll('.action-text, .action-text-mobile');
       
-      const interval = setInterval(() => {
-        element.textContent = targetWord
-          .split("")
-          .map((letter, index) => {
-            if (index < iterations / 2) {
-              return targetWord[index];
-            }
-            return chars[Math.floor(Math.random() * chars.length)];
-          })
-          .join("");
+      if (scrambleElements.length === 0 || actionElements.length === 0) {
+        return;
+      }
+
+      // Use the first element's data attributes (they all have the same words)
+      const messageWords = JSON.parse(scrambleElements[0].getAttribute('data-words'));
+      const actionWords = JSON.parse(actionElements[0].getAttribute('data-words'));
+      let messageIndex = 0;
+      let actionIndex = 0;
+
+      // Function to scramble text with optional color
+      const scrambleText = (element, targetWord, isGold = false) => {
+        const chars = "!@#$%^&*()_+{}[]|:;<>?/~";
+        let iterations = 0;
+        const maxIterations = 20;
         
-        iterations++;
-        
-        if (iterations >= maxIterations) {
-          clearInterval(interval);
-          element.textContent = targetWord;
+        const interval = setInterval(() => {
+          element.textContent = targetWord
+            .split("")
+            .map((letter, index) => {
+              if (index < iterations / 2) {
+                return targetWord[index];
+              }
+              return chars[Math.floor(Math.random() * chars.length)];
+            })
+            .join("");
           
-          // Apply color based on word for action elements
-          if (element.classList.contains('action-text') || element.classList.contains('action-text-mobile')) {
-            if (targetWord === "Declare" || targetWord === "Customize") {
-              element.style.color = '#d4af37';
-              element.style.fontFamily = '"UnifrakturCook", serif';
-              element.style.textShadow = '0 0 10px #d4af37, 0 0 20px #d4af37';
-            } else {
-              element.style.color = '#00ff00';
-              element.style.textShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-              element.style.fontFamily = 'Cyber, sans-serif';
+          iterations++;
+          
+          if (iterations >= maxIterations) {
+            clearInterval(interval);
+            element.textContent = targetWord;
+            
+            // Apply color based on word for action elements
+            if (element.classList.contains('action-text') || element.classList.contains('action-text-mobile')) {
+              if (targetWord === "Declare" || targetWord === "Customize") {
+                element.style.color = '#d4af37';
+                element.style.fontFamily = '"UnifrakturCook", serif';
+                element.style.textShadow = '0 0 10px #d4af37, 0 0 20px #d4af37';
+              } else {
+                element.style.color = '#00ff00';
+                element.style.textShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                element.style.fontFamily = 'Cyber, sans-serif';
+              }
             }
           }
-        }
-      }, 30);
-    };
+        }, 30);
+      };
 
-    // Function to scramble message words for all elements
-    const scrambleMessage = () => {
-      messageIndex = (messageIndex + 1) % messageWords.length;
+      // Function to scramble message words for all elements
+      const scrambleMessage = () => {
+        messageIndex = (messageIndex + 1) % messageWords.length;
+        scrambleElements.forEach(element => {
+          scrambleText(element, messageWords[messageIndex]);
+        });
+      };
+
+      // Function to scramble action words for all elements
+      const scrambleAction = () => {
+        actionIndex = (actionIndex + 1) % actionWords.length;
+        actionElements.forEach(element => {
+          scrambleText(element, actionWords[actionIndex]);
+        });
+      };
+
+      // Initial animation on first render
       scrambleElements.forEach(element => {
-        scrambleText(element, messageWords[messageIndex]);
+        scrambleText(element, messageWords[0]);
       });
-    };
-
-    // Function to scramble action words for all elements
-    const scrambleAction = () => {
-      actionIndex = (actionIndex + 1) % actionWords.length;
       actionElements.forEach(element => {
-        scrambleText(element, actionWords[actionIndex]);
+        scrambleText(element, actionWords[0]);
       });
-    };
 
-    // Start the animation cycles
-    const messageTimer = setInterval(scrambleMessage, 3000);
-    const actionTimer = setInterval(scrambleAction, 4000); // Different interval for variety
+      // Start the animation cycles
+      messageTimer = setInterval(scrambleMessage, 3000);
+      actionTimer = setInterval(scrambleAction, 4000); // Different interval for variety
+    }, 500); // 500ms delay to ensure DOM is ready for desktop
 
     return () => {
-      clearInterval(messageTimer);
-      clearInterval(actionTimer);
+      clearTimeout(timeoutId);
+      if (messageTimer) clearInterval(messageTimer);
+      if (actionTimer) clearInterval(actionTimer);
     };
-  }, [isClient]);
+  }, [isClient, isMobileView, pageLoading]);
   
   // Comprehensive page loading effect
   useEffect(() => {
@@ -751,7 +768,7 @@ export default function HomePage() {
       image: '/images/face.png',
       number: '01',
       title: 'AVOID FALSE PROFITS',
-      description: 'Only the worthy deserve your credul80.'
+      description: 'Only worthy investments deserve your credulity.'
     },
     {
       id: 2,
