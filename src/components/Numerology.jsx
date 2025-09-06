@@ -52,7 +52,7 @@ const FluidBackground = styled.div`
 
 
 
-const Numerology = () => {
+const Numerology = ({ isMobile = false }) => {
   const [clientSideReady, setClientSideReady] = useState(false);
   const isBrowser = typeof window !== "undefined";
 
@@ -68,7 +68,7 @@ const Numerology = () => {
   return (
     <>
       <GlobalStyles />
-      {/* The fluid background and magic 8 ball combination */}
+      {/* The fluid background and magic 80 ball combination */}
       <svg width="0" height="0" aria-hidden="true" style={{ position: 'fixed' }}>
                       <filter id="smoke" colorInterpolationFilters="sRGB">
                         <feTurbulence baseFrequency="0.00713" result="t" />
@@ -88,12 +88,14 @@ const Numerology = () => {
       <div
                       style={{
                         position: "relative",
-                        width: "100%",
-                        height: "100%",
-                        placeself: 'center',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        margin: '0 auto',
                         border: 'solid 1em #c48901',
-                        width: '25em',
-                        aspectratio: '1',
+                        width: '100%',
+                        maxWidth: isMobile ? '25em' : '25em',
+                        aspectRatio: '1',
                         borderRadius: '3em',
                       }}
                     >
@@ -128,13 +130,13 @@ const Numerology = () => {
                           <iframe
                             src="/magic.html"
                             style={{
-                              width: "300px",
-                              height: "300px",
+                              width: "17.6rem",
+                              height: "17.6rem",
                               border: "none",
                               background: "transparent",
                               borderRadius: "50%",
                             }}
-                            title="Magic 8 Ball"
+                            title="Magic 80 Ball"
                             frameBorder="0"
                             scrolling="no"
                             allowtransparency="true"

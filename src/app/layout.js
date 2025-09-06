@@ -1,6 +1,9 @@
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MusicProvider } from "@/components/MusicContext";
+import { MiniKitContextProvider } from "../../providers/MiniKitProvider";
+
+
 
 
 export const metadata = {
@@ -18,9 +21,11 @@ export default function RootLayout({ children }) {
     <html lang="en" data-theme="dark" suppressHydrationWarning style={{ margin: 0, padding: 0 }}>
       <body suppressHydrationWarning style={{ margin: 0, padding: 0, backgroundColor: '#000000' }}>
         <ClerkProvider>
-          <MusicProvider>
-            {children}
-          </MusicProvider>
+          <MiniKitContextProvider>
+            <MusicProvider>
+              {children}
+            </MusicProvider>
+          </MiniKitContextProvider>
         </ClerkProvider>
       </body>
     </html>

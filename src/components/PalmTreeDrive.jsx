@@ -67,6 +67,60 @@ const textBlocks = [
   ]
 ];
 
+// Define SynthwaveText words for each stage
+const synthwaveWords = [
+  "THIS",
+  "COULD BE",
+  "YOUR",
+  "NEW",
+  "REAL80"
+];
+
+// Wavy shader effect shaders
+const wavyVertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const wavyFragmentShader = `
+  uniform float u_time;
+  uniform vec2 u_mouse;
+  uniform float u_intensity;
+  uniform float u_opacity;
+  varying vec2 vUv;
+
+  void main() {
+    vec2 uv = vUv;
+    
+    // Create wavy distortion
+    float wave1 = sin(uv.x * 8.0 + u_time * 0.5 + u_mouse.x * 3.0) * u_intensity;
+    float wave2 = sin(uv.y * 10.0 + u_time * 0.8 + u_mouse.y * 2.5) * u_intensity;
+    float wave3 = cos(uv.x * 6.0 + u_time * 0.4 + u_mouse.x * 2.0) * u_intensity;
+    float wave4 = cos(uv.y * 7.0 + u_time * 0.6 + u_mouse.y * 2.0) * u_intensity;
+    
+    uv.y += wave1 + wave2;
+    uv.x += wave3 + wave4;
+    
+    // Create gradient with distortion
+    float gradient = 1.0 - distance(uv, vec2(0.5, 0.5)) * 1.5;
+    gradient = clamp(gradient, 0.0, 1.0);
+    
+    // Synthwave colors
+    vec3 color1 = vec3(0.0, 1.0, 1.0); // Cyan
+    vec3 color2 = vec3(1.0, 0.0, 1.0); // Magenta
+    vec3 color3 = vec3(0.0, 0.4, 1.0); // Blue
+    
+    // Mix colors based on position and waves
+    vec3 color = mix(color1, color2, sin(uv.x * 3.0 + u_time) * 0.5 + 0.5);
+    color = mix(color, color3, sin(uv.y * 3.0 + u_time * 0.7) * 0.5 + 0.5);
+    
+    gl_FragColor = vec4(color, gradient * u_opacity * 0.15);
+  }
+`;
+
 const PalmsScene = ({ onLoadingChange }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -92,6 +146,17 @@ const PalmsScene = ({ onLoadingChange }) => {
   // Music player states
   const [userClosedMusic, setUserClosedMusic] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Wavy effect refs and state
+  const wavyCanvasRef = useRef(null);
+  const wavySceneRef = useRef(null);
+  const wavyRendererRef = useRef(null);
+  const wavyMeshRef = useRef(null);
+  const wavyAnimationRef = useRef(null);
+  const [wavyMousePosition, setWavyMousePosition] = useState({ x: 0, y: 0 });
+  const [wavyIntensity, setWavyIntensity] = useState(0.005);
+  const wavyCurrentState = useRef({ mousePosition: { x: 0, y: 0 }, waveIntensity: 0.005 });
+  const wavyTargetState = useRef({ mousePosition: { x: 0, y: 0 }, waveIntensity: 0.005 });
   
   // Debug effect to track button state changes
   useEffect(() => {
@@ -2683,9 +2748,9 @@ const PalmsScene = ({ onLoadingChange }) => {
           }}
         >
           <SynthwaveText 
-            text="A DIGITAL DREAM"
+            text={synthwaveWords[currentCameraStage] || "DRIFT"}
             fontSize={300}
-            scale={isMobile ? 1.1 : 1}
+            scale={isMobile ? 1.1 : 1.2}
             spacingX={6}
             outsideColor="rgba(0, 255, 255, 0)"
             insideColor="rgba(255, 0, 255, 1)"
@@ -2694,6 +2759,8 @@ const PalmsScene = ({ onLoadingChange }) => {
           />
           <p 
             ref={scrollTextRef}
+            lang="en"
+            translate="yes"
             style={{
               fontSize: isMobile ? '20px' : '28px',
               color: 'white',

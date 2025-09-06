@@ -15,9 +15,9 @@ const CyberNav = ({ is80sMode = false }) => {
   }, [isMenuOpen]);
 
   const navItems = [
-    { id: '00', date: 'AN ICON ON I-80', title: "Patron Saint of Prosper80", path: '/', thumbnail: '/I80.jpg' },
-    { id: '01', date: 'SECRET SOCI80', title: 'Bless Us, RL80', path: '/gallery', thumbnail: '/sacred.png' },
-    { id: '02', date: 'MARKET ACTIV80', title: 'Good And Evil Index', path: '/clouds', thumbnail: '/lightning.png' },
+    { id: '00', date: 'ICON ON I-80', title: "The Virtual Mary", path: '/', thumbnail: '/I80.jpg' },
+    { id: '01', date: 'TOKEN UTIL80', title: 'Bless Us, RL80', path: '/gallery', thumbnail: '/sacred.png' },
+    { id: '02', date: 'MARKET ACTIV80', title: 'Cloud Platform', path: '/clouds', thumbnail: '/lightning.png' },
     { id: '03', date: 'INFIN80 FOUNTAIN', title: 'Toss A Coin for Char80', path: '/fountain', thumbnail: '/fountain.png' },
     { id: '04', date: 'MORAL AUTHOR80', title: 'The Scrolls of St. GR80', path: '/model-viewer', thumbnail: '/vvv.jpg' },
   ];

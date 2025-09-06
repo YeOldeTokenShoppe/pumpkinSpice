@@ -20,6 +20,7 @@ export default function ModelViewerPage() {
   const { play, pause, isPlaying: contextIsPlaying, nextTrack, currentTrack, is80sMode: context80sMode, setIs80sMode: setContext80sMode } = useMusic();
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
   const [showCandleModal, setShowCandleModal] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const isTogglingRef = useRef(false);
   const is80sMode = context80sMode;
 
@@ -64,12 +65,17 @@ export default function ModelViewerPage() {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
-      <SimpleModelViewer modelPath="/models/saint_robot.glb" />
+      <SimpleModelViewer 
+        modelPath="/models/saint_robot.glb" 
+        onLoadingChange={setIsPageLoading}
+        is80sMode={is80sMode}
+      />
       
-      {/* CyberNav Menu */}
-      <CyberNav is80sMode={is80sMode} />
+      {/* CyberNav Menu - Hidden while loading */}
+      {!isPageLoading && <CyberNav is80sMode={is80sMode} />}
       
-      {/* Music, 80s Mode, and User Controls Container */}
+      {/* Music, 80s Mode, and User Controls Container - Hidden while loading */}
+      {!isPageLoading && (
       <div
         style={{
           position: "fixed",
@@ -311,14 +317,15 @@ export default function ModelViewerPage() {
           </button>
         </div>
       </div>
+      )}
 
       {/* Buy Token FAB (optional - uncomment if needed) */}
       {/* <div onClick={() => setShowCandleModal(true)}>
         <BuyTokenFAB is80sMode={is80sMode} />
       </div> */}
 
-      {/* Candle Modal */}
-      {showCandleModal && (
+      {/* Candle Modal - Hidden while loading */}
+      {!isPageLoading && showCandleModal && (
         <CompactCandleModal
           isOpen={showCandleModal}
           onClose={() => setShowCandleModal(false)}

@@ -681,7 +681,7 @@
         </group>
 
         {/* Ambient light for overall scene illumination */}
-        <ambientLight intensity={0.5} />
+        <ambientLight intensity={1} />
 
         {/* Spotlight for general candle illumination */}
         <spotLight

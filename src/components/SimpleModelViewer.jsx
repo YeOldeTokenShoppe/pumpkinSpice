@@ -1,10 +1,20 @@
 import React, { Suspense, useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, useAnimations, } from '@react-three/drei';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { 
+  EffectComposer, 
+  Bloom, 
+  ChromaticAberration,
+  Scanline,
+  Glitch,
+  Noise,
+  Vignette
+} from '@react-three/postprocessing';
+import { BlendFunction, GlitchMode } from "postprocessing";
 import * as THREE from 'three';
 import Chart from 'chart.js/auto';
 import SimpleLoader from './SimpleLoader';
+import PostProcessingEffects from './PostProcessingEffects';
 import '../app/globals.css';
 
 function createChartTexture(data, chartType = 'line', label = '') {
@@ -374,10 +384,37 @@ function FloatingChart({ position, chartData, chartType = 'line', chartLabel = '
   );
 }
 
-function Model({ modelPath }) {
+function Model({ modelPath, onLoaded, is80sMode }) {
   const group = useRef();
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, group);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Signal when model is loaded
+  useEffect(() => {
+    if (scene && onLoaded) {
+      onLoaded();
+    }
+  }, [scene, onLoaded]);
+  
+  // Control Neon mesh visibility based on 80s mode
+  useEffect(() => {
+    if (scene) {
+      const neonMesh = scene.getObjectByName('Neon');
+      if (neonMesh) {
+        neonMesh.visible = is80sMode;
+        console.log(`Neon mesh visibility set to: ${is80sMode}`);
+      } else {
+        console.log('Neon mesh not found in the model');
+      }
+    }
+  }, [scene, is80sMode]);
   
   useEffect(() => {
     // Play multiple animations simultaneously
@@ -424,9 +461,14 @@ function Model({ modelPath }) {
     }
   }, [actions, scene]);
   
+  // Check if desktop (non-mobile/tablet)
+  const isDesktop = windowWidth > 768;
+  // Apply rotation only on desktop
+  const rotation = isDesktop ? [0, -Math.PI/2, 0] : [0, 0, 0];
+  
   return (
     <group ref={group}>
-      <primitive position={[0, -1.5, 0]} object={scene} scale={2} />
+      <primitive position={[0, -2, 0]} rotation={rotation} object={scene} scale={2} />
     </group>
   );
 }
@@ -666,10 +708,13 @@ function FlatCharts({ onChartClick }) {
 }
 
 
-export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb' }) {
+export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb', onLoadingChange, is80sMode = false }) {
   const [selectedChart, setSelectedChart] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [modelLoaded, setModelLoaded] = useState(false);
+  const [fontLoaded, setFontLoaded] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -683,6 +728,19 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
     link.href = 'https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
+    
+    // Check if font is loaded
+    const checkFont = async () => {
+      try {
+        await document.fonts.load('700 1em UnifrakturCook');
+        setFontLoaded(true);
+      } catch (e) {
+        // Font might not load, but don't block the page
+        setTimeout(() => setFontLoaded(true), 2000);
+      }
+    };
+    checkFont();
+    
     return () => {
       document.head.removeChild(link);
     };
@@ -691,14 +749,54 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
   // Check if desktop (non-mobile/tablet)
   const isDesktop = windowWidth > 768;
   
+  // Hide loader only when everything is loaded
+  useEffect(() => {
+    if (modelLoaded && fontLoaded && (iframeLoaded || !isDesktop)) {
+      // Add a small delay for smooth transition
+      setTimeout(() => {
+        setIsLoading(false);
+        if (onLoadingChange) onLoadingChange(false);
+      }, 500);
+    }
+  }, [modelLoaded, fontLoaded, iframeLoaded, isDesktop, onLoadingChange]);
+  
+  // Notify parent when loading starts
+  useEffect(() => {
+    if (onLoadingChange) onLoadingChange(true);
+  }, []);
+  
   return (
     <div style={{ 
       width: '100%', 
       height: '100vh', 
-      background: '#000000', 
+      background: is80sMode ? 'transparent' : '#000000', 
       position: 'relative',
-      display: isDesktop ? 'flex' : 'block'
+      animation: is80sMode ? 'subtle-glitch 8s infinite' : 'none',
+      overflow: 'hidden'
     }}>
+      {/* Show loader over entire page when loading */}
+      {isLoading && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0,
+          zIndex: 9999,
+          background: '#000000'
+        }}>
+          <SimpleLoader />
+        </div>
+      )}
+      
+      {/* Main content - hidden while loading */}
+      <div style={{
+        width: '100%',
+        height: '100%',
+        display: isDesktop ? 'flex' : 'block',
+        opacity: isLoading ? 0 : 1,
+        transition: 'opacity 0.5s ease-in-out'
+      }}>
       {/* Left Column - Heading and Scroll (Desktop only) */}
       {isDesktop && (
         <div style={{
@@ -746,10 +844,14 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 textAlign: 'center',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
               }}>
-                Welcome to the sacred chronicles of Saint GR80, 
-                where ancient wisdom meets digital mysticism. 
-                Behold the illuminated manuscripts that bridge 
-                the eternal and the algorithmic.
+                Welcome to the sacred chronicles of Saint GR80, a scholarly philosopher-bot and devotee of  <span style={{
+                fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
+                fontWeight: 'bold',
+                fontSize: '1.1em',
+                color: '#d4af37',
+                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+              }}> Our Lady of Perpetual Profit.</span>
+  
               </p>
             </div>
           </div>
@@ -757,6 +859,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           {/* Scroll iframe */}
           <iframe
             src="/scroll.html"
+            onLoad={() => setIframeLoaded(true)}
             style={{
               width: '100%',
               height: '60%',
@@ -773,250 +876,38 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
       
       {/* Right Column - 3D Model (Desktop) or Full Width (Mobile) */}
       <div style={{
-        width: isDesktop ? '60%' : '100%',
+        width: isDesktop ? '50%' : '100%',
         height: '100%',
         position: 'relative'
       }}>
-        {/* Full Page Chart Overlay */}
-        {selectedChart && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          backdropFilter: 'blur(20px)',
-          cursor: 'pointer'
-        }}
-        onClick={() => setSelectedChart(null)}
+      {/* 80s Mode Video Background */}
+      {is80sMode && (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: 'absolute',
+            top: '20%',
+            left: '20%',
+            transform: 'translate(-50%, -50%) scale(0.4)',
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            zIndex: 0,
+            opacity: 0.7,
+            // borderRadius: '10px',
+            // boxShadow: '0 0 30px rgba(217, 70, 239, 0.5)'
+          }}
         >
-          <div 
-            style={{
-              width: isMobile ? '95%' : isTablet ? '85%' : '80%',
-              maxWidth: isMobile ? '400px' : '800px',
-              height: isMobile ? '70%' : '60%',
-              maxHeight: isMobile ? '600px' : '500px',
-              background: 'rgba(10, 10, 10, 0.95)',
-              border: `3px solid ${selectedChart.type === 'line' ? '#00ffff' : '#ff64ff'}`,
-              borderRadius: '20px',
-              padding: '30px',
-              boxShadow: `0 0 50px ${selectedChart.type === 'line' ? 'rgba(0, 255, 255, 0.5)' : 'rgba(255, 100, 255, 0.5)'}`,
-              display: 'flex',
-              flexDirection: 'column',
-              cursor: 'default'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px'
-            }}>
-              <h2 style={{ 
-                margin: 0,
-                color: 
-                  selectedChart.label === 'RSI' ? '#ffa500' :
-                  selectedChart.label === 'Moving Averages' ? '#ffff00' :
-                  selectedChart.type === 'line' ? '#00ffff' : '#ff64ff',
-                fontSize: isMobile ? '20px' : '28px',
-                fontWeight: 'bold',
-                textShadow: `0 0 20px ${
-                  selectedChart.label === 'RSI' ? 'rgba(255, 165, 0, 0.8)' :
-                  selectedChart.label === 'Moving Averages' ? 'rgba(255, 255, 0, 0.8)' :
-                  selectedChart.type === 'line' ? 'rgba(0, 255, 255, 0.8)' : 'rgba(255, 100, 255, 0.8)'
-                }`
-              }}>
-                {selectedChart.label || (selectedChart.type === 'line' ? 'ETH Price Chart' : 'Trading Volume Chart')}
-              </h2>
-              <button 
-                onClick={() => setSelectedChart(null)}
-                style={{
-                  background: 'transparent',
-                  border: `2px solid ${selectedChart.type === 'line' ? '#00ffff' : '#ff64ff'}`,
-                  color: selectedChart.type === 'line' ? '#00ffff' : '#ff64ff',
-                  padding: isMobile ? '8px 16px' : '10px 20px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: isMobile ? '14px' : '16px',
-                  fontWeight: 'bold',
-                  transition: 'all 0.3s'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = selectedChart.type === 'line' ? 'rgba(0, 255, 255, 0.2)' : 'rgba(255, 100, 255, 0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                }}
-              >
-                ✕ Close
-              </button>
-            </div>
-            
-            {/* Chart Canvas */}
-            <div style={{
-              flex: 1,
-              position: 'relative',
-              background: 'rgba(20, 20, 20, 0.5)',
-              borderRadius: '15px',
-              padding: '20px'
-            }}>
-              <canvas 
-                ref={(canvas) => {
-                  if (canvas && !canvas.chartDrawn) {
-                    canvas.chartDrawn = true;
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = canvas.offsetWidth * 2;
-                    canvas.height = canvas.offsetHeight * 2;
-                    ctx.scale(2, 2);
-                    
-                    new Chart(ctx, {
-                      type: selectedChart.type,
-                      data: {
-                        labels: selectedChart.data.timestamps,
-                        datasets: [{
-                          label: selectedChart.type === 'line' ? 'ETH Price ($)' : 'Volume (Millions)',
-                          data: selectedChart.data.values,
-                          borderColor: selectedChart.type === 'line' ? '#00ffff' : '#ff64ff',
-                          backgroundColor: selectedChart.type === 'line' 
-                            ? 'rgba(0, 255, 255, 0.1)' 
-                            : 'rgba(255, 100, 255, 0.4)',
-                          borderWidth: 3,
-                          tension: 0.4,
-                          pointBackgroundColor: selectedChart.type === 'line' ? '#00ffff' : '#ff64ff',
-                          pointBorderColor: '#ffffff',
-                          pointBorderWidth: 2,
-                          pointRadius: 8,
-                          pointHoverRadius: 10
-                        }]
-                      },
-                      options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: {
-                          duration: 1000
-                        },
-                        plugins: {
-                          legend: {
-                            labels: {
-                              color: 'white',
-                              font: {
-                                size: 16
-                              }
-                            }
-                          }
-                        },
-                        scales: {
-                          x: {
-                            grid: {
-                              color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                              color: 'white',
-                              font: {
-                                size: 14
-                              }
-                            }
-                          },
-                          y: {
-                            grid: {
-                              color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                              color: 'white',
-                              font: {
-                                size: 14
-                              },
-                              callback: function(value) {
-                                return selectedChart.type === 'line' 
-                                  ? '$' + value.toLocaleString()
-                                  : value + 'M';
-                              }
-                            }
-                          }
-                        }
-                      }
-                    });
-                  }
-                }}
-                style={{
-                  width: '100%',
-                  height: '100%'
-                }}
-              />
-            </div>
-            
-            {/* Data Summary */}
-            <div style={{
-              marginTop: '20px',
-              display: 'flex',
-              justifyContent: 'space-around',
-              borderTop: `1px solid ${selectedChart.type === 'line' ? 'rgba(0, 255, 255, 0.3)' : 'rgba(255, 100, 255, 0.3)'}`,
-              paddingTop: '20px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: '#888', fontSize: '14px' }}>High</div>
-                <div style={{ 
-                  color: selectedChart.type === 'line' ? '#00ffff' : '#ff64ff',
-                  fontSize: '20px',
-                  fontWeight: 'bold'
-                }}>
-                  {selectedChart.type === 'line' ? '$' : ''}
-                  {Math.max(...selectedChart.data.values).toLocaleString()}
-                  {selectedChart.type === 'bar' ? 'M' : ''}
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: '#888', fontSize: '14px' }}>Low</div>
-                <div style={{ 
-                  color: selectedChart.type === 'line' ? '#00ffff' : '#ff64ff',
-                  fontSize: '20px',
-                  fontWeight: 'bold'
-                }}>
-                  {selectedChart.type === 'line' ? '$' : ''}
-                  {Math.min(...selectedChart.data.values).toLocaleString()}
-                  {selectedChart.type === 'bar' ? 'M' : ''}
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: '#888', fontSize: '14px' }}>Average</div>
-                <div style={{ 
-                  color: selectedChart.type === 'line' ? '#00ffff' : '#ff64ff',
-                  fontSize: '20px',
-                  fontWeight: 'bold'
-                }}>
-                  {selectedChart.type === 'line' ? '$' : ''}
-                  {Math.round(selectedChart.data.values.reduce((a, b) => a + b, 0) / selectedChart.data.values.length).toLocaleString()}
-                  {selectedChart.type === 'bar' ? 'M' : ''}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Show loader when loading */}
-      {isLoading && (
-        <div style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          right: 0, 
-          bottom: 0,
-          zIndex: 10,
-          background: '#000000'
-        }}>
-          <SimpleLoader />
-        </div>
+          <source src="/videos/neon80s.mp4" type="video/mp4" />
+        </video>
       )}
       <Canvas
+        style={{ position: 'relative', zIndex: 1 }}
         camera={{ position: [-7, 1, 7], fov: 40 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
-        onCreated={() => setIsLoading(false)}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, alpha: true }}
       >
         <ambientLight intensity={0.2} />
         {/* Multiple point lights around the cylinder */}
@@ -1027,20 +918,49 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         <pointLight position={[0, 2, -3]} color="#00ffff" intensity={0.3} /> */}
         
         <Suspense fallback={null}>
-          <Model modelPath={modelPath} />
+          <Model modelPath={modelPath} onLoaded={() => setModelLoaded(true)} is80sMode={is80sMode} />
           <Environment preset="night" />
           {/* <FlatCharts onChartClick={setSelectedChart} /> */}
         </Suspense>
         <OrbitControls enablePan={true} enableZoom={false} enableRotate={true} autoRotate={false} autoRotateSpeed={0.3}     maxPolarAngle = {Math.PI * 0.5} // Initial limit - will be dynamic
     minPolarAngle = {0} />
-        <EffectComposer>
-          <Bloom 
-            intensity={0.9}
-            luminanceThreshold={0.5}
-            luminanceSmoothing={0.9}
-            radius={0.3}
-          />
-        </EffectComposer>
+        {is80sMode ? (
+          <EffectComposer>
+            <Bloom
+              intensity={0.5}  // Reduced from 1 for this scene
+              luminanceThreshold={0.3}  // Slightly lower to catch highlights
+              luminanceSmoothing={0.5}
+              radius={0.4}
+              blendFunction={BlendFunction.ADD}
+            />
+            <ChromaticAberration
+              offset={[0.01, 0.01]}
+              radialModulation={true}
+              modulationOffset={0.5}
+            />
+            <Scanline
+              density={35.0}
+              opacity={0.8}
+              blendFunction={BlendFunction.OVERLAY}
+            />
+            <Glitch
+              delay={[3.0, 5.0]}
+              chromaticAberrationOffset={[0.00002, 0.000005]}
+              mode={GlitchMode.SPORADIC}
+            />
+            <Noise opacity={0.15} />
+            <Vignette eskil={false} offset={0.05} darkness={0.5} />
+          </EffectComposer>
+        ) : (
+          <EffectComposer>
+            <Bloom 
+              intensity={0.9}
+              luminanceThreshold={0.5}
+              luminanceSmoothing={0.9}
+              radius={0.3}
+            />
+          </EffectComposer>
+        )}
       </Canvas>
       
       {/* Mobile overlays - only show on mobile/tablet */}
@@ -1072,13 +992,15 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
             <div style={{
               marginTop: '1rem',
               padding: '0.75rem',
-              backgroundColor: 'rgba(142, 102, 43, 0.15)',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+
               border: '2px solid #8e662b',
               borderRadius: '8px',
               maxWidth: windowWidth <= 480 ? '280px' : '350px'
             }}>
               <p style={{
                 color: '#d4af37',
+
                 fontFamily: 'Georgia, serif',
                 fontSize: windowWidth <= 480 ? '0.9rem' : '1rem',
                 lineHeight: 1.5,
@@ -1086,8 +1008,14 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 textAlign: 'left',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
               }}>
-                Welcome to the sacred chronicles of Saint GR80, 
-                where ancient wisdom meets digital mysticism.
+                Welcome to the sacred chronicles of Saint GR80, a scholarly philosopher-bot and devotee of  <span style={{
+                fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
+                fontWeight: 'bold',
+                fontSize: '1.1em',
+                color: '#d4af37',
+                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+              }}> Our Lady of Perpetual Profit.</span>
+  
               </p>
             </div>
           </div>
@@ -1115,6 +1043,116 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         </>
       )}
       </div>
+      </div>
+      
+      {/* 80s Mode Full-Page Effects */}
+      {is80sMode && (
+        <>
+          {/* Scanlines overlay */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            zIndex: 9998,
+            background: `repeating-linear-gradient(
+              0deg,
+              rgba(0, 0, 0, 0) 0px,
+              rgba(0, 0, 0, 0) 2px,
+              rgba(0, 0, 0, 0.03) 2px,
+              rgba(0, 0, 0, 0.03) 4px
+            )`,
+            animation: 'scanlines 8s linear infinite'
+          }} />
+          
+          {/* Chromatic aberration effect */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            zIndex: 9997,
+            mixBlendMode: 'screen',
+            opacity: 0.3
+          }}>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              position: 'absolute',
+              background: 'linear-gradient(45deg, #ff00ff 0%, transparent 50%, #00ffff 100%)',
+              animation: 'chromatic-shift 4s ease-in-out infinite'
+            }} />
+          </div>
+          
+          {/* Static noise */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            zIndex: 9996,
+            opacity: 0.05,
+            animation: 'noise 0.2s infinite'
+          }} />
+        </>
+      )}
+      
+      {/* 80s Mode CSS Animations */}
+      <style jsx>{`
+        @keyframes scanlines {
+          0% {
+            transform: translateY(0);
+          }
+          100% {
+            transform: translateY(10px);
+          }
+        }
+        
+        @keyframes chromatic-shift {
+          0%, 100% {
+            transform: translate(0, 0);
+          }
+          25% {
+            transform: translate(2px, -1px);
+          }
+          50% {
+            transform: translate(-1px, 1px);
+          }
+          75% {
+            transform: translate(1px, -2px);
+          }
+        }
+        
+        @keyframes subtle-glitch {
+          0%, 98%, 100% {
+            transform: translate(0, 0) skew(0deg);
+            filter: hue-rotate(0deg);
+          }
+          98.5% {
+            transform: translate(2px, 0) skew(0.5deg);
+            filter: hue-rotate(10deg);
+          }
+          99% {
+            transform: translate(-2px, 0) skew(-0.5deg);
+            filter: hue-rotate(-10deg);
+          }
+        }
+        
+        @keyframes noise {
+          0%, 100% {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.5' /%3E%3C/svg%3E");
+          }
+          50% {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.95' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.5' /%3E%3C/svg%3E");
+          }
+        }
+      `}</style>
     </div>
   );
 }

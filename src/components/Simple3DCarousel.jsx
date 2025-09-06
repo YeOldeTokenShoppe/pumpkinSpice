@@ -281,25 +281,28 @@ export default function Simple3DCarousel({ images = [], captions = [] }) {
       {/* Caption below image container */}
       {captions[currentIndex] && (
         <div style={{
-          marginTop: '-10px',
+          marginTop: '-40px',
+          marginBottom: '2rem',
           textAlign: 'center',
           width: '100%'
         }}>
-          {/* <h3 style={{
+          <h3 style={{
             color: '#d4af37',
-            margin: '0 0 3px 0',
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
+            margin: '0 0 4px 0',
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)',
+            letterSpacing: '0.5px',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
           }}>
             {captions[currentIndex].title}
-          </h3> */}
+          </h3>
           <p style={{
             color: 'rgba(255, 255, 255, 0.9)',
-            marginTop: '-2rem',
-            marginBottom: '2rem',
-            fontSize: '0.75rem',
-            lineHeight: 1,
+            marginTop: '0',
+            marginBottom: '1rem',
+            fontSize: '0.85rem',
+            lineHeight: 1.2,
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
           }}>
             {captions[currentIndex].description}

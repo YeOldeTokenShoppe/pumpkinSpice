@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
   const [currentTask, setCurrentTask] = useState('Perpetu8ing...');
+  const animationRef = useRef(null);
+  const [candlePositions, setCandlePositions] = useState([0, 0, 0]);
   
   useEffect(() => {
     // Update current task based on progress
@@ -26,6 +28,47 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
     
     return () => clearInterval(interval);
   }, [detailedProgress]);
+  
+  // JavaScript-based animation for candles using requestAnimationFrame
+  useEffect(() => {
+    let startTime = null;
+    const duration = 3000; // 3 seconds for full cycle
+    const delays = [0, 400, 800]; // Delays for each candle
+    
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      
+      const newPositions = delays.map((delay) => {
+        const adjustedTime = Math.max(0, elapsed - delay);
+        const progress = (adjustedTime % duration) / duration;
+        
+        // Easing function for smooth rise
+        let yPosition = 0;
+        if (progress < 0.6) {
+          // Rising phase
+          const riseProgress = progress / 0.6;
+          yPosition = 40 * (1 - riseProgress * riseProgress); // Quadratic ease out
+        } else {
+          // Stay at top
+          yPosition = 0;
+        }
+        
+        return yPosition;
+      });
+      
+      setCandlePositions(newPositions);
+      animationRef.current = requestAnimationFrame(animate);
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
   
   useEffect(() => {
     // Inject keyframes into the document if not already present
@@ -163,12 +206,13 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
         <div style={wrapperStyle}>
           <div style={{
             ...columnStyle,
-            animation: 'simple-loader-rise 3s ease-out infinite',
-            animationFillMode: 'both'
+            transform: `translateY(${candlePositions[0]}px)`,
+            opacity: 1 - (candlePositions[0] / 40) * 0.6,
+            transition: 'none'
           }}>
             <div style={{
               ...topBarStyle,
-              animation: 'simple-loader-glow 3s ease-in-out infinite'
+              filter: candlePositions[0] < 5 ? 'brightness(1.3)' : 'brightness(1)'
             }} />
             <div style={middleBarStyle} />
             <div style={bottomBarStyle} />
@@ -176,8 +220,9 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
           <div style={{
             ...columnStyle,
             bottom: '16px',
-            animation: 'simple-loader-rise 3s ease-out infinite 0.4s',
-            animationFillMode: 'both'
+            transform: `translateY(${candlePositions[1]}px)`,
+            opacity: 1 - (candlePositions[1] / 40) * 0.6,
+            transition: 'none'
           }}>
             <div style={topBarStyle} />
             <div style={middleBarStyle} />
@@ -186,12 +231,13 @@ const SimpleLoader = ({ progress = 0, detailedProgress = null }) => {
           <div style={{
             ...columnStyle,
             bottom: '32px',
-            animation: 'simple-loader-rise 3s ease-out infinite 0.8s',
-            animationFillMode: 'both'
+            transform: `translateY(${candlePositions[2]}px)`,
+            opacity: 1 - (candlePositions[2] / 40) * 0.6,
+            transition: 'none'
           }}>
             <div style={{
               ...topBarStyle,
-              animation: 'simple-loader-glow 3s ease-in-out infinite 0.8s'
+              filter: candlePositions[2] < 5 ? 'brightness(1.3)' : 'brightness(1)'
             }} />
             <div style={middleBarStyle} />
             <div style={bottomBarStyle} />

@@ -163,7 +163,24 @@ const SlantedCarousel = ({
             />
             <div className="slide-overlay" />
             <div className="slide-content">
-              <h2 className="slide-title">{slide.title}</h2>
+              <h2 className="slide-title">
+                {slide.title.length > 15 ? (
+                  (() => {
+                    const words = slide.title.split(' ');
+                    const midPoint = Math.ceil(words.length / 2);
+                    const firstLine = words.slice(0, midPoint).join(' ');
+                    const secondLine = words.slice(midPoint).join(' ');
+                    return (
+                      <>
+                        <span className="title-line">{firstLine}</span>
+                        <span className="title-line">{secondLine}</span>
+                      </>
+                    );
+                  })()
+                ) : (
+                  slide.title
+                )}
+              </h2>
               <p className="slide-description">{slide.description}</p>
             </div>
             <div className="slide-image">

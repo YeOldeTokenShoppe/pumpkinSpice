@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 
 const SynthwaveText = ({ 
   text = "SYNTHWAVE",
-  fontSize = 150,
+  fontSize = 300,
   scale = 1,
   spacingX = 4,
   outsideColor = "rgba(0, 255, 255, 0.0)",
@@ -143,7 +143,7 @@ const SynthwaveText = ({
   }, [text, fontSize, spacingX, outsideColor, insideColor, backgroundColor]);
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className}`} lang="en">
       <canvas
         ref={canvasRef}
         style={{
@@ -154,7 +154,27 @@ const SynthwaveText = ({
           transform: `scale(${scale})`,
           transformOrigin: 'center'
         }}
+        aria-label={text}
+        role="img"
       />
+      {/* Hidden text element for translation services */}
+      <span 
+        className="sr-only"
+        translate="yes"
+        style={{
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: 0,
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0,0,0,0)',
+          whiteSpace: 'nowrap',
+          border: 0
+        }}
+      >
+        {text}
+      </span>
     </div>
   );
 };

@@ -7,6 +7,8 @@ import { useMusic } from '@/components/MusicContext';
 import Link from 'next/link';
 
 
+
+
 export default function Home() {
   
   const [isSceneLoading, setIsSceneLoading] = useState(true);

@@ -20,6 +20,7 @@ import { db } from '@/utilities/firebaseClient';
 import { collection, query, getDocs, limit, orderBy } from 'firebase/firestore';
 import '@/components/ArrowButton.css';
 import Numerology from '@/components/Numerology';
+import SimpleLoader from '@/components/SimpleLoader';
 
 // Register GSAP TextPlugin
 if (typeof window !== 'undefined') {
@@ -134,12 +135,24 @@ function SingleCandleModel({ candleData = null }) {
           context.fillStyle = 'rgba(0, 0, 0, 0.7)';
           context.fillRect(0, canvas.height - 80, canvas.width, 80);
           
-          // Draw username
-          context.fillStyle = '#d4af37';
-          context.font = 'bold 32px serif';
+          // Draw username (matching CandleInteraction.jsx font)
+          context.fillStyle = '#ffffff';
+          context.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
           context.textAlign = 'center';
           context.textBaseline = 'middle';
-          context.fillText(candleData.username, canvas.width / 2, canvas.height - 40);
+          
+          const textY = canvas.height - 40;
+          
+          // Add text shadow for better readability (matching CandleInteraction.jsx)
+          context.shadowColor = 'rgba(0, 0, 0, 0.8)';
+          context.shadowBlur = 4;
+          context.shadowOffsetX = 2;
+          context.shadowOffsetY = 2;
+          
+          context.fillText(candleData.username, canvas.width / 2, textY);
+          
+          // Reset shadow
+          context.shadowColor = 'transparent';
         }
         
         // Create texture and apply to mesh
@@ -181,13 +194,23 @@ function SingleCandleModel({ candleData = null }) {
       context.lineWidth = 4;
       context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
       
-      // Set text styling
+      // Set text styling (matching CandleInteraction.jsx style)
       context.fillStyle = '#d4af37';
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.font = 'bold 50px serif';
+      context.font = 'bold 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+      
+      // Add text shadow for better readability
+      context.shadowColor = 'rgba(0, 0, 0, 0.8)';
+      context.shadowBlur = 4;
+      context.shadowOffsetX = 2;
+      context.shadowOffsetY = 2;
+      
       context.fillText('Featured', canvas.width / 2, canvas.height / 2 - 30);
       context.fillText('Candle', canvas.width / 2, canvas.height / 2 + 30);
+      
+      // Reset shadow
+      context.shadowColor = 'transparent';
       
       // Create texture and apply to mesh
       const texture = new THREE.CanvasTexture(canvas);
@@ -270,30 +293,50 @@ function SingleCandleModel({ candleData = null }) {
     
     // Display message - check if candleData exists
     const message = candleData?.message || 'May your gains be eternal and your losses forgotten.';
-    context.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+    
+    // Determine font size based on message length (matching CandleInteraction.jsx)
+    const fontSize = message.length > 200 ? 40 : message.length > 100 ? 48 : 56;
+    context.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif`;
     context.fillStyle = '#000000';
     
-    // Word wrap
+    // Word wrap with reduced maxWidth for better readability (matching CandleInteraction.jsx)
     const words = message.split(' ');
     let line = '';
-    let y = 250;
-    const maxWidth = canvas.width - 200;
+    const maxWidth = 600; // Reduced from canvas.width - 200 to match CandleInteraction.jsx
+    const lineHeight = 70; // Increased from 50 to match CandleInteraction.jsx
+    let lines = [];
     
+    // Build lines array first (matching CandleInteraction.jsx approach)
     for (let n = 0; n < words.length; n++) {
       const testLine = line + words[n] + ' ';
       const metrics = context.measureText(testLine);
       
       if (metrics.width > maxWidth && n > 0) {
-        context.fillText(line, canvas.width / 2, y);
+        lines.push(line);
         line = words[n] + ' ';
-        y += 50;
       } else {
         line = testLine;
       }
     }
     if (line) {
-      context.fillText(line, canvas.width / 2, y);
+      lines.push(line);
     }
+    
+    // Draw text with shadow for better visibility (matching CandleInteraction.jsx)
+    const startY = 200 + ((canvas.height - 200) - lines.length * lineHeight) / 2;
+    lines.forEach((line, index) => {
+      // Add shadow
+      context.shadowColor = "rgba(0, 0, 0, 0.5)";
+      context.shadowBlur = 4;
+      context.shadowOffsetX = 2;
+      context.shadowOffsetY = 2;
+      
+      // Draw text
+      context.fillText(line, canvas.width / 2, startY + index * lineHeight);
+      
+      // Reset shadow
+      context.shadowColor = "transparent";
+    });
     
     // Create and apply texture
     const texture = new THREE.CanvasTexture(canvas);
@@ -353,6 +396,8 @@ export default function HomePage() {
   const [isClient, setIsClient] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const coinRef = useRef(null);
   
   // State for featured candle
@@ -459,7 +504,7 @@ export default function HomePage() {
           
           // Apply color based on word for action elements
           if (element.classList.contains('action-text') || element.classList.contains('action-text-mobile')) {
-            if (targetWord === "Declare") {
+            if (targetWord === "Declare" || targetWord === "Customize") {
               element.style.color = '#d4af37';
               element.style.fontFamily = '"UnifrakturCook", serif';
               element.style.textShadow = '0 0 10px #d4af37, 0 0 20px #d4af37';
@@ -499,23 +544,72 @@ export default function HomePage() {
     };
   }, [isClient]);
   
+  // Comprehensive page loading effect
   useEffect(() => {
-    // Ensure UnifrakturCook font is loaded
-    const loadFont = async () => {
+    const loadResources = async () => {
       try {
-        await document.fonts.load('bold 7rem "UnifrakturCook"');
+        setLoadingProgress(10);
+        
+        // Preload critical fonts
+        const fontPromises = [
+          document.fonts.load('bold 7rem "UnifrakturCook"'),
+          document.fonts.load('bold 7rem "UnifrakturMaguntia"'),
+          document.fonts.load('bold 2rem "Bowlby One SC"'),
+          document.fonts.load('bold 2rem "Cyber"')
+        ];
+        
+        setLoadingProgress(30);
+        
+        // Wait for fonts with timeout
+        await Promise.race([
+          Promise.all(fontPromises),
+          new Promise(resolve => setTimeout(resolve, 3000)) // 3 second timeout
+        ]);
+        
         setFontLoaded(true);
-      } catch (e) {
-        console.log('Font loading:', e);
+        setLoadingProgress(60);
+        
+        // Check if client-side and set viewport
+        if (typeof window !== 'undefined') {
+          setIsClient(true);
+          const width = window.innerWidth;
+          const height = window.innerHeight;
+          setIsMobileView(width <= 768);
+          setIsMobileDevice(width <= 768);
+          setIsLandscape(width > height);
+          setViewportHeight(height);
+        }
+        
+        setLoadingProgress(80);
+        
+        // Small delay to ensure smooth transition
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        setLoadingProgress(100);
+        
+        // Hide loader after progress reaches 100%
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 300);
+        
+      } catch (error) {
+        console.log('Resource loading error:', error);
+        // Even on error, eventually show the page
         setFontLoaded(true);
+        setIsClient(true);
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 1000);
       }
     };
-    loadFont();
+    
+    loadResources();
   }, []);
   
-  // Check if mobile view and device - only run on client
+  // Handle viewport changes after initial load
   useEffect(() => {
-    setIsClient(true);
+    if (!isClient) return;
+    
     const checkViewport = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -524,18 +618,19 @@ export default function HomePage() {
       setIsLandscape(width > height);
       setViewportHeight(height);
     };
-    checkViewport();
+    
     window.addEventListener('resize', checkViewport);
     window.addEventListener('orientationchange', checkViewport);
     return () => {
       window.removeEventListener('resize', checkViewport);
       window.removeEventListener('orientationchange', checkViewport);
     };
-  }, []);
+  }, [isClient]);
 
   // Sparkle effect for coin
   useEffect(() => {
-    if (typeof window === "undefined" || !coinRef.current) {
+    // Wait for client and page to be ready
+    if (!isClient || pageLoading || !coinRef.current) {
       return;
     }
 
@@ -647,7 +742,7 @@ export default function HomePage() {
     return () => {
       clearInterval(intervalId);
     };
-  }, [isClient, isMobileView]);
+  }, [isClient, isMobileView, pageLoading]);
 
   const carouselSlides = [
     {
@@ -655,48 +750,48 @@ export default function HomePage() {
       backgroundImage: '/images/face.png',
       image: '/images/face.png',
       number: '01',
-      title: 'Sacred Spaces',
-      description: 'Enter the divine realm of perpetual profit.'
+      title: 'AVOID FALSE PROFITS',
+      description: 'Only the worthy deserve your credul80.'
     },
     {
       id: 2,
       backgroundImage: '/images/deejay.jpg',
       image: '/images/deejay.jpg',
       number: '02',
-      title: 'Digital Visions',
-      description: 'Where technology meets spiritual transcendence.'
+      title: 'DEFI BEATS',
+      description: 'Curated playlists for spiritual transcendence.'
     },
     {
       id: 3,
       backgroundImage: '/images/rl80vsMonster.png',
       image: '/images/rl80vsMonster.png',
       number: '03',
-      title: 'Gothic Dreams',
-      description: 'Ancient mysteries in modern manifestation.'
+      title: 'WARD OFF EVIL',
+      description: 'Avoid scams, schemes, and evil-doers.'
     },
     {
       id: 4,
       backgroundImage: '/images/bullrider.jpg',
       image: '/images/bullrider.jpg',
       number: '04',
-      title: 'Eternal Flow',
-      description: 'The fountain of perpetual abundance.'
+      title: 'ASCENDING TRENDS',
+      description: 'Your guide you up and to the right.'
     },
     {
       id: 5,
       backgroundImage: '/images/lowrider.jpg',
       image: '/images/lowrider.jpg',
       number: '05',
-      title: 'Cosmic Jest',
-      description: 'Where humor meets the divine comedy.'
+      title: 'GUARDIAN OF GOOD TIMES',
+      description: 'She offers you her protection with smart contracts.'
     },
     {
       id: 6,
       backgroundImage: '/images/mosaic.jpg',
       image: '/images/mosaic.jpg',
       number: '05',
-      title: 'Cosmic Jest',
-      description: 'Where humor meets the divine comedy.'
+      title: 'PATRON OF THE ARTS',
+      description: 'From mimes to memes, she rewards creativ80. #RL80'
     },
     
     {
@@ -704,18 +799,23 @@ export default function HomePage() {
       backgroundImage: '/images/teknoir.jpg',
       image: '/images/teknoir.jpg',
       number: '05',
-      title: 'Cosmic Jest',
-      description: 'Where humor meets the divine comedy.'
+      title: 'F8TH IN THE FUTURE',
+      description: 'Even cyborgs need something to believe in.'
     },
-    {
-      id: 8,
-      backgroundImage: '/images/toast.jpg',
-      image: '/images/toast.jpg',
-      number: '05',
-      title: 'Cosmic Jest',
-      description: 'Where humor meets the divine comedy.'
-    }
+    // {
+    //   id: 8,
+    //   backgroundImage: '/images/toast.jpg',
+    //   image: '/images/toast.jpg',
+    //   number: '05',
+    //   title: 'PATTERN RECOGNITION',
+    //   description: 'Separate signal from noise in market analysis.'
+    // }
   ];
+
+  // Show loader while page is loading
+  if (pageLoading) {
+    return <SimpleLoader progress={loadingProgress} />;
+  }
 
   return (
     <>
@@ -922,7 +1022,7 @@ export default function HomePage() {
           // fontSize: '1rem',
           
           lineHeight: 1.6,
-          textAlign: 'left'
+          textAlign: 'center'
         }}>
           {/* <h2 style={{
             color: '#d4af37',
@@ -935,24 +1035,18 @@ export default function HomePage() {
             fontWeight: 400,
             letterSpacing: '0.02em'
           }}>
-            Experience the convergence of ancient wisdom and modern technology. 
-            <span style={{
-              fontFamily: 'UnifrakturCook, serif',
-              fontWeight: 'bold',
-              fontSize: '1.1em',
-              color: '#d4af37',
-              textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-            }}> Our Lady of Perpetual Profit</span> guides seekers through the digital realm, 
-            offering enlightenment through carefully curated experiences.
+    Experience the convergence of ancient wisdom and cyberpunk sensibility into the maternal market-oriented icon, 
+  <span style={{
+                fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
+                fontWeight: 'bold',
+                fontSize: '1.1em',
+                color: '#d4af37',
+                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+              }}> Our Lady of Perpetual Profit</span>. Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers. 
+
+
           </p>
-          <p style={{
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-            fontWeight: 400,
-            letterSpacing: '0.02em'
-          }}>
-            Navigate through our sacred scrolls, witness divine visions, and discover 
-            the eternal flow of creative abundance that awaits those who dare to explore.
-          </p>
+
         </div>
       )}
       
@@ -1081,7 +1175,7 @@ export default function HomePage() {
                   textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00',
                   minWidth: '120px',
                   textAlign: 'right'
-                }} data-words='["Encrypt", "Declare"]'>Encrypt</span>
+                }} data-words='["Encrypt", "Declare", "Customize"]'>Encrypt</span>
                 <span style={{ 
                   color: '#00ff00',
                   textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
@@ -1097,7 +1191,7 @@ export default function HomePage() {
             
             <p style={{
               fontSize: '0.95rem',
-              lineHeight: 1.1,
+              lineHeight: 1.6,
               marginBottom: '1rem',
               marginTop: '0.5rem',
               color: '#ffffff',
@@ -1111,16 +1205,13 @@ export default function HomePage() {
               whiteSpace: 'normal',
               wordWrap: 'break-word'
             }}>
-              Devote a virtual candle for{' '}
-              <span style={{
-                fontFamily: 'UnifrakturCook, serif',
-                fontWeight: 'bold',
-                fontSize: '1.1em',
-                color: '#d4af37',
-                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                display: 'inline'
-              }}>Our Lady of Perpetual Profit</span>
-              {' '}on the blockchain! 
+               Prime your portfolio for pumps and devote a green candle to <span style={{
+                  fontFamily: 'UnifrakturCook, serif',
+                  fontWeight: 'bold',
+                  fontSize: '1.1em',
+                  color: '#d4af37',
+                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+                }}>Our Lady of Perpetual Profit.</span> If The Virgin notices your virtue signal, you could receive an airdrop!
               {/* Top token burners are inducted into <span style={{
                 fontFamily: 'UnifrakturCook, serif',
                 fontWeight: 'bold',
@@ -1245,7 +1336,7 @@ export default function HomePage() {
           borderRadius: '12px',
           border: '1px solid rgba(212, 175, 55, 0.2)'
         }}>
-          <Numerology />
+          <Numerology isMobile={true} />
           
           {/* Caption and explanatory text for 8-ball */}
           <div style={{
@@ -1263,14 +1354,20 @@ export default function HomePage() {
               The Oracle of RL80
             </h3>
             <p style={{
-              fontSize: '1rem',
+              fontSize: '0.95rem',
               lineHeight: 1.6,
-              marginBottom: '0.5rem',
+              marginBottom: '1rem',
+              marginTop: '0.5rem',
+              color: '#ffffff',
               opacity: 0.9,
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               fontWeight: 400,
               letterSpacing: '0.02em',
-              padding: '0 1rem'
+              padding: '0 1rem',
+              display: 'block',
+              width: '100%',
+              whiteSpace: 'normal',
+              wordWrap: 'break-word'
             }}>
               Consult the mystical oracle for guidance on your path to perpetual profit. 
               Ask your burning questions about investments, life choices, or divine timing.
@@ -1301,13 +1398,16 @@ export default function HomePage() {
           <div style={{ 
             position: "relative",
             display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
             justifyContent: "center"
           }}>
             <div
               ref={isMobileView ? coinRef : null}
               style={{ 
                 position: "relative", 
-                width: "25rem", 
+                width: "100%",
+                maxWidth: "25rem", 
                 height: "25rem",
                 display: "flex",
                 alignItems: "center",
@@ -1325,6 +1425,34 @@ export default function HomePage() {
                 <Coin />
               </Link>
             </div>
+            
+            {/* Click to Buy Button - Directly under coin */}
+            <button
+              style={{
+                backgroundColor: '#d4af37',
+                color: '#000',
+                position: 'absolute',
+                left: '50%',
+                bottom: '1rem',
+                padding: '0.6rem 0.5rem',
+                borderRadius: '25px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                fontFamily: 'Cyber, monospace',
+                boxShadow: '0 0 20px rgba(212, 175, 55, 0.6)',
+                border: 'none',
+                cursor: 'pointer',
+                animation: 'pulse 2s infinite',
+                marginTop: '-3rem',
+                zIndex: 15,
+                display: 'block',
+                marginLeft: 'auto',
+                marginRight: 'auto'
+              }}
+              onClick={() => window.open('', '_blank')}
+            >
+              ↑ Click to Buy! ↑
+            </button>
           </div>
           
           {/* Caption and explanatory text for Coin */}
@@ -1333,11 +1461,11 @@ export default function HomePage() {
             textAlign: 'center',
             color: '#ffffff'
           }}>
-            <h3 style={{
+       <h3 style={{
               color: '#d4af37',
               fontSize: '1.8rem',
               marginBottom: '0.5rem',
-              fontFamily: 'Cyber, monospace',
+              fontFamily: 'UnifrakturCook, serif',
               textShadow: '0 0 10px rgba(212, 175, 55, 0.5)'
             }}>
               Sacred Token of Prosper80
@@ -1354,14 +1482,6 @@ export default function HomePage() {
             }}>
               The golden coin of infinite abundance spins eternally, channeling cosmic 
               energy and divine fortune to all who witness its radiant glow.
-            </p>
-            <p style={{
-              fontSize: '0.9rem',
-              fontStyle: 'italic',
-              opacity: 0.7,
-              color: '#d4af37'
-            }}>
-              Click to flip between realms of possibility
             </p>
           </div>
         </div>
@@ -1440,7 +1560,7 @@ export default function HomePage() {
                 {/* Click to Buy callout */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '5rem',
+                  bottom: '2rem',
                   left: '50%',
                   transform: 'translateX(-50%)',
                   backgroundColor: '#d4af37',
@@ -1480,22 +1600,23 @@ export default function HomePage() {
             textAlign: 'center',
             marginBottom: "3rem"
           }}>
-            <p style={{ 
-              marginBottom: '1rem',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              letterSpacing: '0.02em'
-            }}>
-              Experience the convergence of ancient wisdom and modern technology. 
-              <span style={{
+     <p style={{ 
+            marginBottom: '1rem',  
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            fontWeight: 400,
+            letterSpacing: '0.02em'
+          }}>
+    Experience the convergence of ancient wisdom and cyberpunk sensibility into the maternal market-oriented icon, 
+  <span style={{
                 fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
                 fontWeight: 'bold',
                 fontSize: '1.1em',
                 color: '#d4af37',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-              }}> Our Lady of Perpetual Profit</span> guides seekers through the digital realm, 
-              offering enlightenment through carefully curated experiences.
-            </p>
+              }}> Our Lady of Perpetual Profit.</span> Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers. 
+
+
+          </p>
           </div>
           
           {/* Two Column Section with Candle and Text */}
@@ -1665,7 +1786,7 @@ export default function HomePage() {
                     textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00',
                     minWidth: '200px',
                     textAlign: 'right'
-                  }} data-words='["Encrypt", "Declare"]'>Encrypt</span>
+                  }} data-words='["Encrypt", "Declare", "Customize"]'>Encrypt</span>
                   <span style={{ 
                     color: '#00ff00',
                     textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
@@ -1679,7 +1800,7 @@ export default function HomePage() {
                 }} data-words='["Prayer", "Wish", "Dedication", "Confession", "Intentions"]'>Message</span>
               </h5>
               <p style={{
-                lineHeight: 1.5,
+                lineHeight: 1.2,
                 marginBottom: '1.5rem',
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -1688,13 +1809,13 @@ export default function HomePage() {
                 fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem',
                 textAlign: 'center'
               }}>
-                Prime your portfolio for prosper80 and devote a virtual green candle to <span style={{
+                Prime your portfolio for pumps and devote a green candle to <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit</span> - saved for etern80 on the blockchain!
+                }}>Our Lady of Perpetual Profit.</span> If The Virgin notices your virtue signal, you could receive an airdrop!
                  {/* Top burners are inducted into  <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
@@ -1816,7 +1937,7 @@ export default function HomePage() {
           }}>
             {/* Left Column - Text Content */}
             <div style={{
-              padding: '0 2rem',
+              // padding: '0 2rem',
               color: '#ffffff'
             }}>
               <h2 style={{
@@ -1831,20 +1952,21 @@ export default function HomePage() {
                 The Oracle of RL80
               </h2>
               <p style={{
-                fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '1.5rem',
-                lineHeight: 1.6,
+                lineHeight: 1.2,
                 marginBottom: '1.5rem',
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
-                letterSpacing: '0.02em'
+                letterSpacing: '0.02em',
+                fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem',
+                textAlign: 'center'
               }}>
                 Peer into the mystical realm where ancient wisdom meets iconic modernity. 
                 Our quantum-entangled oracle channels divine guidance and market analysis.
               </p>
               <p style={{
                 fontSize: isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem',
-                lineHeight: 1.5,
+                lineHeight: 1.2,
                 opacity: 0.8,
                 fontStyle: 'italic',
                 color: '#d4af37'
@@ -1859,7 +1981,7 @@ export default function HomePage() {
                   marginLeft: '0.3rem'
                 }}>Our Lady of Perpetual Profit</span>
               </p>
-              <div style={{
+              {/* <div style={{
                 marginTop: '2rem',
                 padding: '1rem',
                 background: 'rgba(212, 175, 55, 0.1)',
@@ -1875,7 +1997,7 @@ export default function HomePage() {
                 }}>
                   ✨ Tap or click to reveal your fortune ✨
                 </p>
-              </div>
+              </div> */}
             </div>
             
             {/* Right Column - Numerology Component */}

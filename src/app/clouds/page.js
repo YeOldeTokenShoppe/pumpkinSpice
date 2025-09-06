@@ -9,6 +9,7 @@ import Link from 'next/link';
 import CyberNav from '@/components/CyberNav';
 import { useUser, UserButton, SignInButton } from '@clerk/nextjs';
 import { useMusic } from '@/components/MusicContext';
+import SimpleLoader from '@/components/SimpleLoader';
 
 
 
@@ -37,6 +38,8 @@ const EtherealCloudsPage = () => {
   const [isMobileView, setIsMobileView] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [sceneLoaded, setSceneLoaded] = useState(false);
   const handleScreenshot = useCallback(() => {
     if (canvasRef.current) {
       const canvas = canvasRef.current;
@@ -106,6 +109,14 @@ const EtherealCloudsPage = () => {
     };
     checkFont();
   }, []);
+  
+  // Hide loader only when everything is loaded
+  useEffect(() => {
+    if (fontLoaded && sceneLoaded) {
+      // Add a small delay for smooth transition
+      setTimeout(() => setIsPageLoading(false), 500);
+    }
+  }, [fontLoaded, sceneLoaded]);
 
   return (
 <div style={{ 
@@ -118,6 +129,29 @@ const EtherealCloudsPage = () => {
       border: "none",
       boxSizing: "border-box"
     }}>
+      {/* Show loader over entire page when loading */}
+      {isPageLoading && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0,
+          zIndex: 99999,
+          background: '#000000'
+        }}>
+          <SimpleLoader />
+        </div>
+      )}
+      
+      {/* Main content wrapper - hidden while loading */}
+      <div style={{
+        width: '100%',
+        height: '100%',
+        opacity: isPageLoading ? 0 : 1,
+        transition: 'opacity 0.5s ease-in-out',
+        position: 'relative'
+      }}>
       {/* Add inline keyframes for font */}
       <style jsx global>{`
         @font-face {
@@ -217,6 +251,7 @@ const EtherealCloudsPage = () => {
           preserveDrawingBuffer: true
         }}
         style={{ background: '#87CEEB' }}
+        onCreated={() => setSceneLoaded(true)}
       >
         <Suspense fallback={null}>
           <EtherealClouds />
@@ -456,10 +491,8 @@ const EtherealCloudsPage = () => {
           </button>
         </div>
       </div>
-      {/* Loading indicator */}
-
-      
-      {/* UI Controls */}
+      </div>
+      {/* End of main content wrapper */}
       {/* <VStack
         position="absolute"
         top={4}

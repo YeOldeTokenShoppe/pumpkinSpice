@@ -45,6 +45,7 @@ export default function GalleryPage() {
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [showCandleModal, setShowCandleModal] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
   
   // Sync showMusicControls with playing state when it changes
   useEffect(() => {
@@ -99,9 +100,20 @@ export default function GalleryPage() {
   // Debug isLoading state
   useEffect(() => {
     console.log('Gallery page - isLoading:', isLoading);
-    console.log('Gallery page - isMobileView:', isMobileView);
-    console.log('Gallery page - showMusicControls:', showMusicControls);
-  }, [isLoading, isMobileView, showMusicControls]);
+    console.log('Gallery page - fontLoaded:', fontLoaded);
+    console.log('Gallery page - sceneReady:', sceneReady);
+  }, [isLoading, fontLoaded, sceneReady]);
+
+  // Properly manage loading state based on all assets
+  useEffect(() => {
+    if (fontLoaded && sceneReady) {
+      // Add a small delay for smooth transition
+      setTimeout(() => {
+        console.log('Gallery: All assets loaded, hiding loader');
+        setIsLoading(false);
+      }, 500);
+    }
+  }, [fontLoaded, sceneReady]);
 
   // Fallback timeout to ensure loader doesn't stay forever
   useEffect(() => {
@@ -110,7 +122,7 @@ export default function GalleryPage() {
         console.log('Gallery loading timeout reached, forcing complete');
         setIsLoading(false);
       }
-    }, 10000); // 10 second timeout
+    }, 15000); // 15 second timeout (increased for safety)
 
     return () => clearTimeout(timeout);
   }, []);
@@ -190,8 +202,8 @@ export default function GalleryPage() {
         }
       `}</style>
 
-      {/* Loader with progress */}
-      {isLoading ? (
+      {/* Full page loader covering everything */}
+      {isLoading && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -206,7 +218,16 @@ export default function GalleryPage() {
         }}>
           <SimpleLoader />
         </div>
-      ) : (
+      )}
+      
+      {/* Main content wrapper - hidden while loading */}
+      <div style={{
+        width: '100%',
+        height: '100%',
+        opacity: isLoading ? 0 : 1,
+        transition: 'opacity 0.5s ease-in-out'
+      }}>
+        {!isLoading && (
         <>
           {/* Candle Interaction Hint */}
           <CandleInteractionHint isMobileView={isMobileView} />
@@ -618,7 +639,7 @@ export default function GalleryPage() {
         pointerEvents: isLoading ? 'none' : 'auto'
       }}>
         <ThreeDVotiveStand 
-          setIsLoading={setIsLoading}
+          setIsLoading={setSceneReady}
           isMobileView={isMobileView}
           is80sMode={is80sMode}
         />
@@ -640,6 +661,7 @@ export default function GalleryPage() {
       />
       </>
       )}
+      </div>
     </div>
   );
 }
