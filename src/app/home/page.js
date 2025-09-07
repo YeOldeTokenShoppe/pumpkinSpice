@@ -21,11 +21,22 @@ import { collection, query, getDocs, limit, orderBy } from 'firebase/firestore';
 import '@/components/ArrowButton.css';
 import Numerology from '@/components/Numerology';
 import SimpleLoader from '@/components/SimpleLoader';
+import MoonRoomModal from '@/components/MoonRoomModal';
+import Bouncer from '@/components/Bouncer';
 
 // Register GSAP TextPlugin
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(TextPlugin);
 }
+
+// Custom useDisclosure hook
+const useDisclosure = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const onOpen = () => setIsOpen(true);
+  const onClose = () => setIsOpen(false);
+  const onToggle = () => setIsOpen(prev => !prev);
+  return { isOpen, onOpen, onClose, onToggle };
+};
 
 // Dynamically import 3D carousel to avoid SSR issues
 const Simple3DCarousel = dynamic(() => import('@/components/Simple3DCarousel'), {
@@ -42,6 +53,7 @@ function SingleCandleModel({ candleData = null }) {
   const [label2Mesh, setLabel2Mesh] = useState(null);
   const targetRotationRef = useRef(0);
   const currentRotationRef = useRef(0);
+  const { isOpen, onOpen, onClose } = useDisclosure();
   
   // Clone the scene to avoid conflicts with other instances
   const clonedScene = React.useMemo(() => {
@@ -399,6 +411,7 @@ export default function HomePage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const coinRef = useRef(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
   
   // State for featured candle
   const [featuredCandle, setFeaturedCandle] = useState(null);
@@ -1064,6 +1077,98 @@ export default function HomePage() {
 
           </p>
 
+          {/* RL80 Token Information */}
+          <div style={{
+            marginTop: '1.5rem',
+            padding: '1rem',
+            background: 'rgba(212, 175, 55, 0.1)',
+            borderRadius: '8px',
+            border: '1px solid rgba(212, 175, 55, 0.3)'
+          }}>
+            <h3 style={{
+              color: '#d4af37',
+              fontSize: '1.4rem',
+              marginBottom: '0.8rem',
+              fontFamily: 'Cyber, monospace'
+            }}>RL80 Token - Contract Summary</h3>
+            <h4 style={{
+              color: '#00ff00',
+              fontSize: '1.2rem',
+              marginBottom: '0.6rem',
+              fontFamily: 'Cyber, monospace'
+            }}>Core Tokenomics</h4>
+            <ul style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              fontSize: '0.95rem',
+              lineHeight: 1.8
+            }}>
+              <li><strong style={{ color: '#d4af37' }}>Total Supply:</strong> 80 billion RL80 tokens</li>
+              <li><strong style={{ color: '#d4af37' }}>Distribution:</strong> 80% liquidity, 10% treasury, 10% marketing</li>
+              <li><strong style={{ color: '#d4af37' }}>Network:</strong> Base (Ethereum L2)</li>
+              <li><strong style={{ color: '#d4af37' }}>No mint function</strong> - Supply is fixed forever</li>
+            </ul>
+            
+            <h4 style={{
+              color: '#00ff00',
+              fontSize: '1.2rem',
+              marginTop: '1rem',
+              marginBottom: '0.6rem',
+              fontFamily: 'Cyber, monospace'
+            }}>Tax Structure</h4>
+            <p style={{
+              fontSize: '0.9rem',
+              marginBottom: '0.5rem'
+            }}>Progressive reduction:</p>
+            <ul style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              fontSize: '0.9rem',
+              lineHeight: 1.6
+            }}>
+              <li>• <strong style={{ color: '#d4af37' }}>Start:</strong> 5% buy/sell tax</li>
+              <li>• <strong style={{ color: '#d4af37' }}>After 250 buys:</strong> 3% tax</li>
+              <li>• <strong style={{ color: '#d4af37' }}>After 500 buys:</strong> 1% tax</li>
+              <li>• <strong style={{ color: '#d4af37' }}>After 1000 buys:</strong> 1% maintained (can be reduced to 0% manually)</li>
+              <li>• Only buys ≥100K tokens count toward milestones (prevents gaming)</li>
+              <li>• ✅ Maximum 5% tax hardcoded</li>
+            </ul>
+            
+            <h4 style={{
+              color: '#00ff00',
+              fontSize: '1.2rem',
+              marginTop: '1rem',
+              marginBottom: '0.6rem',
+              fontFamily: 'Cyber, monospace'
+            }}>Ownership Status</h4>
+            <p style={{
+              fontSize: '0.9rem',
+              lineHeight: 1.6
+            }}>
+              <strong style={{ color: '#d4af37' }}>Not renounced.</strong> This allows for:
+            </p>
+            <ul style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: '0.5rem 0',
+              fontSize: '0.9rem',
+              lineHeight: 1.6
+            }}>
+              <li>(1) Adding CEX wallets for exchange listings</li>
+              <li>(2) Adjusting limits as liquidity grows</li>
+              <li>(3) Reducing tax to 0%</li>
+              <li>(4) Emergency response to exploits</li>
+            </ul>
+            <p style={{
+              fontSize: '0.9rem',
+              lineHeight: 1.6
+            }}>
+              <strong style={{ color: '#ff6b6b' }}>Cannot:</strong> mint tokens, increase tax above 5%, or access liquidity.
+            </p>
+          </div>
+
         </div>
       )}
       
@@ -1635,6 +1740,108 @@ export default function HomePage() {
 
 
           </p>
+
+          {/* RL80 Token Information */}
+          <div style={{
+            marginTop: '1.5rem',
+            padding: '1.5rem',
+            background: 'rgba(212, 175, 55, 0.1)',
+            borderRadius: '8px',
+            border: '1px solid rgba(212, 175, 55, 0.3)'
+          }}>
+            <h3 style={{
+              color: '#d4af37',
+              fontSize: '1.8rem',
+              marginBottom: '1rem',
+              fontFamily: 'Cyber, monospace',
+              textAlign: 'center'
+            }}>RL80 Token - Contract Summary</h3>
+            <h4 style={{
+              color: '#00ff00',
+              fontSize: '1.5rem',
+              marginBottom: '0.8rem',
+              fontFamily: 'Cyber, monospace',
+              textAlign: 'center'
+            }}>Core Tokenomics</h4>
+            <ul style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              fontSize: '1.3rem',
+              lineHeight: 2,
+              textAlign: 'center'
+            }}>
+              <li><strong style={{ color: '#d4af37' }}>Total Supply:</strong> 80 billion RL80 tokens</li>
+              <li><strong style={{ color: '#d4af37' }}>Distribution:</strong> 80% liquidity, 10% treasury, 10% marketing</li>
+              <li><strong style={{ color: '#d4af37' }}>Network:</strong> Base (Ethereum L2)</li>
+              <li><strong style={{ color: '#d4af37' }}>No mint function</strong> - Supply is fixed forever</li>
+            </ul>
+            
+            <h4 style={{
+              color: '#00ff00',
+              fontSize: '1.5rem',
+              marginTop: '1.5rem',
+              marginBottom: '0.8rem',
+              fontFamily: 'Cyber, monospace',
+              textAlign: 'center'
+            }}>Tax Structure</h4>
+            <p style={{
+              fontSize: '1.2rem',
+              marginBottom: '0.5rem',
+              textAlign: 'center'
+            }}>Progressive reduction:</p>
+            <ul style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              fontSize: '1.2rem',
+              lineHeight: 1.8,
+              textAlign: 'center'
+            }}>
+              <li>• <strong style={{ color: '#d4af37' }}>Start:</strong> 5% buy/sell tax</li>
+              <li>• <strong style={{ color: '#d4af37' }}>After 250 buys:</strong> 3% tax</li>
+              <li>• <strong style={{ color: '#d4af37' }}>After 500 buys:</strong> 1% tax</li>
+              <li>• <strong style={{ color: '#d4af37' }}>After 1000 buys:</strong> 1% maintained (can be reduced to 0% manually)</li>
+              <li>• Only buys ≥100K tokens count toward milestones (prevents gaming)</li>
+              <li>• ✅ Maximum 5% tax hardcoded</li>
+            </ul>
+            
+            <h4 style={{
+              color: '#00ff00',
+              fontSize: '1.5rem',
+              marginTop: '1.5rem',
+              marginBottom: '0.8rem',
+              fontFamily: 'Cyber, monospace',
+              textAlign: 'center'
+            }}>Ownership Status</h4>
+            <p style={{
+              fontSize: '1.2rem',
+              lineHeight: 1.8,
+              textAlign: 'center'
+            }}>
+              <strong style={{ color: '#d4af37' }}>Not renounced.</strong> This allows for:
+            </p>
+            <ul style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: '0.5rem 0',
+              fontSize: '1.2rem',
+              lineHeight: 1.8,
+              textAlign: 'center'
+            }}>
+              <li>(1) Adding CEX wallets for exchange listings</li>
+              <li>(2) Adjusting limits as liquidity grows</li>
+              <li>(3) Reducing tax to 0%</li>
+              <li>(4) Emergency response to exploits</li>
+            </ul>
+            <p style={{
+              fontSize: '1.2rem',
+              lineHeight: 1.8,
+              textAlign: 'center'
+            }}>
+              <strong style={{ color: '#ff6b6b' }}>Cannot:</strong> mint tokens, increase tax above 5%, or access liquidity.
+            </p>
+          </div>
           </div>
           
           {/* Two Column Section with Candle and Text */}
@@ -2036,7 +2243,37 @@ export default function HomePage() {
                 <Numerology />
               </div>
             </div>
-          </div> 
+          </div>
+          {/* MoonRoom Section */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "2rem",
+              position: "relative",
+              marginTop: "1rem",
+              gap: "1rem",
+              zIndex: 1
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                width: "30rem",
+                borderRadius: "10px",
+                justifyContent: "center",
+                position: "relative",
+                marginTop: "1rem",
+                zIndex: -1
+              }}
+            >
+              <Bouncer onDoorClick={onOpen} disableBlockingBehavior={false} />
+              <MoonRoomModal isOpen={isOpen} onClose={onClose} />
+            </div>
+          </div>
           {/* Rotating Text Component */}
           <div style={{
             position: "relative",

@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Moon Room</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: none;
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: "Lato", sans-serif;
+        position: relative;
+        width: 100%;
+        max-width: 100vw;
+        height: auto;
+        min-height: 100vh;
+        text-align: center;
+        overflow-x: hidden;
+
+        background: #1b1724;
+        color: #1b1724;
+      }
+      canvas {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        position: fixed;
+        width: 100%;
+        max-width: 100vw;
+        height: auto;
+        min-height: 100vh;
+        top: 0;
+        left: 0;
+        z-index: 0;
+      }
+      main {
+        position: relative;
+      }
+      section {
+        position: relative;
+        width: 100vw;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+      }
+    </style>
+    <link rel="stylesheet" href="/moonRoom.css" />
+  </head>
+  <body>
+    <main>
+      <section></section>
+    </main>
+
+    <script
+      async
+      src="https://ga.jspm.io/npm:es-module-shims@1.6.3/dist/es-module-shims.js"
+    ></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.168.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.168.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/libs/ammo.wasm.js"></script>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
+
+      console.clear();
+      ("use strict");
+      const meshes = [];
+      let isDragging = false;
+      let selectedObject = null;
+      let previousMousePosition = new THREE.Vector2();
+      let dragStartPosition = new THREE.Vector3();
+      const mouse = new THREE.Vector2();
+      const dragPlane = new THREE.Plane();
+      const intersection = new THREE.Vector3();
+      const mousePosition = new THREE.Vector2();
+      const raycaster = new THREE.Raycaster();
+      const meshMap = new WeakMap();
+      async function AmmoPhysics() {
+        if (!("Ammo" in window)) {
+          console.error("AmmoPhysics: Couldn't find Ammo.js");
+          return;
+        }
+
+        const Ammo = await window.Ammo();
+        const collisionConfiguration =
+          new Ammo.btDefaultCollisionConfiguration();
+        const dispatcher = new Ammo.btCollisionDispatcher(
+          collisionConfiguration
+        );
+        const broadphase = new Ammo.btDbvtBroadphase();
+        const solver = new Ammo.btSequentialImpulseConstraintSolver();
+        const world = new Ammo.btDiscreteDynamicsWorld(
+          dispatcher,
+          broadphase,
+          solver,
+          collisionConfiguration
+        );
+        world.setGravity(new Ammo.btVector3(0, -10, 0));
+
+        let transform = new Ammo.btTransform();
+        const worldTransform = new Ammo.btTransform();
+        let position,
+          quaternion = new Ammo.btVector3(0, 0, 0);
+        let quaternion_bt = new Ammo.btQuaternion(0, 0, 0, 0);
+        let vector = new Ammo.btVector3(0, 0, 0);
+
+        const meshes = [];
+        // const meshMap = new WeakMap();
+
+        let shootingShapeSaved = null;
+        let shootingShapeName = "";
+
+        function createConvexHullShape(geometry) {
+          let shape = null;
+          let vector = new Ammo.btVector3(0, 0, 0);
+          let positions = geometry.attributes.position.array;
+
+          shape = new Ammo.btConvexHullShape();
+          for (let i = 0, il = positions.length; i < il; i += 3) {
+            vector.setValue(positions[i], positions[i + 1], positions[i + 2]);
+            const lastOne = i >= il - 3;
+            shape.addPoint(vector, lastOne);
+          }
+
+          if (shape) shape.setMargin(0);
+          if (!shape) console.error("AmmoPhysics: Shape error.");
+          return shape;
+        }
+
+        function createTerrainShape(geometry) {
+          let shape = null;
+          const positions = geometry.attributes.position.array;
+          const indices = geometry.index.array;
+
+          const mesh = new Ammo.btTriangleMesh();
+
+          for (let i = 0; i < indices.length; i += 3) {
+            const v1 = new Ammo.btVector3(
+              positions[indices[i] * 3],
+              positions[indices[i] * 3 + 1],
+              positions[indices[i] * 3 + 2]
+            );
+            const v2 = new Ammo.btVector3(
+              positions[indices[i + 1] * 3],
+              positions[indices[i + 1] * 3 + 1],
+              positions[indices[i + 1] * 3 + 2]
+            );
+            const v3 = new Ammo.btVector3(
+              positions[indices[i + 2] * 3],
+              positions[indices[i + 2] * 3 + 1],
+              positions[indices[i + 2] * 3 + 2]
+            );
+            mesh.addTriangle(v1, v2, v3);
+          }
+
+          shape = new Ammo.btBvhTriangleMeshShape(mesh, true, true);
+          if (shape) shape.setMargin(0);
+
+          return shape;
+        }
+
+        function addRigidBody(threeObject, mass, shape, velocity = null) {
+          position = threeObject.position;
+          quaternion = threeObject.quaternion;
+
+          transform.setIdentity();
+          vector.setValue(position.x, position.y, position.z);
+          transform.setOrigin(vector);
+          transform.setRotation(
+            new Ammo.btQuaternion(
+              quaternion.x,
+              quaternion.y,
+              quaternion.z,
+              quaternion.w
+            )
+          );
+
+          const scale = threeObject.scale;
+          vector.setValue(scale.x, scale.y, scale.z);
+          shape.setLocalScaling(vector);
+          vector.setValue(0, 0, 0);
+
+          const motionState = new Ammo.btDefaultMotionState(transform);
+          const localInertia = vector;
+          if (mass > 0) shape.calculateLocalInertia(mass, localInertia);
+
+          const rbInfo = new Ammo.btRigidBodyConstructionInfo(
+            mass,
+            motionState,
+            shape,
+            localInertia
+          );
+          const body = new Ammo.btRigidBody(rbInfo);
+
+          if (threeObject.name === "pointLight") {
+            body.setFriction(0.1);
+            body.setRestitution(0.7);
+          } else if (threeObject.name === "floor") {
+            body.setFriction(1);
+            body.setRestitution(1);
+            body.setDamping(0, 0);
+          } else if (threeObject.name === "shootingBall") {
+            body.setFriction(0.3);
+            body.setRestitution(0.8);  // High bounce for projectiles
+            body.setDamping(0.1, 0.1);
+          } else if (threeObject.name === "Target") {
+            body.setFriction(0.9);
+            body.setRestitution(0.6);  // Good bounce for target
+            body.setDamping(0, 0);
+          } else if (threeObject.name && (threeObject.name.startsWith("SM_Prop_Dunk_Tank_01") || 
+                     threeObject.name.startsWith("Mesh"))) {
+            body.setFriction(0.8);
+            body.setRestitution(0.5);  // Some bounce for dunk tank parts
+            body.setDamping(0, 0);
+          } else {
+            body.setFriction(0.5);
+            body.setRestitution(0.3);
+            body.setDamping(0, 0);
+          }
+
+          if (threeObject.name === "shootingBall" && velocity) {
+            vector.setValue(velocity.x, velocity.y, velocity.z);
+            body.setLinearVelocity(vector);
+          }
+
+          body.name = threeObject.name;
+          world.addRigidBody(body);
+
+          if (mass > 0) {
+            meshes.push(threeObject);
+            meshMap.set(threeObject, body);
+          }
+        }
+
+        // Set up physics update interval
+        let lastTime = performance.now();
+        setInterval(function () {
+          const time = performance.now();
+          if (lastTime > 0) {
+            const delta = (time - lastTime) / 1000;
+            world.stepSimulation(delta, 10);
+          }
+          lastTime = time;
+
+          for (let i = 0, il = meshes.length; i < il; i++) {
+            const mesh = meshes[i];
+            if (!mesh || (isDragging && mesh === selectedObject)) continue;
+
+            if (mesh.isInstancedMesh) {
+              const array = mesh.instanceMatrix.array;
+              const bodies = meshMap.get(mesh);
+              for (let j = 0; j < bodies.length; j++) {
+                const body = bodies[j];
+                if (!body) continue;
+
+                body.getMotionState().getWorldTransform(worldTransform);
+                const origin = worldTransform.getOrigin();
+                const rotation = worldTransform.getRotation();
+                computeQuaternionFromMatrix(origin, rotation, array, j * 16);
+              }
+              mesh.instanceMatrix.needsUpdate = true;
+            } else if (mesh.isMesh) {
+              const body = meshMap.get(mesh);
+              if (!body) continue;
+
+              body.getMotionState().getWorldTransform(worldTransform);
+              const origin = worldTransform.getOrigin();
+              const rotation = worldTransform.getRotation();
+              mesh.position.set(origin.x(), origin.y(), origin.z());
+              mesh.quaternion.set(
+                rotation.x(),
+                rotation.y(),
+                rotation.z(),
+                rotation.w()
+              );
+            }
+          }
+        }, 1000 / 60);
+
+        return {
+          addMesh: function (mesh, mass = 0) {
+            const shape = createConvexHullShape(mesh.geometry);
+            if (!shape) {
+              console.error("AmmoPhysics: Shape is NULL.");
+              return false;
+            }
+            addRigidBody(mesh, mass, shape);
+          },
+
+          addTerrainMesh: function (mesh, mass = 0) {
+            const shape = createTerrainShape(mesh.geometry);
+            if (!shape) {
+              console.error("AmmoPhysics: Shape is NULL.");
+              return false;
+            }
+            addRigidBody(mesh, mass, shape);
+          },
+
+          addShootingMesh: function (mesh, mass = 0, velocity = null) {
+            if (!velocity) {
+              console.error("AmmoPhysics: Parameter is NULL.");
+              return false;
+            }
+
+            if (!mesh.name || (mesh.name && mesh.name !== shootingShapeName)) {
+              shootingShapeSaved = createConvexHullShape(mesh.geometry);
+              shootingShapeName = mesh.name;
+            }
+
+            if (!shootingShapeSaved) {
+              console.error("AmmoPhysics: Shape is NULL.");
+              return false;
+            }
+
+            addRigidBody(mesh, mass, shootingShapeSaved, velocity);
+          },
+        };
+      }
+
+      function computeQuaternionFromMatrix(e, t, n, o) {
+        const i = t.x(),
+          a = t.y(),
+          r = t.z(),
+          s = t.w(),
+          l = i + i,
+          c = a + a,
+          d = r + r,
+          h = i * l,
+          m = i * c,
+          w = i * d,
+          E = a * c,
+          u = a * d,
+          p = r * d,
+          g = s * l,
+          M = s * c,
+          y = s * d;
+        (n[o + 0] = 1 - (E + p)),
+          (n[o + 1] = m + y),
+          (n[o + 2] = w - M),
+          (n[o + 3] = 0),
+          (n[o + 4] = m - y),
+          (n[o + 5] = 1 - (h + p)),
+          (n[o + 6] = u + g),
+          (n[o + 7] = 0),
+          (n[o + 8] = w + M),
+          (n[o + 9] = u - g),
+          (n[o + 10] = 1 - (h + E)),
+          (n[o + 11] = 0),
+          (n[o + 12] = e.x()),
+          (n[o + 13] = e.y()),
+          (n[o + 14] = e.z()),
+          (n[o + 15] = 1);
+      }
+
+      // Main initialization
+      (async function init() {
+        let physics = await AmmoPhysics();
+        let camera, scene, renderer, controls;
+        let sphereGeom, sphereMat, light, chair;
+        let dunkTankSeat = null;
+        let targetHitbox = null;
+        let seatDropped = false;
+        let intensity = 40;
+        let color = 0x1a1a3a;
+        const HEIGHT = 5;
+        const BOUND = 20;
+
+        // Scene setup
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000033);
+
+        // Renderer setup
+        renderer = new THREE.WebGLRenderer({ 
+          antialias: true,
+          preserveDrawingBuffer: true // Enable this to allow canvas capture
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Camera setup
+        camera = new THREE.PerspectiveCamera(
+          50, // Increase FOV to make the room appear larger
+          window.innerWidth / window.innerHeight,
+          0.01,
+          1000 // Increase far clipping plane
+        );
+        camera.position.set(0, 3, 150);
+        camera.lookAt(0, 0, 0);
+
+        // Controls setup
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.autoRotate = false;
+        controls.autoRotateSpeed = 1;
+        controls.enableDamping = true;
+        controls.enablePan = false;
+        controls.minDistance = 3;
+        controls.maxDistance = BOUND;
+        controls.minPolarAngle = 0;
+        controls.maxPolarAngle = (Math.PI / 2) * 0.9;
+        controls.target.set(0, HEIGHT, 0);
+        controls.update();
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        // Load textures and models
+        const textureLoader = new THREE.TextureLoader();
+
+        Promise.all([
+          new Promise((resolve) => {
+            textureLoader.load(
+              "https://happy358.github.io/Images/textures/lunar_color.jpg",
+              resolve
+            );
+          }),
+          new Promise((resolve) => {
+            new GLTFLoader().load("/models/DunkTank.glb", resolve);
+          }),
+        ]).then(([moonTexture, chairModel]) => {
+          // Create moon lamps
+          moonTexture.anisotropy = 16;
+
+          // Create the first lamp
+          sphereGeom = new THREE.SphereGeometry(2, 30, 30);
+          sphereMat = new THREE.MeshBasicMaterial({ color: color });
+          sphereMat.color.multiplyScalar(3);
+
+          let moonLamp = new THREE.Mesh(sphereGeom, sphereMat);
+          moonLamp.position.set(0, 1, 0);
+          moonLamp.name = "pointLight";
+
+          // Add point light
+          light = new THREE.PointLight(color, intensity, 10);
+          light.castShadow = true;
+          light.shadow.bias = -0.01;
+          moonLamp.add(light);
+
+          // Add glow effects
+          let glowMesh1 = new THREE.Mesh(
+            sphereGeom,
+            new THREE.MeshLambertMaterial({
+              color: "white",
+              transparent: true,
+              opacity: 0.3,
+            })
+          );
+          glowMesh1.scale.set;
+          glowMesh1.scale.set(1.02, 1.02, 1.02);
+          moonLamp.add(glowMesh1);
+
+          let glowMesh2 = new THREE.Mesh(
+            sphereGeom,
+            new THREE.MeshBasicMaterial({
+              color: "white",
+              transparent: true,
+              opacity: 0.05,
+            })
+          );
+          glowMesh2.scale.set(1.05, 1.05, 1.05);
+          moonLamp.add(glowMesh2);
+
+          // Create additional moon lamps
+          for (let i = 0; i < 5; i++) {
+            let newLamp = moonLamp.clone();
+            color = new THREE.Color("#faf0e6");
+            sphereMat = new THREE.MeshPhongMaterial({
+              color: color,
+              map: moonTexture,
+              lightMap: moonTexture,
+              lightMapIntensity: 3,
+            });
+            newLamp.material = sphereMat;
+            newLamp.children[0].color.set(color);
+
+            if (i === 0) {
+              newLamp.position.set(0, 2 * HEIGHT, 0);
+            } else {
+              newLamp.position.set(
+                THREE.MathUtils.randInt(-2 * HEIGHT, 2 * HEIGHT),
+                THREE.MathUtils.randFloat(1.5 * HEIGHT, 4.0 * HEIGHT),
+                THREE.MathUtils.randInt(-2 * HEIGHT, 1.3 * HEIGHT)
+              );
+              newLamp.rotation.set(
+                THREE.MathUtils.randFloat(-2 * Math.PI, 2 * Math.PI),
+                THREE.MathUtils.randFloat(-2 * Math.PI, 2 * Math.PI),
+                THREE.MathUtils.randFloat(-2 * Math.PI, 2 * Math.PI)
+              );
+            }
+
+            scene.add(newLamp);
+            physics.addMesh(newLamp, 0.5);
+            const body = meshMap.get(newLamp);
+            if (body) {
+              body.setDamping(0.5, 0.5);
+              body.setFriction(0.2);
+              body.setRestitution(0.7);
+              body.setRollingFriction(0.1);
+            }
+          }
+
+          // Create shooting balls
+          const ballGeometry = new THREE.IcosahedronGeometry(0.8, 1);
+          const ballMaterial = new THREE.MeshPhongMaterial({
+            color: 0x8888ff,
+            flatShading: true,
+            shininess: 100,
+          });
+          const shootBall = new THREE.Mesh(ballGeometry, ballMaterial);
+          shootBall.castShadow = true;
+          shootBall.name = "shootingBall";
+
+          // Shoot ball on click
+          // const raycaster = new THREE.Raycaster();
+
+          const shootingForce = 45;
+          const ballMass = 10;
+          window.addEventListener("pointerdown", (event) => {
+            mouse.set(
+              (event.clientX / window.innerWidth) * 2 - 1,
+              -(event.clientY / window.innerHeight) * 2 + 1
+            );
+
+            camera.updateMatrixWorld();
+            raycaster.setFromCamera(mouse, camera);
+
+            // Hold Shift to grab, normal click to shoot
+            if (event.shiftKey) {
+              // Shift + click for grabbing
+              const intersects = raycaster.intersectObjects(
+                scene.children,
+                true
+              );
+
+              for (let i = 0; i < intersects.length; i++) {
+                let object = intersects[i].object;
+                while (object.parent && object.parent !== scene) {
+                  object = object.parent;
+                }
+
+                if (object.name === "pointLight") {
+                  isDragging = true;
+                  selectedObject = object;
+                  dragStartPosition.copy(selectedObject.position);
+
+                  dragPlane.normal.copy(
+                    camera.getWorldDirection(dragPlane.normal)
+                  );
+                  dragPlane.constant = -selectedObject.position.dot(
+                    dragPlane.normal
+                  );
+
+                  previousMousePosition.set(event.clientX, event.clientY);
+                  controls.enabled = false;
+                  return;
+                }
+              }
+            } else {
+              // Normal click for shooting
+              let shootingDirection = new THREE.Vector3();
+              shootingDirection.copy(raycaster.ray.direction);
+              shootingDirection.add(raycaster.ray.origin);
+
+              let ball = shootBall.clone();
+              ball.position.set(
+                shootingDirection.x,
+                shootingDirection.y,
+                shootingDirection.z
+              );
+              ball.material = ball.material.clone();
+
+              let ballColor = new THREE.Color();
+              ballColor.setHSL(
+                Math.abs(THREE.MathUtils.randInt(-1000, 1000) / 1000),
+                1,
+                THREE.MathUtils.randInt(500, 700) / 1000
+              );
+              ball.material.color.set(ballColor);
+
+              scene.add(ball);
+
+              shootingDirection.copy(raycaster.ray.direction);
+              shootingDirection.multiplyScalar(shootingForce);
+              physics.addShootingMesh(ball, ballMass, shootingDirection);
+            }
+          });
+
+          // Modify the pointermove event to include collision detection
+          window.addEventListener("pointermove", (event) => {
+            if (isDragging && selectedObject) {
+              mousePosition.set(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+              );
+
+              raycaster.setFromCamera(mousePosition, camera);
+
+              // Create a plane that follows the camera view
+              dragPlane.normal.copy(camera.getWorldDirection(dragPlane.normal));
+              const cameraDistance = camera.position.distanceTo(
+                selectedObject.position
+              );
+              dragPlane.constant =
+                -selectedObject.position.dot(dragPlane.normal) +
+                cameraDistance * 0.5;
+
+              if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
+                const body = meshMap.get(selectedObject);
+                if (body) {
+                  // Add some smoothing to the movement
+                  const smoothFactor = 0.3;
+                  const targetPosition = new THREE.Vector3(
+                    intersection.x,
+                    intersection.y,
+                    intersection.z
+                  );
+
+                  // Constrain movement
+                  const maxHeight = BOUND * 2;
+                  const minHeight = 2;
+                  targetPosition.y = Math.max(
+                    minHeight,
+                    Math.min(maxHeight, targetPosition.y)
+                  );
+
+                  // Keep within room bounds
+                  const distanceFromCenter = new THREE.Vector2(
+                    targetPosition.x,
+                    targetPosition.z
+                  ).length();
+                  if (distanceFromCenter > BOUND * 0.8) {
+                    const angle = Math.atan2(
+                      targetPosition.z,
+                      targetPosition.x
+                    );
+                    targetPosition.x = Math.cos(angle) * BOUND * 0.8;
+                    targetPosition.z = Math.sin(angle) * BOUND * 0.8;
+                  }
+
+                  // Update physics body
+                  let transform = new Ammo.btTransform();
+                  body.getMotionState().getWorldTransform(transform);
+
+                  // Smooth movement
+                  const currentPos = new THREE.Vector3(
+                    transform.getOrigin().x(),
+                    transform.getOrigin().y(),
+                    transform.getOrigin().z()
+                  );
+
+                  const smoothedPosition = new THREE.Vector3(
+                    currentPos.x +
+                      (targetPosition.x - currentPos.x) * smoothFactor,
+                    currentPos.y +
+                      (targetPosition.y - currentPos.y) * smoothFactor,
+                    currentPos.z +
+                      (targetPosition.z - currentPos.z) * smoothFactor
+                  );
+
+                  transform.setOrigin(
+                    new Ammo.btVector3(
+                      smoothedPosition.x,
+                      smoothedPosition.y,
+                      smoothedPosition.z
+                    )
+                  );
+
+                  body.getMotionState().setWorldTransform(transform);
+                  body.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
+                  body.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
+                  body.activate(true);
+
+                  // Update visual position
+                  selectedObject.position.copy(smoothedPosition);
+                }
+              }
+            }
+          });
+
+          // Add this to enable right-click dragging without showing context menu
+          window.addEventListener("contextmenu", (e) => e.preventDefault());
+
+          window.addEventListener("pointerup", (event) => {
+            if (isDragging && selectedObject) {
+              const body = meshMap.get(selectedObject);
+              if (body) {
+                const deltaX = event.clientX - previousMousePosition.x;
+                const deltaY = event.clientY - previousMousePosition.y;
+                const throwForce = 0.7; // Increased throw force
+                const upwardBias = 5; // Add upward force to throws
+
+                // Calculate throw direction in world space
+                const throwDirection = new THREE.Vector3(
+                  deltaX * throwForce,
+                  -deltaY * throwForce + upwardBias,
+                  0
+                ).applyQuaternion(camera.quaternion);
+
+                // Apply velocity-based throwing
+                const velocity = throwDirection.multiplyScalar(0.1); // Scale down for better control
+                body.setLinearVelocity(
+                  new Ammo.btVector3(velocity.x, velocity.y, velocity.z)
+                );
+                body.activate(true);
+              }
+            }
+
+            isDragging = false;
+            selectedObject = null;
+            controls.enabled = true;
+          });
+
+          // Create environment
+          // Wall
+          const wallGeometry = new THREE.CylinderGeometry(
+            BOUND,
+            BOUND,
+            4 * BOUND,
+            32,
+            1,
+            false
+          );
+          const wallMaterial = new THREE.MeshPhongMaterial({
+            color: 0x000033,
+            shininess: 10,
+            specular: 0x111111,
+            side: THREE.DoubleSide,
+          });
+          const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+          wall.receiveShadow = true;
+          wall.name = "wall";
+          scene.add(wall);
+          physics.addTerrainMesh(wall, 0);
+
+
+          // Floor
+          const floorGeometry = new THREE.CircleGeometry(1.5 * BOUND, 8);
+          floorGeometry.rotateX(-Math.PI / 2);
+          const floor = new THREE.Mesh(floorGeometry, wallMaterial);
+          floor.receiveShadow = true;
+          floor.name = "floor";
+          scene.add(floor);
+          physics.addTerrainMesh(floor, 0);
+
+          // Add dunk tank model
+          const dunkTankModel = chairModel.scene;
+          dunkTankModel.scale.set(10, 10, 10);
+          dunkTankModel.position.set(0, 0, -10);
+          dunkTankModel.castShadow = true;
+          dunkTankModel.receiveShadow = true;
+          scene.add(dunkTankModel);
+          
+          // Update matrix for proper physics
+          dunkTankModel.updateMatrixWorld(true);
+          
+          // Get the seat and target references
+          dunkTankSeat = dunkTankModel.getObjectByName("SeatBoard");
+          targetHitbox = dunkTankModel.getObjectByName("Target");
+          
+          // Ensure Target is properly set up for collision detection
+          if (targetHitbox) {
+            targetHitbox.updateMatrixWorld(true);
+            // Make sure Target has a name for collision detection
+            targetHitbox.name = "Target";
+          }
+          
+          // Setup target hitbox
+          if (targetHitbox) {
+            // Store original material for reset
+            const originalMaterial = targetHitbox.material ? targetHitbox.material.clone() : null;
+            
+            // Make target visible and interactive
+            targetHitbox.visible = true;
+            if (targetHitbox.material) {
+              targetHitbox.material = targetHitbox.material.clone();
+              targetHitbox.material.transparent = true;
+              targetHitbox.material.opacity = 0.8;
+              // Keep original color or set a target-like color
+              if (!targetHitbox.material.color) {
+                targetHitbox.material.color = new THREE.Color(0xff3333); // Red target color
+              }
+            }
+            
+            // Store materials for hit feedback
+            targetHitbox.userData.originalMaterial = originalMaterial;
+            
+            // Physics will be added in the traverse loop below
+            console.log("Target found and configured");
+          }
+          
+          // Store seat globally for animation
+          if (dunkTankSeat) {
+            window.dunkTankSeat = dunkTankSeat;
+            console.log("Dunk tank seat found");
+          }
+          
+          // Add physics to the dunk tank meshes
+          let dunkTankBodyMesh = null;
+          let targetMesh = null;
+          let targetWorldPos = null;
+          const processedMeshes = [];
+          
+          // First pass: find the Target position
+          dunkTankModel.traverse((child) => {
+            const parentName = child.parent ? child.parent.name : '';
+            if ((child.name === "Target" || parentName === "Target") && child.isMesh) {
+              targetMesh = child;
+              child.name = "Target";
+              targetWorldPos = new THREE.Vector3();
+              child.getWorldPosition(targetWorldPos);
+              console.log("Target position found at:", targetWorldPos);
+            }
+          });
+          
+          // Second pass: add physics
+          dunkTankModel.traverse((child) => {
+            // Check both the object and its parent for names
+            const parentName = child.parent ? child.parent.name : '';
+            
+            if (child.isMesh) {
+              child.updateMatrixWorld(true);
+              console.log(`Processing mesh: ${child.name}, parent: ${parentName}`);
+              
+              // The actual Target mesh - NO PHYSICS so it can be hit
+              if (child.name === "Target" || parentName === "Target") {
+                console.log("✓ Target found - no physics collision (keeping it accessible for hits)");
+                
+              // The DunkTankBody mesh - use triangle mesh for accurate collision with holes
+              } else if (parentName === "DunkTankBody" || child.name === "DunkTankBody") {
+                dunkTankBodyMesh = child;
+                
+                // Get world transform
+                const worldPosition = new THREE.Vector3();
+                const worldQuaternion = new THREE.Quaternion();
+                const worldScale = new THREE.Vector3();
+                child.getWorldPosition(worldPosition);
+                child.getWorldQuaternion(worldQuaternion);
+                child.getWorldScale(worldScale);
+                
+                // Clone and transform geometry to world space
+                const transformedGeometry = child.geometry.clone();
+                const matrix = new THREE.Matrix4();
+                matrix.compose(worldPosition, worldQuaternion, worldScale);
+                transformedGeometry.applyMatrix4(matrix);
+                
+                // Create mesh for triangle mesh collision
+                const tankPhysicsMesh = new THREE.Mesh(
+                  transformedGeometry,
+                  new THREE.MeshBasicMaterial({ 
+                    color: 0x00ff00,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.3,
+                    visible: true  // Set to false to hide debug mesh
+                  })
+                );
+                tankPhysicsMesh.position.set(0, 0, 0);
+                tankPhysicsMesh.rotation.set(0, 0, 0);
+                tankPhysicsMesh.scale.set(1, 1, 1);
+                tankPhysicsMesh.name = "DunkTankBody";
+                
+                // Add to scene
+                scene.add(tankPhysicsMesh);
+                
+                // Use triangle mesh collision for accurate non-convex shape with holes
+                physics.addTerrainMesh(tankPhysicsMesh, 0);
+                
+                processedMeshes.push(child.name);
+                console.log(`✓ Added ${child.name} (DunkTankBody) with triangle mesh collision (preserves holes)`)
+                
+              // The Hinge mesh - also needs collision
+              } else if (parentName === "Hinge") {
+                // Get world transform
+                const worldPosition = new THREE.Vector3();
+                const worldQuaternion = new THREE.Quaternion();
+                const worldScale = new THREE.Vector3();
+                child.getWorldPosition(worldPosition);
+                child.getWorldQuaternion(worldQuaternion);
+                child.getWorldScale(worldScale);
+                
+                // Clone and transform geometry
+                const transformedGeometry = child.geometry.clone();
+                const matrix = new THREE.Matrix4();
+                matrix.compose(worldPosition, worldQuaternion, worldScale);
+                transformedGeometry.applyMatrix4(matrix);
+                
+                // Create invisible physics mesh
+                const hingePhysicsMesh = new THREE.Mesh(
+                  transformedGeometry,
+                  new THREE.MeshBasicMaterial({ visible: false })
+                );
+                hingePhysicsMesh.position.set(0, 0, 0);
+                hingePhysicsMesh.rotation.set(0, 0, 0);
+                hingePhysicsMesh.scale.set(1, 1, 1);
+                hingePhysicsMesh.name = "Hinge";
+                
+                // Add to scene and physics
+                scene.add(hingePhysicsMesh);
+                physics.addMesh(hingePhysicsMesh, 0);
+                
+                processedMeshes.push(child.name);
+                console.log(`✓ Added ${child.name} (Hinge) with convex hull collision`);
+                
+              // Skip the SeatBoard mesh
+              } else if (parentName === "SeatBoard" || child.name === "SeatBoard") {
+                console.log(`- Skipping ${child.name} (SeatBoard - needs to animate)`);
+                
+              } else {
+                console.log(`- Unknown mesh: ${child.name}, parent: ${parentName}`);
+              }
+            }
+          });
+          
+          console.log(`Physics setup complete. Processed ${processedMeshes.length} meshes`);
+
+          // Seat pivot setup and animation
+          let seatPivot = null;
+          let seatAxis = 'x'; // Try 'x', 'y', or 'z' based on your model orientation
+          
+          function setupSeatPivot() {
+            const seat = dunkTankModel.getObjectByName('SeatBoard');
+            const hingeRef = dunkTankModel.getObjectByName('Empty') 
+                          || dunkTankModel.getObjectByName('Hinge');
+            
+            if (!seat) {
+              console.error('SeatBoard not found');
+              return false;
+            }
+            
+            // Get the seat's bounding box to find the hinge edge
+            seat.updateMatrixWorld(true);
+            const seatBox = new THREE.Box3().setFromObject(seat);
+            const seatMin = seatBox.min;
+            const seatMax = seatBox.max;
+            const seatCenter = seatBox.getCenter(new THREE.Vector3());
+            
+            // The hinge should be at one edge of the seat
+            // Adjust these based on your model orientation:
+            // - If seat rotates forward/back: hinge is at back (min.z or max.z)
+            // - If seat rotates left/right: hinge is at side (min.x or max.x)
+            // - Vertically: usually at top (max.y)
+            const hingeWorld = new THREE.Vector3(
+              seatCenter.x,      // Center on X
+              seatMax.y,         // Top of seat (or use seatMin.y for bottom)
+              seatMin.z          // Back of seat (min.z is the back edge)
+            );
+            
+            console.log('Seat bounding box:', {min: seatMin, max: seatMax, center: seatCenter});
+            console.log('Calculated hinge position:', hingeWorld);
+            
+            // Create a runtime pivot under the same parent as the seat
+            const parent = seat.parent;
+            seatPivot = new THREE.Object3D();
+            seatPivot.name = 'SeatPivot';
+            parent.add(seatPivot);
+            
+            // Place pivot at the calculated hinge position
+            seatPivot.position.copy(parent.worldToLocal(hingeWorld.clone()));
+            
+            // Reparent seat under pivot while preserving world transform
+            // attach() keeps world transform for you (no manual math needed)
+            seatPivot.attach(seat);
+            
+            // Optional: visualize pivot to confirm position
+            // const axesHelper = new THREE.AxesHelper(5);
+            // seatPivot.add(axesHelper);
+            // console.log('Enable axes helper to see pivot location');
+            
+            console.log('Seat pivot setup complete at:', seatPivot.position);
+            return true;
+          }
+          
+          // Animation helpers
+          function rotateSeatTo(angleRad, durationMs = 800) {
+            if (!seatPivot) {
+              console.error('Seat pivot not initialized');
+              return;
+            }
+            
+            const start = {
+              x: seatPivot.rotation.x,
+              y: seatPivot.rotation.y,
+              z: seatPivot.rotation.z,
+            };
+            const startTime = performance.now();
+            
+            function tick(t) {
+              const k = Math.min((t - startTime) / durationMs, 1);
+              // easeInOutQuad
+              const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+              
+              // Set only the chosen axis
+              seatPivot.rotation[seatAxis] = start[seatAxis] + (angleRad - start[seatAxis]) * e;
+              
+              if (k < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+          }
+          
+          function openSeat() { 
+            seatDropped = true;
+            rotateSeatTo(Math.PI / 2, 1000); // 90° down; adjust sign if needed
+          }
+          
+          function closeSeat() { 
+            seatDropped = false;
+            rotateSeatTo(0, 1000); 
+          }
+          
+          // Initialize seat pivot after model is loaded
+          setTimeout(() => {
+            if (setupSeatPivot()) {
+              console.log('Seat pivot ready for animation');
+            }
+          }, 100);
+          
+          // Seat drop animation function
+          function dropSeat() {
+            if (seatDropped) return;
+            
+            console.log("Dropping the seat!");
+            openSeat();
+            
+            // Reset after 3 seconds
+            setTimeout(() => {
+              closeSeat();
+            }, 3000);
+          }
+
+          // Check for collisions between projectiles and target
+          function checkTargetCollision() {
+            if (!targetHitbox || seatDropped) return;
+            
+            // Create a bounding box for the target (update each frame in case it moves)
+            const targetBox = new THREE.Box3().setFromObject(targetHitbox);
+            
+            // Only check shooting balls (projectiles) for collision
+            scene.traverse((object) => {
+              if (object.name === "shootingBall" && object.isMesh) {
+                const ballBox = new THREE.Box3().setFromObject(object);
+                
+                if (targetBox.intersectsBox(ballBox)) {
+                  dropSeat();
+                  console.log("Target hit by projectile!");
+                  
+                  // Optional: Remove the ball after hit
+                  setTimeout(() => {
+                    scene.remove(object);
+                    // Remove from mesh map to stop physics updates
+                    if (meshMap.has(object)) {
+                      meshMap.delete(object);
+                    }
+                  }, 100);
+                }
+              }
+            });
+          }
+
+          // document.getElementById("loading").style.display = "none";
+
+          // Animation loop
+          function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            checkTargetCollision(); // Check for collisions each frame
+            renderer.render(scene, camera);
+          }
+          animate();
+
+          window.addEventListener("resize", () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+          });
+        });
+      })();
+    </script>
+    <!-- <iframe
+      style="
+        border-radius: 12px;
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1;
+      "
+      src="https://open.spotify.com/embed/playlist/37i9dQZF1DWWEJlAGA9gs0?utm_source=generator"
+      width="25%"
+      height="152"
+      frameborder="0"
+      allowfullscreen=""
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      loading="lazy"
+    ></iframe> -->
+  </body>
+</html>

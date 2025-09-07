@@ -706,7 +706,7 @@ const ThreeDVotiveStand = forwardRef(({
                 pointerEvents: 'none',
               }}
             >
-              {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'mostLiked' ? 'THE BELOV80' : sortBy === 'newest' ? 'THE COMMUN80' : 'THE NOBIL80'}
+              {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'mostLiked' ? 'THE POPULAR80' : sortBy === 'newest' ? 'THE COMMUN80' : 'THE NOBIL80'}
             </div>
             
             {/* Right Arrow */}

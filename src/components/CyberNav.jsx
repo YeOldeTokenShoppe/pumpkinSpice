@@ -18,7 +18,7 @@ const CyberNav = ({ is80sMode = false }) => {
     { id: '00', date: 'ICON ON I-80', title: "Future Nostalgia", path: '/', thumbnail: '/I80.jpg' },
     { id: '01', date: 'TOKEN UTIL80 I', title: 'Bless Us, RL80', path: '/gallery', thumbnail: '/sacred.png' },
     { id: '02', date: 'TOKEN UTIL80 II', title: 'Coins for Clar80', path: '/fountain', thumbnail: '/fountain.png' },
-    { id: '03', date: 'MARKET ACTIV80', title: 'Cloud Platform', path: '/clouds', thumbnail: '/lightning.png' },
+    { id: '03', date: 'MARKET ACTIV80', title: 'Cloud Services', path: '/clouds', thumbnail: '/lightning.png' },
 
     { id: '04', date: 'MORAL AUTHOR80', title: 'St. GR80\'s Scrolls', path: '/model-viewer', thumbnail: '/vvv.jpg' },
   ];
