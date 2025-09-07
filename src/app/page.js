@@ -191,12 +191,12 @@ export default function Home() {
           }}
           style={{
             position: "fixed",
-            bottom: "30px",
-            right: "30px",
+            top: "1.5rem",
+            right: "1.5rem",
             width: "64px",
             height: "64px",
             borderRadius: "50%",
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            backgroundColor: "rgba(0, 0, 0, 0.2)",
             border: "2px solid rgba(255, 255, 255, 0.2)",
             color: "#ffffff",
             display: "flex",
@@ -230,7 +230,7 @@ export default function Home() {
         <div
           style={{
             position: "fixed",
-            bottom: "20px",
+            top: "20px",
             right: "20px",
             zIndex: 9999,
             display: "flex",

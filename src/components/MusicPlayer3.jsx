@@ -254,11 +254,22 @@ const MusicPlayer3 = React.forwardRef(
       if (isLoading) return;
       
       const nextIndex = getNextTrackIndex(direction);
-      const wasPlaying = audioRef.current && !audioRef.current.paused;
+      // Check if we should auto-play: either currently playing OR track has ended but isPlaying is still true
+      const wasPlaying = audioRef.current && (!audioRef.current.paused || 
+                          (audioRef.current.ended && isPlaying));
       
-      // Force load the new track even if one is playing
+      console.log('🎵 changeTrack:', { 
+        direction, 
+        nextIndex, 
+        wasPlaying,
+        paused: audioRef.current?.paused,
+        ended: audioRef.current?.ended,
+        isPlaying 
+      });
+      
+      // Force load the new track
       await loadTrack(nextIndex, wasPlaying);
-    }, [loadTrack, getNextTrackIndex, isLoading, audioRef]);
+    }, [loadTrack, getNextTrackIndex, isLoading, audioRef, isPlaying]);
     
     // Toggle shuffle
     const toggleShuffle = useCallback(() => {
@@ -450,20 +461,18 @@ const MusicPlayer3 = React.forwardRef(
     }, [isVisible]); // Only depend on visibility, not autoPlay
     
     
-    // Handle track end
+    // Set up event listeners for play/pause/timeupdate only (ended is handled in MusicContext)
     useEffect(() => {
       if (!audioRef.current) return;
       
-      const handleEnded = () => {
-        changeTrack(1);
-      };
-      
       const handlePlay = () => {
+        console.log('🎵 Play event fired');
         setIsPlaying(true);
         if (setContextIsPlaying) setContextIsPlaying(true);
       };
       
       const handlePause = () => {
+        console.log('🎵 Pause event fired');
         setIsPlaying(false);
         if (setContextIsPlaying) setContextIsPlaying(false);
       };
@@ -472,20 +481,24 @@ const MusicPlayer3 = React.forwardRef(
         updateProgress();
       };
       
-      audioRef.current.addEventListener('ended', handleEnded);
-      audioRef.current.addEventListener('play', handlePlay);
-      audioRef.current.addEventListener('pause', handlePause);
-      audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
+      const audio = audioRef.current;
+      audio.addEventListener('play', handlePlay);
+      audio.addEventListener('pause', handlePause);
+      audio.addEventListener('timeupdate', handleTimeUpdate);
+      
+      // Also listen for loadedmetadata to ensure duration is available
+      const handleLoadedMetadata = () => {
+        console.log('🎵 Track metadata loaded, duration:', audio.duration);
+      };
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
       
       return () => {
-        if (audioRef.current) {
-          audioRef.current.removeEventListener('ended', handleEnded);
-          audioRef.current.removeEventListener('play', handlePlay);
-          audioRef.current.removeEventListener('pause', handlePause);
-          audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
-        }
+        audio.removeEventListener('play', handlePlay);
+        audio.removeEventListener('pause', handlePause);
+        audio.removeEventListener('timeupdate', handleTimeUpdate);
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       };
-    }, [audioRef, changeTrack, updateProgress]);
+    }, [audioRef, updateProgress, setContextIsPlaying]);
     
     // Handle visibility changes
     useEffect(() => {

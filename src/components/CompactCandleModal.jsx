@@ -9,6 +9,7 @@ import { gsap } from 'gsap';
 import { ScrambleTextPlugin } from 'gsap/dist/ScrambleTextPlugin';
 import { encryptMessage, generateScrambledDisplay } from '@/utilities/encryption';
 import { generatePrayer, getRemainingPrayers, PRAYER_PROMPTS } from '@/utilities/aiPrayers';
+import { useUser } from '@clerk/nextjs';
 import './CompactCandleModal.css';
 
 // Register GSAP plugin
@@ -297,6 +298,9 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
         ? imageUrl 
         : `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
       
+      // For Clerk images, we need to handle CORS properly
+      loader.setCrossOrigin('anonymous');
+      
       loader.load(
         finalUrl,
         (texture) => {
@@ -319,7 +323,24 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
         undefined,
         (error) => {
           console.error('Error loading texture:', error);
-          setUserTexture(null);
+          // If texture loading fails, try loading it as an image first
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const texture = new THREE.Texture(img);
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.repeat.set(1, -1);
+            texture.offset.set(0, 1);
+            texture.needsUpdate = true;
+            setUserTexture(texture);
+            console.log('User texture loaded via Image fallback');
+          };
+          img.onerror = () => {
+            console.error('Failed to load image even with fallback');
+            setUserTexture(null);
+          };
+          img.src = finalUrl;
         }
       );
     } else {
@@ -584,15 +605,36 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       canvas.height = 1024;
       const ctx = canvas.getContext('2d');
       
-      // Fill background
-      ctx.fillStyle = '#ffffff';
+      // Fill background with a light color for better visibility
+      ctx.fillStyle = '#f5f5f5';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // Function to draw image and username
       const drawImageWithName = (img) => {
+        // Check if this is likely a Clerk letter avatar (small dimensions)
+        const isLetterAvatar = img.width <= 200 && img.height <= 200;
+        
         // Draw the image (leave space at bottom for name)
         const imageHeight = username ? canvas.height * 0.9 : canvas.height;
-        ctx.drawImage(img, 0, 0, canvas.width, imageHeight);
+        
+        if (isLetterAvatar) {
+          // For letter avatars, center them and add padding
+          const size = Math.min(canvas.width, imageHeight) * 0.6;
+          const x = (canvas.width - size) / 2;
+          const y = (imageHeight - size) / 2;
+          
+          // Add a subtle background circle
+          ctx.fillStyle = '#e0e0e0';
+          ctx.beginPath();
+          ctx.arc(canvas.width / 2, imageHeight / 2, size / 2 + 20, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw the letter avatar centered
+          ctx.drawImage(img, x, y, size, size);
+        } else {
+          // Draw regular images full size
+          ctx.drawImage(img, 0, 0, canvas.width, imageHeight);
+        }
         
         // Draw username if provided
         if (username && username.trim()) {
@@ -653,7 +695,36 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       
       // Load and draw the appropriate image
       const img = new Image();
+      img.crossOrigin = 'anonymous'; // Enable CORS for external images
       img.onload = () => drawImageWithName(img);
+      img.onerror = () => {
+        console.error('Failed to load image for Label2');
+        // Fallback to a solid color if image fails
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Still draw the username if available
+        if (username && username.trim()) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 72px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(username, canvas.width / 2, canvas.height / 2);
+        }
+        
+        // Create texture even on error
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.repeat.set(1, -1);
+        texture.offset.set(0, 1);
+        texture.needsUpdate = true;
+        
+        if (label2MeshRef.current.material) {
+          label2MeshRef.current.material.map = texture;
+          label2MeshRef.current.material.needsUpdate = true;
+        }
+      };
       
       if (userTexture) {
         // Use user texture's image source
@@ -661,6 +732,9 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       } else if (defaultTexture) {
         // Use default texture's image source
         img.src = defaultTexture.image.src;
+      } else {
+        // No image available, trigger error handler
+        img.onerror();
       }
     }
   }, [userTexture, defaultTexture, username]);
@@ -678,12 +752,14 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
 }
 
 export default function CompactCandleModal({ isOpen, onClose, onCandleCreated }) {
+  const { user, isSignedIn } = useUser();
   const [selectedPrayer, setSelectedPrayer] = useState(null);
   const [currentLanguage, setCurrentLanguage] = useState(getUserLanguage());
   const [formData, setFormData] = useState({
     username: '',
     message: '',
     burnedAmount: '',
+    allowLikes: true, // Default to allowing appreciation
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -731,17 +807,29 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     }
   };
   
-  // Reset form when modal opens
+  // Reset form when modal opens and prepopulate with Clerk user data
   useEffect(() => {
     if (isOpen) {
+      // Prepopulate with Clerk user data if available
+      const defaultUsername = user ? 
+        (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` :
+         user.firstName || user.lastName || 
+         user.username || 
+         user.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 
+         '') : '';
+      
+      const clerkImageUrl = user?.imageUrl || null;
+      
       setFormData({
-        username: '',
+        username: defaultUsername,
         message: '',
         burnedAmount: '',
+        allowLikes: true,
       });
       setSelectedPrayer(null);
       setImageFile(null);
-      setImagePreview(null);
+      // Set Clerk profile image as preview if available
+      setImagePreview(clerkImageUrl);
       setError('');
       setIsSubmitting(false);
       setIsEncrypted(false);
@@ -761,7 +849,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       // Check remaining AI prayers
       setRemainingPrayers(getRemainingPrayers());
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -849,6 +937,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       
       const reader = new FileReader();
       reader.onloadend = () => {
+        // Replace any existing preview (including Clerk image) with the uploaded file
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
@@ -886,16 +975,24 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   };
   
   const uploadImage = async () => {
-    if (!imageFile) return null;
-
-    const timestamp = Date.now();
-    const fileName = `candles/${timestamp}_${imageFile.name}`;
-    const storageRef = ref(storage, fileName);
+    // If user uploaded a file, use that
+    if (imageFile) {
+      const timestamp = Date.now();
+      const fileName = `candles/${timestamp}_${imageFile.name}`;
+      const storageRef = ref(storage, fileName);
+      
+      const snapshot = await uploadBytes(storageRef, imageFile);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      
+      return downloadURL;
+    }
     
-    const snapshot = await uploadBytes(storageRef, imageFile);
-    const downloadURL = await getDownloadURL(snapshot.ref);
+    // If no file but we have a Clerk image preview, use that directly
+    if (imagePreview && imagePreview.startsWith('http')) {
+      return imagePreview;
+    }
     
-    return downloadURL;
+    return null;
   };
 
   const handleSubmit = (e) => {
@@ -918,6 +1015,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       return;
     }
     
+    if (!formData.burnedAmount || formData.burnedAmount === '0') {
+      setError('Please enter the amount of RL80 tokens to burn');
+      return;
+    }
+    
     // Show confirmation dialog instead of immediately saving
     setShowConfirmDialog(true);
   };
@@ -929,10 +1031,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     setError('');
 
     try {
-      let imageUrl = null;
-      if (imageFile) {
-        imageUrl = await uploadImage();
-      }
+      // Upload image or use Clerk profile image
+      const imageUrl = await uploadImage();
 
       let docData;
       
@@ -948,6 +1048,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           burnedAmount: parseInt(formData.burnedAmount) || 1000,
           image: imageUrl,
           staked: false,
+          allowLikes: formData.allowLikes || false,
+          likes: 0, // Initialize likes counter
           createdAt: serverTimestamp()
         };
       } else {
@@ -958,6 +1060,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           burnedAmount: parseInt(formData.burnedAmount) || 1000,
           image: imageUrl,
           staked: false,
+          allowLikes: formData.allowLikes || false,
+          likes: 0, // Initialize likes counter
           createdAt: serverTimestamp()
         };
       }
@@ -977,6 +1081,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         username: '',
         message: '',
         burnedAmount: 1000,
+        allowLikes: true,
       });
       setImageFile(null);
       setImagePreview(null);
@@ -1082,8 +1187,18 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
 
           {/* Right side - Form */}
           <div className="compact-form-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <h2>Get Lit with RL80</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h2 style={{
+                background: 'linear-gradient(45deg, #ff6600, #ffaa00, #ff6600, #ff3300)',
+                backgroundSize: '200% 200%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                textShadow: '0 0 40px rgba(255, 102, 0, 0.8)',
+                animation: 'flameGlow 2s ease-in-out infinite',
+                filter: 'drop-shadow(0 0 20px rgba(255, 102, 0, 0.5))',
+                fontWeight: 'bold'
+              }}>Get Lit with RL80</h2>
               <select 
                 value={currentLanguage}
                 onChange={(e) => {
@@ -1129,101 +1244,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 />
               </div>
 
-              {/* Prayer Selector */}
-              <div className="compact-prayer-selector">
-                <label>Choose a prayer or write your own:</label>
-                <div className="prayer-buttons">
-                  {(PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers).map((prayer) => (
-                    <button
-                      key={prayer.id}
-                      type="button"
-                      className={`prayer-btn ${selectedPrayer === prayer.id ? 'active' : ''}`}
-                      onClick={() => {
-                        setSelectedPrayer(prayer.id);
-                        setFormData(prev => ({ ...prev, message: prayer.text }));
-                      }}
-                      title={prayer.text}
-                    >
-                      {currentLanguage === 'es' ? 
-                        (prayer.id === 'scalper' ? 'Scalper' :
-                         prayer.id === 'leverage' ? 'Apalancado' :
-                         prayer.id === 'swing' ? 'Swing' :
-                         prayer.id === 'hodler' ? 'Holdear' :
-                         prayer.id === 'chart' ? 'Gráficos' : prayer.title) :
-                       currentLanguage === 'pt' ?
-                        (prayer.id === 'scalper' ? 'Scalper' :
-                         prayer.id === 'leverage' ? 'Alavancagem' :
-                         prayer.id === 'swing' ? 'Swing' :
-                         prayer.id === 'hodler' ? 'Holder' :
-                         prayer.id === 'chart' ? 'Gráficos' : prayer.title) :
-                       currentLanguage === 'fr' ?
-                        (prayer.id === 'scalper' ? 'Scalper' :
-                         prayer.id === 'leverage' ? 'Levier' :
-                         prayer.id === 'swing' ? 'Swing' :
-                         prayer.id === 'hodler' ? 'Hodler' :
-                         prayer.id === 'chart' ? 'Graphiques' : prayer.title) :
-                       currentLanguage === 'it' ?
-                        (prayer.id === 'scalper' ? 'Scalper' :
-                         prayer.id === 'leverage' ? 'Leva' :
-                         prayer.id === 'swing' ? 'Swing' :
-                         prayer.id === 'hodler' ? 'Hodler' :
-                         prayer.id === 'chart' ? 'Grafici' : prayer.title) :
-                       currentLanguage === 'zh' ?
-                        (prayer.id === 'scalper' ? '刷单' :
-                         prayer.id === 'leverage' ? '杠杆' :
-                         prayer.id === 'swing' ? '波段' :
-                         prayer.id === 'hodler' ? '囤币' :
-                         prayer.id === 'chart' ? '图表' : prayer.title) :
-                       currentLanguage === 'hi' ?
-                        (prayer.id === 'scalper' ? 'स्कैल्पर' :
-                         prayer.id === 'leverage' ? 'लीवरेज' :
-                         prayer.id === 'swing' ? 'स्विंग' :
-                         prayer.id === 'hodler' ? 'होडलर' :
-                         prayer.id === 'chart' ? 'चार्ट' : prayer.title) :
-                        (prayer.id === 'scalper' ? 'Scalper' :
-                         prayer.id === 'leverage' ? 'Leverage' :
-                         prayer.id === 'swing' ? 'Swing' :
-                         prayer.id === 'hodler' ? 'Hodler' :
-                         prayer.id === 'chart' ? 'Chart' : prayer.title)}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    className={`prayer-btn ${selectedPrayer === null ? 'active' : ''}`}
-                    onClick={() => {
-                      setSelectedPrayer(null);
-                      setFormData(prev => ({ ...prev, message: '' }));
-                    }}
-                  >
-                    Custom
-                  </button>
-                </div>
-              </div>
-
-              {/* AI Prayer Generator Button */}
-              <div style={{ textAlign: 'center', margin: '10px 0' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowAIPanel(!showAIPanel)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    boxShadow: '0 2px 10px rgba(102, 126, 234, 0.4)',
-                    transition: 'transform 0.2s',
-                  }}
-                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-                >
-                  ✨ AI Prayer Generator
-                   {/* ({remainingPrayers} left today) */}
-                </button>
-              </div>
 
               {/* AI Generation Panel */}
               {showAIPanel && (
@@ -1406,7 +1426,126 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               )}
 
               <div className="compact-form-group message-group">
-                <div className="message-input-wrapper">
+                <div className="message-input-wrapper" style={{ position: 'relative' }}>
+                  {/* Prayer Template and AI controls bar */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '8px',
+                    alignItems: 'center'
+                  }}>
+                    {/* Prayer Template Dropdown */}
+                    <select
+                      value={selectedPrayer || 'custom'}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === 'custom') {
+                          setSelectedPrayer(null);
+                          setFormData(prev => ({ ...prev, message: '' }));
+                        } else {
+                          const prayers = PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
+                          const prayer = prayers.find(p => p.id === value);
+                          if (prayer) {
+                            setSelectedPrayer(value);
+                            setFormData(prev => ({ ...prev, message: prayer.text }));
+                          }
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                        color: '#fff',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 10px center',
+                        backgroundSize: '18px',
+                        appearance: 'none',
+                        paddingRight: '35px'
+                      }}
+                    >
+                      <option value="custom">✍️ Write Custom Prayer</option>
+                      <optgroup label="Pre-written Prayers">
+                        {(PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers).map((prayer) => (
+                          <option key={prayer.id} value={prayer.id}>
+                            {currentLanguage === 'es' ? 
+                              (prayer.id === 'scalper' ? '⚡ Scalper' :
+                               prayer.id === 'leverage' ? '📊 Apalancado' :
+                               prayer.id === 'swing' ? '🌊 Swing' :
+                               prayer.id === 'hodler' ? '💎 Holdear' :
+                               prayer.id === 'chart' ? '📈 Gráficos' : prayer.title) :
+                             currentLanguage === 'pt' ?
+                              (prayer.id === 'scalper' ? '⚡ Scalper' :
+                               prayer.id === 'leverage' ? '📊 Alavancagem' :
+                               prayer.id === 'swing' ? '🌊 Swing' :
+                               prayer.id === 'hodler' ? '💎 Holder' :
+                               prayer.id === 'chart' ? '📈 Gráficos' : prayer.title) :
+                             currentLanguage === 'fr' ?
+                              (prayer.id === 'scalper' ? '⚡ Scalper' :
+                               prayer.id === 'leverage' ? '📊 Levier' :
+                               prayer.id === 'swing' ? '🌊 Swing' :
+                               prayer.id === 'hodler' ? '💎 Hodler' :
+                               prayer.id === 'chart' ? '📈 Graphiques' : prayer.title) :
+                             currentLanguage === 'it' ?
+                              (prayer.id === 'scalper' ? '⚡ Scalper' :
+                               prayer.id === 'leverage' ? '📊 Leva' :
+                               prayer.id === 'swing' ? '🌊 Swing' :
+                               prayer.id === 'hodler' ? '💎 Hodler' :
+                               prayer.id === 'chart' ? '📈 Grafici' : prayer.title) :
+                             currentLanguage === 'zh' ?
+                              (prayer.id === 'scalper' ? '⚡ 刷单' :
+                               prayer.id === 'leverage' ? '📊 杠杆' :
+                               prayer.id === 'swing' ? '🌊 波段' :
+                               prayer.id === 'hodler' ? '💎 囤币' :
+                               prayer.id === 'chart' ? '📈 图表' : prayer.title) :
+                             currentLanguage === 'hi' ?
+                              (prayer.id === 'scalper' ? '⚡ स्कैल्पर' :
+                               prayer.id === 'leverage' ? '📊 लीवरेज' :
+                               prayer.id === 'swing' ? '🌊 स्विंग' :
+                               prayer.id === 'hodler' ? '💎 होडलर' :
+                               prayer.id === 'chart' ? '📈 चार्ट' : prayer.title) :
+                              (prayer.id === 'scalper' ? '⚡ Scalper\'s Prayer' :
+                               prayer.id === 'leverage' ? '📊 Leverage Prayer' :
+                               prayer.id === 'swing' ? '🌊 Swing Trader\'s Prayer' :
+                               prayer.id === 'hodler' ? '💎 Hodler\'s Prayer' :
+                               prayer.id === 'chart' ? '📈 Chart Mystic\'s Prayer' : prayer.title)}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
+                    
+                    {/* AI Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowAIPanel(!showAIPanel)}
+                      title="AI Prayer Generator"
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        background: showAIPanel ? 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: '#fff',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                        transition: 'all 0.2s',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      ✨ AI
+                    </button>
+                  </div>
+                  
                   <textarea
                     ref={textareaRef}
                     name="message"
@@ -1434,20 +1573,27 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         }
                       }
                     }}
+                    style={{
+                      paddingRight: '50px' // Make room for char counter
+                    }}
                   />
-                  <span className="compact-char-count">{formData.message.length}/400</span>
+                  <span className="compact-char-count" style={{
+                    position: 'absolute',
+                    bottom: '8px',
+                    right: '12px',
+                    fontSize: '11px',
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    pointerEvents: 'none'
+                  }}>{formData.message.length}/400</span>
                 </div>
                 <div className="message-controls" style={{ 
                   display: 'flex', 
-                  flexWrap: 'wrap', 
                   gap: '10px',
-                  alignItems: 'flex-end',
+                  alignItems: 'stretch',
                   marginTop: '10px'
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
-                    <label style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)', marginBottom: '4px' }}>
-                      RL80 tokens to burn
-                    </label>
+                  {/* RL80 Amount Input */}
+                  <div style={{ flex: '1', maxWidth: 'calc(100% - 130px)' }}>
                     <input
                       type="text"
                       name="burnedAmount"
@@ -1459,41 +1605,162 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                           e.preventDefault();
                         }
                       }}
-                      placeholder="Choose amount"
+                      placeholder="RL80 tokens to burn"
                       className="amount-input"
+                      required
                       style={{
-                        padding: '8px 12px',
-                        borderRadius: '4px',
+                        padding: '10px 12px',
+                        borderRadius: '6px',
                         border: '1px solid rgba(255, 255, 255, 0.2)',
                         backgroundColor: 'rgba(0, 0, 0, 0.3)',
                         color: '#fff',
                         fontSize: '14px',
-                        width: '140px'
+                        width: '100%',
+                        boxSizing: 'border-box'
                       }}
                     />
                   </div>
+                  
+                  {/* Encrypt Button */}
                   <button
                     type="button"
                     className={`encrypt-button ${isEncrypted ? 'is-encrypted' : ''}`}
                     onClick={toggleEncryption}
                     disabled={!formData.message.trim()}
-                    style={{ flex: '0 0 auto' }}
+                    style={{ 
+                      flex: '0 0 auto',
+                      minWidth: '110px'
+                    }}
                   >
                     <span className="encrypt-text">{isEncrypted ? 'DECRYPT' : 'ENCRYPT?'}</span>
                   </button>
+                  
                   {isEncrypted && (
-                    <div className="message-status" style={{ flex: '0 0 auto' }}>
-                      <span className="encrypted-badge">ENCRYPTED</span>
+                    <div className="message-status" style={{ 
+                      flex: '0 0 auto',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <span className="encrypted-badge">🔒</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="compact-form-group">
+              {/* Combined Row: Mortal Appreciation + Image Selection */}
+              <div className="compact-form-group" style={{
+                display: 'flex',
+                gap: '10px',
+                alignItems: 'stretch',
+                marginTop: '12px',
+                marginBottom: '12px'
+              }}>
+                {/* Allow Mortal Appreciation Toggle - Left Side */}
+                <div style={{
+                  flex: '1',
+                  padding: '12px',
+                  background: 'rgba(139, 69, 19, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    height: '100%'
+                  }}>
+                    <div style={{ 
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center'
+                    }}>
+                      <div style={{
+                        fontSize: '13px',
+                        color: '#fff',
+                        fontWeight: '500',
+                        marginBottom: '2px'
+                      }}>
+                        Allow Likes
+                      </div>
+                      <div style={{
+                        fontSize: '11px',
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        lineHeight: '1.2'
+                      }}>
+                        {formData.allowLikes ? "❤️ Public" : "🔒 Private"}
+                      </div>
+                    </div>
+                    <div style={{
+                      position: 'relative',
+                      width: '44px',
+                      height: '24px',
+                      backgroundColor: formData.allowLikes ? 'rgba(255, 105, 180, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      border: formData.allowLikes ? '1px solid #ff69b4' : '1px solid rgba(255, 255, 255, 0.3)',
+                      transition: 'all 0.3s ease',
+                      boxShadow: formData.allowLikes ? '0 0 8px rgba(255, 105, 180, 0.3)' : 'none',
+                      marginLeft: '10px'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={formData.allowLikes || false}
+                        onChange={(e) => setFormData(prev => ({ ...prev, allowLikes: e.target.checked }))}
+                        style={{
+                          position: 'absolute',
+                          opacity: 0,
+                          width: '100%',
+                          height: '100%',
+                          cursor: 'pointer',
+                          margin: 0
+                        }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: '2px',
+                        left: formData.allowLikes ? '20px' : '2px',
+                        width: '20px',
+                        height: '20px',
+                        backgroundColor: formData.allowLikes ? '#ff69b4' : '#666',
+                        borderRadius: '50%',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '11px'
+                      }}>
+                        {formData.allowLikes ? '❤️' : '🔒'}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Image Selection - Right Side */}
                 <label className="compact-file-label" style={{
-                  backgroundColor: imageFile ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 102, 0, 0.1)',
-                  border: imageFile ? '1px solid rgba(0, 255, 0, 0.3)' : '1px solid rgba(255, 102, 0, 0.3)',
-                  cursor: 'pointer'
+                  flex: '1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '12px',
+                  backgroundColor: (imageFile || imagePreview) ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 102, 0, 0.1)',
+                  border: (imageFile || imagePreview) ? '1px solid rgba(0, 255, 0, 0.3)' : '1px solid rgba(255, 102, 0, 0.3)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  margin: 0,
+                  transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = (imageFile || imagePreview) ? 
+                    'rgba(0, 255, 0, 0.2)' : 'rgba(255, 102, 0, 0.2)';
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = (imageFile || imagePreview) ? 
+                    'rgba(0, 255, 0, 0.1)' : 'rgba(255, 102, 0, 0.1)';
+                  e.currentTarget.style.transform = 'scale(1)';
                 }}>
                   <input
                     ref={fileInputRef}
@@ -1502,12 +1769,39 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     onChange={handleImageChange}
                     className="compact-file-input"
                   />
-                  <span style={{ 
-                    color: imageFile ? '#00ff00' : '#ff6600',
-                    fontWeight: imageFile ? 'normal' : 'bold'
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '2px'
                   }}>
-                    {imageFile ? '✓ Image Added' : '📷 Add Image (Recommended)'}
-                  </span>
+                    <span style={{ 
+                      color: (imageFile || imagePreview) ? '#00ff00' : '#ff6600',
+                      fontWeight: (imageFile || imagePreview) ? 'normal' : 'bold',
+                      fontSize: '13px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      {imageFile ? (
+                        <>📷 Custom Image</>
+                      ) : (imagePreview && !imageFile) ? (
+                        <>👤 Profile Picture</>
+                      ) : (
+                        <>📷 Add Image</>
+                      )}
+                    </span>
+                    {(imagePreview && !imageFile) && (
+                      <span style={{
+                        fontSize: '10px',
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        fontStyle: 'italic'
+                      }}>
+                        Click to change
+                      </span>
+                    )}
+                  </div>
                 </label>
               </div>
 
@@ -1601,16 +1895,54 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           }}></span>
         </span> Ready to Light Your Candle?</h3>
                     <div className="confirmation-details">
+                      {/* Image Section with Thumbnail and Label */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        marginBottom: '8px'
+                      }}>
+                        <p style={{ 
+                          margin: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          color: (imageFile || imagePreview) ? 'inherit' : '#ff6600',
+                          fontWeight: (imageFile || imagePreview) ? 'normal' : 'bold'
+                        }}>
+                          <strong>Image:</strong> 
+                          <span style={{ fontWeight: 'normal' }}>
+                            {imageFile ? '✓ Custom image' : 
+                             (imagePreview && !imageFile) ? '✓ Profile picture' :
+                             '⚠️ Using default'}
+                          </span>
+                        </p>
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: imageFile ? '4px' : '50%', // Square for custom, round for profile
+                          overflow: 'hidden',
+                          border: '2px solid rgba(255, 255, 255, 0.2)',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                          flexShrink: 0,
+                          marginLeft: '-5rem'
+                        }}>
+                          <img 
+                            src={imagePreview || '/defaultAvatar.png'}
+                            alt="Candle image preview"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
                       <p><strong>Name:</strong> {formData.username}</p>
                       <p><strong>Amount:</strong> {formatNumberWithCommas(formData.burnedAmount)}</p>
                       <p><strong>Message:</strong> {formData.message.substring(0, 50)}{formData.message.length > 50 ? '...' : ''}</p>
                       {isEncrypted && <p className="encryption-notice">🔒 This message will be encrypted</p>}
-                      <p style={{ 
-                        color: imageFile ? 'inherit' : '#ff6600',
-                        fontWeight: imageFile ? 'normal' : 'bold'
-                      }}>
-                        <strong>Image:</strong> {imageFile ? '✓ Attached' : '⚠️ No image attached (using default)'}
-                      </p>
                     </div>
                     <p className="confirmation-warning">Once lit, your candle cannot be changed or removed.</p>
                     <div className="confirmation-actions">

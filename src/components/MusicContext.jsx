@@ -51,13 +51,32 @@ export const MusicProvider = ({ children }) => {
   const [audioElement, setAudioElement] = useState(null);
   const [isLoadingTrack, setIsLoadingTrack] = useState(false);
   
+  // Use refs to track current values for event handlers
+  const currentTrackIndexRef = React.useRef(0);
+  const is80sModeRef = React.useRef(false);
+  const loadTrackRef = React.useRef(null);
+  
+  // Update refs when values change
+  React.useEffect(() => {
+    currentTrackIndexRef.current = currentTrackIndex;
+  }, [currentTrackIndex]);
+  
+  React.useEffect(() => {
+    is80sModeRef.current = is80sMode;
+  }, [is80sMode]);
+  
   
   // Load and play track function
   const loadTrack = useCallback(async (index, shouldAutoPlay = false) => {
+    console.log('[MusicContext] loadTrack called:', { index, shouldAutoPlay, is80sMode });
     const playlist = is80sMode ? eightyTracks : non80sTracks;
     
-    if (index < 0 || index >= playlist.length) return;
+    if (index < 0 || index >= playlist.length) {
+      console.log('[MusicContext] Invalid track index:', index);
+      return;
+    }
     
+    console.log('[MusicContext] Loading track:', playlist[index].name);
     setIsLoadingTrack(true);
     
     try {
@@ -65,15 +84,36 @@ export const MusicProvider = ({ children }) => {
       const url = await getDownloadURL(trackRef);
       
       if (audioRef.current) {
+        // Clear any existing source first
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        
+        // Set new source
         audioRef.current.src = url;
         audioRef.current.load();
         
-        await new Promise((resolve) => {
+        await new Promise((resolve, reject) => {
           const handleCanPlay = () => {
+            console.log('[MusicContext] Track can play through');
             audioRef.current.removeEventListener('canplaythrough', handleCanPlay);
+            audioRef.current.removeEventListener('error', handleError);
             resolve();
           };
+          const handleError = (e) => {
+            console.error('[MusicContext] Error loading track:', e);
+            audioRef.current.removeEventListener('canplaythrough', handleCanPlay);
+            audioRef.current.removeEventListener('error', handleError);
+            reject(e);
+          };
           audioRef.current.addEventListener('canplaythrough', handleCanPlay);
+          audioRef.current.addEventListener('error', handleError);
+          
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            audioRef.current.removeEventListener('canplaythrough', handleCanPlay);
+            audioRef.current.removeEventListener('error', handleError);
+            resolve();
+          }, 10000);
         });
         
         setCurrentTrackIndex(index);
@@ -82,16 +122,27 @@ export const MusicProvider = ({ children }) => {
         setIsLoadingTrack(false);
         
         if (shouldAutoPlay) {
+          console.log('[MusicContext] Auto-playing track');
           audioRef.current.play().then(() => {
+            console.log('[MusicContext] Playback started successfully');
             setIsPlaying(true);
-          }).catch(e => console.log('Auto-play blocked:', e));
+          }).catch(e => {
+            console.log('[MusicContext] Auto-play blocked:', e);
+            setIsPlaying(false);
+          });
         }
       }
     } catch (error) {
-      console.error('Error loading track:', error);
+      console.error('[MusicContext] Error loading track:', error);
       setIsLoadingTrack(false);
+      setIsPlaying(false);
     }
   }, [is80sMode, setCurrentTrackBPM]);
+  
+  // Update loadTrackRef when loadTrack changes
+  React.useEffect(() => {
+    loadTrackRef.current = loadTrack;
+  }, [loadTrack]);
   
   // Play/Pause functions
   const play = useCallback(() => {
@@ -146,12 +197,26 @@ export const MusicProvider = ({ children }) => {
     audioRef.current = audio;
     setAudioElement(audio);
     
-    // Add event listeners
-    audio.addEventListener('ended', () => {
+    // Add ended event listener that uses refs for current values
+    audio.onended = () => {
+      console.log('[MusicContext] Track ended, advancing to next track');
+      const playlist = is80sModeRef.current ? eightyTracks : non80sTracks;
+      const nextIndex = (currentTrackIndexRef.current + 1) % playlist.length;
+      console.log('[MusicContext] Current index:', currentTrackIndexRef.current, 'Next index:', nextIndex);
+      
+      // Set playing to false first to stop animation
       setIsPlaying(false);
-    });
+      
+      // Load and play next track using the ref
+      setTimeout(() => {
+        if (loadTrackRef.current) {
+          loadTrackRef.current(nextIndex, true);
+        }
+      }, 100);
+    };
     
     return () => {
+      audio.onended = null;
       audio.pause();
       audio.src = '';
     };

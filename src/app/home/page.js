@@ -776,7 +776,7 @@ export default function HomePage() {
       image: '/images/deejay.jpg',
       number: '02',
       title: 'DEFI BEATS',
-      description: 'Curated playlists for spiritual transcendence.'
+      description: 'Curated playlists for algorithmic transcendence.'
     },
     {
       id: 3,
@@ -784,7 +784,7 @@ export default function HomePage() {
       image: '/images/rl80vsMonster.png',
       number: '03',
       title: 'WARD OFF EVIL',
-      description: 'Avoid scams, schemes, and evil-doers.'
+      description: 'Avoid scams, fiends, and insider schemes.'
     },
     {
       id: 4,
@@ -792,7 +792,7 @@ export default function HomePage() {
       image: '/images/bullrider.jpg',
       number: '04',
       title: 'ASCENDING TRENDS',
-      description: 'Your guide up and to the right.'
+      description: 'She will guide you up and to the right.'
     },
     {
       id: 5,
@@ -800,7 +800,7 @@ export default function HomePage() {
       image: '/images/lowrider.jpg',
       number: '05',
       title: 'GUARDIAN OF GOOD TIMES',
-      description: 'She offers you her protection with smart contracts.'
+      description: 'She offers you her protection with very smart contracts.'
     },
     {
       id: 6,

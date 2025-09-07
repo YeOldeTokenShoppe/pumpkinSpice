@@ -35,7 +35,7 @@ export default function FountainFrame({ is80sMode = false }) {
     }}>
       <iframe
         ref={iframeRef}
-        src="/fountain.html"
+        src={`/fountain.html${is80sMode ? '?80s=true' : ''}`}
         onLoad={handleIframeLoad}
         style={{
           position: 'absolute',

@@ -2725,7 +2725,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             right: isMobile ? '20px' : '15%',
             top: '50%',
             transform: 'translateY(-50%)',
-            width: isMobile ? '70%' : '40%',
+            width: isMobile ? '60%' : '40%',
             maxWidth: '600px',
             pointerEvents: 'none',
             zIndex: "100",
@@ -2765,19 +2765,22 @@ const PalmsScene = ({ onLoadingChange }) => {
             )}
           </div>
           <div style={{
-            minHeight: isMobile ? '280px' : '320px', // Fixed height for text container
+            minHeight: isMobile ? '220px' : '320px', // Fixed height for text container
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            position: 'relative',
+            marginTop: isMobile ? '-2rem' : '-3rem',
+
           }}>
             <p 
               ref={scrollTextRef}
               lang="en"
               translate="yes"
               style={{
-                fontSize: isMobile ? '20px' : '28px',
+                fontSize: isMobile ? '1rem' : '28px',
                 color: 'white',
-                lineHeight: '1.6',
+                lineHeight: isMobile ? '1.4' : '1.6',
                 fontFamily: 'monospace',
                 margin: 0,
                 textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
@@ -2832,10 +2835,10 @@ const PalmsScene = ({ onLoadingChange }) => {
             scroll up to continue
           </div>
           
-          {/* "Take me there" button - absolutely positioned */}
+      
           <div style={{
             position: 'absolute',
-            bottom: '-3rem',
+            bottom: isMobile ? '-3rem' : '-5.5rem',
             left: '50%',
             transform: 'translateX(-50%)',
             opacity: 1,
@@ -2851,8 +2854,8 @@ const PalmsScene = ({ onLoadingChange }) => {
                   router.push(destination);
                 }}
                 style={{
-                  padding: "15px 40px",
-                  fontSize: "1.8rem",
+                  padding: isMobile ? '10px 25px' : '15px 40px',
+                  fontSize: isMobile ? "1.3rem" : "1.8rem",
                   fontFamily: "'UnifrakturMaguntia', serif",
                   backgroundColor: "#000000",
                   color: "#ff00ee",

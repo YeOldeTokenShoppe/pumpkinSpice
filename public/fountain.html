@@ -518,6 +518,9 @@
 			import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
 			import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 			import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+			import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+			import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+			import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 			
 			console.log('Fountain imports successful!');
 
@@ -867,6 +870,7 @@
 
 			let container;
 			let camera, scene, renderer, controls;
+			let composer, bloomPass;
 			let mousedown = false;
 			let hasAimed = false; // Track if user has clicked water to aim
 			let is80sMode = false; // Track 80s mode state
@@ -1489,6 +1493,12 @@
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
 
+				// Check for 80s mode in URL parameters
+				const urlParams = new URLSearchParams(window.location.search);
+				if (urlParams.get('80s') === 'true') {
+					is80sMode = true;
+				}
+
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
 				camera.position.set( 0, 0.5, 4 );
 				camera.lookAt( 0, 0, 0 );
@@ -1508,6 +1518,18 @@
 				renderer.toneMapping = THREE.ACESFilmicToneMapping;
 				renderer.toneMappingExposure = 0.5;
 				container.appendChild( renderer.domElement );
+				
+				// Setup bloom post-processing
+				composer = new EffectComposer( renderer );
+				composer.addPass( new RenderPass( scene, camera ) );
+				
+				bloomPass = new UnrealBloomPass(
+					new THREE.Vector2( window.innerWidth, window.innerHeight ),
+					0.5,  // strength
+					0.4,  // radius  
+					0.85  // threshold
+				);
+				composer.addPass( bloomPass );
 
 				controls = new OrbitControls( camera, container );
 				controls.zoomToCursor = true;
@@ -1608,6 +1630,14 @@
                 
                 fountainModel.traverse(function(node) {
                     // console.log("Found node:", node.name, node.type);
+                    
+                    // Check for Neon objects
+                    if (node.name && node.name.startsWith('Neon')) {
+                        console.log("Found Neon object:", node.name);
+                        neonObjects.push(node);
+                        // Set visibility based on current 80s mode state
+                        node.visible = is80sMode;
+                    }
                     
                     // Look for GoldCoin by name (case insensitive to be safe)
                     if (node.name.toLowerCase().includes("coin") || node.name.toLowerCase().includes("gold")) {
@@ -1772,6 +1802,11 @@
 				updateLoadingProgress(100);
 				isLoading = false;
 				hideLoader();
+
+				// Enable 80s mode if it was set via URL parameter
+				if (is80sMode) {
+					toggle80sMode(true);
+				}
 
 			}
 
@@ -1952,6 +1987,203 @@
 			// Elements for 80s mode
 			let synthwaveBackground, neonGrid, retroSun, originalSky;
 			let originalStatueMaterials = new Map(); // Store original materials
+			let neonObjects = []; // Store references to Neon objects from the model
+			
+			// Custom shader for chromatic aberration
+			const ChromaticAberrationShader = {
+				uniforms: {
+					'tDiffuse': { value: null },
+					'amount': { value: 0.005 }
+				},
+				vertexShader: `
+					varying vec2 vUv;
+					void main() {
+						vUv = uv;
+						gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+					}
+				`,
+				fragmentShader: `
+					uniform sampler2D tDiffuse;
+					uniform float amount;
+					varying vec2 vUv;
+					void main() {
+						vec2 offset = amount * vec2(1.0, 0.0);
+						vec4 cr = texture2D(tDiffuse, vUv + offset);
+						vec4 cg = texture2D(tDiffuse, vUv);
+						vec4 cb = texture2D(tDiffuse, vUv - offset);
+						gl_FragColor = vec4(cr.r, cg.g, cb.b, cg.a);
+					}
+				`
+			};
+			
+			// Custom shader for scanlines
+			const ScanlineShader = {
+				uniforms: {
+					'tDiffuse': { value: null },
+					'time': { value: 0.0 },
+					'opacity': { value: 0.3 }
+				},
+				vertexShader: `
+					varying vec2 vUv;
+					void main() {
+						vUv = uv;
+						gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+					}
+				`,
+				fragmentShader: `
+					uniform sampler2D tDiffuse;
+					uniform float time;
+					uniform float opacity;
+					varying vec2 vUv;
+					void main() {
+						vec4 color = texture2D(tDiffuse, vUv);
+						float scanline = sin(vUv.y * 800.0 + time * 10.0) * 0.04;
+						color.rgb -= scanline * opacity;
+						gl_FragColor = color;
+					}
+				`
+			};
+			
+			// Custom shader for vignette
+			const VignetteShader = {
+				uniforms: {
+					'tDiffuse': { value: null },
+					'offset': { value: 0.5 },
+					'darkness': { value: 0.5 }
+				},
+				vertexShader: `
+					varying vec2 vUv;
+					void main() {
+						vUv = uv;
+						gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+					}
+				`,
+				fragmentShader: `
+					uniform sampler2D tDiffuse;
+					uniform float offset;
+					uniform float darkness;
+					varying vec2 vUv;
+					void main() {
+						vec4 color = texture2D(tDiffuse, vUv);
+						vec2 uv = (vUv - vec2(0.5)) * vec2(offset);
+						float vignette = 1.0 - dot(uv, uv);
+						color.rgb = mix(color.rgb * darkness, color.rgb, vignette);
+						gl_FragColor = color;
+					}
+				`
+			};
+			
+			// Custom shader for noise
+			const NoiseShader = {
+				uniforms: {
+					'tDiffuse': { value: null },
+					'time': { value: 0.0 },
+					'amount': { value: 0.05 }
+				},
+				vertexShader: `
+					varying vec2 vUv;
+					void main() {
+						vUv = uv;
+						gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+					}
+				`,
+				fragmentShader: `
+					uniform sampler2D tDiffuse;
+					uniform float time;
+					uniform float amount;
+					varying vec2 vUv;
+					
+					float random(vec2 p) {
+						return fract(sin(dot(p.xy, vec2(12.9898, 78.233))) * 43758.5453);
+					}
+					
+					void main() {
+						vec4 color = texture2D(tDiffuse, vUv);
+						float noise = random(vUv + time) * amount;
+						color.rgb += vec3(noise);
+						gl_FragColor = color;
+					}
+				`
+			};
+			
+			function setupPostProcessing() {
+				if (!renderer || !scene || !camera) {
+					console.error('Cannot setup post-processing: renderer, scene, or camera not initialized');
+					return;
+				}
+				
+				composer = new EffectComposer(renderer);
+				const renderPass = new RenderPass(scene, camera);
+				composer.addPass(renderPass);
+				
+				// Bloom pass (always active)
+				const resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+				bloomPass = new UnrealBloomPass(
+					resolution,
+					0.9,  // strength
+					0.4,  // radius
+					0.85  // threshold
+				);
+				composer.addPass(bloomPass);
+				
+				// Chromatic aberration (80s mode only)
+				chromaticAberrationPass = new ShaderPass(ChromaticAberrationShader);
+				chromaticAberrationPass.enabled = false;
+				composer.addPass(chromaticAberrationPass);
+				
+				// Scanlines (80s mode only)
+				scanlinePass = new ShaderPass(ScanlineShader);
+				scanlinePass.enabled = false;
+				composer.addPass(scanlinePass);
+				
+				// Noise (80s mode only)
+				noisePass = new ShaderPass(NoiseShader);
+				noisePass.enabled = false;
+				composer.addPass(noisePass);
+				
+				// Vignette (80s mode only)
+				vignettePass = new ShaderPass(VignetteShader);
+				vignettePass.enabled = false;
+				composer.addPass(vignettePass);
+				
+				// FXAA for antialiasing - temporarily disabled for debugging
+				// fxaaPass = new ShaderPass(FXAAShader);
+				// fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+				// composer.addPass(fxaaPass);
+			}
+			
+			function updatePostProcessingFor80s(enabled) {
+				if (!composer) return;
+				
+				if (enabled) {
+					// 80s mode: stronger bloom, enable all effects
+					bloomPass.strength = 1.5;
+					bloomPass.radius = 0.6;
+					bloomPass.threshold = 0.3;
+					
+					chromaticAberrationPass.enabled = true;
+					chromaticAberrationPass.uniforms.amount.value = 0.01;
+					
+					scanlinePass.enabled = true;
+					scanlinePass.uniforms.opacity.value = 0.8;
+					
+					noisePass.enabled = true;
+					noisePass.uniforms.amount.value = 0.15;
+					
+					vignettePass.enabled = true;
+					vignettePass.uniforms.darkness.value = 0.5;
+				} else {
+					// Normal mode: subtle bloom, disable other effects
+					bloomPass.strength = 0.9;
+					bloomPass.radius = 0.4;
+					bloomPass.threshold = 0.85;
+					
+					chromaticAberrationPass.enabled = false;
+					scanlinePass.enabled = false;
+					noisePass.enabled = false;
+					vignettePass.enabled = false;
+				}
+			}
 			
 			function toggle80sMode(enabled) {
 				is80sMode = enabled;
@@ -1986,6 +2218,11 @@
 				}
 				if (retroSun) retroSun.visible = true;
 				
+				// Show Neon objects from the model
+				neonObjects.forEach(obj => {
+					obj.visible = true;
+				});
+				
 				// Modify water colors for neon effect
 				updateWaterFor80s(true);
 				
@@ -2013,6 +2250,11 @@
 				
 				// Clear fog - let the gradient sky show properly
 				scene.fog = null;
+				
+				// Hide Neon objects from the model
+				neonObjects.forEach(obj => {
+					obj.visible = false;
+				});
 			}
 			
 			function createSynthwaveBackground() {
@@ -2895,8 +3137,12 @@
 					}
 				}
 
-				// Render
-				renderer.render( scene, camera );
+				// Render with bloom
+				if (composer) {
+					composer.render();
+				} else {
+					renderer.render( scene, camera );
+				}
 
 			}
 

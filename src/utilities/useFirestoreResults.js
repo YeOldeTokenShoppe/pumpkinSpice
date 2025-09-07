@@ -8,7 +8,10 @@ export function useFirestoreResults(sortBy = "burnedAmount") {
   useEffect(() => {
     // Create query based on sort option
     let q;
-    if (sortBy === "newest") {
+    if (sortBy === "mostLiked") {
+      // Sort by most liked (likes descending)
+      q = query(collection(db, "results"), orderBy("likes", "desc"), limit(80));
+    } else if (sortBy === "newest") {
       // Sort by newest (createdAt descending)
       q = query(collection(db, "results"), orderBy("createdAt", "desc"), limit(80));
     } else if (sortBy === "smallest") {
@@ -27,6 +30,8 @@ export function useFirestoreResults(sortBy = "burnedAmount") {
         message: doc.data().message,
         burnedAmount: doc.data().burnedAmount || 1,
         staked: doc.data().staked || false,
+        likes: doc.data().likes || 0, // Include likes count
+        allowLikes: doc.data().allowLikes !== false, // Default true for backward compatibility
         createdAt: doc.data().createdAt?.toDate() || new Date(), // Include createdAt timestamp
       }));
 

@@ -645,8 +645,33 @@ export default function GalleryPage() {
         />
       </div>
       
-      {/* Buy Token FAB - Opens Candle Modal */}
-      <div onClick={() => setShowCandleModal(true)}>
+      {/* Hidden Sign In Button for programmatic trigger */}
+      {!isSignedIn && (
+        <SignInButton mode="modal">
+          <button
+            id="hidden-sign-in-btn"
+            style={{ display: 'none' }}
+            aria-hidden="true"
+          >
+            Sign In
+          </button>
+        </SignInButton>
+      )}
+      
+      {/* Buy Token FAB - Opens Candle Modal or Sign In */}
+      <div onClick={() => {
+        if (!isSignedIn) {
+          // Trigger the hidden sign-in button
+          const hiddenBtn = document.getElementById('hidden-sign-in-btn');
+          if (hiddenBtn) {
+            hiddenBtn.click();
+          } else {
+            alert('Please sign in to light a candle');
+          }
+        } else {
+          setShowCandleModal(true);
+        }
+      }}>
         <BuyTokenFAB is80sMode={is80sMode} />
       </div>
       

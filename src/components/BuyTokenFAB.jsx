@@ -160,7 +160,7 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            padding: "8px 16px 8px 8px",
+            // padding: "8px 16px 8px 8px",
             backgroundColor: isHovered ? "rgba(0, 0, 0, 0.8)" : "rgba(0, 0, 0, 0.6)",
             backdropFilter: "blur(20px)",
             borderRadius: "50px",
@@ -173,12 +173,25 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ width: "3rem", height: "3rem", position: "relative" }}>
-              <CoinLoader 
-                size="3rem" 
-                showText={false} 
-                withSparkle={false}
-              />
+            <div style={{ 
+              width: "4rem", 
+              height: "4rem", 
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "50%",
+              overflow: "hidden",
+              backgroundColor: "rgba(0, 0, 0, 0.3)"
+            }}>
+              <div className="flame-container">
+                <div className="red flame"></div>
+                <div className="orange flame"></div>
+                <div className="yellow flame"></div>
+                <div className="white flame"></div>
+                <div className="blue circle"></div>
+                <div className="black circle"></div>
+              </div>
             </div>
             
             <div
@@ -288,6 +301,94 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
             opacity: 0;
             transform: scale(0) rotate(720deg);
           }
+        }
+
+        .flame-container {
+          width: 30px;
+          height: 30px;
+          position: relative;
+          transform-origin: center bottom;
+          animation-name: flicker;
+          animation-duration: 3ms;
+          animation-delay: 200ms;
+          animation-timing-function: ease-in;
+          animation-iteration-count: infinite;
+          animation-direction: alternate;
+          transform: scale(0.7) translateY(-5px);
+        }
+
+        .flame {
+          bottom: 0;
+          position: absolute;
+          border-bottom-right-radius: 50%;
+          border-bottom-left-radius: 50%;
+          border-top-left-radius: 50%;
+          transform: rotate(-45deg) scale(1.5, 1.5);
+        }
+
+        .yellow {
+          left: 7px;
+          width: 15px;
+          height: 15px;
+          background: gold;
+          box-shadow: 0px 0px 9px 4px gold;
+        }
+
+        .orange {
+          left: 5px;
+          width: 20px;
+          height: 20px;
+          background: orange;
+          box-shadow: 0px 0px 9px 4px orange;
+        }
+
+        .red {
+          left: 2px;
+          width: 25px;
+          height: 25px;
+          background: OrangeRed;
+          box-shadow: 0px 0px 5px 4px OrangeRed;
+        }
+
+        .white {
+          left: 7px;
+          bottom: -2px;
+          width: 15px;
+          height: 15px;
+          background: white;
+          box-shadow: 0px 0px 9px 4px white;
+        }
+
+        .circle {
+          border-radius: 50%;
+          position: absolute;
+        }
+
+        .blue {
+          width: 5px;
+          height: 5px;
+          left: 12px;
+          bottom: -12px;
+          background: SlateBlue;
+          box-shadow: 0px 0px 15px 10px SlateBlue;
+        }
+
+        .black {
+          width: 20px;
+          height: 20px;
+          left: 5px;
+          bottom: -30px;
+          background: black;
+          box-shadow: 0px 0px 15px 10px black;
+        }
+
+        @keyframes flicker {
+          0% { transform: rotate(-1deg) scale(0.8); }
+          20% { transform: rotate(1deg) scale(0.8); }
+          40% { transform: rotate(-1deg) scale(0.8); }
+          60% { transform: rotate(1deg) scaleY(0.83) scaleX(0.8); }
+          80% { transform: rotate(-2deg) scaleY(0.74) scaleX(0.8); }
+          100% { transform: rotate(1deg) scale(0.8); }
         }
       `}</style>
     </div>
