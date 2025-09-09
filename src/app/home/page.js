@@ -2554,7 +2554,7 @@ export default function HomePage() {
                 color: '#ffffff',
                 opacity: 0.9
               }}>
-                Ascend to the inner circle of enlightened traders and unlock exclusive benefits:
+                Top 80 candle burners ascend to the inner circle of enlightened traders and unlock exclusive benefits:
               </p>
               
               <ul style={{
@@ -2565,8 +2565,8 @@ export default function HomePage() {
                 paddingLeft: '0'
               }}>
                      <li style={{ marginBottom: '0.75rem' }}>
-                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
-                  Split 0.5% of all RL80 transaction taxes
+                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🔥</span>
+                  Members split 0.5% of RL80 transaction taxes
                 </li>
                 <li style={{ marginBottom: '0.75rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>

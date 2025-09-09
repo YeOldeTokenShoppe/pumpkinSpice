@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Moon Room</title>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
@@ -38,7 +40,7 @@
         position: fixed;
         bottom: 20px;
         right: 20px;
-        width: 400px;
+        width: 440px;
         height: 500px;
         background: rgba(26, 26, 58, 0.95);
         border: 2px solid rgba(250, 240, 230, 0.2);
@@ -53,6 +55,23 @@
 
       .chat-container.minimized {
         height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+      
+      .chat-container.minimized.new-message {
+        animation: pulse 1s infinite !important;
+        background: rgba(255, 100, 100, 0.95) !important;
+        border: 2px solid rgba(255, 200, 200, 0.8) !important;
+        box-shadow: 0 0 20px rgba(255, 100, 100, 0.8) !important;
+      }
+      
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
       }
 
       .chat-header {
@@ -79,6 +98,11 @@
         cursor: pointer;
         padding: 0 8px;
         transition: transform 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        min-height: 32px;
       }
 
       .toggle-btn:hover {
@@ -310,16 +334,198 @@
       }
 
       /* Mobile Responsive */
-      @media (max-width: 480px) {
+      @media (max-width: 768px) {
         .chat-container {
           width: calc(100vw - 20px);
-          height: calc(100vh - 100px);
+          height: 50vh;
+          max-height: 400px;
           right: 10px;
           bottom: 10px;
+          left: 10px;
+          border-radius: 12px;
+          border: 2px solid rgba(250, 240, 230, 0.3);
+          font-size: 16px; /* Prevent zoom on iOS */
+          box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chat-container.minimized {
+          height: 50px;
+          width: auto;
+          min-width: 120px;
+          right: 10px;
+          bottom: 10px;
+          left: auto;
+          border-radius: 25px;
+          background: rgba(102, 126, 234, 0.95);
+          border: 2px solid rgba(250, 240, 230, 0.4);
+          padding: 0 15px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .chat-container.minimized.new-message {
+          animation: pulse 1s infinite !important;
+          background: rgba(255, 100, 100, 0.95) !important;
+          border: 2px solid rgba(255, 200, 200, 0.8) !important;
+          box-shadow: 0 0 20px rgba(255, 100, 100, 0.8) !important;
+        }
+        
+        .chat-container.minimized .chat-header {
+          border: none;
+          background: transparent;
+          justify-content: center;
+          align-items: center;
+          padding: 0;
+          display: flex;
+        }
+        
+        .chat-container.minimized .members-toggle-btn {
+          display: none !important;
+        }
+        
+        .chat-container.minimized .chat-title {
+          font-size: 14px;
+        }
+        
+        .chat-container.minimized .toggle-btn {
+          position: relative;
+          right: auto;
+          font-size: 24px;
+          margin-left: 12px;
+          min-width: 48px;
+          min-height: 48px;
+          padding: 12px;
         }
         
         .online-members {
           display: none;
+          position: absolute;
+          top: 50px;
+          left: 10px;
+          right: 10px;
+          background: rgba(26, 26, 58, 0.98);
+          border: 2px solid rgba(250, 240, 230, 0.3);
+          border-radius: 8px;
+          padding: 10px;
+          z-index: 10;
+          max-height: 150px;
+          overflow-y: auto;
+        }
+        
+        .online-members.show {
+          display: block;
+        }
+        
+        .members-toggle-btn {
+          display: inline-block !important;
+          background: none;
+          border: none;
+          color: #faf0e6;
+          font-size: 20px;
+          cursor: pointer;
+          padding: 0 8px;
+          min-width: 44px;
+          min-height: 44px;
+        }
+        
+        .members-toggle-btn.active {
+          color: #4ade80;
+        }
+        
+        .chat-header {
+          padding: 10px;
+        }
+        
+        .toggle-btn {
+          font-size: 28px;
+          min-width: 44px;
+          min-height: 44px;
+          padding: 10px;
+        }
+        
+        .chat-title {
+          font-size: 14px;
+        }
+        
+        .messages-container {
+          max-height: calc(50vh - 140px);
+          min-height: 150px;
+        }
+        
+        .message-input {
+          font-size: 16px; /* Prevent zoom on iOS */
+          padding: 12px;
+          height: 48px;
+        }
+        
+        .send-button {
+          padding: 12px 20px;
+          font-size: 16px;
+          min-width: 80px;
+          height: 48px;
+        }
+        
+        .emoji-button {
+          width: 48px;
+          height: 48px;
+          font-size: 20px;
+        }
+        
+        .emoji-picker {
+          grid-template-columns: repeat(6, 1fr);
+          bottom: 70px;
+          max-height: 150px;
+        }
+        
+        .emoji-item {
+          font-size: 18px;
+          padding: 6px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .chat-container {
+          height: 45vh;
+          max-height: 350px;
+          width: 100vw;
+          right: 0;
+          left: 0;
+          bottom: 0;
+          border-radius: 20px 20px 0 0;
+        }
+        
+        .messages-container {
+          max-height: calc(45vh - 140px);
+        }
+        
+        .emoji-picker {
+          grid-template-columns: repeat(5, 1fr);
+        }
+        
+        .message {
+          font-size: 12px;
+        }
+        
+        .message-author {
+          font-size: 10px;
+        }
+        
+        .message-time {
+          font-size: 9px;
+        }
+      }
+      
+      /* Landscape mobile */
+      @media (max-width: 768px) and (orientation: landscape) {
+        .chat-container {
+          height: 90vh;
+          width: 60vw;
+          right: 0;
+        }
+        
+        .messages-container {
+          max-height: calc(90vh - 140px);
         }
       }
       canvas {
@@ -359,6 +565,7 @@
       <div class="chat-header">
         <span class="chat-title">🌙 ILLUMIN80 Chat</span>
         <span id="userInfo" style="font-size: 11px; color: #a0a0ff;"></span>
+        <button id="membersToggle" class="members-toggle-btn" style="display: none;">👥</button>
         <button id="toggleChat" class="toggle-btn">−</button>
       </div>
       <div class="chat-content">
@@ -431,9 +638,10 @@
       let messages = [];
       let onlineMembers = [];
       let chatMinimized = false;
+      let lastMessageTimestamp = 0;
 
       // DOM elements
-      let messageInput, sendButton, messagesContainer, membersList, chatContainer, toggleBtn, emojiButton, emojiPicker;
+      let messageInput, sendButton, messagesContainer, membersList, chatContainer, toggleBtn, emojiButton, emojiPicker, membersToggle;
 
       // Initialize chat after DOM loads
       document.addEventListener('DOMContentLoaded', function() {
@@ -443,6 +651,7 @@
         membersList = document.getElementById('membersList');
         chatContainer = document.getElementById('chatContainer');
         toggleBtn = document.getElementById('toggleChat');
+        membersToggle = document.getElementById('membersToggle');
         emojiButton = document.getElementById('emojiButton');
         emojiPicker = document.getElementById('emojiPicker');
 
@@ -485,6 +694,17 @@
           e.stopPropagation();
           toggleChat();
         });
+        
+        // Mobile members toggle
+        if (membersToggle) {
+          membersToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const membersList = document.querySelector('.online-members');
+            membersList.classList.toggle('show');
+            membersToggle.classList.toggle('active');
+          });
+        }
 
         // Initialize emoji picker
         initializeEmojiPicker();
@@ -619,15 +839,64 @@
             console.log('Chat data received, message count:', data ? Object.keys(data).length : 0);
             
             messages = [];
+            let newestTimestamp = 0;
+            let newestNonBotTimestamp = 0;
             if (data) {
               Object.keys(data).forEach(key => {
-                messages.push({ ...data[key], id: key }); // Include message ID
+                const msg = { ...data[key], id: key };
+                messages.push(msg);
+                if (msg.timestamp > newestTimestamp) {
+                  newestTimestamp = msg.timestamp;
+                }
+                // Track newest non-bot message timestamp
+                if (!msg.isBot && msg.timestamp > newestNonBotTimestamp) {
+                  newestNonBotTimestamp = msg.timestamp;
+                }
               });
               messages.sort((a, b) => a.timestamp - b.timestamp);
-              displayMessages();
               
-              // Check for new messages that need bot responses
-              // Only process messages from the last 30 seconds to avoid responding to old messages
+              // Debug logging
+              console.log('Message check - minimized:', chatMinimized, 'last timestamp:', lastMessageTimestamp, 'newest non-bot:', newestNonBotTimestamp);
+              
+              // Check for new non-bot messages while minimized
+              if (chatMinimized && lastMessageTimestamp > 0 && newestNonBotTimestamp > lastMessageTimestamp) {
+                console.log('🔔 NEW MESSAGE WHILE MINIMIZED (excluding bot messages)!');
+                console.log('Adding new-message class to:', chatContainer);
+                // Add visual notification
+                chatContainer.classList.add('new-message');
+                console.log('Classes after adding:', chatContainer.className);
+                
+                // Play notification sound
+                try {
+                  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                  const oscillator = audioContext.createOscillator();
+                  const gainNode = audioContext.createGain();
+                  
+                  oscillator.frequency.value = 800;
+                  oscillator.type = 'sine';
+                  gainNode.gain.value = 0.1;
+                  
+                  oscillator.connect(gainNode);
+                  gainNode.connect(audioContext.destination);
+                  
+                  oscillator.start();
+                  oscillator.stop(audioContext.currentTime + 0.15);
+                } catch (e) {
+                  console.log('Could not play notification sound:', e);
+                }
+              }
+              
+              // Update last timestamp after processing (track non-bot messages only)
+              if (newestNonBotTimestamp > lastMessageTimestamp) {
+                lastMessageTimestamp = newestNonBotTimestamp;
+              }
+            }
+            
+            displayMessages();
+            
+            // Check for new messages that need bot responses
+            // Only process messages from the last 30 seconds to avoid responding to old messages
+            if (data) {
               const thirtySecondsAgo = Date.now() - 30000;
               
               Object.keys(data).forEach(messageId => {
@@ -946,7 +1215,14 @@
           
           const textEl = document.createElement('div');
           textEl.className = 'message-text';
-          textEl.textContent = msg.message;
+          
+          // Check if message is a sticker
+          if (msg.message && msg.message.startsWith('[sticker:') && msg.message.endsWith(']')) {
+            const stickerUrl = msg.message.slice(9, -1); // Extract URL from [sticker:url]
+            textEl.innerHTML = `<img src="${stickerUrl}" alt="sticker" style="max-width: 150px; max-height: 150px; display: block; border-radius: 8px;">`;
+          } else {
+            textEl.textContent = msg.message;
+          }
           
           const timeEl = document.createElement('div');
           timeEl.className = 'message-time';
@@ -978,10 +1254,20 @@
         chatMinimized = !chatMinimized;
         if (chatMinimized) {
           chatContainer.classList.add('minimized');
-          toggleBtn.textContent = '+';
+          toggleBtn.textContent = '💬';
+          // Hide members panel when minimizing on mobile
+          if (window.innerWidth <= 768) {
+            document.querySelector('.chat-title').textContent = 'Chat';
+            const membersList = document.querySelector('.online-members');
+            membersList.classList.remove('show');
+            if (membersToggle) membersToggle.classList.remove('active');
+          }
         } else {
           chatContainer.classList.remove('minimized');
+          chatContainer.classList.remove('new-message'); // Remove notification when opened
           toggleBtn.textContent = '−';
+          // Restore the full title when expanded
+          document.querySelector('.chat-title').textContent = '🌙 ILLUMIN80 Chat';
         }
       }
 
@@ -989,6 +1275,7 @@
         const emojis = {
           'Smileys': ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖'],
           'Moon & Space': ['🌙', '🌛', '🌜', '🌚', '🌝', '🌞', '⭐', '🌟', '✨', '💫', '🌠', '☄️', '🚀', '🛸', '🛰️', '🌌', '🪐', '🔭'],
+          'ILLUMIN80': ['❤️‍🔥', '🍂', '🍁', '🦇', '🕷️', '🕸️', '👻', '💀', '🦴', '🧙‍♀️', '🧙‍♂️', '🔮', '🕯️', '⚰️', '🪦'],
           'Hearts': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝'],
           'Hands': ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏'],
           'Party': ['🎉', '🎊', '🎈', '🎁', '🎀', '🎆', '🎇', '🧨', '✨', '🎭', '🎪', '🎨', '🎬', '🎤', '🎧', '🎼', '🎵', '🎶', '🥳', '🍾', '🥂', '🍻', '🍺'],
@@ -996,14 +1283,38 @@
           'Food': ['🍕', '🍔', '🍟', '🌭', '🍿', '🧂', '🥓', '🥚', '🧇', '🥞', '🧈', '🍞', '🥐', '🥨', '🥯', '🥖', '🧀', '🍖', '🍗', '🥩', '🍠', '🥔', '🌽', '🌶️', '🥒', '🥬', '🥦', '🧄', '🧅', '🍄', '🥜', '🌰', '🍞'],
           'Objects': ['💎', '💍', '👑', '⚡', '🔥', '💧', '🌊', '💨', '❄️', '🌈', '☀️', '⛅', '☁️', '🌧️', '⛈️', '🌩️', '🌨️', '☃️', '⛄', '🌬️', '💨', '🌪️', '🌫️']
         };
+        
+        // Custom stickers - add your image URLs here
+        // Format: {url: 'image_url', alt: 'description'}
+        const stickers = [
+          // Example stickers - replace with your own image URLs
+          // {url: 'https://example.com/sticker1.gif', alt: 'dancing'},
+          // {url: 'https://example.com/sticker2.png', alt: 'laughing'},
+          // {url: '/images/custom-sticker.gif', alt: 'custom'},
+        ];
 
         let html = '';
+        
+        // Add emojis
         for (const [category, emojiList] of Object.entries(emojis)) {
           html += `<div class="emoji-category">${category}</div>`;
+          html += '<div class="emoji-grid">';
           emojiList.forEach(emoji => {
             html += `<span class="emoji-item" data-emoji="${emoji}">${emoji}</span>`;
           });
+          html += '</div>';
         }
+        
+        // Add stickers section if there are any
+        if (stickers.length > 0) {
+          html += `<div class="emoji-category">Stickers</div>`;
+          html += '<div class="emoji-grid">';
+          stickers.forEach(sticker => {
+            html += `<img class="sticker-item" src="${sticker.url}" alt="${sticker.alt}" style="width: 40px; height: 40px; cursor: pointer; margin: 2px; border-radius: 4px;">`;
+          });
+          html += '</div>';
+        }
+        
         emojiPicker.innerHTML = html;
 
         // Add click handlers to emoji items
@@ -1013,6 +1324,19 @@
             e.stopPropagation();
             const emoji = this.getAttribute('data-emoji');
             insertEmoji(emoji);
+          });
+        });
+        
+        // Add click handlers for stickers
+        emojiPicker.querySelectorAll('.sticker-item').forEach(item => {
+          item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Send sticker as a special message format
+            const stickerCode = `[sticker:${this.src}]`;
+            messageInput.value = stickerCode;
+            handleMessageSubmit();
+            toggleEmojiPicker();
           });
         });
       }
@@ -1084,6 +1408,7 @@
       import * as THREE from "three";
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 
       console.clear();
       ("use strict");
@@ -1424,16 +1749,20 @@
             moon.receiveShadow = true;
             
             // Add point light to make it glow
-            const light = new THREE.PointLight('#faf0e6', 20, 10);
+            const light = new THREE.PointLight('#faf0e6', 40, 10);
             light.castShadow = true;
             moon.add(light);
             
-            // Random initial position
-            moon.position.set(
-              (Math.random() - 0.5) * 20,
-              Math.random() * 10 + 5,
-              (Math.random() - 0.5) * 20
-            );
+            // Random initial position (matching original scale with HEIGHT=5)
+            if (i === 0) {
+              moon.position.set(0, 2 * HEIGHT, 0);  // First moon at (0, 10, 0)
+            } else {
+              moon.position.set(
+                THREE.MathUtils.randInt(-2 * HEIGHT, 2 * HEIGHT),      // -10 to 10
+                THREE.MathUtils.randFloat(1.5 * HEIGHT, 4.0 * HEIGHT), // 7.5 to 20
+                THREE.MathUtils.randInt(-2 * HEIGHT, 1.3 * HEIGHT)     // -10 to 6.5
+              );
+            }
             
             this.scene.add(moon);
             this.sharedMoons.set(moonId, moon);
@@ -1486,7 +1815,7 @@
           moon.receiveShadow = true;
           
           // Add point light to make it glow
-          const light = new THREE.PointLight('#faf0e6', 20, 10);
+          const light = new THREE.PointLight('#faf0e6', 40, 10);
           light.castShadow = true;
           moon.add(light);
           
@@ -1682,28 +2011,56 @@
 
         function createTerrainShape(geometry) {
           let shape = null;
+          
+          if (!geometry || !geometry.attributes || !geometry.attributes.position) {
+            console.error("Invalid geometry for terrain shape");
+            return null;
+          }
+          
           const positions = geometry.attributes.position.array;
-          const indices = geometry.index.array;
-
           const mesh = new Ammo.btTriangleMesh();
 
-          for (let i = 0; i < indices.length; i += 3) {
-            const v1 = new Ammo.btVector3(
-              positions[indices[i] * 3],
-              positions[indices[i] * 3 + 1],
-              positions[indices[i] * 3 + 2]
-            );
-            const v2 = new Ammo.btVector3(
-              positions[indices[i + 1] * 3],
-              positions[indices[i + 1] * 3 + 1],
-              positions[indices[i + 1] * 3 + 2]
-            );
-            const v3 = new Ammo.btVector3(
-              positions[indices[i + 2] * 3],
-              positions[indices[i + 2] * 3 + 1],
-              positions[indices[i + 2] * 3 + 2]
-            );
-            mesh.addTriangle(v1, v2, v3);
+          if (geometry.index) {
+            // Indexed geometry
+            const indices = geometry.index.array;
+            for (let i = 0; i < indices.length; i += 3) {
+              const v1 = new Ammo.btVector3(
+                positions[indices[i] * 3],
+                positions[indices[i] * 3 + 1],
+                positions[indices[i] * 3 + 2]
+              );
+              const v2 = new Ammo.btVector3(
+                positions[indices[i + 1] * 3],
+                positions[indices[i + 1] * 3 + 1],
+                positions[indices[i + 1] * 3 + 2]
+              );
+              const v3 = new Ammo.btVector3(
+                positions[indices[i + 2] * 3],
+                positions[indices[i + 2] * 3 + 1],
+                positions[indices[i + 2] * 3 + 2]
+              );
+              mesh.addTriangle(v1, v2, v3);
+            }
+          } else {
+            // Non-indexed geometry - every 3 vertices form a triangle
+            for (let i = 0; i < positions.length; i += 9) {
+              const v1 = new Ammo.btVector3(
+                positions[i],
+                positions[i + 1],
+                positions[i + 2]
+              );
+              const v2 = new Ammo.btVector3(
+                positions[i + 3],
+                positions[i + 4],
+                positions[i + 5]
+              );
+              const v3 = new Ammo.btVector3(
+                positions[i + 6],
+                positions[i + 7],
+                positions[i + 8]
+              );
+              mesh.addTriangle(v1, v2, v3);
+            }
           }
 
           shape = new Ammo.btBvhTriangleMeshShape(mesh, true, true);
@@ -1938,7 +2295,7 @@
           0.01,
           1000 // Increase far clipping plane
         );
-        camera.position.set(0, 3, 150);
+        camera.position.set(0, 3, 50);
         camera.lookAt(0, 0, 0);
 
         // Controls setup
@@ -1974,7 +2331,7 @@
             );
           }),
           new Promise((resolve) => {
-            new GLTFLoader().load("/models/ArmChair.glb", resolve);
+            new GLTFLoader().load("/models/tvs.glb", resolve);
           }),
         ]).then(([moonTexture, chairModel]) => {
           // Create moon lamps
@@ -2061,10 +2418,49 @@
           }
           */
 
-          // Initialize multiplayer projectiles after physics is ready
-          if (window.database && window.userAddress) {
-            window.multiplayerProjectiles = new MultiplayerProjectiles(scene, window.database, physics);
-            console.log('Multiplayer projectiles initialized');
+          // Skip multiplayer for now - just create local moons
+          // if (window.database && window.userAddress) {
+          //   window.multiplayerProjectiles = new MultiplayerProjectiles(scene, window.database, physics);
+          //   console.log('Multiplayer projectiles initialized');
+          // }
+          
+          // Create local moons - EXACT copy from original
+          for (let i = 0; i < 5; i++) {
+            let newLamp = moonLamp.clone();
+            let color = new THREE.Color("#faf0e6");
+            let sphereMat = new THREE.MeshPhongMaterial({
+              color: color,
+              map: moonTexture,
+              lightMap: moonTexture,
+              lightMapIntensity: 3,
+            });
+            newLamp.material = sphereMat;
+            newLamp.children[0].color.set(color);
+
+            if (i === 0) {
+              newLamp.position.set(0, 2 * HEIGHT, 0);
+            } else {
+              newLamp.position.set(
+                THREE.MathUtils.randInt(-2 * HEIGHT, 2 * HEIGHT),
+                THREE.MathUtils.randFloat(1.5 * HEIGHT, 4.0 * HEIGHT),
+                THREE.MathUtils.randInt(-2 * HEIGHT, 1.3 * HEIGHT)
+              );
+              newLamp.rotation.set(
+                THREE.MathUtils.randFloat(-2 * Math.PI, 2 * Math.PI),
+                THREE.MathUtils.randFloat(-2 * Math.PI, 2 * Math.PI),
+                THREE.MathUtils.randFloat(-2 * Math.PI, 2 * Math.PI)
+              );
+            }
+
+            scene.add(newLamp);
+            physics.addMesh(newLamp, 0.5);
+            const body = meshMap.get(newLamp);
+            if (body) {
+              body.setDamping(0.5, 0.5);
+              body.setFriction(0.2);
+              body.setRestitution(0.7);
+              body.setRollingFriction(0.1);
+            }
           }
 
           // Create shooting balls
@@ -2362,25 +2758,159 @@
           scene.add(floor);
           physics.addTerrainMesh(floor, 0);
 
-          // Add chair model
-          chair = new THREE.Mesh(
-            chairModel.scene.children[0].geometry,
-            chairModel.scene.children[0].material
-          );
+          // Add GLB model - use the entire scene
+          chair = chairModel.scene;
           chair.scale.set(10, 10, 10);
           chair.position.set(0, 0, 0);
           // chair.rotation.y = Math.PI;
-          chair.castShadow = true;
-          chair.receiveShadow = true;
+          
+          // Set shadows for all meshes in the model
+          chair.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+          
           chair.name = "chair";
           scene.add(chair);
-          physics.addTerrainMesh(chair, 0);
+          
+          // Find the Empty mesh that contains the animated object
+          let emptyMesh = null;
+          chair.traverse((child) => {
+            if (child.name === 'Empty') {
+              emptyMesh = child;
+              console.log("Found Empty mesh:", child);
+            }
+          });
+          
+          // Set up animation if the model has animations
+          let mixer = null;
+          if (chairModel.animations && chairModel.animations.length > 0) {
+            // Create mixer for the entire scene (animations might target specific objects)
+            mixer = new THREE.AnimationMixer(chair);
+            
+            // Log available animations and what they target
+            console.log("Available animations:");
+            chairModel.animations.forEach((clip, index) => {
+              console.log(`${index}: ${clip.name}`);
+              // Log what objects the animation targets
+              if (clip.tracks && clip.tracks.length > 0) {
+                const targetObjects = new Set(clip.tracks.map(track => track.name.split('.')[0]));
+                console.log(`  Targets: ${Array.from(targetObjects).join(', ')}`);
+              }
+            });
+            
+            // Find and play the 'closed' animation specifically
+            const closedAnimation = chairModel.animations.find(clip => 
+              clip.name === 'closed'
+            );
+            
+            if (closedAnimation) {
+              const action = mixer.clipAction(closedAnimation);
+              action.setLoop(THREE.LoopOnce); // Play once
+              action.clampWhenFinished = true; // Stay at the last frame
+              action.play();
+              console.log(`Playing animation: ${closedAnimation.name}`);
+            } else {
+              // Fallback to close_action if 'closed' not found
+              const closeAction = chairModel.animations.find(clip => 
+                clip.name === 'close_action'
+              );
+              if (closeAction) {
+                const action = mixer.clipAction(closeAction);
+                action.setLoop(THREE.LoopOnce);
+                action.clampWhenFinished = true;
+                action.play();
+                console.log(`Playing animation: ${closeAction.name}`);
+              }
+            }
+            
+            // If we found the Empty mesh, we can control it directly if needed
+            if (emptyMesh) {
+              console.log("Empty mesh ready for additional control if needed");
+            }
+          }
+          
+          // Create collision for the model (excluding animated parts)
+          const geometries = [];
+          chair.traverse((child) => {
+            if (child.isMesh && child.geometry) {
+              // Skip animated/skinned meshes
+              const isAnimated = child.isSkinnedMesh || 
+                               child.geometry.attributes.skinIndex || 
+                               child.geometry.attributes.skinWeight;
+              
+              if (!isAnimated) {
+                // Clone geometry for static meshes only
+                const clonedGeometry = child.geometry.clone();
+                
+                // Remove any animation attributes that might have been left
+                delete clonedGeometry.attributes.skinIndex;
+                delete clonedGeometry.attributes.skinWeight;
+                
+                clonedGeometry.applyMatrix4(child.matrixWorld);
+                geometries.push(clonedGeometry);
+              }
+            }
+          });
+          
+          // Create collision hull from static geometries only
+          if (geometries.length > 0) {
+            try {
+              const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries);
+              
+              // Create a simplified convex hull mesh for collision
+              const hullMesh = new THREE.Mesh(
+                mergedGeometry,
+                new THREE.MeshBasicMaterial({
+                  visible: false,  // Set to false to hide
+                  wireframe: true,
+                  color: 0x00ff00,
+                  opacity: 0.3,
+                  transparent: true
+                })
+              );
+              hullMesh.scale.copy(chair.scale);
+              hullMesh.position.copy(chair.position);
+              hullMesh.name = "model_hull_collision";
+              
+              scene.add(hullMesh);
+              physics.addMesh(hullMesh, 0); // Mass 0 = static
+              
+              console.log("Added convex hull collision for static parts");
+            } catch (err) {
+              console.warn("Could not merge geometries, using bounding box:", err);
+              
+              // Fallback to simple box collision
+              const box = new THREE.Box3().setFromObject(chair);
+              const size = new THREE.Vector3();
+              const center = new THREE.Vector3();
+              box.getSize(size);
+              box.getCenter(center);
+              
+              const boxGeo = new THREE.BoxGeometry(size.x, size.y, size.z);
+              const boxMesh = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ visible: false }));
+              boxMesh.position.copy(center);
+              
+              scene.add(boxMesh);
+              physics.addMesh(boxMesh, 0);
+            }
+          }
 
           // document.getElementById("loading").style.display = "none";
 
           // Animation loop
+          const clock = new THREE.Clock();
           function animate() {
             requestAnimationFrame(animate);
+            
+            // Update animation mixer if it exists
+            if (mixer) {
+              const delta = clock.getDelta();
+              mixer.update(delta);
+            }
+            
             controls.update();
             renderer.render(scene, camera);
           }
