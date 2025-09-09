@@ -29,8 +29,15 @@ const flowAnimation = keyframes`
 `;
 
 const rotateAnimation = keyframes`
-  from { transform: rotateZ(0deg); }
-  to { transform: rotateZ(90deg); }
+  0% { transform: rotateZ(0deg); }
+  20% { transform: rotateZ(90deg); }
+  25% { transform: rotateZ(90deg); }
+  45% { transform: rotateZ(180deg); }
+  50% { transform: rotateZ(180deg); }
+  70% { transform: rotateZ(270deg); }
+  75% { transform: rotateZ(270deg); }
+  95% { transform: rotateZ(360deg); }
+  100% { transform: rotateZ(360deg); }
 `;
 
 // Styled components
@@ -56,7 +63,7 @@ const InfinityShape = styled.div`
   
   display: flex;
   transform-style: preserve-3d;
-  animation: ${rotateAnimation} 3s ease-in-out infinite alternate;
+  animation: ${rotateAnimation} 4s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
   
   &:before, &:after {
     margin: 0 calc(0.5 * (var(--ri) - var(--ro)));

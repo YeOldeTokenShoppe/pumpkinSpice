@@ -110,7 +110,7 @@
 				}
 				
 				.coin-emoji {
-					font-size: 12px !important;
+					font-size: 10px !important;
 				}
 			}
 
@@ -288,20 +288,30 @@
 			z-index: 1000;
 			display: flex;
 			flex-direction: column;
-			gap: 4px;
+			gap: 2px;
 			width: 250px;
 			box-sizing: border-box;
 		">
 			<div style="text-align: center; font-size: 12px; color: #30cfd0; text-shadow: 0 0 10px rgba(48, 207, 208, 0.5); margin-bottom: 2px; border-bottom: 1px solid rgba(48, 207, 208, 0.3); padding-bottom: 2px; line-height: 1;">
 				Charity Collection
 			</div>
-			<div style="display: flex; align-items: center; gap: 8px;">
-				<span class="coin-emoji" style="font-size: 18px;">🪙</span>
-				<span><span class="desktop-text">Current: </span><span id="coinCount">0</span> / 200</span>
+			<div style="display: flex; align-items: center; gap: 6px;">
+				<span class="coin-emoji" style="font-size: 16px;">🪙</span>
+				<span style="font-size: 11px;"><span class="desktop-text">Current: </span><span id="coinCount">0</span> / 200</span>
 			</div>
-			<div style="display: flex; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid rgba(206, 187, 67, 0.3);">
-				<span class="coin-emoji" style="font-size: 18px;">💰</span>
-				<span><span class="desktop-text">Collected: </span><span id="collectedCount">0</span></span>
+			<div style="display: flex; align-items: center; gap: 6px; padding-top: 2px; border-top: 1px solid rgba(206, 187, 67, 0.3);">
+				<span class="coin-emoji" style="font-size: 16px;">💰</span>
+				<span style="font-size: 11px;"><span class="desktop-text">Collected: </span><span id="collectedCount">0</span></span>
+			</div>
+			<div style="padding-top: 2px; border-top: 1px solid rgba(206, 187, 67, 0.3); font-size: 10px; line-height: 1.2;">
+				<div style="display: flex; align-items: center; gap: 3px; margin-bottom: 1px;">
+					<span style="font-size: 10px;">🍽️</span>
+					<span style="flex: 1;">WCK: <span id="wckPercentage">0</span>%</span>
+				</div>
+				<div style="display: flex; align-items: center; gap: 3px;">
+					<span style="font-size: 10px;">🐾</span>
+					<span style="flex: 1;">ASPCA: <span id="aspcaPercentage">0</span>%</span>
+				</div>
 			</div>
 			<div id="resetMessage" style="display: none; color: #30cfd0; font-size: 12px; text-align: center; margin-top: 8px;">
 				Resetting fountain...
@@ -567,6 +577,7 @@
 			// --- Coin Counter and Performance Settings ---
 			let totalCoinCount = 0;
 			let collectedCoinCount = 0;
+			let charityAllocation = { 'world-central-kitchen': 0, 'aspca': 0 };
 			let isResetting = false;
 			let staticCoinInstancedMesh = null;
 			let staticCoinData = [];
@@ -577,6 +588,8 @@
 			function updateCoinCounter() {
 				const coinCountElement = document.getElementById('coinCount');
 				const collectedCountElement = document.getElementById('collectedCount');
+				const wckPercentageElement = document.getElementById('wckPercentage');
+				const aspcaPercentageElement = document.getElementById('aspcaPercentage');
 				
 				if (coinCountElement) {
 					// Show actual count from database, even if we're only rendering some
@@ -585,6 +598,18 @@
 				
 				if (collectedCountElement) {
 					collectedCountElement.textContent = collectedCoinCount;
+				}
+				
+				// Update allocation percentages
+				const total = charityAllocation['world-central-kitchen'] + charityAllocation['aspca'];
+				if (total > 0 && wckPercentageElement && aspcaPercentageElement) {
+					const wckPercent = Math.round((charityAllocation['world-central-kitchen'] / total) * 100);
+					const aspcaPercent = Math.round((charityAllocation['aspca'] / total) * 100);
+					wckPercentageElement.textContent = wckPercent;
+					aspcaPercentageElement.textContent = aspcaPercent;
+				} else if (wckPercentageElement && aspcaPercentageElement) {
+					wckPercentageElement.textContent = '0';
+					aspcaPercentageElement.textContent = '0';
 				}
 			}
 			
@@ -635,6 +660,7 @@
 						// Update collected count
 						collectedCoinCount = data.cumulativeTotal || (collectedCoinCount + data.archivedCount);
 						totalCoinCount = 0;
+						charityAllocation = { 'world-central-kitchen': 0, 'aspca': 0 };
 						updateCoinCounter();
 						
 						// Clear visual coins
@@ -823,8 +849,9 @@
 						.limit(COINS_TO_LOAD)
 						.get();
 					
-					// Clear existing static coin data
+					// Clear existing static coin data and reset charity allocation
 					staticCoinData = [];
+					charityAllocation = { 'world-central-kitchen': 0, 'aspca': 0 };
 					
 					snapshot.forEach((doc) => {
 						const data = doc.data();
@@ -835,6 +862,12 @@
 								underwater: data.position.y < -0.4,
 								id: doc.id
 							});
+						}
+						// Count charity allocations
+						if (data.charity) {
+							if (charityAllocation[data.charity] !== undefined) {
+								charityAllocation[data.charity]++;
+							}
 						}
 					});
 					

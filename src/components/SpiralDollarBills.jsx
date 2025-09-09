@@ -71,8 +71,32 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
               Math.floor(subdivisions / 2.35) // Proportional subdivisions
             );
             
+            // Add curve deformation to the geometry
+            const positions = planeGeometry.attributes.position;
+            const vertex = new THREE.Vector3();
+            
+            for (let i = 0; i < positions.count; i++) {
+              vertex.fromBufferAttribute(positions, i);
+              
+              // Create a wave/curve effect along the width (x-axis)
+              const curveFactor = 0.25; // Adjust this for more/less curve
+              const waveX = Math.sin((vertex.x / width + 0.5) * Math.PI) * curveFactor;
+              
+              // Add slight ripple along height for more realistic paper effect
+              const rippleFactor = 0.03;
+              const rippleY = Math.sin((vertex.y / height + 0.5) * Math.PI * 2) * rippleFactor;
+              
+              // Apply the deformation to the z-axis (depth)
+              vertex.z = waveX + rippleY;
+              
+              positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+            
+            planeGeometry.computeVertexNormals();
+            planeGeometry.attributes.position.needsUpdate = true;
+            
             setBillGeometry(planeGeometry);
-            console.log('Created subdivided plane geometry:', width, 'x', height, 'with', subdivisions, 'subdivisions');
+            console.log('Created curved plane geometry:', width, 'x', height, 'with', subdivisions, 'subdivisions');
           }
           
           // Extract textures based on mesh/material names

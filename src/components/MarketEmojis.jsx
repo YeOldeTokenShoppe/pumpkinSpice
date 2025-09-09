@@ -8,6 +8,7 @@ const MarketEmoji = ({ type = 'devil', position, scale = 1, orbitRadius, orbitSp
   // Load the appropriate model based on type
   const modelPath = type === 'angel' ? '/models/angel_emoji.glb' : 
                     type === 'money' ? '/models/money_emoji.glb' : 
+                    type === 'crying' ? '/models/crying_emoji.glb' :
                     '/models/devil_emoji.glb';
   
   const { scene, animations } = useGLTF(modelPath);
@@ -96,10 +97,16 @@ const MarketEmoji = ({ type = 'devil', position, scale = 1, orbitRadius, orbitSp
           clip.name === 'Bone.002_01|Idle3' ||
           clip.name.includes('Idle3')
         );
+      } else if (type === 'crying') {
+        idleClip = animations.find(clip => 
+          clip.name === 'Idle4' || 
+          clip.name === 'Bone.004_01|Idle4' ||
+          clip.name.includes('Idle4')
+        );
       } else { // devil
         idleClip = animations.find(clip => 
           clip.name === 'Idle' || 
-          clip.name.includes('Idle') && !clip.name.includes('Idle_') && !clip.name.includes('Idle3') ||
+          clip.name.includes('Idle') && !clip.name.includes('Idle_') && !clip.name.includes('Idle3') && !clip.name.includes('Idle4') ||
           clip.name.includes('idle')
         );
       }
@@ -175,11 +182,13 @@ const MarketEmoji = ({ type = 'devil', position, scale = 1, orbitRadius, orbitSp
       meshRef.current.position.x = position[0] + Math.cos(angle) * orbitRadius;
       meshRef.current.position.z = position[2] + Math.sin(angle) * orbitRadius;
       
-      // Position based on type - money floats highest, angels mid, devils low
+      // Position based on type - money floats highest, angels mid, devils low, crying lowest
       if (type === 'money') {
         meshRef.current.position.y = position[1] + 15 + Math.sin(time * 0.8 + orbitOffset) * 3;
       } else if (type === 'angel') {
         meshRef.current.position.y = position[1] + 8 + Math.sin(time * 0.6 + orbitOffset) * 2;
+      } else if (type === 'crying') {
+        meshRef.current.position.y = position[1] - 10 + Math.sin(time * 0.3 + orbitOffset) * 1; // Lower and slower
       } else { // devil
         meshRef.current.position.y = position[1] - 5 + Math.sin(time * 0.4 + orbitOffset) * 1.5; // Slower, smaller movement
       }
@@ -212,7 +221,7 @@ const MarketEmoji = ({ type = 'devil', position, scale = 1, orbitRadius, orbitSp
         {/* Colored glow effect based on type - reduced intensity */}
         <pointLight 
           ref={glowRef}
-          color={type === 'angel' ? '#87ceeb' : type === 'money' ? '#ffd700' : '#ff0000'} 
+          color={type === 'angel' ? '#87ceeb' : type === 'money' ? '#ffd700' : type === 'crying' ? '#4169e1' : '#ff0000'} 
           intensity={glowIntensity * 0.5} 
           distance={20}
           decay={2}
@@ -226,39 +235,236 @@ const MarketEmoji = ({ type = 'devil', position, scale = 1, orbitRadius, orbitSp
 useGLTF.preload('/models/devil_emoji.glb');
 useGLTF.preload('/models/angel_emoji.glb');
 useGLTF.preload('/models/money_emoji.glb');
+useGLTF.preload('/models/crying_emoji.glb');
 
 const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGreedData = null }) => {
   const [fearGreedIndex, setFearGreedIndex] = useState(null);
   const [devilCount, setDevilCount] = useState(0);
   const [angelCount, setAngelCount] = useState(0);
   const [moneyCount, setMoneyCount] = useState(0);
+  const [cryingCount, setCryingCount] = useState(0);
+  const [marketVolume, setMarketVolume] = useState(null);
   const [loading, setLoading] = useState(true);
   
+  // Fetch Market Volume Data
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      try {
+        // Try CoinGecko API first (no CORS, free tier available)
+        const geckoResponse = await fetch(
+          'https://api.coingecko.com/api/v3/global',
+          {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            }
+          }
+        ).catch(() => null);
+
+        if (geckoResponse && geckoResponse.ok) {
+          const geckoData = await geckoResponse.json();
+          // CoinGecko returns volume in USD already
+          const volume24h = geckoData.data?.total_volume?.usd || 0;
+          const volumeInBillions = volume24h / 1000000000;
+          
+          setMarketVolume({
+            raw: volume24h,
+            billions: volumeInBillions,
+            formatted: `$${volumeInBillions.toFixed(1)}B`,
+            marketCap: geckoData.data?.total_market_cap?.usd || 0,
+            source: 'CoinGecko'
+          });
+          
+          console.log('Market Volume (24h from CoinGecko):', volumeInBillions.toFixed(1), 'billion');
+          return;
+        }
+
+        // Try Firebase Cloud Function as backup
+        const response = await fetch(
+          'https://us-central1-illumin8-e963f.cloudfunctions.net/api/global-metrics',
+          {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+              'Accept': 'application/json',
+            }
+          }
+        ).catch(() => null);
+
+        if (response && response.ok) {
+          const data = await response.json();
+          // Extract 24h volume (in billions)
+          const volume24h = data.data?.quote?.USD?.total_volume_24h || 0;
+          const volumeInBillions = volume24h / 1000000000;
+          
+          setMarketVolume({
+            raw: volume24h,
+            billions: volumeInBillions,
+            formatted: `$${volumeInBillions.toFixed(1)}B`,
+            marketCap: data.data?.quote?.USD?.total_market_cap || 0,
+            source: 'CoinMarketCap'
+          });
+          
+          console.log('Market Volume (24h from CMC):', volumeInBillions.toFixed(1), 'billion');
+        } else {
+          // Fallback to more realistic simulated volume (150-200B range)
+          const hour = new Date().getHours();
+          const baseVolume = 175; // More realistic base
+          const variance = Math.sin((hour / 24) * Math.PI * 2) * 25 + Math.random() * 10;
+          const simulatedVolume = baseVolume + variance;
+          
+          setMarketVolume({
+            raw: simulatedVolume * 1000000000,
+            billions: simulatedVolume,
+            formatted: `$${simulatedVolume.toFixed(1)}B`,
+            simulated: true
+          });
+          
+          console.log('Using simulated volume:', simulatedVolume.toFixed(1), 'billion (more realistic)');
+        }
+      } catch (error) {
+        console.warn('Market data fetch failed:', error);
+        // Set more realistic default simulated volume
+        const simulatedVolume = 150 + Math.random() * 50;
+        setMarketVolume({
+          raw: simulatedVolume * 1000000000,
+          billions: simulatedVolume,
+          formatted: `$${simulatedVolume.toFixed(1)}B`,
+          simulated: true
+        });
+      }
+    };
+
+    fetchMarketData();
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchMarketData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Fetch Fear & Greed Index
   useEffect(() => {
     const fetchFearGreedIndex = async () => {
       try {
-        // Try alternative.me API first (no CORS issues)
-        const altResponse = await fetch('https://api.alternative.me/fng/', {
+        // Try CoinMarketCap API first with your API key
+        const cmcApiKey = process.env.NEXT_PUBLIC_COINMARKETCAP;
+        if (cmcApiKey) {
+          // Using proxy to avoid CORS issues
+          const cmcResponse = await fetch('/api/cmc-fear-greed', {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            }
+          }).catch((err) => {
+            console.error('CMC Fear & Greed fetch error:', err);
+            return null;
+          });
+          
+          if (cmcResponse && cmcResponse.ok) {
+            const cmcData = await cmcResponse.json();
+            console.log('CMC API Response:', cmcData);
+            
+            // CMC returns data as an object with value, update_time, and value_classification
+            if (cmcData && cmcData.data && cmcData.data.value !== undefined) {
+              const value = parseInt(cmcData.data.value);
+              const classification = cmcData.data.value_classification || (
+                value < 25 ? 'Extreme Fear' :
+                value < 45 ? 'Fear' :
+                value < 55 ? 'Neutral' :
+                value < 75 ? 'Greed' : 'Extreme Greed'
+              );
+              
+              setFearGreedIndex({
+                value: value,
+                classification: classification,
+                updateTime: cmcData.data.update_time,
+                source: 'CoinMarketCap'
+              });
+              console.log('Fear & Greed Index (CoinMarketCap):', {
+                value: value,
+                classification: classification,
+                updateTime: cmcData.data.update_time
+              });
+              setLoading(false);
+              return;
+            } else {
+              console.warn('CMC response missing expected data structure:', cmcData);
+            }
+          }
+        }
+        
+        // Fallback to alternative.me API
+        const altResponse = await fetch('https://api.alternative.me/fng/?limit=1', {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
           }
-        }).catch(() => null);
+        }).catch((err) => {
+          console.error('Alternative.me fetch error:', err);
+          return null;
+        });
         
         if (altResponse && altResponse.ok) {
           const altData = await altResponse.json();
-          const latestData = altData.data[0];
-          setFearGreedIndex({
-            value: parseInt(latestData.value),
-            classification: latestData.value_classification,
-          });
-          console.log('Fear & Greed Index (Alternative):', latestData);
-          setLoading(false);
-          return;
+          if (altData && altData.data && altData.data[0]) {
+            const latestData = altData.data[0];
+            const value = parseInt(latestData.value);
+            setFearGreedIndex({
+              value: value,
+              classification: latestData.value_classification,
+              timestamp: latestData.timestamp,
+              time_until_update: latestData.time_until_update
+            });
+            console.log('Fear & Greed Index (Alternative.me):', {
+              value: value,
+              classification: latestData.value_classification,
+              timestamp: new Date(latestData.timestamp * 1000).toLocaleString()
+            });
+            setLoading(false);
+            return;
+          }
+        } else if (altResponse) {
+          console.warn('Alternative.me API response not ok:', altResponse.status);
         }
         
-        // Try Firebase Cloud Function as backup
+        // Try to get CMC Fear & Greed via proxy/alternative endpoint
+        // Note: Direct CMC API requires API key, so we'll try public alternatives
+        
+        // Try CoinStats as another alternative (updates every 12 hours)
+        const coinStatsResponse = await fetch(
+          'https://api.coinstats.app/public/v1/charts/bitcoin/fear-greed',
+          {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            }
+          }
+        ).catch((err) => {
+          console.error('CoinStats fetch error:', err);
+          return null;
+        });
+        
+        if (coinStatsResponse && coinStatsResponse.ok) {
+          const coinStatsData = await coinStatsResponse.json();
+          if (coinStatsData && coinStatsData.value) {
+            const value = parseInt(coinStatsData.value);
+            let classification = 'Neutral';
+            if (value < 25) classification = 'Extreme Fear';
+            else if (value < 45) classification = 'Fear';
+            else if (value > 75) classification = 'Extreme Greed';
+            else if (value > 55) classification = 'Greed';
+            
+            setFearGreedIndex({
+              value: value,
+              classification: classification,
+              source: 'CoinStats'
+            });
+            console.log('Fear & Greed Index (CoinStats):', value, classification);
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Try Firebase Cloud Function as final backup
         const cmcResponse = await fetch(
           'https://us-central1-illumin8-e963f.cloudfunctions.net/api/fear-and-greed',
           { 
@@ -275,8 +481,9 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
           setFearGreedIndex({
             value: cmcData.value,
             classification: cmcData.classification,
+            source: 'CMC via Firebase'
           });
-          console.log('Fear & Greed Index (CMC):', cmcData);
+          console.log('Fear & Greed Index (CMC via Firebase):', cmcData);
           setLoading(false);
           return;
         }
@@ -338,11 +545,12 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
       let devils = 0;
       let angels = 0;
       let money = 0;
+      let crying = 0;
       
       if (value >= 80) {
         // Extreme Greed (80+): Money emojis appear!
         devils = 0;
-        angels = 0; // No angels, pure greed!
+        angels = 3; // No angels, pure greed!
         money = Math.floor(4 + (value - 80) / 20 * 3); // 4-7 money emojis
         console.log(`EXTREME GREED MANUAL: Setting angels=0, money=${money} for value=${value}`);
       } else if (value > 75) {
@@ -360,21 +568,30 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
         devils = Math.floor(1 + (55 - value) / 10);
         angels = Math.floor(1 + (value - 45) / 10);
         money = 0;
-      } else if (value > 25) {
-        // Fear: Devils tempting
-        devils = Math.floor(3 + (45 - value) / 20 * 2);
+      } else if (value >= 30) {
+        // Fear (30-45): Devils tempting
+        devils = Math.floor(3 + (45 - value) / 15 * 2);
         angels = 0;
         money = 0;
+        crying = 0;
+      } else if (value > 25) {
+        // High Fear (25-30): Devils and crying emojis
+        devils = Math.floor(4 + (30 - value) / 5 * 2);
+        angels = 0;
+        money = 0;
+        crying = Math.floor(1 + (30 - value) / 5 * 2); // 1-3 crying emojis
       } else {
-        // Extreme Fear: Maximum devils
+        // Extreme Fear (<25): Maximum devils and crying
         devils = Math.floor(5 + (25 - value) / 25 * 3);
         angels = 0;
         money = 0;
+        crying = Math.floor(3 + (25 - value) / 25 * 2); // 3-5 crying emojis
       }
       
       setDevilCount(devils);
       setAngelCount(angels);
       setMoneyCount(money);
+      setCryingCount(crying);
       // console.log(`MarketEmojis: Manual mode emoji counts - Devils: ${devils}, Angels: ${angels}, Money: ${money}`);
       
       // Call the callback with updated data for manual mode
@@ -383,11 +600,13 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
           ...manualFearGreedData,
           devilCount: devils,
           angelCount: angels,
-          moneyCount: money
+          moneyCount: money,
+          cryingCount: crying,
+          marketVolume: marketVolume
         });
       }
     }
-  }, [manualFearGreedData?.value, manualFearGreedData?.manual]); // Only watch for value and manual flag changes
+  }, [manualFearGreedData?.value, manualFearGreedData?.manual, marketVolume, onDataUpdate]); // Watch for value, manual flag, and volume changes
   
   // Calculate devil and angel counts based on Fear & Greed value (for live data)
   useEffect(() => {
@@ -397,10 +616,11 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
     if (fearGreedIndex) {
       const { value } = fearGreedIndex;
       
-      // Devils appear during fear (temptation), angels during greed (warning), money at peak greed
+      // Devils appear during fear (temptation), angels during greed (warning), money at peak greed, crying at extreme fear
       let devils = 0;
       let angels = 0;
       let money = 0;
+      let crying = 0;
       
       if (value >= 80) {
         // Extreme Greed (80+): Money emojis appear!
@@ -423,22 +643,31 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
         devils = Math.floor(1 + (55 - value) / 10);
         angels = Math.floor(1 + (value - 45) / 10);
         money = 0;
-      } else if (value > 25) {
-        // Fear: Devils tempting
-        devils = Math.floor(3 + (45 - value) / 20 * 2);
+      } else if (value >= 30) {
+        // Fear (30-45): Devils tempting
+        devils = Math.floor(3 + (45 - value) / 15 * 2);
         angels = Math.random() > 0.5 ? 1 : 0;
         money = 0;
+        crying = 0;
+      } else if (value > 25) {
+        // High Fear (25-30): Devils and crying emojis
+        devils = Math.floor(4 + (30 - value) / 5 * 2);
+        angels = 0;
+        money = 0;
+        crying = Math.floor(1 + (30 - value) / 5 * 2); // 1-3 crying emojis
       } else {
-        // Extreme Fear: Maximum devils
+        // Extreme Fear (<25): Maximum devils and crying
         devils = Math.floor(5 + (25 - value) / 25 * 3);
         angels = 0;
         money = 0;
+        crying = Math.floor(3 + (25 - value) / 25 * 2); // 3-5 crying emojis
       }
       
       setDevilCount(devils);
       setAngelCount(angels);
       setMoneyCount(money);
-      console.log(`Fear & Greed: ${value} (${fearGreedIndex.classification}) - Spawning ${devils} devils, ${angels} angels, and ${money} money emojis`);
+      setCryingCount(crying);
+      console.log(`Fear & Greed: ${value} (${fearGreedIndex.classification}) - Spawning ${devils} devils, ${angels} angels, ${money} money, and ${crying} crying emojis`);
       
       // Call the callback with updated data
       if (onDataUpdate) {
@@ -446,11 +675,13 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
           ...fearGreedIndex,
           devilCount: devils,
           angelCount: angels,
-          moneyCount: money
+          moneyCount: money,
+          cryingCount: crying,
+          marketVolume: marketVolume
         });
       }
     }
-  }, [fearGreedIndex, manualFearGreedData]);
+  }, [fearGreedIndex, manualFearGreedData, marketVolume]);
   
   // Generate devil positions and parameters
   const devils = useMemo(() => {
@@ -521,6 +752,29 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
     return moneyArray;
   }, [moneyCount]);
   
+  // Generate crying emoji positions and parameters
+  const cryingEmojis = useMemo(() => {
+    const cryingArray = [];
+    for (let i = 0; i < cryingCount; i++) {
+      const layer = Math.floor(i / 3); // Create layers
+      const indexInLayer = i % 3;
+      
+      // Use deterministic values based on index
+      const seedValue = ((i * 137.5) % 1); // Golden angle for distribution
+      
+      cryingArray.push({
+        id: i,
+        scale: 0.5 + seedValue * 0.2, // Scale 0.5-0.7
+        orbitRadius: 20 + layer * 8 + (seedValue * 4), // Close orbit
+        orbitSpeed: 0.05 + (seedValue * 0.05), // Very slow, sad movement
+        orbitOffset: (indexInLayer * Math.PI * 2 / 3) + (seedValue * 0.3),
+        height: -15 - layer * 3, // Lowest position
+        glowIntensity: 1.0 + (30 - (fearGreedIndex?.value || 30)) / 20, // Dim blue glow
+      });
+    }
+    return cryingArray;
+  }, [cryingCount, fearGreedIndex]);
+  
   if (loading) return null;
   
   return (
@@ -571,6 +825,20 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
           orbitSpeed={money.orbitSpeed}
           orbitOffset={money.orbitOffset}
           glowIntensity={money.glowIntensity}
+        />
+      ))}
+      
+      {/* Render crying emojis for extreme fear */}
+      {cryingEmojis.map((crying) => (
+        <MarketEmoji
+          type="crying"
+          key={`crying-${crying.id}`}
+          position={[centerPosition[0], centerPosition[1] + crying.height, centerPosition[2]]}
+          scale={crying.scale}
+          orbitRadius={crying.orbitRadius}
+          orbitSpeed={crying.orbitSpeed}
+          orbitOffset={crying.orbitOffset}
+          glowIntensity={crying.glowIntensity}
         />
       ))}
       

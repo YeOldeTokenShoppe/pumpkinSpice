@@ -15,8 +15,8 @@ import TestDevil from '@/components/TestDevil';
 // import CoinSparkles from './CoinSparkles';
 
 // Madonna Model Component
-const MadonnaModel = ({ position = [0, -1, 1], scale = 1, goldCoinRef, coinsRef }) => {
-  const { scene } = useGLTF('/models/madonna_skates.glb');
+const MadonnaModel = ({ position = [0, -1, 0], scale = 1, goldCoinRef, coinsRef }) => {
+  const { scene } = useGLTF('/models/madonna_skates2.glb');
   
   React.useEffect(() => {
     // Log all meshes to identify the duplicate feet
@@ -178,14 +178,15 @@ const MadonnaModel = ({ position = [0, -1, 1], scale = 1, goldCoinRef, coinsRef 
 };
 
 // Preload the model
-useGLTF.preload('/models/madonna_skates.glb');
+useGLTF.preload('/models/madonna_skates2.glb');
 
-const EtherealClouds = ({ onDataUpdate, manualFearGreedData, is80sMode = false }) => {
+const EtherealClouds = ({ onDataUpdate, manualFearGreedData, manualVolumeData, is80sMode = false }) => {
   const goldCoinRef = React.useRef();
   const coinsRef = React.useRef([]);
   const [coinPositions, setCoinPositions] = React.useState([]);
   const [coinTemplate, setCoinTemplate] = React.useState(null);
   const [currentFearGreedValue, setCurrentFearGreedValue] = React.useState(50);
+  const [marketVolume, setMarketVolume] = React.useState(null);
   const shakeRef = React.useRef();
   
   // Rotate all coins in place in different directions
@@ -303,21 +304,23 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, is80sMode = false }
       />
       
       {/* Madonna Model in center */}
-      <MadonnaModel position={[1, 15, -9]} scale={15} goldCoinRef={goldCoinRef} coinsRef={coinsRef} />
+      <MadonnaModel position={[0, 10, -5]} scale={15} goldCoinRef={goldCoinRef} coinsRef={coinsRef} />
       
       {/* Market-driven emoji display based on Fear & Greed Index */}
       <MarketEmojis 
-        centerPosition={[1, 15, -9]} 
+        centerPosition={[0, 0, 0]} 
         onDataUpdate={(data) => {
           setCurrentFearGreedValue(data?.value || 50);
+          setMarketVolume(data?.marketVolume || null);
           if (onDataUpdate) onDataUpdate(data);
         }}
         manualFearGreedData={manualFearGreedData}
       />
       
       {/* Coin streams from both hands */}
-      {/* <CoinStream 
-        startPosition={[-12.8, 16, -1]}  // Left hand position (adjusted for model scale/position)
+      /* Right Hand */
+      <CoinStream 
+        startPosition={[-12.8, 12, 2]}  // Left hand position (adjusted for model scale/position)
         endPosition={[0, -20, 0]}
         coinCount={20}
         coinSize={1}
@@ -326,10 +329,10 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, is80sMode = false }
         gravity={-8}
         initialVelocity={[-4, 2, 7]}
         coinMesh={coinTemplate}
-      /> */}
-      
-      {/* <CoinStream 
-        startPosition={[12, 16, 4]}   // Right hand position (adjusted for model scale/position)
+      />
+       /* Left Hand */
+      <CoinStream 
+        startPosition={[11, 12, 6]}   // Right hand position (adjusted for model scale/position)
         endPosition={[0, -20, 0]}
         coinCount={20}
         coinSize={1}
@@ -338,7 +341,7 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, is80sMode = false }
         gravity={-8}
         initialVelocity={[2, 3, 2]}
         coinMesh={coinTemplate}
-      /> */}
+      />
       {/* <FallingDiamonds 
         count={90}
         fallSpeed={0.8}
@@ -358,38 +361,74 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, is80sMode = false }
       ))}
        */}
       {/* Dollar Bills - switch between normal and burning based on fear */}
-      {(manualFearGreedData?.value ?? currentFearGreedValue) < 25 ? (
-        // Extreme fear - use burning bills with reduced count
-        <BurningDollarBills 
-          key="burning-bills"
-          count={Math.max(10, 40 - Math.floor((25 - (manualFearGreedData?.value ?? currentFearGreedValue)) * 1.2))} 
-          radius={30} 
-          height={170} 
-          speed={3}
-          startY={120}
-          endY={-50}
-        />
-      ) : (
-        // Normal to greed - use regular spiral bills with dynamic count
-        <React.Fragment key="spiral-bills">
-          <SpiralDollarBills 
-            count={Math.min(50, 20 + Math.floor((manualFearGreedData?.value ?? currentFearGreedValue) * 0.4))} 
-            radius={40} 
-            height={150} 
-            speed={-2}
-            startY={130}
-            endY={-50}
-          />
-          <SpiralDollarBills 
-            count={Math.min(50, 20 + Math.floor((manualFearGreedData?.value ?? currentFearGreedValue) * 0.4))} 
-            radius={30} 
-            height={170} 
-            speed={2}
-            startY={120}
-            endY={-50}
-          />
-        </React.Fragment>
-      )}
+      {(() => {
+        const fearGreedValue = manualFearGreedData?.value ?? currentFearGreedValue;
+        
+        // Use manual volume if provided, otherwise use live volume
+        const volumeData = manualVolumeData || marketVolume;
+        
+        // Calculate volume multiplier (0.2 to 4.0 for more dramatic effect)
+        let volumeMultiplier = 1.0;
+        if (volumeData?.billions) {
+          // Much more dramatic range for visual impact
+          // <20B = 0.2x multiplier, 40B = 1x, 60B = 1.8x, 100B = 3x, >150B = 4x multiplier
+          if (volumeData.billions < 20) {
+            volumeMultiplier = 0.2 + (volumeData.billions / 20) * 0.3; // 0.2 to 0.5 for 0-20B
+          } else if (volumeData.billions < 40) {
+            volumeMultiplier = 0.5 + (volumeData.billions - 20) / 20 * 0.5; // 0.5 to 1.0 for 20-40B
+          } else if (volumeData.billions < 60) {
+            volumeMultiplier = 1.0 + (volumeData.billions - 40) / 20 * 0.8; // 1.0 to 1.8 for 40-60B
+          } else if (volumeData.billions < 100) {
+            volumeMultiplier = 1.8 + (volumeData.billions - 60) / 40 * 1.2; // 1.8 to 3.0 for 60-100B
+          } else {
+            volumeMultiplier = 3.0 + Math.min(1.0, (volumeData.billions - 100) / 50); // 3.0 to 4.0 for 100B+
+          }
+          console.log('Volume multiplier:', volumeMultiplier.toFixed(2), 'for volume:', volumeData.formatted, 'Manual:', volumeData.manual || false);
+        }
+        
+        if (fearGreedValue < 25) {
+          // Extreme fear - use burning bills with volume-adjusted count
+          const baseCount = 40 - Math.floor((25 - fearGreedValue) * 1.2);
+          const adjustedCount = Math.max(10, Math.floor(baseCount * volumeMultiplier));
+          
+          return (
+            <BurningDollarBills 
+              key="burning-bills"
+              count={adjustedCount} 
+              radius={30} 
+              height={170} 
+              speed={3}
+              startY={120}
+              endY={-50}
+            />
+          );
+        } else {
+          // Normal to greed - use regular spiral bills with volume-adjusted count
+          const baseCount = 30 + Math.floor(fearGreedValue * 0.5); // Increased base count
+          const adjustedCount = Math.min(100, Math.floor(baseCount * volumeMultiplier));
+          
+          return (
+            <React.Fragment key="spiral-bills">
+              <SpiralDollarBills 
+                count={adjustedCount} 
+                radius={40} 
+                height={150} 
+                speed={-2}
+                startY={130}
+                endY={-50}
+              />
+              <SpiralDollarBills 
+                count={Math.floor(adjustedCount * 0.8)} 
+                radius={30} 
+                height={170} 
+                speed={2}
+                startY={120}
+                endY={-50}
+              />
+            </React.Fragment>
+          );
+        }
+      })()}
     </>
   );
 };

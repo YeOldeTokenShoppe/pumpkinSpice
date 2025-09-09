@@ -44,6 +44,7 @@ const EtherealCloudsPage = () => {
   const [fearGreedData, setFearGreedData] = useState(null);
   const [isManualMode, setIsManualMode] = useState(false);
   const [manualFearGreedValue, setManualFearGreedValue] = useState(50);
+  const [manualVolumeValue, setManualVolumeValue] = useState(null);
   const updateTimeoutRef = useRef(null);
   
   const handleManualControl = useCallback((value) => {
@@ -116,6 +117,18 @@ const EtherealCloudsPage = () => {
       setFearGreedData(manualData);
     }
     }, 50); // 50ms throttle to prevent rapid updates
+  }, []);
+  
+  const handleVolumeControl = useCallback((value) => {
+    if (value === null) {
+      // Return to live volume
+      setManualVolumeValue(null);
+      // Don't modify fearGreedData here - let onDataUpdate handle it
+    } else {
+      // Set manual volume
+      setManualVolumeValue(value);
+      // The onDataUpdate callback will handle applying the manual volume
+    }
   }, []);
   
   const handleScreenshot = useCallback(() => {
@@ -339,36 +352,42 @@ const EtherealCloudsPage = () => {
         <Suspense fallback={null}>
           <EtherealClouds 
             onDataUpdate={useCallback((data) => {
-              setFearGreedData(data);
-            }, [])}
+              // Apply manual volume if set, otherwise use live data
+              if (manualVolumeValue !== null) {
+                setFearGreedData({
+                  ...data,
+                  marketVolume: {
+                    raw: manualVolumeValue * 1000000000,
+                    billions: manualVolumeValue,
+                    formatted: `$${manualVolumeValue}B`,
+                    manual: true
+                  }
+                });
+              } else {
+                // Use live volume data from MarketEmojis
+                setFearGreedData(data);
+              }
+            }, [manualVolumeValue])}
             manualFearGreedData={isManualMode ? fearGreedData : null}
+            manualVolumeData={manualVolumeValue ? {
+              raw: manualVolumeValue * 1000000000,
+              billions: manualVolumeValue,
+              formatted: `$${manualVolumeValue}B`,
+              manual: true
+            } : null}
             is80sMode={is80sMode}
           />
           {/* <BasicScene /> */}
           {/* <MinimalTest /> */}
           
-          {/* Camera controls - rotate around Madonna */}
-          <OrbitControls
-          // lookAt={[1, 15, -9]}
-            // enablePan={false}
-            // enableZoom={true}
+          {/* Camera controls - rotate around center */}
+          {/* <OrbitControls
             enableRotate={true}
+            enableZoom={true}
             minDistance={20}
             maxDistance={80}
-            // minPolarAngle={0}
-            // maxPolarAngle={Math.PI * 0.85}
-            target={[1, 15, -9]}
-            // screenSpacePanning={false}
-            // mouseButtons={{
-            //   LEFT: THREE.MOUSE.ROTATE,
-            //   MIDDLE: THREE.MOUSE.ZOOM,
-            //   RIGHT: THREE.MOUSE.ROTATE
-            // }}
-            // touches={{
-            //   ONE: THREE.TOUCH.ROTATE,
-            //   TWO: THREE.TOUCH.DOLLY_ROTATE
-            // }}
-          />
+            target={[0, 0, 0]}
+          /> */}
           
           {/* Post-processing effects */}
           {/* <EffectComposer>
@@ -399,6 +418,7 @@ const EtherealCloudsPage = () => {
         showMoney={fearGreedData?.moneyCount}
         onManualControl={handleManualControl}
         isManualMode={isManualMode}
+        onVolumeControl={handleVolumeControl}
       />
 
       {/* Icon Bar - CyberNav Menu, User, Music, and 80s Mode */}
