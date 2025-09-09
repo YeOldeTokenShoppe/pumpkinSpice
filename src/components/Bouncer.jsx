@@ -14,17 +14,17 @@ const Bouncer = ({
 
   const welcomeMessages = [
     "Welcome to the Moon Room! Right this way, token holder! 🌙",
-    "Ah, a LUNAR holder! The party's inside, friend! 🎉",
+    "Ah, you're ILLUNIN80! The party's inside, friend! 🎉",
     "Token verified! Enjoy your time on the moon! 🚀",
     "VIP access granted! The Illumin80 awaits you! ✨",
     "Looking good, token holder! Head on in! 🎪",
-    "Your LUNAR shines bright! Welcome aboard! 🌟",
+    "Your candle shines bright! Welcome aboard! 🌟",
     "Token holder in the house! Make yourself at home! 🏠",
     "Access approved! To the moon we go! 🚀",
     "Diamond hands detected! You've earned this! 💎",
     "Welcome to the exclusive side of the moon! 🌒",
     "Token authenticated! The moon is yours tonight! 🌕",
-    "Step right in, lunar legend! 🌙",
+    "Step right in, legendary luminary! 🌙",
     "Your ticket to the stars is valid! Enter freely! ⭐",
     "HODL gang recognized! Welcome to the club! 🎊",
     "Moonwalker status: CONFIRMED! 👨‍🚀",
@@ -32,34 +32,34 @@ const Bouncer = ({
 
   const bouncerMessages = [
     // Original messages
-    "Hold up! You need to hold at least 1 LUNAR token to enter.",
-    "Nice try! But this moon's for token holders only. 🌙",
+    "Hold up! You need to be a top 80 RL80 devotee to enter.",
+    "Nice try! But this moon's for ILLUMIN80 members only. 🌙",
     "No token, no entry! House rules, pal. 🚫",
-    "Sorry friend, VIP means Very Important Protocol... and you need a token for that!",
-    "Psst... get yourself a LUNAR token and we'll talk. 😉",
+    "Sorry friend, VIP means Very Important Protocol... and you need ILLUMIN80 status for that!",
+    "Psst... get yourself on the leaderboard and we'll talk. 😉",
 
     // New space-themed messages
-    "Houston, we have a problem... you're missing a LUNAR token! 🚀",
-    "One small token for entry, one giant leap for your portfolio! 🌎",
-    "Sorry, can't let you space walk without a token suit! 👨‍🚀",
+    "Houston, we have a problem... you're missing ILLUMIN80 credentials! 🚀",
+    "One small sacrifice for entry, one giant leap for your portfolio! 🌎",
+    "Sorry, can't let you space walk without a token pass! 👨‍🚀",
     "This moon party requires proper tokenization! 🎪",
 
     // Playful bouncer messages
     "My token scanner is showing zero... can't let you in like that! 🔍",
     "No ticket? No token? No entry! I don't make the rules... wait, yes I do! 😎",
-    "The password is LUNAR... token. You need the token part too! 🎫",
-    "You shall not pass! ...without a LUNAR token, that is. 🧙‍♂️",
+    "The password is RL80... token. You need the token part too! 🎫",
+    "You shall not pass! ...without ILLUMIN80 priveleges, that is. 🧙‍♂️",
 
     // Crypto-themed humor
-    "DYOR? Then you know you need a token to enter! 📚",
-    "Proof of Token required beyond this point! ✅",
+    "DYOR? Then you know you need an ILLUMIN80 pass to enter! 📚",
+    "Proof of Token Status required beyond this point! ✅",
     // "This isn't a free mint, friend. Token holders only! 🎨",
     "Diamond hands hold tokens. Paper hands stay outside! 💎",
 
     // Pop culture references
-    "To the moon? You'll need a token for that! 🚀",
+    "To the moon? You'll need token statis for that! 🚀",
     "I'm gonna need to see some token verification... 🧐",
-    "The first rule of Moon Club? Hold a LUNAR token! 🌙",
+    "The first rule of Moon Club? Hold RL80 tokens! 🌙",
     "Luke, I am your bouncer. Show me your tokens! ⭐",
 
     // Extra silly ones
@@ -70,7 +70,6 @@ const Bouncer = ({
   ];
 
   const handleMouseEnter = useCallback(() => {
-    setIsHovered(true);
     if (!disableBlockingBehavior) {
       if (hasToken) {
         setCurrentMessage(Math.floor(Math.random() * welcomeMessages.length));
@@ -78,7 +77,12 @@ const Bouncer = ({
         setCurrentMessage(Math.floor(Math.random() * bouncerMessages.length));
       }
     }
+    setIsHovered(true);
   }, [bouncerMessages.length, welcomeMessages.length, hasToken, disableBlockingBehavior]);
+  
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+  }, []);
 
   const handleDoorClick = (e) => {
     e.preventDefault();
@@ -182,6 +186,7 @@ const Bouncer = ({
           height: 25px;
           background: #1D2528;
           border-radius: 50%;
+          pointer-events: none;
         }
         
         .door::after {
@@ -194,6 +199,7 @@ const Bouncer = ({
           height: 10px;
           background: #49555B;
           border-radius: 5px;
+          pointer-events: none;
         }
 
    
@@ -258,8 +264,9 @@ const Bouncer = ({
         .bouncer {
           position: relative;
           left: -130px;
-          transition: left 1.5s;
+          transition: left 1.5s ease;
         }
+        
         
         .head {
           position: relative;
@@ -426,7 +433,7 @@ const Bouncer = ({
           transform: rotate(-30deg);
           transform-origin: top center;
           z-index: 20;
-          transition: transform 1s;
+          transition: transform 1s ease;
         }
         
         .arm::before {
@@ -503,7 +510,7 @@ const Bouncer = ({
           border-bottom-right-radius: 150px;
           box-shadow: 0 2px #9C0502;
           box-sizing: border-box;
-          transition: width 1.5s;
+          transition: width 1.5s ease;
         }
         .speech-bubble {
           position: absolute;
@@ -579,7 +586,7 @@ const Bouncer = ({
           left: 130px;
         }
         
-        .hover:not(.has-token):hover .arm {
+        .hover:not(.has-token):hover .bouncer .arm {
           transform: rotate(-42deg);
         }
         
@@ -596,7 +603,7 @@ const Bouncer = ({
           left: -150px; /* Step back instead of blocking */
         }
         
-        .hover.has-token:hover .arm {
+        .hover.has-token:hover .bouncer .arm {
           transform: rotate(10deg); /* Welcoming gesture */
         }
         
@@ -607,6 +614,7 @@ const Bouncer = ({
         .hover.has-token:hover .eye::before {
           bottom: 8px; /* Friendly eyes */
         }
+        
         {/* hover:not(.test-mode):hover .bouncer {
           left: 130px;
         }
@@ -629,14 +637,12 @@ const Bouncer = ({
       <div
         className={`hover ${disableBlockingBehavior ? "test-mode" : ""} ${hasToken && !disableBlockingBehavior ? "has-token" : ""}`}
         onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseLeave={handleMouseLeave}
       >
         <div className="background">
           <div
             className={`door ${isBlocked ? "blocked" : ""}`}
             onClick={handleDoorClick}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={() => setIsHovered(false)}
             style={{ cursor: isBlocked ? "not-allowed" : "pointer" }}
           >
             <div

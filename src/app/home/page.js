@@ -1688,7 +1688,7 @@ export default function HomePage() {
               color: '#d4af37',
               fontSize: '1.8rem',
               marginBottom: '0.5rem',
-              fontFamily: 'UnifrakturCook, serif',
+              fontFamily: 'UnifrakturMaguntia, serif',
               textShadow: '0 0 10px rgba(212, 175, 55, 0.5)'
             }}>
               The Oracle of RL80
@@ -1927,7 +1927,7 @@ export default function HomePage() {
           <div style={{
             position: "relative",
             margin: "0 auto 4rem auto",
-            width: "80%",
+   
             maxWidth: "1400px",
             padding: '3rem 2rem',
             background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
@@ -2071,66 +2071,12 @@ export default function HomePage() {
           
           </div>
           {/* Two Column Section with Scroll */}
-          <div style={{
-            padding: '3rem 2rem',
-            maxWidth: '1400px',
-            margin: '0 auto 4rem auto',
-            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: '20px',
-            border: '2px solid rgba(212, 175, 55, 0.4)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
+
             {/* Decorative corner elements */}
-            <div style={{
-              position: 'absolute',
-              top: '-2px',
-              left: '-2px',
-              width: '60px',
-              height: '60px',
-              borderTop: '3px solid #d4af37',
-              borderLeft: '3px solid #d4af37',
-              borderRadius: '20px 0 0 0',
-              opacity: 0.6
-            }} />
-            <div style={{
-              position: 'absolute',
-              top: '-2px',
-              right: '-2px',
-              width: '60px',
-              height: '60px',
-              borderTop: '3px solid #d4af37',
-              borderRight: '3px solid #d4af37',
-              borderRadius: '0 20px 0 0',
-              opacity: 0.6
-            }} />
-            <div style={{
-              position: 'absolute',
-              bottom: '-2px',
-              left: '-2px',
-              width: '60px',
-              height: '60px',
-              borderBottom: '3px solid #d4af37',
-              borderLeft: '3px solid #d4af37',
-              borderRadius: '0 0 0 20px',
-              opacity: 0.6
-            }} />
-            <div style={{
-              position: 'absolute',
-              bottom: '-2px',
-              right: '-2px',
-              width: '60px',
-              height: '60px',
-              borderBottom: '3px solid #d4af37',
-              borderRight: '3px solid #d4af37',
-              borderRadius: '0 0 20px 0',
-              opacity: 0.6
-            }} />
+          
             
             {/* Full-width heading */}
-            <h2 style={{
+            {/* <h2 style={{
               fontSize: '3rem',
               marginBottom: '2.5rem',
               color: '#d4af37',
@@ -2144,278 +2090,11 @@ export default function HomePage() {
                 display: 'inline-block',
                 // animation: 'glow 3s ease-in-out infinite'
               }}>RL80 Token Summary</span>
-            </h2>
+            </h2> */}
             
             {/* Two column grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: window.innerWidth > 768 ? '1fr 1fr' : '1fr',
-              gap: '2rem'
-            }}>
-              {/* Left Column - Content */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-                padding: '1.5rem',
-                overflowY: 'auto',
-                maxHeight: '45rem',
-                background: 'rgba(0, 0, 0, 0.3)',
-                borderRadius: '15px',
-                border: '1px solid rgba(212, 175, 55, 0.2)'
-              }}>
-              
-              <div style={{
-                marginBottom: '1.5rem',
-                padding: '1rem',
-                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, transparent 100%)',
-                borderRadius: '10px',
-                border: '1px solid rgba(212, 175, 55, 0.2)',
-                transition: 'all 0.3s ease',
-                cursor: 'default'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 5px 20px rgba(212, 175, 55, 0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}>
-                <h3 style={{
-                  fontSize: '1.4rem',
-                  marginBottom: '0.6rem',
-                  color: '#d4af37',
-                  fontFamily: 'UnifrakturCook, serif',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '1.2rem' }}>💰</span> Core Tokenomics
-                </h3>
-                <ul style={{
-                  fontSize: '1rem',
-                  lineHeight: 1.7,
-                  color: '#ffffff',
-                  listStyle: 'none',
-                  paddingLeft: '0',
-                  margin: '0'
-                }}>
-                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: '#00ff00', marginRight: '0.5rem', fontSize: '1.2rem' }}>◈</span>
-                    <strong style={{ color: '#d4af37', marginRight: '0.5rem' }}>Total Supply:</strong> 80 billion RL80 tokens, capped
-                  </li>
-                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: '#00ff00', marginRight: '0.5rem', fontSize: '1.2rem' }}>◈</span>
-                    <strong style={{ color: '#d4af37', marginRight: '0.5rem' }}>Distribution:</strong> 80% liquidity, 10% treasury, 10% marketing
-                  </li>
-                  <li style={{ marginBottom: '0', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: '#00ff00', marginRight: '0.5rem', fontSize: '1.2rem' }}>◈</span>
-                    <strong style={{ color: '#d4af37', marginRight: '0.5rem' }}>Network:</strong> Base (Ethereum L2)
-                  </li>
-              
-                </ul>
-              </div>
-
-              <div style={{
-                marginBottom: '1.5rem',
-                padding: '1rem',
-                background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.05) 0%, transparent 100%)',
-                borderRadius: '10px',
-                border: '1px solid rgba(0, 255, 0, 0.2)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 5px 20px rgba(0, 255, 0, 0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}>
-                <h3 style={{
-                  fontSize: '1.4rem',
-                  marginBottom: '0.6rem',
-                  color: '#d4af37',
-                  fontFamily: 'UnifrakturCook, serif',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '1.2rem' }}>📊</span> Tax Structure
-                </h3>
-                
-                <ul style={{
-                  fontSize: '1rem',
-                  lineHeight: 1.7,
-                  color: '#ffffff',
-                  listStyle: 'none',
-                  paddingLeft: '0',
-                  margin: '0'
-                }}>
-                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: '#ff6b6b', marginRight: '0.5rem' }}>▸</span>
-                    <strong style={{ color: '#00ff00' }}>Start:</strong> <span style={{ marginLeft: '0.5rem' }}>5% buy/sell tax</span>
-                  </li>
-                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: '#ffff00', marginRight: '0.5rem' }}>▸</span>
-                    <strong style={{ color: '#00ff00' }}>After 250 buys:</strong> <span style={{ marginLeft: '0.5rem' }}>3% tax</span>
-                  </li>
-                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: '#00ffff', marginRight: '0.5rem' }}>▸</span>
-                    <strong style={{ color: '#00ff00' }}>After 500 buys:</strong> <span style={{ marginLeft: '0.5rem' }}>1% tax</span>
-                  </li>
-                  <li style={{ marginBottom: '0', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: '#00ff00', marginRight: '0.5rem' }}>▸</span>
-                    <strong style={{ color: '#00ff00' }}>CEX listing:</strong> <span style={{ marginLeft: '0.5rem', color: '#00ff00', fontWeight: 'bold' }}>0% tax</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div style={{
-                padding: '1rem',
-                background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, transparent 100%)',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 107, 107, 0.2)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 5px 20px rgba(255, 107, 107, 0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}>
-                <h3 style={{
-                  fontSize: '1.4rem',
-                  marginBottom: '0.6rem',
-                  color: '#d4af37',
-                  fontFamily: 'UnifrakturCook, serif',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '1.2rem' }}>🕯️</span> Unique Utility
-                </h3>
-                <ul style={{
-                  fontSize: '1rem',
-                  lineHeight: 1.7,
-                  color: '#ffffff',
-                  listStyle: 'none',
-                  paddingLeft: '0',
-                  margin: '0'
-                }}>
-                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start' }}>
-                    <span style={{ color: '#d4af37', marginRight: '0.5rem', marginTop: '2px' }}>✦</span>
-                    <span>Burn RL80 tokens to devote candles to the patron saint of day traders</span>
-                  </li>
-                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✦</span>
-                    Prayers stored permanently on blockchain
-                  </li>
-                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✦</span>
-                    Creates deflationary pressure
-                  </li>
-                  <li style={{ marginBottom: '0', display: 'flex', alignItems: 'flex-start' }}>
-                    <span style={{ color: '#d4af37', marginRight: '0.5rem', marginTop: '2px' }}>✦</span>
-                    <span><strong style={{ color: '#d4af37' }}>ILLUMIN80</strong> elite ranking for top 80 burners with special perks</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            
-            {/* Right Column - Scroll */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-              marginTop: '-5rem'
-            }}>
-              <div style={{
-                height: '45rem',
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                background: 'radial-gradient(ellipse at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%)',
-                borderRadius: '15px',
-                padding: '1rem',
-                transition: 'all 0.5s ease',
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.02)';
-                e.currentTarget.style.boxShadow = '0 10px 40px rgba(212, 175, 55, 0.2)';
-                e.currentTarget.querySelector('iframe').style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = 'none';
-                e.currentTarget.querySelector('iframe').style.opacity = '0.9';
-              }}>
-                <iframe
-                  src="/scroll2.html"
-                  onLoad={() => setIframeLoaded(true)}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    border: 'none',
-                    pointerEvents: 'auto',
-                    background: 'transparent',
-                    opacity: 0.9,
-                    mixBlendMode: 'screen',
-                    transition: 'opacity 0.3s ease'
-                  }}
-                  title="Scroll Overlay"
-                />
-                {/* Decorative glow effect */}
-                <div style={{
-                  position: 'absolute',
-                  top: '10%',
-                  left: '50%',
-                  borderRadius: '10%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '80%',
-                  height: '80%',
-                  background: 'radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 50%)',
-                  pointerEvents: 'none',
-                  animation: 'pulse 4s ease-in-out infinite',
-                  zIndex: -1
-                }} />
-              </div>
-              <p style={{
-                marginTop: '1.5rem',
-                fontSize: '1.2rem',
-                color: '#d4af37',
-                fontStyle: 'italic',
-                textAlign: 'center',
-                fontFamily: 'Cyber, monospace',
-                textShadow: '0 0 10px rgba(212, 175, 55, 0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.05)';
-                e.currentTarget.style.textShadow = '0 0 20px rgba(212, 175, 55, 0.6)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.textShadow = '0 0 10px rgba(212, 175, 55, 0.4)';
-              }}>
-                <span style={{ fontSize: '1rem' }}>📜</span>
-                Read the fine print
-                <span style={{ fontSize: '1rem' }}>📜</span>
-              </p>
-            </div>
-          </div>
-        </div>
+           
+ 
         {/* Two Column Section with Candle and Text */}
           <div style={{
             position: "relative",
@@ -2752,7 +2431,7 @@ export default function HomePage() {
                 color: '#d4af37',
                 fontSize: '3rem',
                 marginBottom: '1rem',
-                fontFamily: 'UnifrakturCook, serif',
+                fontFamily: 'UnifrakturMaguntia, serif',
                 textAlign: 'center',
                 textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
                 lineHeight: 1.2
@@ -2885,30 +2564,28 @@ export default function HomePage() {
                 listStyle: 'none',
                 paddingLeft: '0'
               }}>
+                     <li style={{ marginBottom: '0.75rem' }}>
+                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
+                  Split 0.5% of all RL80 transaction taxes
+                </li>
                 <li style={{ marginBottom: '0.75rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
                   Access to the sacred Moon Room sanctuary
                 </li>
-                <li style={{ marginBottom: '0.75rem' }}>
-                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🕯️</span>
-                  Priority candle devotions reach Our Lady first
-                </li>
+            
                 <li style={{ marginBottom: '0.75rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>📊</span>
-                  Exclusive alpha from the most devoted traders
+                  Exclusive alpha
                 </li>
                 <li style={{ marginBottom: '0.75rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🎯</span>
-                  Early access to new ritual features
+                  Early access to new features
                 </li>
                 <li style={{ marginBottom: '0.75rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>💎</span>
-                  Special airdrop multipliers for the faithful
+                  Special airdrops
                 </li>
-                <li style={{ marginBottom: '0.75rem' }}>
-                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🏆</span>
-                  Permanent ranking on the leaderboard of enlightenment
-                </li>
+           
               </ul>
               
               <p style={{
@@ -2918,7 +2595,7 @@ export default function HomePage() {
                 color: '#d4af37',
                 opacity: 0.9
               }}>
-                Burn RL80 tokens to ascend the ranks of spiritual prosperity
+                Devote a candle and burn RL80 tokens to ascend to this most elite level of devotion.
               </p>
             </div>
           </div>

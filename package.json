@@ -23,6 +23,7 @@
     "gsap": "^3.13.0",
     "maath": "^0.10.8",
     "next": "15.4.6",
+    "openai": "^5.20.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-fast-marquee": "^1.6.5",

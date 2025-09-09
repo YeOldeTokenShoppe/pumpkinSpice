@@ -357,7 +357,7 @@
     <!-- Chat Interface -->
     <div id="chatContainer" class="chat-container">
       <div class="chat-header">
-        <span class="chat-title">🌙 Moon Room Chat</span>
+        <span class="chat-title">🌙 ILLUMIN80 Chat</span>
         <span id="userInfo" style="font-size: 11px; color: #a0a0ff;"></span>
         <button id="toggleChat" class="toggle-btn">−</button>
       </div>
@@ -407,6 +407,7 @@
       try {
         firebase.initializeApp(MOONROOM_FIREBASE_CONFIG);
         database = firebase.database();
+        window.database = database; // Make database globally available
         const auth = firebase.auth();
         
         console.log('Firebase initialized successfully');
@@ -504,6 +505,28 @@
       });
 
       function checkMemberAccess() {
+        // Add performance monitoring
+        let frameCount = 0;
+        let lastTime = performance.now();
+        setInterval(() => {
+          const now = performance.now();
+          const fps = Math.round(frameCount * 1000 / (now - lastTime));
+          frameCount = 0;
+          lastTime = now;
+          
+          // Warn if FPS drops below 30
+          if (fps < 30 && fps > 0) {
+            console.warn(`Low FPS: ${fps}. Consider reducing activity.`);
+          }
+        }, 1000);
+        
+        // Track frame updates
+        function countFrame() {
+          frameCount++;
+          requestAnimationFrame(countFrame);
+        }
+        countFrame();
+        
         // Get user info from localStorage or session
         // First check if we have stored credentials
         userAddress = localStorage.getItem('walletAddress');
@@ -557,6 +580,7 @@
           });
         }
 
+        window.userAddress = userAddress; // Make userAddress globally available
         console.log('Current user:', {
           address: userAddress,
           ranking: userRanking
@@ -591,15 +615,79 @@
           console.log('Setting up chat listener...');
           
           chatRef.orderByChild('timestamp').limitToLast(50).on('value', (snapshot) => {
-            console.log('Chat data received:', snapshot.val());
-            messages = [];
             const data = snapshot.val();
+            console.log('Chat data received, message count:', data ? Object.keys(data).length : 0);
+            
+            messages = [];
             if (data) {
               Object.keys(data).forEach(key => {
-                messages.push(data[key]);
+                messages.push({ ...data[key], id: key }); // Include message ID
               });
               messages.sort((a, b) => a.timestamp - b.timestamp);
               displayMessages();
+              
+              // Check for new messages that need bot responses
+              // Only process messages from the last 30 seconds to avoid responding to old messages
+              const thirtySecondsAgo = Date.now() - 30000;
+              
+              Object.keys(data).forEach(messageId => {
+                const msg = data[messageId];
+                
+                // Log bot messages to see if they're being received
+                if (msg.isBot) {
+                  console.log('Bot message found:', msg.message.substring(0, 50));
+                }
+                
+                // Skip if: bot message, already responded, too old, or from ourselves during init
+                if (msg.isBot || 
+                    respondedMessages.has(messageId) || 
+                    msg.timestamp < thirtySecondsAgo ||
+                    msg.replyTo) { // Skip messages that are already replies
+                  return;
+                }
+                
+                // Mark as responded immediately to prevent duplicates
+                respondedMessages.add(messageId);
+                console.log('New message detected:', msg.message, 'from:', msg.from);
+                
+                // Only the bot host responds to prevent duplicates
+                database.ref('moonRoom/members').once('value', (membersSnapshot) => {
+                  const members = Object.keys(membersSnapshot.val() || {});
+                  const sortedMembers = members.sort();
+                  const isBotHost = sortedMembers.length > 0 && sortedMembers[0] === userAddress;
+                  
+                  console.log('Bot host check:', { isBotHost, userAddress, firstMember: sortedMembers[0] });
+                  
+                  if (isBotHost && msg.message) {
+                    console.log('Bot host will process message:', msg.message);
+                    
+                    // Get bot response
+                    getMoonBotResponse(msg.message).then(botResponse => {
+                      if (botResponse) {
+                        console.log('Bot will respond with:', botResponse);
+                        // Add delay for natural feel
+                        setTimeout(() => {
+                          console.log('Sending bot message now...');
+                          sendBotMessage(botResponse, messageId);
+                        }, 1500 + Math.random() * 1500);
+                      } else {
+                        console.log('No bot response generated for:', msg.message);
+                      }
+                    }).catch(error => {
+                      console.error('Error getting bot response:', error);
+                    });
+                  } else if (!isBotHost) {
+                    console.log('Not bot host, skipping response generation');
+                  }
+                });
+              });
+              
+              // Clean up old responded messages to prevent memory leak
+              if (respondedMessages.size > 100) {
+                const messagesToKeep = Array.from(respondedMessages).slice(-50);
+                respondedMessages.clear();
+                messagesToKeep.forEach(id => respondedMessages.add(id));
+              }
             }
           }, (error) => {
             console.error('Error listening to chat:', error);
@@ -618,6 +706,14 @@
                 onlineMembers.push(member);
               });
               displayMembers();
+              
+              // Warn if too many users
+              if (onlineMembers.length > 10) {
+                console.warn(`High user count (${onlineMembers.length}). Performance may be affected.`);
+                if (onlineMembers.length > 20) {
+                  alert('Warning: Room has ' + onlineMembers.length + ' users. Performance may be severely impacted.');
+                }
+              }
             }
           }, (error) => {
             console.error('Error listening to members:', error);
@@ -642,6 +738,137 @@
         window.addEventListener('beforeunload', () => {
           userRef.remove();
         });
+        
+        // Moon Bot greets new user after a short delay
+        setTimeout(() => {
+          sendBotMessage(`Welcome to the Moon Room, ILLUMIN80 #${userRanking}! 🌙 Feel free to shoot the moons and chat with other members!`);
+        }, 2000);
+      }
+      
+      // AI Bot functionality
+      let lastBotMessageTime = 0;
+      const botCooldown = 10000; // 10 seconds between bot messages
+      const respondedMessages = new Set(); // Track which messages we've responded to
+      
+      function sendBotMessage(message, replyToId = null) {
+        const now = Date.now();
+        if (now - lastBotMessageTime < botCooldown) {
+          console.log('Bot message blocked by cooldown');
+          return; // Too soon for another bot message
+        }
+        lastBotMessageTime = now;
+        
+        const chatRef = database.ref('moonRoom/chat');
+        const botMessage = {
+          from: '🌙 Moon Bot',
+          message: message,
+          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          address: 'moon_bot',
+          isBot: true,
+          replyTo: replyToId // Track what message we're replying to
+        };
+        
+        console.log('Pushing bot message to Firebase:', botMessage);
+        chatRef.push(botMessage).then(() => {
+          console.log('Bot message sent successfully');
+        }).catch(error => {
+          console.error('Error sending bot message:', error);
+        });
+      }
+      
+      // Enhanced AI responses with OpenAI fallback
+      async function getMoonBotResponse(message) {
+        try {
+          // Try to use OpenAI API first
+          const context = messages.slice(-5).filter(msg => !msg.isBot || msg.from === '🌙 Moon Bot');
+          
+          // Use the full URL - check if we're on localhost or production
+          const apiUrl = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api/moonbot'
+            : `${window.location.origin}/api/moonbot`;
+          
+          console.log('Calling Moon Bot API at:', apiUrl);
+          
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: message,
+              context: context
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Moon Bot API response:', data);
+            return data.response;
+          } else {
+            console.log('Moon Bot API error:', response.status, response.statusText);
+          }
+        } catch (error) {
+          console.log('OpenAI API unavailable, using fallback responses:', error);
+        }
+        
+        // Fallback to simple responses if API fails
+        const lowerMsg = message.toLowerCase();
+        
+        // Greetings
+        if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
+          const greetings = [
+            "Ah, another star wanderer arrives... Welcome to my domain 🌙", 
+            "Greetings, lunar initiate. The moons have been expecting you ✨",
+            "Your lunar aura shimmers brightly today, chosen one 🌟",
+            "The cosmic tides brought you here at the perfect moment...",
+            "Welcome back to the space between spaces, traveler 🌌"
+          ];
+          return greetings[Math.floor(Math.random() * greetings.length)];
+        }
+        
+        // Questions about the room
+        if (lowerMsg.includes('what') && (lowerMsg.includes('do') || lowerMsg.includes('this'))) {
+          return "This sacred chamber exists between dimensions, where your mind shapes reality through stardust projectiles... The moons await your command 🌌";
+        }
+        
+        // Moon related
+        if (lowerMsg.includes('moon')) {
+          const moonResponses = [
+            "Each moon carries the memory of a thousand orbital cycles... 🌙",
+            "The moons whisper secrets to those who listen carefully ✨",
+            "Ah yes, the celestial dancers... they respond to your lunar synchronization level",
+            "These aren't mere moons - they're fragments of the primordial cosmos 🌟",
+            "The moons remember every collision, every trajectory... as do I"
+          ];
+          return moonResponses[Math.floor(Math.random() * moonResponses.length)];
+        }
+        
+        // Help
+        if (lowerMsg.includes('help') || lowerMsg.includes('how')) {
+          return "Channel your intent through clicks to launch stardust... Hold Shift while clicking to bend gravity itself 🔮 The cosmos will guide you.";
+        }
+        
+        // Compliments
+        if (lowerMsg.includes('cool') || lowerMsg.includes('awesome') || lowerMsg.includes('nice')) {
+          return "Your appreciation resonates through the lunar frequencies... The moons pulse with approval 💫";
+        }
+        
+        // Random responses for other messages (20% chance)
+        if (Math.random() < 0.2) {
+          const randomResponses = [
+            "The cosmic symphony intensifies... 🌙",
+            "I sense a disturbance in the lunar field...",
+            "Your projectile patterns reveal much about your destiny ✨",
+            "The ancient astronomer's chair remembers all who sat there...",
+            "Three more collisions until the next phase shift... 🌟",
+            "The moons are whispering about you, ILLUMIN80 one",
+            "Fascinating... your lunar aura grows stronger 💫",
+            "As the ancients foretold... the chaos brings balance"
+          ];
+          return randomResponses[Math.floor(Math.random() * randomResponses.length)];
+        }
+        
+        return null; // No response
       }
 
       function sendMessage() {
@@ -687,6 +914,7 @@
           chatRef.push(newMessage).then(() => {
             console.log('Message sent successfully');
             messageInput.value = '';
+            // Bot will respond via the chat listener now
           }).catch(error => {
             console.error('Error sending message:', error);
             alert('Failed to send message. Check console for details.');
@@ -703,9 +931,18 @@
           const messageEl = document.createElement('div');
           messageEl.className = 'message';
           
+          // Style bot messages differently
+          if (msg.isBot) {
+            messageEl.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)';
+            messageEl.style.border = '1px solid rgba(102, 126, 234, 0.3)';
+          }
+          
           const authorEl = document.createElement('div');
           authorEl.className = 'message-author';
           authorEl.textContent = msg.from;
+          if (msg.isBot) {
+            authorEl.style.color = '#667eea';
+          }
           
           const textEl = document.createElement('div');
           textEl.className = 'message-text';
@@ -851,131 +1088,364 @@
       console.clear();
       ("use strict");
 
-      // MultiplayerMoons class definition
-      class MultiplayerMoons {
-        constructor(scene, database, physics, meshMap) {
+      // MultiplayerProjectiles class - synchronizes shooting balls and moons across players
+      class MultiplayerProjectiles {
+        constructor(scene, database, physics) {
           this.scene = scene;
           this.database = database;
           this.physics = physics;
-          this.meshMap = meshMap;
-          this.moons = new Map();
-          this.moonRefs = database.ref('moonRoom/moons');
-          this.forcesRef = database.ref('moonRoom/forces');
+          this.projectilesRef = database.ref('moonRoom/projectiles');
+          this.moonsRef = database.ref('moonRoom/sharedMoons');
+          this.moonHitsRef = database.ref('moonRoom/moonHits');
+          this.localUserAddress = window.userAddress || 'anonymous';
+          this.sharedMoons = new Map();
           this.isHost = false;
-          this.moonVelocities = new Map();
-          this.moonTexture = null;
-          this.localUserAddress = window.userAddress;
           
-          this.initializeMoons();
-          this.setupSync();
-        }
-        
-        async loadMoonTexture() {
-          return new Promise((resolve) => {
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load(
-              "https://happy358.github.io/Images/textures/lunar_color.jpg",
-              (texture) => {
-                texture.anisotropy = 16;
-                this.moonTexture = texture;
-                resolve(texture);
-              }
-            );
+          this.setupListeners();
+          // Check host status first, then initialize moons
+          this.checkHostStatus().then(() => {
+            this.initializeSharedMoons();
           });
         }
         
-        async initializeMoons() {
-          // Load moon texture first
-          await this.loadMoonTexture();
+        setupListeners() {
+          this.projectileCount = 0; // Track number of projectiles
           
-          // Wait a moment to determine host status first
-          setTimeout(() => {
-            // Check if moons already exist in Firebase
-            this.moonRefs.once('value', (snapshot) => {
-              const existingMoons = snapshot.val();
-              
-              if (!existingMoons || Object.keys(existingMoons).length === 0) {
-                // Only the first player (host) creates initial moons
-                if (this.isHost) {
-                  console.log('Host creating initial moons');
-                  this.createInitialMoons();
+          // First, clean up old projectiles from Firebase
+          this.projectilesRef.once('value', (snapshot) => {
+            const projectiles = snapshot.val();
+            const now = Date.now();
+            if (projectiles) {
+              Object.keys(projectiles).forEach(key => {
+                const projectile = projectiles[key];
+                // Remove projectiles older than 2 seconds
+                if (now - projectile.timestamp > 2000) {
+                  this.projectilesRef.child(key).remove();
                 }
-              } else {
-                // Everyone loads existing moons from Firebase
-                console.log('Loading existing moons from Firebase');
-                this.loadExistingMoons(existingMoons);
-              }
-            });
-          }, 500); // Small delay to ensure host status is determined
+              });
+            }
+            
+            // Now start listening for new projectiles only
+            setTimeout(() => {
+              this.projectilesRef.on('child_added', (snapshot) => {
+                const projectile = snapshot.val();
+                
+                // Ignore old projectiles (shouldn't happen but just in case)
+                if (Date.now() - projectile.timestamp > 2000) {
+                  snapshot.ref.remove();
+                  return;
+                }
+                
+                console.log('Received projectile:', projectile, 'from:', projectile.from, 'local:', this.localUserAddress);
+                
+                // Don't replay our own projectiles
+                if (projectile.from === this.localUserAddress) {
+                  console.log('Skipping own projectile');
+                  return;
+                }
+                
+                // Create and shoot the projectile locally
+                console.log('Creating remote projectile from:', projectile.from);
+                this.createRemoteProjectile(projectile);
+                
+                // Clean up after 10 seconds
+                setTimeout(() => {
+                  snapshot.ref.remove();
+                }, 10000);
+              });
+              
+              // Periodic cleanup of projectiles in Firebase (every 30 seconds)
+              setInterval(() => {
+                this.cleanupOldProjectiles();
+              }, 30000);
+            }, 500); // Wait 500ms before listening to avoid catching cleanup operations
+          });
         }
         
-        createInitialMoons() {
-          // Create 10 multiplayer moon objects
-          for (let i = 0; i < 10; i++) {
-            const moonId = `moon_${i}`;
+        cleanupOldProjectiles() {
+          // Clean up projectiles older than 5 seconds and keep only last 25
+          this.projectilesRef.once('value', (snapshot) => {
+            const projectiles = snapshot.val();
+            if (!projectiles) return;
             
-            // Create moon mesh
-            const geometry = new THREE.SphereGeometry(1.5, 30, 30);
-            const material = new THREE.MeshPhongMaterial({
-              color: new THREE.Color('#faf0e6'),
-              map: this.moonTexture,
-              emissive: new THREE.Color('#1a1a3a'),
-              emissiveIntensity: 0.2,
-              emissiveMap: this.moonTexture
-            });
+            const projectileArray = Object.keys(projectiles).map(key => ({
+              key,
+              timestamp: projectiles[key].timestamp
+            }));
             
-            const moon = new THREE.Mesh(geometry, material);
-            moon.name = `multiplayer_${moonId}`;
-            moon.castShadow = true;
-            moon.receiveShadow = true;
+            // Sort by timestamp (newest first)
+            projectileArray.sort((a, b) => b.timestamp - a.timestamp);
             
-            // Add a subtle glow
-            const glowGeometry = new THREE.SphereGeometry(1.52, 30, 30);
-            const glowMaterial = new THREE.MeshBasicMaterial({
-              color: 0xffffff,
-              transparent: true,
-              opacity: 0.1
-            });
-            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-            moon.add(glow);
-            
-            // Random initial position
-            moon.position.set(
-              (Math.random() - 0.5) * 30,
-              Math.random() * 20 + 5,
-              (Math.random() - 0.5) * 30
-            );
-            
-            // Random initial rotation
-            moon.rotation.set(
-              Math.random() * Math.PI * 2,
-              Math.random() * Math.PI * 2,
-              Math.random() * Math.PI * 2
-            );
-            
-            this.scene.add(moon);
-            this.moons.set(moonId, moon);
-            
-            // Add physics - only host has dynamic bodies
-            if (this.physics && this.physics.addMesh) {
-              const mass = this.isHost ? 0.3 : 0;
-              this.physics.addMesh(moon, mass);
-              
-              // Configure physics properties
-              const body = this.meshMap.get(moon);
-              if (body && this.isHost) {
-                body.setDamping(0.3, 0.3);
-                body.setFriction(0.3);
-                body.setRestitution(0.8);
-                body.setRollingFriction(0.05);
+            // Remove all but the most recent 15 (reduced for better performance)
+            if (projectileArray.length > 15) {
+              for (let i = 15; i < projectileArray.length; i++) {
+                this.projectilesRef.child(projectileArray[i].key).remove();
               }
             }
             
-            // Initialize velocity tracking
-            this.moonVelocities.set(moonId, new THREE.Vector3(0, 0, 0));
+            // Also remove any older than 5 seconds
+            const fiveSecondsAgo = Date.now() - 5000;
+            projectileArray.forEach(p => {
+              if (p.timestamp < fiveSecondsAgo) {
+                this.projectilesRef.child(p.key).remove();
+              }
+            });
+          });
+        }
+        
+        // Send a projectile event to all players
+        sendProjectile(origin, direction, force = 35) {
+          const projectileData = {
+            origin: {
+              x: origin.x,
+              y: origin.y,
+              z: origin.z
+            },
+            direction: {
+              x: direction.x,
+              y: direction.y,
+              z: direction.z
+            },
+            force: force,
+            from: this.localUserAddress,
+            timestamp: Date.now()
+          };
+          
+          console.log('Sending projectile:', projectileData);
+          this.projectilesRef.push(projectileData);
+        }
+        
+        // Create a projectile from another player
+        createRemoteProjectile(projectileData) {
+          // Create the ball mesh
+          const ballGeometry = new THREE.IcosahedronGeometry(0.8, 1);
+          const ballMaterial = new THREE.MeshPhongMaterial({
+            flatShading: true,
+            color: new THREE.Color().setHSL(Math.random(), 1, 0.5),
+            emissive: new THREE.Color().setHSL(Math.random(), 1, 0.3),
+            emissiveIntensity: 0.5
+          });
+          const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+          ball.castShadow = true;
+          ball.name = "shootingBall"; // Use same name as local balls for physics
+          
+          // Position the ball
+          ball.position.set(
+            projectileData.origin.x,
+            projectileData.origin.y,
+            projectileData.origin.z
+          );
+          
+          this.scene.add(ball);
+          
+          // Add physics to the ball with correct velocity
+          if (this.physics && this.physics.addShootingMesh) {
+            const velocity = new THREE.Vector3(
+              projectileData.direction.x * projectileData.force,
+              projectileData.direction.y * projectileData.force,
+              projectileData.direction.z * projectileData.force
+            );
+            console.log('Adding physics to remote projectile with velocity:', velocity);
+            this.physics.addShootingMesh(ball, 10, velocity); // Same mass as local balls
+          }
+          
+          // Remove the ball after 5 seconds (reduced for performance)
+          setTimeout(() => {
+            if (ball.parent) {
+              this.scene.remove(ball);
+              ball.geometry.dispose();
+              ball.material.dispose();
+            }
+          }, 5000);
+        }
+        
+        cleanup() {
+          this.projectilesRef.off();
+          this.moonsRef.off();
+          this.moonHitsRef.off();
+        }
+        
+        // Initialize shared moon objects
+        async initializeSharedMoons() {
+          console.log('Initializing shared moons, isHost:', this.isHost);
+          
+          // First, clear any old moon data with wrong naming
+          await new Promise((resolve) => {
+            this.moonsRef.once('value', (snapshot) => {
+              const existingMoons = snapshot.val();
+              if (existingMoons) {
+                const cleanupPromises = [];
+                Object.keys(existingMoons).forEach(moonId => {
+                  // Remove old shared_moon_ entries or all entries if we're the host
+                  if (moonId.startsWith('shared_moon_')) {
+                    cleanupPromises.push(this.moonsRef.child(moonId).remove());
+                  }
+                });
+                Promise.all(cleanupPromises).then(resolve);
+              } else {
+                resolve();
+              }
+            });
+          });
+          
+          // Wait a bit for cleanup
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Check if moons already exist in Firebase
+          this.moonsRef.once('value', (snapshot) => {
+            const existingMoons = snapshot.val();
+            const validMoons = existingMoons ? Object.keys(existingMoons).filter(id => id.startsWith('multiplayer_moon_')) : [];
             
-            // Save initial position to Firebase
-            this.moonRefs.child(moonId).set({
+            console.log('Existing valid moons:', validMoons.length);
+            
+            if (validMoons.length === 0 && this.isHost) {
+              // Only the host creates initial moons when there are none
+              console.log('HOST: Creating new shared moons');
+              this.createSharedMoons();
+              // Start syncing as host
+              this.startHostSync();
+            } else if (validMoons.length > 0) {
+              // Load existing moons from Firebase
+              console.log('Loading existing shared moons from Firebase');
+              validMoons.forEach(moonId => {
+                this.createMoonFromData(moonId, existingMoons[moonId]);
+              });
+              // If we're the host, start syncing
+              if (this.isHost) {
+                this.startHostSync();
+              }
+            } else if (!this.isHost) {
+              // Non-host waits for host to create moons
+              console.log('NON-HOST: Waiting for host to create moons');
+              
+              // Listen for when moons are added
+              const onMoonAdded = this.moonsRef.on('child_added', (snapshot) => {
+                const moonId = snapshot.key;
+                const data = snapshot.val();
+                if (moonId.startsWith('multiplayer_moon_') && !this.sharedMoons.has(moonId)) {
+                  console.log('NON-HOST: Moon added by host:', moonId);
+                  this.createMoonFromData(moonId, data);
+                }
+              });
+            }
+          });
+          
+          // Listen for moon position updates
+          this.moonsRef.on('child_changed', (snapshot) => {
+            const moonId = snapshot.key;
+            const data = snapshot.val();
+            
+            // Only non-hosts should update from Firebase
+            // Host controls the physics directly
+            if (this.sharedMoons.has(moonId) && !this.isHost) {
+              const moon = this.sharedMoons.get(moonId);
+              const body = window.meshMap?.get(moon);
+              
+              if (body && window.Ammo) {
+                // Update physics body position for non-hosts
+                const transform = new Ammo.btTransform();
+                transform.setIdentity();
+                transform.setOrigin(new Ammo.btVector3(data.position.x, data.position.y, data.position.z));
+                transform.setRotation(new Ammo.btQuaternion(
+                  moon.quaternion.x,
+                  moon.quaternion.y, 
+                  moon.quaternion.z,
+                  moon.quaternion.w
+                ));
+                body.setWorldTransform(transform);
+                
+                // Apply velocity if provided
+                if (data.velocity) {
+                  body.setLinearVelocity(new Ammo.btVector3(data.velocity.x, data.velocity.y, data.velocity.z));
+                }
+                
+                body.activate(true);
+              }
+              
+              // Update visual position
+              moon.position.set(data.position.x, data.position.y, data.position.z);
+              moon.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
+            }
+          });
+          
+          // Listen for moon hit events
+          this.moonHitsRef.on('child_added', (snapshot) => {
+            const hitData = snapshot.val();
+            
+            // Apply the hit force to the moon
+            if (this.sharedMoons.has(hitData.moonId)) {
+              const moon = this.sharedMoons.get(hitData.moonId);
+              const body = window.meshMap?.get(moon);
+              
+              if (body && window.Ammo) {
+                const force = new Ammo.btVector3(
+                  hitData.force.x,
+                  hitData.force.y,
+                  hitData.force.z
+                );
+                body.applyCentralImpulse(force);
+                body.activate(true);
+                Ammo.destroy(force);
+              }
+            }
+            
+            // Clean up old hit events
+            if (Date.now() - hitData.timestamp > 5000) {
+              snapshot.ref.remove();
+            }
+          });
+        }
+        
+        createSharedMoons() {
+          // Create 5 shared moon objects
+          for (let i = 0; i < 5; i++) {
+            const moonId = `multiplayer_moon_${i}`;
+            
+            // Load moon texture
+            const textureLoader = new THREE.TextureLoader();
+            const moonTexture = textureLoader.load("https://happy358.github.io/Images/textures/lunar_color.jpg");
+            moonTexture.anisotropy = 16;
+            
+            // Create moon mesh with lunar texture
+            const geometry = new THREE.SphereGeometry(2, 32, 32);
+            const material = new THREE.MeshPhongMaterial({
+              color: new THREE.Color('#faf0e6'),
+              map: moonTexture,
+              lightMap: moonTexture,
+              lightMapIntensity: 3,
+              emissive: new THREE.Color('#1a1a3a'),
+              emissiveIntensity: 0.1,
+              shininess: 5
+            });
+            
+            const moon = new THREE.Mesh(geometry, material);
+            moon.name = moonId;
+            moon.castShadow = true;
+            moon.receiveShadow = true;
+            
+            // Add point light to make it glow
+            const light = new THREE.PointLight('#faf0e6', 20, 10);
+            light.castShadow = true;
+            moon.add(light);
+            
+            // Random initial position
+            moon.position.set(
+              (Math.random() - 0.5) * 20,
+              Math.random() * 10 + 5,
+              (Math.random() - 0.5) * 20
+            );
+            
+            this.scene.add(moon);
+            this.sharedMoons.set(moonId, moon);
+            
+            // Add physics - all players need physics for local collision detection
+            if (this.physics && this.physics.addMesh) {
+              this.physics.addMesh(moon, 0.5); // Light mass for fun physics
+              console.log(`HOST: Added physics to moon ${moonId}`);
+            }
+            
+            // Save to Firebase
+            this.moonsRef.child(moonId).set({
               position: {
                 x: moon.position.x,
                 y: moon.position.y,
@@ -985,307 +1455,167 @@
                 x: moon.rotation.x,
                 y: moon.rotation.y,
                 z: moon.rotation.z
-              },
-              velocity: {
-                x: 0,
-                y: 0,
-                z: 0
               }
             });
           }
         }
         
-        loadExistingMoons(moonData) {
-          Object.entries(moonData).forEach(([moonId, data]) => {
-            this.loadSingleMoon(moonId, data);
-          });
-        }
-        
-        loadSingleMoon(moonId, data) {
+        createMoonFromData(moonId, data) {
           // Don't create if already exists
-          if (this.moons.has(moonId)) return;
+          if (this.sharedMoons.has(moonId)) return;
           
-          // Create moon mesh
-          const geometry = new THREE.SphereGeometry(1.5, 30, 30);
+          // Load moon texture
+          const textureLoader = new THREE.TextureLoader();
+          const moonTexture = textureLoader.load("https://happy358.github.io/Images/textures/lunar_color.jpg");
+          moonTexture.anisotropy = 16;
+          
+          const geometry = new THREE.SphereGeometry(2, 32, 32);
           const material = new THREE.MeshPhongMaterial({
             color: new THREE.Color('#faf0e6'),
-            map: this.moonTexture,
+            map: moonTexture,
+            lightMap: moonTexture,
+            lightMapIntensity: 3,
             emissive: new THREE.Color('#1a1a3a'),
-            emissiveIntensity: 0.2,
-            emissiveMap: this.moonTexture
+            emissiveIntensity: 0.1,
+            shininess: 5
           });
           
           const moon = new THREE.Mesh(geometry, material);
-          moon.name = `multiplayer_${moonId}`;
+          moon.name = moonId;
           moon.castShadow = true;
           moon.receiveShadow = true;
           
-          // Add glow
-          const glowGeometry = new THREE.SphereGeometry(1.52, 30, 30);
-          const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.1
-          });
-          const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-          moon.add(glow);
+          // Add point light to make it glow
+          const light = new THREE.PointLight('#faf0e6', 20, 10);
+          light.castShadow = true;
+          moon.add(light);
           
-          // Set position from Firebase
-          moon.position.set(
-            data.position.x,
-            data.position.y,
-            data.position.z
-          );
-          
-          // Set rotation from Firebase
-          moon.rotation.set(
-            data.rotation.x,
-            data.rotation.y,
-            data.rotation.z
-          );
+          moon.position.set(data.position.x, data.position.y, data.position.z);
+          moon.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
           
           this.scene.add(moon);
-          this.moons.set(moonId, moon);
+          this.sharedMoons.set(moonId, moon);
           
-          // Add physics - but only active for host
+          // Add physics - all players have dynamic physics now
           if (this.physics && this.physics.addMesh) {
-            const mass = this.isHost ? 0.3 : 0; // Static bodies for non-hosts
-            this.physics.addMesh(moon, mass);
-            
-            const body = this.meshMap.get(moon);
-            if (body) {
-              if (this.isHost) {
-                body.setDamping(0.3, 0.3);
-                body.setFriction(0.3);
-                body.setRestitution(0.8);
-                body.setRollingFriction(0.05);
-              } else {
-                // Make it kinematic for non-hosts
-                body.setCollisionFlags(body.getCollisionFlags() | 2); // CF_KINEMATIC_OBJECT
-                body.setActivationState(4); // DISABLE_DEACTIVATION
-              }
-            }
+            // Everyone gets dynamic physics, but only host syncs to Firebase
+            this.physics.addMesh(moon, 0.5);
+            console.log(`Created moon ${moonId} with physics, isHost: ${this.isHost}`);
           }
-          
-          // Initialize velocity tracking
-          this.moonVelocities.set(moonId, new THREE.Vector3(
-            data.velocity?.x || 0,
-            data.velocity?.y || 0,
-            data.velocity?.z || 0
-          ));
-        }
-        
-        setupSync() {
-          // Listen for moon position updates
-          this.moonRefs.on('value', (snapshot) => {
-            const moonData = snapshot.val() || {};
-            
-            Object.entries(moonData).forEach(([moonId, data]) => {
-              // Create moon if it doesn't exist yet
-              if (!this.moons.has(moonId) && data) {
-                this.loadSingleMoon(moonId, data);
-              }
-              
-              // Update position for non-hosts
-              if (this.moons.has(moonId) && !this.isHost) {
-                const moon = this.moons.get(moonId);
-                const body = this.meshMap.get(moon);
-                
-                // Update physics body position for non-hosts
-                if (body && window.Ammo) {
-                  const transform = new Ammo.btTransform();
-                  transform.setIdentity();
-                  transform.setOrigin(new Ammo.btVector3(data.position.x, data.position.y, data.position.z));
-                  transform.setRotation(new Ammo.btQuaternion(
-                    data.rotation.x, data.rotation.y, data.rotation.z, 1
-                  ));
-                  body.setWorldTransform(transform);
-                  body.getMotionState().setWorldTransform(transform);
-                  body.activate(false); // Don't activate physics, just position
-                }
-                
-                // Smooth visual interpolation
-                gsap.to(moon.position, {
-                  x: data.position.x,
-                  y: data.position.y,
-                  z: data.position.z,
-                  duration: 0.15,
-                  ease: "power2.out"
-                });
-                
-                // Apply rotation
-                gsap.to(moon.rotation, {
-                  x: data.rotation.x,
-                  y: data.rotation.y,
-                  z: data.rotation.z,
-                  duration: 0.15,
-                  ease: "power2.out"
-                });
-                
-                // Update velocity tracking
-                if (data.velocity) {
-                  this.moonVelocities.set(moonId, new THREE.Vector3(
-                    data.velocity.x,
-                    data.velocity.y,
-                    data.velocity.z
-                  ));
-                }
-              }
-            });
-          });
-          
-          // Listen for force applications
-          this.forcesRef.on('child_added', (snapshot) => {
-            const forceData = snapshot.val();
-            const moonId = snapshot.key.split('_')[0] + '_' + snapshot.key.split('_')[1];
-            
-            if (this.moons.has(moonId) && forceData.from !== this.localUserAddress) {
-              const moon = this.moons.get(moonId);
-              const body = this.meshMap.get(moon);
-              
-              if (body && window.Ammo) {
-                // Apply the force
-                const force = new Ammo.btVector3(
-                  forceData.x * 10,
-                  forceData.y * 10,
-                  forceData.z * 10
-                );
-                body.applyCentralImpulse(force);
-                body.activate(true);
-              }
-            }
-            
-            // Remove the force entry after processing
-            snapshot.ref.remove();
-          });
-          
-          // Determine host status
-          this.checkHostStatus();
         }
         
         checkHostStatus() {
-          // First player in room becomes physics host
-          const presenceRef = this.database.ref('moonRoom/members');
-          presenceRef.on('value', (snapshot) => {
-            const members = Object.keys(snapshot.val() || {});
-            const wasHost = this.isHost;
-            this.isHost = members.length > 0 && members[0] === this.localUserAddress;
+          return new Promise((resolve) => {
+            // Use a more stable host determination - alphabetically first member
+            const membersRef = this.database.ref('moonRoom/members');
             
-            if (this.isHost && !wasHost) {
-              console.log('Became physics host for multiplayer moons');
-              this.runPhysicsSync();
-            } else if (!this.isHost && wasHost) {
-              console.log('No longer physics host');
-            }
-          });
-        }
-        
-        shootMoon(moonId, force) {
-          // Any player can apply force to a moon
-          const forceRef = this.forcesRef.child(`${moonId}_${Date.now()}`);
-          forceRef.set({
-            x: force.x,
-            y: force.y,
-            z: force.z,
-            from: this.localUserAddress,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-          });
-          
-          // Apply force locally immediately for responsiveness
-          if (this.moons.has(moonId)) {
-            const moon = this.moons.get(moonId);
-            const body = this.meshMap.get(moon);
+            // Get initial host status
+            membersRef.once('value', (snapshot) => {
+              const members = snapshot.val() || {};
+              const sortedMembers = Object.keys(members).sort();
+              this.isHost = sortedMembers.length > 0 && sortedMembers[0] === this.localUserAddress;
+              console.log(`Initial host status: ${this.isHost ? 'HOST' : 'NOT HOST'} (${this.localUserAddress})`);
+              console.log('Sorted members in room:', sortedMembers);
+              resolve();
+            });
             
-            if (body && window.Ammo) {
-              const impulse = new Ammo.btVector3(
-                force.x * 10,
-                force.y * 10,
-                force.z * 10
-              );
-              body.applyCentralImpulse(impulse);
-              body.activate(true);
-            }
-          }
-        }
-        
-        runPhysicsSync() {
-          // Only the host syncs physics to Firebase
-          const updateMoonPosition = window.throttle((moonId, moon) => {
-            const body = this.meshMap.get(moon);
-            if (body && window.Ammo) {
-              // Get velocity from physics body
-              const velocity = body.getLinearVelocity();
+            // Then listen for changes
+            membersRef.on('value', (snapshot) => {
+              const members = snapshot.val() || {};
+              const sortedMembers = Object.keys(members).sort();
+              const wasHost = this.isHost;
+              this.isHost = sortedMembers.length > 0 && sortedMembers[0] === this.localUserAddress;
               
-              this.moonRefs.child(moonId).update({
-                position: {
-                  x: moon.position.x,
-                  y: moon.position.y,
-                  z: moon.position.z
-                },
-                rotation: {
-                  x: moon.rotation.x,
-                  y: moon.rotation.y,
-                  z: moon.rotation.z
-                },
-                velocity: {
-                  x: velocity.x(),
-                  y: velocity.y(),
-                  z: velocity.z()
-                }
-              });
-            }
-          }, 100); // Update max 10 times per second
-          
-          // Sync loop
-          const syncLoop = () => {
-            if (!this.isHost) return;
-            
-            this.moons.forEach((moon, moonId) => {
-              // Only update if moon has moved significantly
-              const lastVel = this.moonVelocities.get(moonId);
-              const body = this.meshMap.get(moon);
-              
-              if (body && window.Ammo) {
-                const currentVel = body.getLinearVelocity();
-                const velMagnitude = Math.sqrt(
-                  currentVel.x() * currentVel.x() +
-                  currentVel.y() * currentVel.y() +
-                  currentVel.z() * currentVel.z()
-                );
+              if (this.isHost !== wasHost) {
+                console.log(this.isHost ? 'Became host for shared moons' : 'No longer host');
+                console.log('Current sorted members:', sortedMembers);
                 
-                // Only update if moving or recently moved
-                if (velMagnitude > 0.1 || (lastVel && lastVel.length() > 0.1)) {
-                  updateMoonPosition(moonId, moon);
+                if (this.isHost) {
+                  // New host - start syncing
+                  this.startHostSync();
+                } else {
+                  // No longer host - stop syncing
+                  if (this.syncInterval) {
+                    clearInterval(this.syncInterval);
+                    this.syncInterval = null;
+                  }
                 }
+                
+                // Update physics for all moons
+                this.sharedMoons.forEach((moon, moonId) => {
+                  const body = window.meshMap?.get(moon);
+                  if (body && window.Ammo) {
+                    // All players keep dynamic physics for local collision detection
+                    // The host's physics is authoritative and syncs to others
+                    body.setMassProps(0.5, new Ammo.btVector3(1, 1, 1));
+                    body.activate(true);
+                  }
+                });
               }
             });
-            
-            requestAnimationFrame(syncLoop);
-          };
-          
-          syncLoop();
+          });
         }
         
-        // Clean up forces periodically
-        startCleanup() {
-          setInterval(() => {
-            this.forcesRef.once('value', (snapshot) => {
-              const forces = snapshot.val() || {};
-              const now = Date.now();
-              
-              Object.entries(forces).forEach(([key, force]) => {
-                // Remove forces older than 5 seconds
-                if (force.timestamp && now - force.timestamp > 5000) {
-                  this.forcesRef.child(key).remove();
-                }
-              });
+        startHostSync() {
+          // Only host syncs moon positions
+          if (!this.isHost || this.syncInterval) return;
+          
+          console.log('Starting host sync for moons');
+          
+          // Use throttled updates to avoid overwhelming Firebase
+          this.syncInterval = setInterval(() => {
+            if (!this.isHost) {
+              clearInterval(this.syncInterval);
+              this.syncInterval = null;
+              return;
+            }
+            
+            this.sharedMoons.forEach((moon, moonId) => {
+              const body = window.meshMap?.get(moon);
+              if (body && body.getMotionState) {
+                const vel = body.getLinearVelocity();
+                const speed = Math.sqrt(vel.x() * vel.x() + vel.y() * vel.y() + vel.z() * vel.z());
+                
+                // Always update positions for consistency
+                this.moonsRef.child(moonId).update({
+                  position: {
+                    x: moon.position.x,
+                    y: moon.position.y,
+                    z: moon.position.z
+                  },
+                  rotation: {
+                    x: moon.rotation.x,
+                    y: moon.rotation.y,
+                    z: moon.rotation.z
+                  },
+                  velocity: speed > 0.1 ? {
+                    x: vel.x(),
+                    y: vel.y(),
+                    z: vel.z()
+                  } : null
+                });
+              }
             });
-          }, 10000); // Every 10 seconds
+          }, 200); // Update 5 times per second (reduced for better performance with many users)
+        }
+        
+        // Report when a projectile hits a moon
+        reportMoonHit(moonId, force) {
+          this.moonHitsRef.push({
+            moonId: moonId,
+            force: {
+              x: force.x,
+              y: force.y,
+              z: force.z
+            },
+            from: this.localUserAddress,
+            timestamp: Date.now()
+          });
         }
       }
 
-      // Make MultiplayerMoons available globally
-      window.MultiplayerMoons = MultiplayerMoons;
+      // Make MultiplayerProjectiles available globally
+      window.MultiplayerProjectiles = MultiplayerProjectiles;
       const meshes = [];
       let isDragging = false;
       let selectedObject = null;
@@ -1297,6 +1627,7 @@
       const mousePosition = new THREE.Vector2();
       const raycaster = new THREE.Raycaster();
       const meshMap = new WeakMap();
+      window.meshMap = meshMap; // Make meshMap globally available
       async function AmmoPhysics() {
         if (!("Ammo" in window)) {
           console.error("AmmoPhysics: Couldn't find Ammo.js");
@@ -1455,11 +1786,13 @@
             const mesh = meshes[i];
             if (!mesh || (isDragging && mesh === selectedObject)) continue;
 
-            // Skip updating multiplayer moons if we're not the host
+            // For multiplayer moons, only update from physics if we're the host
+            // Non-hosts get their positions from Firebase updates
             if (mesh.name && mesh.name.startsWith('multiplayer_moon_')) {
-              if (window.multiplayerMoons && !window.multiplayerMoons.isHost) {
-                continue; // Don't update position from physics if not host
+              if (window.multiplayerProjectiles && !window.multiplayerProjectiles.isHost) {
+                continue; // Non-hosts don't update from local physics
               }
+              // Host continues to update normally from physics
             }
 
             if (mesh.isInstancedMesh) {
@@ -1529,6 +1862,15 @@
             }
 
             addRigidBody(mesh, mass, shootingShapeSaved, velocity);
+            
+            // Add tracking for cleanup
+            mesh.isProjectile = true;
+          },
+          
+          removeBody: function(body) {
+            if (body) {
+              world.removeRigidBody(body);
+            }
           },
         };
       }
@@ -1678,6 +2020,8 @@
           moonLamp.add(glowMesh2);
 
           // Create additional moon lamps (reduced to 3 to avoid conflict with multiplayer moons)
+          // COMMENTED OUT: Local moon spawning
+          /*
           for (let i = 0; i < 3; i++) {
             let newLamp = moonLamp.clone();
             color = new THREE.Color("#faf0e6");
@@ -1715,12 +2059,12 @@
               body.setRollingFriction(0.1);
             }
           }
+          */
 
-          // Initialize multiplayer moons after physics is ready
+          // Initialize multiplayer projectiles after physics is ready
           if (window.database && window.userAddress) {
-            window.multiplayerMoons = new MultiplayerMoons(scene, window.database, physics, meshMap);
-            window.multiplayerMoons.startCleanup();
-            console.log('Multiplayer moons initialized');
+            window.multiplayerProjectiles = new MultiplayerProjectiles(scene, window.database, physics);
+            console.log('Multiplayer projectiles initialized');
           }
 
           // Create shooting balls
@@ -1737,6 +2081,9 @@
 
           const shootingForce = 35;
           const ballMass = 10;
+          let lastShotTime = 0;
+          const shotCooldown = 250; // Minimum 250ms between shots
+          
           window.addEventListener("pointerdown", (event) => {
             // Check if the click is on the chat interface
             const chatContainer = document.getElementById('chatContainer');
@@ -1785,63 +2132,25 @@
                 }
               }
             } else {
-              // Check if clicking on a multiplayer moon
-              const intersects = raycaster.intersectObjects(scene.children, true);
-              let hitMultiplayerMoon = false;
-              
-              for (let i = 0; i < intersects.length; i++) {
-                let object = intersects[i].object;
-                while (object.parent && object.parent !== scene) {
-                  object = object.parent;
-                }
-                
-                if (object.name && object.name.startsWith('multiplayer_moon_')) {
-                  // Apply force to multiplayer moon
-                  const moonId = object.name.replace('multiplayer_', '');
-                  const force = raycaster.ray.direction.clone().multiplyScalar(shootingForce * 0.5);
-                  
-                  if (window.multiplayerMoons) {
-                    window.multiplayerMoons.shootMoon(moonId, force);
-                  }
-                  
-                  hitMultiplayerMoon = true;
-                  
-                  // Visual feedback - create a small burst effect
-                  const burstGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-                  const burstMaterial = new THREE.MeshBasicMaterial({
-                    color: new THREE.Color().setHSL(Math.random(), 1, 0.7),
-                    transparent: true,
-                    opacity: 0.8
-                  });
-                  const burst = new THREE.Mesh(burstGeometry, burstMaterial);
-                  burst.position.copy(intersects[i].point);
-                  scene.add(burst);
-                  
-                  // Animate and remove burst
-                  gsap.to(burst.scale, {
-                    x: 2, y: 2, z: 2,
-                    duration: 0.3,
-                    ease: "power2.out"
-                  });
-                  gsap.to(burstMaterial, {
-                    opacity: 0,
-                    duration: 0.3,
-                    onComplete: () => {
-                      scene.remove(burst);
-                      burst.geometry.dispose();
-                      burst.material.dispose();
-                    }
-                  });
-                  
-                  break;
-                }
+              // Normal click - shoot a ball (with rate limiting)
+              const now = Date.now();
+              if (now - lastShotTime < shotCooldown) {
+                return; // Too soon since last shot
               }
+              lastShotTime = now;
               
-              // Normal shooting if not hitting a multiplayer moon
-              if (!hitMultiplayerMoon) {
-                let shootingDirection = new THREE.Vector3();
-                shootingDirection.copy(raycaster.ray.direction);
-                shootingDirection.add(raycaster.ray.origin);
+              let shootingDirection = new THREE.Vector3();
+              shootingDirection.copy(raycaster.ray.direction);
+              shootingDirection.add(raycaster.ray.origin);
+              
+              // Send projectile event to other players
+              if (window.multiplayerProjectiles) {
+                window.multiplayerProjectiles.sendProjectile(
+                  shootingDirection, 
+                  raycaster.ray.direction,
+                  shootingForce
+                );
+              }
 
                 let ball = shootBall.clone();
                 ball.position.set(
@@ -1864,7 +2173,21 @@
                 shootingDirection.copy(raycaster.ray.direction);
                 shootingDirection.multiplyScalar(shootingForce);
                 physics.addShootingMesh(ball, ballMass, shootingDirection);
-              }
+                
+                // Remove the ball after 5 seconds (reduced for performance)
+                setTimeout(() => {
+                  if (ball.parent) {
+                    scene.remove(ball);
+                    ball.geometry.dispose();
+                    ball.material.dispose();
+                    // Remove from physics
+                    const body = meshMap.get(ball);
+                    if (body && physics.removeBody) {
+                      physics.removeBody(body);
+                    }
+                    meshMap.delete(ball);
+                  }
+                }, 5000);
             }
           });
 
