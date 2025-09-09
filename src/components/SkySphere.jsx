@@ -1,13 +1,110 @@
-import React from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { useThree, useFrame } from '@react-three/fiber';
 
-const SkySphere = () => {
+const SkySphere = ({ type = 'color', fearGreedValue = 50 }) => {
+  const { scene } = useThree();
+  const meshRef = React.useRef();
+  const currentColorRef = React.useRef(new THREE.Color());
+  
+  const cubeTexture = useMemo(() => {
+    if (type !== 'cubemap') return null;
+    
+    const loader = new THREE.CubeTextureLoader();
+    const texture = loader.load([
+      '/skybox/PolygonSciFiSpace_Skybox_01_Right.png',  // positive X
+      '/skybox/PolygonSciFiSpace_Skybox_01_Left.png',   // negative X
+      '/skybox/PolygonSciFiSpace_Skybox_01_Up.png',     // positive Y
+      '/skybox/PolygonSciFiSpace_Skybox_01_Down.png',   // negative Y
+      '/skybox/PolygonSciFiSpace_Skybox_01_Front.png',  // positive Z
+      '/skybox/PolygonSciFiSpace_Skybox_01_Back.png'    // negative Z
+    ]);
+    
+    return texture;
+  }, [type]);
+  
+  React.useEffect(() => {
+    if (type === 'cubemap' && cubeTexture) {
+      scene.background = cubeTexture;
+      scene.environment = cubeTexture;
+      return () => {
+        scene.background = null;
+        scene.environment = null;
+      };
+    }
+  }, [scene, cubeTexture, type]);
+  
+  if (type === 'cubemap') {
+    return null;
+  }
+  
+  // Calculate color based on Fear & Greed value
+  const getColorForSentiment = (value) => {
+    // Create a gradient from dark (fear) to blue (greed)
+    if (value < 20) {
+      // Extreme Fear: Very dark, almost black
+      return new THREE.Color().lerpColors(
+        new THREE.Color(0x0a0a0a), // Near black
+        new THREE.Color(0x1a1a1a), // Very dark grey
+        value / 20
+      );
+    } else if (value < 40) {
+      // Fear: Dark grey
+      return new THREE.Color().lerpColors(
+        new THREE.Color(0x1a1a1a), // Very dark grey
+        new THREE.Color(0x333333), // Dark grey
+        (value - 20) / 20
+      );
+    } else if (value < 50) {
+      // Neutral-Fear: Medium grey
+      return new THREE.Color().lerpColors(
+        new THREE.Color(0x333333), // Dark grey
+        new THREE.Color(0x4a4a4a), // Medium grey
+        (value - 40) / 10
+      );
+    } else if (value < 60) {
+      // Neutral-Greed: Grey with blue tint
+      return new THREE.Color().lerpColors(
+        new THREE.Color(0x4a4a4a), // Medium grey
+        new THREE.Color(0x5a6a7a), // Grey-blue
+        (value - 50) / 10
+      );
+    } else if (value < 80) {
+      // Greed: Blue-grey to sky blue
+      return new THREE.Color().lerpColors(
+        new THREE.Color(0x5a6a7a), // Grey-blue
+        new THREE.Color(0x6a8aaa), // Light blue-grey
+        (value - 60) / 20
+      );
+    } else {
+      // Extreme Greed: Your original blue
+      return new THREE.Color().lerpColors(
+        new THREE.Color(0x6a8aaa), // Light blue-grey
+        new THREE.Color(0x87CEEB), // Sky blue (your original color)
+        (value - 80) / 20
+      );
+    }
+  };
+  
+  // Log when fearGreedValue changes
+  useEffect(() => {
+    console.log('SkySphere: fearGreedValue changed to:', fearGreedValue);
+  }, [fearGreedValue]);
+  
+  // Smoothly animate color changes
+  useFrame((state, delta) => {
+    if (meshRef.current && meshRef.current.material) {
+      const targetColor = getColorForSentiment(fearGreedValue);
+      currentColorRef.current.lerp(targetColor, delta * 0.5); // Smooth transition
+      meshRef.current.material.color.copy(currentColorRef.current);
+    }
+  });
+  
   return (
-    <mesh scale={[500, 500, 500]}>
+    <mesh ref={meshRef} scale={[500, 500, 500]}>
       <sphereGeometry args={[1, 32, 32]} />
       <meshBasicMaterial 
-        // color="#87CEEB" 
-        color="#87CEEB" 
+        color={getColorForSentiment(fearGreedValue)} 
         side={THREE.BackSide}
         fog={false}
       />

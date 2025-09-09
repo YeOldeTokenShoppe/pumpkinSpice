@@ -1,5 +1,5 @@
 import React from 'react';
-import { useGLTF } from '@react-three/drei';
+import { useGLTF, CameraShake } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import DarkClouds from '@/components/Clouds';
@@ -7,8 +7,11 @@ import PostProcessingEffects from '@/components/PostProcessingEffects';
 import EnhancedVolumetricLight from '@/components/EnhancedVolumetricLight';
 import SkySphere from '@/components/SkySphere';
 import SpiralDollarBills from '@/components/SpiralDollarBills';
+import BurningDollarBills from '@/components/BurningDollarBills';
 import CoinStream from '@/components/CoinStream';
 import FallingDiamonds from '@/components/FallingDiamonds';
+import MarketEmojis from '@/components/MarketEmojis';
+import TestDevil from '@/components/TestDevil';
 // import CoinSparkles from './CoinSparkles';
 
 // Madonna Model Component
@@ -175,13 +178,15 @@ const MadonnaModel = ({ position = [0, -1, 1], scale = 1, goldCoinRef, coinsRef 
 };
 
 // Preload the model
-useGLTF.preload('/madonna_skates.glb');
+useGLTF.preload('/models/madonna_skates.glb');
 
-const EtherealClouds = () => {
+const EtherealClouds = ({ onDataUpdate, manualFearGreedData, is80sMode = false }) => {
   const goldCoinRef = React.useRef();
   const coinsRef = React.useRef([]);
   const [coinPositions, setCoinPositions] = React.useState([]);
   const [coinTemplate, setCoinTemplate] = React.useState(null);
+  const [currentFearGreedValue, setCurrentFearGreedValue] = React.useState(50);
+  const shakeRef = React.useRef();
   
   // Rotate all coins in place in different directions
   useFrame((state, delta) => {
@@ -244,8 +249,22 @@ const EtherealClouds = () => {
   
   return (
     <>
-      {/* Sky sphere background */}
-      <SkySphere />
+      {/* Camera shake for lightning effects */}
+      <CameraShake 
+        ref={shakeRef} 
+        decay 
+        decayRate={0.95} 
+        maxYaw={0.05} 
+        maxPitch={0.01} 
+        yawFrequency={4} 
+        pitchFrequency={2} 
+        rollFrequency={2} 
+        intensity={0} 
+      />
+      
+      {/*  sphere background */}
+      {/* <SkySphere type="cubemap" /> */}
+      <SkySphere type="color" fearGreedValue={manualFearGreedData?.value ?? currentFearGreedValue} />
       
       {/* Additional lights for better model visibility */}
       <directionalLight 
@@ -266,11 +285,14 @@ const EtherealClouds = () => {
         color="#ffffff"
       />
       
-      {/* Dark clouds for atmosphere */}
-      <DarkClouds />
+      {/* Dark clouds for atmosphere with shake ref */}
+      <DarkClouds 
+        fearGreedValue={manualFearGreedData?.value ?? currentFearGreedValue} 
+        shakeRef={shakeRef}
+      />
       
-      {/* Post-processing effects */}
-      <PostProcessingEffects />
+      {/* Post-processing effects with 80s mode support */}
+      <PostProcessingEffects is80sMode={is80sMode} />
       
       {/* Enhanced volumetric light rays */}
       <EnhancedVolumetricLight 
@@ -282,6 +304,16 @@ const EtherealClouds = () => {
       
       {/* Madonna Model in center */}
       <MadonnaModel position={[1, 15, -9]} scale={15} goldCoinRef={goldCoinRef} coinsRef={coinsRef} />
+      
+      {/* Market-driven emoji display based on Fear & Greed Index */}
+      <MarketEmojis 
+        centerPosition={[1, 15, -9]} 
+        onDataUpdate={(data) => {
+          setCurrentFearGreedValue(data?.value || 50);
+          if (onDataUpdate) onDataUpdate(data);
+        }}
+        manualFearGreedData={manualFearGreedData}
+      />
       
       {/* Coin streams from both hands */}
       {/* <CoinStream 
@@ -325,23 +357,39 @@ const EtherealClouds = () => {
         />
       ))}
        */}
-      {/* Spiraling Dollar Bills */}
-      <SpiralDollarBills 
-        count={50} 
-        radius={40} 
-        height={150} 
-        speed={-2}
-        startY={130}
-        endY={-50}
-      />
-       <SpiralDollarBills 
-        count={50} 
-        radius={30} 
-        height={170} 
-        speed={2}
-        startY={120}
-        endY={-50}
-      />
+      {/* Dollar Bills - switch between normal and burning based on fear */}
+      {(manualFearGreedData?.value ?? currentFearGreedValue) < 25 ? (
+        // Extreme fear - use burning bills with reduced count
+        <BurningDollarBills 
+          key="burning-bills"
+          count={Math.max(10, 40 - Math.floor((25 - (manualFearGreedData?.value ?? currentFearGreedValue)) * 1.2))} 
+          radius={30} 
+          height={170} 
+          speed={3}
+          startY={120}
+          endY={-50}
+        />
+      ) : (
+        // Normal to greed - use regular spiral bills with dynamic count
+        <React.Fragment key="spiral-bills">
+          <SpiralDollarBills 
+            count={Math.min(50, 20 + Math.floor((manualFearGreedData?.value ?? currentFearGreedValue) * 0.4))} 
+            radius={40} 
+            height={150} 
+            speed={-2}
+            startY={130}
+            endY={-50}
+          />
+          <SpiralDollarBills 
+            count={Math.min(50, 20 + Math.floor((manualFearGreedData?.value ?? currentFearGreedValue) * 0.4))} 
+            radius={30} 
+            height={170} 
+            speed={2}
+            startY={120}
+            endY={-50}
+          />
+        </React.Fragment>
+      )}
     </>
   );
 };

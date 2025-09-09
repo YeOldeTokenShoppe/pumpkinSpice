@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 const EnhancedVolumetricLight = ({ 
   position = [0, 100, 10], 
-  target = [0, 0, 0],
+  target = [0, 20, 0],
   color = '#ffffff',
   intensity = 3,
   rayCount = 50,
@@ -38,21 +38,22 @@ const EnhancedVolumetricLight = ({
         const x = Math.cos(theta) * radius;
         const z = Math.sin(theta) * radius;
         
-        // Add some randomness for natural look
+        // Add deterministic offset for natural look based on index
+        const seedValue = ((i + layer * 100) * 137.5) % 1; // Golden angle
         const randomOffset = new THREE.Vector3(
-          (Math.random() - 0.5) * 5,
-          (Math.random() - 0.5) * 5,
-          (Math.random() - 0.5) * 5
+          (seedValue - 0.5) * 5,
+          ((seedValue * 2) % 1 - 0.5) * 5,
+          ((seedValue * 3) % 1 - 0.5) * 5
         );
         
-        const rayStart = lightPos.clone().add(new THREE.Vector3(x, 0, z)).add(randomOffset);
-        // Extend rays much further down (to -200 instead of -10)
-        const rayEnd = targetPos.clone().add(new THREE.Vector3(x * 0.2, -200, z * 0.2));
+        const rayStart = lightPos.clone().add(new THREE.Vector3(x, 50, z)).add(randomOffset);
+        // Godray endpoints - shorter for more realistic light rays
+        const rayEnd = targetPos.clone().add(new THREE.Vector3(x * 0.5, -50, z * 0.5));
         const rayLength = rayStart.distanceTo(rayEnd);
         const rayDirection = rayEnd.clone().sub(rayStart).normalize();
         
-        // Vary the cone width based on distance
-        const coneRadius = (4 + Math.random() * 3) * (1 + layer * 0.5);
+        // Vary the cone width based on distance - deterministic
+        const coneRadius = (4 + seedValue * 3) * (1 + layer * 0.5);
         
         raysArray.push({
           id: `${layer}-${i}`,
@@ -63,9 +64,9 @@ const EnhancedVolumetricLight = ({
             0
           ),
           scale: [coneRadius, rayLength, coneRadius],
-          opacity: layerOpacity * (0.5 + Math.random() * 0.5),
-          pulseSpeed: 0.2 + Math.random() * 0.3,
-          pulsePhase: Math.random() * Math.PI * 2
+          opacity: layerOpacity * (0.5 + seedValue * 0.5),
+          pulseSpeed: 0.2 + seedValue * 0.3,
+          pulsePhase: seedValue * Math.PI * 2
         });
       }
     }
@@ -78,8 +79,8 @@ const EnhancedVolumetricLight = ({
     time.current = state.clock.getElapsedTime();
     
     if (groupRef.current) {
-      // Gentle rotation of the entire light group
-      groupRef.current.rotation.y = Math.sin(time.current * 0.1) * 0.02;
+      // Very subtle rotation - reduced to prevent vibration
+      groupRef.current.rotation.y = Math.sin(time.current * 0.05) * 0.01;
     }
   });
   
@@ -128,12 +129,12 @@ const EnhancedVolumetricLight = ({
         </mesh>
       ))}
       
-      {/* Central bright core ray - extended much further */}
-      <mesh
-        position={[position[0], position[1] - 150, position[2]]}
+      {/* Central bright core ray */}
+      {/* <mesh
+        position={[position[0], position[1] - 50, position[2]]}
         rotation={[Math.PI, 0, 0]}
       >
-        <cylinderGeometry args={[8, 25, 500, 8, 1, true]} />
+        <cylinderGeometry args={[8, 25, 150, 8, 1, true]} />
         <meshBasicMaterial
           color={color}
           transparent
@@ -142,7 +143,7 @@ const EnhancedVolumetricLight = ({
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
-      </mesh>
+      </mesh> */}
       
       {/* Atmospheric glow at the source - commented out to hide sphere */}
       {/* <mesh position={position}>

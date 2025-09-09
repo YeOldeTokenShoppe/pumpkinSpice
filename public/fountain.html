@@ -55,27 +55,29 @@
 				#info {
 					position: fixed !important;
 					right: 20px !important;
-					left: 150px !important;  /* Leave space for coin counter */
+					left: 160px !important;  /* Leave space for coin counter */
 					top: auto !important;
 					bottom: 30px !important;
 					transform: none !important;
 					width: auto !important;
 					max-width: none !important;
-					text-align: center;
 					padding: 12px 15px !important;
-					font-size: 14px !important;
+					font-size: 13px !important;
 					line-height: 1.4 !important;
 					background: rgba(20, 20, 30, 0.9) !important;
 					border-width: 2px !important;
-					height: fit-content;
-					min-height: 6rem;  /* Slightly taller */
-					height: 6rem;
+					height: 8rem !important;  /* Fixed height */
 					display: flex;
-					align-items: center;
-					justify-content: center;
+					flex-direction: column;
+					justify-content: flex-start;
 					box-sizing: border-box;
-					overflow: hidden;
+					overflow: visible;
 					word-wrap: break-word;
+				}
+				
+				#info > div:first-child {
+					font-size: 14px !important;  /* Smaller title on mobile */
+					margin-bottom: 6px !important;
 				}
 				
 				#coinCounter {
@@ -86,19 +88,25 @@
 					top: auto !important;
 					bottom: 30px !important;  /* Same level as info box */
 					padding: 12px 15px !important;  /* Match info box padding */
-					font-size: 13px !important;  /* Slightly larger */
-					width: auto !important;
-					min-width: 100px !important;
-					max-width: 120px !important;
+					font-size: 11px !important;  /* Slightly smaller */
+					width: 130px !important;
+					min-width: 130px !important;
+					max-width: 130px !important;
 					background: rgba(20, 20, 30, 0.9) !important;
 					border-width: 2px !important;
-					height: 6rem !important;  /* Fixed height to match info box */
-					min-height: 6rem !important;  /* Ensure minimum height */
+					height: 8rem !important;  /* Fixed height matching info box */
 					display: flex !important;
-					align-items: center !important;
-					justify-content: center !important;
 					flex-direction: column !important;
+					justify-content: flex-start !important;
 					box-sizing: border-box !important;
+					overflow: visible !important;
+				}
+				
+				#coinCounter > div:first-child {
+					font-size: 11px !important;  /* Smaller title on mobile */
+					margin-bottom: 2px !important;
+					padding-bottom: 2px !important;
+					line-height: 1.2 !important;
 				}
 				
 				.coin-emoji {
@@ -252,8 +260,12 @@
 			line-height: 1.4;
 			box-shadow: 0 0 15px rgba(48, 207, 208, 0.5);
 			z-index: 1000;
-			max-width: 25rem;
+			width: 250px;
+			box-sizing: border-box;
 		">
+			<div style="text-align: center; font-size: 16px; color: #30cfd0; text-shadow: 0 0 10px rgba(48, 207, 208, 0.5); margin-bottom: 8px; border-bottom: 1px solid rgba(48, 207, 208, 0.3); padding-bottom: 8px;">
+				📖 Instructions 📖
+			</div>
 			<span class="mobile-text">Click water to aim. Then, press blue button to throw a virtual coin or orange button to donate a real coin.</span>
 			<span class="desktop-text">Click water to aim. Then, press blue button to throw a virtual coin or orange button to donate a real coin to charity.</span>
 		</div>
@@ -262,27 +274,32 @@
 		<div id="coinCounter" style="
 			position: absolute;
 			right: 30%;
-			top: calc(50% + 60px);
+			top: calc(50% + 120px);
 			transform: translateY(-50%);
 			background: rgba(20, 20, 30, 0.9);
 			border: 2px solid #cebb43;
 			border-radius: 8px;
-			padding: 12px 20px;
+			padding: 10px;
 			color: #cebb43;
 			font-family: Arial, sans-serif;
-			font-size: 14px;
+			font-size: 12px;
 			font-weight: bold;
 			box-shadow: 0 0 15px rgba(206, 187, 67, 0.4);
 			z-index: 1000;
 			display: flex;
 			flex-direction: column;
-			gap: 8px;
+			gap: 4px;
+			width: 250px;
+			box-sizing: border-box;
 		">
+			<div style="text-align: center; font-size: 12px; color: #30cfd0; text-shadow: 0 0 10px rgba(48, 207, 208, 0.5); margin-bottom: 2px; border-bottom: 1px solid rgba(48, 207, 208, 0.3); padding-bottom: 2px; line-height: 1;">
+				Charity Collection
+			</div>
 			<div style="display: flex; align-items: center; gap: 8px;">
 				<span class="coin-emoji" style="font-size: 18px;">🪙</span>
 				<span><span class="desktop-text">Current: </span><span id="coinCount">0</span> / 200</span>
 			</div>
-			<div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(206, 187, 67, 0.3);">
+			<div style="display: flex; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid rgba(206, 187, 67, 0.3);">
 				<span class="coin-emoji" style="font-size: 18px;">💰</span>
 				<span><span class="desktop-text">Collected: </span><span id="collectedCount">0</span></span>
 			</div>
@@ -318,13 +335,14 @@
 						coinCounter.style.top = 'auto';
 						coinCounter.style.bottom = '30px';
 						coinCounter.style.transform = 'none';
-						coinCounter.style.setProperty('height', '6rem', 'important');  // Force height with !important
-						coinCounter.style.setProperty('min-height', '6rem', 'important');  // Ensure minimum height
+						coinCounter.style.setProperty('height', '8rem', 'important');  // Match info box height
+						coinCounter.style.setProperty('min-height', '8rem', 'important');  // Ensure minimum height
 						coinCounter.style.fontSize = '13px';
 						coinCounter.style.padding = '12px 15px';  // Match info box padding
 						coinCounter.style.display = 'flex';
-						coinCounter.style.alignItems = 'center';
-						coinCounter.style.justifyContent = 'center';
+						coinCounter.style.flexDirection = 'column';
+						coinCounter.style.alignItems = 'flex-start';
+						coinCounter.style.justifyContent = 'flex-start';
 					}
 				} else {
 					// Desktop layout
@@ -333,17 +351,18 @@
 					info.style.top = '50%';
 					info.style.bottom = 'auto';
 					info.style.transform = 'translateY(-50%)';
-					info.style.width = 'auto';
-					info.style.maxWidth = '200px';
+					info.style.width = '250px';
+					info.style.maxWidth = 'none';
 					info.style.textAlign = 'left';
 					
 					// Desktop coin counter position (below info box)
 					if (coinCounter) {
 						coinCounter.style.right = '30px';
 						coinCounter.style.left = 'auto';
-						coinCounter.style.top = 'calc(50% + 100px)';
+						coinCounter.style.top = 'calc(50% + 140px)';
 						coinCounter.style.bottom = 'auto';
 						coinCounter.style.transform = 'translateY(-50%)';
+						coinCounter.style.width = '250px';
 					}
 				}
 			}
@@ -1302,19 +1321,19 @@
 				
 				// Determine button size based on screen
 				const isMobile = window.innerWidth <= 768;
-				const buttonWidth = isMobile ? 0.35 : 0.25;
-				const buttonHeight = isMobile ? 0.12 : 0.084;
+				const buttonWidth = isMobile ? 0.35 : 0.35;  // Increased desktop width from 0.25 to 0.35
+				const buttonHeight = isMobile ? 0.12 : 0.12;  // Increased desktop height from 0.084 to 0.12
 				
 				// Use override colors if provided, otherwise use original colors
 				let bgColor, textColor, fontSize;
 				if (isLocalCoin) {
 					bgColor = bgColorOverride || '#30cfd0';
 					textColor = textColorOverride || 'black';
-					fontSize = isMobile ? 48 : 42;
+					fontSize = isMobile ? 48 : 56;  // Increased desktop font from 42 to 56
 				} else {
 					bgColor = bgColorOverride || '#ffa100';
 					textColor = textColorOverride || 'black';
-					fontSize = isMobile ? 42 : 36;
+					fontSize = isMobile ? 42 : 48;  // Increased desktop font from 36 to 48
 				}
 				
 				// Remove old button
@@ -1764,11 +1783,11 @@
 
 				// Determine button sizes based on screen size
 				const isMobile = window.innerWidth <= 768;
-				const buttonWidth = isMobile ? 0.35 : 0.25;  // Larger width on mobile
-				const buttonHeight = isMobile ? 0.12 : 0.084;  // Uniform height for both buttons
-				const fontSize1 = isMobile ? 48 : 42;  // Larger font on mobile
-				const fontSize2 = isMobile ? 42 : 36;  // Larger font on mobile
-				const buttonSpacing = isMobile ? 0.20 : 0.18;  // Adjust spacing between buttons
+				const buttonWidth = isMobile ? 0.35 : 0.35;  // Increased desktop width from 0.25 to 0.35
+				const buttonHeight = isMobile ? 0.12 : 0.12;  // Increased desktop height from 0.084 to 0.12
+				const fontSize1 = isMobile ? 48 : 56;  // Increased desktop font from 42 to 56
+				const fontSize2 = isMobile ? 42 : 48;  // Increased desktop font from 36 to 48
+				const buttonSpacing = isMobile ? 0.20 : 0.25;  // Increased desktop spacing from 0.18 to 0.25
 				
 				localCoinButton3D = createButtonMesh(
       "Click to Toss Coin",
@@ -1782,7 +1801,7 @@
   scene.add(localCoinButton3D);
 
   tossCoinButton3D = createButtonMesh(
-      "Click to Connect Wallet\nand Toss Real Coin",
+      "Connect Wallet\n and Donate Token",
       new THREE.Vector3(buttonSpacing, -0.38, 1.4),
       {width: buttonWidth, height: buttonHeight},  // Same height now
       fontSize2,                    // fontSize

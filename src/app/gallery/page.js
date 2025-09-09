@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { useMusic } from "@/components/MusicContext";
-import SimpleLoader from "@/components/SimpleLoader";
+import InfinityLoader from "@/components/InfinityLoader";
 import CandleInteractionHint from "@/components/CandleInteractionHint";
 import BuyTokenFAB from "@/components/BuyTokenFAB";
 import CompactCandleModal from "@/components/CompactCandleModal";
@@ -17,7 +17,7 @@ import SocialBar from "@/components/SocialBar";
 
 const ThreeDVotiveStand = dynamic(() => import("@/components/index.jsx"), {
   ssr: false,
-  loading: () => <SimpleLoader/>,
+  loading: () => <InfinityLoader/>,
 });
 
 export default function GalleryPage() {
@@ -216,7 +216,7 @@ export default function GalleryPage() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <SimpleLoader />
+          <InfinityLoader />
         </div>
       )}
       

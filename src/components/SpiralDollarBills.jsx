@@ -9,8 +9,6 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
   const [billGeometry, setBillGeometry] = useState(null);
   const [frontTexture, setFrontTexture] = useState(null);
   const [backTexture, setBackTexture] = useState(null);
-  const shaderMaterialRef = useRef();
-  
   const dummy = useMemo(() => new THREE.Object3D(), []);
   
   const positions = useMemo(() => {
@@ -116,11 +114,6 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
   useFrame((state, delta) => {
     if (!meshRef.current) return;
     
-    // Update shader time uniform
-    if (shaderMaterialRef.current) {
-      shaderMaterialRef.current.uniforms.time.value = state.clock.elapsedTime;
-    }
-    
     positions.forEach((pos, i) => {
       // Apply vertical offset for smoother falling
       pos.y -= speed * delta * (1 + pos.verticalOffset * 0.3);
@@ -163,102 +156,21 @@ const SpiralDollarBills = ({ count = 10, radius = 5, height = 20, speed = 0.5, s
     meshRef.current.instanceMatrix.needsUpdate = true;
   });
   
-  // Create shader material with bending effect
-  const shaderMaterial = useMemo(() => {
+  // Create material for bills
+  const billMaterial = useMemo(() => {
     if (!frontTexture || !backTexture) return null;
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        frontMap: { value: frontTexture },
-        backMap: { value: backTexture },
-        time: { value: 0 },
-        bendAmount: { value: 0.4 }
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        uniform float time;
-        uniform float bendAmount;
-        
-        void main() {
-          vUv = uv;
-          vec3 pos = position;
-          
-          // Gentle U-shaped bend along the width
-          float mainBend = sin(uv.x * 3.14159) * bendAmount;
-          
-          // Subtle wave along the length
-          float lengthWave = sin(uv.y * 3.14159) * 0.05;
-          
-          // Light rippling effect
-          float ripple = sin(time * 2.0 + uv.x * 6.0 + uv.y * 4.0) * 0.001;
-          
-          // Very subtle corner curl
-          float cornerCurl = 0.0;
-          float dist1 = 1.0 - distance(uv, vec2(0.0, 0.0));
-          float dist2 = 1.0 - distance(uv, vec2(1.0, 1.0));
-          cornerCurl += pow(dist1, 6.0) * sin(time * 2.0) * 0.05;
-          cornerCurl += pow(dist2, 6.0) * cos(time * 1.8) * 0.05;
-          
-          // Apply gentle deformations
-          pos.z += mainBend * (0.8 + 0.2 * sin(time * 1.5));
-          pos.z += lengthWave * sin(time * 2.0);
-          pos.z += ripple;
-          pos.z += cornerCurl;
-          
-          // Subtle flutter
-          float flutter = sin(time * 3.0 + uv.x * 10.0) * 0.01;
-          pos.y += flutter;
-          
-          // Very light edge movement
-          float edgeDistance = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-          if (edgeDistance < 0.1) {
-            float edgeFlutter = (0.1 - edgeDistance) / 0.5;
-            pos.y += sin(time * 8.0 + uv.x * 15.0) * 0.02 * edgeFlutter;
-            pos.z += cos(time * 6.0 + uv.y * 12.0) * 0.015 * edgeFlutter;
-          }
-          
-          // Apply instance transformation
-          vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
-          gl_Position = projectionMatrix * mvPosition;
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D frontMap;
-        uniform sampler2D backMap;
-        varying vec2 vUv;
-        
-        void main() {
-          // If the texture contains both sides, we might need to use different UV regions
-          // For now, showing the same texture on both sides
-          vec4 texColor;
-          if (gl_FrontFacing) {
-            // Front face - use normal UVs
-            texColor = texture2D(frontMap, vUv);
-          } else {
-            // Back face - flip horizontally for correct orientation
-            vec2 flippedUv = vec2(1.0 - vUv.x, vUv.y);
-            texColor = texture2D(backMap, flippedUv);
-          }
-          
-          // Discard transparent pixels to ensure clean edges
-          if (texColor.a < 0.1) discard;
-          
-          gl_FragColor = texColor;
-        }
-      `,
+    return new THREE.MeshStandardMaterial({
+      map: frontTexture,
       side: THREE.DoubleSide,
-      transparent: true
+      transparent: true,
+      alphaTest: 0.1
     });
   }, [frontTexture, backTexture]);
   
-  // Store material ref for animation
-  useEffect(() => {
-    shaderMaterialRef.current = shaderMaterial;
-  }, [shaderMaterial]);
-  
-  if (!billGeometry || !shaderMaterial) return null;
+  if (!billGeometry || !billMaterial) return null;
   
   return (
-    <instancedMesh ref={meshRef} args={[billGeometry, shaderMaterial, count]} />
+    <instancedMesh ref={meshRef} args={[billGeometry, billMaterial, count]} />
   );
 };
 

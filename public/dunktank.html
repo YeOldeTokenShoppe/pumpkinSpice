@@ -509,53 +509,75 @@
             );
           }),
           new Promise((resolve) => {
-            // Setup DRACO loader for compressed geometry
-            const dracoLoader = new DRACOLoader();
-            // Use the CDN hosted decoder (Google's CDN)
-            // For production, consider downloading these files and hosting locally:
-            // Download from: https://github.com/google/draco/tree/master/javascript
-            // Then use: dracoLoader.setDecoderPath('/draco/');
-            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-            dracoLoader.setDecoderConfig({ type: 'js' });  // Use JS decoder (alternatively 'wasm' for WebAssembly)
-            
-            // Create GLTF loader with DRACO support
+            // Create GLTF loader WITHOUT DRACO for production stability
             const gltfLoader = new GLTFLoader();
-            gltfLoader.setDRACOLoader(dracoLoader);
             
-            console.log("Loading model with DRACO compression support...");
+            // Model loading with fallback options
+            const models = [
+              "/models/DunkTank4.glb", // Try the re-exported version with WebP first
+   
+            ];
             
-            gltfLoader.load(
-              "/models/DunkTank4.glb", 
-              (gltf) => {
-                console.log("Model loaded successfully");
-                
-                // Store animations from the GLB file globally
-                if (gltf.animations && gltf.animations.length > 0) {
-                  window.characterAnimations = gltf.animations;
-                  console.log("Found GLB animations:", gltf.animations.map(a => a.name));
-                }
-                
-                // Hide the Armature immediately to prevent T-pose
-                gltf.scene.traverse((child) => {
-                  if (child.name === 'Armature001') {
-                    child.visible = false;
-                    console.log("Armature hidden immediately on load");
-                  }
-                });
-                
-                resolve(gltf);
-              },
-              // Progress callback
-              (xhr) => {
-                const percentComplete = (xhr.loaded / xhr.total) * 100;
-                console.log(`Loading model: ${Math.round(percentComplete)}%`);
-              },
-              // Error callback
-              (error) => {
-                console.error("Error loading model:", error);
+            let modelIndex = 0;
+            
+            const loadModel = () => {
+              if (modelIndex >= models.length) {
+                console.error("All model loading attempts failed");
                 resolve(null);
+                return;
               }
-            );
+              
+              const modelPath = models[modelIndex];
+              console.log(`Loading model attempt ${modelIndex + 1}:`, modelPath);
+              
+              gltfLoader.load(
+                modelPath,
+                (gltf) => {
+                  console.log("Model loaded successfully:", modelPath);
+                  
+                  // Store animations from the GLB file globally
+                  if (gltf.animations && gltf.animations.length > 0) {
+                    window.characterAnimations = gltf.animations;
+                    console.log("Found GLB animations:", gltf.animations.map(a => a.name));
+                  }
+                  
+                  // Hide the Armature immediately to prevent T-pose
+                  gltf.scene.traverse((child) => {
+                    if (child.name === 'Armature001') {
+                      child.visible = false;
+                      console.log("Armature hidden immediately on load");
+                    }
+                    
+                    // Ensure textures are properly configured
+                    if (child.isMesh && child.material) {
+                      if (child.material.map) {
+                        child.material.map.encoding = THREE.sRGBEncoding;
+                      }
+                      child.material.needsUpdate = true;
+                    }
+                  });
+                  
+                  resolve(gltf);
+                },
+                // Progress callback
+                (xhr) => {
+                  if (xhr.total && xhr.total > 0) {
+                    const percentComplete = (xhr.loaded / xhr.total) * 100;
+                    console.log(`Loading model: ${Math.round(percentComplete)}%`);
+                  } else {
+                    console.log(`Loading model: ${xhr.loaded} bytes`);
+                  }
+                },
+                // Error callback
+                (error) => {
+                  console.error(`Error loading model ${modelPath}:`, error);
+                  modelIndex++;
+                  loadModel(); // Try next model
+                }
+              );
+            };
+            
+            loadModel();
           }),
         ]).then(([moonTexture, chairModel]) => {
           // Create moon lamps

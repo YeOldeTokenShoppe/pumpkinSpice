@@ -2838,7 +2838,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       
           <div style={{
             position: 'absolute',
-            bottom: isMobile ? '-3rem' : '-5.5rem',
+            bottom: isMobile ? '-4rem' : '-5.5rem',
             left: '50%',
             transform: 'translateX(-50%)',
             opacity: 1,

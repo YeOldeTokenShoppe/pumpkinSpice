@@ -10,6 +10,7 @@ import CyberNav from '@/components/CyberNav';
 import { useUser, UserButton, SignInButton } from '@clerk/nextjs';
 import { useMusic } from '@/components/MusicContext';
 import SimpleLoader from '@/components/SimpleLoader';
+import FearGreedOverlay from '@/components/FearGreedOverlay';
 
 
 
@@ -40,6 +41,83 @@ const EtherealCloudsPage = () => {
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [sceneLoaded, setSceneLoaded] = useState(false);
+  const [fearGreedData, setFearGreedData] = useState(null);
+  const [isManualMode, setIsManualMode] = useState(false);
+  const [manualFearGreedValue, setManualFearGreedValue] = useState(50);
+  const updateTimeoutRef = useRef(null);
+  
+  const handleManualControl = useCallback((value) => {
+    // Clear any pending updates
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    
+    // Throttle updates to prevent infinite loops
+    updateTimeoutRef.current = setTimeout(() => {
+    if (value === null) {
+      // Return to live data
+      setIsManualMode(false);
+      // Will be updated by the next MarketEmojis update
+    } else {
+      setIsManualMode(true);
+      setManualFearGreedValue(value);
+      
+      // Calculate devil, angel, and money counts dynamically
+      let devils = 0;
+      let angels = 0;
+      let money = 0;
+      
+      if (value >= 80) {
+        // Extreme Greed: Money emojis appear!
+        devils = 0;
+        angels = 0;
+        money = Math.floor(4 + (value - 80) / 20 * 3); // 4-7 money emojis
+      } else if (value > 75) {
+        // High Greed: Mix of angels warning
+        devils = 0;
+        angels = Math.floor(5 + (value - 75) / 5 * 2);
+        money = 0;
+      } else if (value > 55) {
+        // Greed: Angels warning
+        devils = 0;
+        angels = Math.floor(3 + (value - 55) / 20 * 2);
+        money = 0;
+      } else if (value > 45) {
+        // Neutral: Balanced
+        devils = Math.floor(1 + (55 - value) / 10);
+        angels = Math.floor(1 + (value - 45) / 10);
+        money = 0;
+      } else if (value > 25) {
+        // Fear: Devils tempting
+        devils = Math.floor(3 + (45 - value) / 20 * 2);
+        angels = 0;
+        money = 0;
+      } else {
+        // Extreme Fear: Maximum devils
+        devils = Math.floor(5 + (25 - value) / 25 * 3);
+        angels = 0;
+        money = 0;
+      }
+      
+      // Create manual fear/greed data
+      const manualData = {
+        value: value,
+        classification: value < 25 ? 'Extreme Fear' : 
+                        value < 45 ? 'Fear' : 
+                        value < 55 ? 'Neutral' : 
+                        value < 75 ? 'Greed' : 'Extreme Greed',
+        devilCount: devils,
+        angelCount: angels,
+        moneyCount: money,
+        simulated: false,
+        manual: true
+      };
+      // console.log('CloudsPage: Setting manual data:', manualData);
+      setFearGreedData(manualData);
+    }
+    }, 50); // 50ms throttle to prevent rapid updates
+  }, []);
+  
   const handleScreenshot = useCallback(() => {
     if (canvasRef.current) {
       const canvas = canvasRef.current;
@@ -74,6 +152,10 @@ const EtherealCloudsPage = () => {
     return () => {
       window.removeEventListener('resize', checkMobile);
       console.error = originalError;
+      // Clean up timeout on unmount
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
     };
   }, []);
   // Sync showMusicControls with playing state
@@ -245,6 +327,7 @@ const EtherealCloudsPage = () => {
       <Canvas
         ref={canvasRef}
         camera={{ position: [4, -5, 60], fov: 60 }}
+
         gl={{ 
           antialias: true, 
           alpha: false,
@@ -254,23 +337,37 @@ const EtherealCloudsPage = () => {
         onCreated={() => setSceneLoaded(true)}
       >
         <Suspense fallback={null}>
-          <EtherealClouds />
+          <EtherealClouds 
+            onDataUpdate={useCallback((data) => {
+              setFearGreedData(data);
+            }, [])}
+            manualFearGreedData={isManualMode ? fearGreedData : null}
+            is80sMode={is80sMode}
+          />
           {/* <BasicScene /> */}
           {/* <MinimalTest /> */}
           
-          {/* Camera controls */}
+          {/* Camera controls - rotate around Madonna */}
           <OrbitControls
-            enablePan={true}
-            enableZoom={true}
+          // lookAt={[1, 15, -9]}
+            // enablePan={false}
+            // enableZoom={true}
             enableRotate={true}
-            minDistance={5}
-            maxDistance={100}
-            maxPolarAngle={Math.PI * 0.85}
-            // autoRotate
-            // autoRotateSpeed={0.5}
-            target={[0, 15, -20]}
-
-            // zoomToCursor
+            minDistance={20}
+            maxDistance={80}
+            // minPolarAngle={0}
+            // maxPolarAngle={Math.PI * 0.85}
+            target={[1, 15, -9]}
+            // screenSpacePanning={false}
+            // mouseButtons={{
+            //   LEFT: THREE.MOUSE.ROTATE,
+            //   MIDDLE: THREE.MOUSE.ZOOM,
+            //   RIGHT: THREE.MOUSE.ROTATE
+            // }}
+            // touches={{
+            //   ONE: THREE.TOUCH.ROTATE,
+            //   TWO: THREE.TOUCH.DOLLY_ROTATE
+            // }}
           />
           
           {/* Post-processing effects */}
@@ -293,6 +390,16 @@ const EtherealCloudsPage = () => {
           </EffectComposer> */}
         </Suspense>
       </Canvas>
+
+      {/* Fear & Greed Overlay */}
+      <FearGreedOverlay 
+        fearGreedData={fearGreedData}
+        showDevils={fearGreedData?.devilCount}
+        showAngels={fearGreedData?.angelCount}
+        showMoney={fearGreedData?.moneyCount}
+        onManualControl={handleManualControl}
+        isManualMode={isManualMode}
+      />
 
       {/* Icon Bar - CyberNav Menu, User, Music, and 80s Mode */}
       <CyberNav is80sMode={is80sMode} />
