@@ -1,0 +1,41 @@
+{
+  "rules": {
+    "moonRoom": {
+      "chat": {
+        ".read": true,
+        ".write": true,
+        "$messageId": {
+          ".validate": "newData.hasChildren(['from', 'message', 'timestamp', 'address'])",
+          "from": {
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "message": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+          },
+          "timestamp": {
+            ".validate": "newData.isNumber()"
+          },
+          "address": {
+            ".validate": "newData.isString()"
+          }
+        }
+      },
+      "members": {
+        ".read": true,
+        "$userId": {
+          ".write": "$userId === auth.uid || auth == null",
+          ".validate": "newData.hasChildren(['address', 'nickname', 'joinedAt'])",
+          "address": {
+            ".validate": "newData.isString()"
+          },
+          "nickname": {
+            ".validate": "newData.isString()"
+          },
+          "joinedAt": {
+            ".validate": "newData.isNumber()"
+          }
+        }
+      }
+    }
+  }
+}

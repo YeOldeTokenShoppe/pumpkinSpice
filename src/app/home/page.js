@@ -21,8 +21,10 @@ import { collection, query, getDocs, limit, orderBy } from 'firebase/firestore';
 import '@/components/ArrowButton.css';
 import Numerology from '@/components/Numerology';
 import SimpleLoader from '@/components/SimpleLoader';
-import MoonRoomModal from '@/components/MoonRoomModal';
 import Bouncer from '@/components/Bouncer';
+import Manuscript from '@/components/Manuscript';
+
+
 
 // Register GSAP TextPlugin
 if (typeof window !== 'undefined') {
@@ -55,6 +57,220 @@ function SingleCandleModel({ candleData = null }) {
   const currentRotationRef = useRef(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
   
+
+  // Add this component for magical floating particles
+const FloatingParticles = () => {
+  return (
+    <div style={{
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      overflow: 'hidden',
+      pointerEvents: 'none',
+      top: 0,
+      left: 0
+    }}>
+      {[...Array(20)].map((_, i) => (
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            width: '4px',
+            height: '4px',
+            background: '#d4af37',
+            borderRadius: '50%',
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animation: `float ${10 + Math.random() * 20}s infinite ease-in-out`,
+            animationDelay: `${Math.random() * 5}s`,
+            opacity: Math.random() * 0.5 + 0.3,
+            boxShadow: '0 0 10px #d4af37'
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0) translateX(0); }
+          25% { transform: translateY(-30px) translateX(10px); }
+          50% { transform: translateY(15px) translateX(-10px); }
+          75% { transform: translateY(-15px) translateX(15px); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// Replace your bullet points with this component
+const CandleBullet = ({ children }) => {
+  return (
+    <li style={{ 
+      marginBottom: '0.5rem',
+      display: 'flex',
+      alignItems: 'flex-start',
+      listStyle: 'none'
+    }}>
+      <span style={{
+        marginRight: '0.5rem',
+        fontSize: '1.2rem',
+        animation: 'flicker 2s infinite',
+        display: 'inline-block'
+      }}>
+        🕯️
+      </span>
+      <span>{children}</span>
+      <style>{`
+        @keyframes flicker {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(0.95); }
+        }
+      `}</style>
+    </li>
+  );
+};
+
+const GlowingHeader = ({ children, size = '1.5rem' }) => {
+  return (
+    <h3 style={{
+      fontSize: size,
+      marginBottom: '0.4rem',
+      color: '#d4af37',
+      fontFamily: 'UnifrakturCook, serif',
+      textShadow: '0 0 20px rgba(212, 175, 55, 0.8)',
+      animation: 'pulse 3s infinite ease-in-out'
+    }}>
+      {children}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { textShadow: 0 0 20px rgba(212, 175, 55, 0.8); }
+          50% { textShadow: 0 0 30px rgba(212, 175, 55, 1), 0 0 40px rgba(212, 175, 55, 0.6); }
+        }
+      `}</style>
+    </h3>
+  );
+};
+const CollapsibleSection = ({ title, children, icon = "📜" }) => {
+  const [isOpen, setIsOpen] = useState(true);
+  
+  return (
+    <div style={{
+      marginBottom: '1.5rem',
+      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(212, 175, 55, 0.02) 100%)',
+      border: '1px solid rgba(212, 175, 55, 0.3)',
+      borderRadius: '8px',
+      padding: '1rem',
+      transition: 'all 0.3s ease',
+      boxShadow: isOpen ? '0 4px 20px rgba(212, 175, 55, 0.2)' : 'none'
+    }}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: isOpen ? '1rem' : '0'
+        }}
+      >
+        <h3 style={{
+          fontSize: '1.5rem',
+          color: '#d4af37',
+          fontFamily: 'UnifrakturCook, serif',
+          margin: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <span>{icon}</span>
+          {title}
+        </h3>
+        <span style={{
+          transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
+          transition: 'transform 0.3s ease',
+          fontSize: '1.5rem'
+        }}>⌄</span>
+      </div>
+      <div style={{
+        maxHeight: isOpen ? '500px' : '0',
+        overflow: 'hidden',
+        transition: 'max-height 0.3s ease',
+        opacity: isOpen ? 1 : 0
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+};
+const TaxProgressBar = ({ currentBuys = 150 }) => {
+  const stages = [
+    { buys: 0, tax: 5, label: "Start" },
+    { buys: 250, tax: 3, label: "250 buys" },
+    { buys: 500, tax: 1, label: "500 buys" },
+    { buys: 1000, tax: 0, label: "CEX" }
+  ];
+  
+  const progress = Math.min((currentBuys / 1000) * 100, 100);
+  
+  return (
+    <div style={{ marginBottom: '2rem' }}>
+      <div style={{
+        background: 'rgba(0, 0, 0, 0.5)',
+        borderRadius: '10px',
+        height: '40px',
+        position: 'relative',
+        border: '1px solid rgba(212, 175, 55, 0.3)',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          background: 'linear-gradient(90deg, #d4af37 0%, #f4e4bc 100%)',
+          height: '100%',
+          width: `${progress}%`,
+          transition: 'width 1s ease',
+          boxShadow: '0 0 20px rgba(212, 175, 55, 0.6)',
+          position: 'relative'
+        }}>
+          <div style={{
+            position: 'absolute',
+            right: '0',
+            top: '0',
+            height: '100%',
+            width: '10px',
+            background: 'white',
+            opacity: '0.8',
+            animation: 'shimmer 2s infinite'
+          }}/>
+        </div>
+        
+        {stages.map((stage, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            left: `${(stage.buys / 1000) * 100}%`,
+            top: '-25px',
+            transform: 'translateX(-50%)',
+            textAlign: 'center',
+            fontSize: '0.8rem',
+            color: currentBuys >= stage.buys ? '#d4af37' : '#666'
+          }}>
+            <div>{stage.label}</div>
+            <div style={{ fontWeight: 'bold' }}>{stage.tax}%</div>
+            <div style={{
+              width: '2px',
+              height: '65px',
+              background: currentBuys >= stage.buys ? '#d4af37' : '#444',
+              margin: '0 auto'
+            }}/>
+          </div>
+        ))}
+      </div>
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100px); }
+          100% { transform: translateX(100px); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
   // Clone the scene to avoid conflicts with other instances
   const clonedScene = React.useMemo(() => {
     const cloned = scene.clone();
@@ -412,6 +628,7 @@ export default function HomePage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const coinRef = useRef(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   
   // State for featured candle
   const [featuredCandle, setFeaturedCandle] = useState(null);
@@ -1072,13 +1289,13 @@ export default function HomePage() {
                 fontSize: '1.1em',
                 color: '#d4af37',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-              }}> Our Lady of Perpetual Profit</span>. Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers. 
+              }}> Our Lady of Perpetual Profit</span>. Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers, or pay homage to the Patron Saint of Day Traders with a green candle. 
 
 
           </p>
 
           {/* RL80 Token Information */}
-          <div style={{
+          {/* <div style={{
             marginTop: '1.5rem',
             padding: '1rem',
             background: 'rgba(212, 175, 55, 0.1)',
@@ -1167,7 +1384,7 @@ export default function HomePage() {
             }}>
               <strong style={{ color: '#ff6b6b' }}>Cannot:</strong> mint tokens, increase tax above 5%, or access liquidity.
             </p>
-          </div>
+          </div> */}
 
         </div>
       )}
@@ -1709,40 +1926,49 @@ export default function HomePage() {
           {/* Text Box */}
           <div style={{
             position: "relative",
-            margin: "0 auto",
+            margin: "0 auto 4rem auto",
             width: "80%",
-            maxWidth: "80vw",
-            padding: '1.8rem',
-            background: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            border: '1px solid rgba(212, 175, 55, 0.3)',
+            maxWidth: "1400px",
+            padding: '3rem 2rem',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '20px',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
             color: '#ffffff',
             fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem',
             lineHeight: 1.2,
-            textAlign: 'center',
-            marginBottom: "3rem"
+            textAlign: 'center'
           }}>
      <p style={{ 
-            marginBottom: '1rem',  
+            marginBottom: '2rem',  
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
             fontWeight: 400,
             letterSpacing: '0.02em'
           }}>
     Experience the convergence of ancient wisdom and cyberpunk sensibility into the maternal market-oriented icon, 
-  <span style={{
+    <span style={{
                 fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
                 fontWeight: 'bold',
                 fontSize: '1.1em',
                 color: '#d4af37',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-              }}> Our Lady of Perpetual Profit.</span> Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers. 
+              }}> Our Lady of Perpetual Profit</span>. Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers, or pay homage to the Patron Saint of Day Traders with a green candle. 
 
 
           </p>
-
+          {/* <Manuscript 
+    title="RL80 Token Summary"
+    content={{
+      firstParagraph: "Your text...",
+      blockquote: "Quote text...",
+      secondParagraph: "More text..."
+    }}
+  /> */}
+  
+{/* <FlipBook /> */}
           {/* RL80 Token Information */}
-          <div style={{
+          {/* <div style={{
             marginTop: '1.5rem',
             padding: '1.5rem',
             background: 'rgba(212, 175, 55, 0.1)',
@@ -1841,25 +2067,370 @@ export default function HomePage() {
             }}>
               <strong style={{ color: '#ff6b6b' }}>Cannot:</strong> mint tokens, increase tax above 5%, or access liquidity.
             </p>
-          </div>
-          </div>
+          </div> */}
           
-          {/* Two Column Section with Candle and Text */}
+          </div>
+          {/* Two Column Section with Scroll */}
+          <div style={{
+            padding: '3rem 2rem',
+            maxWidth: '1400px',
+            margin: '0 auto 4rem auto',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '20px',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Decorative corner elements */}
+            <div style={{
+              position: 'absolute',
+              top: '-2px',
+              left: '-2px',
+              width: '60px',
+              height: '60px',
+              borderTop: '3px solid #d4af37',
+              borderLeft: '3px solid #d4af37',
+              borderRadius: '20px 0 0 0',
+              opacity: 0.6
+            }} />
+            <div style={{
+              position: 'absolute',
+              top: '-2px',
+              right: '-2px',
+              width: '60px',
+              height: '60px',
+              borderTop: '3px solid #d4af37',
+              borderRight: '3px solid #d4af37',
+              borderRadius: '0 20px 0 0',
+              opacity: 0.6
+            }} />
+            <div style={{
+              position: 'absolute',
+              bottom: '-2px',
+              left: '-2px',
+              width: '60px',
+              height: '60px',
+              borderBottom: '3px solid #d4af37',
+              borderLeft: '3px solid #d4af37',
+              borderRadius: '0 0 0 20px',
+              opacity: 0.6
+            }} />
+            <div style={{
+              position: 'absolute',
+              bottom: '-2px',
+              right: '-2px',
+              width: '60px',
+              height: '60px',
+              borderBottom: '3px solid #d4af37',
+              borderRight: '3px solid #d4af37',
+              borderRadius: '0 0 20px 0',
+              opacity: 0.6
+            }} />
+            
+            {/* Full-width heading */}
+            <h2 style={{
+              fontSize: '3rem',
+              marginBottom: '2.5rem',
+              color: '#d4af37',
+              fontFamily: 'UnifrakturMaguntia, serif',
+              textAlign: 'center',
+              textShadow: '0 0 20px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.3)',
+              letterSpacing: '2px',
+              position: 'relative'
+            }}>
+              <span style={{ 
+                display: 'inline-block',
+                // animation: 'glow 3s ease-in-out infinite'
+              }}>RL80 Token Summary</span>
+            </h2>
+            
+            {/* Two column grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: window.innerWidth > 768 ? '1fr 1fr' : '1fr',
+              gap: '2rem'
+            }}>
+              {/* Left Column - Content */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                padding: '1.5rem',
+                overflowY: 'auto',
+                maxHeight: '45rem',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '15px',
+                border: '1px solid rgba(212, 175, 55, 0.2)'
+              }}>
+              
+              <div style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, transparent 100%)',
+                borderRadius: '10px',
+                border: '1px solid rgba(212, 175, 55, 0.2)',
+                transition: 'all 0.3s ease',
+                cursor: 'default'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 5px 20px rgba(212, 175, 55, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}>
+                <h3 style={{
+                  fontSize: '1.4rem',
+                  marginBottom: '0.6rem',
+                  color: '#d4af37',
+                  fontFamily: 'UnifrakturCook, serif',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '1.2rem' }}>💰</span> Core Tokenomics
+                </h3>
+                <ul style={{
+                  fontSize: '1rem',
+                  lineHeight: 1.7,
+                  color: '#ffffff',
+                  listStyle: 'none',
+                  paddingLeft: '0',
+                  margin: '0'
+                }}>
+                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#00ff00', marginRight: '0.5rem', fontSize: '1.2rem' }}>◈</span>
+                    <strong style={{ color: '#d4af37', marginRight: '0.5rem' }}>Total Supply:</strong> 80 billion RL80 tokens, capped
+                  </li>
+                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#00ff00', marginRight: '0.5rem', fontSize: '1.2rem' }}>◈</span>
+                    <strong style={{ color: '#d4af37', marginRight: '0.5rem' }}>Distribution:</strong> 80% liquidity, 10% treasury, 10% marketing
+                  </li>
+                  <li style={{ marginBottom: '0', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#00ff00', marginRight: '0.5rem', fontSize: '1.2rem' }}>◈</span>
+                    <strong style={{ color: '#d4af37', marginRight: '0.5rem' }}>Network:</strong> Base (Ethereum L2)
+                  </li>
+              
+                </ul>
+              </div>
+
+              <div style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.05) 0%, transparent 100%)',
+                borderRadius: '10px',
+                border: '1px solid rgba(0, 255, 0, 0.2)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 5px 20px rgba(0, 255, 0, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}>
+                <h3 style={{
+                  fontSize: '1.4rem',
+                  marginBottom: '0.6rem',
+                  color: '#d4af37',
+                  fontFamily: 'UnifrakturCook, serif',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '1.2rem' }}>📊</span> Tax Structure
+                </h3>
+                
+                <ul style={{
+                  fontSize: '1rem',
+                  lineHeight: 1.7,
+                  color: '#ffffff',
+                  listStyle: 'none',
+                  paddingLeft: '0',
+                  margin: '0'
+                }}>
+                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#ff6b6b', marginRight: '0.5rem' }}>▸</span>
+                    <strong style={{ color: '#00ff00' }}>Start:</strong> <span style={{ marginLeft: '0.5rem' }}>5% buy/sell tax</span>
+                  </li>
+                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#ffff00', marginRight: '0.5rem' }}>▸</span>
+                    <strong style={{ color: '#00ff00' }}>After 250 buys:</strong> <span style={{ marginLeft: '0.5rem' }}>3% tax</span>
+                  </li>
+                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#00ffff', marginRight: '0.5rem' }}>▸</span>
+                    <strong style={{ color: '#00ff00' }}>After 500 buys:</strong> <span style={{ marginLeft: '0.5rem' }}>1% tax</span>
+                  </li>
+                  <li style={{ marginBottom: '0', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#00ff00', marginRight: '0.5rem' }}>▸</span>
+                    <strong style={{ color: '#00ff00' }}>CEX listing:</strong> <span style={{ marginLeft: '0.5rem', color: '#00ff00', fontWeight: 'bold' }}>0% tax</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div style={{
+                padding: '1rem',
+                background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, transparent 100%)',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 107, 107, 0.2)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 5px 20px rgba(255, 107, 107, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}>
+                <h3 style={{
+                  fontSize: '1.4rem',
+                  marginBottom: '0.6rem',
+                  color: '#d4af37',
+                  fontFamily: 'UnifrakturCook, serif',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '1.2rem' }}>🕯️</span> Unique Utility
+                </h3>
+                <ul style={{
+                  fontSize: '1rem',
+                  lineHeight: 1.7,
+                  color: '#ffffff',
+                  listStyle: 'none',
+                  paddingLeft: '0',
+                  margin: '0'
+                }}>
+                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem', marginTop: '2px' }}>✦</span>
+                    <span>Burn RL80 tokens to devote candles to the patron saint of day traders</span>
+                  </li>
+                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✦</span>
+                    Prayers stored permanently on blockchain
+                  </li>
+                  <li style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✦</span>
+                    Creates deflationary pressure
+                  </li>
+                  <li style={{ marginBottom: '0', display: 'flex', alignItems: 'flex-start' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem', marginTop: '2px' }}>✦</span>
+                    <span><strong style={{ color: '#d4af37' }}>ILLUMIN80</strong> elite ranking for top 80 burners with special perks</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            
+            {/* Right Column - Scroll */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              marginTop: '-5rem'
+            }}>
+              <div style={{
+                height: '45rem',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                background: 'radial-gradient(ellipse at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%)',
+                borderRadius: '15px',
+                padding: '1rem',
+                transition: 'all 0.5s ease',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.02)';
+                e.currentTarget.style.boxShadow = '0 10px 40px rgba(212, 175, 55, 0.2)';
+                e.currentTarget.querySelector('iframe').style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.querySelector('iframe').style.opacity = '0.9';
+              }}>
+                <iframe
+                  src="/scroll2.html"
+                  onLoad={() => setIframeLoaded(true)}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    pointerEvents: 'auto',
+                    background: 'transparent',
+                    opacity: 0.9,
+                    mixBlendMode: 'screen',
+                    transition: 'opacity 0.3s ease'
+                  }}
+                  title="Scroll Overlay"
+                />
+                {/* Decorative glow effect */}
+                <div style={{
+                  position: 'absolute',
+                  top: '10%',
+                  left: '50%',
+                  borderRadius: '10%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '80%',
+                  height: '80%',
+                  background: 'radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 50%)',
+                  pointerEvents: 'none',
+                  animation: 'pulse 4s ease-in-out infinite',
+                  zIndex: -1
+                }} />
+              </div>
+              <p style={{
+                marginTop: '1.5rem',
+                fontSize: '1.2rem',
+                color: '#d4af37',
+                fontStyle: 'italic',
+                textAlign: 'center',
+                fontFamily: 'Cyber, monospace',
+                textShadow: '0 0 10px rgba(212, 175, 55, 0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.textShadow = '0 0 20px rgba(212, 175, 55, 0.6)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.textShadow = '0 0 10px rgba(212, 175, 55, 0.4)';
+              }}>
+                <span style={{ fontSize: '1rem' }}>📜</span>
+                Read the fine print
+                <span style={{ fontSize: '1rem' }}>📜</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* Two Column Section with Candle and Text */}
           <div style={{
             position: "relative",
-            margin: "0 auto",
-            width: "80%",
-            maxWidth: "80vw",
+            margin: "0 auto 4rem auto",
+            maxWidth: "1400px",
             display: "grid",
             gridTemplateColumns: "minmax(0, 0.4fr) minmax(0, 0.6fr)", // 40% candle, 60% text
-            gap: "0rem",
+            gap: "3rem",
             alignItems: "center",
-            marginBottom: "3rem",
-            padding: '2rem',
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            border: '1px solid rgba(212, 175, 55, 0.3)',
+            padding: '3rem 2rem',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '20px',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
             color: '#ffffff',
           }}>
             {/* Left Column - Candle Model */}
@@ -2145,21 +2716,31 @@ export default function HomePage() {
           </div>
           
           {/* Text Marquee Component */}
-          <TextMarquee />
+          <div style={{
+            margin: '0 auto 4rem auto',
+            maxWidth: '1400px',
+            overflow: 'hidden'
+          }}>
+            <TextMarquee />
+          </div>
+          
+          {/* Flipbook Section - CSS-only interactive book */}
+ 
           
           {/* Desktop Numerology Section - 2 Column Layout */}
           <div style={{
-            marginTop: '4rem',
-            marginBottom: '4rem',
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: '3rem',
             alignItems: 'center',
-            padding: '2rem',
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            border: '1px solid rgba(212, 175, 55, 0.3)',
+            padding: '3rem 2rem',
+            margin: '0 auto 4rem auto',
+            maxWidth: '1400px',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '20px',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
             color: '#ffffff',
           }}>
             {/* Left Column - Text Content */}
@@ -2247,39 +2828,106 @@ export default function HomePage() {
           {/* MoonRoom Section */}
           <div
             style={{
-              display: "flex",
-              flexDirection: "row",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
               alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "2rem",
-              position: "relative",
-              marginTop: "1rem",
-              gap: "1rem",
-              zIndex: 1
+              gap: "3rem",
+              padding: '3rem 2rem',
+              maxWidth: '1400px',
+              margin: '0 auto 4rem auto',
+              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '20px',
+              border: '2px solid rgba(212, 175, 55, 0.4)',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
             }}
           >
+            {/* Left Column - Bouncer */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                width: "30rem",
-                borderRadius: "10px",
                 justifyContent: "center",
-                position: "relative",
-                marginTop: "1rem",
-                zIndex: -1
+                position: "relative"
               }}
             >
-              <Bouncer onDoorClick={onOpen} disableBlockingBehavior={false} />
-              <MoonRoomModal isOpen={isOpen} onClose={onClose} />
+              <Bouncer />
+            </div>
+            
+            {/* Right Column - Illumin80 Perks */}
+            <div style={{
+              padding: '0 1rem',
+              color: '#ffffff'
+            }}>
+              <h2 style={{
+                fontSize: '2.5rem',
+                marginBottom: '1.5rem',
+                color: '#d4af37',
+                fontFamily: 'UnifrakturMaguntia, serif',
+                textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
+                alignContent: 'center',
+              }}>Join the Illumin80 Soci80</h2>
+              
+              <p style={{
+                fontSize: '1.2rem',
+                marginBottom: '1.5rem',
+                lineHeight: 1.6,
+                color: '#ffffff',
+                opacity: 0.9
+              }}>
+                Ascend to the inner circle of enlightened traders and unlock exclusive benefits:
+              </p>
+              
+              <ul style={{
+                fontSize: '1.1rem',
+                lineHeight: 1.8,
+                color: '#ffffff',
+                listStyle: 'none',
+                paddingLeft: '0'
+              }}>
+                <li style={{ marginBottom: '0.75rem' }}>
+                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
+                  Access to the sacred Moon Room sanctuary
+                </li>
+                <li style={{ marginBottom: '0.75rem' }}>
+                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🕯️</span>
+                  Priority candle devotions reach Our Lady first
+                </li>
+                <li style={{ marginBottom: '0.75rem' }}>
+                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>📊</span>
+                  Exclusive alpha from the most devoted traders
+                </li>
+                <li style={{ marginBottom: '0.75rem' }}>
+                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🎯</span>
+                  Early access to new ritual features
+                </li>
+                <li style={{ marginBottom: '0.75rem' }}>
+                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>💎</span>
+                  Special airdrop multipliers for the faithful
+                </li>
+                <li style={{ marginBottom: '0.75rem' }}>
+                  <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🏆</span>
+                  Permanent ranking on the leaderboard of enlightenment
+                </li>
+              </ul>
+              
+              <p style={{
+                marginTop: '1.5rem',
+                fontSize: '1rem',
+                fontStyle: 'italic',
+                color: '#d4af37',
+                opacity: 0.9
+              }}>
+                Burn RL80 tokens to ascend the ranks of spiritual prosperity
+              </p>
             </div>
           </div>
           {/* Rotating Text Component */}
           <div style={{
             position: "relative",
-            width: "90%",
-            maxWidth: "1200px",
-            margin: "0 auto"
+            maxWidth: "1400px",
+            margin: "0 auto 4rem auto",
+            padding: '3rem 2rem'
           }}
           className="desktop-rotating-text">
             <div

@@ -1,6 +1,16 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-export default clerkMiddleware()
+// Define which routes are protected
+const isProtectedRoute = createRouteMatcher([
+  '/moonroom(.*)',
+])
+
+export default clerkMiddleware(async (auth, req) => {
+  // Protect the moonroom route
+  if (isProtectedRoute(req)) {
+    await auth.protect()
+  }
+})
 
 export const config = {
   matcher: [

@@ -1,13 +1,34 @@
 import React, { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 const Bouncer = ({
   onDoorClick,
-  doorLink = "http://127.0.0.1:5500/public/MoonRoom.html",
-  disableBlockingBehavior = true,
+  doorLink = "/moonroom",
+  disableBlockingBehavior = false,
+  hasToken = false, // Manual override - set to true to simulate having token
 }) => {
+  const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
-  const isBlocked = !disableBlockingBehavior && isHovered;
+  const isBlocked = !disableBlockingBehavior && !hasToken && isHovered;
   const [currentMessage, setCurrentMessage] = useState(0);
+
+  const welcomeMessages = [
+    "Welcome to the Moon Room! Right this way, token holder! 🌙",
+    "Ah, a LUNAR holder! The party's inside, friend! 🎉",
+    "Token verified! Enjoy your time on the moon! 🚀",
+    "VIP access granted! The Illumin80 awaits you! ✨",
+    "Looking good, token holder! Head on in! 🎪",
+    "Your LUNAR shines bright! Welcome aboard! 🌟",
+    "Token holder in the house! Make yourself at home! 🏠",
+    "Access approved! To the moon we go! 🚀",
+    "Diamond hands detected! You've earned this! 💎",
+    "Welcome to the exclusive side of the moon! 🌒",
+    "Token authenticated! The moon is yours tonight! 🌕",
+    "Step right in, lunar legend! 🌙",
+    "Your ticket to the stars is valid! Enter freely! ⭐",
+    "HODL gang recognized! Welcome to the club! 🎊",
+    "Moonwalker status: CONFIRMED! 👨‍🚀",
+  ];
 
   const bouncerMessages = [
     // Original messages
@@ -50,14 +71,24 @@ const Bouncer = ({
 
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
-    setCurrentMessage(Math.floor(Math.random() * bouncerMessages.length));
-  }, [bouncerMessages.length]);
+    if (!disableBlockingBehavior) {
+      if (hasToken) {
+        setCurrentMessage(Math.floor(Math.random() * welcomeMessages.length));
+      } else {
+        setCurrentMessage(Math.floor(Math.random() * bouncerMessages.length));
+      }
+    }
+  }, [bouncerMessages.length, welcomeMessages.length, hasToken, disableBlockingBehavior]);
 
   const handleDoorClick = (e) => {
     e.preventDefault();
-    if (!isBlocked) {
-      onDoorClick();
+    if (isBlocked) {
+      // User is blocked - do nothing
+      return;
     }
+    
+    // Navigate to the moon room page
+    router.push(doorLink);
   };
   return (
     <div className="bouncer-container">
@@ -76,7 +107,7 @@ const Bouncer = ({
           height: 100%;
           position: relative;
           margin-top: 28rem;
-          z-index: -1;
+          z-index: 1;
    
         }
         
@@ -131,8 +162,8 @@ const Bouncer = ({
           background: #F3F2EE;
           border: 10px solid #DAD2C9;
           border-radius: 3px;
-          font-size: 50px;
-          line-height: 3;
+          font-size: 20px;
+          line-height: 1;
           text-align: center;
           text-shadow: 0 2px #F5AE4E;
           cursor: pointer;
@@ -145,7 +176,7 @@ const Bouncer = ({
           display: block;
           content: '';
           position: absolute;
-          top: 140px;
+          top: 160px;
           right: 10px;
           width: 25px;
           height: 25px;
@@ -157,7 +188,7 @@ const Bouncer = ({
           display: block;
           content: '';
           position: absolute;
-          top: 148px;
+          top: 168px;
           right: 18px;
           width: 35px;
           height: 10px;
@@ -177,9 +208,10 @@ const Bouncer = ({
           color: inherit;
           display: block;
           width: 100%;
+      marginTop: 80px;
           height: 100%;
-                   font-family: 'Limelight', cursive;
-                   line-height: 3;
+                   font-family: 'UnifrakturCook', cursive;
+                   line-height: 1;
         }
 
         .door-link.blocked {
@@ -518,8 +550,13 @@ const Bouncer = ({
           line-height: 1.4;
         }
 
-        /* Show speech bubble when bouncer is blocking */
+        /* Show speech bubble when bouncer is blocking or welcoming */
         .hover:hover .bouncer .speech-bubble {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        
+        .hover.has-token:hover .bouncer .speech-bubble {
           opacity: 1;
           transform: translateY(0);
         }
@@ -537,20 +574,38 @@ const Bouncer = ({
           animation: bubbleBounce 1s ease-in-out;
         }
         
-        .hover:hover .bouncer {
+        /* Only block when NOT has-token */
+        .hover:not(.has-token):hover .bouncer {
           left: 130px;
         }
         
-        .hover:hover .arm {
+        .hover:not(.has-token):hover .arm {
           transform: rotate(-42deg);
         }
         
-        .hover:hover .rope {
+        .hover:not(.has-token):hover .rope {
           width: 435px;
         }
         
-        .hover:hover .eye::before {
+        .hover:not(.has-token):hover .eye::before {
           bottom: 4px;
+        }
+        
+        /* When user has token - bouncer welcomes them */
+        .hover.has-token:hover .bouncer {
+          left: -150px; /* Step back instead of blocking */
+        }
+        
+        .hover.has-token:hover .arm {
+          transform: rotate(10deg); /* Welcoming gesture */
+        }
+        
+        .hover.has-token:hover .rope {
+          width: 50px; /* Pull rope back */
+        }
+        
+        .hover.has-token:hover .eye::before {
+          bottom: 8px; /* Friendly eyes */
         }
         {/* hover:not(.test-mode):hover .bouncer {
           left: 130px;
@@ -572,7 +627,7 @@ const Bouncer = ({
         <div className="test-mode-banner">Test Mode - Blocking Disabled</div>
       )}
       <div
-        className={`hover ${disableBlockingBehavior ? "test-mode" : ""}`}
+        className={`hover ${disableBlockingBehavior ? "test-mode" : ""} ${hasToken && !disableBlockingBehavior ? "has-token" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -580,24 +635,29 @@ const Bouncer = ({
           <div
             className={`door ${isBlocked ? "blocked" : ""}`}
             onClick={handleDoorClick}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={() => setIsHovered(false)}
+            style={{ cursor: isBlocked ? "not-allowed" : "pointer" }}
           >
-            <a
-              href={doorLink}
+            <div
               className={`door-link ${isBlocked ? "blocked" : ""}`}
               aria-disabled={isBlocked}
+              style={{
+                paddingTop: "40px",
+              }}
             >
-              RL80
+              The Illumin80
               <br />
               <span
                 style={{
-                  fontSize: "20px",
+                  fontSize: "30px",
                   position: "relative",
-                  top: "-120px",
+                  top: "10px",
                 }}
               >
                 Moon Room
               </span>
-            </a>
+            </div>
           </div>
           <div className="rug"></div>
         </div>
@@ -605,7 +665,7 @@ const Bouncer = ({
           <div className="bouncer">
             <div className="speech-bubble">
               <p className="speech-bubble-text">
-                {bouncerMessages[currentMessage]}
+                {hasToken && !disableBlockingBehavior ? welcomeMessages[currentMessage] : bouncerMessages[currentMessage]}
               </p>
             </div>
             <div className="head">

@@ -32,6 +32,296 @@
         background: #1b1724;
         color: #1b1724;
       }
+
+      /* Chat Interface Styles */
+      .chat-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 400px;
+        height: 500px;
+        background: rgba(26, 26, 58, 0.95);
+        border: 2px solid rgba(250, 240, 230, 0.2);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        transition: all 0.3s ease;
+      }
+
+      .chat-container.minimized {
+        height: 50px;
+      }
+
+      .chat-header {
+        padding: 12px 16px;
+        background: rgba(26, 26, 58, 0.8);
+        border-bottom: 1px solid rgba(250, 240, 230, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 12px 12px 0 0;
+      }
+
+      .chat-title {
+        color: #faf0e6;
+        font-weight: bold;
+        font-size: 16px;
+      }
+
+      .toggle-btn {
+        background: none;
+        border: none;
+        color: #faf0e6;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0 8px;
+        transition: transform 0.3s;
+      }
+
+      .toggle-btn:hover {
+        transform: scale(1.1);
+      }
+
+      .chat-content {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+
+      .chat-container.minimized .chat-content {
+        display: none;
+      }
+
+      .online-members {
+        width: 120px;
+        background: rgba(26, 26, 58, 0.5);
+        border-right: 1px solid rgba(250, 240, 230, 0.1);
+        padding: 10px;
+      }
+
+      .members-header {
+        color: #faf0e6;
+        font-size: 12px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: left;
+      }
+
+      .members-list {
+        color: #faf0e6;
+        font-size: 11px;
+      }
+
+      .member-item {
+        padding: 4px 0;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .member-item.online {
+        color: #4ade80;
+      }
+
+      .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .message {
+        background: rgba(250, 240, 230, 0.05);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: #faf0e6;
+        text-align: left;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .message-author {
+        font-size: 11px;
+        color: #a0a0ff;
+        margin-bottom: 4px;
+        font-weight: bold;
+      }
+
+      .message-text {
+        font-size: 13px;
+        word-wrap: break-word;
+      }
+
+      .message-time {
+        font-size: 10px;
+        color: rgba(250, 240, 230, 0.4);
+        margin-top: 4px;
+      }
+
+      .chat-input-container {
+        padding: 10px;
+        border-top: 1px solid rgba(250, 240, 230, 0.1);
+        display: flex;
+        gap: 8px;
+      }
+
+      .message-input {
+        flex: 1;
+        background: rgba(250, 240, 230, 0.05);
+        border: 1px solid rgba(250, 240, 230, 0.2);
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: #faf0e6;
+        font-size: 13px;
+        outline: none;
+      }
+
+      .message-input:focus {
+        border-color: rgba(250, 240, 230, 0.4);
+        background: rgba(250, 240, 230, 0.08);
+      }
+
+      .message-input::placeholder {
+        color: rgba(250, 240, 230, 0.3);
+      }
+
+      .send-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        color: #faf0e6;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .send-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .send-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Emoji Picker Styles */
+      .emoji-button {
+        background: rgba(250, 240, 230, 0.1);
+        border: 1px solid rgba(250, 240, 230, 0.2);
+        border-radius: 6px;
+        padding: 8px;
+        color: #faf0e6;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-right: 8px;
+      }
+
+      .emoji-button:hover {
+        background: rgba(250, 240, 230, 0.2);
+        transform: scale(1.1);
+      }
+
+      .emoji-picker {
+        position: absolute;
+        bottom: 60px;
+        left: 10px;
+        right: 10px;
+        background: rgba(26, 26, 58, 0.98);
+        border: 1px solid rgba(250, 240, 230, 0.2);
+        border-radius: 8px;
+        padding: 10px;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 5px;
+        max-height: 200px;
+        overflow-y: auto;
+        backdrop-filter: blur(10px);
+        z-index: 10;
+      }
+
+      .emoji-item {
+        background: rgba(250, 240, 230, 0.05);
+        border: 1px solid transparent;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 20px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+      }
+
+      .emoji-item:hover {
+        background: rgba(250, 240, 230, 0.2);
+        border-color: rgba(250, 240, 230, 0.3);
+        transform: scale(1.2);
+      }
+
+      .emoji-category {
+        grid-column: span 8;
+        color: #a0a0ff;
+        font-size: 11px;
+        font-weight: bold;
+        margin: 5px 0;
+        padding: 5px;
+        border-bottom: 1px solid rgba(250, 240, 230, 0.1);
+      }
+
+      /* Scrollbar Styles */
+      .messages-container::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .messages-container::-webkit-scrollbar-track {
+        background: rgba(250, 240, 230, 0.05);
+      }
+
+      .messages-container::-webkit-scrollbar-thumb {
+        background: rgba(250, 240, 230, 0.2);
+        border-radius: 3px;
+      }
+
+      .messages-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(250, 240, 230, 0.3);
+      }
+
+      /* Mobile Responsive */
+      @media (max-width: 480px) {
+        .chat-container {
+          width: calc(100vw - 20px);
+          height: calc(100vh - 100px);
+          right: 10px;
+          bottom: 10px;
+        }
+        
+        .online-members {
+          display: none;
+        }
+      }
       canvas {
         -moz-user-select: none;
         -webkit-user-select: none;
@@ -64,6 +354,38 @@
       <section></section>
     </main>
 
+    <!-- Chat Interface -->
+    <div id="chatContainer" class="chat-container">
+      <div class="chat-header">
+        <span class="chat-title">🌙 Moon Room Chat</span>
+        <span id="userInfo" style="font-size: 11px; color: #a0a0ff;"></span>
+        <button id="toggleChat" class="toggle-btn">−</button>
+      </div>
+      <div class="chat-content">
+        <div class="online-members">
+          <div class="members-header">Online Members</div>
+          <div id="membersList" class="members-list"></div>
+        </div>
+        <div class="chat-main">
+          <div id="messagesContainer" class="messages-container"></div>
+          <div class="chat-input-container">
+            <button id="emojiButton" class="emoji-button" title="Add emoji">😊</button>
+            <input type="text" id="messageInput" class="message-input" placeholder="Type a message..." maxlength="200" />
+            <button id="sendButton" class="send-button">Send</button>
+          </div>
+          <div id="emojiPicker" class="emoji-picker" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="/moonroom-config.js"></script>
+    
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script
       async
       src="https://ga.jspm.io/npm:es-module-shims@1.6.3/dist/es-module-shims.js"
@@ -78,14 +400,892 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/libs/ammo.wasm.js"></script>
 
+    <!-- Firebase and Chat Initialization -->
+    <script>
+      // Initialize Firebase with configuration from moonroom-config.js
+      let database;
+      try {
+        firebase.initializeApp(MOONROOM_FIREBASE_CONFIG);
+        database = firebase.database();
+        const auth = firebase.auth();
+        
+        console.log('Firebase initialized successfully');
+        
+        // Test connection to Firebase
+        database.ref('.info/connected').on('value', function(snapshot) {
+          if (snapshot.val() === true) {
+            console.log('✅ Connected to Firebase Realtime Database');
+          } else {
+            console.warn('⚠️ Not connected to Firebase Realtime Database');
+          }
+        });
+      } catch (error) {
+        console.error('Firebase initialization error:', error);
+      }
+
+      // Chat functionality
+      let currentUser = null;
+      let userAddress = null;
+      let userRanking = null;
+      let messages = [];
+      let onlineMembers = [];
+      let chatMinimized = false;
+
+      // DOM elements
+      let messageInput, sendButton, messagesContainer, membersList, chatContainer, toggleBtn, emojiButton, emojiPicker;
+
+      // Initialize chat after DOM loads
+      document.addEventListener('DOMContentLoaded', function() {
+        messageInput = document.getElementById('messageInput');
+        sendButton = document.getElementById('sendButton');
+        messagesContainer = document.getElementById('messagesContainer');
+        membersList = document.getElementById('membersList');
+        chatContainer = document.getElementById('chatContainer');
+        toggleBtn = document.getElementById('toggleChat');
+        emojiButton = document.getElementById('emojiButton');
+        emojiPicker = document.getElementById('emojiPicker');
+
+        // Prevent event propagation from chat interface
+        if (chatContainer) {
+          chatContainer.addEventListener('pointerdown', function(e) {
+            e.stopPropagation();
+          });
+          chatContainer.addEventListener('pointermove', function(e) {
+            e.stopPropagation();
+          });
+          chatContainer.addEventListener('pointerup', function(e) {
+            e.stopPropagation();
+          });
+          chatContainer.addEventListener('click', function(e) {
+            e.stopPropagation();
+          });
+        }
+
+        // Check authentication and member status
+        checkMemberAccess();
+
+        // Set up event listeners
+        sendButton.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          sendMessage();
+        });
+        
+        messageInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            sendMessage();
+          }
+        });
+
+        toggleBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleChat();
+        });
+
+        // Initialize emoji picker
+        initializeEmojiPicker();
+        
+        // Emoji button click handler
+        emojiButton.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleEmojiPicker();
+        });
+
+        // Close emoji picker when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!emojiPicker.contains(e.target) && e.target !== emojiButton) {
+            emojiPicker.style.display = 'none';
+          }
+        });
+      });
+
+      function checkMemberAccess() {
+        // Get user info from localStorage or session
+        // First check if we have stored credentials
+        userAddress = localStorage.getItem('walletAddress');
+        userRanking = localStorage.getItem('memberRanking');
+
+        // If not, check URL parameters (for when redirected from main app)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlAddress = urlParams.get('address');
+        const urlRanking = urlParams.get('ranking');
+        
+        if (urlAddress && urlRanking) {
+          userAddress = urlAddress;
+          userRanking = urlRanking;
+          localStorage.setItem('walletAddress', userAddress);
+          localStorage.setItem('memberRanking', userRanking);
+        }
+
+        // Check if we're in an iframe and try to get data from parent
+        if (window.parent !== window && !userAddress) {
+          try {
+            // Try to communicate with parent window
+            window.parent.postMessage({ type: 'REQUEST_USER_INFO' }, '*');
+            
+            // Listen for response
+            window.addEventListener('message', function(event) {
+              if (event.data && event.data.type === 'USER_INFO') {
+                userAddress = event.data.address;
+                userRanking = event.data.ranking;
+                localStorage.setItem('walletAddress', userAddress);
+                localStorage.setItem('memberRanking', userRanking);
+                updateUserDisplay();
+              }
+            });
+          } catch (e) {
+            console.log('Could not communicate with parent window:', e);
+          }
+        }
+
+        // If still no user, generate a test user
+        if (!userAddress) {
+          // Generate a test user for demo purposes
+          userAddress = 'moon_' + Math.random().toString(36).substr(2, 9);
+          userRanking = Math.floor(Math.random() * 80) + 1;
+          localStorage.setItem('walletAddress', userAddress);
+          localStorage.setItem('memberRanking', userRanking);
+          
+          console.log('Generated test user:', {
+            address: userAddress,
+            ranking: userRanking,
+            nickname: `ILLUMIN80 #${userRanking}`
+          });
+        }
+
+        console.log('Current user:', {
+          address: userAddress,
+          ranking: userRanking
+        });
+
+        // Update the UI to show user info
+        updateUserDisplay();
+
+        // Initialize chat listeners
+        initializeChatListeners();
+        setUserOnline();
+      }
+
+      function updateUserDisplay() {
+        const userInfoEl = document.getElementById('userInfo');
+        if (userInfoEl && userRanking) {
+          userInfoEl.textContent = `ILLUMIN80 #${userRanking}`;
+        }
+      }
+
+      function initializeChatListeners() {
+        console.log('Initializing chat listeners...');
+        
+        if (!database) {
+          console.error('Database not initialized, cannot set up listeners');
+          return;
+        }
+
+        // Listen for new messages
+        try {
+          const chatRef = database.ref('moonRoom/chat');
+          console.log('Setting up chat listener...');
+          
+          chatRef.orderByChild('timestamp').limitToLast(50).on('value', (snapshot) => {
+            console.log('Chat data received:', snapshot.val());
+            messages = [];
+            const data = snapshot.val();
+            if (data) {
+              Object.keys(data).forEach(key => {
+                messages.push(data[key]);
+              });
+              messages.sort((a, b) => a.timestamp - b.timestamp);
+              displayMessages();
+            }
+          }, (error) => {
+            console.error('Error listening to chat:', error);
+          });
+
+          // Listen for online members
+          const membersRef = database.ref('moonRoom/members');
+          console.log('Setting up members listener...');
+          
+          membersRef.on('value', (snapshot) => {
+            console.log('Members data received:', snapshot.val());
+            onlineMembers = [];
+            const data = snapshot.val();
+            if (data) {
+              Object.values(data).forEach(member => {
+                onlineMembers.push(member);
+              });
+              displayMembers();
+            }
+          }, (error) => {
+            console.error('Error listening to members:', error);
+          });
+        } catch (error) {
+          console.error('Error setting up listeners:', error);
+        }
+      }
+
+      function setUserOnline() {
+        const userRef = database.ref(`moonRoom/members/${userAddress}`);
+        const userData = {
+          address: userAddress,
+          nickname: `ILLUMIN80 #${userRanking}`,
+          joinedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        userRef.set(userData);
+        userRef.onDisconnect().remove();
+
+        // Remove user on page unload
+        window.addEventListener('beforeunload', () => {
+          userRef.remove();
+        });
+      }
+
+      function sendMessage() {
+        console.log('sendMessage called');
+        
+        if (!messageInput) {
+          console.error('messageInput not found');
+          return;
+        }
+        
+        const messageText = messageInput.value.trim();
+        console.log('Message text:', messageText);
+        
+        if (!messageText) {
+          console.log('Empty message, not sending');
+          return;
+        }
+
+        if (!database) {
+          console.error('Database not initialized');
+          alert('Chat is not connected. Please refresh the page.');
+          return;
+        }
+
+        if (!userAddress || !userRanking) {
+          console.error('User not initialized:', { userAddress, userRanking });
+          return;
+        }
+
+        console.log('Sending message with user:', { userAddress, userRanking });
+
+        try {
+          const chatRef = database.ref('moonRoom/chat');
+          const newMessage = {
+            from: `ILLUMIN80 #${userRanking}`,
+            message: messageText,
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            address: userAddress
+          };
+
+          console.log('Pushing message to Firebase:', newMessage);
+
+          chatRef.push(newMessage).then(() => {
+            console.log('Message sent successfully');
+            messageInput.value = '';
+          }).catch(error => {
+            console.error('Error sending message:', error);
+            alert('Failed to send message. Check console for details.');
+          });
+        } catch (error) {
+          console.error('Exception in sendMessage:', error);
+          alert('Error sending message. Check console for details.');
+        }
+      }
+
+      function displayMessages() {
+        messagesContainer.innerHTML = '';
+        messages.forEach(msg => {
+          const messageEl = document.createElement('div');
+          messageEl.className = 'message';
+          
+          const authorEl = document.createElement('div');
+          authorEl.className = 'message-author';
+          authorEl.textContent = msg.from;
+          
+          const textEl = document.createElement('div');
+          textEl.className = 'message-text';
+          textEl.textContent = msg.message;
+          
+          const timeEl = document.createElement('div');
+          timeEl.className = 'message-time';
+          const time = new Date(msg.timestamp);
+          timeEl.textContent = time.toLocaleTimeString();
+          
+          messageEl.appendChild(authorEl);
+          messageEl.appendChild(textEl);
+          messageEl.appendChild(timeEl);
+          
+          messagesContainer.appendChild(messageEl);
+        });
+        
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      function displayMembers() {
+        membersList.innerHTML = '';
+        onlineMembers.forEach(member => {
+          const memberEl = document.createElement('div');
+          memberEl.className = 'member-item online';
+          memberEl.textContent = `🟢 ${member.nickname}`;
+          membersList.appendChild(memberEl);
+        });
+      }
+
+      function toggleChat() {
+        chatMinimized = !chatMinimized;
+        if (chatMinimized) {
+          chatContainer.classList.add('minimized');
+          toggleBtn.textContent = '+';
+        } else {
+          chatContainer.classList.remove('minimized');
+          toggleBtn.textContent = '−';
+        }
+      }
+
+      function initializeEmojiPicker() {
+        const emojis = {
+          'Smileys': ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖'],
+          'Moon & Space': ['🌙', '🌛', '🌜', '🌚', '🌝', '🌞', '⭐', '🌟', '✨', '💫', '🌠', '☄️', '🚀', '🛸', '🛰️', '🌌', '🪐', '🔭'],
+          'Hearts': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝'],
+          'Hands': ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏'],
+          'Party': ['🎉', '🎊', '🎈', '🎁', '🎀', '🎆', '🎇', '🧨', '✨', '🎭', '🎪', '🎨', '🎬', '🎤', '🎧', '🎼', '🎵', '🎶', '🥳', '🍾', '🥂', '🍻', '🍺'],
+          'Nature': ['🌸', '💮', '🏵️', '🌹', '🥀', '🌺', '🌻', '🌼', '🌷', '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌿', '☘️', '🍀', '🍁', '🍂', '🍃'],
+          'Food': ['🍕', '🍔', '🍟', '🌭', '🍿', '🧂', '🥓', '🥚', '🧇', '🥞', '🧈', '🍞', '🥐', '🥨', '🥯', '🥖', '🧀', '🍖', '🍗', '🥩', '🍠', '🥔', '🌽', '🌶️', '🥒', '🥬', '🥦', '🧄', '🧅', '🍄', '🥜', '🌰', '🍞'],
+          'Objects': ['💎', '💍', '👑', '⚡', '🔥', '💧', '🌊', '💨', '❄️', '🌈', '☀️', '⛅', '☁️', '🌧️', '⛈️', '🌩️', '🌨️', '☃️', '⛄', '🌬️', '💨', '🌪️', '🌫️']
+        };
+
+        let html = '';
+        for (const [category, emojiList] of Object.entries(emojis)) {
+          html += `<div class="emoji-category">${category}</div>`;
+          emojiList.forEach(emoji => {
+            html += `<span class="emoji-item" data-emoji="${emoji}">${emoji}</span>`;
+          });
+        }
+        emojiPicker.innerHTML = html;
+
+        // Add click handlers to emoji items
+        emojiPicker.querySelectorAll('.emoji-item').forEach(item => {
+          item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const emoji = this.getAttribute('data-emoji');
+            insertEmoji(emoji);
+          });
+        });
+      }
+
+      function toggleEmojiPicker() {
+        if (emojiPicker.style.display === 'none' || !emojiPicker.style.display) {
+          emojiPicker.style.display = 'grid';
+        } else {
+          emojiPicker.style.display = 'none';
+        }
+      }
+
+      function insertEmoji(emoji) {
+        const cursorPos = messageInput.selectionStart;
+        const textBefore = messageInput.value.substring(0, cursorPos);
+        const textAfter = messageInput.value.substring(cursorPos);
+        
+        messageInput.value = textBefore + emoji + textAfter;
+        messageInput.focus();
+        messageInput.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+        
+        // Hide emoji picker after selection
+        emojiPicker.style.display = 'none';
+      }
+
+      // Clean up old messages periodically (keep last 50)
+      setInterval(() => {
+        const chatRef = database.ref('moonRoom/chat');
+        chatRef.once('value', (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const keys = Object.keys(data);
+            if (keys.length > 50) {
+              const sortedKeys = keys.sort((a, b) => 
+                data[a].timestamp - data[b].timestamp
+              );
+              const toDelete = sortedKeys.slice(0, keys.length - 50);
+              toDelete.forEach(key => {
+                chatRef.child(key).remove();
+              });
+            }
+          }
+        });
+      }, 60000); // Every minute
+
+      // Throttle utility function
+      function throttle(func, limit) {
+        let inThrottle;
+        return function() {
+          const args = arguments;
+          const context = this;
+          if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+          }
+        }
+      }
+      
+      // Make throttle globally available
+      window.throttle = throttle;
+
+      // MultiplayerMoons class will be defined in the module section where THREE is available
+      // Global variable to store multiplayer moons instance
+      let multiplayerMoons = null;
+    </script>
+
     <script type="module">
       import * as THREE from "three";
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-      import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 
       console.clear();
       ("use strict");
+
+      // MultiplayerMoons class definition
+      class MultiplayerMoons {
+        constructor(scene, database, physics, meshMap) {
+          this.scene = scene;
+          this.database = database;
+          this.physics = physics;
+          this.meshMap = meshMap;
+          this.moons = new Map();
+          this.moonRefs = database.ref('moonRoom/moons');
+          this.forcesRef = database.ref('moonRoom/forces');
+          this.isHost = false;
+          this.moonVelocities = new Map();
+          this.moonTexture = null;
+          this.localUserAddress = window.userAddress;
+          
+          this.initializeMoons();
+          this.setupSync();
+        }
+        
+        async loadMoonTexture() {
+          return new Promise((resolve) => {
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(
+              "https://happy358.github.io/Images/textures/lunar_color.jpg",
+              (texture) => {
+                texture.anisotropy = 16;
+                this.moonTexture = texture;
+                resolve(texture);
+              }
+            );
+          });
+        }
+        
+        async initializeMoons() {
+          // Load moon texture first
+          await this.loadMoonTexture();
+          
+          // Wait a moment to determine host status first
+          setTimeout(() => {
+            // Check if moons already exist in Firebase
+            this.moonRefs.once('value', (snapshot) => {
+              const existingMoons = snapshot.val();
+              
+              if (!existingMoons || Object.keys(existingMoons).length === 0) {
+                // Only the first player (host) creates initial moons
+                if (this.isHost) {
+                  console.log('Host creating initial moons');
+                  this.createInitialMoons();
+                }
+              } else {
+                // Everyone loads existing moons from Firebase
+                console.log('Loading existing moons from Firebase');
+                this.loadExistingMoons(existingMoons);
+              }
+            });
+          }, 500); // Small delay to ensure host status is determined
+        }
+        
+        createInitialMoons() {
+          // Create 10 multiplayer moon objects
+          for (let i = 0; i < 10; i++) {
+            const moonId = `moon_${i}`;
+            
+            // Create moon mesh
+            const geometry = new THREE.SphereGeometry(1.5, 30, 30);
+            const material = new THREE.MeshPhongMaterial({
+              color: new THREE.Color('#faf0e6'),
+              map: this.moonTexture,
+              emissive: new THREE.Color('#1a1a3a'),
+              emissiveIntensity: 0.2,
+              emissiveMap: this.moonTexture
+            });
+            
+            const moon = new THREE.Mesh(geometry, material);
+            moon.name = `multiplayer_${moonId}`;
+            moon.castShadow = true;
+            moon.receiveShadow = true;
+            
+            // Add a subtle glow
+            const glowGeometry = new THREE.SphereGeometry(1.52, 30, 30);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+              color: 0xffffff,
+              transparent: true,
+              opacity: 0.1
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            moon.add(glow);
+            
+            // Random initial position
+            moon.position.set(
+              (Math.random() - 0.5) * 30,
+              Math.random() * 20 + 5,
+              (Math.random() - 0.5) * 30
+            );
+            
+            // Random initial rotation
+            moon.rotation.set(
+              Math.random() * Math.PI * 2,
+              Math.random() * Math.PI * 2,
+              Math.random() * Math.PI * 2
+            );
+            
+            this.scene.add(moon);
+            this.moons.set(moonId, moon);
+            
+            // Add physics - only host has dynamic bodies
+            if (this.physics && this.physics.addMesh) {
+              const mass = this.isHost ? 0.3 : 0;
+              this.physics.addMesh(moon, mass);
+              
+              // Configure physics properties
+              const body = this.meshMap.get(moon);
+              if (body && this.isHost) {
+                body.setDamping(0.3, 0.3);
+                body.setFriction(0.3);
+                body.setRestitution(0.8);
+                body.setRollingFriction(0.05);
+              }
+            }
+            
+            // Initialize velocity tracking
+            this.moonVelocities.set(moonId, new THREE.Vector3(0, 0, 0));
+            
+            // Save initial position to Firebase
+            this.moonRefs.child(moonId).set({
+              position: {
+                x: moon.position.x,
+                y: moon.position.y,
+                z: moon.position.z
+              },
+              rotation: {
+                x: moon.rotation.x,
+                y: moon.rotation.y,
+                z: moon.rotation.z
+              },
+              velocity: {
+                x: 0,
+                y: 0,
+                z: 0
+              }
+            });
+          }
+        }
+        
+        loadExistingMoons(moonData) {
+          Object.entries(moonData).forEach(([moonId, data]) => {
+            this.loadSingleMoon(moonId, data);
+          });
+        }
+        
+        loadSingleMoon(moonId, data) {
+          // Don't create if already exists
+          if (this.moons.has(moonId)) return;
+          
+          // Create moon mesh
+          const geometry = new THREE.SphereGeometry(1.5, 30, 30);
+          const material = new THREE.MeshPhongMaterial({
+            color: new THREE.Color('#faf0e6'),
+            map: this.moonTexture,
+            emissive: new THREE.Color('#1a1a3a'),
+            emissiveIntensity: 0.2,
+            emissiveMap: this.moonTexture
+          });
+          
+          const moon = new THREE.Mesh(geometry, material);
+          moon.name = `multiplayer_${moonId}`;
+          moon.castShadow = true;
+          moon.receiveShadow = true;
+          
+          // Add glow
+          const glowGeometry = new THREE.SphereGeometry(1.52, 30, 30);
+          const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.1
+          });
+          const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+          moon.add(glow);
+          
+          // Set position from Firebase
+          moon.position.set(
+            data.position.x,
+            data.position.y,
+            data.position.z
+          );
+          
+          // Set rotation from Firebase
+          moon.rotation.set(
+            data.rotation.x,
+            data.rotation.y,
+            data.rotation.z
+          );
+          
+          this.scene.add(moon);
+          this.moons.set(moonId, moon);
+          
+          // Add physics - but only active for host
+          if (this.physics && this.physics.addMesh) {
+            const mass = this.isHost ? 0.3 : 0; // Static bodies for non-hosts
+            this.physics.addMesh(moon, mass);
+            
+            const body = this.meshMap.get(moon);
+            if (body) {
+              if (this.isHost) {
+                body.setDamping(0.3, 0.3);
+                body.setFriction(0.3);
+                body.setRestitution(0.8);
+                body.setRollingFriction(0.05);
+              } else {
+                // Make it kinematic for non-hosts
+                body.setCollisionFlags(body.getCollisionFlags() | 2); // CF_KINEMATIC_OBJECT
+                body.setActivationState(4); // DISABLE_DEACTIVATION
+              }
+            }
+          }
+          
+          // Initialize velocity tracking
+          this.moonVelocities.set(moonId, new THREE.Vector3(
+            data.velocity?.x || 0,
+            data.velocity?.y || 0,
+            data.velocity?.z || 0
+          ));
+        }
+        
+        setupSync() {
+          // Listen for moon position updates
+          this.moonRefs.on('value', (snapshot) => {
+            const moonData = snapshot.val() || {};
+            
+            Object.entries(moonData).forEach(([moonId, data]) => {
+              // Create moon if it doesn't exist yet
+              if (!this.moons.has(moonId) && data) {
+                this.loadSingleMoon(moonId, data);
+              }
+              
+              // Update position for non-hosts
+              if (this.moons.has(moonId) && !this.isHost) {
+                const moon = this.moons.get(moonId);
+                const body = this.meshMap.get(moon);
+                
+                // Update physics body position for non-hosts
+                if (body && window.Ammo) {
+                  const transform = new Ammo.btTransform();
+                  transform.setIdentity();
+                  transform.setOrigin(new Ammo.btVector3(data.position.x, data.position.y, data.position.z));
+                  transform.setRotation(new Ammo.btQuaternion(
+                    data.rotation.x, data.rotation.y, data.rotation.z, 1
+                  ));
+                  body.setWorldTransform(transform);
+                  body.getMotionState().setWorldTransform(transform);
+                  body.activate(false); // Don't activate physics, just position
+                }
+                
+                // Smooth visual interpolation
+                gsap.to(moon.position, {
+                  x: data.position.x,
+                  y: data.position.y,
+                  z: data.position.z,
+                  duration: 0.15,
+                  ease: "power2.out"
+                });
+                
+                // Apply rotation
+                gsap.to(moon.rotation, {
+                  x: data.rotation.x,
+                  y: data.rotation.y,
+                  z: data.rotation.z,
+                  duration: 0.15,
+                  ease: "power2.out"
+                });
+                
+                // Update velocity tracking
+                if (data.velocity) {
+                  this.moonVelocities.set(moonId, new THREE.Vector3(
+                    data.velocity.x,
+                    data.velocity.y,
+                    data.velocity.z
+                  ));
+                }
+              }
+            });
+          });
+          
+          // Listen for force applications
+          this.forcesRef.on('child_added', (snapshot) => {
+            const forceData = snapshot.val();
+            const moonId = snapshot.key.split('_')[0] + '_' + snapshot.key.split('_')[1];
+            
+            if (this.moons.has(moonId) && forceData.from !== this.localUserAddress) {
+              const moon = this.moons.get(moonId);
+              const body = this.meshMap.get(moon);
+              
+              if (body && window.Ammo) {
+                // Apply the force
+                const force = new Ammo.btVector3(
+                  forceData.x * 10,
+                  forceData.y * 10,
+                  forceData.z * 10
+                );
+                body.applyCentralImpulse(force);
+                body.activate(true);
+              }
+            }
+            
+            // Remove the force entry after processing
+            snapshot.ref.remove();
+          });
+          
+          // Determine host status
+          this.checkHostStatus();
+        }
+        
+        checkHostStatus() {
+          // First player in room becomes physics host
+          const presenceRef = this.database.ref('moonRoom/members');
+          presenceRef.on('value', (snapshot) => {
+            const members = Object.keys(snapshot.val() || {});
+            const wasHost = this.isHost;
+            this.isHost = members.length > 0 && members[0] === this.localUserAddress;
+            
+            if (this.isHost && !wasHost) {
+              console.log('Became physics host for multiplayer moons');
+              this.runPhysicsSync();
+            } else if (!this.isHost && wasHost) {
+              console.log('No longer physics host');
+            }
+          });
+        }
+        
+        shootMoon(moonId, force) {
+          // Any player can apply force to a moon
+          const forceRef = this.forcesRef.child(`${moonId}_${Date.now()}`);
+          forceRef.set({
+            x: force.x,
+            y: force.y,
+            z: force.z,
+            from: this.localUserAddress,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+          });
+          
+          // Apply force locally immediately for responsiveness
+          if (this.moons.has(moonId)) {
+            const moon = this.moons.get(moonId);
+            const body = this.meshMap.get(moon);
+            
+            if (body && window.Ammo) {
+              const impulse = new Ammo.btVector3(
+                force.x * 10,
+                force.y * 10,
+                force.z * 10
+              );
+              body.applyCentralImpulse(impulse);
+              body.activate(true);
+            }
+          }
+        }
+        
+        runPhysicsSync() {
+          // Only the host syncs physics to Firebase
+          const updateMoonPosition = window.throttle((moonId, moon) => {
+            const body = this.meshMap.get(moon);
+            if (body && window.Ammo) {
+              // Get velocity from physics body
+              const velocity = body.getLinearVelocity();
+              
+              this.moonRefs.child(moonId).update({
+                position: {
+                  x: moon.position.x,
+                  y: moon.position.y,
+                  z: moon.position.z
+                },
+                rotation: {
+                  x: moon.rotation.x,
+                  y: moon.rotation.y,
+                  z: moon.rotation.z
+                },
+                velocity: {
+                  x: velocity.x(),
+                  y: velocity.y(),
+                  z: velocity.z()
+                }
+              });
+            }
+          }, 100); // Update max 10 times per second
+          
+          // Sync loop
+          const syncLoop = () => {
+            if (!this.isHost) return;
+            
+            this.moons.forEach((moon, moonId) => {
+              // Only update if moon has moved significantly
+              const lastVel = this.moonVelocities.get(moonId);
+              const body = this.meshMap.get(moon);
+              
+              if (body && window.Ammo) {
+                const currentVel = body.getLinearVelocity();
+                const velMagnitude = Math.sqrt(
+                  currentVel.x() * currentVel.x() +
+                  currentVel.y() * currentVel.y() +
+                  currentVel.z() * currentVel.z()
+                );
+                
+                // Only update if moving or recently moved
+                if (velMagnitude > 0.1 || (lastVel && lastVel.length() > 0.1)) {
+                  updateMoonPosition(moonId, moon);
+                }
+              }
+            });
+            
+            requestAnimationFrame(syncLoop);
+          };
+          
+          syncLoop();
+        }
+        
+        // Clean up forces periodically
+        startCleanup() {
+          setInterval(() => {
+            this.forcesRef.once('value', (snapshot) => {
+              const forces = snapshot.val() || {};
+              const now = Date.now();
+              
+              Object.entries(forces).forEach(([key, force]) => {
+                // Remove forces older than 5 seconds
+                if (force.timestamp && now - force.timestamp > 5000) {
+                  this.forcesRef.child(key).remove();
+                }
+              });
+            });
+          }, 10000); // Every 10 seconds
+        }
+      }
+
+      // Make MultiplayerMoons available globally
+      window.MultiplayerMoons = MultiplayerMoons;
       const meshes = [];
       let isDragging = false;
       let selectedObject = null;
@@ -221,19 +1421,6 @@
             body.setFriction(1);
             body.setRestitution(1);
             body.setDamping(0, 0);
-          } else if (threeObject.name === "shootingBall") {
-            body.setFriction(0.3);
-            body.setRestitution(0.8);  // High bounce for projectiles
-            body.setDamping(0.1, 0.1);
-          } else if (threeObject.name === "Target") {
-            body.setFriction(0.9);
-            body.setRestitution(0.6);  // Good bounce for target
-            body.setDamping(0, 0);
-          } else if (threeObject.name && (threeObject.name.startsWith("SM_Prop_Dunk_Tank_01") || 
-                     threeObject.name.startsWith("Mesh"))) {
-            body.setFriction(0.8);
-            body.setRestitution(0.5);  // Some bounce for dunk tank parts
-            body.setDamping(0, 0);
           } else {
             body.setFriction(0.5);
             body.setRestitution(0.3);
@@ -267,6 +1454,13 @@
           for (let i = 0, il = meshes.length; i < il; i++) {
             const mesh = meshes[i];
             if (!mesh || (isDragging && mesh === selectedObject)) continue;
+
+            // Skip updating multiplayer moons if we're not the host
+            if (mesh.name && mesh.name.startsWith('multiplayer_moon_')) {
+              if (window.multiplayerMoons && !window.multiplayerMoons.isHost) {
+                continue; // Don't update position from physics if not host
+              }
+            }
 
             if (mesh.isInstancedMesh) {
               const array = mesh.instanceMatrix.array;
@@ -379,9 +1573,6 @@
         let physics = await AmmoPhysics();
         let camera, scene, renderer, controls;
         let sphereGeom, sphereMat, light, chair;
-        let dunkTankSeat = null;
-        let targetHitbox = null;
-        let seatDropped = false;
         let intensity = 40;
         let color = 0x1a1a3a;
         const HEIGHT = 5;
@@ -392,10 +1583,7 @@
         scene.background = new THREE.Color(0x000033);
 
         // Renderer setup
-        renderer = new THREE.WebGLRenderer({ 
-          antialias: true,
-          preserveDrawingBuffer: true // Enable this to allow canvas capture
-        });
+        renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
@@ -430,6 +1618,11 @@
 
         // Load textures and models
         const textureLoader = new THREE.TextureLoader();
+        // const cubeLoader = new THREE.CubeTextureLoader();
+
+        // // Set up environment maps
+        // cubeLoader.setCrossOrigin("");
+        // cubeLoader.setPath("https://threejs.org/examples/textures/cube/pisa/");
 
         Promise.all([
           new Promise((resolve) => {
@@ -439,7 +1632,7 @@
             );
           }),
           new Promise((resolve) => {
-            new GLTFLoader().load("/models/DunkTank.glb", resolve);
+            new GLTFLoader().load("/models/ArmChair.glb", resolve);
           }),
         ]).then(([moonTexture, chairModel]) => {
           // Create moon lamps
@@ -484,8 +1677,8 @@
           glowMesh2.scale.set(1.05, 1.05, 1.05);
           moonLamp.add(glowMesh2);
 
-          // Create additional moon lamps
-          for (let i = 0; i < 5; i++) {
+          // Create additional moon lamps (reduced to 3 to avoid conflict with multiplayer moons)
+          for (let i = 0; i < 3; i++) {
             let newLamp = moonLamp.clone();
             color = new THREE.Color("#faf0e6");
             sphereMat = new THREE.MeshPhongMaterial({
@@ -523,12 +1716,17 @@
             }
           }
 
+          // Initialize multiplayer moons after physics is ready
+          if (window.database && window.userAddress) {
+            window.multiplayerMoons = new MultiplayerMoons(scene, window.database, physics, meshMap);
+            window.multiplayerMoons.startCleanup();
+            console.log('Multiplayer moons initialized');
+          }
+
           // Create shooting balls
           const ballGeometry = new THREE.IcosahedronGeometry(0.8, 1);
           const ballMaterial = new THREE.MeshPhongMaterial({
-            color: 0x8888ff,
             flatShading: true,
-            shininess: 100,
           });
           const shootBall = new THREE.Mesh(ballGeometry, ballMaterial);
           shootBall.castShadow = true;
@@ -537,9 +1735,16 @@
           // Shoot ball on click
           // const raycaster = new THREE.Raycaster();
 
-          const shootingForce = 45;
+          const shootingForce = 35;
           const ballMass = 10;
           window.addEventListener("pointerdown", (event) => {
+            // Check if the click is on the chat interface
+            const chatContainer = document.getElementById('chatContainer');
+            if (chatContainer && chatContainer.contains(event.target)) {
+              // Don't shoot if clicking on chat
+              return;
+            }
+            
             mouse.set(
               (event.clientX / window.innerWidth) * 2 - 1,
               -(event.clientY / window.innerHeight) * 2 + 1
@@ -562,7 +1767,7 @@
                   object = object.parent;
                 }
 
-                if (object.name === "pointLight") {
+                if (object.name === "pointLight" || (object.name && object.name.startsWith('multiplayer_moon_'))) {
                   isDragging = true;
                   selectedObject = object;
                   dragStartPosition.copy(selectedObject.position);
@@ -580,37 +1785,97 @@
                 }
               }
             } else {
-              // Normal click for shooting
-              let shootingDirection = new THREE.Vector3();
-              shootingDirection.copy(raycaster.ray.direction);
-              shootingDirection.add(raycaster.ray.origin);
+              // Check if clicking on a multiplayer moon
+              const intersects = raycaster.intersectObjects(scene.children, true);
+              let hitMultiplayerMoon = false;
+              
+              for (let i = 0; i < intersects.length; i++) {
+                let object = intersects[i].object;
+                while (object.parent && object.parent !== scene) {
+                  object = object.parent;
+                }
+                
+                if (object.name && object.name.startsWith('multiplayer_moon_')) {
+                  // Apply force to multiplayer moon
+                  const moonId = object.name.replace('multiplayer_', '');
+                  const force = raycaster.ray.direction.clone().multiplyScalar(shootingForce * 0.5);
+                  
+                  if (window.multiplayerMoons) {
+                    window.multiplayerMoons.shootMoon(moonId, force);
+                  }
+                  
+                  hitMultiplayerMoon = true;
+                  
+                  // Visual feedback - create a small burst effect
+                  const burstGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                  const burstMaterial = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(Math.random(), 1, 0.7),
+                    transparent: true,
+                    opacity: 0.8
+                  });
+                  const burst = new THREE.Mesh(burstGeometry, burstMaterial);
+                  burst.position.copy(intersects[i].point);
+                  scene.add(burst);
+                  
+                  // Animate and remove burst
+                  gsap.to(burst.scale, {
+                    x: 2, y: 2, z: 2,
+                    duration: 0.3,
+                    ease: "power2.out"
+                  });
+                  gsap.to(burstMaterial, {
+                    opacity: 0,
+                    duration: 0.3,
+                    onComplete: () => {
+                      scene.remove(burst);
+                      burst.geometry.dispose();
+                      burst.material.dispose();
+                    }
+                  });
+                  
+                  break;
+                }
+              }
+              
+              // Normal shooting if not hitting a multiplayer moon
+              if (!hitMultiplayerMoon) {
+                let shootingDirection = new THREE.Vector3();
+                shootingDirection.copy(raycaster.ray.direction);
+                shootingDirection.add(raycaster.ray.origin);
 
-              let ball = shootBall.clone();
-              ball.position.set(
-                shootingDirection.x,
-                shootingDirection.y,
-                shootingDirection.z
-              );
-              ball.material = ball.material.clone();
+                let ball = shootBall.clone();
+                ball.position.set(
+                  shootingDirection.x,
+                  shootingDirection.y,
+                  shootingDirection.z
+                );
+                ball.material = ball.material.clone();
 
-              let ballColor = new THREE.Color();
-              ballColor.setHSL(
-                Math.abs(THREE.MathUtils.randInt(-1000, 1000) / 1000),
-                1,
-                THREE.MathUtils.randInt(500, 700) / 1000
-              );
-              ball.material.color.set(ballColor);
+                let ballColor = new THREE.Color();
+                ballColor.setHSL(
+                  Math.abs(THREE.MathUtils.randInt(-1000, 1000) / 1000),
+                  1,
+                  THREE.MathUtils.randInt(500, 700) / 1000
+                );
+                ball.material.color.set(ballColor);
 
-              scene.add(ball);
+                scene.add(ball);
 
-              shootingDirection.copy(raycaster.ray.direction);
-              shootingDirection.multiplyScalar(shootingForce);
-              physics.addShootingMesh(ball, ballMass, shootingDirection);
+                shootingDirection.copy(raycaster.ray.direction);
+                shootingDirection.multiplyScalar(shootingForce);
+                physics.addShootingMesh(ball, ballMass, shootingDirection);
+              }
             }
           });
 
           // Modify the pointermove event to include collision detection
           window.addEventListener("pointermove", (event) => {
+            // Check if mouse is over chat interface
+            const chatContainer = document.getElementById('chatContainer');
+            if (chatContainer && chatContainer.contains(event.target)) {
+              return;
+            }
+            
             if (isDragging && selectedObject) {
               mousePosition.set(
                 (event.clientX / window.innerWidth) * 2 - 1,
@@ -705,6 +1970,15 @@
           window.addEventListener("contextmenu", (e) => e.preventDefault());
 
           window.addEventListener("pointerup", (event) => {
+            // Check if releasing over chat interface
+            const chatContainer = document.getElementById('chatContainer');
+            if (chatContainer && chatContainer.contains(event.target)) {
+              isDragging = false;
+              selectedObject = null;
+              controls.enabled = true;
+              return;
+            }
+            
             if (isDragging && selectedObject) {
               const body = meshMap.get(selectedObject);
               if (body) {
@@ -756,7 +2030,6 @@
           scene.add(wall);
           physics.addTerrainMesh(wall, 0);
 
-
           // Floor
           const floorGeometry = new THREE.CircleGeometry(1.5 * BOUND, 8);
           floorGeometry.rotateX(-Math.PI / 2);
@@ -766,319 +2039,19 @@
           scene.add(floor);
           physics.addTerrainMesh(floor, 0);
 
-          // Add dunk tank model
-          const dunkTankModel = chairModel.scene;
-          dunkTankModel.scale.set(10, 10, 10);
-          dunkTankModel.position.set(0, 0, -10);
-          dunkTankModel.castShadow = true;
-          dunkTankModel.receiveShadow = true;
-          scene.add(dunkTankModel);
-          
-          // Update matrix for proper physics
-          dunkTankModel.updateMatrixWorld(true);
-          
-          // Get the seat and target references
-          dunkTankSeat = dunkTankModel.getObjectByName("SeatBoard");
-          targetHitbox = dunkTankModel.getObjectByName("Target");
-          
-          // Ensure Target is properly set up for collision detection
-          if (targetHitbox) {
-            targetHitbox.updateMatrixWorld(true);
-            // Make sure Target has a name for collision detection
-            targetHitbox.name = "Target";
-          }
-          
-          // Setup target hitbox
-          if (targetHitbox) {
-            // Store original material for reset
-            const originalMaterial = targetHitbox.material ? targetHitbox.material.clone() : null;
-            
-            // Make target visible and interactive
-            targetHitbox.visible = true;
-            if (targetHitbox.material) {
-              targetHitbox.material = targetHitbox.material.clone();
-              targetHitbox.material.transparent = true;
-              targetHitbox.material.opacity = 0.8;
-              // Keep original color or set a target-like color
-              if (!targetHitbox.material.color) {
-                targetHitbox.material.color = new THREE.Color(0xff3333); // Red target color
-              }
-            }
-            
-            // Store materials for hit feedback
-            targetHitbox.userData.originalMaterial = originalMaterial;
-            
-            // Physics will be added in the traverse loop below
-            console.log("Target found and configured");
-          }
-          
-          // Store seat globally for animation
-          if (dunkTankSeat) {
-            window.dunkTankSeat = dunkTankSeat;
-            console.log("Dunk tank seat found");
-          }
-          
-          // Add physics to the dunk tank meshes
-          let dunkTankBodyMesh = null;
-          let targetMesh = null;
-          let targetWorldPos = null;
-          const processedMeshes = [];
-          
-          // First pass: find the Target position
-          dunkTankModel.traverse((child) => {
-            const parentName = child.parent ? child.parent.name : '';
-            if ((child.name === "Target" || parentName === "Target") && child.isMesh) {
-              targetMesh = child;
-              child.name = "Target";
-              targetWorldPos = new THREE.Vector3();
-              child.getWorldPosition(targetWorldPos);
-              console.log("Target position found at:", targetWorldPos);
-            }
-          });
-          
-          // Second pass: add physics
-          dunkTankModel.traverse((child) => {
-            // Check both the object and its parent for names
-            const parentName = child.parent ? child.parent.name : '';
-            
-            if (child.isMesh) {
-              child.updateMatrixWorld(true);
-              console.log(`Processing mesh: ${child.name}, parent: ${parentName}`);
-              
-              // The actual Target mesh - NO PHYSICS so it can be hit
-              if (child.name === "Target" || parentName === "Target") {
-                console.log("✓ Target found - no physics collision (keeping it accessible for hits)");
-                
-              // The DunkTankBody mesh - use triangle mesh for accurate collision with holes
-              } else if (parentName === "DunkTankBody" || child.name === "DunkTankBody") {
-                dunkTankBodyMesh = child;
-                
-                // Get world transform
-                const worldPosition = new THREE.Vector3();
-                const worldQuaternion = new THREE.Quaternion();
-                const worldScale = new THREE.Vector3();
-                child.getWorldPosition(worldPosition);
-                child.getWorldQuaternion(worldQuaternion);
-                child.getWorldScale(worldScale);
-                
-                // Clone and transform geometry to world space
-                const transformedGeometry = child.geometry.clone();
-                const matrix = new THREE.Matrix4();
-                matrix.compose(worldPosition, worldQuaternion, worldScale);
-                transformedGeometry.applyMatrix4(matrix);
-                
-                // Create mesh for triangle mesh collision
-                const tankPhysicsMesh = new THREE.Mesh(
-                  transformedGeometry,
-                  new THREE.MeshBasicMaterial({ 
-                    color: 0x00ff00,
-                    wireframe: true,
-                    transparent: true,
-                    opacity: 0.3,
-                    visible: true  // Set to false to hide debug mesh
-                  })
-                );
-                tankPhysicsMesh.position.set(0, 0, 0);
-                tankPhysicsMesh.rotation.set(0, 0, 0);
-                tankPhysicsMesh.scale.set(1, 1, 1);
-                tankPhysicsMesh.name = "DunkTankBody";
-                
-                // Add to scene
-                scene.add(tankPhysicsMesh);
-                
-                // Use triangle mesh collision for accurate non-convex shape with holes
-                physics.addTerrainMesh(tankPhysicsMesh, 0);
-                
-                processedMeshes.push(child.name);
-                console.log(`✓ Added ${child.name} (DunkTankBody) with triangle mesh collision (preserves holes)`)
-                
-              // The Hinge mesh - also needs collision
-              } else if (parentName === "Hinge") {
-                // Get world transform
-                const worldPosition = new THREE.Vector3();
-                const worldQuaternion = new THREE.Quaternion();
-                const worldScale = new THREE.Vector3();
-                child.getWorldPosition(worldPosition);
-                child.getWorldQuaternion(worldQuaternion);
-                child.getWorldScale(worldScale);
-                
-                // Clone and transform geometry
-                const transformedGeometry = child.geometry.clone();
-                const matrix = new THREE.Matrix4();
-                matrix.compose(worldPosition, worldQuaternion, worldScale);
-                transformedGeometry.applyMatrix4(matrix);
-                
-                // Create invisible physics mesh
-                const hingePhysicsMesh = new THREE.Mesh(
-                  transformedGeometry,
-                  new THREE.MeshBasicMaterial({ visible: false })
-                );
-                hingePhysicsMesh.position.set(0, 0, 0);
-                hingePhysicsMesh.rotation.set(0, 0, 0);
-                hingePhysicsMesh.scale.set(1, 1, 1);
-                hingePhysicsMesh.name = "Hinge";
-                
-                // Add to scene and physics
-                scene.add(hingePhysicsMesh);
-                physics.addMesh(hingePhysicsMesh, 0);
-                
-                processedMeshes.push(child.name);
-                console.log(`✓ Added ${child.name} (Hinge) with convex hull collision`);
-                
-              // Skip the SeatBoard mesh
-              } else if (parentName === "SeatBoard" || child.name === "SeatBoard") {
-                console.log(`- Skipping ${child.name} (SeatBoard - needs to animate)`);
-                
-              } else {
-                console.log(`- Unknown mesh: ${child.name}, parent: ${parentName}`);
-              }
-            }
-          });
-          
-          console.log(`Physics setup complete. Processed ${processedMeshes.length} meshes`);
-
-          // Seat pivot setup and animation
-          let seatPivot = null;
-          let seatAxis = 'x'; // Try 'x', 'y', or 'z' based on your model orientation
-          
-          function setupSeatPivot() {
-            const seat = dunkTankModel.getObjectByName('SeatBoard');
-            const hingeRef = dunkTankModel.getObjectByName('Empty') 
-                          || dunkTankModel.getObjectByName('Hinge');
-            
-            if (!seat) {
-              console.error('SeatBoard not found');
-              return false;
-            }
-            
-            // Get the seat's bounding box to find the hinge edge
-            seat.updateMatrixWorld(true);
-            const seatBox = new THREE.Box3().setFromObject(seat);
-            const seatMin = seatBox.min;
-            const seatMax = seatBox.max;
-            const seatCenter = seatBox.getCenter(new THREE.Vector3());
-            
-            // The hinge should be at one edge of the seat
-            // Adjust these based on your model orientation:
-            // - If seat rotates forward/back: hinge is at back (min.z or max.z)
-            // - If seat rotates left/right: hinge is at side (min.x or max.x)
-            // - Vertically: usually at top (max.y)
-            const hingeWorld = new THREE.Vector3(
-              seatCenter.x,      // Center on X
-              seatMax.y,         // Top of seat (or use seatMin.y for bottom)
-              seatMin.z          // Back of seat (min.z is the back edge)
-            );
-            
-            console.log('Seat bounding box:', {min: seatMin, max: seatMax, center: seatCenter});
-            console.log('Calculated hinge position:', hingeWorld);
-            
-            // Create a runtime pivot under the same parent as the seat
-            const parent = seat.parent;
-            seatPivot = new THREE.Object3D();
-            seatPivot.name = 'SeatPivot';
-            parent.add(seatPivot);
-            
-            // Place pivot at the calculated hinge position
-            seatPivot.position.copy(parent.worldToLocal(hingeWorld.clone()));
-            
-            // Reparent seat under pivot while preserving world transform
-            // attach() keeps world transform for you (no manual math needed)
-            seatPivot.attach(seat);
-            
-            // Optional: visualize pivot to confirm position
-            // const axesHelper = new THREE.AxesHelper(5);
-            // seatPivot.add(axesHelper);
-            // console.log('Enable axes helper to see pivot location');
-            
-            console.log('Seat pivot setup complete at:', seatPivot.position);
-            return true;
-          }
-          
-          // Animation helpers
-          function rotateSeatTo(angleRad, durationMs = 800) {
-            if (!seatPivot) {
-              console.error('Seat pivot not initialized');
-              return;
-            }
-            
-            const start = {
-              x: seatPivot.rotation.x,
-              y: seatPivot.rotation.y,
-              z: seatPivot.rotation.z,
-            };
-            const startTime = performance.now();
-            
-            function tick(t) {
-              const k = Math.min((t - startTime) / durationMs, 1);
-              // easeInOutQuad
-              const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-              
-              // Set only the chosen axis
-              seatPivot.rotation[seatAxis] = start[seatAxis] + (angleRad - start[seatAxis]) * e;
-              
-              if (k < 1) requestAnimationFrame(tick);
-            }
-            requestAnimationFrame(tick);
-          }
-          
-          function openSeat() { 
-            seatDropped = true;
-            rotateSeatTo(Math.PI / 2, 1000); // 90° down; adjust sign if needed
-          }
-          
-          function closeSeat() { 
-            seatDropped = false;
-            rotateSeatTo(0, 1000); 
-          }
-          
-          // Initialize seat pivot after model is loaded
-          setTimeout(() => {
-            if (setupSeatPivot()) {
-              console.log('Seat pivot ready for animation');
-            }
-          }, 100);
-          
-          // Seat drop animation function
-          function dropSeat() {
-            if (seatDropped) return;
-            
-            console.log("Dropping the seat!");
-            openSeat();
-            
-            // Reset after 3 seconds
-            setTimeout(() => {
-              closeSeat();
-            }, 3000);
-          }
-
-          // Check for collisions between projectiles and target
-          function checkTargetCollision() {
-            if (!targetHitbox || seatDropped) return;
-            
-            // Create a bounding box for the target (update each frame in case it moves)
-            const targetBox = new THREE.Box3().setFromObject(targetHitbox);
-            
-            // Only check shooting balls (projectiles) for collision
-            scene.traverse((object) => {
-              if (object.name === "shootingBall" && object.isMesh) {
-                const ballBox = new THREE.Box3().setFromObject(object);
-                
-                if (targetBox.intersectsBox(ballBox)) {
-                  dropSeat();
-                  console.log("Target hit by projectile!");
-                  
-                  // Optional: Remove the ball after hit
-                  setTimeout(() => {
-                    scene.remove(object);
-                    // Remove from mesh map to stop physics updates
-                    if (meshMap.has(object)) {
-                      meshMap.delete(object);
-                    }
-                  }, 100);
-                }
-              }
-            });
-          }
+          // Add chair model
+          chair = new THREE.Mesh(
+            chairModel.scene.children[0].geometry,
+            chairModel.scene.children[0].material
+          );
+          chair.scale.set(10, 10, 10);
+          chair.position.set(0, 0, 0);
+          // chair.rotation.y = Math.PI;
+          chair.castShadow = true;
+          chair.receiveShadow = true;
+          chair.name = "chair";
+          scene.add(chair);
+          physics.addTerrainMesh(chair, 0);
 
           // document.getElementById("loading").style.display = "none";
 
@@ -1086,7 +2059,6 @@
           function animate() {
             requestAnimationFrame(animate);
             controls.update();
-            checkTargetCollision(); // Check for collisions each frame
             renderer.render(scene, camera);
           }
           animate();

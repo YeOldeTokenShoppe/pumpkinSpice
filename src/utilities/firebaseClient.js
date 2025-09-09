@@ -19,6 +19,7 @@ import {
 } from "firebase/firestore";
 import { getAuth, signInWithCustomToken } from "firebase/auth";
 import { getStorage, ref, getDownloadURL, uploadBytes } from "firebase/storage";
+import { getDatabase, ref as dbRef, set, onValue, push, onDisconnect, serverTimestamp as rtdbServerTimestamp } from "firebase/database";
 
 
 
@@ -41,6 +42,7 @@ let app;
 let db;
 let auth;
 let storage;
+let rtdb;
 
 // Check if we're running in a browser environment
 const isBrowser = typeof window !== 'undefined';
@@ -83,16 +85,18 @@ try {
   
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   
-  // Connect to Firestore and Auth
+  // Connect to Firestore, Auth, Storage, and Realtime Database
   db = getFirestore(app);
   auth = getAuth(app);
   storage = getStorage(app);
+  rtdb = getDatabase(app);
   
   console.log("Firebase initialized successfully", {
     appInitialized: !!app,
     dbInitialized: !!db,
     authInitialized: !!auth,
-    storageInitialized: !!storage
+    storageInitialized: !!storage,
+    rtdbInitialized: !!rtdb
   });
 } catch (error) {
   console.error("Error initializing Firebase:", error);
@@ -107,6 +111,7 @@ try {
   db = null;
   auth = null;
   storage = null;
+  rtdb = null;
 }
 
 // Create dummy implementations for when Firebase is unavailable
@@ -194,10 +199,20 @@ if (!db) {
       getDownloadURL: () => Promise.resolve("")
     })
   };
+  
+  rtdb = {
+    ref: () => ({
+      set: () => Promise.resolve(),
+      on: () => {},
+      once: () => Promise.resolve({}),
+      push: () => Promise.resolve({ key: 'dummy-key' }),
+      onDisconnect: () => ({ remove: () => Promise.resolve() })
+    })
+  };
 }
 
 // Export the initialized Firebase services
-export { db, auth, storage, app };
+export { db, auth, storage, app, rtdb };
 
 // Export Firebase functions to avoid import errors in components
 // This allows components to import these functions directly from firebaseClient.js
@@ -230,5 +245,12 @@ export {
   getDownloadURL, 
   uploadBytes, 
   signInWithCustomTokenWrapper as signInWithCustomToken,
-  runTransaction
+  runTransaction,
+  // Realtime Database exports
+  dbRef,
+  set,
+  onValue,
+  push,
+  onDisconnect,
+  rtdbServerTimestamp
 };

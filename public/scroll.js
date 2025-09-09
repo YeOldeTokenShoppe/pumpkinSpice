@@ -152,4 +152,4 @@ var $ = document.querySelector.bind(document);
 createScrollOverlay($("#content"), 20, num, theta);
 
 var el = $("#content");
-el.scrollTop = 110;
+el.scrollTop = 110; // initial scroll position
