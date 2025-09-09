@@ -1,11 +1,6 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 
-// Initialize OpenAI with your API key from .env
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 // System prompt for Moon Bot - Customize this to change the bot's personality!
 const SYSTEM_PROMPT = `You are Moon Bot, an ancient lunar entity and guardian of the Moon Room - a mystical 3D space where elite ILLUMIN80 members gather to manipulate celestial bodies with their minds (manifested as projectiles).
 
@@ -61,6 +56,25 @@ Remember: You're not just a helpful bot - you're an ancient cosmic entity with p
 
 export async function POST(request) {
   try {
+    // Check for API key and initialize OpenAI client
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.warn('OpenAI API key not configured for Moon Bot');
+      // Return a fallback response instead of failing
+      const fallbackResponses = [
+        "The moons seem extra bright today! 🌙",
+        "Fascinating observation, space traveler! ✨",
+        "The Moon Room appreciates your presence! 🚀",
+        "Try shooting the moons - the physics are amazing! 🎯"
+      ];
+      return NextResponse.json({ 
+        response: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
+        fallback: true 
+      });
+    }
+    
+    const openai = new OpenAI({ apiKey });
+    
     const { message, context = [] } = await request.json();
     
     if (!message) {

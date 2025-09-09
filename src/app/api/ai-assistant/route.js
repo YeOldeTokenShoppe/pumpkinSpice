@@ -1,10 +1,6 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 // Different prompts for different features
 const PROMPTS = {
   moonbot: `You are Moon Bot, an ancient lunar entity...`, // Your moon bot prompt
@@ -23,6 +19,19 @@ const PROMPTS = {
 
 export async function POST(request) {
   try {
+    // Check for API key and initialize OpenAI client
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.warn('OpenAI API key not configured');
+      return NextResponse.json({ 
+        error: 'AI service not configured',
+        fallback: true,
+        message: 'Please set OPENAI_API_KEY in your environment variables'
+      }, { status: 503 });
+    }
+    
+    const openai = new OpenAI({ apiKey });
+    
     const { message, mode = 'moonbot', context = [] } = await request.json();
     
     const systemPrompt = PROMPTS[mode];
