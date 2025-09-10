@@ -339,8 +339,15 @@ const EtherealCloudsPage = () => {
         </div>
       <Canvas
         ref={canvasRef}
-        camera={{ position: [4, -5, 60], fov: 60 }}
-
+        camera={{ 
+          position: isMobileDevice ? [0, 20, 65] : [0, 20, 60], 
+          fov: isMobileDevice ? 60 : 60, 
+          near: 0.1, 
+          far: 1000 
+        }}
+        // onCreated={({ camera }) => {
+        //   camera.lookAt(0, 5, -15);
+        // }}
         gl={{ 
           antialias: true, 
           alpha: false,
@@ -381,13 +388,17 @@ const EtherealCloudsPage = () => {
           {/* <MinimalTest /> */}
           
           {/* Camera controls - rotate around center */}
-          {/* <OrbitControls
+          <OrbitControls
             enableRotate={true}
             enableZoom={true}
-            minDistance={20}
+            minDistance={50}
             maxDistance={80}
-            target={[0, 0, 0]}
-          /> */}
+            target={[0, 5, -15]}
+            minAzimuthAngle={-Math.PI / 12}  // -60 degrees
+            maxAzimuthAngle={Math.PI / 12}   // +60 degrees
+            minPolarAngle={0}     // 45 degrees from top
+            maxPolarAngle={Math.PI / 2.2}   // ~82 degrees, prevents going too low
+          />
           
           {/* Post-processing effects */}
           {/* <EffectComposer>

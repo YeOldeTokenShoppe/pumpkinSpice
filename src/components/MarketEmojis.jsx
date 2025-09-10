@@ -182,20 +182,47 @@ const MarketEmoji = ({ type = 'devil', position, scale = 1, orbitRadius, orbitSp
       meshRef.current.position.x = position[0] + Math.cos(angle) * orbitRadius;
       meshRef.current.position.z = position[2] + Math.sin(angle) * orbitRadius;
       
-      // Position based on type - money floats highest, angels mid, devils low, crying lowest
+      // Enhanced floating motion with multiple sine waves for more organic movement
       if (type === 'money') {
-        meshRef.current.position.y = position[1] + 15 + Math.sin(time * 0.8 + orbitOffset) * 3;
+        // Money emojis: Energetic, bouncy movement
+        const floatBase = Math.sin(time * 1.2 + orbitOffset) * 4;
+        const floatSecondary = Math.cos(time * 2.5 + orbitOffset * 0.5) * 1.5;
+        meshRef.current.position.y = position[1] + 15 + floatBase + floatSecondary;
+        
+        // Add slight horizontal sway
+        meshRef.current.position.x += Math.sin(time * 0.9 + orbitOffset) * 1.5;
       } else if (type === 'angel') {
-        meshRef.current.position.y = position[1] + 8 + Math.sin(time * 0.6 + orbitOffset) * 2;
+        // Angels: Graceful, smooth floating
+        const floatBase = Math.sin(time * 0.7 + orbitOffset) * 3;
+        const floatSecondary = Math.sin(time * 1.4 + orbitOffset * 1.5) * 1;
+        meshRef.current.position.y = position[1] + 8 + floatBase + floatSecondary;
+        
+        // Gentle horizontal figure-8 motion
+        meshRef.current.position.x += Math.sin(time * 0.5 + orbitOffset) * 0.8;
+        meshRef.current.position.z += Math.cos(time * 0.5 + orbitOffset) * 0.5;
       } else if (type === 'crying') {
-        meshRef.current.position.y = position[1] - 10 + Math.sin(time * 0.3 + orbitOffset) * 1; // Lower and slower
+        // Crying emojis: Slow, heavy sinking motion
+        const floatBase = Math.sin(time * 0.3 + orbitOffset) * 1.5;
+        const floatSecondary = Math.cos(time * 0.6 + orbitOffset * 2) * 0.5;
+        meshRef.current.position.y = position[1] - 10 + floatBase - floatSecondary;
+        
+        // Slight trembling motion
+        meshRef.current.position.x += Math.sin(time * 4 + orbitOffset) * 0.1;
       } else { // devil
-        meshRef.current.position.y = position[1] - 5 + Math.sin(time * 0.4 + orbitOffset) * 1.5; // Slower, smaller movement
+        // Devils: Mischievous, irregular bobbing
+        const floatBase = Math.sin(time * 0.8 + orbitOffset) * 2.5;
+        const floatSecondary = Math.sin(time * 2.1 + orbitOffset * 0.7) * 1;
+        const floatTertiary = Math.cos(time * 3.5 + orbitOffset * 1.2) * 0.5;
+        meshRef.current.position.y = position[1] - 5 + floatBase + floatSecondary + floatTertiary;
+        
+        // Zigzag horizontal motion
+        meshRef.current.position.x += Math.sin(time * 1.5 + orbitOffset) * 1.2;
       }
       
-      // Rotate the emoji itself
-      meshRef.current.rotation.y = angle * -1; // Face the center
-      meshRef.current.rotation.z = Math.sin(time * 0.3) * 0.03; // Even gentler wobble
+      // Enhanced rotation with more complex motion
+      meshRef.current.rotation.y = angle * -1 + Math.sin(time * 0.5) * 0.1; // Face center with slight variation
+      meshRef.current.rotation.z = Math.sin(time * 0.8 + orbitOffset) * 0.08; // More noticeable wobble
+      meshRef.current.rotation.x = Math.cos(time * 0.6 + orbitOffset * 0.5) * 0.05; // Add pitch variation
       
       // Pulsing glow effect (also affected by opacity)
       if (glowRef.current) {
@@ -367,10 +394,10 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
             if (cmcData && cmcData.data && cmcData.data.value !== undefined) {
               const value = parseInt(cmcData.data.value);
               const classification = cmcData.data.value_classification || (
-                value < 25 ? 'Extreme Fear' :
-                value < 45 ? 'Fear' :
-                value < 55 ? 'Neutral' :
-                value < 75 ? 'Greed' : 'Extreme Greed'
+                value <= 20 ? 'Extreme Fear' :
+                value <= 39 ? 'Fear' :
+                value <= 60 ? 'Neutral' :
+                value <= 80 ? 'Greed' : 'Extreme Greed'
               );
               
               setFearGreedIndex({
@@ -448,10 +475,10 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
           if (coinStatsData && coinStatsData.value) {
             const value = parseInt(coinStatsData.value);
             let classification = 'Neutral';
-            if (value < 25) classification = 'Extreme Fear';
-            else if (value < 45) classification = 'Fear';
-            else if (value > 75) classification = 'Extreme Greed';
-            else if (value > 55) classification = 'Greed';
+            if (value <= 20) classification = 'Extreme Fear';
+            else if (value <= 39) classification = 'Fear';
+            else if (value > 80) classification = 'Extreme Greed';
+            else if (value > 60) classification = 'Greed';
             
             setFearGreedIndex({
               value: value,
@@ -495,10 +522,10 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
         const value = Math.floor(Math.min(100, Math.max(0, simulatedValue)));
         
         let classification = 'Neutral';
-        if (value > 75) classification = 'Extreme Greed';
-        else if (value > 55) classification = 'Greed';
-        else if (value < 25) classification = 'Extreme Fear';
-        else if (value < 45) classification = 'Fear';
+        if (value > 80) classification = 'Extreme Greed';
+        else if (value > 60) classification = 'Greed';
+        else if (value <= 20) classification = 'Extreme Fear';
+        else if (value <= 39) classification = 'Fear';
         
         setFearGreedIndex({
           value,
@@ -547,45 +574,40 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
       let money = 0;
       let crying = 0;
       
-      if (value >= 80) {
-        // Extreme Greed (80+): Money emojis appear!
+      if (value > 80) {
+        // Extreme Greed (>80): Money emojis appear!
         devils = 0;
-        angels = 3; // No angels, pure greed!
+        angels = 0; // No angels, pure greed!
         money = Math.floor(4 + (value - 80) / 20 * 3); // 4-7 money emojis
         console.log(`EXTREME GREED MANUAL: Setting angels=0, money=${money} for value=${value}`);
-      } else if (value > 75) {
-        // High Greed: Mix of angels warning
+      } else if (value > 60) {
+        // Greed (61-80): Angels warning
         devils = 0;
-        angels = Math.floor(5 + (value - 75) / 5 * 2);
+        angels = Math.floor(3 + (value - 60) / 20 * 3); // 3-6 angels
         money = 0;
-      } else if (value > 55) {
-        // Greed: Angels warning
-        devils = 0;
-        angels = Math.floor(3 + (value - 55) / 20 * 2);
+      } else if (value >= 40) {
+        // Neutral (40-60): Balanced
+        const neutralMid = 50;
+        if (value < neutralMid) {
+          devils = Math.floor(1 + (neutralMid - value) / 10 * 2); // 1-3 devils
+          angels = Math.floor(1 + (value - 40) / 10); // 1-2 angels
+        } else {
+          devils = Math.floor(1 + (60 - value) / 10); // 1-2 devils
+          angels = Math.floor(1 + (value - neutralMid) / 10 * 2); // 1-3 angels
+        }
         money = 0;
-      } else if (value > 45) {
-        // Neutral: Balanced
-        devils = Math.floor(1 + (55 - value) / 10);
-        angels = Math.floor(1 + (value - 45) / 10);
-        money = 0;
-      } else if (value >= 30) {
-        // Fear (30-45): Devils tempting
-        devils = Math.floor(3 + (45 - value) / 15 * 2);
+      } else if (value >= 20) {
+        // Fear (20-39): Devils tempting
+        devils = Math.floor(3 + (40 - value) / 20 * 3); // 3-6 devils
         angels = 0;
         money = 0;
         crying = 0;
-      } else if (value > 25) {
-        // High Fear (25-30): Devils and crying emojis
-        devils = Math.floor(4 + (30 - value) / 5 * 2);
-        angels = 0;
-        money = 0;
-        crying = Math.floor(1 + (30 - value) / 5 * 2); // 1-3 crying emojis
       } else {
-        // Extreme Fear (<25): Maximum devils and crying
-        devils = Math.floor(5 + (25 - value) / 25 * 3);
+        // Extreme Fear (<20): Maximum devils and crying
+        devils = Math.floor(5 + (20 - value) / 20 * 3); // 5-8 devils
         angels = 0;
         money = 0;
-        crying = Math.floor(3 + (25 - value) / 25 * 2); // 3-5 crying emojis
+        crying = Math.floor(3 + (20 - value) / 20 * 3); // 3-6 crying emojis
       }
       
       setDevilCount(devils);
@@ -622,45 +644,40 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
       let money = 0;
       let crying = 0;
       
-      if (value >= 80) {
-        // Extreme Greed (80+): Money emojis appear!
+      if (value > 80) {
+        // Extreme Greed (>80): Money emojis appear!
         devils = 0;
         angels = 0; // No angels, pure greed!
         money = Math.floor(4 + (value - 80) / 20 * 3); // 4-7 money emojis
         console.log(`EXTREME GREED LIVE: Setting angels=0, money=${money} for value=${value}`);
-      } else if (value > 75) {
-        // High Greed: Mostly angels warning
+      } else if (value > 60) {
+        // Greed (61-80): Angels warning
         devils = 0;
-        angels = Math.floor(5 + (value - 75) / 5 * 2);
+        angels = Math.floor(3 + (value - 60) / 20 * 3); // 3-6 angels
         money = 0;
-      } else if (value > 55) {
-        // Greed: Angels warning
-        devils = Math.random() > 0.7 ? 1 : 0;
-        angels = Math.floor(3 + (value - 55) / 20 * 2);
+      } else if (value >= 40) {
+        // Neutral (40-60): Balanced
+        const neutralMid = 50;
+        if (value < neutralMid) {
+          devils = Math.floor(1 + (neutralMid - value) / 10 * 2); // 1-3 devils
+          angels = Math.floor(1 + (value - 40) / 10); // 1-2 angels
+        } else {
+          devils = Math.floor(1 + (60 - value) / 10); // 1-2 devils
+          angels = Math.floor(1 + (value - neutralMid) / 10 * 2); // 1-3 angels
+        }
         money = 0;
-      } else if (value > 45) {
-        // Neutral: Balanced
-        devils = Math.floor(1 + (55 - value) / 10);
-        angels = Math.floor(1 + (value - 45) / 10);
-        money = 0;
-      } else if (value >= 30) {
-        // Fear (30-45): Devils tempting
-        devils = Math.floor(3 + (45 - value) / 15 * 2);
-        angels = Math.random() > 0.5 ? 1 : 0;
+      } else if (value >= 20) {
+        // Fear (20-39): Devils tempting
+        devils = Math.floor(3 + (40 - value) / 20 * 3); // 3-6 devils
+        angels = 0;
         money = 0;
         crying = 0;
-      } else if (value > 25) {
-        // High Fear (25-30): Devils and crying emojis
-        devils = Math.floor(4 + (30 - value) / 5 * 2);
-        angels = 0;
-        money = 0;
-        crying = Math.floor(1 + (30 - value) / 5 * 2); // 1-3 crying emojis
       } else {
-        // Extreme Fear (<25): Maximum devils and crying
-        devils = Math.floor(5 + (25 - value) / 25 * 3);
+        // Extreme Fear (<20): Maximum devils and crying
+        devils = Math.floor(5 + (20 - value) / 20 * 3); // 5-8 devils
         angels = 0;
         money = 0;
-        crying = Math.floor(3 + (25 - value) / 25 * 2); // 3-5 crying emojis
+        crying = Math.floor(3 + (20 - value) / 20 * 3); // 3-6 crying emojis
       }
       
       setDevilCount(devils);

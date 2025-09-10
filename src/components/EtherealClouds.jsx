@@ -13,12 +13,35 @@ import FallingDiamonds from '@/components/FallingDiamonds';
 import MarketEmojis from '@/components/MarketEmojis';
 import TestDevil from '@/components/TestDevil';
 // import CoinSparkles from './CoinSparkles';
+import BreathSmoke from '@/components/BreathSmoke';
 
 // Madonna Model Component
-const MadonnaModel = ({ position = [0, -1, 0], scale = 1, goldCoinRef, coinsRef }) => {
-  const { scene } = useGLTF('/models/madonna_skates2.glb');
+const MadonnaModel = ({ position = [0, 0, -15], scale = 1, goldCoinRef, coinsRef, onModelCentered, is80sMode = false }) => {
+  const { scene } = useGLTF('/models/ourlady_rider.glb');
+  const modelRef = React.useRef();
   
   React.useEffect(() => {
+    if (!modelRef.current) return;
+    
+    // Calculate the actual bounding box of the entire model
+    const modelBounds = new THREE.Box3().setFromObject(modelRef.current);
+    const modelCenter = new THREE.Vector3();
+    modelBounds.getCenter(modelCenter);
+    
+    // Adjust the model's position to center it
+    modelRef.current.position.sub(modelCenter);
+    
+    // Now the model is centered at origin, so we just use the position prop for OrbitControls
+    console.log('=== MODEL CENTER COORDINATES ===');
+    console.log('Model local center (before centering):', modelCenter);
+    console.log('Model has been centered at origin');
+    console.log('Use position prop for OrbitControls target:', position);
+    
+    // Notify parent component about the center
+    if (onModelCentered) {
+      onModelCentered(position);
+    }
+    
     // Log all meshes to identify the duplicate feet
     console.log('=== All meshes in scene ===');
     const meshList = [];
@@ -71,6 +94,13 @@ const MadonnaModel = ({ position = [0, -1, 0], scale = 1, goldCoinRef, coinsRef 
         if (child.parent?.name === 'lady' && child.parent?.parent?.name === 'lady') {
           child.visible = false;
           console.log('Hiding T-pose mesh:', child.name);
+          return;
+        }
+        
+        // Handle glasses visibility based on 80s mode
+        if (child.name === 'Object_1' || child.parent?.name === 'Glasses') {
+          child.visible = is80sMode;
+          console.log(`Glasses (${child.name}) visibility set to:`, is80sMode);
           return;
         }
         
@@ -165,20 +195,22 @@ const MadonnaModel = ({ position = [0, -1, 0], scale = 1, goldCoinRef, coinsRef 
       }
     });
     
-  }, [scene, goldCoinRef, coinsRef]);
+  }, [scene, goldCoinRef, coinsRef, position, scale, onModelCentered, is80sMode]);
   
   return (
     <primitive 
+      ref={modelRef}
       object={scene} 
       position={position} 
       scale={scale}
-      rotation={[0, -Math.PI / 12, 0]}
+      // rotation={[0, -Math.PI / 12, 0]}
+      rotation={[0, Math.PI / 12, 0]}
     />
   );
 };
 
 // Preload the model
-useGLTF.preload('/models/madonna_skates2.glb');
+useGLTF.preload('/models/ourlady_rider.glb');
 
 const EtherealClouds = ({ onDataUpdate, manualFearGreedData, manualVolumeData, is80sMode = false }) => {
   const goldCoinRef = React.useRef();
@@ -304,8 +336,30 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, manualVolumeData, i
       />
       
       {/* Madonna Model in center */}
-      <MadonnaModel position={[0, 10, -5]} scale={15} goldCoinRef={goldCoinRef} coinsRef={coinsRef} />
-      
+      <MadonnaModel position={[0, 0, -15]} scale={10} goldCoinRef={goldCoinRef} coinsRef={coinsRef} is80sMode={is80sMode} />
+      {/* Multiple debug positions to find the bull */}
+      {/* <BreathSmoke
+        position={[0, 0, 0]} // Center of scene
+        direction={[0, 0.2, 1]}
+        breathRate={2}
+        color="#f0f0f0"
+        debug={true}
+      /> */}
+      {/* <BreathSmoke
+        position={[7, 4, 30]} // Left nostril
+        direction={[0.3, -0.1, -1]} // Forward and slightly down
+        rotation={[0, -0.2, 0]} // Rotate slightly left (negative Y rotation)
+        breathRate={5}
+        color="#f0f0f0"
+        debug={false}
+      /> */}
+    {/* <BreathSmoke
+        position={[8.5, 4, 30]} // Right nostril
+        direction={[0.3, -0.1, 1]} // Forward and slightly down
+        breathRate={5}
+        color="#f0f0f0"
+        debug={false}
+      /> */}
       {/* Market-driven emoji display based on Fear & Greed Index */}
       <MarketEmojis 
         centerPosition={[0, 0, 0]} 
@@ -319,7 +373,7 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, manualVolumeData, i
       
       {/* Coin streams from both hands */}
       /* Right Hand */
-      <CoinStream 
+      {/* <CoinStream 
         startPosition={[-12.8, 12, 2]}  // Left hand position (adjusted for model scale/position)
         endPosition={[0, -20, 0]}
         coinCount={20}
@@ -329,9 +383,9 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, manualVolumeData, i
         gravity={-8}
         initialVelocity={[-4, 2, 7]}
         coinMesh={coinTemplate}
-      />
+      /> */}
        /* Left Hand */
-      <CoinStream 
+      {/* <CoinStream 
         startPosition={[11, 12, 6]}   // Right hand position (adjusted for model scale/position)
         endPosition={[0, -20, 0]}
         coinCount={20}
@@ -341,7 +395,7 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, manualVolumeData, i
         gravity={-8}
         initialVelocity={[2, 3, 2]}
         coinMesh={coinTemplate}
-      />
+      /> */}
       {/* <FallingDiamonds 
         count={90}
         fallSpeed={0.8}

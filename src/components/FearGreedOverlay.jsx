@@ -86,10 +86,10 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
     }
   };
   const getColorForValue = (value) => {
-    if (value < 25) return '#ff3333'; // Extreme Fear - Red
-    if (value < 45) return '#ff9933'; // Fear - Orange
-    if (value < 55) return '#ffff33'; // Neutral - Yellow
-    if (value < 75) return '#66ff66'; // Greed - Light Green
+    if (value <= 20) return '#ff3333'; // Extreme Fear - Red
+    if (value <= 39) return '#ff9933'; // Fear - Orange
+    if (value <= 60) return '#ffff33'; // Neutral - Yellow
+    if (value <= 80) return '#66ff66'; // Greed - Light Green
     return '#00ff00'; // Extreme Greed - Green
   };
   
@@ -103,12 +103,11 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
   };
   
   const getMarketMessage = (value, classification) => {
-    if (value < 25) return "😈 Devils tempt the fearful!";
-    if (value < 45) return "👹 Darkness whispers doubt";
-    if (value < 55) return "⚖️ Balance in the cosmos";
-    if (value < 75) return "😇 Angels warn of excess";
-    if (value >= 80) return "🤑 PEAK GREED - Money rains from heaven!";
-    return "👼 Heavenly caution - Peak euphoria!";
+    if (value <= 20) return "😈 Devils tempt the fearful!";
+    if (value <= 39) return "👹 Darkness whispers doubt";
+    if (value <= 60) return "⚖️ Balance in the cosmos";
+    if (value <= 80) return "😇 Angels warn of excess";
+    return "🤑 PEAK GREED - Money rains from heaven!";
   };
   
   if (!fearGreedData) return null;
@@ -116,10 +115,11 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
   // Mobile compact version
   if (isMobile) {
     const displayValue = isManualMode ? sliderValue : fearGreedData.value;
-    const classification = displayValue < 25 ? 'Extreme Fear' : 
-                          displayValue < 45 ? 'Fear' : 
-                          displayValue < 55 ? 'Neutral' : 
-                          displayValue < 75 ? 'Greed' : 'Extreme Greed';
+    const classification = displayValue <= 20 ? 'Extreme Fear' : 
+                          displayValue <= 39 ? 'Fear' : 
+                          displayValue <= 60 ? 'Neutral' : 
+                          displayValue <= 80 ? 'Greed' : 
+                          'Extreme Greed';
     
     return (
       <div style={{
@@ -355,10 +355,10 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
   
   // Desktop version
   const displayValue = isManualMode ? sliderValue : fearGreedData.value;
-  const classification = displayValue < 25 ? 'Extreme Fear' : 
-                        displayValue < 45 ? 'Fear' : 
-                        displayValue < 55 ? 'Neutral' : 
-                        displayValue < 75 ? 'Greed' : 'Extreme Greed';
+  const classification = displayValue <= 20 ? 'Extreme Fear' : 
+                        displayValue <= 39 ? 'Fear' : 
+                        displayValue <= 60 ? 'Neutral' : 
+                        displayValue <= 80 ? 'Greed' : 'Extreme Greed';
   
   return (
     <div style={{

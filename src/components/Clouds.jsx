@@ -142,19 +142,49 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
       shake.current.setIntensity(shakeIntensity);
     }
 
-    // Very subtle rotation for the entire cloud group
+    // More dynamic rotation for the entire cloud group
     if (cloudsGroupRef.current) {
-      cloudsGroupRef.current.rotation.y = Math.cos(time / 4) / 50;
-      cloudsGroupRef.current.rotation.x = Math.sin(time / 4) / 60;
+      cloudsGroupRef.current.rotation.y = Math.cos(time / 4) / 20;
+      cloudsGroupRef.current.rotation.x = Math.sin(time / 4) / 30;
     }
 
-    // Very minimal individual cloud rotations
-    if (cloud0.current) cloud0.current.rotation.y -= delta * 0.01;
-    if (cloud1.current) cloud1.current.rotation.y += delta * 0.008;
-    if (cloud2.current) cloud2.current.rotation.y -= delta * 0.012;
-    if (cloud3.current) cloud3.current.rotation.y += delta * 0.006;
-    if (cloud4.current) cloud4.current.rotation.y -= delta * 0.009;
-    if (cloud5.current) cloud5.current.rotation.y += delta * 0.007;
+    // Individual cloud movements - rotation and drift
+    if (cloud0.current) {
+      cloud0.current.rotation.y -= delta * 0.02;
+      cloud0.current.position.x = Math.sin(time * 0.1) * 2;
+      cloud0.current.position.y = -11 + Math.cos(time * 0.15) * 1;
+    }
+    
+    if (cloud1.current) {
+      cloud1.current.rotation.y += delta * 0.015;
+      cloud1.current.position.x = 30 + Math.cos(time * 0.12) * 3;
+      cloud1.current.position.y = -15 + Math.sin(time * 0.1) * 1.5;
+    }
+    
+    if (cloud2.current) {
+      cloud2.current.rotation.y -= delta * 0.018;
+      cloud2.current.position.x = -30 + Math.sin(time * 0.08) * 2.5;
+      cloud2.current.position.y = -12 + Math.cos(time * 0.12) * 1.2;
+    }
+    
+    if (cloud3.current) {
+      cloud3.current.rotation.y += delta * 0.012;
+      cloud3.current.position.z = -20 + Math.sin(time * 0.09) * 2;
+      cloud3.current.position.y = -13 + Math.cos(time * 0.11) * 1;
+    }
+    
+    if (cloud4.current) {
+      cloud4.current.rotation.y -= delta * 0.014;
+      cloud4.current.position.x = 10 + Math.cos(time * 0.13) * 2;
+      cloud4.current.position.z = 15 + Math.sin(time * 0.1) * 1.5;
+    }
+    
+    if (cloud5.current) {
+      cloud5.current.rotation.y += delta * 0.01;
+      // Larger, slower movement for background cloud
+      cloud5.current.position.x = Math.sin(time * 0.05) * 5;
+      cloud5.current.position.z = -30 + Math.cos(time * 0.06) * 3;
+    }
 
     // Apply emissive glow based on lightning (only when active)
     if (cloudsGroupRef.current && lightningActive) {
