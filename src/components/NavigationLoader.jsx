@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import SimpleLoader from './SimpleLoader';
+import InfinityLoader from '@/components/InfinityLoader';
 
 export default function NavigationLoader() {
   const [isNavigating, setIsNavigating] = useState(false);
@@ -38,7 +38,7 @@ export default function NavigationLoader() {
       alignItems: 'center',
       justifyContent: 'center'
     }}>
-      <SimpleLoader />
+      <InfinityLoader />
     </div>
   );
 }

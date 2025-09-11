@@ -4,14 +4,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useUser, UserButton, SignInButton } from '@clerk/nextjs';
 import { useMusic } from '@/components/MusicContext';
-import SimpleLoader from '@/components/SimpleLoader';
+import InfinityLoader from '@/components/InfinityLoader';
 import CyberNav from '@/components/CyberNav';
 import BuyTokenFAB from '@/components/BuyTokenFAB';
 import CompactCandleModal from '@/components/CompactCandleModal';
 
 const SimpleModelViewer = dynamic(() => import('@/components/SimpleModelViewer'), {
   ssr: false,
-  loading: () => <SimpleLoader />
+  loading: () => <InfinityLoader />
 });
 
 export default function ModelViewerPage() {

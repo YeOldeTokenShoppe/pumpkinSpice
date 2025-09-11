@@ -16,7 +16,7 @@ import TestDevil from '@/components/TestDevil';
 import BreathSmoke from '@/components/BreathSmoke';
 
 // Madonna Model Component
-const MadonnaModel = ({ position = [0, 0, -15], scale = 1, goldCoinRef, coinsRef, onModelCentered, is80sMode = false }) => {
+const MadonnaModel = ({ position = [0, -6, 0], scale = 1, goldCoinRef, coinsRef, onModelCentered, is80sMode = false }) => {
   const { scene } = useGLTF('/models/ourlady_rider.glb');
   const modelRef = React.useRef();
   
@@ -60,11 +60,11 @@ const MadonnaModel = ({ position = [0, 0, -15], scale = 1, goldCoinRef, coinsRef
           visible: child.visible
         });
         
-        console.log(`Mesh: ${child.name}`, {
-          parent: child.parent?.name,
-          position: `(${child.position.x.toFixed(2)}, ${child.position.y.toFixed(2)}, ${child.position.z.toFixed(2)})`,
-          size: `(${size.x.toFixed(2)}, ${size.y.toFixed(2)}, ${size.z.toFixed(2)})`,
-        });
+        // console.log(`Mesh: ${child.name}`, {
+        //   parent: child.parent?.name,
+        //   position: `(${child.position.x.toFixed(2)}, ${child.position.y.toFixed(2)}, ${child.position.z.toFixed(2)})`,
+        //   size: `(${size.x.toFixed(2)}, ${size.y.toFixed(2)}, ${size.z.toFixed(2)})`,
+        // });
       }
     });
     
@@ -188,12 +188,12 @@ const MadonnaModel = ({ position = [0, 0, -15], scale = 1, goldCoinRef, coinsRef
     });
     
     // Log scene structure for debugging
-    console.log('Scene structure:');
-    scene.traverse((obj) => {
-      if (obj.name) {
-        console.log(`${obj.type}: ${obj.name}`);
-      }
-    });
+    // console.log('Scene structure:');
+    // scene.traverse((obj) => {
+    //   if (obj.name) {
+    //     console.log(`${obj.type}: ${obj.name}`);
+    //   }
+    // });
     
   }, [scene, goldCoinRef, coinsRef, position, scale, onModelCentered, is80sMode]);
   
@@ -201,7 +201,7 @@ const MadonnaModel = ({ position = [0, 0, -15], scale = 1, goldCoinRef, coinsRef
     <primitive 
       ref={modelRef}
       object={scene} 
-      position={position} 
+      position={[0, -6, 0]} 
       scale={scale}
       // rotation={[0, -Math.PI / 12, 0]}
       rotation={[0, Math.PI / 12, 0]}
@@ -336,7 +336,7 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, manualVolumeData, i
       />
       
       {/* Madonna Model in center */}
-      <MadonnaModel position={[0, 0, -15]} scale={10} goldCoinRef={goldCoinRef} coinsRef={coinsRef} is80sMode={is80sMode} />
+      <MadonnaModel position={[0, -6, 0]} scale={10} goldCoinRef={goldCoinRef} coinsRef={coinsRef} is80sMode={is80sMode} />
       {/* Multiple debug positions to find the bull */}
       {/* <BreathSmoke
         position={[0, 0, 0]} // Center of scene
@@ -449,7 +449,7 @@ const EtherealClouds = ({ onDataUpdate, manualFearGreedData, manualVolumeData, i
             <BurningDollarBills 
               key="burning-bills"
               count={adjustedCount} 
-              radius={30} 
+              radius={50} 
               height={170} 
               speed={3}
               startY={120}

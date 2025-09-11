@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import SimpleLoader from '@/components/SimpleLoader';
+import InfinityLoader from '@/components/InfinityLoader';
 import PalmTreeDrive from '@/components/PalmTreeDrive';
 import { useMusic } from '@/components/MusicContext';
 import Link from 'next/link';
@@ -91,7 +91,7 @@ export default function Home() {
           backgroundColor: '#000',
           zIndex: 9999
         }}>
-          <SimpleLoader />
+          <InfinityLoader />
         </div>
       )}
       

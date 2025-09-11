@@ -20,9 +20,10 @@ import { db } from '@/utilities/firebaseClient';
 import { collection, query, getDocs, limit, orderBy } from 'firebase/firestore';
 import '@/components/ArrowButton.css';
 import Numerology from '@/components/Numerology';
-import SimpleLoader from '@/components/SimpleLoader';
+import InfinityLoader from '@/components/InfinityLoader';
 import Bouncer from '@/components/Bouncer';
 import Manuscript from '@/components/Manuscript';
+import TokenInfoGrid from '@/components/TokenInfoGrid';
 
 
 
@@ -213,15 +214,15 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
   return (
     <div style={{ marginBottom: '2rem' }}>
       <div style={{
-        background: 'rgba(0, 0, 0, 0.5)',
+        // background: 'rgba(0, 0, 0, 0.5)',
         borderRadius: '10px',
         height: '40px',
         position: 'relative',
-        border: '1px solid rgba(212, 175, 55, 0.3)',
+        // border: '1px solid rgba(212, 175, 55, 0.3)',
         overflow: 'hidden'
       }}>
         <div style={{
-          background: 'linear-gradient(90deg, #d4af37 0%, #f4e4bc 100%)',
+          // background: 'linear-gradient(90deg, #d4af37 0%, #f4e4bc 100%)',
           height: '100%',
           width: `${progress}%`,
           transition: 'width 1s ease',
@@ -993,12 +994,12 @@ export default function HomePage() {
 
   const carouselSlides = [
     {
-      id: 1,
-      backgroundImage: '/images/face.png',
-      image: '/images/face.png',
-      number: '01',
-      title: 'AVOID FALSE PROFITS',
-      description: 'Only worthy investments deserve your credulity                                                                                                                                                                                                                                                                                                                                                                                                                    .'
+      id: 4,
+      backgroundImage: '/images/bullrider.jpg',
+      image: '/images/bullrider.jpg',
+      number: '04',
+      title: 'ONWARD AND UPWARD',
+      description: 'She will guide you up and to the right.'
     },
     {
       id: 2,
@@ -1017,13 +1018,14 @@ export default function HomePage() {
       description: 'Avoid scams, fiends, and insider schemes.'
     },
     {
-      id: 4,
-      backgroundImage: '/images/bullrider.jpg',
-      image: '/images/bullrider.jpg',
-      number: '04',
-      title: 'ASCENDING TRENDS',
-      description: 'She will guide you up and to the right.'
+      id: 1,
+      backgroundImage: '/images/face.png',
+      image: '/images/face.png',
+      number: '01',
+      title: 'AVOID FALSE PROFITS',
+      description: 'A mother usually knows best.'
     },
+   
     {
       id: 5,
       backgroundImage: '/images/lowrider.jpg',
@@ -1033,7 +1035,7 @@ export default function HomePage() {
       description: 'She offers you her protection with very smart contracts.'
     },
     {
-      id: 6,
+      id: 0,
       backgroundImage: '/images/mosaic.jpg',
       image: '/images/mosaic.jpg',
       number: '05',
@@ -1061,7 +1063,7 @@ export default function HomePage() {
 
   // Show loader while page is loading
   if (pageLoading) {
-    return <SimpleLoader progress={loadingProgress} />;
+    return <InfinityLoader progress={loadingProgress} />;
   }
 
   return (
@@ -1072,6 +1074,14 @@ export default function HomePage() {
           font-family: 'UnifrakturCook';
           src: url('/fonts/UnifrakturCook-Bold.ttf') format('truetype');
           font-weight: bold;
+          font-style: normal;
+          font-display: swap;
+        }
+        
+        @font-face {
+          font-family: 'UnifrakturMaguntia';
+          src: url('/fonts/UnifrakturMaguntia-Regular.ttf') format('truetype');
+          font-weight: normal;
           font-style: normal;
           font-display: swap;
         }
@@ -1255,8 +1265,15 @@ export default function HomePage() {
       )}
       
       {/* Mobile Text Box - only shown on mobile */}
+   
+
+      {/* TokenInfoGrid for Mobile */}
       {isClient && isMobileView && (
         <div style={{
+          marginTop: '1rem',
+          width: '100%',
+        }}>
+          <div style={{
           marginTop: '1rem',
           marginLeft: '0',
           marginRight: '0',
@@ -1266,7 +1283,7 @@ export default function HomePage() {
           borderRadius: '12px',
           border: '1px solid rgba(212, 175, 55, 0.3)',
           color: '#ffffff',
-          // fontSize: '1rem',
+          fontSize: '1rem',
           
           lineHeight: 1.6,
           textAlign: 'center'
@@ -1293,7 +1310,16 @@ export default function HomePage() {
 
 
           </p>
+        </div>
+          <TokenInfoGrid />
+        </div>
+      )}
 
+      {/* Mobile Text Box continued - if needed */}
+      {isClient && isMobileView && (
+        <div style={{
+          display: 'none', // Hidden for now since TokenInfoGrid replaced the token info
+        }}>
           {/* RL80 Token Information */}
           {/* <div style={{
             marginTop: '1.5rem',
@@ -1551,7 +1577,7 @@ export default function HomePage() {
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit.</span> If The Virgin notices your virtue signal, you could receive an airdrop!
+                }}>Our Lady of Perpetual Profit.</span> Upon request, she'll visit your social media with a personalized blessing.
               {/* Top token burners are inducted into <span style={{
                 fontFamily: 'UnifrakturCook, serif',
                 fontWeight: 'bold',
@@ -1772,7 +1798,8 @@ export default function HomePage() {
                 backgroundColor: '#d4af37',
                 color: '#000',
                 position: 'absolute',
-                left: '50%',
+                left: 'auto',
+      
                 bottom: '1rem',
                 padding: '0.6rem 0.5rem',
                 borderRadius: '25px',
@@ -1930,24 +1957,45 @@ export default function HomePage() {
    
             maxWidth: "1400px",
             padding: '3rem 2rem',
-            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+            // background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
             backdropFilter: 'blur(12px)',
-            borderRadius: '20px',
-            border: '2px solid rgba(212, 175, 55, 0.4)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+            // borderRadius: '20px',
+            // border: '2px solid rgba(212, 175, 55, 0.4)',                                                                                                    ``````````````````````````
             color: '#ffffff',
             fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem',
             lineHeight: 1.2,
             textAlign: 'center'
           }}>
-     <p style={{ 
-            marginBottom: '2rem',  
+            <div style={{
+          marginTop: '1rem',
+          marginLeft: '0',
+          marginRight: '0',
+          // padding: '1.5rem',
+          background: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(10px)',
+          // borderRadius: '12px',
+          // border: '1px solid rgba(212, 175, 55, 0.3)',
+          // color: '#ffffff',
+          // fontSize: '1rem',
+          
+          lineHeight: 1.6,
+          textAlign: 'center'
+        }}>
+          {/* <h2 style={{
+            color: '#d4af37',
+            // marginBottom: '1rem',
+            fontSize: '3.5rem',
+            fontFamily: 'UnifrakturMaguntia, serif'
+          }}>Welcome to Our Sacred Digital Temple</h2>
+          <p style={{ 
+            marginBottom: '1rem',  
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
             fontWeight: 400,
-            letterSpacing: '0.02em'
+            letterSpacing: '0.02em',
+            marginBottom: '1rem',
           }}>
     Experience the convergence of ancient wisdom and cyberpunk sensibility into the maternal market-oriented icon, 
-    <span style={{
+  <span style={{
                 fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
                 fontWeight: 'bold',
                 fontSize: '1.1em',
@@ -1956,119 +2004,10 @@ export default function HomePage() {
               }}> Our Lady of Perpetual Profit</span>. Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers, or pay homage to the Patron Saint of Day Traders with a green candle. 
 
 
-          </p>
-          {/* <Manuscript 
-    title="RL80 Token Summary"
-    content={{
-      firstParagraph: "Your text...",
-      blockquote: "Quote text...",
-      secondParagraph: "More text..."
-    }}
-  /> */}
-  
-{/* <FlipBook /> */}
-          {/* RL80 Token Information */}
-          {/* <div style={{
-            marginTop: '1.5rem',
-            padding: '1.5rem',
-            background: 'rgba(212, 175, 55, 0.1)',
-            borderRadius: '8px',
-            border: '1px solid rgba(212, 175, 55, 0.3)'
-          }}>
-            <h3 style={{
-              color: '#d4af37',
-              fontSize: '1.8rem',
-              marginBottom: '1rem',
-              fontFamily: 'Cyber, monospace',
-              textAlign: 'center'
-            }}>RL80 Token - Contract Summary</h3>
-            <h4 style={{
-              color: '#00ff00',
-              fontSize: '1.5rem',
-              marginBottom: '0.8rem',
-              fontFamily: 'Cyber, monospace',
-              textAlign: 'center'
-            }}>Core Tokenomics</h4>
-            <ul style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0,
-              fontSize: '1.3rem',
-              lineHeight: 2,
-              textAlign: 'center'
-            }}>
-              <li><strong style={{ color: '#d4af37' }}>Total Supply:</strong> 80 billion RL80 tokens</li>
-              <li><strong style={{ color: '#d4af37' }}>Distribution:</strong> 80% liquidity, 10% treasury, 10% marketing</li>
-              <li><strong style={{ color: '#d4af37' }}>Network:</strong> Base (Ethereum L2)</li>
-              <li><strong style={{ color: '#d4af37' }}>No mint function</strong> - Supply is fixed forever</li>
-            </ul>
-            
-            <h4 style={{
-              color: '#00ff00',
-              fontSize: '1.5rem',
-              marginTop: '1.5rem',
-              marginBottom: '0.8rem',
-              fontFamily: 'Cyber, monospace',
-              textAlign: 'center'
-            }}>Tax Structure</h4>
-            <p style={{
-              fontSize: '1.2rem',
-              marginBottom: '0.5rem',
-              textAlign: 'center'
-            }}>Progressive reduction:</p>
-            <ul style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0,
-              fontSize: '1.2rem',
-              lineHeight: 1.8,
-              textAlign: 'center'
-            }}>
-              <li>• <strong style={{ color: '#d4af37' }}>Start:</strong> 5% buy/sell tax</li>
-              <li>• <strong style={{ color: '#d4af37' }}>After 250 buys:</strong> 3% tax</li>
-              <li>• <strong style={{ color: '#d4af37' }}>After 500 buys:</strong> 1% tax</li>
-              <li>• <strong style={{ color: '#d4af37' }}>After 1000 buys:</strong> 1% maintained (can be reduced to 0% manually)</li>
-              <li>• Only buys ≥100K tokens count toward milestones (prevents gaming)</li>
-              <li>• ✅ Maximum 5% tax hardcoded</li>
-            </ul>
-            
-            <h4 style={{
-              color: '#00ff00',
-              fontSize: '1.5rem',
-              marginTop: '1.5rem',
-              marginBottom: '0.8rem',
-              fontFamily: 'Cyber, monospace',
-              textAlign: 'center'
-            }}>Ownership Status</h4>
-            <p style={{
-              fontSize: '1.2rem',
-              lineHeight: 1.8,
-              textAlign: 'center'
-            }}>
-              <strong style={{ color: '#d4af37' }}>Not renounced.</strong> This allows for:
-            </p>
-            <ul style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: '0.5rem 0',
-              fontSize: '1.2rem',
-              lineHeight: 1.8,
-              textAlign: 'center'
-            }}>
-              <li>(1) Adding CEX wallets for exchange listings</li>
-              <li>(2) Adjusting limits as liquidity grows</li>
-              <li>(3) Reducing tax to 0%</li>
-              <li>(4) Emergency response to exploits</li>
-            </ul>
-            <p style={{
-              fontSize: '1.2rem',
-              lineHeight: 1.8,
-              textAlign: 'center'
-            }}>
-              <strong style={{ color: '#ff6b6b' }}>Cannot:</strong> mint tokens, increase tax above 5%, or access liquidity.
-            </p>
-          </div> */}
-          
+          </p> */}
+        </div>
+
+            <TokenInfoGrid />
           </div>
           {/* Two Column Section with Scroll */}
 
@@ -2291,7 +2230,7 @@ export default function HomePage() {
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit.</span> If The Virgin notices your virtue signal, you could receive an airdrop!
+                }}>Our Lady of Perpetual Profit.</span> Upon request, she'll visit your social media with a personalized blessing.
                  {/* Top burners are inducted into  <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
@@ -2405,105 +2344,7 @@ export default function HomePage() {
           
           {/* Flipbook Section - CSS-only interactive book */}
  
-          
-          {/* Desktop Numerology Section - 2 Column Layout */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '3rem',
-            alignItems: 'center',
-            padding: '3rem 2rem',
-            margin: '0 auto 4rem auto',
-            maxWidth: '1400px',
-            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: '20px',
-            border: '2px solid rgba(212, 175, 55, 0.4)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
-            color: '#ffffff',
-          }}>
-            {/* Left Column - Text Content */}
-            <div style={{
-              // padding: '0 2rem',
-              color: '#ffffff'
-            }}>
-              <h2 style={{
-                color: '#d4af37',
-                fontSize: '3rem',
-                marginBottom: '1rem',
-                fontFamily: 'UnifrakturMaguntia, serif',
-                textAlign: 'center',
-                textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
-                lineHeight: 1.2
-              }}>
-                The Oracle of RL80
-              </h2>
-              <p style={{
-                lineHeight: 1.2,
-                marginBottom: '1.5rem',
-                opacity: 0.9,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                fontWeight: 400,
-                letterSpacing: '0.02em',
-                fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem',
-                textAlign: 'center'
-              }}>
-                Peer into the mystical realm where ancient wisdom meets iconic modernity. 
-                Our quantum-entangled oracle channels divine guidance and market analysis.
-              </p>
-              <p style={{
-                fontSize: isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem',
-                lineHeight: 1.2,
-                opacity: 0.8,
-                fontStyle: 'italic',
-                color: '#d4af37',
-                textAlign: 'center'
-              }}>
-                Ask your question, shake the sphere of destiny, and receive wisdom from 
-                <span style={{
-                  fontFamily: 'UnifrakturCook, serif',
-                  fontWeight: 'bold',
-                  fontSize: '1.2em',
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                  display: 'inline-block',
-                  marginLeft: '0.3rem'
-                }}>Our Lady of Perpetual Profit</span>
-              </p>
-              {/* <div style={{
-                marginTop: '2rem',
-                padding: '1rem',
-                background: 'rgba(212, 175, 55, 0.1)',
-                borderLeft: '3px solid #d4af37',
-                borderRadius: '5px'
-              }}>
-                <p style={{
-                  fontSize: '1rem',
-                  fontFamily: 'Cyber, monospace',
-                  color: '#00ff00',
-                  textShadow: '0 0 5px #00ff00',
-                  margin: 0
-                }}>
-                  ✨ Tap or click to reveal your fortune ✨
-                </p>
-              </div> */}
-            </div>
-            
-            {/* Right Column - Numerology Component */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '500px'
-            }}>
-              <div style={{
-                width: '100%',
-                maxWidth: '400px',
-                height: '400px'
-              }}>
-                <Numerology />
-              </div>
-            </div>
-          </div>
+         
           {/* MoonRoom Section */}
           <div
             style={{
@@ -2536,7 +2377,8 @@ export default function HomePage() {
             {/* Right Column - Illumin80 Perks */}
             <div style={{
               padding: '0 1rem',
-              color: '#ffffff'
+              color: '#ffffff',
+              textAlign: 'center'
             }}>
               <h2 style={{
                 fontSize: '2.5rem',
@@ -2545,16 +2387,31 @@ export default function HomePage() {
                 fontFamily: 'UnifrakturMaguntia, serif',
                 textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
                 alignContent: 'center',
+          
               }}>Join the Illumin80 Soci80</h2>
               
               <p style={{
                 fontSize: '1.2rem',
                 marginBottom: '1.5rem',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+
                 lineHeight: 1.6,
                 color: '#ffffff',
                 opacity: 0.9
               }}>
-                Top 80 candle burners ascend to the inner circle of enlightened traders and unlock exclusive benefits:
+                Devote a green candle to  <span style={{
+                  fontFamily: 'UnifrakturCook, serif',
+                  fontWeight: 'bold',
+                  fontSize: '1.1em',
+                  color: '#d4af37',
+                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+                }}>Our Lady of Perpetual Profit</span> by burning some RL80 tokens. The top 80 burners qualify for <span style={{
+                  fontFamily: 'UnifrakturCook, serif',
+                  fontWeight: 'bold',
+                  fontSize: '1.1em',
+                  color: '#d4af37',
+                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+                }}>Illumin80</span> status and unlock exclusive benefits:
               </p>
               
               <ul style={{
@@ -2562,33 +2419,35 @@ export default function HomePage() {
                 lineHeight: 1.8,
                 color: '#ffffff',
                 listStyle: 'none',
-                paddingLeft: '0'
+                paddingLeft: '0',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+
               }}>
-                     <li style={{ marginBottom: '0.75rem' }}>
+                     <li style={{ marginBottom: '0.35rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🔥</span>
-                  Members split 0.5% of RL80 transaction taxes
+                  Members split 1% of RL80 transaction taxes
                 </li>
-                <li style={{ marginBottom: '0.75rem' }}>
+                <li style={{ marginBottom: '0.35rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
-                  Access to the sacred Moon Room sanctuary
+                  Access to the sacred Moon Room member's club
                 </li>
             
-                <li style={{ marginBottom: '0.75rem' }}>
+                <li style={{ marginBottom: '0.35rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>📊</span>
                   Exclusive alpha
                 </li>
-                <li style={{ marginBottom: '0.75rem' }}>
+                <li style={{ marginBottom: '0.35rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🎯</span>
                   Early access to new features
                 </li>
-                <li style={{ marginBottom: '0.75rem' }}>
+                <li style={{ marginBottom: '0.35rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>💎</span>
                   Special airdrops
                 </li>
            
               </ul>
               
-              <p style={{
+              {/* <p style={{
                 marginTop: '1.5rem',
                 fontSize: '1rem',
                 fontStyle: 'italic',
@@ -2596,7 +2455,7 @@ export default function HomePage() {
                 opacity: 0.9
               }}>
                 Devote a candle and burn RL80 tokens to ascend to this most elite level of devotion.
-              </p>
+              </p> */}
             </div>
           </div>
           {/* Rotating Text Component */}
@@ -2625,6 +2484,102 @@ export default function HomePage() {
             <div style={{ position: "relative", zIndex: 2 }}>
               <RotatingText isDesktop={true} />
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Mobile Illumin80 Section */}
+      {isClient && isMobileView && (
+        <div style={{
+          padding: '2rem 1rem',
+          margin: '2rem auto',
+          maxWidth: '100%',
+          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '20px',
+          border: '2px solid rgba(212, 175, 55, 0.4)',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+        }}>
+          {/* Bouncer Component */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: '2rem',
+            marginTop: '5rem'
+          }}>
+            <Bouncer />
+          </div>
+          
+          {/* Illumin80 Content */}
+          <div style={{
+            color: '#ffffff',
+            textAlign: 'center'
+          }}>
+            <h2 style={{
+              fontSize: '2rem',
+              marginBottom: '1rem',
+              color: '#d4af37',
+              fontFamily: 'UnifrakturMaguntia, serif',
+              textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
+            }}>Join the Illumin80 Soci80</h2>
+            
+            <p style={{
+              fontSize: '1rem',
+              marginBottom: '1.5rem',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              lineHeight: 1.6,
+              color: '#ffffff',
+              opacity: 0.9,
+              padding: '0 1rem'
+            }}>
+              Devote a green candle to <span style={{
+                fontFamily: 'UnifrakturCook, serif',
+                fontWeight: 'bold',
+                fontSize: '1.1em',
+                color: '#d4af37',
+                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+              }}>Our Lady of Perpetual Profit</span> by burning some RL80 tokens. The top 80 burners qualify for <span style={{
+                fontFamily: 'UnifrakturCook, serif',
+                fontWeight: 'bold',
+                fontSize: '1.1em',
+                color: '#d4af37',
+                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+              }}>Illumin80</span> status and unlock exclusive benefits:
+            </p>
+            
+            <ul style={{
+              fontSize: '0.95rem',
+              lineHeight: 1.8,
+              color: '#ffffff',
+              listStyle: 'none',
+              paddingLeft: '0',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              textAlign: 'left',
+              maxWidth: '300px',
+              margin: '0 auto'
+            }}>
+              <li style={{ marginBottom: '0.75rem' }}>
+                <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🔥</span>
+                Members split 0.8% of RL80 transaction taxes
+              </li>
+              <li style={{ marginBottom: '0.75rem' }}>
+                <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
+                Access to the sacred Moon Room member's club
+              </li>
+              <li style={{ marginBottom: '0.75rem' }}>
+                <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>📊</span>
+                Exclusive alpha
+              </li>
+              <li style={{ marginBottom: '0.75rem' }}>
+                <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🎯</span>
+                Early access to new features
+              </li>
+              <li style={{ marginBottom: '0.75rem' }}>
+                <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>💎</span>
+                Special airdrops
+              </li>
+            </ul>
           </div>
         </div>
       )}
@@ -2702,8 +2657,6 @@ export default function HomePage() {
           <span style={{ marginLeft: "3rem" }}>Profit </span>
         </h1>
       )}
-      
-
       
       {/* Footer */}
       <footer style={{

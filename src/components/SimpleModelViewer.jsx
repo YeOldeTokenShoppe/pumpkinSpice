@@ -13,7 +13,7 @@ import {
 import { BlendFunction, GlitchMode } from "postprocessing";
 import * as THREE from 'three';
 import Chart from 'chart.js/auto';
-import SimpleLoader from './SimpleLoader';
+import InfinityLoader from '@/components/InfinityLoader';
 import PostProcessingEffects from './PostProcessingEffects';
 import '../app/globals.css';
 
@@ -389,6 +389,7 @@ function Model({ modelPath, onLoaded, is80sMode }) {
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, group);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [centerOffset, setCenterOffset] = useState(new THREE.Vector3(0, 0, 0));
   
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -396,12 +397,38 @@ function Model({ modelPath, onLoaded, is80sMode }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // Signal when model is loaded
+  // Signal when model is loaded and calculate center
   useEffect(() => {
-    if (scene && onLoaded) {
-      onLoaded();
+    if (scene) {
+      // Calculate the bounding box and center of the model
+      const box = new THREE.Box3().setFromObject(scene);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      
+      console.log('=== Model Center Information (Before Centering) ===');
+      console.log('Model Path:', modelPath);
+      console.log('Bounding Box Min:', box.min);
+      console.log('Bounding Box Max:', box.max);
+      console.log('Original Model Center:', center);
+      console.log('Model Size:', size);
+      console.log('Center X:', center.x);
+      console.log('Center Y:', center.y);
+      console.log('Center Z:', center.z);
+      
+      // Calculate offset to center the model at [0,0,0]
+      const offset = center.clone().multiplyScalar(-1);
+      setCenterOffset(offset);
+      
+      console.log('=== Centering Model ===');
+      console.log('Offset to apply:', offset);
+      console.log('New center will be at: [0, 0, 0]');
+      console.log('================================');
+      
+      if (onLoaded) {
+        onLoaded();
+      }
     }
-  }, [scene, onLoaded]);
+  }, [scene, onLoaded, modelPath]);
   
   // Control Neon mesh visibility based on 80s mode
   useEffect(() => {
@@ -466,9 +493,16 @@ function Model({ modelPath, onLoaded, is80sMode }) {
   // Apply rotation only on desktop
   const rotation = isDesktop ? [0, -Math.PI/2, 0] : [0, 0, 0];
   
+  // Apply the center offset to position the model at [0,0,0]
+  const position = [
+    centerOffset.x,
+    centerOffset.y - 2, // Keep the -2 vertical adjustment
+    centerOffset.z
+  ];
+  
   return (
     <group ref={group}>
-      <primitive position={[0, -2, 0]} rotation={rotation} object={scene} scale={2} />
+      <primitive position={position} rotation={rotation} object={scene} scale={2} />
     </group>
   );
 }
@@ -785,7 +819,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           zIndex: 9999,
           background: '#000000'
         }}>
-          <SimpleLoader />
+          <InfinityLoader />
         </div>
       )}
       

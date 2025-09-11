@@ -28,14 +28,14 @@ const MorphingSynthwaveText = ({
     }
   }, [shouldMorph, morphDelay, isMorphing]);
 
-  const letterScale = scale * (isMobile ? 0.8 : 1.2);
+  const letterScale = scale * (isMobile ? 0.8 : 0.8);
   
   // Container with fixed dimensions to prevent layout shift
   return (
     <div style={{ 
       position: 'relative',
       width: '100%',
-      minHeight: '120px', // Set a minimum height to prevent vertical shift
+      minHeight: '100px', // Set a minimum height to prevent vertical shift
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center'

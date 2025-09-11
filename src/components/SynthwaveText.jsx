@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
 const SynthwaveText = ({ 
   text = "SYNTHWAVE",
   fontSize = 300,
-  scale = 1,
+  scale = 0.8,
   spacingX = 4,
   outsideColor = "rgba(0, 255, 255, 0.0)",
   insideColor = "rgba(255, 0, 255, 1)",

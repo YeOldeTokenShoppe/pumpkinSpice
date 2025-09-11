@@ -27,32 +27,47 @@ const gAnimation = keyframes`
 `;
 
 const FluidBackground = styled.div`
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: #000; /* Add black background as fallback */
-  border-radius: 2em; /* Match the clip-path rounded corners */
+  border-radius: 0.5em; /* Match the parent border radius minus border width */
+  
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000;
+    z-index: 0;
+  }
 
   &::after {
     --l: rgb(var(--r) var(--g) 0%),
       rgb(calc(100% - var(--r)) calc(100% - var(--g)) 0%);
     content: "";
     position: absolute;
-    top: -2em;
-    left: -2em;
-    right: -2em;
-    bottom: -2em;
+    top: 50%;
+    left: 50%;
+    width: 200%;
+    height: 200%;
+    transform: translate(-50%, -50%);
     background: radial-gradient(var(--l)), linear-gradient(var(--l)),
       conic-gradient(at 0 100%, var(--l) 25%);
     background-blend-mode: difference;
-    clip-path: inset(3em round 1em);
     animation: ${rAnimation} 4.7s ease-in-out -1.93s infinite alternate,
       ${gAnimation} 4.3s ease-in-out -2.37s infinite alternate;
     filter: url(#smoke) invert(1) saturate(2);
-    z-index: 0;
-    transform: translateZ(0); /* Force GPU acceleration for better rendering */
-    will-change: transform, clip-path; /* Optimize for animation */
+    z-index: 1;
+    transform-origin: center center;
+    will-change: background; /* Only animate the background colors, not position */
   }
 `;
 
@@ -98,24 +113,16 @@ const Numerology = ({ isMobile = false }) => {
                         justifyContent: 'center',
                         alignItems: 'center',
                         margin: '0 auto',
-                        border: 'solid 1em #c48901',
+                        border: 'solid 0.5em #c48901',
                         width: '100%',
-                        maxWidth: isMobile ? '25em' : '25em',
+                        // maxWidth: isMobile ? '25em' : '25em',
                         aspectRatio: '1',
-                        borderRadius: '3em',
+                        borderRadius: '1em',
                       }}
                     >
                       
                       {/* Fluid background as the base layer */}
-                      <FluidBackground
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                        }}
-                      />
+                      <FluidBackground />
 
                       {/* Magic 8 ball as an iframe */}
                       <div
@@ -126,7 +133,7 @@ const Numerology = ({ isMobile = false }) => {
                           display: "flex",
                           justifyContent: "center",
                           alignItems: "center",
-                          zIndex: "0",
+                          zIndex: "2",
                           background: "transparent",
                           borderRadius: "50%",
 
@@ -141,6 +148,7 @@ const Numerology = ({ isMobile = false }) => {
                               border: "none",
                               background: "transparent",
                               borderRadius: "50%",
+                     
                             }}
                             title="Magic 80 Ball"
                             frameBorder="0"

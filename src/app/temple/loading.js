@@ -1,6 +1,6 @@
 "use client";
 
-import SimpleLoader from '@/components/SimpleLoader';
+import InfinityLoader from '@/components/InfinityLoader';
 import { useEffect } from 'react';
 
 export default function Loading() {
@@ -21,7 +21,7 @@ export default function Loading() {
       alignItems: 'center',
       justifyContent: 'center'
     }}>
-      <SimpleLoader />
+      <InfinityLoader />
     </div>
   );
 }

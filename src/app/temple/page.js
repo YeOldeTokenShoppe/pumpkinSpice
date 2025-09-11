@@ -16,7 +16,7 @@ import CyberCalloutOverlay from '@/components/CyberCalloutOverlay';
 const MusicPlayer3 = dynamic(() => import('@/components/MusicPlayer3'), {
   ssr: false,
 });
-import SimpleLoader from '@/components/SimpleLoader';
+import InfinityLoader from '@/components/InfinityLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import * as THREE from 'three';
@@ -521,7 +521,7 @@ export default function CyborgTemple() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <SimpleLoader progress={loadingProgress} detailedProgress={detailedProgress} />
+          <InfinityLoader progress={loadingProgress} detailedProgress={detailedProgress} />
         </div>
       ) : (
         <>

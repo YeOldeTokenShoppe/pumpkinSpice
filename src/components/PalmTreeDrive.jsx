@@ -28,7 +28,7 @@ const textBlocks = [
     "and memories blur",
     "into synthetic sunsets",
     "forever driving",
-    "through digital paradise"
+    // "through digital paradise"
   ],
   [
     "beneath the static",
@@ -37,7 +37,7 @@ const textBlocks = [
     "searching for meaning",
     "in silicon valleys",
     "where futures past",
-    "never sleep"
+    // "never sleep"
   ],
   [
     "chrome reflections dance",
@@ -46,7 +46,7 @@ const textBlocks = [
     "and everywhere at once",
     "chasing ghosts",
     "in rearview mirrors",
-    "of tomorrow"
+    // "of tomorrow"
   ],
   [
     "she watches over",
@@ -55,7 +55,7 @@ const textBlocks = [
     "in electric twilight",
     "where faith meets code",
     "and prayers become",
-    "digital whispers"
+    // "digital whispers"
   ],
   [
     "here at the end",
@@ -64,7 +64,7 @@ const textBlocks = [
     "into pixels and light",
     "a sacred moment",
     "forever preserved",
-    "in synthetic amber"
+    // "in synthetic amber"
   ]
 ];
 
@@ -2736,14 +2736,14 @@ const PalmsScene = ({ onLoadingChange }) => {
             gap: '20px',
           }}
         >
-          <div style={{ marginBottom: isMobile ? '-20px' : '0', position: 'relative' }}>
+          {/* <div style={{ marginBottom: isMobile ? '-20px' : '0', position: 'relative' }}>
             {currentCameraStage === 4 ? (
               <MorphingSynthwaveText 
                 startText="REAL80"
                 shouldMorph={true}
                 morphDelay={3000}
                 fontSize={300}
-                scale={1.25}  // Make REAL80/RL80 larger
+                scale={1.1}  // Make REAL80/RL80 larger
                 spacingX={6}
                 outsideColor="rgba(0, 255, 255, 0)"
                 insideColor="rgba(255, 0, 255, 1)"
@@ -2763,7 +2763,7 @@ const PalmsScene = ({ onLoadingChange }) => {
                 className="mb-4"
               />
             )}
-          </div>
+          </div> */}
           <div style={{
             minHeight: isMobile ? '220px' : '320px', // Fixed height for text container
             display: 'flex',
@@ -2803,7 +2803,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             style={{
               display: 'flex',
               gap: '8px',
-              marginTop: '20px',
+              marginTop: '1rem',
               justifyContent: 'center',
             }}>
             {[0, 1, 2, 3, 4].map((index) => (

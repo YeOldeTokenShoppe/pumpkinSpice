@@ -48,16 +48,16 @@ const Bouncer = ({
     "My token scanner is showing zero... can't let you in like that! 🔍",
     "No ticket? No token? No entry! I don't make the rules... wait, yes I do! 😎",
     "The password is RL80... token. You need the token part too! 🎫",
-    "You shall not pass! ...without ILLUMIN80 priveleges, that is. 🧙‍♂️",
+    "You shall not pass! ...without ILLUMIN80 privileges, that is. 🧙‍♂️",
 
     // Crypto-themed humor
-    "DYOR? Then you know you need an ILLUMIN80 pass to enter! 📚",
+    "DYOR? Then you know you need ILLUMIN80 credentials to enter! 📚",
     "Proof of Token Status required beyond this point! ✅",
     // "This isn't a free mint, friend. Token holders only! 🎨",
     "Diamond hands hold tokens. Paper hands stay outside! 💎",
 
     // Pop culture references
-    "To the moon? You'll need token statis for that! 🚀",
+    "To the moon? You'll need VIP status for that! 🚀",
     "I'm gonna need to see some token verification... 🧐",
     "The first rule of Moon Club? Hold RL80 tokens! 🌙",
     "Luke, I am your bouncer. Show me your tokens! ⭐",

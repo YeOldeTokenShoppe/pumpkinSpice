@@ -4,6 +4,7 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
   const [isMobile, setIsMobile] = useState(false);
   const [showSlider, setShowSlider] = useState(false);
   const [sliderValue, setSliderValue] = useState(50);
+  const [lastLiveValue, setLastLiveValue] = useState(50); // Track the last known live value
   const [volumeSliderValue, setVolumeSliderValue] = useState(40);
   const [isVolumeManual, setIsVolumeManual] = useState(false);
   const [volumeHistory, setVolumeHistory] = useState([]);
@@ -18,8 +19,15 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
   }, []);
   
   useEffect(() => {
-    if (fearGreedData && !isManualMode) {
-      setSliderValue(fearGreedData.value);
+    if (fearGreedData) {
+      // Track live value when we receive non-manual data
+      if (!fearGreedData.manual && fearGreedData.value !== undefined) {
+        setLastLiveValue(fearGreedData.value);
+        // Update slider if we're not in manual mode
+        if (!isManualMode) {
+          setSliderValue(fearGreedData.value);
+        }
+      }
     }
     // Update volume slider if not in manual mode
     if (fearGreedData?.marketVolume && !isVolumeManual) {
@@ -66,10 +74,9 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
       setIsVolumeManual(false);
       // Return to live volume and reset slider to live value
       if (onVolumeControl) onVolumeControl(null);
-      // Reset slider to live volume value
-      if (fearGreedData?.marketVolume?.billions) {
-        setVolumeSliderValue(Math.round(fearGreedData.marketVolume.billions));
-      }
+      // Reset slider to live volume value - use default if no live data
+      const liveVolume = fearGreedData?.marketVolume?.billions || 40; // Default to 40B if no live data
+      setVolumeSliderValue(Math.round(liveVolume));
     } else {
       setIsVolumeManual(true);
       if (onVolumeControl) onVolumeControl(volumeSliderValue);
@@ -77,12 +84,20 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
   };
   
   const toggleManualMode = () => {
-    if (isManualMode && onManualControl) {
-      onManualControl(null); // Return to live data
+    if (isManualMode) {
+      // Switching from manual to live mode
+      if (onManualControl) {
+        onManualControl(null); // Return to live data
+      }
       setShowSlider(false);
-    } else if (onManualControl) {
+      // Immediately set slider to the last known live value
+      setSliderValue(lastLiveValue);
+    } else {
+      // Switching from live to manual mode
       setShowSlider(true);
-      onManualControl(sliderValue); // Enable manual mode with current slider value
+      if (onManualControl) {
+        onManualControl(sliderValue); // Enable manual mode with current slider value
+      }
     }
   };
   const getColorForValue = (value) => {
@@ -114,7 +129,7 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
   
   // Mobile compact version
   if (isMobile) {
-    const displayValue = isManualMode ? sliderValue : fearGreedData.value;
+    const displayValue = isManualMode ? sliderValue : lastLiveValue;
     const classification = displayValue <= 20 ? 'Extreme Fear' : 
                           displayValue <= 39 ? 'Fear' : 
                           displayValue <= 60 ? 'Neutral' : 
@@ -354,7 +369,7 @@ const FearGreedOverlay = ({ fearGreedData, showDevils, showAngels, showMoney, on
   }
   
   // Desktop version
-  const displayValue = isManualMode ? sliderValue : fearGreedData.value;
+  const displayValue = isManualMode ? sliderValue : lastLiveValue;
   const classification = displayValue <= 20 ? 'Extreme Fear' : 
                         displayValue <= 39 ? 'Fear' : 
                         displayValue <= 60 ? 'Neutral' : 

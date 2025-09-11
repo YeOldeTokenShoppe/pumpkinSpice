@@ -56,24 +56,24 @@ const SkySphere = ({ type = 'color', fearGreedValue = 50 }) => {
         (value - 20) / 20
       );
     } else if (value < 50) {
-      // Neutral-Fear: Medium grey
+      // Neutral-Fear: Soft lavender grey
       return new THREE.Color().lerpColors(
-        new THREE.Color(0x333333), // Dark grey
-        new THREE.Color(0x4a4a4a), // Medium grey
+        new THREE.Color(0x7a7a8a), // Soft grey with lavender hint
+        new THREE.Color(0x9a9aaa), // Light lavender grey
         (value - 40) / 10
       );
     } else if (value < 60) {
-      // Neutral-Greed: Grey with blue tint
+      // Neutral-Greed: Soft periwinkle
       return new THREE.Color().lerpColors(
-        new THREE.Color(0x4a4a4a), // Medium grey
-        new THREE.Color(0x5a6a7a), // Grey-blue
+        new THREE.Color(0x9a9aaa), // Light lavender grey
+        new THREE.Color(0xaab4ca), // Soft periwinkle blue
         (value - 50) / 10
       );
     } else if (value < 80) {
-      // Greed: Blue-grey to sky blue
+      // Greed: Pretty sky blue gradient
       return new THREE.Color().lerpColors(
-        new THREE.Color(0x5a6a7a), // Grey-blue
-        new THREE.Color(0x6a8aaa), // Light blue-grey
+        new THREE.Color(0xaab4ca), // Soft periwinkle blue
+        new THREE.Color(0xb8d4e8), // Light powder blue
         (value - 60) / 20
       );
     } else {

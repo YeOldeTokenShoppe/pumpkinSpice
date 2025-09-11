@@ -9,7 +9,7 @@ import Link from 'next/link';
 import CyberNav from '@/components/CyberNav';
 import { useUser, UserButton, SignInButton } from '@clerk/nextjs';
 import { useMusic } from '@/components/MusicContext';
-import SimpleLoader from '@/components/SimpleLoader';
+import InfinityLoader from '@/components/InfinityLoader';
 import FearGreedOverlay from '@/components/FearGreedOverlay';
 
 
@@ -235,7 +235,7 @@ const EtherealCloudsPage = () => {
           zIndex: 99999,
           background: '#000000'
         }}>
-          <SimpleLoader />
+          <InfinityLoader />
         </div>
       )}
       
@@ -338,7 +338,7 @@ const EtherealCloudsPage = () => {
           </div>
         </div>
       <Canvas
-        ref={canvasRef}
+        // ref={canvasRef}
         camera={{ 
           position: isMobileDevice ? [0, 20, 65] : [0, 20, 60], 
           fov: isMobileDevice ? 60 : 60, 
@@ -390,14 +390,16 @@ const EtherealCloudsPage = () => {
           {/* Camera controls - rotate around center */}
           <OrbitControls
             enableRotate={true}
+            enableDamping={true}
+            enablePan={true}
             enableZoom={true}
             minDistance={50}
-            maxDistance={80}
-            target={[0, 5, -15]}
-            minAzimuthAngle={-Math.PI / 12}  // -60 degrees
-            maxAzimuthAngle={Math.PI / 12}   // +60 degrees
-            minPolarAngle={0}     // 45 degrees from top
-            maxPolarAngle={Math.PI / 2.2}   // ~82 degrees, prevents going too low
+            maxDistance={100}
+            // target={[0, 0, 0]}
+            // minAzimuthAngle={-Math.PI / 12}  // -60 degrees
+            // maxAzimuthAngle={Math.PI / 12}   // +60 degrees
+            // minPolarAngle={0}     // 45 degrees from top
+            // maxPolarAngle={Math.PI / 2.2}   // ~82 degrees, prevents going too low
           />
           
           {/* Post-processing effects */}

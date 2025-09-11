@@ -1,6 +1,5 @@
 "use client";
 
-// import SimpleLoader from '@/components/SimpleLoader';
 import InfinityLoader from '@/components/InfinityLoader';
 import { useEffect } from 'react';
 

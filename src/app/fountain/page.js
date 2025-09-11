@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMusic } from '@/components/MusicContext';
-import SimpleLoader from '@/components/SimpleLoader';
+import InfinityLoader from '@/components/InfinityLoader';
 import BuyTokenFAB from '@/components/BuyTokenFAB';
 import CompactCandleModal from '@/components/CompactCandleModal';
 import CyberNav from '@/components/CyberNav';
@@ -13,7 +13,7 @@ import { useUser, UserButton, SignInButton } from '@clerk/nextjs';
 // Dynamic import for the FountainFrame component
 const FountainFrame = dynamic(() => import('@/components/FountainFrame'), {
   ssr: false,
-  loading: () => <SimpleLoader />
+  loading: () => <InfinityLoader />
 });
 
 export default function FountainPage() {
@@ -132,7 +132,7 @@ export default function FountainPage() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <SimpleLoader />
+          <InfinityLoader />
         </div>
       )}
 

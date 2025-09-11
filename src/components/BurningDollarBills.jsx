@@ -1,7 +1,7 @@
-import React, { useRef, useMemo } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import React, { useRef, useMemo, useEffect, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useTexture } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 
 const BurningDollarBills = ({ 
   count = 40, 
@@ -11,41 +11,112 @@ const BurningDollarBills = ({
   startY = 120,
   endY = -50 
 }) => {
+  const { scene } = useGLTF('/models/100DollarBill.glb');
   const billsRef = useRef([]);
   const fireParticlesRef = useRef([]);
   const billStatesRef = useRef([]);
   const particleStatesRef = useRef([]);
+  const [billGeometry, setBillGeometry] = useState(null);
+  const [billTexture, setBillTexture] = useState(null);
   
-  // Create fire texture gradient only once
-  const fireColors = useMemo(() => {
-    // Use a simple color instead of canvas texture to avoid potential issues
-    return null; // We'll use color directly in the material
-  }, []);
+  // Extract geometry and texture from the model
+  useEffect(() => {
+    if (scene) {
+      let geometry = null;
+      let texture = null;
+      
+      scene.traverse((child) => {
+        if (child.isMesh) {
+          // Get geometry from first mesh
+          if (!geometry) {
+            // Create curved dollar bill geometry like in SpiralDollarBills
+            const width = 2.35;
+            const height = 1.0;
+            const subdivisions = 16; // Slightly less subdivisions for performance with more bills
+            
+            const planeGeometry = new THREE.PlaneGeometry(
+              width, 
+              height, 
+              subdivisions, 
+              Math.floor(subdivisions / 2.35)
+            );
+            
+            // Add curve deformation
+            const positions = planeGeometry.attributes.position;
+            const vertex = new THREE.Vector3();
+            
+            for (let i = 0; i < positions.count; i++) {
+              vertex.fromBufferAttribute(positions, i);
+              
+              const curveFactor = 0.2; // Slightly less curve for burning bills
+              const waveX = Math.sin((vertex.x / width + 0.5) * Math.PI) * curveFactor;
+              const rippleFactor = 0.02;
+              const rippleY = Math.sin((vertex.y / height + 0.5) * Math.PI * 2) * rippleFactor;
+              
+              vertex.z = waveX + rippleY;
+              positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+            
+            planeGeometry.computeVertexNormals();
+            planeGeometry.attributes.position.needsUpdate = true;
+            setBillGeometry(planeGeometry);
+          }
+          
+          // Get texture from material
+          if (child.material && child.material.map && !texture) {
+            texture = child.material.map;
+            setBillTexture(texture);
+          }
+        }
+      });
+    }
+  }, [scene]);
   
   // Initialize bills with random properties - include count in dependencies
   const bills = useMemo(() => {
     const billsArray = [];
     const statesArray = [];
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2 * 4; // Spiral
-      const y = startY - (i / count) * (startY - endY);
-      const radiusOffset = radius + Math.sin(i * 0.5) * 10;
+      // More random distribution - mix of spiraling and straight falling bills
+      const isSpiralBill = Math.random() > 0.4; // 60% spiral, 40% straight fall
+      
+      // Distribute bills across multiple layers for more randomness
+      const layer = i % 4; // 4 different layers
+      const angleOffset = (layer * Math.PI * 2) / 4 + Math.random() * Math.PI * 0.5; // Random offset
+      const angle = Math.random() * Math.PI * 2 + angleOffset;
+      
+      // Randomize initial Y position across the full height range
+      const baseY = Math.random() * (startY - endY);
+      const y = startY - baseY + (Math.random() - 0.5) * 20; // More variation
+      
+      // Vary the radius significantly for each bill
+      const layerRadius = radius + (Math.random() - 0.5) * radius * 1.5; // Much more radius variation
+      
+      // For straight falling bills, random X/Z position
+      const straightX = isSpiralBill ? 0 : (Math.random() - 0.5) * radius * 2;
+      const straightZ = isSpiralBill ? 0 : (Math.random() - 0.5) * radius * 2;
       
       billsArray.push({
         position: new THREE.Vector3(
-          Math.cos(angle) * radiusOffset,
+          isSpiralBill ? Math.cos(angle) * layerRadius : straightX,
           y,
-          Math.sin(angle) * radiusOffset
+          isSpiralBill ? Math.sin(angle) * layerRadius : straightZ
         ),
         rotation: new THREE.Euler(
-          Math.random() * Math.PI,
-          Math.random() * Math.PI,
-          Math.random() * Math.PI
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2
         ),
-        scale: 1 + Math.random() * 0.3,
-        speed: speed + Math.random() * 2,
-        fireIntensity: 0.5 + Math.random() * 0.5,
-        radiusOffset: radiusOffset,
+        scale: 0.8 + Math.random() * 0.6, // More size variation
+        speed: speed + Math.random() * 3, // More speed variation
+        fireIntensity: 0.3 + Math.random() * 0.7,
+        radiusOffset: layerRadius,
+        isSpiralBill: isSpiralBill,
+        straightX: straightX,
+        straightZ: straightZ,
+        spiralSpeed: 0.2 + Math.random() * 0.4, // Random spiral speed
+        verticalOffset: Math.random() * 0.2, // Random vertical speed offset
+        phase: Math.random() * Math.PI * 2, // Random phase for wobble
         index: i
       });
       
@@ -65,12 +136,12 @@ const BurningDollarBills = ({
     const particles = [];
     const statesArray = [];
     bills.forEach((bill, billIndex) => {
-      const particleCount = 20; // Fire particles per bill - increased density
+      const particleCount = 30; // Fire particles per bill - increased density
       for (let i = 0; i < particleCount; i++) {
         particles.push({
           billIndex,
           speed: 0.5 + Math.random() * 0.5,
-          size: 1.2 + Math.random() * 1.5 // Much larger particles
+          size: 0.6 + Math.random() * 0.8 // Much larger particles
         });
         
         // Store mutable state separately
@@ -97,42 +168,67 @@ const BurningDollarBills = ({
         const mesh = billsRef.current[i];
         const billState = billStatesRef.current[i];
         
-        // Spiral motion
-        billState.originalAngle += delta * bill.speed * 0.3;
-        const spiralY = billState.y - delta * bill.speed * 5;
+        // Apply vertical offset for more natural falling speed variation
+        billState.y -= delta * bill.speed * 5 * (1 + bill.verticalOffset * 0.5);
         
-        // Reset to top when reaching bottom
-        if (spiralY < endY) {
-          billState.y = startY;
-          billState.originalAngle = (i / count) * Math.PI * 2 * 4;
-          billState.burnProgress = 0;
-        } else {
-          billState.y = spiralY;
+        // Reset to top when reaching bottom with new random position
+        if (billState.y < endY) {
+          // Respawn at random height for continuous flow
+          billState.y = startY + Math.random() * 20;
+          
+          // Re-randomize angle for spiral bills
+          if (bill.isSpiralBill) {
+            billState.originalAngle = Math.random() * Math.PI * 2;
+          } else {
+            // Re-randomize position for straight falling bills
+            bill.straightX = (Math.random() - 0.5) * radius * 2;
+            bill.straightZ = (Math.random() - 0.5) * radius * 2;
+          }
+          
+          billState.burnProgress = Math.random() * 0.2; // Reset with some initial burn
         }
         
-        // Update position with wobble
-        const wobbleX = Math.sin(time * 2 + i) * 0.5;
-        const wobbleZ = Math.cos(time * 2 + i) * 0.5;
+        let x, z;
+        if (bill.isSpiralBill) {
+          // Spiraling bills with varying speeds
+          billState.originalAngle += delta * bill.spiralSpeed;
+          x = Math.cos(billState.originalAngle) * bill.radiusOffset;
+          z = Math.sin(billState.originalAngle) * bill.radiusOffset;
+          
+          // Add wobble based on phase
+          const wobbleX = Math.sin(time * 1.5 + bill.phase) * 0.8;
+          const wobbleZ = Math.cos(time * 1.5 + bill.phase) * 0.8;
+          x += wobbleX;
+          z += wobbleZ;
+        } else {
+          // Straight falling bills with gentle drift
+          x = bill.straightX + Math.sin(time * 0.5 + bill.phase) * 1.5;
+          z = bill.straightZ + Math.cos(time * 0.5 + bill.phase) * 1.5;
+        }
         
-        mesh.position.x = Math.cos(billState.originalAngle) * bill.radiusOffset + wobbleX;
+        mesh.position.x = x;
         mesh.position.y = billState.y;
-        mesh.position.z = Math.sin(billState.originalAngle) * bill.radiusOffset + wobbleZ;
+        mesh.position.z = z;
         
-        // Tumbling rotation
-        mesh.rotation.x += delta * 0.5;
-        mesh.rotation.y += delta * 0.3;
-        mesh.rotation.z += delta * 0.2;
+        // More varied tumbling rotation
+        mesh.rotation.x += delta * (0.3 + Math.sin(time + i) * 0.3);
+        mesh.rotation.y += delta * (0.2 + Math.cos(time + i) * 0.2);
+        mesh.rotation.z += delta * (0.1 + Math.sin(time * 0.5 + i) * 0.2);
         
         // Update burn progress
         billState.burnProgress = Math.min(1, billState.burnProgress + delta * 0.1);
         
         // Update material to show burning effect
         if (mesh.material) {
-          // Keep bills green but add fire glow
-          mesh.material.color.setHex(0x85bb65); // Keep green color
-          
+          // Add fire glow to the textured bill
           mesh.material.emissive = new THREE.Color(0xff4400);
           mesh.material.emissiveIntensity = billState.burnProgress * bill.fireIntensity * 0.5;
+          
+          // Optionally darken the bill as it burns
+          const burnDarkness = 1 - (billState.burnProgress * 0.3);
+          if (mesh.material.color) {
+            mesh.material.color.setRGB(burnDarkness, burnDarkness, burnDarkness);
+          }
         }
       }
     });
@@ -174,6 +270,11 @@ const BurningDollarBills = ({
     });
   });
   
+  // Don't render until geometry and texture are loaded
+  if (!billGeometry || !billTexture) {
+    return null;
+  }
+  
   return (
     <group>
       {/* Dollar Bills */}
@@ -183,18 +284,19 @@ const BurningDollarBills = ({
           ref={el => billsRef.current[i] = el}
           position={bill.position}
           rotation={bill.rotation}
-          scale={[bill.scale * 3, bill.scale * 1.3, 0.01]}
+          scale={[bill.scale * 1.5, bill.scale * 1.5, bill.scale]}
+          geometry={billGeometry}
         >
-          <planeGeometry args={[1, 1, 8, 8]} />
           <meshStandardMaterial
-            color="#85bb65"
+            map={billTexture}
             side={THREE.DoubleSide}
             transparent
             opacity={0.9}
             emissive={new THREE.Color(0xff4400)}
             emissiveIntensity={0}
-            roughness={0.8}
+            roughness={0.4}
             metalness={0.1}
+            alphaTest={0.1}
           />
         </mesh>
       ))}
@@ -228,5 +330,7 @@ const BurningDollarBills = ({
     </group>
   );
 };
+
+useGLTF.preload('/models/100DollarBill.glb');
 
 export default BurningDollarBills;

@@ -1,115 +1,86 @@
-import React from 'react';
-import styled, { keyframes, createGlobalStyle } from 'styled-components';
+'use client';
 
-// CSS custom property for animation
-const GlobalStyle = createGlobalStyle`
-  @property --off { 
-    syntax: '<number>'; 
-    initial-value: 0; 
-    inherits: false;
-  }
-`;
+import { useEffect, useRef } from 'react';
+import './InfinityLoader.css';
 
-// Generate gradient list
-const generateGradientList = (start = 0, range = 180, steps = 8) => {
-  const unit = range / steps;
-  let gradientList = [];
-  
-  for (let i = 0; i <= steps; i++) {
-    gradientList.push(`HSL(calc(${start} + var(--off)), 85%, 57%)`);
-    start += unit;
-  }
-  
-  return gradientList.join(', ');
-};
+export default function InfinityLoader({ loading = true }) {
+  const symbolRef = useRef(null);
+  const intervalRef = useRef(null);
 
-// Animations
-const flowAnimation = keyframes`
-  to { --off: 360 }
-`;
+  useEffect(() => {
+    if (!loading) return;
 
-const rotateAnimation = keyframes`
-  0% { transform: rotateZ(0deg); }
-  20% { transform: rotateZ(90deg); }
-  25% { transform: rotateZ(90deg); }
-  45% { transform: rotateZ(180deg); }
-  50% { transform: rotateZ(180deg); }
-  70% { transform: rotateZ(270deg); }
-  75% { transform: rotateZ(270deg); }
-  95% { transform: rotateZ(360deg); }
-  100% { transform: rotateZ(360deg); }
-`;
+    let travelingRight = true;
+    let travelingDown = true;
+    const cssVars = document.documentElement.style;
+    cssVars.setProperty('--translateX', '0px');
+    cssVars.setProperty('--translateY', '0px');
 
-// Styled components
-const LoaderContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  filter: drop-shadow(0.25em 0.25em 0.25em #000) 
-          drop-shadow(0.25em 0.25em 0.5em #000);
-  z-index: 9999;
-`;
+    const getRootX = () => parseFloat(cssVars.getPropertyValue('--translateX'));
+    const getRootY = () => parseFloat(cssVars.getPropertyValue('--translateY'));
 
-const InfinityShape = styled.div`
-  --do: 12.5em;
-  --ro: calc(0.5 * var(--do));
-  --ri: calc(0.5 * var(--ro));
-  
-  display: flex;
-  transform-style: preserve-3d;
-  animation: ${rotateAnimation} 4s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-  
-  &:before, &:after {
-    margin: 0 calc(0.5 * (var(--ri) - var(--ro)));
-    width: var(--do);
-    height: var(--do);
-    border-radius: 50%;
-    transform: rotatex(1deg) rotate(90deg);
-    box-shadow: inset 0 -0.375em rgba(255, 255, 255, 0.25);
-    background: 
-      radial-gradient(circle at 47% 43%, 
-        transparent calc(var(--ro) + -1px), rgba(255, 255, 255, 0.32) var(--ro)), 
-      radial-gradient(circle at 53% 43%, 
-        transparent calc(var(--ro) + -1px), rgba(255, 255, 255, 0.32) var(--ro)), 
-      radial-gradient(circle at calc(50% + 2px) 50%, 
-        rgba(255, 255, 255, 0.83) calc(var(--ri) + -1px), 
-        transparent calc(var(--ri) + 1px)), 
-      conic-gradient(${generateGradientList(180, -180)});
-    mask: radial-gradient(transparent calc(var(--ri) - 1px), #000 var(--ri));
-    animation: ${flowAnimation} 2s linear infinite;
-    content: '';
-  }
-  
-  &:after {
-    transform: rotatex(-1deg) rotate(-90deg);
-    box-shadow: inset -0.375em 0 rgba(255, 255, 255, 0.25);
-    background: 
-      radial-gradient(circle at 100% calc(-1 * var(--ri)), 
-        rgba(0, 0, 0, 0.75) var(--ro), transparent calc(2 * var(--ro))) 0 0 / 50% 100% no-repeat, 
-      radial-gradient(circle at 50% calc(50% + 2px), 
-        rgba(255, 255, 255, 0.43) calc(var(--ri) - 1px), 
-        transparent calc(var(--ri) + 1px)), 
-      conic-gradient(${generateGradientList(180, 180)});
-  }
-`;
+    intervalRef.current = setInterval(() => {
+      if (window.innerWidth >= 1920 && symbolRef.current) {
+        const symbolCoords = symbolRef.current.getBoundingClientRect();
 
-const InfinityLoader = ({ loading = true }) => {
+        const isAtTop = symbolCoords.top <= 1;
+        const isAtRight = symbolCoords.right >= window.innerWidth - 1;
+        const isAtBottom = symbolCoords.bottom >= window.innerHeight - 1;
+        const isAtLeft = symbolCoords.left <= 1;
+
+        if (isAtTop) {
+          travelingDown = true;
+        } else if (isAtBottom) {
+          travelingDown = false;
+        }
+
+        if (isAtRight) {
+          travelingRight = false;
+        } else if (isAtLeft) {
+          travelingRight = true;
+        }
+
+        const newX = travelingRight ? getRootX() + 5 : getRootX() - 5;
+        const newY = travelingDown ? getRootY() + 5 : getRootY() - 5;
+
+        cssVars.setProperty('--translateX', newX + 'px');
+        cssVars.setProperty('--translateY', newY + 'px');
+      }
+    }, 40);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [loading]);
+
   if (!loading) return null;
-  
-  return (
-    <>
-      <GlobalStyle />
-      <LoaderContainer>
-        <InfinityShape />
-      </LoaderContainer>
-    </>
-  );
-};
 
-export default InfinityLoader;
+  return (
+    <div className="infinity-loader-container">
+      <svg
+        ref={symbolRef}
+        className="infinity-symbol"
+        width="100%"
+        height="100%"
+        viewBox="0 0 1114 498"
+        version="1.1"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{
+          fillRule: 'evenodd',
+          clipRule: 'evenodd',
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          strokeMiterlimit: 1.5,
+        }}
+      >
+        <path
+          d="M556.639,248.609c53.406,53.406 101.683,111.534 164.527,155.683c32.351,22.727 69.175,43.083 109.585,49.008c28.958,4.245 59.488,0.613 87.317,-7.576c26.905,-7.918 52.087,-20.892 73.811,-37.871c21.56,-16.851 39.677,-37.626 53.018,-60.895c10.19,-17.771 17.616,-36.957 21.888,-56.774c4.437,-20.585 5.532,-41.765 3.304,-62.666c-8.654,-81.211 -69.752,-151.815 -152.021,-176.024c-21.015,-6.185 -42.784,-9.169 -64.773,-9.286c-20.432,-0.109 -41.041,2.144 -60.735,7.389c-60.474,16.105 -104.752,61.37 -145.625,103.912c-25.822,26.876 -51.28,54.064 -76.924,81.093c-50.066,52.771 -98.707,107.45 -153.977,155.565c-26.704,23.247 -58.379,43.63 -92.848,54.868c-68.352,22.285 -146.537,6.002 -201.788,-37.182c-21.56,-16.851 -39.676,-37.626 -53.018,-60.895c-10.19,-17.771 -17.616,-36.957 -21.887,-56.774c-20.542,-95.293 34.073,-193.859 128.699,-231.746c26.53,-10.622 55.918,-16.645 84.79,-16.23c66.027,0.948 126.189,41.423 172.681,82.451c12.721,11.225 25.299,22.604 37.509,34.327c11.528,11.07 22.61,22.551 33.684,34.029c17.75,18.398 34.689,37.5 52.783,55.594Z"
+          style={{ fill: 'none', strokeWidth: '84.38px' }}
+        />
+      </svg>
+      <div className="infinity-crt"></div>
+    </div>
+  );
+}
