@@ -401,28 +401,6 @@ function Model({ modelPath, onLoaded, is80sMode }) {
   useEffect(() => {
     if (scene) {
       // Calculate the bounding box and center of the model
-      const box = new THREE.Box3().setFromObject(scene);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      
-      console.log('=== Model Center Information (Before Centering) ===');
-      console.log('Model Path:', modelPath);
-      console.log('Bounding Box Min:', box.min);
-      console.log('Bounding Box Max:', box.max);
-      console.log('Original Model Center:', center);
-      console.log('Model Size:', size);
-      console.log('Center X:', center.x);
-      console.log('Center Y:', center.y);
-      console.log('Center Z:', center.z);
-      
-      // Calculate offset to center the model at [0,0,0]
-      const offset = center.clone().multiplyScalar(-1);
-      setCenterOffset(offset);
-      
-      console.log('=== Centering Model ===');
-      console.log('Offset to apply:', offset);
-      console.log('New center will be at: [0, 0, 0]');
-      console.log('================================');
       
       if (onLoaded) {
         onLoaded();

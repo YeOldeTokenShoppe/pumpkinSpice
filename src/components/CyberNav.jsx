@@ -2,10 +2,21 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const CyberNav = ({ is80sMode = false }) => {
+const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hoveredItemPath, setHoveredItemPath] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
+  
+  // Check for mobile device
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Reset hover state when menu closes
   React.useEffect(() => {
@@ -28,10 +39,10 @@ const CyberNav = ({ is80sMode = false }) => {
       <>
         <button
           style={{
-            position: "fixed",
-            top: "20px",
+            position: position,
+            top: position === "absolute" ? "10px" : "20px",
             right: "20px",
-            zIndex: "10000",
+            zIndex: 10000000,
             color: is80sMode ? "#D946EF" : "#ffff00",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             backdropFilter: "blur(10px)",
@@ -79,7 +90,7 @@ const CyberNav = ({ is80sMode = false }) => {
               bottom: "0",
               backgroundColor: "rgba(0, 0, 0, 0.95)",
               backdropFilter: "blur(20px)",
-              zIndex: "9999",
+              zIndex: 9999999,
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",

@@ -968,8 +968,10 @@
           
           membersRef.on('value', (snapshot) => {
             console.log('Members data received:', snapshot.val());
+            const previousMemberCount = onlineMembers.length;
             onlineMembers = [];
             const data = snapshot.val();
+            
             if (data) {
               Object.values(data).forEach(member => {
                 onlineMembers.push(member);
@@ -982,6 +984,24 @@
                 if (onlineMembers.length > 20) {
                   alert('Warning: Room has ' + onlineMembers.length + ' users. Performance may be severely impacted.');
                 }
+              }
+            } else {
+              // No members online - clear the member display
+              displayMembers();
+              
+              // Clear chat messages when the last user leaves
+              if (previousMemberCount > 0) {
+                console.log('Last user left the room, clearing chat messages...');
+                const chatRef = database.ref('moonRoom/chat');
+                chatRef.remove().then(() => {
+                  console.log('Chat messages cleared successfully');
+                  messages = [];
+                  if (messagesContainer) {
+                    messagesContainer.innerHTML = '';
+                  }
+                }).catch(error => {
+                  console.error('Error clearing chat messages:', error);
+                });
               }
             }
           }, (error) => {

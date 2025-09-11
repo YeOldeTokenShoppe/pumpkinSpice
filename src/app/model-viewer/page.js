@@ -23,7 +23,17 @@ export default function ModelViewerPage() {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const isTogglingRef = useRef(false);
   const is80sMode = context80sMode;
+  const [emoji, setEmoji] = useState("😇");
 
+  // Alternate emoji for sign-in button
+  useEffect(() => {
+    const emojiInterval = setInterval(() => {
+      setEmoji((prevEmoji) => (prevEmoji === "😇" ? "😈" : "😇"));
+    }, 3000);
+
+    return () => clearInterval(emojiInterval);
+  }, []);
+  
   // Check if device is mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -127,19 +137,7 @@ export default function ModelViewerPage() {
                 }}
                 title="Sign In"
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+                <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
               </button>
             </SignInButton>
           )}

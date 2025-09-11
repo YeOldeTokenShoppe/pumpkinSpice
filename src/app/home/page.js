@@ -621,7 +621,9 @@ useGLTF.preload('/models/singleCandleAnimatedFlame.glb');
 export default function HomePage() {
   const [fontLoaded, setFontLoaded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+  );
   const [isClient, setIsClient] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -634,6 +636,7 @@ export default function HomePage() {
   // State for featured candle
   const [featuredCandle, setFeaturedCandle] = useState(null);
   const [isLoadingCandle, setIsLoadingCandle] = useState(false);
+  const [emoji, setEmoji] = useState("😇");
   
   // Function to fetch a random candle from Firestore
   const fetchRandomCandle = async () => {
@@ -669,6 +672,15 @@ export default function HomePage() {
   // Fetch initial random candle on mount
   useEffect(() => {
     fetchRandomCandle();
+  }, []);
+  
+  // Alternate emoji for sign-in button
+  useEffect(() => {
+    const emojiInterval = setInterval(() => {
+      setEmoji((prevEmoji) => (prevEmoji === "😇" ? "😈" : "😇"));
+    }, 3000);
+
+    return () => clearInterval(emojiInterval);
   }, []);
   
   // Get user from Clerk
@@ -1067,7 +1079,12 @@ export default function HomePage() {
   }
 
   return (
-    <>
+    <div style={{ 
+      position: 'relative', 
+      width: '100%', 
+      minHeight: '100vh',
+      overflow: 'hidden'
+    }}>
       <link rel="stylesheet" href="/coin.css" />
       <style jsx global>{`
         @font-face {
@@ -1280,9 +1297,9 @@ export default function HomePage() {
           padding: '1.5rem',
           background: 'rgba(0, 0, 0, 0.6)',
           backdropFilter: 'blur(10px)',
-          borderRadius: '12px',
-          border: '1px solid rgba(212, 175, 55, 0.3)',
-          color: '#ffffff',
+          // borderRadius: '12px',
+          // border: '1px solid rgba(212, 175, 55, 0.3)',
+          // color: '#ffffff',
           fontSize: '1rem',
           
           lineHeight: 1.6,
@@ -1293,23 +1310,7 @@ export default function HomePage() {
             marginBottom: '1rem',
             fontSize: '1.8rem'
           }}>Welcome to Our Sacred Digital Temple</h2> */}
-          <p style={{ 
-            marginBottom: '1rem',  
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-            fontWeight: 400,
-            letterSpacing: '0.02em'
-          }}>
-    Experience the convergence of ancient wisdom and cyberpunk sensibility into the maternal market-oriented icon, 
-  <span style={{
-                fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
-                fontWeight: 'bold',
-                fontSize: '1.1em',
-                color: '#d4af37',
-                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-              }}> Our Lady of Perpetual Profit</span>. Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers, or pay homage to the Patron Saint of Day Traders with a green candle. 
-
-
-          </p>
+  
         </div>
           <TokenInfoGrid />
         </div>
@@ -1691,64 +1692,7 @@ export default function HomePage() {
         <TextMarquee />
       )}
       
-      {/* Mobile Numerology Component */}
-      {isClient && isMobileView && (
-        <div style={{
-          marginTop: '2rem',
-          marginBottom: '2rem',
-          padding: '1.5rem',
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '12px',
-          border: '1px solid rgba(212, 175, 55, 0.2)'
-        }}>
-          <Numerology isMobile={true} />
-          
-          {/* Caption and explanatory text for 8-ball */}
-          <div style={{
-            marginTop: '1.5rem',
-            textAlign: 'center',
-            color: '#ffffff'
-          }}>
-            <h3 style={{
-              color: '#d4af37',
-              fontSize: '1.8rem',
-              marginBottom: '0.5rem',
-              fontFamily: 'UnifrakturMaguntia, serif',
-              textShadow: '0 0 10px rgba(212, 175, 55, 0.5)'
-            }}>
-              The Oracle of RL80
-            </h3>
-            <p style={{
-              fontSize: '0.95rem',
-              lineHeight: 1.6,
-              marginBottom: '1rem',
-              marginTop: '0.5rem',
-              color: '#ffffff',
-              opacity: 0.9,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              letterSpacing: '0.02em',
-              padding: '0 1rem',
-              display: 'block',
-              width: '100%',
-              whiteSpace: 'normal',
-              wordWrap: 'break-word'
-            }}>
-              Consult the mystical oracle for guidance on your path to perpetual profit. 
-              Ask your burning questions about investments, life choices, or divine timing.
-            </p>
-            <p style={{
-              fontSize: '0.9rem',
-              fontStyle: 'italic',
-              opacity: 0.7,
-              color: '#d4af37'
-            }}>
-              Shake or tap to reveal your destiny
-            </p>
-          </div>
-        </div>
-      )}
+
       
       {/* Mobile Coin Component - repositioned to flow after candle */}
       {isClient && isMobileView && (
@@ -2749,25 +2693,24 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+      </div>
       
-      {/* CyberNav Menu */}
+      {/* CyberNav Menu - Outside main container */}
       <CyberNav is80sMode={is80sMode} />
       
-      {/* Music and User Controls Container */}
+      {/* Music and User Controls Container - Outside main container */}
       <div style={{
         position: "fixed",
-        top: isClient && isMobileDevice ? "70px" : "20px",
-        right: isClient && isMobileDevice ? "20px" : "72px",
+        top: isMobileDevice ? "70px" : "20px",
+        right: "20px",
         display: "flex",
-        flexDirection: isClient && isMobileDevice ? "column" : "row",
+        flexDirection: isMobileDevice ? "column" : "row",
         gap: "10px",
-        alignItems: isClient && isMobileDevice ? "flex-end" : "center",
-        zIndex: 9999,
-        opacity: isClient ? 1 : 0,
-        transition: "opacity 0.3s ease"
+        alignItems: isMobileDevice ? "flex-end" : "center",
+        zIndex: 9999999
       }}>
         {/* User Account Icon */}
-        <div style={{ order: isClient && isMobileDevice ? 2 : 0 }}>
+        <div>
           {isSignedIn ? (
             <UserButton 
               afterSignOutUrl="/"
@@ -2805,26 +2748,14 @@ export default function HomePage() {
                 }}
                 title="Sign In"
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+                <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
               </button>
             </SignInButton>
           )}
         </div>
         
         {/* Music Controls */}
-        <div style={{ order: isClient && isMobileDevice ? 1 : 1 }}>
+        <div>
           {!showMusicControls ? (
             <button
               onClick={() => {
@@ -2952,7 +2883,6 @@ export default function HomePage() {
         </div>
       </div>
       
-      </div>
-    </>
+    </div>
   );
 }

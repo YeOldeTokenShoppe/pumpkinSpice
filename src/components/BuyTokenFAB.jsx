@@ -145,9 +145,9 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
     <div
       style={{
         position: "fixed",
-        bottom: isMobile ? "2rem" : "150px",
+        bottom: isMobile ? "2rem" : "4rem",
         left: isMobile ? "50%" : "auto",
-        right: isMobile ? "auto" : "20px",
+        right: isMobile ? "auto" : "4rem",
         transform: isMobile ? "translateX(-50%)" : "none",
         zIndex: 1200
       }}
@@ -174,8 +174,8 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div style={{ 
-              width: "4rem", 
-              height: "4rem", 
+              width: "6rem", 
+              height: "6rem", 
               position: "relative",
               display: "flex",
               alignItems: "center",

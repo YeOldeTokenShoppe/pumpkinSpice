@@ -17,6 +17,24 @@ const TokenInfoGrid = () => {
     tokensBurned: 0,
   });
   
+  // Detect viewport for responsive font sizing
+  const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  const [isLandscape, setIsLandscape] = useState(typeof window !== 'undefined' ? window.innerWidth > window.innerHeight : false);
+  const isMobile = viewportWidth <= 480;
+  const isTablet = viewportWidth <= 768;
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportHeight(window.innerHeight);
+      setViewportWidth(window.innerWidth);
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
   const contractAddress = tokenData?.contractAddress || "0x0000000000000000000000000000000000000000";
   
   const handleCopyAddress = async () => {
@@ -283,6 +301,7 @@ const TokenInfoGrid = () => {
   const DistributionChart = () => {
     const canvasRef = useRef(null);
     const [hoveredSegment, setHoveredSegment] = useState(null);
+    const chartSize = isMobile ? 180 : 240;
 
     const distribution = [
       { label: 'Liquidity', value: 80, color: '#c48901' },
@@ -408,12 +427,19 @@ const TokenInfoGrid = () => {
     };
 
     return (
-      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div style={{ 
+        position: 'relative', 
+        width: '100%', 
+        height: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
         <canvas 
           ref={canvasRef} 
-          width={180} 
-          height={180} 
-          style={{ width: '100%', height: '100%', cursor: 'pointer' }}
+          width={chartSize} 
+          height={chartSize} 
+          style={{ width: `${chartSize}px`, height: `${chartSize}px`, cursor: 'pointer' }}
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setHoveredSegment(null)}
         />
@@ -443,101 +469,33 @@ const TokenInfoGrid = () => {
 
   // Grid item configurations with dynamic data
   const gridItems = [
-    // Row 1
+    // Top left - Contract Address box
     {
       id: 'contract',
       columns: 2,
       rows: 1,
       type: 'contract',
     },
+    // Top right - Verified box
     {
-      id: 'new-box',
+      id: 'verified',
       columns: 2,
       rows: 1,
-      type: 'new-box',
+      type: 'verified',
     },
-    {
-      id: 'volume',
-      columns: 1,
-      rows: 1,
-      type: 'number',
-      label: '24h Volume',
-      value: `$${animatedValues.volume24h.toLocaleString()}`,
-      trend: tokenData?.volumeChange24h >= 0 ? 'up' : 'down',
-      change: `${tokenData?.volumeChange24h >= 0 ? '+' : ''}${tokenData?.volumeChange24h?.toFixed(1) || '0'}%`,
-      subtext: 'from yesterday',
-    },
-    {
-      id: 'marketcap',
-      columns: 1,
-      rows: 1,
-      type: 'marketcap',
-      label: 'Market Cap',
-      value: `$${animatedValues.marketCap.toLocaleString()}`,
-      trend: tokenData?.marketCapChange >= 0 ? 'up' : 'down',
-      change: `${tokenData?.marketCapChange >= 0 ? '+' : ''}${tokenData?.marketCapChange?.toFixed(1) || '0'}%`,
-      subtext: 'last 7 days',
-    },
-    // Row 2
-    {
-      id: 'chart',
-      columns: 1,
-      rows: 1,
-      type: 'chart',
-    },
-    {
-      id: 'liquidity',
-      columns: 1,
-      rows: 1,
-      type: 'number',
-      label: 'Liquidity Pool',
-      value: `$${animatedValues.liquidityAmount.toLocaleString()}`,
-      trend: tokenData?.liquidityChange24h >= 0 ? 'up' : 'down',
-      change: tokenData?.liquidityChange24h ? `${tokenData.liquidityChange24h >= 0 ? '+' : ''}${tokenData.liquidityChange24h.toFixed(1)}%` : null,
-      subtext: tokenData?.liquidityLocked ? '🔒 Locked 1 year' : 'Unlocked',
-    },
-    {
-      id: 'burned',
-      columns: 1,
-      rows: 1,
-      type: 'burned',
-    },
-    {
-      id: 'holders',
-      columns: 1,
-      rows: 1,
-      type: 'number',
-      label: 'Holders',
-      value: animatedValues.holders.toLocaleString(),
-      trend: tokenData?.holdersChange24h >= 0 ? 'up' : 'down',
-      change: `${tokenData?.holdersChange24h >= 0 ? '+' : ''}${tokenData?.holdersChange24h?.toFixed(1) || '0'}%`,
-      subtext: 'active wallets',
-    },
-    // Row 3-4
+    // Bottom left - Token Distribution box (below Contract Address)
     {
       id: 'distribution',
       columns: 2,
       rows: 2,
       type: 'distribution',
     },
+    // Bottom right - Tax Timeline box
     {
       id: 'tax-timeline',
       columns: 2,
       rows: 2,
       type: 'timeline',
-    },
-    {
-      id: 'numerology',
-      columns: 2,
-      rows: 2,
-      type: 'numerology',
-    },
-    // Row 5 - Bottom left verified box
-    {
-      id: 'verified',
-      columns: 2,
-      rows: 1,
-      type: 'verified',
     },
   ];
 
@@ -655,195 +613,195 @@ const TokenInfoGrid = () => {
           </div>
         );
 
-      case 'marketcap':
-        return (
-          <div 
-            key={item.id} 
-            style={baseStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.02)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
-            }}
-          >
-            <div style={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: '0.75rem',
-            }}>
-              <div style={{
-                fontSize: '0.65rem',
-                color: 'rgba(255, 255, 255, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                fontFamily: '"Cyber", monospace',
-              }}>
-                {item.label}
-              </div>
+      // case 'marketcap':
+      //   return (
+      //     <div 
+      //       key={item.id} 
+      //       style={baseStyle}
+      //       onMouseEnter={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1.02)';
+      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
+      //       }}
+      //       onMouseLeave={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1)';
+      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
+      //       }}
+      //     >
+      //       <div style={{
+      //         width: '100%',
+      //         display: 'flex',
+      //         flexDirection: 'column',
+      //         alignItems: 'flex-start',
+      //         gap: '0.75rem',
+      //       }}>
+      //         <div style={{
+      //           fontSize: '0.65rem',
+      //           color: 'rgba(255, 255, 255, 0.5)',
+      //           textTransform: 'uppercase',
+      //           letterSpacing: '0.1em',
+      //           fontFamily: '"Cyber", monospace',
+      //         }}>
+      //           {item.label}
+      //         </div>
               
-              <div style={{
-                fontSize: '1.4rem',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                fontFamily: '"Cyber", monospace',
-                lineHeight: 1,
-              }}>
-                {item.value}
-              </div>
+      //         <div style={{
+      //           fontSize: '1.4rem',
+      //           fontWeight: 'bold',
+      //           color: '#ffffff',
+      //           fontFamily: '"Cyber", monospace',
+      //           lineHeight: 1,
+      //         }}>
+      //           {item.value}
+      //         </div>
               
-              {item.change && (
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '12px',
-                  backgroundColor: item.trend === 'up' 
-                    ? 'rgba(0, 255, 136, 0.15)' 
-                    : 'rgba(255, 68, 68, 0.15)',
-                  border: `1px solid ${item.trend === 'up' 
-                    ? 'rgba(0, 255, 136, 0.3)' 
-                    : 'rgba(255, 68, 68, 0.3)'}`,
-                }}>
-                  <svg 
-                    width="12" 
-                    height="12" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke={item.trend === 'up' ? '#00ff88' : '#ff4444'} 
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {item.trend === 'up' ? (
-                      <path d="M12 19V5M5 12L12 5L19 12" />
-                    ) : (
-                      <path d="M12 5V19M5 12L12 19L19 12" />
-                    )}
-                  </svg>
-                  <span style={{
-                    color: item.trend === 'up' ? '#00ff88' : '#ff4444',
-                    fontSize: '0.7rem',
-                    fontWeight: '600',
-                  }}>
-                    {item.change}
-                  </span>
-                </div>
-              )}
+      //         {item.change && (
+      //           <div style={{
+      //             display: 'inline-flex',
+      //             alignItems: 'center',
+      //             gap: '0.25rem',
+      //             padding: '0.25rem 0.5rem',
+      //             borderRadius: '12px',
+      //             backgroundColor: item.trend === 'up' 
+      //               ? 'rgba(0, 255, 136, 0.15)' 
+      //               : 'rgba(255, 68, 68, 0.15)',
+      //             border: `1px solid ${item.trend === 'up' 
+      //               ? 'rgba(0, 255, 136, 0.3)' 
+      //               : 'rgba(255, 68, 68, 0.3)'}`,
+      //           }}>
+      //             <svg 
+      //               width="12" 
+      //               height="12" 
+      //               viewBox="0 0 24 24" 
+      //               fill="none" 
+      //               stroke={item.trend === 'up' ? '#00ff88' : '#ff4444'} 
+      //               strokeWidth="3"
+      //               strokeLinecap="round"
+      //               strokeLinejoin="round"
+      //             >
+      //               {item.trend === 'up' ? (
+      //                 <path d="M12 19V5M5 12L12 5L19 12" />
+      //               ) : (
+      //                 <path d="M12 5V19M5 12L12 19L19 12" />
+      //               )}
+      //             </svg>
+      //             <span style={{
+      //               color: item.trend === 'up' ? '#00ff88' : '#ff4444',
+      //               fontSize: '0.7rem',
+      //               fontWeight: '600',
+      //             }}>
+      //               {item.change}
+      //             </span>
+      //           </div>
+      //         )}
               
-              {item.subtext && (
-                <div style={{
-                  fontSize: '0.65rem',
-                  color: 'rgba(255, 255, 255, 0.4)',
-                  fontFamily: '"Cyber", monospace',
-                }}>
-                  {item.subtext}
-                </div>
-              )}
-            </div>
-          </div>
-        );
+      //         {item.subtext && (
+      //           <div style={{
+      //             fontSize: '0.65rem',
+      //             color: 'rgba(255, 255, 255, 0.4)',
+      //             fontFamily: '"Cyber", monospace',
+      //           }}>
+      //             {item.subtext}
+      //           </div>
+      //         )}
+      //       </div>
+      //     </div>
+      //   );
 
-      case 'number':
-        return (
-          <div 
-            key={item.id} 
-            style={baseStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.02)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
-            }}
-          >
-            <div style={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: '0.75rem',
-            }}>
-              <div style={{
-                fontSize: '0.65rem',
-                color: 'rgba(255, 255, 255, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                fontFamily: '"Cyber", monospace',
-              }}>
-                {item.label}
-              </div>
+      // case 'number':
+      //   return (
+      //     <div 
+      //       key={item.id} 
+      //       style={baseStyle}
+      //       onMouseEnter={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1.02)';
+      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
+      //       }}
+      //       onMouseLeave={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1)';
+      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
+      //       }}
+      //     >
+      //       <div style={{
+      //         width: '100%',
+      //         display: 'flex',
+      //         flexDirection: 'column',
+      //         alignItems: 'flex-start',
+      //         gap: '0.75rem',
+      //       }}>
+      //         <div style={{
+      //           fontSize: '0.65rem',
+      //           color: 'rgba(255, 255, 255, 0.5)',
+      //           textTransform: 'uppercase',
+      //           letterSpacing: '0.1em',
+      //           fontFamily: '"Cyber", monospace',
+      //         }}>
+      //           {item.label}
+      //         </div>
               
-              <div style={{
-                fontSize: item.id === 'supply' ? '0.9rem' : (item.rows === 2 ? '1.8rem' : '1.4rem'),
-                fontWeight: 'bold',
-                color: '#ffffff',
-                fontFamily: '"Cyber", monospace',
-                lineHeight: 1,
-                wordBreak: 'break-word',
-                width: '100%',
-              }}>
-                {item.value}
-              </div>
+      //         <div style={{
+      //           fontSize: item.id === 'supply' ? '0.9rem' : (item.rows === 2 ? '1.8rem' : '1.4rem'),
+      //           fontWeight: 'bold',
+      //           color: '#ffffff',
+      //           fontFamily: '"Cyber", monospace',
+      //           lineHeight: 1,
+      //           wordBreak: 'break-word',
+      //           width: '100%',
+      //         }}>
+      //           {item.value}
+      //         </div>
               
-              {item.change && (
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '12px',
-                  backgroundColor: item.trend === 'up' 
-                    ? 'rgba(0, 255, 136, 0.15)' 
-                    : 'rgba(255, 68, 68, 0.15)',
-                  border: `1px solid ${item.trend === 'up' 
-                    ? 'rgba(0, 255, 136, 0.3)' 
-                    : 'rgba(255, 68, 68, 0.3)'}`,
-                }}>
-                  <svg 
-                    width="12" 
-                    height="12" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke={item.trend === 'up' ? '#00ff88' : '#ff4444'} 
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {item.trend === 'up' ? (
-                      <path d="M12 19V5M5 12L12 5L19 12" />
-                    ) : (
-                      <path d="M12 5V19M5 12L12 19L19 12" />
-                    )}
-                  </svg>
-                  <span style={{
-                    color: item.trend === 'up' ? '#00ff88' : '#ff4444',
-                    fontSize: '0.7rem',
-                    fontWeight: '600',
-                  }}>
-                    {item.change}
-                  </span>
-                </div>
-              )}
+      //         {item.change && (
+      //           <div style={{
+      //             display: 'inline-flex',
+      //             alignItems: 'center',
+      //             gap: '0.25rem',
+      //             padding: '0.25rem 0.5rem',
+      //             borderRadius: '12px',
+      //             backgroundColor: item.trend === 'up' 
+      //               ? 'rgba(0, 255, 136, 0.15)' 
+      //               : 'rgba(255, 68, 68, 0.15)',
+      //             border: `1px solid ${item.trend === 'up' 
+      //               ? 'rgba(0, 255, 136, 0.3)' 
+      //               : 'rgba(255, 68, 68, 0.3)'}`,
+      //           }}>
+      //             <svg 
+      //               width="12" 
+      //               height="12" 
+      //               viewBox="0 0 24 24" 
+      //               fill="none" 
+      //               stroke={item.trend === 'up' ? '#00ff88' : '#ff4444'} 
+      //               strokeWidth="3"
+      //               strokeLinecap="round"
+      //               strokeLinejoin="round"
+      //             >
+      //               {item.trend === 'up' ? (
+      //                 <path d="M12 19V5M5 12L12 5L19 12" />
+      //               ) : (
+      //                 <path d="M12 5V19M5 12L12 19L19 12" />
+      //               )}
+      //             </svg>
+      //             <span style={{
+      //               color: item.trend === 'up' ? '#00ff88' : '#ff4444',
+      //               fontSize: '0.7rem',
+      //               fontWeight: '600',
+      //             }}>
+      //               {item.change}
+      //             </span>
+      //           </div>
+      //         )}
               
-              {item.subtext && (
-                <div style={{
-                  fontSize: '0.65rem',
-                  color: 'rgba(255, 255, 255, 0.4)',
-                  fontFamily: '"Cyber", monospace',
-                }}>
-                  {item.subtext}
-                </div>
-              )}
-            </div>
-          </div>
-        );
+      //         {item.subtext && (
+      //           <div style={{
+      //             fontSize: '0.65rem',
+      //             color: 'rgba(255, 255, 255, 0.4)',
+      //             fontFamily: '"Cyber", monospace',
+      //           }}>
+      //             {item.subtext}
+      //           </div>
+      //         )}
+      //       </div>
+      //     </div>
+      //   );
 
       case 'text':
         return (
@@ -890,95 +848,95 @@ const TokenInfoGrid = () => {
           </div>
         );
 
-      case 'chart':
-        return (
-          <div 
-            key={item.id} 
-            style={baseStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.02)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
-            }}
-          >
-            <div style={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: '0.75rem',
-            }}>
-              <div style={{
-                fontSize: '0.65rem',
-                color: 'rgba(255, 255, 255, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                fontFamily: '"Cyber", monospace',
-              }}>
-                Current Price
-              </div>
+      // case 'chart':
+      //   return (
+      //     <div 
+      //       key={item.id} 
+      //       style={baseStyle}
+      //       onMouseEnter={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1.02)';
+      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
+      //       }}
+      //       onMouseLeave={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1)';
+      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
+      //       }}
+      //     >
+      //       <div style={{
+      //         width: '100%',
+      //         display: 'flex',
+      //         flexDirection: 'column',
+      //         alignItems: 'flex-start',
+      //         gap: '0.75rem',
+      //       }}>
+      //         <div style={{
+      //           fontSize: '0.65rem',
+      //           color: 'rgba(255, 255, 255, 0.5)',
+      //           textTransform: 'uppercase',
+      //           letterSpacing: '0.1em',
+      //           fontFamily: '"Cyber", monospace',
+      //         }}>
+      //           Current Price
+      //         </div>
               
-              <div style={{
-                fontSize: '1.4rem',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                fontFamily: '"Cyber", monospace',
-                lineHeight: 1,
-              }}>
-                ${animatedValues.price.toFixed(5)}
-              </div>
+      //         <div style={{
+      //           fontSize: '1.4rem',
+      //           fontWeight: 'bold',
+      //           color: '#ffffff',
+      //           fontFamily: '"Cyber", monospace',
+      //           lineHeight: 1,
+      //         }}>
+      //           ${animatedValues.price.toFixed(5)}
+      //         </div>
               
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '12px',
-                backgroundColor: tokenData?.priceChange24h >= 0 
-                  ? 'rgba(0, 255, 136, 0.15)' 
-                  : 'rgba(255, 68, 68, 0.15)',
-                border: `1px solid ${tokenData?.priceChange24h >= 0 
-                  ? 'rgba(0, 255, 136, 0.3)' 
-                  : 'rgba(255, 68, 68, 0.3)'}`,
-              }}>
-                <svg 
-                  width="12" 
-                  height="12" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke={tokenData?.priceChange24h >= 0 ? '#00ff88' : '#ff4444'} 
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  {tokenData?.priceChange24h >= 0 ? (
-                    <path d="M12 19V5M5 12L12 5L19 12" />
-                  ) : (
-                    <path d="M12 5V19M5 12L12 19L19 12" />
-                  )}
-                </svg>
-                <span style={{
-                  color: tokenData?.priceChange24h >= 0 ? '#00ff88' : '#ff4444',
-                  fontSize: '0.7rem',
-                  fontWeight: '600',
-                }}>
-                  {tokenData?.priceChange24h >= 0 ? '+' : ''}{tokenData?.priceChange24h?.toFixed(1) || '0'}%
-                </span>
-              </div>
+      //         <div style={{
+      //           display: 'inline-flex',
+      //           alignItems: 'center',
+      //           gap: '0.25rem',
+      //           padding: '0.25rem 0.5rem',
+      //           borderRadius: '12px',
+      //           backgroundColor: tokenData?.priceChange24h >= 0 
+      //             ? 'rgba(0, 255, 136, 0.15)' 
+      //             : 'rgba(255, 68, 68, 0.15)',
+      //           border: `1px solid ${tokenData?.priceChange24h >= 0 
+      //             ? 'rgba(0, 255, 136, 0.3)' 
+      //             : 'rgba(255, 68, 68, 0.3)'}`,
+      //         }}>
+      //           <svg 
+      //             width="12" 
+      //             height="12" 
+      //             viewBox="0 0 24 24" 
+      //             fill="none" 
+      //             stroke={tokenData?.priceChange24h >= 0 ? '#00ff88' : '#ff4444'} 
+      //             strokeWidth="3"
+      //             strokeLinecap="round"
+      //             strokeLinejoin="round"
+      //           >
+      //             {tokenData?.priceChange24h >= 0 ? (
+      //               <path d="M12 19V5M5 12L12 5L19 12" />
+      //             ) : (
+      //               <path d="M12 5V19M5 12L12 19L19 12" />
+      //             )}
+      //           </svg>
+      //           <span style={{
+      //             color: tokenData?.priceChange24h >= 0 ? '#00ff88' : '#ff4444',
+      //             fontSize: '0.7rem',
+      //             fontWeight: '600',
+      //           }}>
+      //             {tokenData?.priceChange24h >= 0 ? '+' : ''}{tokenData?.priceChange24h?.toFixed(1) || '0'}%
+      //           </span>
+      //         </div>
               
-              <div style={{
-                fontSize: '0.65rem',
-                color: 'rgba(255, 255, 255, 0.4)',
-                fontFamily: '"Cyber", monospace',
-              }}>
-                24h change
-              </div>
-            </div>
-          </div>
-        );
+      //         <div style={{
+      //           fontSize: '0.65rem',
+      //           color: 'rgba(255, 255, 255, 0.4)',
+      //           fontFamily: '"Cyber", monospace',
+      //         }}>
+      //           24h change
+      //         </div>
+      //       </div>
+      //     </div>
+      //   );
 
       case 'distribution':
         return (
@@ -987,6 +945,9 @@ const TokenInfoGrid = () => {
             style={{
               ...baseStyle,
               padding: '1rem',
+              minHeight: '380px',
+              display: 'flex',
+              flexDirection: 'column',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'scale(1.02)';
@@ -1026,6 +987,8 @@ const TokenInfoGrid = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              minHeight: '260px',
+              padding: '10px 0',
             }}>
               <DistributionChart />
             </div>
@@ -1073,6 +1036,9 @@ const TokenInfoGrid = () => {
               ...baseStyle,
               padding: '1.25rem',
               alignItems: 'flex-start',
+              minHeight: '380px',
+              display: 'flex',
+              flexDirection: 'column',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'scale(1.01)';
@@ -1287,96 +1253,6 @@ const TokenInfoGrid = () => {
           </div>
         );
 
-
-      case 'burned':
-        return (
-          <div 
-            key={item.id} 
-            style={baseStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.02)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
-            }}
-          >
-            <div style={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: '0.75rem',
-            }}>
-              <div style={{
-                fontSize: '0.65rem',
-                color: 'rgba(255, 255, 255, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                fontFamily: '"Cyber", monospace',
-              }}>
-                Tokens Burned
-              </div>
-              
-              <div style={{
-                fontSize: '1.4rem',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.25rem',
-                fontFamily: '"Cyber", monospace',
-                lineHeight: 1,
-              }}>
-                🔥 {(animatedValues.tokensBurned || 0).toLocaleString()}
-              </div>
-              
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(196, 137, 1, 0.15)',
-                border: '1px solid rgba(196, 137, 1, 0.3)',
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '6px',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '3px',
-                  overflow: 'hidden',
-                  position: 'relative',
-                }}>
-                  <div style={{
-                    width: `${tokenData?.burnPercentage || 5}%`,
-                    height: '100%',
-                    background: 'linear-gradient(90deg, #c48901, #d4af37)',
-                    borderRadius: '3px',
-                    transition: 'width 1s ease-out',
-                  }} />
-                </div>
-                <span style={{
-                  fontSize: '0.7rem',
-                  color: '#c48901',
-                  fontWeight: '600',
-                  fontFamily: '"Cyber", monospace',
-                }}>
-                  {tokenData?.burnPercentage || 5}%
-                </span>
-              </div>
-              
-              <div style={{
-                fontSize: '0.65rem',
-                color: 'rgba(255, 255, 255, 0.4)',
-                fontFamily: '"Cyber", monospace',
-              }}>
-                deflationary
-              </div>
-            </div>
-          </div>
-        );
 
       case 'verified':
         return (
@@ -1627,62 +1503,189 @@ const TokenInfoGrid = () => {
   return (
     <div style={{
       width: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
+      padding: isMobile ? '0 10px' : '0 40px',
+      maxWidth: '1400px',
+      margin: '0 auto',
       boxSizing: 'border-box',
+  
     }}>
-      {/* Introductory Text */}
-      {/* <div style={{
-        marginBottom: '2rem',
-        padding: '1.5rem',
-        textAlign: 'center',
-        color: '#ffffff',
-        fontSize: '1.1rem',
-        lineHeight: 1.8,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        fontWeight: 400,
-        letterSpacing: '0.02em',
-        maxWidth: '1000px',
+      <div className="main-grid" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(12, 1fr)',
+        gridGap: '24px',
+        width: '100%',
+        boxSizing: 'border-box',
+alignContent: 'center',
+
       }}>
+        {/* Text Content - Shows first on mobile, second on desktop */}
+        <div className="text-section" style={{
+          gridColumn: isMobile ? 'span 12' : 'span 7',
+          padding: isMobile ? '1rem 0' : '0',
+          order: isMobile ? 1 : 2,
+  
+        }}>
         <h2 style={{
           color: '#d4af37',
           marginBottom: '1.5rem',
-          fontSize: '2rem',
+          fontSize: isMobile ? '1.5rem' : (isLandscape && viewportHeight < 800 ? '2rem' : '3rem'),
           fontFamily: 'UnifrakturCook, serif',
           textShadow: '0 0 10px rgba(212, 175, 55, 0.3)',
+          lineHeight: 1.2,
+          marginTop: isMobile ? '0' : '-1rem',
+          textAlign: 'center',
         }}>
-          Welcome to Our Sacred Digital Temple
+          The Holy Grail of Digital Assets
         </h2>
         <p style={{ 
-          marginBottom: '1rem',
+          color: '#ffffff',
+          fontSize: isMobile ? '0.95rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem'),
+          lineHeight: 1.6,
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          fontWeight: 400,
+          letterSpacing: '0.02em',
+          marginBottom: '1.5rem',
+          opacity: 0.9,
         }}>
           Experience the convergence of ancient wisdom and cyberpunk sensibility into the maternal market-oriented icon, 
           <span style={{
-            fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
+            fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
             fontSize: '1.1em',
             color: '#d4af37',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
-          }}> Our Lady of Perpetual Profit</span>. Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers, or pay homage to the Patron Saint of Day Traders with a green candle.
+          }}> Our Lady of Perpetual Profit</span>.
         </p>
-      </div> */}
+        
+        <p style={{ 
+          color: '#ffffff',
+          fontSize: isMobile ? '0.9rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.5rem'),
+          lineHeight: 1.6,
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          fontWeight: 400,
+          letterSpacing: '0.02em',
+          marginBottom: '2rem',
+          opacity: 0.85,
+        }}>
+          Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers, or pay homage to the Patron Saint of Day Traders with a green candle.
+        </p>
+
+        <div style={{
+          // marginTop: '2rem',
+          position: 'relative',
+          bottom: 0,
+          padding: '1.5rem',
+          background: 'linear-gradient(135deg, rgba(196, 137, 1, 0.1), rgba(255, 255, 255, 0.05))',
+          border: '2px solid rgba(196, 137, 1, 0.3)',
+          borderRadius: '12px',
+        }}>
+          <h3 style={{
+            color: '#c48901',
+            fontSize: isMobile ? '1rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '1.5rem'),
+            marginBottom: '1rem',
+            fontFamily: '"Cyber", monospace',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+          }}>
+            Token Features
+          </h3>
+          <ul style={{
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+          }}>
+            <li style={{
+              color: '#ffffff',
+              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
+              marginBottom: '0.75rem',
+              paddingLeft: '1.5rem',
+              position: 'relative',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              opacity: 0.9,
+              lineHeight: 1.5,
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: 0,
+                color: '#c48901',
+              }}>▸</span>
+              Progressive tax reduction system
+            </li>
+            <li style={{
+              color: '#ffffff',
+              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
+              marginBottom: '0.75rem',
+              paddingLeft: '1.5rem',
+              position: 'relative',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              opacity: 0.9,
+              lineHeight: 1.5,
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: 0,
+                color: '#c48901',
+              }}>▸</span>
+              80% liquidity allocation
+            </li>
+            <li style={{
+              color: '#ffffff',
+              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
+              marginBottom: '0.75rem',
+              paddingLeft: '1.5rem',
+              position: 'relative',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              opacity: 0.9,
+              lineHeight: 1.5,
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: 0,
+                color: '#c48901',
+              }}>▸</span>
+              Verified and SAFU protected
+            </li>
+            <li style={{
+              color: '#ffffff',
+              fontSize: '0.9rem',
+              paddingLeft: '1.5rem',
+              position: 'relative',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              opacity: 0.9,
+              lineHeight: 1.5,
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: 0,
+                color: '#c48901',
+              }}>▸</span>
+              Community-driven milestones
+            </li>
+          </ul>
+        </div>
+      </div>
       
-      {/* Token Info Grid */}
-      <div className="token-info-grid" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(var(--grid-columns, 6), 1fr)',
-        gridGap: '16px',
-        gridAutoRows: 'minmax(120px, auto)',
-        width: 'calc(100% - 40px)',
-        maxWidth: '1400px',
-        margin: '0 20px',
-        boxSizing: 'border-box',
-        '--grid-columns': '6',
-        '--max-columns': '6',
+      {/* Token Info Grid - Shows second on mobile, first on desktop */}
+      <div className="grid-section" style={{
+        gridColumn: isMobile ? 'span 12' : 'span 5',
+        order: isMobile ? 2 : 1,
       }}>
-        {gridItems.map(renderGridItem)}
+        <div className="token-info-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+          gridGap: isMobile ? '12px' : '16px',
+          gridAutoRows: 'minmax(120px, auto)',
+          width: '100%',
+          boxSizing: 'border-box',
+        }}>
+          {gridItems.map(renderGridItem)}
+        </div>
+      </div>
       </div>
       
       <style jsx>{`
@@ -1695,33 +1698,88 @@ const TokenInfoGrid = () => {
           }
         }
         
-        /* Tablet landscape (1024px and below) */
-        @media (max-width: 1024px) {
-          .token-info-grid {
-            --grid-columns: 4 !important;
-            --max-columns: 4 !important;
+        /* Large tablets and small desktops */
+        @media (max-width: 1200px) {
+          .main-grid {
+            grid-template-columns: repeat(12, 1fr) !important;
+          }
+          
+          .grid-section {
+            grid-column: span 6 !important;
+          }
+          
+          .text-section {
+            grid-column: span 6 !important;
           }
         }
         
-        /* Tablet portrait (768px and below) */
+        /* Tablets */
+        @media (max-width: 992px) {
+          .main-grid {
+            grid-template-columns: 1fr !important;
+            grid-gap: 2rem !important;
+          }
+          
+          .grid-section {
+            grid-column: span 1 !important;
+            max-width: 600px !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+          }
+          
+          .text-section {
+            grid-column: span 1 !important;
+            padding: 0 1rem !important;
+          }
+        }
+        
+        /* Small tablets and large phones */
         @media (max-width: 768px) {
           .token-info-grid {
-            --grid-columns: 2 !important;
-            --max-columns: 2 !important;
+            grid-template-columns: repeat(2, 1fr) !important;
             grid-gap: 12px !important;
-            margin: 0 15px !important;
-            width: calc(100% - 30px) !important;
+          }
+          
+          .main-container {
+            padding: 0 20px !important;
           }
         }
         
-        /* Mobile (480px and below) */
+        /* Mobile */
         @media (max-width: 480px) {
           .token-info-grid {
-            --grid-columns: 1 !important;
-            --max-columns: 1 !important;
-            grid-gap: 10px !important;
-            margin: 0 10px !important;
-            width: calc(100% - 20px) !important;
+            grid-template-columns: 1fr !important;
+            grid-gap: 12px !important;
+            width: 100% !important;
+          }
+          
+          .main-container {
+            padding: 0 15px !important;
+          }
+          
+          .grid-section {
+            width: 100% !important;
+            max-width: none !important;
+          }
+          
+          .text-section {
+            padding: 0 !important;
+          }
+          
+          .text-section h2 {
+            font-size: 1.8rem !important;
+          }
+          
+          .text-section p {
+            font-size: 1rem !important;
+          }
+          
+          .text-section h3 {
+            font-size: 1.1rem !important;
+          }
+          
+          .text-section li {
+            font-size: 0.9rem !important;
           }
         }
       `}</style>

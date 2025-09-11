@@ -46,6 +46,7 @@ const EtherealCloudsPage = () => {
   const [manualFearGreedValue, setManualFearGreedValue] = useState(50);
   const [manualVolumeValue, setManualVolumeValue] = useState(null);
   const updateTimeoutRef = useRef(null);
+  const [emoji, setEmoji] = useState("😇");
   
   const handleManualControl = useCallback((value) => {
     // Clear any pending updates
@@ -144,6 +145,15 @@ const EtherealCloudsPage = () => {
       });
     }
   }, []);
+  // Alternate emoji for sign-in button
+  useEffect(() => {
+    const emojiInterval = setInterval(() => {
+      setEmoji((prevEmoji) => (prevEmoji === "😇" ? "😈" : "😇"));
+    }, 3000);
+
+    return () => clearInterval(emojiInterval);
+  }, []);
+  
   useEffect(() => {
     const checkMobile = () => {
       const isMobile = window.innerWidth <= 768;
@@ -487,10 +497,7 @@ const EtherealCloudsPage = () => {
                 }}
                 title="Sign In"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+                <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
               </button>
             </SignInButton>
           )}

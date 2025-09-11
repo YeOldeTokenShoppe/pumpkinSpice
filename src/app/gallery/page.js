@@ -11,6 +11,7 @@ import BuyTokenFAB from "@/components/BuyTokenFAB";
 import CompactCandleModal from "@/components/CompactCandleModal";
 import CyberNav from "@/components/CyberNav";
 import SocialBar from "@/components/SocialBar";
+import TokensBurned from "@/components/TokensBurned";
 
 
 
@@ -46,6 +47,7 @@ export default function GalleryPage() {
   const [fontLoaded, setFontLoaded] = useState(false);
   const [showCandleModal, setShowCandleModal] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
+  const [emoji, setEmoji] = useState("😇");
   
   // Sync showMusicControls with playing state when it changes
   useEffect(() => {
@@ -53,6 +55,15 @@ export default function GalleryPage() {
       setShowMusicControls(true);
     }
   }, [contextIsPlaying]);
+  
+  // Alternate emoji for sign-in button
+  useEffect(() => {
+    const emojiInterval = setInterval(() => {
+      setEmoji((prevEmoji) => (prevEmoji === "😇" ? "😈" : "😇"));
+    }, 3000);
+
+    return () => clearInterval(emojiInterval);
+  }, []);
 
 
   
@@ -401,19 +412,7 @@ export default function GalleryPage() {
                       }}
                       title="Sign In"
                     >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
+                      <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
                     </button>
                   </SignInButton>
                 )}
@@ -657,6 +656,17 @@ export default function GalleryPage() {
           </button>
         </SignInButton>
       )}
+      
+      {/* Tokens Burned Display */}
+      <div style={{
+        position: 'fixed',
+        bottom: isMobileDevice ? '40px' : '20px',
+        left: isMobileDevice ? 'auto' : '20px',
+        right: isMobileDevice ? '40px' : 'auto', // Position to right on mobile, avoiding FAB
+        zIndex: 9998,
+      }}>
+        <TokensBurned />
+      </div>
       
       {/* Buy Token FAB - Opens Candle Modal or Sign In */}
       <div onClick={() => {
