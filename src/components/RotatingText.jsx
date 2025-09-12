@@ -17,7 +17,7 @@ const RotatingText = ({ isDesktop = false }) => {
       // ["It may be", "stupid, but", "it's also dumb"],
       ["The lack of", "RL80 is the", "root of evil"],
       // ["A token ", "of appreciation"],
-      ["The prophets", "predicted", " the profits"],
+      ["Avoid", "false", " profits"],
     ];
 
     let phraseIndex = 0;

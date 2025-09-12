@@ -74,7 +74,7 @@ const Floor = ({ scene, physicsWorld, addPhysicsMesh, AmmoLib }) => {
 };
 
 const ArmChair = ({ scene }) => {
-  const { scene: chairScene } = useGLTF("/models/DunkTank4.glb");
+  const { scene: chairScene } = useGLTF("/models/Armchair.glb");
   useEffect(() => {
     chairScene.scale.set(10, 10, 10);
     scene.add(chairScene);

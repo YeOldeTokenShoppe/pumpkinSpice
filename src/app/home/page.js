@@ -4,7 +4,8 @@ import React, { useEffect, useState, useRef, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import SlantedCarousel from '@/components/SlantedCarousel';
 import { useMusic } from '@/components/MusicContext';
-import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
+import { useUser, SignInButton } from "@clerk/nextjs";
+import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import CyberNav from '@/components/CyberNav';
 import Link from 'next/link';
 import Coin from '@/components/Coin';
@@ -21,7 +22,7 @@ import { collection, query, getDocs, limit, orderBy } from 'firebase/firestore';
 import '@/components/ArrowButton.css';
 import Numerology from '@/components/Numerology';
 import InfinityLoader from '@/components/InfinityLoader';
-import Bouncer from '@/components/Bouncer';
+import Illumin80Bouncer from '@/components/Illumin80Bouncer';
 import Manuscript from '@/components/Manuscript';
 import TokenInfoGrid from '@/components/TokenInfoGrid';
 
@@ -638,6 +639,13 @@ export default function HomePage() {
   const [isLoadingCandle, setIsLoadingCandle] = useState(false);
   const [emoji, setEmoji] = useState("😇");
   
+  // Helper function to truncate long usernames
+  const truncateUsername = (username, maxLength = 20) => {
+    if (!username) return '';
+    if (username.length <= maxLength) return username;
+    return username.substring(0, maxLength) + '...';
+  };
+  
   // Function to fetch a random candle from Firestore
   const fetchRandomCandle = async () => {
     setIsLoadingCandle(true);
@@ -754,7 +762,7 @@ export default function HomePage() {
             
             // Apply color based on word for action elements
             if (element.classList.contains('action-text') || element.classList.contains('action-text-mobile')) {
-              if (targetWord === "Declare" || targetWord === "Customize") {
+              if (targetWord === "Declare" || targetWord === "Offer") {
                 element.style.color = '#d4af37';
                 element.style.fontFamily = '"UnifrakturCook", serif';
                 element.style.textShadow = '0 0 10px #d4af37, 0 0 20px #d4af37';
@@ -1010,8 +1018,8 @@ export default function HomePage() {
       backgroundImage: '/images/bullrider.jpg',
       image: '/images/bullrider.jpg',
       number: '04',
-      title: 'ONWARD AND UPWARD',
-      description: 'She will guide you up and to the right.'
+      title: 'UP AND TO THE RIGHT',
+      // description: 'She will guide you up and to the right.'
     },
     {
       id: 2,
@@ -1019,7 +1027,7 @@ export default function HomePage() {
       image: '/images/deejay.jpg',
       number: '02',
       title: 'DEFI BEATS',
-      description: 'Curated playlists for algorithmic transcendence.'
+      // description: 'Curated playlists for algorithmic transcendence.'
     },
     {
       id: 3,
@@ -1027,7 +1035,7 @@ export default function HomePage() {
       image: '/images/rl80vsMonster.png',
       number: '03',
       title: 'WARD OFF EVIL',
-      description: 'Avoid scams, fiends, and insider schemes.'
+      // description: 'Avoid scams, fiends, and insider schemes.'
     },
     {
       id: 1,
@@ -1035,7 +1043,7 @@ export default function HomePage() {
       image: '/images/face.png',
       number: '01',
       title: 'AVOID FALSE PROFITS',
-      description: 'A mother usually knows best.'
+      // description: 'A mother usually knows best.'
     },
    
     {
@@ -1044,7 +1052,7 @@ export default function HomePage() {
       image: '/images/lowrider.jpg',
       number: '05',
       title: 'GUARDIAN OF GOOD TIMES',
-      description: 'She offers you her protection with very smart contracts.'
+      // description: 'She offers you her protection with very smart contracts.'
     },
     {
       id: 0,
@@ -1052,7 +1060,7 @@ export default function HomePage() {
       image: '/images/mosaic.jpg',
       number: '05',
       title: 'PATRON OF THE ARTS',
-      description: 'From mimes to memes, she rewards creativ80. #RL80'
+      description: '#RL80'
     },
     
     {
@@ -1061,7 +1069,7 @@ export default function HomePage() {
       image: '/images/teknoir.jpg',
       number: '05',
       title: 'F8TH IN THE FUTURE',
-      description: 'Even cyborgs need something to believe in.'
+      // description: 'Even cyborgs need something to believe in.'
     },
     // {
     //   id: 8,
@@ -1291,10 +1299,10 @@ export default function HomePage() {
           width: '100%',
         }}>
           <div style={{
-          marginTop: '1rem',
-          marginLeft: '0',
-          marginRight: '0',
-          padding: '1.5rem',
+          // marginTop: '1rem',
+          // marginLeft: '0',
+          // marginRight: '0',
+          // padding: '1.5rem',
           background: 'rgba(0, 0, 0, 0.6)',
           backdropFilter: 'blur(10px)',
           // borderRadius: '12px',
@@ -1511,7 +1519,12 @@ export default function HomePage() {
             <div className="featured-banner" style={{
               bottom: '0'
             }}>
-              ✨ Featured Candle ✨
+              <span style={{
+                whiteSpace: 'nowrap',
+                display: 'inline-block'
+              }}>
+                ✨ {featuredCandle?.username ? `Candle by ${truncateUsername(featuredCandle.username, 15)}` : 'Featured Candle'} ✨
+              </span>
             </div>
           </div>
           
@@ -1542,7 +1555,7 @@ export default function HomePage() {
                   textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00',
                   minWidth: '120px',
                   textAlign: 'right'
-                }} data-words='["Encrypt", "Declare", "Customize"]'>Encrypt</span>
+                }} data-words='["Encrypt", "Declare"]'>Encrypt</span>
                 <span style={{ 
                   color: '#00ff00',
                   textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
@@ -1558,9 +1571,9 @@ export default function HomePage() {
             
             <p style={{
               fontSize: '0.95rem',
-              lineHeight: 1.6,
-              marginBottom: '1rem',
-              marginTop: '0.5rem',
+              lineHeight: 1.3,
+              marginBottom: '3rem',
+              // marginTop: '-0.5rem',
               color: '#ffffff',
               opacity: 0.9,
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -1578,7 +1591,7 @@ export default function HomePage() {
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit.</span> Upon request, she'll visit your social media with a personalized blessing.
+                }}>Our Lady of Perpetual Profit.</span>
               {/* Top token burners are inducted into <span style={{
                 fontFamily: 'UnifrakturCook, serif',
                 fontWeight: 'bold',
@@ -1591,8 +1604,8 @@ export default function HomePage() {
             <p style={{
               fontSize: '0.65rem',
               lineHeight: 1,
-              marginBottom: '1rem',
-              marginTop: '0.5rem',
+              // marginBottom: '3rem',
+              marginTop: '1rem',
               color: '#ffffff',
               opacity: 0.9,
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -2083,10 +2096,15 @@ export default function HomePage() {
               
               {/* Featured Candle Caption - Below Candle */}
               <div className="featured-banner" style={{
-                bottom: '30px',
+                bottom: '30px'
                 // transform: 'translateX(-50%)'
               }}>
-                ✨ Featured Candle ✨
+                <span style={{
+                  whiteSpace: 'nowrap',
+                  display: 'inline-block'
+                }}>
+                  ✨ {featuredCandle?.username ? `Candle by ${truncateUsername(featuredCandle.username, 15)}` : 'Featured Candle'} ✨
+                </span>
               </div>
             </div>
             
@@ -2145,7 +2163,7 @@ export default function HomePage() {
                     textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00',
                     minWidth: '200px',
                     textAlign: 'right'
-                  }} data-words='["Encrypt", "Declare", "Customize"]'>Encrypt</span>
+                  }} data-words='["Encrypt", "Declare", "Dedicate"]'>Encrypt</span>
                   <span style={{ 
                     color: '#00ff00',
                     textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
@@ -2315,7 +2333,7 @@ export default function HomePage() {
                 position: "relative"
               }}
             >
-              <Bouncer />
+              <Illumin80Bouncer />
             </div>
             
             {/* Right Column - Illumin80 Perks */}
@@ -2328,7 +2346,7 @@ export default function HomePage() {
                 fontSize: '2.5rem',
                 marginBottom: '1.5rem',
                 color: '#d4af37',
-                fontFamily: 'UnifrakturMaguntia, serif',
+                fontFamily: 'UnifrakturCook, serif',
                 textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
                 alignContent: 'center',
           
@@ -2349,13 +2367,13 @@ export default function HomePage() {
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit</span> by burning some RL80 tokens. The top 80 burners qualify for <span style={{
+                }}>Our Lady of Perpetual Profit</span> by burning RL80 tokens. The top 80 burners are automatically <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Illumin80</span> status and unlock exclusive benefits:
+                }}>Illumin80</span> and unlock exclusive benefits:
               </p>
               
               <ul style={{
@@ -2367,19 +2385,19 @@ export default function HomePage() {
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 
               }}>
-                     <li style={{ marginBottom: '0.35rem' }}>
+                     {/* <li style={{ marginBottom: '0.35rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🔥</span>
-                  Members split 1% of RL80 transaction taxes
-                </li>
+                  Members split burn 
+                </li> */}
                 <li style={{ marginBottom: '0.35rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
                   Access to the sacred Moon Room member's club
                 </li>
             
-                <li style={{ marginBottom: '0.35rem' }}>
+                {/* <li style={{ marginBottom: '0.35rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>📊</span>
                   Exclusive alpha
-                </li>
+                </li> */}
                 <li style={{ marginBottom: '0.35rem' }}>
                   <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🎯</span>
                   Early access to new features
@@ -2452,7 +2470,7 @@ export default function HomePage() {
             marginBottom: '2rem',
             marginTop: '5rem'
           }}>
-            <Bouncer />
+            <Illumin80Bouncer />
           </div>
           
           {/* Illumin80 Content */}
@@ -2464,7 +2482,7 @@ export default function HomePage() {
               fontSize: '2rem',
               marginBottom: '1rem',
               color: '#d4af37',
-              fontFamily: 'UnifrakturMaguntia, serif',
+              fontFamily: 'UnifrakturCook, serif',
               textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
             }}>Join the Illumin80 Soci80</h2>
             
@@ -2702,32 +2720,17 @@ export default function HomePage() {
       <div style={{
         position: "fixed",
         top: isMobileDevice ? "70px" : "20px",
-        right: "20px",
+        right: isMobileDevice ? "20px" : "72px",
         display: "flex",
         flexDirection: isMobileDevice ? "column" : "row",
         gap: "10px",
         alignItems: isMobileDevice ? "flex-end" : "center",
         zIndex: 9999999
       }}>
-        {/* User Account Icon */}
+        {/* User Account Icon with Illumin80 Laurel */}
         <div>
           {isSignedIn ? (
-            <UserButton 
-              afterSignOutUrl="/"
-              appearance={{
-                elements: {
-                  avatarBox: {
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "8px",
-                    border: "2px solid rgba(255, 255, 255, 0.2)",
-                    backgroundColor: "rgba(0, 0, 0, 0.7)",
-                    backdropFilter: "blur(10px)",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
-                  }
-                }
-              }}
-            />
+            <Illumin80ClerkButton afterSignOutUrl="/" />
           ) : (
             <SignInButton mode="modal">
               <button

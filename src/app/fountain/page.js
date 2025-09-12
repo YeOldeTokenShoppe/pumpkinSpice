@@ -8,7 +8,8 @@ import InfinityLoader from '@/components/InfinityLoader';
 import BuyTokenFAB from '@/components/BuyTokenFAB';
 import CompactCandleModal from '@/components/CompactCandleModal';
 import CyberNav from '@/components/CyberNav';
-import { useUser, UserButton, SignInButton } from '@clerk/nextjs';
+import { useUser, SignInButton } from '@clerk/nextjs';
+import { Illumin80ClerkButton } from '@/components/Illumin80Display';
 
 // Dynamic import for the FountainFrame component
 const FountainFrame = dynamic(() => import('@/components/FountainFrame'), {
@@ -218,22 +219,7 @@ export default function FountainPage() {
         {/* User Account Icon */}
         <div style={{ order: isMobileDevice ? 3 : 0 }}>
           {isSignedIn ? (
-            <UserButton 
-              afterSignOutUrl="/"
-              appearance={{
-                elements: {
-                  avatarBox: {
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "8px",
-                    border: "2px solid rgba(255, 255, 255, 0.2)",
-                    backgroundColor: "rgba(0, 0, 0, 0.7)",
-                    backdropFilter: "blur(10px)",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
-                  }
-                }
-              }}
-            />
+            <Illumin80ClerkButton afterSignOutUrl="/" />
           ) : (
             <SignInButton mode="modal">
               <button

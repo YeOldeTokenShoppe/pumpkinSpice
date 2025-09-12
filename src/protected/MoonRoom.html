@@ -142,13 +142,38 @@
       .member-item {
         padding: 4px 0;
         text-align: left;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
 
       .member-item.online {
         color: #4ade80;
+      }
+      
+      .member-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+      
+      .member-avatar.default {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-size: 11px;
+        font-weight: bold;
+      }
+      
+      .member-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .chat-main {
@@ -635,6 +660,8 @@
       let currentUser = null;
       let userAddress = null;
       let userRanking = null;
+      let userDisplayName = null;
+      let userAvatarUrl = null;
       let messages = [];
       let onlineMembers = [];
       let chatMinimized = false;
@@ -751,6 +778,15 @@
         // First check if we have stored credentials
         userAddress = localStorage.getItem('walletAddress');
         userRanking = localStorage.getItem('memberRanking');
+        userDisplayName = localStorage.getItem('userDisplayName');
+        
+        // Check if we have Clerk user data injected by the server
+        if (window.CLERK_USER_DATA) {
+          userAddress = window.CLERK_USER_DATA.userId;
+          userRanking = window.CLERK_USER_DATA.illumin80Rank;
+          userDisplayName = window.CLERK_USER_DATA.displayName;
+          userAvatarUrl = window.CLERK_USER_DATA.avatarUrl;
+        }
 
         // If not, check URL parameters (for when redirected from main app)
         const urlParams = new URLSearchParams(window.location.search);
@@ -796,7 +832,7 @@
           console.log('Generated test user:', {
             address: userAddress,
             ranking: userRanking,
-            nickname: `ILLUMIN80 #${userRanking}`
+            nickname: userDisplayName || `ILLUMIN80 #${userRanking}`
           });
         }
 
@@ -816,8 +852,12 @@
 
       function updateUserDisplay() {
         const userInfoEl = document.getElementById('userInfo');
-        if (userInfoEl && userRanking) {
-          userInfoEl.textContent = `ILLUMIN80 #${userRanking}`;
+        if (userInfoEl) {
+          if (userDisplayName) {
+            userInfoEl.textContent = `${userDisplayName} (#${userRanking})`;
+          } else if (userRanking) {
+            userInfoEl.textContent = `ILLUMIN80 #${userRanking}`;
+          }
         }
       }
 
@@ -1016,7 +1056,8 @@
         const userRef = database.ref(`moonRoom/members/${userAddress}`);
         const userData = {
           address: userAddress,
-          nickname: `ILLUMIN80 #${userRanking}`,
+          nickname: userDisplayName || `ILLUMIN80 #${userRanking}`,
+          avatarUrl: userAvatarUrl || '',
           joinedAt: firebase.database.ServerValue.TIMESTAMP
         };
 
@@ -1028,10 +1069,26 @@
           userRef.remove();
         });
         
-        // Moon Bot greets new user after a short delay
-        setTimeout(() => {
-          sendBotMessage(`Welcome to the Moon Room, ILLUMIN80 #${userRanking}! 🌙 Feel free to shoot the moons and chat with other members!`);
-        }, 2000);
+        // Send a single welcome message after user joins
+        // Using a flag to ensure it only happens once
+        if (!window.moonBotGreeted) {
+          window.moonBotGreeted = true;
+          setTimeout(() => {
+            const welcomeName = userDisplayName || `ILLUMIN80 #${userRanking}`;
+            // Check if bot is already active in chat to prevent duplicate greetings
+            database.ref('moonRoom/chat').orderByChild('timestamp').limitToLast(10).once('value', (snapshot) => {
+              const recentMessages = snapshot.val() || {};
+              const recentBotMessages = Object.values(recentMessages).filter(msg => 
+                msg.isBot && (Date.now() - msg.timestamp < 10000) // Bot message in last 10 seconds
+              );
+              
+              // Only send welcome if bot hasn't recently greeted
+              if (recentBotMessages.length === 0) {
+                sendBotMessage(`Welcome to the Moon Room, ${welcomeName}! 🌙 The moons await your command.`);
+              }
+            });
+          }, 2000);
+        }
       }
       
       // AI Bot functionality
@@ -1103,8 +1160,21 @@
         // Fallback to simple responses if API fails
         const lowerMsg = message.toLowerCase();
         
-        // Greetings
+        // Greetings - but check if we already welcomed this user in this session
         if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
+          // If we already sent the automatic welcome in this session, give a different response
+          if (window.moonBotGreeted) {
+            const responses = [
+              "The moons are particularly active today, aren't they? ✨",
+              "Feel free to test your aim on the celestial spheres 🎯",
+              "The cosmic energies are strong in this chamber tonight 🌌",
+              "How may the Moon Room serve you today? 🌙",
+              "The celestial bodies await your command, chosen one 💫"
+            ];
+            return responses[Math.floor(Math.random() * responses.length)];
+          }
+          
+          // Only send welcome greeting if we haven't auto-greeted yet (edge case)
           const greetings = [
             "Ah, another star wanderer arrives... Welcome to my domain 🌙", 
             "Greetings, lunar initiate. The moons have been expecting you ✨",
@@ -1192,7 +1262,7 @@
         try {
           const chatRef = database.ref('moonRoom/chat');
           const newMessage = {
-            from: `ILLUMIN80 #${userRanking}`,
+            from: userDisplayName || `ILLUMIN80 #${userRanking}`,
             message: messageText,
             timestamp: firebase.database.ServerValue.TIMESTAMP,
             address: userAddress
@@ -1265,7 +1335,36 @@
         onlineMembers.forEach(member => {
           const memberEl = document.createElement('div');
           memberEl.className = 'member-item online';
-          memberEl.textContent = `🟢 ${member.nickname}`;
+          
+          // Create avatar element
+          if (member.avatarUrl) {
+            const avatarImg = document.createElement('img');
+            avatarImg.className = 'member-avatar';
+            avatarImg.src = member.avatarUrl;
+            avatarImg.alt = member.nickname;
+            avatarImg.onerror = function() {
+              // If image fails to load, replace with initials
+              this.style.display = 'none';
+              const defaultAvatar = document.createElement('div');
+              defaultAvatar.className = 'member-avatar default';
+              defaultAvatar.textContent = member.nickname.charAt(0).toUpperCase();
+              this.parentNode.insertBefore(defaultAvatar, this);
+            };
+            memberEl.appendChild(avatarImg);
+          } else {
+            // Create default avatar with initial
+            const defaultAvatar = document.createElement('div');
+            defaultAvatar.className = 'member-avatar default';
+            defaultAvatar.textContent = member.nickname.charAt(0).toUpperCase();
+            memberEl.appendChild(defaultAvatar);
+          }
+          
+          // Add name with online indicator
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'member-name';
+          nameSpan.textContent = member.nickname;
+          memberEl.appendChild(nameSpan);
+          
           membersList.appendChild(memberEl);
         });
       }

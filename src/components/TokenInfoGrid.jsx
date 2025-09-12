@@ -559,7 +559,7 @@ const TokenInfoGrid = () => {
               marginBottom: '0.5rem',
               fontFamily: '"Cyber", monospace',
             }}>
-              Contract Address
+              Contract Address (BASE Chain)
             </h3>
             
             <div style={{
@@ -816,7 +816,7 @@ const TokenInfoGrid = () => {
             }}
           >
             <div style={{
-              fontSize: '0.7rem',
+              fontSize: '1.3rem',
               color: 'rgba(255, 255, 255, 0.6)',
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
@@ -963,7 +963,7 @@ const TokenInfoGrid = () => {
               textAlign: 'center',
             }}>
               <div style={{
-                fontSize: '0.7rem',
+                fontSize: '1.3rem',
                 color: 'rgba(255, 255, 255, 0.6)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
@@ -1060,7 +1060,7 @@ const TokenInfoGrid = () => {
             }}>
               <div>
                 <div style={{
-                  fontSize: '0.7rem',
+                  fontSize: '1.3rem',
                   color: 'rgba(255, 255, 255, 0.6)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.1em',
@@ -1069,7 +1069,7 @@ const TokenInfoGrid = () => {
                   Tax Structure
                 </div>
                 <div style={{
-                  fontSize: '0.6rem',
+                  fontSize: '0.8rem',
                   color: 'rgba(255, 255, 255, 0.4)',
                   fontFamily: '"Cyber", monospace',
                   marginTop: '0.25rem',
@@ -1078,7 +1078,7 @@ const TokenInfoGrid = () => {
                 </div>
               </div>
               <div style={{
-                textAlign: 'right',
+                textAlign: 'center',
                 background: 'rgba(196, 137, 1, 0.1)',
                 padding: '0.5rem 0.75rem',
                 borderRadius: '8px',
@@ -1254,110 +1254,110 @@ const TokenInfoGrid = () => {
         );
 
 
-      case 'verified':
-        return (
-          <div 
-            key={item.id} 
-            style={{
-              ...baseStyle,
-              padding: '1.25rem',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.02)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
-            }}
-          >
-            <div style={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}>
-              <div style={{
-                fontSize: '0.65rem',
-                color: 'rgba(255, 255, 255, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                fontFamily: '"Cyber", monospace',
-              }}>
-                Verified
-              </div>
+      // case 'verified':
+      //   return (
+      //     <div 
+      //       key={item.id} 
+      //       style={{
+      //         ...baseStyle,
+      //         padding: '1.25rem',
+      //       }}
+      //       onMouseEnter={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1.02)';
+      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
+      //       }}
+      //       onMouseLeave={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1)';
+      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
+      //       }}
+      //     >
+      //       <div style={{
+      //         width: '100%',
+      //         display: 'flex',
+      //         flexDirection: 'column',
+      //         gap: '0.75rem',
+      //       }}>
+      //         <div style={{
+      //           fontSize: '0.65rem',
+      //           color: 'rgba(255, 255, 255, 0.5)',
+      //           textTransform: 'uppercase',
+      //           letterSpacing: '0.1em',
+      //           fontFamily: '"Cyber", monospace',
+      //         }}>
+      //           Verified
+      //         </div>
               
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.4rem 0.6rem',
-                  background: 'rgba(0, 255, 136, 0.05)',
-                  border: '1px solid rgba(0, 255, 136, 0.2)',
-                  borderRadius: '6px',
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  <span style={{
-                    fontSize: '0.65rem',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontFamily: '"Cyber", monospace',
-                  }}>
-                    Contract Verified
-                  </span>
-                </div>
+      //         <div style={{
+      //           display: 'flex',
+      //           flexDirection: 'column',
+      //           gap: '0.5rem',
+      //         }}>
+      //           <div style={{
+      //             display: 'flex',
+      //             alignItems: 'center',
+      //             gap: '0.5rem',
+      //             padding: '0.4rem 0.6rem',
+      //             background: 'rgba(0, 255, 136, 0.05)',
+      //             border: '1px solid rgba(0, 255, 136, 0.2)',
+      //             borderRadius: '6px',
+      //           }}>
+      //             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2">
+      //               <polyline points="20 6 9 17 4 12" />
+      //             </svg>
+      //             <span style={{
+      //               fontSize: '0.65rem',
+      //               color: 'rgba(255, 255, 255, 0.7)',
+      //               fontFamily: '"Cyber", monospace',
+      //             }}>
+      //               Contract Verified
+      //             </span>
+      //           </div>
                 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.4rem 0.6rem',
-                  background: 'rgba(0, 255, 136, 0.05)',
-                  border: '1px solid rgba(0, 255, 136, 0.2)',
-                  borderRadius: '6px',
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  <span style={{
-                    fontSize: '0.65rem',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontFamily: '"Cyber", monospace',
-                  }}>
-                    Liquidity Locked
-                  </span>
-                </div>
+      //           <div style={{
+      //             display: 'flex',
+      //             alignItems: 'center',
+      //             gap: '0.5rem',
+      //             padding: '0.4rem 0.6rem',
+      //             background: 'rgba(0, 255, 136, 0.05)',
+      //             border: '1px solid rgba(0, 255, 136, 0.2)',
+      //             borderRadius: '6px',
+      //           }}>
+      //             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2">
+      //               <polyline points="20 6 9 17 4 12" />
+      //             </svg>
+      //             <span style={{
+      //               fontSize: '0.65rem',
+      //               color: 'rgba(255, 255, 255, 0.7)',
+      //               fontFamily: '"Cyber", monospace',
+      //             }}>
+      //               Liquidity Locked
+      //             </span>
+      //           </div>
                 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.4rem 0.6rem',
-                  background: 'rgba(0, 255, 136, 0.05)',
-                  border: '1px solid rgba(0, 255, 136, 0.2)',
-                  borderRadius: '6px',
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  <span style={{
-                    fontSize: '0.65rem',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontFamily: '"Cyber", monospace',
-                  }}>
-                    SAFU Protocol
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+      //           <div style={{
+      //             display: 'flex',
+      //             alignItems: 'center',
+      //             gap: '0.5rem',
+      //             padding: '0.4rem 0.6rem',
+      //             background: 'rgba(0, 255, 136, 0.05)',
+      //             border: '1px solid rgba(0, 255, 136, 0.2)',
+      //             borderRadius: '6px',
+      //           }}>
+      //             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2">
+      //               <polyline points="20 6 9 17 4 12" />
+      //             </svg>
+      //             <span style={{
+      //               fontSize: '0.65rem',
+      //               color: 'rgba(255, 255, 255, 0.7)',
+      //               fontFamily: '"Cyber", monospace',
+      //             }}>
+      //               SAFU Protocol
+      //             </span>
+      //           </div>
+      //         </div>
+      //       </div>
+      //     </div>
+      //   );
 
       // case 'new-box':
       //   const utilityFeatures = [
@@ -1503,9 +1503,9 @@ const TokenInfoGrid = () => {
   return (
     <div style={{
       width: '100%',
-      padding: isMobile ? '0 10px' : '0 40px',
+      padding: isMobile ? '0 10px' : '0 0px',
       maxWidth: '1400px',
-      margin: '0 auto',
+      margin: '0 0',
       boxSizing: 'border-box',
   
     }}>
@@ -1521,7 +1521,7 @@ alignContent: 'center',
         {/* Text Content - Shows first on mobile, second on desktop */}
         <div className="text-section" style={{
           gridColumn: isMobile ? 'span 12' : 'span 7',
-          padding: isMobile ? '1rem 0' : '0',
+          padding: isMobile ? '1rem 0' : '3rem',
           order: isMobile ? 1 : 2,
   
         }}>
@@ -1535,19 +1535,19 @@ alignContent: 'center',
           marginTop: isMobile ? '0' : '-1rem',
           textAlign: 'center',
         }}>
-          The Holy Grail of Digital Assets
+          She Brings Prosper80 For The People!
         </h2>
         <p style={{ 
           color: '#ffffff',
-          fontSize: isMobile ? '0.95rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem'),
-          lineHeight: 1.6,
+          fontSize: isMobile ? '0.95rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '1.6rem'),
+          lineHeight: 1.2,
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
           fontWeight: 400,
           letterSpacing: '0.02em',
           marginBottom: '1.5rem',
           opacity: 0.9,
         }}>
-          Experience the convergence of ancient wisdom and cyberpunk sensibility into the maternal market-oriented icon, 
+
           <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
@@ -1555,27 +1555,42 @@ alignContent: 'center',
             color: '#d4af37',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
-          }}> Our Lady of Perpetual Profit</span>.
+          }}> Our Lady of Perpetual Profit</span> believes in decentralization of power and fair distribution of wealth to the greater soci80.
         </p>
         
         <p style={{ 
           color: '#ffffff',
-          fontSize: isMobile ? '0.9rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.5rem'),
-          lineHeight: 1.6,
+          fontSize: isMobile ? '0.9rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '1.5rem'),
+          lineHeight: 1.2,
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
           fontWeight: 400,
           letterSpacing: '0.02em',
           marginBottom: '2rem',
           opacity: 0.85,
         }}>
-          Hold RL80 tokens in your wallet as a good luck talisman and to ward off scams and evil-doers, or pay homage to the Patron Saint of Day Traders with a green candle.
-        </p>
+The <span style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontWeight: 'bold',
+            fontSize: '1.1em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            marginLeft: '0.25em',
+          }}> RL80 </span>token lets you pay homage and devote green candles to the Patron Saint of Day Traders. Hold  <span style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontWeight: 'bold',
+            fontSize: '1.1em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            marginLeft: '0.25em',
+          }}> RL80</span> in your wallet as a good luck charm and to ward off evil. 
+
+</p>
 
         <div style={{
-          // marginTop: '2rem',
+    textAlign: 'center',
           position: 'relative',
           bottom: 0,
-          padding: '1.5rem',
+          padding: '0.5rem',
           background: 'linear-gradient(135deg, rgba(196, 137, 1, 0.1), rgba(255, 255, 255, 0.05))',
           border: '2px solid rgba(196, 137, 1, 0.3)',
           borderRadius: '12px',
@@ -1594,12 +1609,14 @@ alignContent: 'center',
             listStyle: 'none',
             padding: 0,
             margin: 0,
+            textAlign: 'left',
           }}>
             <li style={{
               color: '#ffffff',
               fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
               marginBottom: '0.75rem',
               paddingLeft: '1.5rem',
+              paddingRight: '1rem',
               position: 'relative',
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               fontWeight: 400,
@@ -1608,16 +1625,17 @@ alignContent: 'center',
             }}>
               <span style={{
                 position: 'absolute',
-                left: 0,
+                left: '0.5rem',
                 color: '#c48901',
               }}>▸</span>
-              Progressive tax reduction system
+              Light candles to request divine intervention for your portfolio
             </li>
             <li style={{
               color: '#ffffff',
               fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
               marginBottom: '0.75rem',
               paddingLeft: '1.5rem',
+              paddingRight: '1rem',
               position: 'relative',
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               fontWeight: 400,
@@ -1626,16 +1644,37 @@ alignContent: 'center',
             }}>
               <span style={{
                 position: 'absolute',
-                left: 0,
+                left: '0.5rem',
                 color: '#c48901',
               }}>▸</span>
-              80% liquidity allocation
+             RL80 is deflationary! Buy candles by burning tokens - choose any amount. Your offering benefits all holders!
+            </li>
+           
+            <li style={{
+              color: '#ffffff',
+              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
+              marginBottom: '0.75rem',
+              paddingLeft: '1.5rem',
+
+              position: 'relative',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              opacity: 0.9,
+              lineHeight: 1.5,
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: '0.5rem',
+                color: '#c48901',
+              }}>▸</span>
+         Receive personalized social posts from the Virtual Virgin
             </li>
             <li style={{
               color: '#ffffff',
               fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
               marginBottom: '0.75rem',
               paddingLeft: '1.5rem',
+
               position: 'relative',
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               fontWeight: 400,
@@ -1644,15 +1683,37 @@ alignContent: 'center',
             }}>
               <span style={{
                 position: 'absolute',
-                left: 0,
+                left: '0.5rem',
                 color: '#c48901',
               }}>▸</span>
-              Verified and SAFU protected
+              Good luck charm for your portfolio
+            </li>
+           
+            <li style={{
+              color: '#ffffff',
+              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
+              marginBottom: '0.75rem',
+              paddingLeft: '1.5rem',
+
+              position: 'relative',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              opacity: 0.9,
+              lineHeight: 1.5,
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: '0.5rem',
+                color: '#c48901',
+              }}>▸</span>
+              Fair launched and scrupulous; no insider trading
             </li>
             <li style={{
               color: '#ffffff',
-              fontSize: '0.9rem',
+              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
+              marginBottom: '0.75rem',
               paddingLeft: '1.5rem',
+
               position: 'relative',
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               fontWeight: 400,
@@ -1661,10 +1722,29 @@ alignContent: 'center',
             }}>
               <span style={{
                 position: 'absolute',
-                left: 0,
+                left: '0.5rem',
                 color: '#c48901',
               }}>▸</span>
-              Community-driven milestones
+              Anti-sniper and anti-whale mechanisms
+            </li>
+            <li style={{
+              color: '#ffffff',
+              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
+              marginBottom: '0.75rem',
+              paddingLeft: '1.5rem',
+              paddingRight: '1rem',
+              position: 'relative',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 400,
+              opacity: 0.9,
+              lineHeight: 1.5,
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: '0.5rem',
+                color: '#c48901',
+              }}>▸</span>
+              Light up the leaderboard and gain access to the ILLUMIN80
             </li>
           </ul>
         </div>

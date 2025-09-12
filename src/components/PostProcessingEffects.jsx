@@ -163,9 +163,9 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
         />
       )} */}
       <Bloom
-        intensity={1}           // Much stronger bloom for that 80s glow
-        luminanceThreshold={0.1} // Lower threshold to catch more colors
-        luminanceSmoothing={0.3}  // Sharper, more pronounced bloom
+        intensity={0.5}           // Much stronger bloom for that 80s glow
+        luminanceThreshold={0.3} // Lower threshold to catch more colors
+        luminanceSmoothing={0.6}  // Sharper, more pronounced bloom
         height={512}              // Higher resolution for better quality
         blendFunction={BlendFunction.ADD} // ADD for more intense glow
       />

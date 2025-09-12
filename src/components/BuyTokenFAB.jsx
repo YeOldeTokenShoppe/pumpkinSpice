@@ -197,8 +197,10 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
             <div
               style={{
                 color: is80sMode ? "#67e8f9" : "#ffffff",
-                fontSize: isMobile ? "14px" : "16px",
+                fontSize: isMobile ? "12px" : "14px",
+                marginLeft: isMobile ? "-1.5rem" : "-1.5rem",
                 fontWeight: "700",
+                textAlign: "center",
                 fontFamily: "'Rajdhani', sans-serif",
                 textTransform: "uppercase",
                 letterSpacing: "1px",
@@ -208,7 +210,7 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
                 display: isHovered ? "block" : "none"
               }}
             >
-              Light Candle
+              Light <br/>Candle
             </div>
           </div>
         </div>

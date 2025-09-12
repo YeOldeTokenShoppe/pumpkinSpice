@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
+import { useUser, SignInButton } from "@clerk/nextjs";
+import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import { useMusic } from "@/components/MusicContext";
 import InfinityLoader from "@/components/InfinityLoader";
 import CandleInteractionHint from "@/components/CandleInteractionHint";
@@ -110,9 +111,9 @@ export default function GalleryPage() {
 
   // Debug isLoading state
   useEffect(() => {
-    console.log('Gallery page - isLoading:', isLoading);
-    console.log('Gallery page - fontLoaded:', fontLoaded);
-    console.log('Gallery page - sceneReady:', sceneReady);
+    // console.log('Gallery page - isLoading:', isLoading);
+    // console.log('Gallery page - fontLoaded:', fontLoaded);
+    // console.log('Gallery page - sceneReady:', sceneReady);
   }, [isLoading, fontLoaded, sceneReady]);
 
   // Properly manage loading state based on all assets
@@ -376,24 +377,9 @@ export default function GalleryPage() {
             {(!isMobileDevice || isMobileDevice) && (
               <div style={{ order: isMobileDevice ? 3 : 0 }}>
                 {isSignedIn ? (
-                  <UserButton 
-                    afterSignOutUrl="/"
-                    appearance={{
-                      elements: {
-                        avatarBox: {
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "8px",
-                          border: "2px solid rgba(255, 255, 255, 0.2)",
-                          backgroundColor: "rgba(0, 0, 0, 0.7)",
-                          backdropFilter: "blur(10px)",
-                          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
-                        }
-                      }
-                    }}
-                  />
+                  <Illumin80ClerkButton afterSignOutUrl="/" />
                 ) : (
-                  <SignInButton mode="modal">
+                  <SignInButton mode="modal" >
                     <button
                       style={{
                         width: "40px",
@@ -646,7 +632,7 @@ export default function GalleryPage() {
       
       {/* Hidden Sign In Button for programmatic trigger */}
       {!isSignedIn && (
-        <SignInButton mode="modal">
+        <SignInButton mode="modal" >
           <button
             id="hidden-sign-in-btn"
             style={{ display: 'none' }}

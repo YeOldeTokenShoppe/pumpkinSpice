@@ -3,6 +3,8 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 // Define which routes are protected
 const isProtectedRoute = createRouteMatcher([
   '/moonroom(.*)',
+  '/api/moonroom(.*)',
+  '/MoonRoom.html',  // Block direct access to the HTML file
 ])
 
 export default clerkMiddleware(async (auth, req) => {
