@@ -588,7 +588,7 @@
     <!-- Chat Interface -->
     <div id="chatContainer" class="chat-container">
       <div class="chat-header">
-        <span class="chat-title">🌙 ILLUMIN80 Chat</span>
+        <span class="chat-title">🚀 ILLUMIN80 Chat</span>
         <span id="userInfo" style="font-size: 11px; color: #a0a0ff;"></span>
         <button id="membersToggle" class="members-toggle-btn" style="display: none;">👥</button>
         <button id="toggleChat" class="toggle-btn">−</button>
@@ -2399,6 +2399,7 @@
         // Scene setup
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x000033);
+        
 
         // Renderer setup
         renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -2411,10 +2412,10 @@
         camera = new THREE.PerspectiveCamera(
           50, // Increase FOV to make the room appear larger
           window.innerWidth / window.innerHeight,
-          0.01,
-          1000 // Increase far clipping plane
+          1,
+          100 // Increase far clipping plane
         );
-        camera.position.set(0, 3, 50);
+        camera.position.set(0, 3, 70);
         camera.lookAt(0, 0, 0);
 
         // Controls setup
@@ -2431,12 +2432,16 @@
         controls.update();
 
         // Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
+        // const ambientLight = new THREE.AmbientLight(0xffffff, 0.15); // Reduced for spotlight effect
+        // scene.add(ambientLight);
 
         // Load textures and models
         const textureLoader = new THREE.TextureLoader();
         // const cubeLoader = new THREE.CubeTextureLoader();
+        
+        // Variables for spotlight effect
+        let spotlight1, spotlight2;
+        const spotlightTargets = [];
 
         // // Set up environment maps
         // cubeLoader.setCrossOrigin("");
@@ -2450,7 +2455,7 @@
             );
           }),
           new Promise((resolve) => {
-            new GLTFLoader().load("/models/tvs.glb", resolve);
+            new GLTFLoader().load("/models/maryStatue.glb", resolve);
           }),
         ]).then(([moonTexture, chairModel]) => {
           // Create moon lamps
@@ -2869,18 +2874,102 @@
           physics.addTerrainMesh(wall, 0);
 
           // Floor
-          const floorGeometry = new THREE.CircleGeometry(1.5 * BOUND, 8);
-          floorGeometry.rotateX(-Math.PI / 2);
-          const floor = new THREE.Mesh(floorGeometry, wallMaterial);
-          floor.receiveShadow = true;
-          floor.name = "floor";
-          scene.add(floor);
-          physics.addTerrainMesh(floor, 0);
+          // const floorGeometry = new THREE.CircleGeometry(1.5 * BOUND, 8);
+          // floorGeometry.rotateX(-Math.PI / 2);
+          // const floor = new THREE.Mesh(floorGeometry, wallMaterial);
+          // floor.receiveShadow = true;
+          // floor.name = "floor";
+          // scene.add(floor);
+          // physics.addTerrainMesh(floor, 0);
+          // Create checkered texture
+  const checkeredCanvas = document.createElement('canvas');
+  checkeredCanvas.width = 512;
+  checkeredCanvas.height = 512;
+  const ctx = checkeredCanvas.getContext('2d');
+
+  const tileSize = 64; // Size of each checker square
+  const tilesX = checkeredCanvas.width / tileSize;
+  const tilesY = checkeredCanvas.height / tileSize;
+
+  for (let i = 0; i < tilesX; i++) {
+    for (let j = 0; j < tilesY; j++) {
+      ctx.fillStyle = (i + j) % 2 === 0 ? '#ffffff' : '#000000';
+      ctx.fillRect(i * tileSize, j * tileSize, tileSize, tileSize);
+    }
+  }
+
+  const checkeredTexture = new THREE.CanvasTexture(checkeredCanvas);
+  checkeredTexture.wrapS = THREE.RepeatWrapping;
+  checkeredTexture.wrapT = THREE.RepeatWrapping;
+  checkeredTexture.repeat.set(3, 3); // Adjust for more/fewer tiles
+
+  const checkeredMaterial = new THREE.MeshStandardMaterial({
+    map: checkeredTexture,
+    side: THREE.DoubleSide
+  });
+
+  // Floor
+  const floorGeometry = new THREE.CircleGeometry(1.5 * BOUND, 8);
+  floorGeometry.rotateX(-Math.PI / 2);
+  const floor = new THREE.Mesh(floorGeometry, checkeredMaterial); // Use 
+  //checkered material
+  floor.receiveShadow = true;
+  floor.name = "floor";
+  scene.add(floor);
+  physics.addTerrainMesh(floor, 0);
+          
+          // Create interactive spotlights
+          function createMovingSpotlight(color, position) {
+            const spotlight = new THREE.SpotLight(color, 35, 100, Math.PI * 0.25, 0.5, 1);
+            spotlight.position.set(...position);
+            spotlight.castShadow = true;
+            spotlight.shadow.camera.near = 1;
+            spotlight.shadow.camera.far = 50;
+            // spotlight.shadow.mapSize.width = 2048;
+            // spotlight.shadow.mapSize.height = 2048;
+            
+            // Create target for spotlight
+            const target = new THREE.Object3D();
+            scene.add(target);
+            spotlight.target = target;
+            
+            scene.add(spotlight);
+            
+            // Add helper to visualize spotlight cone
+            const helper = new THREE.SpotLightHelper(spotlight);
+            // scene.add(helper);
+            
+            return { spotlight, target, helper };
+          }
+          
+          // Create two interactive spotlights with lower positions
+          const spot1 = createMovingSpotlight(0x0c8cbf, [5, 15, 5]);
+          const spot2 = createMovingSpotlight(0xb00c3f, [-5, 15, -5]);
+          spotlight1 = spot1.spotlight;
+          spotlight2 = spot2.spotlight;
+          spotlightTargets.push(spot1.target, spot2.target);
+          const spotlightHelpers = [spot1.helper, spot2.helper];
+          
+          // Add visible cones to see where spotlights are
+          const coneGeometry = new THREE.ConeGeometry(0.5, 1, 8);
+          const coneMaterial1 = new THREE.MeshBasicMaterial({ color: 0x0c8cbf, emissive: 0x0c8cbf });
+          const coneMaterial2 = new THREE.MeshBasicMaterial({ color: 0xb00c3f, emissive: 0xb00c3f });
+          
+          const cone1 = new THREE.Mesh(coneGeometry, coneMaterial1);
+          const cone2 = new THREE.Mesh(coneGeometry, coneMaterial2);
+          
+          cone1.position.copy(spotlight1.position);
+          cone2.position.copy(spotlight2.position);
+          cone1.rotation.x = Math.PI;
+          cone2.rotation.x = Math.PI;
+          
+          // scene.add(cone1);
+          // scene.add(cone2);
 
           // Add GLB model - use the entire scene
           chair = chairModel.scene;
           chair.scale.set(10, 10, 10);
-          chair.position.set(0, 0, 0);
+          chair.position.set(0, -1, -3);
           // chair.rotation.y = Math.PI;
           
           // Set shadows for all meshes in the model
@@ -3021,6 +3110,8 @@
 
           // Animation loop
           const clock = new THREE.Clock();
+          const spotlightVec = new THREE.Vector3();
+          
           function animate() {
             requestAnimationFrame(animate);
             
@@ -3030,10 +3121,39 @@
               mixer.update(delta);
             }
             
+            // Update spotlight targets to follow mouse with smooth lerping
+            if (spotlightTargets.length > 0) {
+              // Convert mouse position to 3D world coordinates
+              // mousePosition.x and y are normalized 0-1, convert to -1 to 1 then scale
+              const targetX = (mousePosition.x - 0.5) * 30;
+              const targetZ = (mousePosition.y - 0.5) * 30;
+              
+              spotlightVec.set(targetX, -3, targetZ);
+              
+              // Smooth lerping for both spotlight targets
+              spotlightTargets[0].position.lerp(spotlightVec.clone().add(new THREE.Vector3(2, 0, 2)), 0.1);
+              spotlightTargets[1].position.lerp(spotlightVec.clone().add(new THREE.Vector3(-2, 0, -2)), 0.1);
+              
+              // Update spotlight target matrix
+              spotlightTargets[0].updateMatrixWorld();
+              spotlightTargets[1].updateMatrixWorld();
+              
+              // Update spotlight helpers
+              if (typeof spotlightHelpers !== 'undefined' && spotlightHelpers.length > 0) {
+                spotlightHelpers.forEach(helper => helper.update());
+              }
+            }
+            
             controls.update();
             renderer.render(scene, camera);
           }
           animate();
+          
+          // Track mouse position for spotlight effect
+          window.addEventListener("mousemove", (event) => {
+            mousePosition.x = event.clientX / window.innerWidth;
+            mousePosition.y = event.clientY / window.innerHeight;
+          });
 
           window.addEventListener("resize", () => {
             camera.aspect = window.innerWidth / window.innerHeight;

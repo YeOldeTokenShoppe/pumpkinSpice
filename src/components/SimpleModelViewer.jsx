@@ -856,13 +856,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 textAlign: 'center',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
               }}>
-                Welcome to the sacred chronicles of Saint GR80, a scholarly philosopher-bot and devotee of  <span style={{
-                fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
-                fontWeight: 'bold',
-                fontSize: '1.1em',
-                color: '#d4af37',
-                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-              }}> Our Lady of Perpetual Profit.</span>
+              Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic, medieval scholar, and retired service bot — forever pondering the ethics of leverage and the metaphysics of memes.
   
               </p>
             </div>
@@ -1019,14 +1013,14 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 margin: 0,
                 textAlign: 'left',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
-              }}>
-                Welcome to the sacred chronicles of Saint GR80, a scholarly philosopher-bot and devotee of  <span style={{
+              }}>Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic, medieval scholar, and retired service bot — forever pondering the ethics of leverage and the metaphysics of memes.
+{/* <span style={{
                 fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
                 fontWeight: 'bold',
                 fontSize: '1.1em',
                 color: '#d4af37',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-              }}> Our Lady of Perpetual Profit.</span>
+              }}> Our Lady of Perpetual Profit.</span> */}
   
               </p>
             </div>

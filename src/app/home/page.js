@@ -690,6 +690,73 @@ export default function HomePage() {
 
     return () => clearInterval(emojiInterval);
   }, []);
+
+  // GSAP Title Animation
+  useEffect(() => {
+    if (isClient && !isMobileView) {
+      // Wait for DOM to be ready
+      setTimeout(() => {
+        const titleEl = document.getElementById('main-title');
+        if (titleEl) {
+          const lines = titleEl.querySelectorAll('.title-line');
+          
+          // Set initial state
+          gsap.set(lines, {
+            opacity: 0,
+            y: 50,
+            scale: 0.8,
+          });
+          
+          // Create timeline for entrance animation
+          const tl = gsap.timeline();
+          
+          // Animate each line in
+          tl.to(lines, {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 1.2,
+            stagger: 0.2,
+            ease: "power3.out",
+          })
+          .to(lines, {
+            textShadow: "3px 3px 5px #000, -1px -1px 5px pink, 0 0 40px rgba(212, 175, 55, 0.6)",
+            duration: 0.8,
+            ease: "power2.inOut"
+          }, "-=0.5");
+          
+          // Add continuous glow animation
+          gsap.to(lines, {
+            textShadow: "3px 3px 5px #000, -1px -1px 5px pink, 0 0 20px rgba(212, 175, 55, 0.3)",
+            duration: 2,
+            ease: "power2.inOut",
+            repeat: -1,
+            yoyo: true,
+            delay: 2
+          });
+          
+          // Add hover effect
+          titleEl.addEventListener('mouseenter', () => {
+            gsap.to(lines, {
+              scale: 1.05,
+              duration: 0.3,
+              ease: "power2.out",
+              stagger: 0.05
+            });
+          });
+          
+          titleEl.addEventListener('mouseleave', () => {
+            gsap.to(lines, {
+              scale: 1,
+              duration: 0.3,
+              ease: "power2.out",
+              stagger: 0.05
+            });
+          });
+        }
+      }, 100);
+    }
+  }, [isClient, isMobileView]);
   
   // Get user from Clerk
   const { user, isSignedIn } = useUser();
@@ -1432,16 +1499,47 @@ export default function HomePage() {
           padding: '1.5rem',
           background: 'rgba(0, 0, 0, 0.5)',
           backdropFilter: 'blur(10px)',
-         borderRadius: '12px',
+          borderRadius: '12px',
           border: '1px solid rgba(212, 175, 55, 0.3)',
           color: '#ffffff',
         }}>
+          {/* Section Heading */}
+          <h2 style={{
+            fontSize: '2rem',
+            marginBottom: '1rem',
+            textAlign: 'center',
+            color: '#00ff00',
+            fontFamily: 'Cyber, monospace',
+            textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
+          }}>
+            Get Lit With RL80
+          </h2>
+          
+          <p style={{
+            fontSize: '1rem',
+            lineHeight: 1.4,
+            marginBottom: '1.5rem',
+            textAlign: 'center',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            opacity: 0.9,
+            padding: '0 0.5rem'
+          }}>
+            Prime your portfolio for pumps and devote a green candle to{' '}
+            <span style={{
+              fontFamily: 'UnifrakturCook, serif',
+              fontWeight: 'bold',
+              fontSize: '1.1em',
+              color: '#d4af37',
+              textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+            }}>Our Lady of Perpetual Profit</span>.
+          </p>
+          
           {/* Candle Model Container */}
           <div style={{
             position: "relative",
             height: "300px",
             overflow: "visible",
-            marginBottom: '0.5rem'
+            marginBottom: '1rem'
           }}>
             <Canvas
               camera={{ position: [0, 2, 8], fov: 45 }}
@@ -1512,19 +1610,22 @@ export default function HomePage() {
           {/* Featured Candle Caption - Below Candle */}
           <div style={{
             position: 'relative',
-            height: '50px',
-            marginTop: '-1rem',
-            marginBottom: '1rem'
+            height: 'auto',
+            marginTop: '0.5rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center'
           }}>
-            <div className="featured-banner" style={{
-              bottom: '0'
+            <div style={{
+              display: 'inline-block',
+              padding: '0.5rem 1rem',
+              background: 'rgba(212, 175, 55, 0.1)',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              borderRadius: '20px',
+              color: '#d4af37',
+              fontSize: '0.9rem',
+              fontFamily: 'Cyber, monospace'
             }}>
-              <span style={{
-                whiteSpace: 'nowrap',
-                display: 'inline-block'
-              }}>
-                ✨ {featuredCandle?.username ? `Candle by ${truncateUsername(featuredCandle.username, 15)}` : 'Featured Candle'} ✨
-              </span>
+              ✨ {featuredCandle?.username ? `Candle by ${truncateUsername(featuredCandle.username, 15)}` : 'Featured Candle'} ✨
             </div>
           </div>
           
@@ -1532,9 +1633,9 @@ export default function HomePage() {
           <div style={{
             textAlign: 'center',
             padding: '0 0.5rem',
-            marginTop: '-2rem',
+            marginTop: '1rem',
           }}>
-            <h5 style={{
+            {/* <h5 style={{
               fontSize: '2rem',
               marginBottom: '0.5rem',
               fontFamily: 'Cyber, monospace',
@@ -1567,40 +1668,8 @@ export default function HomePage() {
                 color: '#00ff00',
                 textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
               }} data-words='["Prayer", "Wish", "Dedication", "Confession", "Gratitude"]'>Message</span>
-            </h5>
+            </h5> */}
             
-            <p style={{
-              fontSize: '0.95rem',
-              lineHeight: 1.3,
-              marginBottom: '3rem',
-              // marginTop: '-0.5rem',
-              color: '#ffffff',
-              opacity: 0.9,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              letterSpacing: '0.02em',
-              padding: '0 1rem',
-              display: 'block',
-              width: '100%',
-              whiteSpace: 'normal',
-              wordWrap: 'break-word'
-            }}>
-               Prime your portfolio for pumps and devote a green candle to <span style={{
-                  fontFamily: 'UnifrakturCook, serif',
-                  fontWeight: 'bold',
-                  fontSize: '1.1em',
-                  color: '#d4af37',
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit.</span>
-              {/* Top token burners are inducted into <span style={{
-                fontFamily: 'UnifrakturCook, serif',
-                fontWeight: 'bold',
-                fontSize: '1.1em',
-                color: '#d4af37',
-                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                display: 'inline'
-              }}>The Illumin80 Soci80</span>. */}
-            </p>
             <p style={{
               fontSize: '0.65rem',
               lineHeight: 1,
@@ -1794,7 +1863,7 @@ export default function HomePage() {
             }}>
               Sacred Token of Prosper80
             </h3>
-            <p style={{
+            {/* <p style={{
               fontSize: '1rem',
               lineHeight: 1.6,
               marginBottom: '0.5rem',
@@ -1806,7 +1875,7 @@ export default function HomePage() {
             }}>
               The golden coin of infinite abundance spins eternally, channeling cosmic 
               energy and divine fortune to all who witness its radiant glow.
-            </p>
+            </p> */}
           </div>
         </div>
       )}
@@ -1829,11 +1898,12 @@ export default function HomePage() {
             marginTop: "-15rem",
             // marginBottom: "4rem"
           }}>
-            {/* Title */}
-            <h1 style={{ 
+            {/* Animated Title */}
+            <h1 
+              id="main-title"
+              style={{ 
               position: "relative",
               left: "10%",
-      
               color: "#8e662b",
               fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
               textShadow: "3px 3px 5px #000, -1px -1px 5px pink",
@@ -1843,14 +1913,15 @@ export default function HomePage() {
               transform: "rotate(-8deg) skew(-15deg)",
               zIndex: 1000,
               marginTop: '-3rem',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              cursor: 'pointer',
             }}>
-              <span style={{ display: 'block' }}>Our Lady</span>
-              <span style={{ display: 'block' }}>
+              <span className="title-line" style={{ display: 'block', position: 'relative' }}>Our Lady</span>
+              <span className="title-line" style={{ display: 'block', position: 'relative' }}>
                 <span style={{ fontSize: "3rem" }}>of </span>
                 Perpetual
               </span>
-              <span style={{ display: 'block', marginLeft: "6rem" }}>Profit</span>
+              <span className="title-line" style={{ display: 'block', marginLeft: "6rem", position: 'relative' }}>Profit</span>
             </h1>
             
             {/* Coin */}
@@ -1965,6 +2036,108 @@ export default function HomePage() {
         </div>
 
             <TokenInfoGrid />
+            
+            {/* Linked Images Strip */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              width: '100%',
+              maxWidth: '800px',
+              margin: '3rem auto 2rem auto',
+              padding: '1rem',
+              flexWrap: 'wrap',
+            }}>
+              {/* DEXScreener Link */}
+              <a 
+                href="#" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  transition: 'all 0.3s ease',
+                  opacity: 0.8,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.opacity = '0.8';
+                }}
+              >
+                <img 
+                  src="/dexscreener.png" 
+                  alt="DEXScreener" 
+                  style={{
+                    height: '60px',
+                    width: 'auto',
+                    filter: 'brightness(0.9)',
+                  }}
+                />
+              </a>
+              
+              {/* Honeypot Link */}
+              <a 
+                href="#" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  transition: 'all 0.3s ease',
+                  opacity: 0.8,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.opacity = '0.8';
+                }}
+              >
+                <img 
+                  src="/honeypot.png" 
+                  alt="Honeypot" 
+                  style={{
+                    height: '60px',
+                    width: 'auto',
+                    filter: 'brightness(0.9)',
+                  }}
+                />
+              </a>
+              
+              {/* Token Sniffer Link */}
+              <a 
+                href="#" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  transition: 'all 0.3s ease',
+                  opacity: 0.8,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.opacity = '0.8';
+                }}
+              >
+                <img 
+                  src="/tokenSniffer.png" 
+                  alt="Token Sniffer" 
+                  style={{
+                    height: '60px',
+                    width: 'auto',
+                    filter: 'brightness(0.9)',
+                  }}
+                />
+              </a>
+            </div>
           </div>
           {/* Two Column Section with Scroll */}
 
@@ -2121,64 +2294,14 @@ export default function HomePage() {
               overflow: 'hidden', // Prevent content overflow
               position: 'relative'
             }}>
-              {/* <h4 style={{
-                color: '#d4af37',
-                fontSize: '2rem',
-                marginBottom: '0.5rem',
-                marginTop: '-2rem',
-                fontFamily: 'UnifrakturCook, serif',
-                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)',
-                textAlign: 'center'
-              }}>
-                Devote a Green Candle
-              </h4>
-              <p style={{
-                fontSize: '1.2rem',
-                lineHeight: 1.5,
-                marginBottom: '1.5rem',
-                opacity: 0.9
-              }}>
-                Send a prayer, wish, dedication, or confession to Our Lady of Perpetual Profit through the blockchain!
-              </p> */}
+             
+     
               <br/>
-              <h5 style={{
-                fontSize: '3.5rem',
-                marginBottom: '0.5rem',
-                marginTop: '-2rem',
-                fontFamily: 'Cyber, monospace',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                <span style={{ 
-                  minWidth: 'fit-content',
-                  display: 'flex',
-                  gap: '0.5rem',
-                  alignItems: 'baseline'
-                }}>
-                  <span className="action-text" style={{ 
-                    color: '#00ff00',
-                    textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00',
-                    minWidth: '200px',
-                    textAlign: 'right'
-                  }} data-words='["Encrypt", "Declare", "Dedicate"]'>Encrypt</span>
-                  <span style={{ 
-                    color: '#00ff00',
-                    textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
-                  }}>Your</span>
-                </span>
-                <span className="scramble-text" style={{ 
-                  minWidth: '350px', 
-                  textAlign: 'center',
-                  color: '#00ff00',
-                  textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
-                }} data-words='["Prayer", "Wish", "Dedication", "Confession", "Intentions"]'>Message</span>
-              </h5>
+     
+              <h2 style={{fontFamily: 'Cyber, monospace', fontSize: isLandscape && viewportHeight < 800 ? '2.5rem' : '4rem', marginBottom: '1rem', textAlign: 'center', color: '#00ff00', textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'}}>Get Lit With RL80</h2>
               <p style={{
                 lineHeight: 1.2,
-                marginBottom: '1.5rem',
+                marginBottom: '3.5rem',
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
@@ -2192,7 +2315,7 @@ export default function HomePage() {
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit.</span> Upon request, she'll visit your social media with a personalized blessing.
+                }}>Our Lady of Perpetual Profit.</span> 
                  {/* Top burners are inducted into  <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
@@ -2289,7 +2412,7 @@ export default function HomePage() {
             transform: 'translateX(-50%)'
           }}></span>
         </span>
-                  <span>Get Lit With RL80</span>
+                  <span>Light The Way</span>
                 </Link>
               </div>
             </div>
@@ -2367,7 +2490,7 @@ export default function HomePage() {
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit</span> by burning RL80 tokens. The top 80 burners are automatically <span style={{
+                }}>Our Lady of Perpetual Profit</span> by burning RL80 tokens. The top 80 burners are automatically inducted as <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
                   fontSize: '1.1em',

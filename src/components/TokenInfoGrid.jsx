@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTokenData, useMilestoneStatus } from '@/services/tokenDataService';
-import Numerology from './Numerology';
+import Numerology from '@/components/Numerology';
 
 const TokenInfoGrid = () => {
   const [copied, setCopied] = useState(false);
@@ -469,34 +469,7 @@ const TokenInfoGrid = () => {
 
   // Grid item configurations with dynamic data
   const gridItems = [
-    // Top left - Contract Address box
-    {
-      id: 'contract',
-      columns: 2,
-      rows: 1,
-      type: 'contract',
-    },
-    // Top right - Verified box
-    {
-      id: 'verified',
-      columns: 2,
-      rows: 1,
-      type: 'verified',
-    },
-    // Bottom left - Token Distribution box (below Contract Address)
-    {
-      id: 'distribution',
-      columns: 2,
-      rows: 2,
-      type: 'distribution',
-    },
-    // Bottom right - Tax Timeline box
-    {
-      id: 'tax-timeline',
-      columns: 2,
-      rows: 2,
-      type: 'timeline',
-    },
+    // Empty for now - all content moved to text section
   ];
 
   const renderGridItem = (item) => {
@@ -938,96 +911,96 @@ const TokenInfoGrid = () => {
       //     </div>
       //   );
 
-      case 'distribution':
-        return (
-          <div 
-            key={item.id} 
-            style={{
-              ...baseStyle,
-              padding: '1rem',
-              minHeight: '380px',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.02)';
-              e.currentTarget.style.boxShadow = '0 12px 32px rgba(196, 137, 1, 0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <div style={{
-              marginBottom: '0.75rem',
-              textAlign: 'center',
-            }}>
-              <div style={{
-                fontSize: '1.3rem',
-                color: 'rgba(255, 255, 255, 0.6)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                fontFamily: '"Cyber", monospace',
-              }}>
-                Token Distribution
-              </div>
-              <div style={{
-                fontSize: '0.8rem',
-                color: 'rgba(255, 255, 255, 0.4)',
-                fontFamily: '"Cyber", monospace',
-                marginTop: '0.25rem',
-              }}>
-                Total Supply: 80 billion RL80 tokens
-              </div>
-            </div>
+      // case 'distribution':
+      //   return (
+      //     <div 
+      //       key={item.id} 
+      //       style={{
+      //         ...baseStyle,
+      //         padding: '1rem',
+      //         minHeight: '380px',
+      //         display: 'flex',
+      //         flexDirection: 'column',
+      //       }}
+      //       onMouseEnter={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1.02)';
+      //         e.currentTarget.style.boxShadow = '0 12px 32px rgba(196, 137, 1, 0.2)';
+      //       }}
+      //       onMouseLeave={(e) => {
+      //         e.currentTarget.style.transform = 'scale(1)';
+      //         e.currentTarget.style.boxShadow = 'none';
+      //       }}
+      //     >
+      //       <div style={{
+      //         marginBottom: '0.75rem',
+      //         textAlign: 'center',
+      //       }}>
+      //         <div style={{
+      //           fontSize: '1.3rem',
+      //           color: 'rgba(255, 255, 255, 0.6)',
+      //           textTransform: 'uppercase',
+      //           letterSpacing: '0.1em',
+      //           fontFamily: '"Cyber", monospace',
+      //         }}>
+      //           Token Distribution
+      //         </div>
+      //         <div style={{
+      //           fontSize: '0.8rem',
+      //           color: 'rgba(255, 255, 255, 0.4)',
+      //           fontFamily: '"Cyber", monospace',
+      //           marginTop: '0.25rem',
+      //         }}>
+      //           Total Supply: 80 billion RL80 tokens
+      //         </div>
+      //       </div>
             
-            <div style={{ 
-              flex: 1, 
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '260px',
-              padding: '10px 0',
-            }}>
-              <DistributionChart />
-            </div>
+      //       <div style={{ 
+      //         flex: 1, 
+      //         width: '100%',
+      //         display: 'flex',
+      //         alignItems: 'center',
+      //         justifyContent: 'center',
+      //         minHeight: '260px',
+      //         padding: '10px 0',
+      //       }}>
+      //         <DistributionChart />
+      //       </div>
             
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-around',
-              width: '100%',
-              marginTop: '0.75rem',
-              fontSize: '0.6rem',
-              fontFamily: '"Cyber", monospace',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <div style={{ width: '10px', height: '10px', backgroundColor: '#c48901', borderRadius: '2px' }} />
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Liquidity</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <div style={{ width: '10px', height: '10px', backgroundColor: '#00ff88', borderRadius: '2px' }} />
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Treasury</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <div style={{ width: '10px', height: '10px', backgroundColor: '#ff4444', borderRadius: '2px' }} />
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Marketing</span>
-              </div>
-            </div>
-          </div>
-        );
+      //       <div style={{
+      //         display: 'flex',
+      //         justifyContent: 'space-around',
+      //         width: '100%',
+      //         marginTop: '0.75rem',
+      //         fontSize: '0.6rem',
+      //         fontFamily: '"Cyber", monospace',
+      //       }}>
+      //         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+      //           <div style={{ width: '10px', height: '10px', backgroundColor: '#c48901', borderRadius: '2px' }} />
+      //           <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Liquidity</span>
+      //         </div>
+      //         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+      //           <div style={{ width: '10px', height: '10px', backgroundColor: '#00ff88', borderRadius: '2px' }} />
+      //           <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Treasury</span>
+      //         </div>
+      //         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+      //           <div style={{ width: '10px', height: '10px', backgroundColor: '#ff4444', borderRadius: '2px' }} />
+      //           <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Marketing</span>
+      //         </div>
+      //       </div>
+      //     </div>
+      //   );
 
-      case 'timeline':
-        const timelineSteps = milestoneStatus.map(milestone => ({
-          label: milestone.label,
-          tax: `${milestone.taxRate}%`,
-          description: milestone.description,
-          status: milestone.status,
-          icon: milestone.icon,
-          progress: milestone.buyThreshold && tokenData?.currentBuyCount 
-            ? `${tokenData.currentBuyCount}/${milestone.buyThreshold} buys`
-            : null,
-        }));
+      // case 'timeline':
+      //   const timelineSteps = milestoneStatus.map(milestone => ({
+      //     label: milestone.label,
+      //     tax: `${milestone.taxRate}%`,
+      //     description: milestone.description,
+      //     status: milestone.status,
+      //     icon: milestone.icon,
+      //     progress: milestone.buyThreshold && tokenData?.currentBuyCount 
+      //       ? `${tokenData.currentBuyCount}/${milestone.buyThreshold} buys`
+      //       : null,
+      //   }));
 
         return (
           <div 
@@ -1440,45 +1413,10 @@ const TokenInfoGrid = () => {
 
       // case 'numerology':
       //   return (
-      //     <div 
-      //       key={item.id} 
-      //       style={{
-      //         ...baseStyle,
-      //         padding: '1rem',
-      //         display: 'flex',
-      //         flexDirection: 'column',
-      //         alignItems: 'center',
-      //       }}
-      //       onMouseEnter={(e) => {
-      //         e.currentTarget.style.transform = 'scale(1.01)';
-      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.5)';
-      //       }}
-      //       onMouseLeave={(e) => {
-      //         e.currentTarget.style.transform = 'scale(1)';
-      //         e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.3)';
-      //       }}
-      //     >
-      //       <div style={{
-      //         fontSize: '0.7rem',
-      //         color: 'rgba(255, 255, 255, 0.6)',
-      //         textTransform: 'uppercase',
-      //         letterSpacing: '0.1em',
-      //         marginBottom: '0.5rem',
-      //         fontFamily: '"Cyber", monospace',
-      //         textAlign: 'center',
-      //       }}>
-      //         Divine Numerology
-      //       </div>
+          
+   
             
-      //       <div style={{
-      //         fontSize: '0.65rem',
-      //         color: 'rgba(255, 255, 255, 0.4)',
-      //         marginBottom: '0.75rem',
-      //         fontFamily: '"Cyber", monospace',
-      //         textAlign: 'center',
-      //       }}>
-      //         Ask the sacred RL80 oracle
-      //       </div>
+           
             
       //       <div style={{
       //         flex: 1,
@@ -1486,12 +1424,12 @@ const TokenInfoGrid = () => {
       //         display: 'flex',
       //         alignItems: 'center',
       //         justifyContent: 'center',
-      //         // transform: 'scale(0.7)',
+       
       //         transformOrigin: 'center',
       //       }}>
       //         <Numerology isMobile={true} />
       //       </div>
-      //     </div>
+   
       //   );
 
 
@@ -1503,27 +1441,80 @@ const TokenInfoGrid = () => {
   return (
     <div style={{
       width: '100%',
-      padding: isMobile ? '0 10px' : '0 0px',
-      maxWidth: '1400px',
-      margin: '0 0',
       boxSizing: 'border-box',
-  
     }}>
-      <div className="main-grid" style={{
+      {/* Responsive Layout Container */}
+      <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(12, 1fr)',
-        gridGap: '24px',
+        gridTemplateColumns: isMobile ? '1fr' : '2fr 3fr', // 40/60 ratio for desktop
+        gap: isMobile ? '2rem' : '3rem',
         width: '100%',
-        boxSizing: 'border-box',
-alignContent: 'center',
-
+        alignItems: isMobile ? 'center' : 'stretch',
       }}>
-        {/* Text Content - Shows first on mobile, second on desktop */}
-        <div className="text-section" style={{
-          gridColumn: isMobile ? 'span 12' : 'span 7',
-          padding: isMobile ? '1rem 0' : '3rem',
-          order: isMobile ? 1 : 2,
-  
+        {/* Left Column - Numerology */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: isMobile ? '350px' : '500px',
+          order: isMobile ? 2 : 1, // Show Numerology second on mobile
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '400px', // Increased from 320px to allow Numerology to be bigger
+          }}>
+            <Numerology />
+            
+            {/* Numerology Description */}
+            <div style={{
+              marginTop: '0rem',
+              padding: '1.5rem',
+              // background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+              // backdropFilter: 'blur(12px)',
+              // borderRadius: '20px',
+              // border: '2px solid rgba(212, 175, 55, 0.4)',
+              // boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+            }}>
+              <h3 style={{
+                color: '#d4af37',
+                fontSize: '1.2rem',
+                fontFamily: 'UnifrakturCook, serif',
+                textAlign: 'center',
+                marginBottom: '1rem',
+                textShadow: '0 0 10px rgba(212, 175, 55, 0.3)',
+              }}>
+                Divine Numerology Oracle
+              </h3>
+              <p style={{
+                color: '#ffffff',
+                fontSize: '0.9rem',
+                lineHeight: 1.6,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                textAlign: 'center',
+                opacity: 0.9,
+                marginBottom: '0.75rem',
+              }}>
+                Seek guidance from the sacred RL80 oracle. Click to reveal divine wisdom about your trading destiny.
+              </p>
+              <p style={{
+                color: '#c48901',
+                fontSize: '0.85rem',
+                fontFamily: '"Cyber", monospace',
+                textAlign: 'center',
+                fontStyle: 'italic',
+                opacity: 0.8,
+              }}>
+                Switch between General prophecies and Contract enlightenment modes below the oracle.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Right Column - Text Content */}
+        <div style={{
+          width: '100%',
+          padding: isMobile ? '1rem' : '0',
+          order: isMobile ? 1 : 2, // Show text first on mobile
         }}>
         <h2 style={{
           color: '#d4af37',
@@ -1535,9 +1526,9 @@ alignContent: 'center',
           marginTop: isMobile ? '0' : '-1rem',
           textAlign: 'center',
         }}>
-          She Brings Prosper80 For The People!
+          Fierce as a mother. Luminous as a motherboard.
         </h2>
-        <p style={{ 
+        {/* <p style={{ 
           color: '#ffffff',
           fontSize: isMobile ? '0.95rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '1.6rem'),
           lineHeight: 1.2,
@@ -1556,7 +1547,7 @@ alignContent: 'center',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
           }}> Our Lady of Perpetual Profit</span> believes in decentralization of power and fair distribution of wealth to the greater soci80.
-        </p>
+        </p> */}
         
         <p style={{ 
           color: '#ffffff',
@@ -1568,208 +1559,152 @@ alignContent: 'center',
           marginBottom: '2rem',
           opacity: 0.85,
         }}>
-The <span style={{
+          The markets are rigged. Capitalism is a casino where the house always wins. But now, an icon descends to flip the script: <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
             fontSize: '1.1em',
             color: '#d4af37',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
-          }}> RL80 </span>token lets you pay homage and devote green candles to the Patron Saint of Day Traders. Hold  <span style={{
+          }}> Our Lady of Perpetual Profit! </span>   
+She guards the earnest, liquidates the wicked, and illuminates the digital realm with divine intervention.
+</p>
+<p style={{ 
+          color: '#ffffff',
+          fontSize: isMobile ? '0.9rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '1.5rem'),
+          lineHeight: 1.2,
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          fontWeight: 400,
+          letterSpacing: '0.02em',
+          marginBottom: '2rem',
+          opacity: 0.85,
+        }}>
+ Behold,  <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
             fontSize: '1.1em',
             color: '#d4af37',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
-          }}> RL80</span> in your wallet as a good luck charm and to ward off evil. 
+          }}> RL80! </span> 
+
+
+— your rosary of prosperity, your talisman against evil. 
 
 </p>
 
+        {/* Contract Address Box */}
         <div style={{
-    textAlign: 'center',
-          position: 'relative',
-          bottom: 0,
-          padding: '0.5rem',
-          background: 'linear-gradient(135deg, rgba(196, 137, 1, 0.1), rgba(255, 255, 255, 0.05))',
-          border: '2px solid rgba(196, 137, 1, 0.3)',
-          borderRadius: '12px',
-        }}>
+          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '20px',
+          border: '2px solid rgba(212, 175, 55, 0.4)',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+          padding: '1rem',
+          marginTop: '2rem',
+          backdropFilter: 'blur(10px)',
+          transition: 'all 0.3s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(196, 137, 1, 0.3)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = 'none';
+        }}
+        >
+          <span style={{
+            fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
+            fontWeight: 'bold',
+            fontSize: '0.9em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            display: 'block',
+            textAlign: 'center',
+            marginBottom: '0.5rem'
+          }}> Our Lady of Perpetual Profit</span>
+          <span style={{
+            fontFamily: 'cyber, monospace',
+            fontWeight: 'bold',
+            fontSize: '0.8em',
+            color: '#ffffff',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            display: 'block',
+            textAlign: 'center',
+            marginBottom: '0.75rem'
+          }}> Ticker: RL80 </span>
           <h3 style={{
             color: '#c48901',
-            fontSize: isMobile ? '1rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '1.5rem'),
-            marginBottom: '1rem',
-            fontFamily: '"Cyber", monospace',
-            textTransform: 'uppercase',
+            fontSize: '0.85rem',
+            fontWeight: '600',
             letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            marginBottom: '0.75rem',
+            fontFamily: '"Cyber", monospace',
+            textAlign: 'center',
           }}>
-            Token Features
+            Contract Address (BASE Chain)
           </h3>
-          <ul style={{
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-            textAlign: 'left',
+          
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'rgba(0, 0, 0, 0.3)',
+            padding: '0.75rem',
+            borderRadius: '8px',
+            border: '1px solid rgba(196, 137, 1, 0.2)',
+            width: '100%',
           }}>
-            <li style={{
+            <code style={{
               color: '#ffffff',
-              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
-              marginBottom: '0.75rem',
-              paddingLeft: '1.5rem',
-              paddingRight: '1rem',
-              position: 'relative',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
+              fontSize: '0.85rem',
+              fontFamily: 'monospace',
+              wordBreak: 'break-all',
+              flex: 1,
               opacity: 0.9,
-              lineHeight: 1.5,
+              textAlign: 'center',
             }}>
-              <span style={{
-                position: 'absolute',
-                left: '0.5rem',
-                color: '#c48901',
-              }}>▸</span>
-              Light candles to request divine intervention for your portfolio
-            </li>
-            <li style={{
-              color: '#ffffff',
-              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
-              marginBottom: '0.75rem',
-              paddingLeft: '1.5rem',
-              paddingRight: '1rem',
-              position: 'relative',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              opacity: 0.9,
-              lineHeight: 1.5,
-            }}>
-              <span style={{
-                position: 'absolute',
-                left: '0.5rem',
-                color: '#c48901',
-              }}>▸</span>
-             RL80 is deflationary! Buy candles by burning tokens - choose any amount. Your offering benefits all holders!
-            </li>
-           
-            <li style={{
-              color: '#ffffff',
-              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
-              marginBottom: '0.75rem',
-              paddingLeft: '1.5rem',
-
-              position: 'relative',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              opacity: 0.9,
-              lineHeight: 1.5,
-            }}>
-              <span style={{
-                position: 'absolute',
-                left: '0.5rem',
-                color: '#c48901',
-              }}>▸</span>
-         Receive personalized social posts from the Virtual Virgin
-            </li>
-            <li style={{
-              color: '#ffffff',
-              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
-              marginBottom: '0.75rem',
-              paddingLeft: '1.5rem',
-
-              position: 'relative',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              opacity: 0.9,
-              lineHeight: 1.5,
-            }}>
-              <span style={{
-                position: 'absolute',
-                left: '0.5rem',
-                color: '#c48901',
-              }}>▸</span>
-              Good luck charm for your portfolio
-            </li>
-           
-            <li style={{
-              color: '#ffffff',
-              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
-              marginBottom: '0.75rem',
-              paddingLeft: '1.5rem',
-
-              position: 'relative',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              opacity: 0.9,
-              lineHeight: 1.5,
-            }}>
-              <span style={{
-                position: 'absolute',
-                left: '0.5rem',
-                color: '#c48901',
-              }}>▸</span>
-              Fair launched and scrupulous; no insider trading
-            </li>
-            <li style={{
-              color: '#ffffff',
-              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
-              marginBottom: '0.75rem',
-              paddingLeft: '1.5rem',
-
-              position: 'relative',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              opacity: 0.9,
-              lineHeight: 1.5,
-            }}>
-              <span style={{
-                position: 'absolute',
-                left: '0.5rem',
-                color: '#c48901',
-              }}>▸</span>
-              Anti-sniper and anti-whale mechanisms
-            </li>
-            <li style={{
-              color: '#ffffff',
-              fontSize: isMobile ? '0.85rem' : (isLandscape && viewportHeight < 800 ? '1rem' : '1.3rem'),
-              marginBottom: '0.75rem',
-              paddingLeft: '1.5rem',
-              paddingRight: '1rem',
-              position: 'relative',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              opacity: 0.9,
-              lineHeight: 1.5,
-            }}>
-              <span style={{
-                position: 'absolute',
-                left: '0.5rem',
-                color: '#c48901',
-              }}>▸</span>
-              Light up the leaderboard and gain access to the ILLUMIN80
-            </li>
-          </ul>
-        </div>
-      </div>
-      
-      {/* Token Info Grid - Shows second on mobile, first on desktop */}
-      <div className="grid-section" style={{
-        gridColumn: isMobile ? 'span 12' : 'span 5',
-        order: isMobile ? 2 : 1,
-      }}>
-        <div className="token-info-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-          gridGap: isMobile ? '12px' : '16px',
-          gridAutoRows: 'minmax(120px, auto)',
-          width: '100%',
-          boxSizing: 'border-box',
-        }}>
-          {gridItems.map(renderGridItem)}
+              {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
+            </code>
+            
+            <button
+              onClick={handleCopyAddress}
+              style={{
+                background: copied ? 'rgba(0, 255, 0, 0.2)' : 'rgba(196, 137, 1, 0.2)',
+                border: `1px solid ${copied ? 'rgba(0, 255, 0, 0.5)' : 'rgba(196, 137, 1, 0.5)'}`,
+                borderRadius: '6px',
+                padding: '0.5rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title={copied ? 'Copied!' : 'Copy address'}
+            >
+              {copied ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00ff00" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c48901" strokeWidth="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </div>
       </div>
       
       <style jsx>{`
         @keyframes pulse {
+
+          
+
           0%, 100% {
             opacity: 0.3;
           }

@@ -115,7 +115,7 @@ const Numerology = ({ isMobile = false }) => {
                         margin: '0 auto',
                         border: 'solid 0.5em #c48901',
                         width: '100%',
-                        // maxWidth: isMobile ? '25em' : '25em',
+                        maxWidth: isMobile ? '250px' : '300px',
                         aspectRatio: '1',
                         borderRadius: '1em',
                       }}
@@ -143,8 +143,8 @@ const Numerology = ({ isMobile = false }) => {
                           <iframe
                             src="/magic.html"
                             style={{
-                              width: "17.6rem",
-                              height: "17.6rem",
+                              width: "90%",
+                              height: "90%",
                               border: "none",
                               background: "transparent",
                               borderRadius: "50%",

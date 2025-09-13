@@ -147,7 +147,7 @@
   line-height: 0.8;
   margin-bottom: 1rem;
   text-transform: uppercase;
-  transform: skewX(-15deg);
+  transform: skewX(-20deg);
   background: linear-gradient(45deg, #ff0, #ffd);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
