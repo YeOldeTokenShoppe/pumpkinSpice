@@ -1,0 +1,355 @@
+@charset "UTF-8";
+@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap");
+
+.scratchWin {
+  position: relative;
+  padding: 1rem 2rem 2rem 2rem;
+  background: linear-gradient(#78d6c6 -150%, #12486b);
+  border: 0.2rem solid #ffdc73;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0.2rem 0.2rem 1rem 0 rgba(0, 0, 56, 0.3);
+  font-family: "Arial Black", "Archivo Black", sans-serif;
+  display: inline-block;
+}
+
+@media screen and (max-width: 500px) {
+  .scratchWin {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .scratchWinCoin {
+    transform: scale(0.8);
+  }
+}
+
+.scratchWin:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    -70deg,
+    transparent,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 57%,
+    transparent 60%
+  );
+  background-size: 300% 100%;
+  animation: shinning 6s infinite;
+  pointer-events: none;
+}
+
+@keyframes shinning {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
+.scratchWinTitle {
+  width: 100%;
+  margin: 0 auto 1rem;
+  color: #ffdc73;
+  font-size: 2rem;
+  text-align: center;
+  text-transform: uppercase;
+  background: linear-gradient(#ffdc73, #a67c00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.scratchWinScratcher {
+  position: relative;
+  width: 350px;
+  height: 190px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.scratchWinBackground,
+.scratchWinForeground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.scratchWinBackground {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  color: #333;
+  background-color: #fff;
+  font-size: 0.75rem;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.tokenomicsInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: #fff;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.infoSection {
+  flex: 1;
+}
+
+.infoSection h3 {
+  font-size: 0.9rem;
+  margin: 0 0 0.25rem 0;
+  color: #12486b;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.infoSection ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.infoSection li {
+  font-size: 0.7rem;
+  line-height: 1.2;
+  margin-bottom: 0.15rem;
+  color: #555;
+}
+
+.scratchWinBackground:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 0.5rem,
+    rgba(136, 136, 136, 0.1) 0.5rem,
+    rgba(136, 136, 136, 0.1) 0.6rem
+  );
+  pointer-events: none;
+}
+
+.scratchWinReady .scratchWinBackground {
+  display: flex;
+}
+
+.scratchWinForeground {
+  position: absolute;
+  top: 0 !important;
+  left: 0 !important;
+  width: 350px !important;
+  height: 190px !important;
+  touch-action: none;
+  cursor: none;
+  z-index: 2;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+.scratchWinCoin {
+  position: fixed;
+  z-index: 9999;
+  top: 0;  /* Reset to 0 */
+  left: 0; /* Reset to 0 */
+  width: 6rem;
+  height: 6rem;
+  pointer-events: none;
+  transition: none;
+  /* The transform will handle all positioning */
+}
+
+
+.scratchWinCoinSide {
+  position: absolute;
+  top: -0.4rem;
+  left: 0;
+  z-index: -1;
+  width: calc(100% + 0.6rem);
+  height: calc(100% + 0.6rem);
+  border-radius: 50%;
+  outline: 0.1rem solid #a67c00;
+  background: repeating-linear-gradient(
+    90deg,
+    #d4af37 0,
+    #d4af37 0.5rem,
+    #ffdc73 0.5rem,
+    #ffdc73 0.7rem
+  );
+  box-shadow: 0 1rem 1rem -0.5rem rgba(0, 0, 56, 0.5);
+}
+
+@supports (-webkit-hyphens: none) {
+  .scratchWinCoinSide {
+    outline: none;
+  }
+}
+
+.scratchWinCoinBase {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0.3rem dashed #d4af37;
+  outline: 0.1rem solid #a67c00;
+  border-radius: 50%;
+  background: radial-gradient(circle at 0 0, #ffdc73, #d4af37 150%);
+  box-shadow: inset 0 -0.1rem 0 0 #a67c00;
+}
+
+@supports (-webkit-hyphens: none) {
+  .scratchWinCoinBase {
+    outline: none;
+  }
+}
+
+.scratchWinCoinBase:before,
+.scratchWinCoinBase:after {
+  content: "RL80";
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 2rem;
+  padding-left: 6px;
+}
+
+.scratchWinCoinBase:before {
+  color: #a67c00;
+  transform: rotate(45deg) translateX(-0.4rem) translateY(-0.25rem);
+}
+
+.scratchWinCoinBase:after {
+  color: #d4af37;
+  transform: rotate(45deg) translateX(-0.3rem) translateY(-0.2rem);
+  background: linear-gradient(#ffdc73 -50%, #d4af37);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.confetti {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confettiItem {
+  position: absolute;
+  box-shadow: 0.2rem 0.2rem 0.5rem 0 rgba(0, 0, 56, 0.3);
+  width: 10px;
+  height: 10px;
+}
+
+.confettiActive .confettiItem {
+  animation: confettiFall 3s ease-out forwards;
+}
+
+/* Position confetti items across the screen */
+.confettiItem:nth-child(1) { left: 5%; top: -10%; }
+.confettiItem:nth-child(2) { left: 10%; top: -10%; }
+.confettiItem:nth-child(3) { left: 15%; top: -10%; }
+.confettiItem:nth-child(4) { left: 20%; top: -10%; }
+.confettiItem:nth-child(5) { left: 25%; top: -10%; }
+.confettiItem:nth-child(6) { left: 30%; top: -10%; }
+.confettiItem:nth-child(7) { left: 35%; top: -10%; }
+.confettiItem:nth-child(8) { left: 40%; top: -10%; }
+.confettiItem:nth-child(9) { left: 45%; top: -10%; }
+.confettiItem:nth-child(10) { left: 50%; top: -10%; }
+.confettiItem:nth-child(11) { left: 55%; top: -10%; }
+.confettiItem:nth-child(12) { left: 60%; top: -10%; }
+.confettiItem:nth-child(13) { left: 65%; top: -10%; }
+.confettiItem:nth-child(14) { left: 70%; top: -10%; }
+.confettiItem:nth-child(15) { left: 75%; top: -10%; }
+.confettiItem:nth-child(16) { left: 80%; top: -10%; }
+.confettiItem:nth-child(17) { left: 85%; top: -10%; }
+.confettiItem:nth-child(18) { left: 90%; top: -10%; }
+.confettiItem:nth-child(19) { left: 95%; top: -10%; }
+.confettiItem:nth-child(20) { left: 12%; top: -10%; }
+
+/* Add delays for staggered effect */
+.confettiItem:nth-child(odd) { animation-delay: 0.1s; }
+.confettiItem:nth-child(even) { animation-delay: 0.2s; }
+.confettiItem:nth-child(3n) { animation-delay: 0.3s; }
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Simpler scratch card styles */
+.scratchContainer {
+  position: relative;
+  width: 21rem;
+  height: 11rem;
+  cursor: none;
+  overflow: hidden;
+}
+
+.scratchContent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.goldOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #d4af37 0%, #a67c00 30%, #d4af37 50%, #a67c00 80%, #d4af37 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.scratchMark {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 1);
+  mix-blend-mode: destination-out;
+  pointer-events: none;
+}
+

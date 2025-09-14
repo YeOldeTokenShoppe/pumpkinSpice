@@ -159,7 +159,7 @@ const CollapsibleSection = ({ title, children, icon = "📜" }) => {
       background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(212, 175, 55, 0.02) 100%)',
       border: '1px solid rgba(212, 175, 55, 0.3)',
       borderRadius: '8px',
-      padding: '1rem',
+      // padding: '1rem',
       transition: 'all 0.3s ease',
       boxShadow: isOpen ? '0 4px 20px rgba(212, 175, 55, 0.2)' : 'none'
     }}>
@@ -1762,7 +1762,7 @@ export default function HomePage() {
             transform: 'translateX(-50%)'
           }}></span>
         </span>
-                <span>Get Lit With RL80</span>
+                <span>Burn An Offering</span>
               </Link>
             </div>
           </div>
@@ -1819,7 +1819,7 @@ export default function HomePage() {
             </div>
             
             {/* Click to Buy Button - Directly under coin */}
-            <button
+            {/* <button
               style={{
                 backgroundColor: '#d4af37',
                 color: '#000',
@@ -1845,7 +1845,7 @@ export default function HomePage() {
               onClick={() => window.open('', '_blank')}
             >
               ↑ Click to Buy! ↑
-            </button>
+            </button> */}
           </div>
           
           {/* Caption and explanatory text for Coin */}
@@ -1953,7 +1953,7 @@ export default function HomePage() {
                 </Link>
                 
                 {/* Click to Buy callout */}
-                <div style={{
+                {/* <div style={{
                   position: 'absolute',
                   bottom: '2rem',
                   left: '50%',
@@ -1973,7 +1973,7 @@ export default function HomePage() {
                   pointerEvents: 'none'
                 }}>
                   ↑ Click to Buy! ↑
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -2041,13 +2041,32 @@ export default function HomePage() {
             <div style={{
               display: 'flex',
               justifyContent: 'space-around',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
               alignItems: 'center',
               width: '100%',
               maxWidth: '800px',
               margin: '3rem auto 2rem auto',
               padding: '1rem',
               flexWrap: 'wrap',
+              position: 'relative',
             }}>
+              {/* Green checkbox emoji in top left corner */}
+              <span style={{
+                position: 'absolute',
+                top: '-12px',
+                left: '-1rem',
+                fontSize: '48px',
+                backgroundColor: '#1a1a1a',
+                padding: '0 4px',
+              }}>📜</span>
+                       <span style={{
+                position: 'absolute',
+                top: '-12px',
+                left: '16px',
+                fontSize: '18px',
+                backgroundColor: '#1a1a1a',
+                padding: '0 4px',
+              }}>✅</span>
               {/* DEXScreener Link */}
               <a 
                 href="#" 
@@ -2412,7 +2431,7 @@ export default function HomePage() {
             transform: 'translateX(-50%)'
           }}></span>
         </span>
-                  <span>Light The Way</span>
+                  <span>Burn An Offering</span>
                 </Link>
               </div>
             </div>

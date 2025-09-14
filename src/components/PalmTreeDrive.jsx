@@ -1387,17 +1387,18 @@ const PalmsScene = ({ onLoadingChange }) => {
       }
       
       // Create video element and texture
-      // const video = document.createElement('video');
-      // video.src = '/mario.mp4';
-      // video.loop = true;
-      // video.muted = true;
-      // video.playsInline = true;
-      // video.autoplay = true;
+      const video = document.createElement('video');
+      video.src = '/videos/stockChart.mp4';
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.autoplay = true;
       
-      // const videoTexture = new THREE.VideoTexture(video);
-      // videoTexture.minFilter = THREE.LinearFilter;
-      // videoTexture.magFilter = THREE.LinearFilter;
-      // videoTexture.format = THREE.RGBFormat;
+      const videoTexture = new THREE.VideoTexture(video);
+      videoTexture.minFilter = THREE.LinearFilter;
+      videoTexture.magFilter = THREE.LinearFilter;
+      videoTexture.format = THREE.RGBFormat;
+      videoTexture.flipY = false; // Flip the video upside down
       
       // Keep original car materials and add emissive to halo
       carScene.traverse((child) => {
@@ -1411,31 +1412,31 @@ const PalmsScene = ({ onLoadingChange }) => {
         
           
           // Add video texture to Display mesh
-          // if (child.name === 'Display') { // Exact match
-          //   // console.log('Found Display mesh, applying video texture'); 
-          //   child.material = new THREE.MeshBasicMaterial({
-          //     map: videoTexture,
-          //     emissiveMap: videoTexture,
-          //     emissive: new THREE.Color(0xffffff),
-          //     emissiveIntensity: 1,
-          //     transparent: true,
-          //     opacity: 1
-          //   });
-          //   child.material.needsUpdate = true;
-          // }
+          if (child.name === 'Display') { // Exact match
+            // console.log('Found Display mesh, applying video texture'); 
+            child.material = new THREE.MeshBasicMaterial({
+              map: videoTexture,
+              emissiveMap: videoTexture,
+              emissive: new THREE.Color(0xffffff),
+              emissiveIntensity: 1,
+              transparent: true,
+              opacity: 1
+            });
+            child.material.needsUpdate = true;
+          }
         }
       });
       
       // Start playing the video
-      // video.play().catch(error => {
-      //   // console.warn('Video autoplay failed:', error);
-      //   // Add click handler to start video on user interaction
-      //   const startVideo = () => {
-      //     video.play();
-      //     document.removeEventListener('click', startVideo);
-      //   };
-      //   document.addEventListener('click', startVideo);
-      // });
+      video.play().catch(error => {
+        // console.warn('Video autoplay failed:', error);
+        // Add click handler to start video on user interaction
+        const startVideo = () => {
+          video.play();
+          document.removeEventListener('click', startVideo);
+        };
+        document.addEventListener('click', startVideo);
+      });
       
       // Add a spotlight above the car
       const carSpotlight = new THREE.SpotLight(

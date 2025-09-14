@@ -29,9 +29,9 @@ export default function RootLayout({ children }) {
           colorBackground: '#1a1a2e',  // Dark navy blue background
           colorInputBackground: '#ffffff',  // Slightly lighter for inputs
           colorInputText: '#000',
-          colorText: '#000000',
+          colorText: '#00FFFF',  // Changed from black to cyan for better visibility
           colorTextOnPrimaryBackground: '#000000',  // Black text on gold buttons
-          colorTextSecondary: '#ffffff',
+          colorTextSecondary: '#FFD700',  // Changed to gold for better contrast
           colorDanger: '#ff6b6b',
           colorSuccess: '#4CAF50',
           colorWarning: '#FFC107',
@@ -139,7 +139,7 @@ export default function RootLayout({ children }) {
             fontStyle: 'italic'
           },
           formFieldLabel: {
-            color: '#000000',
+            color: '#00FFFF',  // Changed from black to cyan for visibility
             fontWeight: '600',
             fontSize: '1rem'
           },
@@ -227,6 +227,50 @@ export default function RootLayout({ children }) {
             '&:hover': {
               backgroundColor: '#FFD700 !important'
             }
+          },
+          // Profile modal specific styles for better visibility
+          profileSection: {
+            color: '#00FFFF !important'
+          },
+          profileSectionTitle: {
+            color: '#00FFFF !important',
+            fontWeight: 'bold !important'
+          },
+          profileSectionContent: {
+            color: '#ffffff !important'
+          },
+          profileSectionItem: {
+            color: '#ffffff !important'
+          },
+          profileSectionItemText: {
+            color: '#ffffff !important'
+          },
+          profileSectionItemSubText: {
+            color: '#FFD700 !important'
+          },
+          accordionTriggerButton: {
+            color: '#00FFFF !important',
+            '&:hover': {
+              backgroundColor: 'rgba(0, 255, 255, 0.1) !important'
+            }
+          },
+          accordionContent: {
+            color: '#ffffff !important'
+          },
+          modalContent: {
+            backgroundColor: '#1a1a2e !important'
+          },
+          modalCloseButton: {
+            color: '#FFD700 !important',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 215, 0, 0.1) !important'
+            }
+          },
+          navbarButton: {
+            color: '#00FFFF !important'
+          },
+          navbarButtonIcon: {
+            color: '#FFD700 !important'
           }
         }
       }}>

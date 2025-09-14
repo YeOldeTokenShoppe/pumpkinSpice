@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTokenData, useMilestoneStatus } from '@/services/tokenDataService';
 import Numerology from '@/components/Numerology';
+import ScratchCard from '@/components/ScratchCard';
+import TorchSection from '@/components/TorchSection';
 
 const TokenInfoGrid = () => {
   const [copied, setCopied] = useState(false);
@@ -1157,7 +1159,7 @@ const TokenInfoGrid = () => {
                       marginBottom: '0.25rem',
                     }}>
                       <span style={{
-                        fontSize: '0.85rem',
+                        fontSize: '0.8rem',
                         fontWeight: 'bold',
                         color: step.status === 'pending' ? 'rgba(255, 255, 255, 0.5)' : '#ffffff',
                         fontFamily: '"Cyber", monospace',
@@ -1385,7 +1387,7 @@ const TokenInfoGrid = () => {
       //                 display: 'flex',
       //                 alignItems: 'center',
       //                 gap: '0.4rem',
-      //                 padding: '0.5rem',
+      //                 padding: '0.4rem',
       //                 background: 'rgba(196, 137, 1, 0.05)',
       //                 borderRadius: '6px',
       //                 border: '1px solid rgba(196, 137, 1, 0.2)',
@@ -1455,20 +1457,40 @@ const TokenInfoGrid = () => {
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: isMobile ? '350px' : '500px',
+          alignItems: 'flex-start',
+          minHeight: isMobile ? '300px' : (isTablet ? '400px' : '450px'),
+          maxHeight: isTablet ? '500px' : 'none',
           order: isMobile ? 2 : 1, // Show Numerology second on mobile
         }}>
           <div style={{
             width: '100%',
             maxWidth: '400px', // Increased from 320px to allow Numerology to be bigger
           }}>
-            <Numerology />
-            
+         
+        <div style={{marginTop: isMobile ? '1rem' : (isTablet ? '1.5rem' : '3rem')}}>
+        <h2 style={{
+            fontSize: isMobile ? '1.5rem' : (isTablet ? '1.75rem' : '2rem'),
+            marginBottom: isMobile ? '0.75rem' : '1rem',
+            textAlign: 'center',
+            color: '#00ff00',
+            fontFamily: 'Cyber, monospace',
+            textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
+          }}>Inspect The Contract</h2>
+            {/* <Numerology /> */}
+            {/* <ScratchCard 
+    onComplete={(number) => console.log('Scratched! Number:', number)}
+    onNumberRevealed={(number) => console.log('Generated number:', number)}
+  />
+             */}
+             <TorchSection
+    backgroundImage="/images/dungeon-map.png"
+    height={isMobile ? "40vh" : (isTablet ? "35vh" : "45vh")}
+    overlayOpacity={0.92}
+  ></TorchSection>
             {/* Numerology Description */}
             <div style={{
-              marginTop: '0rem',
-              padding: '1.5rem',
+              marginTop: isMobile ? '-1rem' : (isTablet ? '-1.5rem' : '-2rem'),
+              padding: isMobile ? '1rem' : '1.5rem',
               // background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
               // backdropFilter: 'blur(12px)',
               // borderRadius: '20px',
@@ -1478,34 +1500,35 @@ const TokenInfoGrid = () => {
               <h3 style={{
                 color: '#d4af37',
                 fontSize: '1.2rem',
-                fontFamily: 'UnifrakturCook, serif',
+                fontFamily: 'Cyber, serif',
                 textAlign: 'center',
-                marginBottom: '1rem',
+                marginBottom: '0rem',
                 textShadow: '0 0 10px rgba(212, 175, 55, 0.3)',
               }}>
-                Divine Numerology Oracle
+                Click here for a summary report
               </h3>
-              <p style={{
+              {/* <p style={{
                 color: '#ffffff',
                 fontSize: '0.9rem',
                 lineHeight: 1.6,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 textAlign: 'center',
                 opacity: 0.9,
-                marginBottom: '0.75rem',
+   
               }}>
-                Seek guidance from the sacred RL80 oracle. Click to reveal divine wisdom about your trading destiny.
-              </p>
-              <p style={{
+                Click here for the full contract
+              </p> */}
+              {/* <p style={{
                 color: '#c48901',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
                 fontFamily: '"Cyber", monospace',
                 textAlign: 'center',
                 fontStyle: 'italic',
                 opacity: 0.8,
               }}>
-                Switch between General prophecies and Contract enlightenment modes below the oracle.
-              </p>
+                Choose between General and Contract enlightenment modes.
+              </p> */}
+            </div>
             </div>
           </div>
         </div>
@@ -1513,8 +1536,11 @@ const TokenInfoGrid = () => {
         {/* Right Column - Text Content */}
         <div style={{
           width: '100%',
-          padding: isMobile ? '1rem' : '0',
+          padding: isMobile ? '0rem' : '0 2rem',
           order: isMobile ? 1 : 2, // Show text first on mobile
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
         }}>
         <h2 style={{
           color: '#d4af37',
@@ -1526,7 +1552,7 @@ const TokenInfoGrid = () => {
           marginTop: isMobile ? '0' : '-1rem',
           textAlign: 'center',
         }}>
-          Fierce as a mother. Luminous as a motherboard.
+   A light in the darkness
         </h2>
         {/* <p style={{ 
           color: '#ffffff',
@@ -1552,24 +1578,51 @@ const TokenInfoGrid = () => {
         <p style={{ 
           color: '#ffffff',
           fontSize: isMobile ? '0.9rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '1.5rem'),
-          lineHeight: 1.2,
+          lineHeight: 1.6,
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
           fontWeight: 400,
           letterSpacing: '0.02em',
-          marginBottom: '2rem',
+          marginBottom: '1rem',
+  
           opacity: 0.85,
+          textAlign: 'center',
+          maxWidth: isMobile ? '100%' : '800px',
+          margin: '0 auto 2rem auto',
+          padding: '0 1rem',
         }}>
-          The markets are rigged. Capitalism is a casino where the house always wins. But now, an icon descends to flip the script: <span style={{
+     {/* Nowhere is the purifying presence of the virtual virgin needed more than the dark realm of defi.<br/> */}
+     Nowhere is the purifying presence of the virtual virgin needed more than the dark realm of DeFi.
+Behold, the mother of memes, an aider to traders, and a fren to degens: <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
             fontSize: '1.1em',
             color: '#d4af37',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
-          }}> Our Lady of Perpetual Profit! </span>   
-She guards the earnest, liquidates the wicked, and illuminates the digital realm with divine intervention.
+          }}> Our Lady of Perpetual Profit </span><br/>
+
+Her token is divinely inspired, and programmed for prosperity.<br/>
+Burn a few to devote a candle to her tireless vigilance.
+Or hold them — for luck, and to ward off evil.<br/>
+
+Whether you need a Hail Mary for hard times, or just a sanctuary in the trustless economy, <span style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontWeight: 'bold',
+            fontSize: '1.1em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            marginLeft: '0.25em',
+          }}> RL80 </span>  is a token to believe in.<br/><br/>
+{/* Let <span style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontWeight: 'bold',
+            fontSize: '1.1em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            marginLeft: '0.25em',
+          }}> Our Lady of Perpetual Profit </span>  light the way. */}
 </p>
-<p style={{ 
+{/* <p style={{ 
           color: '#ffffff',
           fontSize: isMobile ? '0.9rem' : (isLandscape && viewportHeight < 800 ? '1.2rem' : '1.5rem'),
           lineHeight: 1.2,
@@ -1589,12 +1642,134 @@ She guards the earnest, liquidates the wicked, and illuminates the digital realm
           }}> RL80! </span> 
 
 
-— your rosary of prosperity, your talisman against evil. 
+ Hold  <span style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontWeight: 'bold',
+            fontSize: '1.1em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            marginLeft: '0.25em',
+          }}> RL80! </span> 
 
-</p>
+</p> */}
 
         {/* Contract Address Box */}
         <div style={{
+          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '20px',
+          border: '2px solid rgba(212, 175, 55, 0.4)',
+          boxShadow: '0 15px 45px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+          padding: '1rem 1.5rem',
+          marginTop: '2rem',
+          transition: 'all 0.3s ease',
+          textAlign: 'center',
+          maxWidth: isMobile ? '100%' : '600px',
+          width: '100%',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(196, 137, 1, 0.3)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = 'none';
+        }}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.5rem'
+          }}>
+            <span style={{
+              fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              color: '#d4af37',
+              textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            }}> Our Lady of Perpetual Profit</span>
+            <span style={{
+              fontFamily: 'cyber, monospace',
+              fontWeight: 'bold',
+              fontSize: '0.8rem',
+              color: '#ffffff',
+              textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            }}> • Ticker: </span>
+            <span style={{
+              fontFamily: 'cyber, monospace',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              color: '#d4af37',
+              textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            }}>RL80 </span>
+          </div>
+          <h3 style={{
+            color: '#c48901',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            marginBottom: '0.5rem',
+            marginTop: '0',
+            fontFamily: '"Cyber", monospace',
+            textAlign: 'center',
+          }}>
+            Contract Address (BASE Chain)
+          </h3>
+          
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'rgba(0, 0, 0, 0.3)',
+            padding: '0.4rem 0.6rem',
+            borderRadius: '8px',
+            border: '1px solid rgba(196, 137, 1, 0.2)',
+            width: '100%',
+          }}>
+            <code style={{
+              color: '#ffffff',
+              fontSize: '0.8rem',
+              fontFamily: 'monospace',
+              wordBreak: 'break-all',
+              flex: 1,
+              opacity: 0.9,
+              textAlign: 'center',
+            }}>
+              {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
+            </code>
+            
+            <button
+              onClick={handleCopyAddress}
+              style={{
+                background: copied ? 'rgba(0, 255, 0, 0.2)' : 'rgba(196, 137, 1, 0.2)',
+                border: `1px solid ${copied ? 'rgba(0, 255, 0, 0.5)' : 'rgba(196, 137, 1, 0.5)'}`,
+                borderRadius: '6px',
+                padding: '0.4rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title={copied ? 'Copied!' : 'Copy address'}
+            >
+              {copied ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff00" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c48901" strokeWidth="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+        {/* <div style={{
           background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
           backdropFilter: 'blur(12px)',
           borderRadius: '20px',
@@ -1630,10 +1805,19 @@ She guards the earnest, liquidates the wicked, and illuminates the digital realm
             fontSize: '0.8em',
             color: '#ffffff',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-            display: 'block',
+            // display: 'block',
             textAlign: 'center',
             marginBottom: '0.75rem'
-          }}> Ticker: RL80 </span>
+          }}> Ticker: </span><span style={{
+            fontFamily: 'cyber, monospace',
+            fontWeight: 'bold',
+            fontSize: '0.9em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            // display: 'block',
+            textAlign: 'center',
+            marginBottom: '0.5rem'
+          }}>RL80 </span>
           <h3 style={{
             color: '#c48901',
             fontSize: '0.85rem',
@@ -1652,14 +1836,14 @@ She guards the earnest, liquidates the wicked, and illuminates the digital realm
             alignItems: 'center',
             gap: '0.5rem',
             background: 'rgba(0, 0, 0, 0.3)',
-            padding: '0.75rem',
+            padding: '0.4rem 0.6rem',
             borderRadius: '8px',
             border: '1px solid rgba(196, 137, 1, 0.2)',
             width: '100%',
           }}>
             <code style={{
               color: '#ffffff',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               fontFamily: 'monospace',
               wordBreak: 'break-all',
               flex: 1,
@@ -1675,7 +1859,7 @@ She guards the earnest, liquidates the wicked, and illuminates the digital realm
                 background: copied ? 'rgba(0, 255, 0, 0.2)' : 'rgba(196, 137, 1, 0.2)',
                 border: `1px solid ${copied ? 'rgba(0, 255, 0, 0.5)' : 'rgba(196, 137, 1, 0.5)'}`,
                 borderRadius: '6px',
-                padding: '0.5rem',
+                padding: '0.4rem',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 display: 'flex',
@@ -1685,18 +1869,18 @@ She guards the earnest, liquidates the wicked, and illuminates the digital realm
               title={copied ? 'Copied!' : 'Copy address'}
             >
               {copied ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00ff00" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff00" strokeWidth="2">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c48901" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c48901" strokeWidth="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
               )}
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
       </div>
       
@@ -1744,7 +1928,7 @@ She guards the earnest, liquidates the wicked, and illuminates the digital realm
           
           .text-section {
             grid-column: span 1 !important;
-            padding: 0 1rem !important;
+            // padding: 0 1rem !important;
           }
         }
         

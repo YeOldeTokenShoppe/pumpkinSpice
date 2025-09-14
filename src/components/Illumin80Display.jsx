@@ -352,35 +352,35 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
           {/* Left laurel branch */}
           <div style={{
             position: 'absolute',
-            left: '-8px',
+            left: '-1.2rem',
             top: '50%',
-            transform: 'translateY(-50%) rotate(-15deg)',
+            transform: 'translateY(-70%) rotate(-15deg) scaleX(-1)',
             fontSize: '24px',
             color: '#FFD700',
             filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.6))',
             pointerEvents: 'none',
             zIndex: 1
           }}>
-            🌿
+            🪽
           </div>
           
           {/* Right laurel branch */}
           <div style={{
             position: 'absolute',
-            right: '-8px',
+            right: '-1.2rem',
             top: '50%',
-            transform: 'translateY(-50%) rotate(15deg) scaleX(-1)',
+            transform: 'translateY(-70%) rotate(15deg) scaleX(1)',
             fontSize: '24px',
             color: '#FFD700',
             filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.6))',
             pointerEvents: 'none',
             zIndex: 1
           }}>
-            🌿
+           🪽
           </div>
           
           {/* Top fleur-de-lis */}
-          <div style={{
+          {/* <div style={{
             position: 'absolute',
             top: '-12px',
             left: '50%',
@@ -392,8 +392,8 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
             zIndex: 2,
             animation: 'subtleGlow 3s ease-in-out infinite'
           }}>
-            ⚜️
-          </div>
+            🐙
+          </div> */}
           
           {/* Subtle golden ring */}
           <div style={{
