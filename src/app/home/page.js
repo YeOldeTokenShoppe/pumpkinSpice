@@ -1085,7 +1085,7 @@ export default function HomePage() {
       backgroundImage: '/images/bullrider.jpg',
       image: '/images/bullrider.jpg',
       number: '04',
-      title: 'UP AND TO THE RIGHT',
+      title: 'UP AND TO THE RIGHT!',
       // description: 'She will guide you up and to the right.'
     },
     {

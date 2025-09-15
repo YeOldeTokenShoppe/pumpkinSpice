@@ -6,7 +6,7 @@ import styles from './TorchSection.module.css';
 export default function TorchSection({ 
   children,
   backgroundImage = '/images/dungeon-map.png',
-  initialRadius = 100,
+  initialRadius = 120,
   minRadius = 80,
   maxRadius = 400,
   showControls = false,
@@ -51,20 +51,43 @@ export default function TorchSection({
     const cursor = cursorRef.current;
     if (!section || !overlay) return;
 
+    // Set initial position to center after a brief delay to ensure mounting
+    const setInitialPosition = () => {
+      const rect = section.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      overlay.style.setProperty('--x', centerX + 'px');
+      overlay.style.setProperty('--y', centerY + 'px');
+      
+      // Also set initial torch position
+      if (torchIcon && cursor) {
+        cursor.style.setProperty('--cursor-x', centerX + 'px');
+        cursor.style.setProperty('--cursor-y', centerY + 'px');
+      }
+    };
+    
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(setInitialPosition);
+
     const setPos = (clientX, clientY) => {
       const rect = section.getBoundingClientRect();
       const maskX = clientX - rect.left;
       const maskY = clientY - rect.top;
       
+      // Or if there's scrolling within the section:
+      // const maskX = clientX - rect.left + section.scrollLeft;
+      // const maskY = clientY - rect.top + section.scrollTop;
+      
       overlay.style.setProperty('--x', maskX + 'px');
       overlay.style.setProperty('--y', maskY + 'px');
       
-      if (torchIcon && cursor && isHovering) {
-        // Position torch icon at cursor location within the section
-        cursor.style.left = maskX + 'px';
-        cursor.style.top = maskY + 'px';
+      if (torchIcon && cursor) {
+        cursor.style.setProperty('--cursor-x', maskX + 'px');
+        cursor.style.setProperty('--cursor-y', maskY + 'px');
       }
     };
+    
 
     const handleMouseEnter = (e) => {
       setIsHovering(true);
@@ -72,6 +95,19 @@ export default function TorchSection({
     };
     const handleMouseLeave = () => {
       setIsHovering(false);
+      
+      // Reset both spotlight and torch to center when mouse leaves
+      const rect = section.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      overlay.style.setProperty('--x', centerX + 'px');
+      overlay.style.setProperty('--y', centerY + 'px');
+      
+      if (torchIcon && cursor) {
+        cursor.style.setProperty('--cursor-x', centerX + 'px');
+        cursor.style.setProperty('--cursor-y', centerY + 'px');
+      }
     };
     const handleMouseMove = (e) => setPos(e.clientX, e.clientY);
     const handleTouchMove = (e) => {
@@ -136,11 +172,16 @@ export default function TorchSection({
         className={styles.overlay} 
         style={{ '--opacity': overlayOpacity }}
       />
-      
-      {torchIcon && isHovering && (
-        <div ref={cursorRef} className={styles.customCursor}>
-          {/* Green Candle SVG */}
-          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="60" viewBox="0 0 40 60">
+      {torchIcon && (
+  <div 
+    ref={cursorRef} 
+    className={styles.customCursor}
+    style={{
+      opacity: isHovering ? 1 : 1, // Optional: make it dimmer when not hovering
+      pointerEvents: 'none'
+    }}
+  >
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="60" viewBox="0 0 40 60">
             {/* Flame */}
             <ellipse cx="20" cy="8" rx="6" ry="8" fill="#ffa500" opacity="0.9"/>
             <ellipse cx="20" cy="10" rx="3" ry="5" fill="#ffff00" opacity="0.8"/>
@@ -151,8 +192,9 @@ export default function TorchSection({
             {/* Wax drip */}
             <ellipse cx="14" cy="28" rx="2" ry="4" fill="#00ff00" opacity="0.8"/>
           </svg>
-        </div>
-      )}
+
+  </div>
+)}
       
       <div className={styles.content}>
         {children}

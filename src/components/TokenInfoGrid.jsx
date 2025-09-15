@@ -5,6 +5,7 @@ import { useTokenData, useMilestoneStatus } from '@/services/tokenDataService';
 import Numerology from '@/components/Numerology';
 import ScratchCard from '@/components/ScratchCard';
 import TorchSection from '@/components/TorchSection';
+import Link from 'next/link';
 
 const TokenInfoGrid = () => {
   const [copied, setCopied] = useState(false);
@@ -1475,7 +1476,7 @@ const TokenInfoGrid = () => {
             color: '#00ff00',
             fontFamily: 'Cyber, monospace',
             textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
-          }}>Inspect The Contract</h2>
+          }}>Trust But Verify</h2>
             {/* <Numerology /> */}
             {/* <ScratchCard 
     onComplete={(number) => console.log('Scratched! Number:', number)}
@@ -1483,7 +1484,7 @@ const TokenInfoGrid = () => {
   />
              */}
              <TorchSection
-    backgroundImage="/images/dungeon-map.png"
+    backgroundImage="/images/Parchment.png"
     height={isMobile ? "40vh" : (isTablet ? "35vh" : "45vh")}
     overlayOpacity={0.92}
   ></TorchSection>
@@ -1505,7 +1506,7 @@ const TokenInfoGrid = () => {
                 marginBottom: '0rem',
                 textShadow: '0 0 10px rgba(212, 175, 55, 0.3)',
               }}>
-                Click here for a summary report
+                See it on the <Link href=" ">blockchain</Link>
               </h3>
               {/* <p style={{
                 color: '#ffffff',
@@ -1552,7 +1553,7 @@ const TokenInfoGrid = () => {
           marginTop: isMobile ? '0' : '-1rem',
           textAlign: 'center',
         }}>
-   A light in the darkness
+   Faith in the Trustless
         </h2>
         {/* <p style={{ 
           color: '#ffffff',
@@ -1591,7 +1592,7 @@ const TokenInfoGrid = () => {
           padding: '0 1rem',
         }}>
      {/* Nowhere is the purifying presence of the virtual virgin needed more than the dark realm of defi.<br/> */}
-     Nowhere is the purifying presence of the virtual virgin needed more than the dark realm of DeFi.
+
 Behold, the mother of memes, an aider to traders, and a fren to degens: <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
@@ -1599,11 +1600,18 @@ Behold, the mother of memes, an aider to traders, and a fren to degens: <span st
             color: '#d4af37',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
-          }}> Our Lady of Perpetual Profit </span><br/>
+          }}> Our Lady of Perpetual Profit </span>is your personal guide through the dark realm of crypto defi.<br/><br/>
 
-Her token is divinely inspired, and programmed for prosperity.<br/>
-Burn a few to devote a candle to her tireless vigilance.
-Or hold them — for luck, and to ward off evil.<br/>
+
+Burn a few <span style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontWeight: 'bold',
+            fontSize: '1.1em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            marginLeft: '0.25em',
+          }}> RL80 </span>tokens to devote a candle to her tireless vigilance.
+Or hold them for luck, and to ward off evil.<br/><br/>
 
 Whether you need a Hail Mary for hard times, or just a sanctuary in the trustless economy, <span style={{
             fontFamily: 'UnifrakturCook, serif',
@@ -1612,7 +1620,7 @@ Whether you need a Hail Mary for hard times, or just a sanctuary in the trustles
             color: '#d4af37',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
-          }}> RL80 </span>  is a token to believe in.<br/><br/>
+          }}> RL80 </span>  is a token to believe in.
 {/* Let <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
