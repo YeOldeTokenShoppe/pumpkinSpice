@@ -1613,7 +1613,7 @@ Burn a few <span style={{
           }}> RL80 </span>tokens to devote a candle to her tireless vigilance.
 Or hold them for luck, and to ward off evil.<br/><br/>
 
-Whether you need a Hail Mary for hard times, or just a sanctuary in the trustless economy, <span style={{
+Whether you need a Hail Mary for hard times, or just a sanctuary in the digital economy, <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
             fontSize: '1.1em',
