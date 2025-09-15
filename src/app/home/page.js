@@ -1390,6 +1390,137 @@ export default function HomePage() {
           <TokenInfoGrid />
         </div>
       )}
+      
+      {/* Mobile Image Links Section */}
+      {isClient && isMobileView && (
+        <div style={{
+          marginTop: '1.5rem',
+          marginBottom: '1.5rem',
+          padding: '0 1rem'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-around',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            alignItems: 'center',
+            width: '100%',
+            maxWidth: '400px',
+            margin: '0 auto',
+            padding: '0.75rem',
+            flexWrap: 'wrap',
+            position: 'relative',
+            gap: '1rem'
+          }}>
+            {/* Green checkbox emoji in top left corner */}
+            <span style={{
+              position: 'absolute',
+              top: '-10px',
+              left: '-0.5rem',
+              fontSize: '32px',
+              backgroundColor: '#1a1a1a',
+              padding: '0 4px',
+            }}>📜</span>
+            <span style={{
+              position: 'absolute',
+              top: '-8px',
+              left: '12px',
+              fontSize: '14px',
+              backgroundColor: '#1a1a1a',
+              padding: '0 4px',
+            }}>✅</span>
+            
+            {/* DEXScreener Link */}
+            <a 
+              href="#" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                transition: 'all 0.3s ease',
+                opacity: 0.8,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+                e.currentTarget.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.opacity = '0.8';
+              }}
+            >
+              <img 
+                src="/dexscreener.png" 
+                alt="DEXScreener" 
+                style={{
+                  height: '40px',
+                  width: 'auto',
+                  filter: 'brightness(0.9)',
+                }}
+              />
+            </a>
+            
+            {/* Honeypot Link */}
+            <a 
+              href="#" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                transition: 'all 0.3s ease',
+                opacity: 0.8,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+                e.currentTarget.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.opacity = '0.8';
+              }}
+            >
+              <img 
+                src="/honeypot.png" 
+                alt="Honeypot" 
+                style={{
+                  height: '40px',
+                  width: 'auto',
+                  filter: 'brightness(0.9)',
+                }}
+              />
+            </a>
+            
+            {/* Token Sniffer Link */}
+            <a 
+              href="#" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                transition: 'all 0.3s ease',
+                opacity: 0.8,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+                e.currentTarget.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.opacity = '0.8';
+              }}
+            >
+              <img 
+                src="/tokensniffer.png" 
+                alt="Token Sniffer" 
+                style={{
+                  height: '40px',
+                  width: 'auto',
+                  filter: 'brightness(0.9)',
+                }}
+              />
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Text Box continued - if needed */}
       {isClient && isMobileView && (
@@ -2147,7 +2278,7 @@ export default function HomePage() {
                 }}
               >
                 <img 
-                  src="/tokenSniffer.png" 
+                  src="/tokensniffer.png" 
                   alt="Token Sniffer" 
                   style={{
                     height: '60px',
