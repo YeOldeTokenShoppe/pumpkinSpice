@@ -4,34 +4,45 @@ export const useFontLoader = () => {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
-    // Check if fonts are already loaded
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        setFontsLoaded(true);
-        document.body.classList.add('fonts-loaded');
+    // Start with fonts not loaded
+    let fontLoadTimeout;
+    
+    const markFontsLoaded = () => {
+      setFontsLoaded(true);
+      document.documentElement.classList.add('fonts-loaded');
+      document.body.classList.add('fonts-loaded');
+      if (fontLoadTimeout) clearTimeout(fontLoadTimeout);
+    };
+
+    // Check if Font Loading API is available
+    if ('fonts' in document) {
+      // Try to load the specific fonts we need
+      Promise.all([
+        document.fonts.load('normal 1rem UnifrakturMaguntia'),
+        document.fonts.load('normal 1rem UnifrakturCook'),
+      ]).then(() => {
+        markFontsLoaded();
+      }).catch(() => {
+        // If specific fonts fail, wait for any fonts to be ready
+        document.fonts.ready.then(() => {
+          markFontsLoaded();
+        });
       });
-    } else {
-      // Fallback for browsers that don't support Font Loading API
-      // Wait a short time then assume fonts are loaded
-      setTimeout(() => {
-        setFontsLoaded(true);
-        document.body.classList.add('fonts-loaded');
-      }, 100);
+
+      // Also set up the general ready check
+      document.fonts.ready.then(() => {
+        markFontsLoaded();
+      });
     }
 
-    // Also check for specific font
-    if ('FontFaceSet' in window) {
-      document.fonts.load('900 4rem UnifrakturMaguntia').then(() => {
-        setFontsLoaded(true);
-        document.body.classList.add('fonts-loaded');
-      }).catch(() => {
-        // Font failed to load, show content anyway after delay
-        setTimeout(() => {
-          setFontsLoaded(true);
-          document.body.classList.add('fonts-loaded');
-        }, 500);
-      });
-    }
+    // Fallback timeout - show content after 300ms regardless
+    fontLoadTimeout = setTimeout(() => {
+      markFontsLoaded();
+    }, 300);
+
+    return () => {
+      if (fontLoadTimeout) clearTimeout(fontLoadTimeout);
+    };
   }, []);
 
   return fontsLoaded;

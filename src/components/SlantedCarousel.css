@@ -159,8 +159,6 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  /* Prevent font flash */
-  font-family: 'UnifrakturMaguntia', 'Arial Black', serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;

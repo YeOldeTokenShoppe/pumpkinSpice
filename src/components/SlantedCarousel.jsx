@@ -149,13 +149,22 @@ const SlantedCarousel = ({
   };
 
   return (
-    <div 
-      className="slanted-carousel-wrapper"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <>
+      {/* Critical CSS to prevent font flash */}
+      {!fontsLoaded && (
+        <style jsx>{`
+          .slide-title {
+            opacity: 0 !important;
+          }
+        `}</style>
+      )}
+      <div 
+        className="slanted-carousel-wrapper"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
       <div className="slideshow-container">
         {defaultSlides.map((slide, index) => (
           <div key={slide.id} className={getSlideClass(index)}>
@@ -231,7 +240,8 @@ const SlantedCarousel = ({
           }}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -630,6 +630,7 @@ export default function HomePage() {
   const [viewportHeight, setViewportHeight] = useState(0);
   const [pageLoading, setPageLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [fontsReady, setFontsReady] = useState(false);
   const coinRef = useRef(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [iframeLoaded, setIframeLoaded] = useState(false);
@@ -913,11 +914,13 @@ export default function HomePage() {
         ]);
         
         setFontLoaded(true);
+        setFontsReady(true); // Fonts are loaded at this point
         setLoadingProgress(60);
         
         // Check if client-side and set viewport
         if (typeof window !== 'undefined') {
           setIsClient(true);
+          
           const width = window.innerWidth;
           const height = window.innerHeight;
           setIsMobileView(width <= 768);
@@ -942,6 +945,7 @@ export default function HomePage() {
         console.log('Resource loading error:', error);
         // Even on error, eventually show the page
         setFontLoaded(true);
+        setFontsReady(true); // Show text even if fonts fail to load
         setIsClient(true);
         setTimeout(() => {
           setPageLoading(false);
@@ -2079,6 +2083,8 @@ export default function HomePage() {
               color: "#8e662b",
               fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
               textShadow: "3px 3px 5px #000, -1px -1px 5px pink",
+              opacity: fontsReady ? 1 : 0,
+              transition: 'opacity 0.2s ease-in',
               fontSize: "7rem",
               fontWeight: 900,
               lineHeight: 0.8,
@@ -2535,7 +2541,7 @@ export default function HomePage() {
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isLandscape && viewportHeight < 800 ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}>Get Lit With RL80</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isLandscape && viewportHeight < 800 ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)', opacity: fontsReady ? 1 : 0, transition: 'opacity 0.2s ease-in'}}>Get Lit With RL80</h1>
               <p style={{
                 lineHeight: 1.2,
                 opacity: 0.9,
@@ -2962,8 +2968,8 @@ export default function HomePage() {
           zIndex: 1000,
           display: "block",
           visibility: "visible",
-          opacity: 1,
-          transition: "opacity 0.3s ease"
+          opacity: fontsReady ? 1 : 0,
+          transition: 'opacity 0.2s ease-in'
         }}>
           Our Lady <br />
           <span style={{ fontSize: "1.5rem" }}>of </span>
