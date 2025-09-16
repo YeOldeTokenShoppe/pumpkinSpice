@@ -1449,8 +1449,8 @@ const TokenInfoGrid = () => {
       {/* Responsive Layout Container */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '2fr 3fr', // 40/60 ratio for desktop
-        gap: isMobile ? '2rem' : '3rem',
+        gridTemplateColumns: isMobile ? '1fr' : '2.5fr 2.5fr', // 40/60 ratio for desktop
+        // gap: isMobile ? '2rem' : '3rem',
         width: '100%',
         alignItems: isMobile ? 'center' : 'stretch',
       }}>
@@ -1468,15 +1468,15 @@ const TokenInfoGrid = () => {
             maxWidth: '400px', // Increased from 320px to allow Numerology to be bigger
           }}>
          
-        <div style={{marginTop: isMobile ? '1rem' : (isTablet ? '1.5rem' : '3rem')}}>
+        <div style={{marginTop: isMobile ? '1rem' : (isTablet ? '1.5rem' : '1rem')}}>
         <h2 style={{
             fontSize: isMobile ? '1.5rem' : (isTablet ? '1.75rem' : '2rem'),
             marginBottom: isMobile ? '0.75rem' : '1rem',
             textAlign: 'center',
-            color: '#00ff00',
-            fontFamily: 'Cyber, monospace',
-            textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
-          }}>Trust But Verify</h2>
+            color: 'rgb(142, 102, 43)',
+            fontFamily: 'UnifrakturCook, serif',
+            // textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
+          }}>Explore the Token Contract</h2>
             {/* <Numerology /> */}
             {/* <ScratchCard 
     onComplete={(number) => console.log('Scratched! Number:', number)}
@@ -1485,7 +1485,7 @@ const TokenInfoGrid = () => {
              */}
              <TorchSection
     backgroundImage="/images/Parchment.png"
-    height={isMobile ? "40vh" : (isTablet ? "35vh" : "45vh")}
+    height={isMobile ? "50vh" : (isTablet ? "45vh" : "45vh")}
     overlayOpacity={0.92}
   ></TorchSection>
             {/* Numerology Description */}
@@ -1499,7 +1499,7 @@ const TokenInfoGrid = () => {
               // boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
             }}>
               <h3 style={{
-                color: '#d4af37',
+                color: 'rgb(142, 102, 43)',
                 fontSize: '1.2rem',
                 fontFamily: 'Cyber, serif',
                 textAlign: 'center',
@@ -1536,15 +1536,16 @@ const TokenInfoGrid = () => {
         
         {/* Right Column - Text Content */}
         <div style={{
-          width: '100%',
-          padding: isMobile ? '0rem' : '0 2rem',
+          width: '90%',
+          marginTop: '2rem',
+          padding: isMobile ? '0rem' : '0 1rem',
           order: isMobile ? 1 : 2, // Show text first on mobile
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
         }}>
         <h2 style={{
-          color: '#d4af37',
+          color: 'rgb(142, 102, 43)',
           marginBottom: '1.5rem',
           fontSize: isMobile ? '1.5rem' : (isLandscape && viewportHeight < 800 ? '2rem' : '3rem'),
           fontFamily: 'UnifrakturCook, serif',
@@ -1553,7 +1554,7 @@ const TokenInfoGrid = () => {
           marginTop: isMobile ? '0' : '-1rem',
           textAlign: 'center',
         }}>
-   Faith in the Trustless
+   In RL80 We Trust
         </h2>
         {/* <p style={{ 
           color: '#ffffff',
@@ -1593,27 +1594,27 @@ const TokenInfoGrid = () => {
         }}>
      {/* Nowhere is the purifying presence of the virtual virgin needed more than the dark realm of defi.<br/> */}
 
-Behold, the mother of memes, an aider to traders, and a fren to degens: <span style={{
+Descending from the Cloud, Behold! the mother of memes, an aider to traders, and a fren to degens: <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
             fontSize: '1.1em',
             color: '#d4af37',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
-          }}> Our Lady of Perpetual Profit </span>is your personal guide through the dark realm of crypto defi.<br/><br/>
+          }}> Our Lady of Perpetual Profit </span>is the patron saint of day traders and your divine guide through the dark realm of crypto DeFi.<br/><br/>
 
 
-Burn a few <span style={{
+{/* Burn a few <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
             fontSize: '1.1em',
             color: '#d4af37',
             textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
             marginLeft: '0.25em',
-          }}> RL80 </span>tokens to devote a candle to her tireless vigilance.
-Or hold them for luck, and to ward off evil.<br/><br/>
+          }}> RL80 </span>tokens to devote a candle in appreciation for her tireless vigilance.
+Or hold them for luck, and to ward off evil.<br/><br/> */}
 
-Whether you need a Hail Mary for hard times, or just a sanctuary in the digital economy, <span style={{
+Whether you need a Hail Mary for hard times, or just a sanctuary in the trustless economy, <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
             fontSize: '1.1em',
@@ -1669,11 +1670,11 @@ Whether you need a Hail Mary for hard times, or just a sanctuary in the digital 
           border: '2px solid rgba(212, 175, 55, 0.4)',
           boxShadow: '0 15px 45px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
           padding: '1rem 1.5rem',
-          marginTop: '2rem',
+          marginTop: '0rem',
           transition: 'all 0.3s ease',
           textAlign: 'center',
           maxWidth: isMobile ? '100%' : '600px',
-          width: '100%',
+          // width: '100%',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = 'translateY(-2px)';

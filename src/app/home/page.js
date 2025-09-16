@@ -638,6 +638,17 @@ export default function HomePage() {
   const [featuredCandle, setFeaturedCandle] = useState(null);
   const [isLoadingCandle, setIsLoadingCandle] = useState(false);
   const [emoji, setEmoji] = useState("😇");
+  const [showRotateTooltip, setShowRotateTooltip] = useState(true);
+  
+  // Auto-hide tooltip after 8 seconds
+  useEffect(() => {
+    if (showRotateTooltip) {
+      const timer = setTimeout(() => {
+        setShowRotateTooltip(false);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [showRotateTooltip]);
   
   // Helper function to truncate long usernames
   const truncateUsername = (username, maxLength = 20) => {
@@ -1319,6 +1330,36 @@ export default function HomePage() {
             transform: scale(0) rotate(360deg);
           }
         }
+        
+        /* Tooltip animations */
+        .rotate-tooltip {
+          animation: tooltipFadeIn 4s ease-in-out infinite;
+        }
+        
+        @keyframes tooltipFadeIn {
+          0%, 100% {
+            opacity: 0.9;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+        
+        .rotate-hand {
+          animation: rotateHand 2s ease-in-out infinite;
+        }
+        
+        @keyframes rotateHand {
+          0%, 100% {
+            transform: rotate(0deg) translateX(0px);
+          }
+          25% {
+            transform: rotate(-15deg) translateX(-10px);
+          }
+          75% {
+            transform: rotate(15deg) translateX(10px);
+          }
+        }
       `}</style>
       <div className="home-page" style={{
         marginLeft: isClient && isMobileView ? '2rem' : '2rem', 
@@ -1452,7 +1493,7 @@ export default function HomePage() {
                 src="/dexscreener.png" 
                 alt="DEXScreener" 
                 style={{
-                  height: '40px',
+                  height: '60px',
                   width: 'auto',
                   filter: 'brightness(0.9)',
                 }}
@@ -1482,7 +1523,7 @@ export default function HomePage() {
                 src="/honeypot.png" 
                 alt="Honeypot" 
                 style={{
-                  height: '40px',
+                  height: '20px',
                   width: 'auto',
                   filter: 'brightness(0.9)',
                 }}
@@ -1635,16 +1676,16 @@ export default function HomePage() {
           color: '#ffffff',
         }}>
           {/* Section Heading */}
-          <h2 style={{
-            fontSize: '2rem',
-            marginBottom: '1rem',
+          <h1 style={{
+            fontSize: '3rem',
+            marginBottom: '3rem',
             textAlign: 'center',
-            color: '#00ff00',
-            fontFamily: 'Cyber, monospace',
+            color: 'rgb(142, 102, 43)',
+            fontFamily: 'UnifrakturCook, serif',
             textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
           }}>
             Get Lit With RL80
-          </h2>
+          </h1>
           
           <p style={{
             fontSize: '1rem',
@@ -2115,7 +2156,7 @@ export default function HomePage() {
             margin: "0 auto 4rem auto",
    
             maxWidth: "1400px",
-            padding: '3rem 2rem',
+            // padding: '3rem 2rem',
             // background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
             backdropFilter: 'blur(12px)',
             // borderRadius: '20px',
@@ -2365,6 +2406,50 @@ export default function HomePage() {
                 </Suspense>
               </Canvas>
               
+              {/* Rotate Tooltip */}
+              {showRotateTooltip && (
+                <>
+                  <div 
+                    onClick={() => setShowRotateTooltip(false)}
+                    className="rotate-tooltip"
+                    style={{
+                      position: 'absolute',
+                      bottom: '40%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '15px 20px',
+                      // backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      // border: '1px solid rgba(212, 175, 55, 0.5)',
+                      // borderRadius: '12px',
+                      // color: '#d4af37',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      zIndex: 100,
+                      // backdropFilter: 'blur(10px)',
+                      // boxShadow: '0 4px 20px rgba(212, 175, 55, 0.2)'
+                    }}
+                  >
+                    <div className="rotate-hand" style={{
+                      fontSize: '28px',
+                      transformOrigin: 'center bottom'
+                    }}>
+                      👆
+                    </div>
+                    {/* <span style={{
+                      textAlign: 'center',
+                      lineHeight: '1.4'
+                    }}>
+                      Drag to rotate
+                    </span> */}
+                  </div>
+                </>
+              )}
+              
               {/* Refresh Button for Random Candle */}
               <button
                 onClick={fetchRandomCandle}
@@ -2439,25 +2524,29 @@ export default function HomePage() {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
+              alignItems: 'center', // Center all children horizontally
               width: '100%', // Ensure full width of grid column
               boxSizing: 'border-box', // Include padding in width calculation
               overflow: 'hidden', // Prevent content overflow
-              position: 'relative'
+              position: 'relative',
+              marginTop: '-3rem'
             }}>
              
      
               <br/>
      
-              <h2 style={{fontFamily: 'Cyber, monospace', fontSize: isLandscape && viewportHeight < 800 ? '2.5rem' : '4rem', marginBottom: '1rem', textAlign: 'center', color: '#00ff00', textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'}}>Get Lit With RL80</h2>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isLandscape && viewportHeight < 800 ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}>Get Lit With RL80</h1>
               <p style={{
                 lineHeight: 1.2,
-                marginBottom: '3.5rem',
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
                 letterSpacing: '0.02em',
-                fontSize: isLandscape && viewportHeight < 800 ? '1.2rem' : '2rem',
-                textAlign: 'center'
+                fontSize: isLandscape && viewportHeight < 800 ? '1.5rem' : '1.5rem',
+                textAlign: 'center',
+                marginBottom: '3.5rem',
+                width: '80%',
+                maxWidth: '600px', // Add max width for better readability
               }}>
                 Prime your portfolio for pumps and devote a green candle to <span style={{
                   fontFamily: 'UnifrakturCook, serif',
@@ -2465,15 +2554,8 @@ export default function HomePage() {
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit.</span> 
-                 {/* Top burners are inducted into  <span style={{
-                  fontFamily: 'UnifrakturCook, serif',
-                  fontWeight: 'bold',
-                  fontSize: '1.1em',
-                  color: '#d4af37',
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                  display: 'inline'
-                }}>The Illumin80</span>. */}
+                }}>Our Lady of Perpetual Profit.</span> Candles are displayed for 24 hours. Top 80 token burns remain visible.
+       
               </p>
               
               
@@ -2483,15 +2565,7 @@ export default function HomePage() {
                 paddingTop: '2rem',
                 textAlign: 'center'
               }}>
-                {/* <p style={{
-                  fontSize: '1.1rem',
-                  marginBottom: '1.5rem',
-                  color: '#d4af37',
-                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                  letterSpacing: '0.02em'
-                }}>
-                  Ready to light your own green candle?
-                </p> */}
+  
                 <Link
                   href="/gallery"
                   style={{
@@ -2617,8 +2691,8 @@ export default function HomePage() {
             }}>
               <h2 style={{
                 fontSize: '2.5rem',
-                marginBottom: '1.5rem',
-                color: '#d4af37',
+                marginBottom: '0rem',
+                color: 'rgb(142, 102, 43)',
                 fontFamily: 'UnifrakturCook, serif',
                 textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
                 alignContent: 'center',
@@ -2626,7 +2700,7 @@ export default function HomePage() {
               }}>Join the Illumin80 Soci80</h2>
               
               <p style={{
-                fontSize: '1.2rem',
+                fontSize: '1.5rem',
                 marginBottom: '1.5rem',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 
@@ -2635,12 +2709,18 @@ export default function HomePage() {
                 opacity: 0.9
               }}>
                 Devote a green candle to  <span style={{
+         fontFamily: 'UnifrakturCook, serif',
+         fontWeight: 'bold',
+         fontSize: '1.1em',
+         color: '#d4af37',
+         textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
+                }}>Our Lady of Perpetual Profit</span>    by burning <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
                   fontSize: '1.1em',
                   color: '#d4af37',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit</span> by burning RL80 tokens. The top 80 burners are automatically inducted as <span style={{
+                }}>RL80</span> tokens. The top 80 burners are automatically inducted as <span style={{
                   fontFamily: 'UnifrakturCook, serif',
                   fontWeight: 'bold',
                   fontSize: '1.1em',
@@ -2910,7 +2990,7 @@ export default function HomePage() {
           <h3 style={{
             fontFamily: 'UnifrakturCook, serif',
             fontSize: '2.5rem',
-            color: '#d4af37',
+            color: 'rgb(142, 102, 43)',
             marginBottom: '1rem',
             textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)'
           }}>

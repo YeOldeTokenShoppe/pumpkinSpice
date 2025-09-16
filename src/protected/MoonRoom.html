@@ -85,7 +85,7 @@
       }
 
       .chat-title {
-        color: #faf0e6;
+        color: #ff4080;
         font-weight: bold;
         font-size: 16px;
       }
@@ -93,7 +93,7 @@
       .toggle-btn {
         background: none;
         border: none;
-        color: #faf0e6;
+        color: #ff4080;
         font-size: 20px;
         cursor: pointer;
         padding: 0 8px;
@@ -127,7 +127,7 @@
       }
 
       .members-header {
-        color: #faf0e6;
+        color: #ff4080;
         font-size: 12px;
         font-weight: bold;
         margin-bottom: 10px;
@@ -135,7 +135,7 @@
       }
 
       .members-list {
-        color: #faf0e6;
+        color: #ff4080;
         font-size: 11px;
       }
 
@@ -164,7 +164,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #ff0040 0%, #0064ff 100%);
         color: white;
         font-size: 11px;
         font-weight: bold;
@@ -195,7 +195,7 @@
         background: rgba(250, 240, 230, 0.05);
         border-radius: 8px;
         padding: 8px 12px;
-        color: #faf0e6;
+        color: #ff4080;
         text-align: left;
         animation: fadeIn 0.3s ease;
       }
@@ -213,7 +213,7 @@
 
       .message-author {
         font-size: 11px;
-        color: #a0a0ff;
+        color: #0064ff;
         margin-bottom: 4px;
         font-weight: bold;
       }
@@ -242,7 +242,7 @@
         border: 1px solid rgba(250, 240, 230, 0.2);
         border-radius: 6px;
         padding: 8px 12px;
-        color: #faf0e6;
+        color: #ff4080;
         font-size: 13px;
         outline: none;
       }
@@ -257,11 +257,11 @@
       }
 
       .send-button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #ff0040 0%, #0064ff 100%);
         border: none;
         border-radius: 6px;
         padding: 8px 16px;
-        color: #faf0e6;
+        color: #ff4080;
         font-weight: bold;
         cursor: pointer;
         transition: all 0.3s;
@@ -283,7 +283,7 @@
         border: 1px solid rgba(250, 240, 230, 0.2);
         border-radius: 6px;
         padding: 8px;
-        color: #faf0e6;
+        color: #ff4080;
         font-size: 18px;
         cursor: pointer;
         transition: all 0.3s;
@@ -332,7 +332,7 @@
 
       .emoji-category {
         grid-column: span 8;
-        color: #a0a0ff;
+        color: #0064ff;
         font-size: 11px;
         font-weight: bold;
         margin: 5px 0;
@@ -446,7 +446,7 @@
           display: inline-block !important;
           background: none;
           border: none;
-          color: #faf0e6;
+          color: #ff4080;
           font-size: 20px;
           cursor: pointer;
           padding: 0 8px;
@@ -589,7 +589,7 @@
     <div id="chatContainer" class="chat-container">
       <div class="chat-header">
         <span class="chat-title">🚀 ILLUMIN80 Chat</span>
-        <span id="userInfo" style="font-size: 11px; color: #a0a0ff;"></span>
+        <span id="userInfo" style="font-size: 11px; color: #0064ff;"></span>
         <button id="membersToggle" class="members-toggle-btn" style="display: none;">👥</button>
         <button id="toggleChat" class="toggle-btn">−</button>
       </div>
@@ -642,16 +642,16 @@
         window.database = database; // Make database globally available
         const auth = firebase.auth();
         
-        console.log('Firebase initialized successfully');
+  
         
         // Test connection to Firebase
-        database.ref('.info/connected').on('value', function(snapshot) {
-          if (snapshot.val() === true) {
-            console.log('✅ Connected to Firebase Realtime Database');
-          } else {
-            console.warn('⚠️ Not connected to Firebase Realtime Database');
-          }
-        });
+        // database.ref('.info/connected').on('value', function(snapshot) {
+        //   if (snapshot.val() === true) {
+        //     console.log('✅ Connected to Firebase Realtime Database');
+        //   } else {
+        //     console.warn('⚠️ Not connected to Firebase Realtime Database');
+        //   }
+        // });
       } catch (error) {
         console.error('Firebase initialization error:', error);
       }
@@ -829,18 +829,18 @@
           localStorage.setItem('walletAddress', userAddress);
           localStorage.setItem('memberRanking', userRanking);
           
-          console.log('Generated test user:', {
-            address: userAddress,
-            ranking: userRanking,
-            nickname: userDisplayName || `ILLUMIN80 #${userRanking}`
-          });
+          // console.log('Generated test user:', {
+          //   address: userAddress,
+          //   ranking: userRanking,
+          //   nickname: userDisplayName || `ILLUMIN80 #${userRanking}`
+          // });
         }
 
         window.userAddress = userAddress; // Make userAddress globally available
-        console.log('Current user:', {
-          address: userAddress,
-          ranking: userRanking
-        });
+        // console.log('Current user:', {
+        //   address: userAddress,
+        //   ranking: userRanking
+        // });
 
         // Update the UI to show user info
         updateUserDisplay();
@@ -862,7 +862,7 @@
       }
 
       function initializeChatListeners() {
-        console.log('Initializing chat listeners...');
+        // console.log('Initializing chat listeners...');
         
         if (!database) {
           console.error('Database not initialized, cannot set up listeners');
@@ -872,11 +872,10 @@
         // Listen for new messages
         try {
           const chatRef = database.ref('moonRoom/chat');
-          console.log('Setting up chat listener...');
+
           
           chatRef.orderByChild('timestamp').limitToLast(50).on('value', (snapshot) => {
             const data = snapshot.val();
-            console.log('Chat data received, message count:', data ? Object.keys(data).length : 0);
             
             messages = [];
             let newestTimestamp = 0;
@@ -896,15 +895,14 @@
               messages.sort((a, b) => a.timestamp - b.timestamp);
               
               // Debug logging
-              console.log('Message check - minimized:', chatMinimized, 'last timestamp:', lastMessageTimestamp, 'newest non-bot:', newestNonBotTimestamp);
+
               
               // Check for new non-bot messages while minimized
               if (chatMinimized && lastMessageTimestamp > 0 && newestNonBotTimestamp > lastMessageTimestamp) {
-                console.log('🔔 NEW MESSAGE WHILE MINIMIZED (excluding bot messages)!');
-                console.log('Adding new-message class to:', chatContainer);
+
                 // Add visual notification
                 chatContainer.classList.add('new-message');
-                console.log('Classes after adding:', chatContainer.className);
+
                 
                 // Play notification sound
                 try {
@@ -922,7 +920,6 @@
                   oscillator.start();
                   oscillator.stop(audioContext.currentTime + 0.15);
                 } catch (e) {
-                  console.log('Could not play notification sound:', e);
                 }
               }
               
@@ -942,10 +939,8 @@
               Object.keys(data).forEach(messageId => {
                 const msg = data[messageId];
                 
-                // Log bot messages to see if they're being received
-                if (msg.isBot) {
-                  console.log('Bot message found:', msg.message.substring(0, 50));
-                }
+
+
                 
                 // Skip if: bot message, already responded, too old, or from ourselves during init
                 if (msg.isBot || 
@@ -957,7 +952,7 @@
                 
                 // Mark as responded immediately to prevent duplicates
                 respondedMessages.add(messageId);
-                console.log('New message detected:', msg.message, 'from:', msg.from);
+
                 
                 // Only the bot host responds to prevent duplicates
                 database.ref('moonRoom/members').once('value', (membersSnapshot) => {
@@ -965,18 +960,14 @@
                   const sortedMembers = members.sort();
                   const isBotHost = sortedMembers.length > 0 && sortedMembers[0] === userAddress;
                   
-                  console.log('Bot host check:', { isBotHost, userAddress, firstMember: sortedMembers[0] });
                   
                   if (isBotHost && msg.message) {
-                    console.log('Bot host will process message:', msg.message);
                     
                     // Get bot response
                     getMoonBotResponse(msg.message).then(botResponse => {
                       if (botResponse) {
-                        console.log('Bot will respond with:', botResponse);
                         // Add delay for natural feel
                         setTimeout(() => {
-                          console.log('Sending bot message now...');
                           sendBotMessage(botResponse, messageId);
                         }, 1500 + Math.random() * 1500);
                       } else {
@@ -1004,10 +995,9 @@
 
           // Listen for online members
           const membersRef = database.ref('moonRoom/members');
-          console.log('Setting up members listener...');
           
           membersRef.on('value', (snapshot) => {
-            console.log('Members data received:', snapshot.val());
+
             const previousMemberCount = onlineMembers.length;
             onlineMembers = [];
             const data = snapshot.val();
@@ -1031,10 +1021,10 @@
               
               // Clear chat messages when the last user leaves
               if (previousMemberCount > 0) {
-                console.log('Last user left the room, clearing chat messages...');
+
                 const chatRef = database.ref('moonRoom/chat');
                 chatRef.remove().then(() => {
-                  console.log('Chat messages cleared successfully');
+
                   messages = [];
                   if (messagesContainer) {
                     messagesContainer.innerHTML = '';
@@ -1114,7 +1104,7 @@
           replyTo: replyToId // Track what message we're replying to
         };
         
-        console.log('Pushing bot message to Firebase:', botMessage);
+
         chatRef.push(botMessage).then(() => {
           console.log('Bot message sent successfully');
         }).catch(error => {
@@ -1133,7 +1123,6 @@
             ? 'http://localhost:3000/api/moonbot'
             : `${window.location.origin}/api/moonbot`;
           
-          console.log('Calling Moon Bot API at:', apiUrl);
           
           const response = await fetch(apiUrl, {
             method: 'POST',
@@ -1148,7 +1137,7 @@
           
           if (response.ok) {
             const data = await response.json();
-            console.log('Moon Bot API response:', data);
+
             return data.response;
           } else {
             console.log('Moon Bot API error:', response.status, response.statusText);
@@ -1231,7 +1220,6 @@
       }
 
       function sendMessage() {
-        console.log('sendMessage called');
         
         if (!messageInput) {
           console.error('messageInput not found');
@@ -1239,7 +1227,6 @@
         }
         
         const messageText = messageInput.value.trim();
-        console.log('Message text:', messageText);
         
         if (!messageText) {
           console.log('Empty message, not sending');
@@ -1257,7 +1244,6 @@
           return;
         }
 
-        console.log('Sending message with user:', { userAddress, userRanking });
 
         try {
           const chatRef = database.ref('moonRoom/chat');
@@ -1268,10 +1254,8 @@
             address: userAddress
           };
 
-          console.log('Pushing message to Firebase:', newMessage);
 
           chatRef.push(newMessage).then(() => {
-            console.log('Message sent successfully');
             messageInput.value = '';
             // Bot will respond via the chat listener now
           }).catch(error => {
@@ -1300,7 +1284,7 @@
           authorEl.className = 'message-author';
           authorEl.textContent = msg.from;
           if (msg.isBot) {
-            authorEl.style.color = '#667eea';
+            authorEl.style.color = '#ff0040';
           }
           
           const textEl = document.createElement('div');
@@ -1853,11 +1837,11 @@
             // Create moon mesh with lunar texture
             const geometry = new THREE.SphereGeometry(2, 32, 32);
             const material = new THREE.MeshPhongMaterial({
-              color: new THREE.Color('#faf0e6'),
+              color: new THREE.Color('#ff4080'),
               map: moonTexture,
               lightMap: moonTexture,
               lightMapIntensity: 3,
-              emissive: new THREE.Color('#1a1a3a'),
+              emissive: new THREE.Color('#0064ff'),
               emissiveIntensity: 0.1,
               shininess: 5
             });
@@ -1868,7 +1852,7 @@
             moon.receiveShadow = true;
             
             // Add point light to make it glow
-            const light = new THREE.PointLight('#faf0e6', 40, 10);
+            const light = new THREE.PointLight('#ff0040', 40, 10);
             light.castShadow = true;
             moon.add(light);
             
@@ -1934,7 +1918,7 @@
           moon.receiveShadow = true;
           
           // Add point light to make it glow
-          const light = new THREE.PointLight('#faf0e6', 40, 10);
+          const light = new THREE.PointLight('#ff0040', 40, 10);
           light.castShadow = true;
           moon.add(light);
           
@@ -2128,6 +2112,18 @@
           return shape;
         }
 
+        function createBoxShape(width, height, depth) {
+          const shape = new Ammo.btBoxShape(new Ammo.btVector3(width * 0.5, height * 0.5, depth * 0.5));
+          shape.setMargin(0.05);
+          return shape;
+        }
+        
+        function createCylinderShape(radius, height) {
+          const shape = new Ammo.btCylinderShape(new Ammo.btVector3(radius, height * 0.5, radius));
+          shape.setMargin(0.05);
+          return shape;
+        }
+        
         function createTerrainShape(geometry) {
           let shape = null;
           
@@ -2255,6 +2251,82 @@
           if (lastTime > 0) {
             const delta = (time - lastTime) / 1000;
             world.stepSimulation(delta, 10);
+            
+            // Check for collisions with the tentacle
+            const dispatcher = world.getDispatcher();
+            const numManifolds = dispatcher.getNumManifolds();
+            
+            // Debug: Log if we have any manifolds at all
+            if (numManifolds > 0 && !window.debuggedManifolds) {
+              console.log("Physics system has", numManifolds, "collision manifolds");
+              window.debuggedManifolds = true;
+            }
+            
+            for (let i = 0; i < numManifolds; i++) {
+              const manifold = dispatcher.getManifoldByIndexInternal(i);
+              const body0 = manifold.getBody0();
+              const body1 = manifold.getBody1();
+              
+              // Check if this is a collision between a shooting ball and tentacle collision box
+              let ballMesh = null;
+              let tentacleCollision = false;
+              let collisionDetails = null;
+              
+              // Find which body is the ball
+              meshes.forEach(mesh => {
+                const body = meshMap.get(mesh);
+                if (body === body0 || body === body1) {
+                  if (mesh.name === "shootingBall") {
+                    ballMesh = mesh;
+                  }
+                }
+              });
+              
+              // Only check tentacle collision if we found a ball
+              if (ballMesh) {
+                // Simple approach: Check all meshes for tentacle collision
+                meshes.forEach(mesh => {
+                  const meshBody = meshMap.get(mesh);
+                  if (meshBody && (meshBody === body0 || meshBody === body1)) {
+                    // Check if this mesh is part of the tentacle
+                    if (mesh.name === 'Object_8' || 
+                        mesh.name === 'TrapTentacle_Trap_Tentacle_0' ||
+                        mesh.name.includes('Tentacle') ||
+                        (mesh.parent && mesh.parent.name === 'chair')) {
+                      tentacleCollision = true;
+                      
+                      // Find and trigger the animation
+                      if (mesh.parent && mesh.parent.triggerHideAnimation) {
+                        mesh.parent.triggerHideAnimation();
+                      } else if (window.tentacleChair && window.tentacleChair.triggerHideAnimation) {
+                        window.tentacleChair.triggerHideAnimation();
+                      } else {
+                        // Try to find the animation function
+                        let chairObj = mesh.parent;
+                        while (chairObj && !chairObj.triggerHideAnimation) {
+                          chairObj = chairObj.parent;
+                        }
+                        if (chairObj && chairObj.triggerHideAnimation) {
+                          chairObj.triggerHideAnimation();
+                        }
+                      }
+                    }
+                    
+                    // Also check collision boxes
+                    if (window.tentacleChair && window.tentacleChair.collisionBoxes) {
+                      window.tentacleChair.collisionBoxes.forEach((box) => {
+                        if (mesh === box) {
+                          tentacleCollision = true;
+                          if (window.tentacleChair.triggerHideAnimation) {
+                            window.tentacleChair.triggerHideAnimation();
+                          }
+                        }
+                      });
+                    }
+                  }
+                });
+              }
+            }
           }
           lastTime = time;
 
@@ -2307,6 +2379,24 @@
             const shape = createConvexHullShape(mesh.geometry);
             if (!shape) {
               console.error("AmmoPhysics: Shape is NULL.");
+              return false;
+            }
+            addRigidBody(mesh, mass, shape);
+          },
+          
+          addBoxMesh: function (mesh, mass = 0, width, height, depth) {
+            const shape = createBoxShape(width, height, depth);
+            if (!shape) {
+              console.error("AmmoPhysics: Box shape is NULL.");
+              return false;
+            }
+            addRigidBody(mesh, mass, shape);
+          },
+          
+          addCylinderMesh: function (mesh, mass = 0, radius, height) {
+            const shape = createCylinderShape(radius, height);
+            if (!shape) {
+              console.error("AmmoPhysics: Cylinder shape is NULL.");
               return false;
             }
             addRigidBody(mesh, mass, shape);
@@ -2398,7 +2488,7 @@
 
         // Scene setup
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x000033);
+        scene.background = new THREE.Color(0x0a0020);
         
 
         // Renderer setup
@@ -2432,8 +2522,8 @@
         controls.update();
 
         // Lights
-        // const ambientLight = new THREE.AmbientLight(0xffffff, 0.15); // Reduced for spotlight effect
-        // scene.add(ambientLight);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.15); // Reduced for spotlight effect
+        scene.add(ambientLight);
 
         // Load textures and models
         const textureLoader = new THREE.TextureLoader();
@@ -2454,10 +2544,39 @@
               resolve
             );
           }),
-          new Promise((resolve) => {
-            new GLTFLoader().load("/models/maryStatue.glb", resolve);
+          new Promise((resolve, reject) => {
+            const loader = new GLTFLoader();
+            console.log("Loading tentacle model from /models/tentacle.glb...");
+            loader.load(
+              "/models/tentacle.glb",
+              (gltf) => {
+                console.log("✅ Tentacle model loaded successfully!", gltf);
+                resolve(gltf);
+              },
+              (progress) => {
+                console.log("Loading progress:", progress.loaded, "/", progress.total);
+              },
+              (error) => {
+                console.error("❌ Error loading tentacle model:", error);
+                reject(error);
+              }
+            );
           }),
         ]).then(([moonTexture, chairModel]) => {
+          console.log("All resources loaded. Setting up scene...");
+          console.log("chairModel:", chairModel);
+          
+          // Create test functions immediately before anything else
+          window.debugTentacleCollision = function() {
+            console.log("Debug function working!");
+            console.log("tentacleChair:", window.tentacleChair);
+          };
+          
+          window.testTentacleHide = function() {
+            console.log("Test function working!");
+          };
+          
+          console.log("Debug functions created at start of promise");
           // Create moon lamps
           moonTexture.anisotropy = 16;
 
@@ -2505,7 +2624,7 @@
           /*
           for (let i = 0; i < 3; i++) {
             let newLamp = moonLamp.clone();
-            color = new THREE.Color("#faf0e6");
+            color = new THREE.Color("#ff4080");
             sphereMat = new THREE.MeshPhongMaterial({
               color: color,
               map: moonTexture,
@@ -2551,7 +2670,7 @@
           // Create local moons - EXACT copy from original
           for (let i = 0; i < 5; i++) {
             let newLamp = moonLamp.clone();
-            let color = new THREE.Color("#faf0e6");
+            let color = new THREE.Color("#ff4080");
             let sphereMat = new THREE.MeshPhongMaterial({
               color: color,
               map: moonTexture,
@@ -2694,8 +2813,32 @@
                 shootingDirection.multiplyScalar(shootingForce);
                 physics.addShootingMesh(ball, ballMass, shootingDirection);
                 
+                // Check for tentacle collision using distance
+                const checkTentacleCollision = setInterval(() => {
+                  if (!ball.parent) {
+                    clearInterval(checkTentacleCollision);
+                    return;
+                  }
+                  
+                  // Check distance to tentacle position
+                  const tentaclePosition = new THREE.Vector3(0, -1, -3); // Where the tentacle is placed
+                  const distance = ball.position.distanceTo(tentaclePosition);
+                  
+                  if (distance < 8) { // Within collision range
+                    // Trigger the animation
+                    if (window.tentacleChair && window.tentacleChair.triggerHideAnimation) {
+                      window.tentacleChair.triggerHideAnimation();
+                      clearInterval(checkTentacleCollision);
+                    } else if (chair && chair.triggerHideAnimation) {
+                      chair.triggerHideAnimation();
+                      clearInterval(checkTentacleCollision);
+                    }
+                  }
+                }, 50); // Check every 50ms
+                
                 // Remove the ball after 5 seconds (reduced for performance)
                 setTimeout(() => {
+                  clearInterval(checkTentacleCollision);
                   if (ball.parent) {
                     scene.remove(ball);
                     ball.geometry.dispose();
@@ -2862,7 +3005,7 @@
             false
           );
           const wallMaterial = new THREE.MeshPhongMaterial({
-            color: 0x000033,
+            color: 0x001030,
             shininess: 10,
             specular: 0x111111,
             side: THREE.DoubleSide,
@@ -2920,7 +3063,7 @@
           
           // Create interactive spotlights
           function createMovingSpotlight(color, position) {
-            const spotlight = new THREE.SpotLight(color, 35, 100, Math.PI * 0.25, 0.5, 1);
+            const spotlight = new THREE.SpotLight(color, 35, 300, Math.PI * 0.25, 0.5, 1);
             spotlight.position.set(...position);
             spotlight.castShadow = true;
             spotlight.shadow.camera.near = 1;
@@ -2943,8 +3086,8 @@
           }
           
           // Create two interactive spotlights with lower positions
-          const spot1 = createMovingSpotlight(0x0c8cbf, [5, 15, 5]);
-          const spot2 = createMovingSpotlight(0xb00c3f, [-5, 15, -5]);
+          const spot1 = createMovingSpotlight(0x0c8cbf, [3, 15, 3]);
+          const spot2 = createMovingSpotlight(0xb00c3f, [-3, 15, -3]);
           spotlight1 = spot1.spotlight;
           spotlight2 = spot2.spotlight;
           spotlightTargets.push(spot1.target, spot2.target);
@@ -2972,6 +3115,13 @@
           chair.position.set(0, -1, -3);
           // chair.rotation.y = Math.PI;
           
+          // Store original position to restore after animations
+          const originalPosition = chair.position.clone();
+          
+          console.log("Chair model added to scene at position:", chair.position);
+          console.log("Chair scale:", chair.scale);
+          console.log("Chair visible:", chair.visible);
+          
           // Set shadows for all meshes in the model
           chair.traverse((child) => {
             if (child.isMesh) {
@@ -2982,6 +3132,254 @@
           
           chair.name = "chair";
           scene.add(chair);
+          
+          // Make chair globally accessible for collision detection AND debugging
+          window.tentacleChair = chair;
+          window.chair = chair;  // Also make it accessible as 'chair'
+          console.log("✅ Chair/tentacle is now globally accessible as window.chair");
+          
+          // Create debug function immediately - use a different approach to ensure it's global
+          (function() {
+            window.debugTentacleCollision = function() {
+              console.log("=== Tentacle Collision Debug ===");
+              console.log("tentacleChair exists:", !!window.tentacleChair);
+              console.log("meshMap exists:", typeof meshMap !== 'undefined');
+              console.log("meshes array exists:", typeof meshes !== 'undefined');
+              
+              if (window.tentacleChair) {
+                console.log("Collision boxes:", window.tentacleChair.collisionBoxes ? window.tentacleChair.collisionBoxes.length : 0);
+                console.log("Collision cylinder:", !!window.tentacleChair.collisionCylinder);
+                
+                if (window.tentacleChair.collisionBoxes) {
+                  console.log("Number of collision boxes:", window.tentacleChair.collisionBoxes.length);
+                }
+              }
+            };
+            
+            // Create test function immediately
+            window.testTentacleHide = function() {
+              console.log("Test function called!");
+              if (window.tentacleChair && window.tentacleChair.triggerHideAnimation) {
+                window.tentacleChair.triggerHideAnimation();
+              } else {
+                console.log("triggerHideAnimation not yet available");
+                console.log("tentacleChair exists:", !!window.tentacleChair);
+                if (window.tentacleChair) {
+                  console.log("triggerHideAnimation exists:", !!window.tentacleChair.triggerHideAnimation);
+                }
+              }
+            };
+            
+            // Verify functions were created
+            if (window.debugTentacleCollision) {
+              console.log("✅ Debug functions created successfully");
+              console.log("Try: window.debugTentacleCollision()");
+              console.log("Try: window.testTentacleHide()");
+            } else {
+              console.error("❌ Failed to create debug functions!");
+            }
+          })();
+          
+          // Add physics collision for the tentacle model
+          // Debug: List all objects in the model
+          console.log("=== Tentacle Model Structure ===");
+          chair.traverse((child) => {
+            if (child.isMesh) {
+              console.log("Mesh found:", {
+                name: child.name,
+                visible: child.visible,
+                isSkinnedMesh: child.isSkinnedMesh,
+                hasGeometry: !!child.geometry,
+                vertexCount: child.geometry?.attributes?.position?.count,
+                hasSkeleton: !!child.skeleton,
+                material: child.material?.name || child.material?.type
+              });
+            } else if (child.isBone) {
+              console.log("Bone found:", child.name);
+            } else if (child.type === 'Object3D' || child.type === 'Group') {
+              console.log("Container found:", child.name, "type:", child.type);
+            }
+          });
+          
+          // Find the visible mesh - check for skinned meshes too
+          let tentacleMesh = null;
+          let foundMeshes = [];
+          chair.traverse((child) => {
+            if (child.isMesh || child.isSkinnedMesh) {
+              foundMeshes.push(child);
+              // Look for the tentacle mesh by various possible names
+              if (child.name.includes('Tentacle') || 
+                  child.name.includes('tentacle') || 
+                  child.name === 'Object_8' ||
+                  child.name === 'TrapTentacle_Trap_Tentacle_0') {
+                tentacleMesh = child;
+                // console.log("Found target tentacle mesh:", child.name, "isSkinnedMesh:", child.isSkinnedMesh);
+              }
+            }
+          });
+          
+          // If no specific tentacle mesh found, use the first mesh we find
+          if (!tentacleMesh && foundMeshes.length > 0) {
+            tentacleMesh = foundMeshes[0];
+            // console.log("Using first found mesh for collision:", tentacleMesh.name);
+          }
+          
+          // Add collision based on mesh type
+          if (tentacleMesh) {
+            if (tentacleMesh.isSkinnedMesh) {
+              // console.log("Tentacle is a skinned mesh - creating multiple collision approach");
+              
+              // Approach 1: Create a simple cylinder collision shape around the tentacle
+              // We need physics collision to stop the balls AND distance detection for animation trigger
+              console.log("Setting up physics collision for tentacle");
+              
+              // Create a smaller box for physics collision at tentacle base
+              const collisionWidth = 3;   // Narrower to match tentacle base
+              const collisionHeight = 4;  // Shorter, just for the base
+              const collisionDepth = 3;   // Narrower
+              
+              const collisionGeometry = new THREE.BoxGeometry(collisionWidth, collisionHeight, collisionDepth);
+              const collisionMesh = new THREE.Mesh(
+                collisionGeometry,
+                new THREE.MeshBasicMaterial({
+                  visible: true,  // Visible for debugging
+                  wireframe: true,
+                  color: 0x00ff00,
+                  transparent: true,
+                  opacity: 0.5
+                })
+              );
+              
+              // Position at tentacle base on the floor
+              collisionMesh.position.set(
+                chair.position.x,
+                chair.position.y,  // At floor level where tentacle base is
+                chair.position.z
+              );
+              
+              scene.add(collisionMesh);
+              
+              // Add physics body with high mass so it doesn't move
+              physics.addBoxMesh(collisionMesh, 10000, collisionWidth, collisionHeight, collisionDepth);
+              
+              const collisionBody = meshMap.get(collisionMesh);
+              if (collisionBody) {
+                collisionBody.setDamping(0.99, 0.99);
+                collisionBody.setActivationState(2); // DISABLE_DEACTIVATION
+                collisionBody.setRestitution(0.5); // Some bounce
+                console.log("Added invisible physics collision for tentacle");
+              }
+              
+              /* Removed old collision boxes - using simple box instead
+              for (let i = 0; i < numBoxes; i++) {
+                const boxHeight = cylinderHeight / numBoxes;
+                
+                // ADJUST BOX SIZES HERE!
+                const boxWidth = cylinderRadius * 1;   // Width (X axis) - increase for wider boxes
+                const boxDepth = cylinderRadius * 1;   // Depth (Z axis) - increase for deeper boxes
+                const boxHeightAdjusted = boxHeight * 1; // Height (Y axis) - increase for taller boxes
+                
+                const boxGeometry = new THREE.BoxGeometry(
+                  boxWidth,         // X dimension
+                  boxHeightAdjusted, // Y dimension  
+                  boxDepth          // Z dimension
+                );
+                const boxMesh = new THREE.Mesh(
+                  boxGeometry,
+                  new THREE.MeshBasicMaterial({
+                    visible: false,  // Temporarily visible to see dynamic movement
+                    wireframe: true,
+                    color: 0xff0000,
+                    opacity: 0.3,
+                    transparent: true
+                  })
+                );
+                
+                boxMesh.position.set(
+                  chair.position.x,
+                  chair.position.y + (i * boxHeight) + boxHeight/2,
+                  chair.position.z
+                );
+                
+                scene.add(boxMesh);
+                
+                // Use addBoxMesh with proper box physics shape
+                // Parameters: mesh, mass, width, height, depth
+                physics.addBoxMesh(boxMesh, 10000, boxWidth, boxHeightAdjusted, boxDepth);
+                
+                // Make it nearly immovable
+                const boxBody = meshMap.get(boxMesh);
+                if (boxBody) {
+                  boxBody.setDamping(0.99, 0.99); // High damping
+                  boxBody.setActivationState(2); // DISABLE_DEACTIVATION
+                  boxBody.setRestitution(0.5); // Add some bounce
+                }
+                
+                chair.collisionBoxes.push(boxMesh);
+                console.log(`Added collision box ${i} with proper shape at:`, boxMesh.position, "body:", boxBody);
+              }
+              
+              console.log("Created multi-part collision system for skinned tentacle mesh");
+              
+              // OPTION FOR DYNAMIC COLLISION: Track bone positions
+              // We can make the collision follow the animation!
+              if (tentacleMesh.skeleton && tentacleMesh.skeleton.bones.length > 0) {
+                console.log("Skeleton found with", tentacleMesh.skeleton.bones.length, "bones");
+                
+                // Store original bone positions for reference
+                chair.boneTracking = {
+                  bones: tentacleMesh.skeleton.bones,
+                  collisionBoxes: chair.collisionBoxes
+                };
+                
+                // Function to update collision to follow animation
+                chair.updateAnimatedCollision = function() {
+                  if (!chair.boneTracking) return;
+                  
+                  const bones = chair.boneTracking.bones;
+                  const boxes = chair.boneTracking.collisionBoxes;
+                  
+                  // Update collision boxes to follow bone positions
+                  boxes.forEach((box, index) => {
+                    // Map each box to a bone position
+                    const boneIndex = Math.min(index * 2, bones.length - 1);
+                    if (bones[boneIndex]) {
+                      // Get world position of the bone
+                      const boneWorldPos = new THREE.Vector3();
+                      bones[boneIndex].getWorldPosition(boneWorldPos);
+                      
+                      // Update the physics body to match bone position
+                      const body = meshMap.get(box);
+                      if (body && window.Ammo) {
+                        const transform = new Ammo.btTransform();
+                        transform.setIdentity();
+                        transform.setOrigin(new Ammo.btVector3(
+                          boneWorldPos.x,
+                          boneWorldPos.y,
+                          boneWorldPos.z
+                        ));
+                        body.setWorldTransform(transform);
+                        // Keep the body active
+                        body.activate(true);
+                      }
+                      
+                      // Update visual collision box position (if visible for debugging)
+                      box.position.copy(boneWorldPos);
+                    }
+                  });
+                };
+                
+                console.log("Dynamic collision ready! Add 'chair.updateAnimatedCollision()' to animation loop for moving collision");
+              }
+              */
+            } else {
+              // Regular mesh - use convex hull
+              physics.addMesh(tentacleMesh, 0);
+              console.log("Added convex hull physics to regular mesh:", tentacleMesh.name);
+            }
+          } else {
+            console.warn("No mesh found in tentacle model!");
+          }
           
           // Find the Empty mesh that contains the animated object
           let emptyMesh = null;
@@ -2994,51 +3392,132 @@
           
           // Set up animation if the model has animations
           let mixer = null;
+          let currentAction = null;
+          let idleAction = null;
+          let hiddenAction = null;
+          let isHiding = false;
+          let hideTimeout = null;
+          
+          console.log("Checking animations for tentacle model...");
+          console.log("chairModel.animations exists:", !!chairModel.animations);
+          console.log("Number of animations:", chairModel.animations ? chairModel.animations.length : 0);
+          
           if (chairModel.animations && chairModel.animations.length > 0) {
             // Create mixer for the entire scene (animations might target specific objects)
             mixer = new THREE.AnimationMixer(chair);
             
             // Log available animations and what they target
-            console.log("Available animations:");
+            console.log("=== ALL AVAILABLE ANIMATIONS IN TENTACLE MODEL ===");
+            console.log("Total animations found:", chairModel.animations.length);
             chairModel.animations.forEach((clip, index) => {
-              console.log(`${index}: ${clip.name}`);
+              console.log(`[${index}] Animation name: "${clip.name}"`);
               // Log what objects the animation targets
               if (clip.tracks && clip.tracks.length > 0) {
                 const targetObjects = new Set(clip.tracks.map(track => track.name.split('.')[0]));
-                console.log(`  Targets: ${Array.from(targetObjects).join(', ')}`);
+                console.log(`     Targets: ${Array.from(targetObjects).join(', ')}`);
               }
             });
+            console.log("=== END OF ANIMATION LIST ===");
             
-            // Find and play the 'closed' animation specifically
-            const closedAnimation = chairModel.animations.find(clip => 
-              clip.name === 'closed'
+            // Find the animations we need - just Idle01 and Idle02
+            let idleAnimation = chairModel.animations.find(clip => 
+              clip.name === 'Armature|Idle01' || clip.name === 'Idle01'
+            );
+            let idle2Animation = chairModel.animations.find(clip => 
+              clip.name === 'Armature|Idle02' || clip.name === 'Idle02'
             );
             
-            if (closedAnimation) {
-              const action = mixer.clipAction(closedAnimation);
-              action.setLoop(THREE.LoopOnce); // Play once
-              action.clampWhenFinished = true; // Stay at the last frame
-              action.play();
-              console.log(`Playing animation: ${closedAnimation.name}`);
-            } else {
-              // Fallback to close_action if 'closed' not found
-              const closeAction = chairModel.animations.find(clip => 
-                clip.name === 'close_action'
-              );
-              if (closeAction) {
-                const action = mixer.clipAction(closeAction);
-                action.setLoop(THREE.LoopOnce);
-                action.clampWhenFinished = true;
-                action.play();
-                console.log(`Playing animation: ${closeAction.name}`);
-              }
+            // Set up idle animation
+            if (idleAnimation) {
+              idleAction = mixer.clipAction(idleAnimation);
+              idleAction.setLoop(THREE.LoopRepeat);
+              idleAction.play();
+              currentAction = idleAction;
+              // console.log(`Playing animation: ${idleAnimation.name}`);
             }
+            
+            // Set up Idle02 animation
+            let idle2Action = null;
+            
+            if (idle2Animation) {
+              idle2Action = mixer.clipAction(idle2Animation);
+              idle2Action.setLoop(THREE.LoopOnce);
+              idle2Action.clampWhenFinished = true;
+              console.log("Found animation: Idle02");
+            }
+            
+            // Function to trigger Idle02 animation on collision
+            chair.triggerHideAnimation = function() {
+              
+              if (isHiding || !idle2Action) {
+                if (isHiding) console.log("Already playing Idle02, skipping");
+                if (!idle2Action) console.log("No Idle02 animation found!");
+                return;
+              }
+              
+              console.log("Collision detected! Switching to Idle02 animation");
+              isHiding = true;
+              
+              // Clear any existing timeout
+              if (hideTimeout) {
+                clearTimeout(hideTimeout);
+              }
+              
+              // Play Idle02 animation
+              if (currentAction === idleAction && idle2Action) {
+                // Fade from Idle01 to Idle02
+                idleAction.fadeOut(0.3);
+                idle2Action.reset();
+                idle2Action.fadeIn(0.3);
+                idle2Action.play();
+                currentAction = idle2Action;
+                
+                // After Idle02 completes, return to Idle01
+                mixer.addEventListener('finished', function onIdle2Finished(e) {
+                  if (e.action === idle2Action && idleAction) {
+                    mixer.removeEventListener('finished', onIdle2Finished);
+                    console.log("Returning to Idle01 animation");
+                    
+                    // Go back to Idle01
+                    idleAction.reset();
+                    idleAction.fadeIn(0.3);
+                    idleAction.play();
+                    currentAction = idleAction;
+                    isHiding = false;
+                  }
+                });
+              }
+            };
+            
+            // Update the existing test function with animation capability
+            if (window.testTentacleHide) {
+              // Update existing function
+              window.testTentacleHide = function() {
+                console.log("Manual test: Triggering tentacle hide animation");
+                if (chair.triggerHideAnimation) {
+                  chair.triggerHideAnimation();
+                } else {
+                  console.error("Trigger function not found!");
+                }
+              };
+            }
+            
+            console.log("Tentacle animation ready. Test with: window.testTentacleHide()");
             
             // If we found the Empty mesh, we can control it directly if needed
             if (emptyMesh) {
               console.log("Empty mesh ready for additional control if needed");
             }
+          } else {
+            console.warn("No animations found in tentacle model!");
+            
+            // Create placeholder functions so we can still test
+            chair.triggerHideAnimation = function() {
+              console.log("triggerHideAnimation called but no animations available!");
+            };
           }
+          
+          // Debug functions were already created earlier
           
           // Create collision for the model (excluding animated parts)
           const geometries = [];
@@ -3072,7 +3551,7 @@
               const hullMesh = new THREE.Mesh(
                 mergedGeometry,
                 new THREE.MeshBasicMaterial({
-                  visible: false,  // Set to false to hide
+                  visible: true,  // Set to false to hide
                   wireframe: true,
                   color: 0x00ff00,
                   opacity: 0.3,
@@ -3098,7 +3577,7 @@
               box.getCenter(center);
               
               const boxGeo = new THREE.BoxGeometry(size.x, size.y, size.z);
-              const boxMesh = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ visible: false }));
+              const boxMesh = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ visible: true }));
               boxMesh.position.copy(center);
               
               scene.add(boxMesh);
@@ -3119,6 +3598,13 @@
             if (mixer) {
               const delta = clock.getDelta();
               mixer.update(delta);
+              
+              // Distance-based collision is used instead of physics bodies
+              /* Removed animated collision update
+              if (chair && chair.updateAnimatedCollision) {
+                chair.updateAnimatedCollision();
+              }
+              */
             }
             
             // Update spotlight targets to follow mouse with smooth lerping
@@ -3160,6 +3646,15 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
           });
+        }).catch(error => {
+          console.error("❌ Error in Promise.all:", error);
+          console.error("Full error details:", error.stack);
+          
+          // Create debug functions even on error
+          window.debugTentacleCollision = function() {
+            console.log("Debug function (created after error)");
+            console.log("Error was:", error);
+          };
         });
       })();
     </script>

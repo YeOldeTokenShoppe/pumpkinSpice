@@ -188,7 +188,7 @@ export default function TorchSection({
             {/* Wick */}
             <rect x="19" y="14" width="2" height="8" fill="#333"/>
             {/* Candle body */}
-            <rect x="12" y="20" width="16" height="35" rx="1" fill="#00ff00"/>
+            <rect x="12" y="20" width="16" height="60" rx="1" fill="#00ff00"/>
             {/* Wax drip */}
             <ellipse cx="14" cy="28" rx="2" ry="4" fill="#00ff00" opacity="0.8"/>
           </svg>

@@ -10,6 +10,7 @@ import { ScrambleTextPlugin } from 'gsap/dist/ScrambleTextPlugin';
 import { encryptMessage, generateScrambledDisplay } from '@/utilities/encryption';
 import { generatePrayer, getRemainingPrayers, PRAYER_PROMPTS } from '@/utilities/aiPrayers';
 import { useUser } from '@clerk/nextjs';
+import BurningEffect from './BurningEffect';
 import './CompactCandleModal.css';
 
 // Register GSAP plugin
@@ -771,6 +772,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [scrambledDisplay, setScrambledDisplay] = useState('');
   const [canvasKey, setCanvasKey] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isBurning, setIsBurning] = useState(false);
+  const modalContentRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   
@@ -1026,6 +1029,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   
   const handleConfirmedSave = async () => {
     setShowConfirmDialog(false);
+    
+    // Trigger burning effect
+    setIsBurning(true);
+    
+    // Wait a moment for the burning effect to start
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     setIsSubmitting(true);
     setError('');
@@ -1076,20 +1085,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         });
       }
 
-      // Reset form
-      setFormData({
-        username: '',
-        message: '',
-        burnedAmount: 1000,
-        allowLikes: true,
-      });
-      setImageFile(null);
-      setImagePreview(null);
-      
-      onClose();
+      // Don't wait here - the burning effect will handle the timing
+      // The onComplete callback will be triggered when burning is done
     } catch (err) {
       console.error('Error creating candle:', err);
       setError('Failed to create candle. Please try again.');
+      setIsBurning(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -1098,7 +1099,25 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   if (!isOpen) return null;
 
   return (
-    <div className="compact-modal-overlay" 
+    <>
+      <BurningEffect 
+        elementRef={modalContentRef}
+        onComplete={() => {
+          setIsBurning(false);
+          // Reset form and close modal after burning completes
+          setFormData({
+            username: '',
+            message: '',
+            burnedAmount: 1000,
+            allowLikes: true,
+          });
+          setImageFile(null);
+          setImagePreview(null);
+          onClose();
+        }}
+        isActive={isBurning}
+      />
+      <div className="compact-modal-overlay" 
       onMouseDown={(e) => {
         // Only mark as potential close if clicking directly on overlay
         if (e.target === e.currentTarget) {
@@ -1112,14 +1131,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           if (showPasswordDialog || showConfirmDialog) {
             return;
           }
-          // Ask for confirmation if there's unsaved data
-          if (formData.username.trim() || formData.message.trim() || imageFile) {
-            if (window.confirm('Are you sure you want to close? Your candle data will be lost.')) {
-              onClose();
-            }
-          } else {
-            onClose();
-          }
+          // Close directly without confirmation
+          onClose();
         }
         // Clean up the data attribute
         delete e.currentTarget.dataset.shouldClose;
@@ -1130,8 +1143,19 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           e.stopPropagation();
         }
       }}>
-      <div className="compact-modal-content" onClick={e => e.stopPropagation()}>
-        <button className="compact-modal-close" onClick={onClose}>×</button>
+      <div className="compact-modal-content" ref={modalContentRef} onClick={e => e.stopPropagation()}>
+        <button className="compact-modal-close" onClick={() => {
+          // If there's data entered, trigger burning effect before closing
+          if (formData.username.trim() || formData.message.trim() || imageFile) {
+            setIsBurning(true);
+            setTimeout(() => {
+              setIsBurning(false);
+              onClose();
+            }, 2000);
+          } else {
+            onClose();
+          }
+        }}>×</button>
         
         <div className="compact-modal-layout">
           {/* Left side - 3D Preview */}
@@ -1995,5 +2019,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         </div>
       </div>
     </div>
+    </>
   );
 }

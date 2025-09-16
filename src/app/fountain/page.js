@@ -395,9 +395,9 @@ export default function FountainPage() {
       </div>
 
       {/* Buy Token FAB */}
-      {/* <div onClick={() => setShowCandleModal(true)}>
+      <div onClick={() => setShowCandleModal(true)}>
         <BuyTokenFAB is80sMode={is80sMode} />
-      </div> */}
+      </div>
 
       {/* Candle Modal */}
       <CompactCandleModal
