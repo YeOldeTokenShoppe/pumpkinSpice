@@ -4557,25 +4557,27 @@
           })();
           
           // Add physics collision for the tentacle model
-          // Debug: List all objects in the model
-          console.log("=== Tentacle Model Structure ===");
-          chair.traverse((child) => {
-            if (child.isMesh) {
-              console.log("Mesh found:", {
-                name: child.name,
-                visible: child.visible,
-                isSkinnedMesh: child.isSkinnedMesh,
-                hasGeometry: !!child.geometry,
-                vertexCount: child.geometry?.attributes?.position?.count,
-                hasSkeleton: !!child.skeleton,
-                material: child.material?.name || child.material?.type
-              });
-            } else if (child.isBone) {
-              console.log("Bone found:", child.name);
-            } else if (child.type === 'Object3D' || child.type === 'Group') {
-              console.log("Container found:", child.name, "type:", child.type);
-            }
-          });
+          // Debug: List all objects in the loaded model
+          console.log("=== Model Structure (Mary Statue) ===");
+          if (window.currentMainModel) {
+            window.currentMainModel.traverse((child) => {
+              if (child.isMesh) {
+                console.log("Mesh found:", {
+                  name: child.name,
+                  visible: child.visible,
+                  isSkinnedMesh: child.isSkinnedMesh,
+                  hasGeometry: !!child.geometry,
+                  vertexCount: child.geometry?.attributes?.position?.count,
+                  hasSkeleton: !!child.skeleton,
+                  material: child.material?.name || child.material?.type
+                });
+              } else if (child.isBone) {
+                console.log("Bone found:", child.name);
+              } else if (child.type === 'Object3D' || child.type === 'Group') {
+                console.log("Container found:", child.name, "type:", child.type);
+              }
+            });
+          }
           
           // TENTACLE-SPECIFIC CODE REMOVED
           // All tentacle collision and animation setup is now handled in:

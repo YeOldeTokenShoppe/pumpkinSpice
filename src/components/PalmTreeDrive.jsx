@@ -480,6 +480,14 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     // Reset material shaders array
     materialShadersRef.current = [];
+    
+    // Fallback timer to ensure loading completes
+    const loadingFallback = setTimeout(() => {
+      if (isSceneLoadingInternal) {
+        console.log('Loading fallback triggered - forcing scene to show');
+        setIsSceneLoading(false);
+      }
+    }, 3000); // 3 seconds fallback
 
     // Noise shader function
     const noise = `
@@ -810,7 +818,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     };
     
     loadingManager.onLoad = () => {
-      // console.log('All assets loaded');
+      console.log('All assets loaded via LoadingManager');
       // Wait a bit to ensure everything is rendered
       setTimeout(() => {
         setIsSceneLoading(false);
@@ -2444,6 +2452,9 @@ const PalmsScene = ({ onLoadingChange }) => {
 
     // Cleanup
     return () => {
+      // Clear loading fallback timer
+      clearTimeout(loadingFallback);
+      
       // Cancel animation frame to stop the animation loop
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);

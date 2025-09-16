@@ -41,9 +41,17 @@ export default function Home() {
     const checkFont = async () => {
       try {
         await document.fonts.load("1em 'UnifrakturMaguntia'");
+        console.log('Font loaded successfully');
         setFontLoaded(true);
+        // Add fonts-loaded class to body to reveal hidden font elements
+        document.body.classList.add('fonts-loaded');
       } catch (e) {
-        setTimeout(() => setFontLoaded(true), 100);
+        console.log('Font loading error:', e);
+        setTimeout(() => {
+          setFontLoaded(true);
+          // Add fonts-loaded class even on error after timeout
+          document.body.classList.add('fonts-loaded');
+        }, 100);
       }
     };
     checkFont();
@@ -74,6 +82,15 @@ export default function Home() {
     
     return () => clearTimeout(timer);
   }, [isSceneLoading]);
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('RL80 Logo Debug:', {
+      isSceneLoading,
+      fontLoaded,
+      shouldShowLogo: !isSceneLoading && fontLoaded
+    });
+  }, [isSceneLoading, fontLoaded]);
 
   return (
     <div style={{ width: '100vw', minHeight: '100vh' }}>
@@ -132,8 +149,6 @@ export default function Home() {
           borderRadius: "8px",
           padding: "10px",
           pointerEvents: "auto",
-          opacity: fontLoaded ? 1 : 0,
-          transition: "opacity 0.3s ease-in-out",
           zIndex: 10000,
         }}>
         <div 
