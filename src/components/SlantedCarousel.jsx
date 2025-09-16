@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './SlantedCarousel.css';
+import { useFontLoader } from '@/hooks/useFontLoader';
 
 const SlantedCarousel = ({ 
   slides = [],
@@ -17,6 +18,7 @@ const SlantedCarousel = ({
   const autoPlayRef = useRef(null);
   const progressRef = useRef(null);
   const startXRef = useRef(0);
+  const fontsLoaded = useFontLoader();
 
   const defaultSlides = slides.length > 0 ? slides : [
     {
@@ -163,7 +165,7 @@ const SlantedCarousel = ({
             />
             <div className="slide-overlay" />
             <div className="slide-content">
-              <h2 className="slide-title">
+              <h2 className={`slide-title ${!fontsLoaded ? 'font-loading-fix' : ''}`}>
                 {slide.title.length > 15 ? (
                   (() => {
                     const words = slide.title.split(' ');

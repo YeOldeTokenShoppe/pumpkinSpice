@@ -891,6 +891,9 @@
                 if (!msg.isBot && msg.timestamp > newestNonBotTimestamp) {
                   newestNonBotTimestamp = msg.timestamp;
                 }
+                
+                // Don't process commands here - they're handled when sent
+                // This was causing duplicate executions
               });
               messages.sort((a, b) => a.timestamp - b.timestamp);
               
@@ -942,11 +945,12 @@
 
 
                 
-                // Skip if: bot message, already responded, too old, or from ourselves during init
+                // Skip if: bot message, already responded, too old, from ourselves during init, or is a slash command
                 if (msg.isBot || 
                     respondedMessages.has(messageId) || 
                     msg.timestamp < thirtySecondsAgo ||
-                    msg.replyTo) { // Skip messages that are already replies
+                    msg.replyTo || // Skip messages that are already replies
+                    (msg.message && msg.message.trim().startsWith('/'))) { // Skip slash commands
                   return;
                 }
                 
@@ -993,6 +997,21 @@
             console.error('Error listening to chat:', error);
           });
 
+          // Listen for new chat messages to process commands from other users
+          chatRef.on('child_added', (snapshot) => {
+            const msg = snapshot.val();
+            const messageId = snapshot.key;
+            
+            // Only process commands from other users (not ourselves)
+            if (msg && msg.address && msg.address !== window.userAddress && !msg.isBot) {
+              const message = msg.message;
+              if (message && message.trim().startsWith('/')) {
+                // Process command from another user
+                processCommandVote(message, msg.address, msg.timestamp || Date.now());
+              }
+            }
+          });
+          
           // Listen for online members
           const membersRef = database.ref('moonRoom/members');
           
@@ -1001,6 +1020,9 @@
             const previousMemberCount = onlineMembers.length;
             onlineMembers = [];
             const data = snapshot.val();
+            
+            // Store current members globally for voting system
+            window.currentMembers = data || {};
             
             if (data) {
               Object.values(data).forEach(member => {
@@ -1074,7 +1096,7 @@
               
               // Only send welcome if bot hasn't recently greeted
               if (recentBotMessages.length === 0) {
-                sendBotMessage(`Welcome to the Moon Room, ${welcomeName}! 🌙 The moons await your command.`);
+                sendBotMessage(`Welcome to the Moon Room, ${welcomeName}! 🌙 Type /commands or /help to see what you can control in this space.`);
               }
             });
           }, 2000);
@@ -1165,7 +1187,7 @@
           
           // Only send welcome greeting if we haven't auto-greeted yet (edge case)
           const greetings = [
-            "Ah, another star wanderer arrives... Welcome to my domain 🌙", 
+            "Ah, another star wanderer arrives... Welcome to my domain 🌙 Type /commands to see what powers you possess here.", 
             "Greetings, lunar initiate. The moons have been expecting you ✨",
             "Your lunar aura shimmers brightly today, chosen one 🌟",
             "The cosmic tides brought you here at the perfect moment...",
@@ -1219,6 +1241,526 @@
         return null; // No response
       }
 
+      // Scene control variables
+      let currentLoadedModels = [];
+      
+      // Command voting system
+      const commandVotes = new Map(); // Track votes for each command
+      const voteTimeout = 30000; // 30 seconds to collect votes
+      
+      // Dynamic vote requirement based on users online
+      function getVotesRequired() {
+        if (!window.database) return 1;
+        
+        // Get the number of active users from the members list
+        const membersCount = Object.keys(window.currentMembers || {}).length;
+        
+        // 1 user = instant execution (no voting needed)
+        if (membersCount <= 1) return 1;
+        
+        // Calculate 20% of users (minimum 2)
+        const twentyPercent = Math.ceil(membersCount * 0.2);
+        
+        // Return the greater of: 2 users or 20% of users
+        // This means: 2-9 users need 2 votes, 10+ users need 20%
+        return Math.max(2, twentyPercent);
+      }
+      
+      // Process command votes from Firebase
+      function processCommandVote(message, userId, timestamp) {
+        const trimmedMessage = message.trim();
+        const lowerMessage = trimmedMessage.toLowerCase();
+        
+        // Check if it's a slash command
+        const isSlashCommand = trimmedMessage.startsWith('/');
+        
+        // Remove slash if present for processing
+        const commandMessage = isSlashCommand ? lowerMessage.substring(1) : lowerMessage;
+        
+        // Ignore help/commands - these should work immediately
+        if (commandMessage === 'help' || commandMessage === 'commands' || commandMessage === '?') {
+          if (userId === window.userAddress) {
+            showSceneCommands();
+          }
+          return;
+        }
+        
+        // Get normalized command for voting
+        const normalizedCommand = getNormalizedCommand(commandMessage);
+        if (!normalizedCommand) return;
+        
+        // Track the vote in Firebase
+        if (window.database) {
+          const voteRef = window.database.ref(`moonRoom/commandVotes/${normalizedCommand}`);
+          
+          voteRef.once('value', (snapshot) => {
+            const voteData = snapshot.val() || { voters: {}, firstVoteTime: timestamp };
+            const votesRequired = getVotesRequired();
+            
+            // If only 1 vote required (single user), execute immediately
+            if (votesRequired === 1) {
+              executeSceneCommand(normalizedCommand);
+              return;
+            }
+            
+            // Check if voting period expired (30 seconds from first vote)
+            if (timestamp - voteData.firstVoteTime > voteTimeout) {
+              // Reset voting for this command
+              voteRef.set({
+                voters: { [userId]: true },
+                firstVoteTime: timestamp,
+                command: normalizedCommand
+              });
+              
+              // Announce new vote
+              const membersCount = Object.keys(window.currentMembers || {}).length;
+              sendBotMessage(`🗳️ ${userId === window.userAddress ? 'You' : 'A user'} started a vote for: "${normalizedCommand}" (1/${votesRequired} votes needed, ${membersCount} users online)`);
+            } else {
+              // Add vote if user hasn't voted yet
+              if (!voteData.voters[userId]) {
+                voteData.voters[userId] = true;
+                const voteCount = Object.keys(voteData.voters).length;
+                
+                voteRef.set(voteData);
+                
+                if (voteCount >= votesRequired) {
+                  // Execute the command for all users!
+                  executeSceneCommand(normalizedCommand);
+                  sendBotMessage(`✅ Command "${normalizedCommand}" executed! (${voteCount}/${votesRequired} votes)`);
+                  
+                  // Clear the votes
+                  voteRef.remove();
+                } else {
+                  // Announce vote progress
+                  sendBotMessage(`🗳️ Vote recorded for: "${normalizedCommand}" (${voteCount}/${votesRequired} votes needed)`);
+                }
+              } else {
+                // User already voted
+                if (userId === window.userAddress) {
+                  sendBotMessage(`⚠️ You already voted for: "${normalizedCommand}"`);
+                }
+              }
+            }
+          });
+        } else {
+          // Fallback for single user
+          executeSceneCommand(normalizedCommand);
+        }
+      }
+      
+      // Normalize commands for voting
+      function getNormalizedCommand(commandMessage) {
+        // Map various command forms to normalized versions
+        if (commandMessage === 'hide' || commandMessage === 'hide tentacle') {
+          return 'tentacle_hide';
+        }
+        if (commandMessage === 'tentacle') {
+          return 'load_tentacle';
+        }
+        if (commandMessage.startsWith('moon ') || commandMessage.startsWith('color ')) {
+          const colorMatch = commandMessage.match(/(?:moon |color )(\w+)/);
+          if (colorMatch) return `moon_${colorMatch[1]}`;
+          return 'moon_random';
+        }
+        if (commandMessage === 'lights off' || commandMessage === 'dark') return 'lights_dark';
+        if (commandMessage === 'lights on' || commandMessage === 'bright') return 'lights_bright';
+        if (commandMessage === 'disco' || commandMessage === 'party') return 'lights_disco';
+        if (commandMessage === 'spawn moon') return 'spawn_moon';
+        if (commandMessage === 'spawn ball') return 'spawn_ball';
+        if (commandMessage === 'camera spin' || commandMessage === 'spin') return 'camera_spin';
+        if (commandMessage === 'camera stop' || commandMessage === 'stop') return 'camera_stop';
+        if (commandMessage === 'camera shake' || commandMessage === 'shake') return 'camera_shake';
+        if (commandMessage === 'mary') return 'load_mary';
+        if (commandMessage.startsWith('load ')) {
+          const modelMatch = commandMessage.match(/load (\w+)/);
+          if (modelMatch) return `load_${modelMatch[1]}`;
+        }
+        
+        return null; // Unknown command
+      }
+      
+      // Execute the actual scene command
+      function executeSceneCommand(normalizedCommand) {
+        console.log('Executing command:', normalizedCommand);
+        
+        // Parse and execute normalized commands
+        if (normalizedCommand === 'tentacle_hide') {
+          if (window.testTentacleHide) {
+            window.testTentacleHide();
+          }
+        } else if (normalizedCommand.startsWith('moon_')) {
+          const color = normalizedCommand.substring(5);
+          if (color === 'random') {
+            const colors = ['#ff4080', '#4080ff', '#80ff40', '#ff8040', '#8040ff', '#40ff80'];
+            changeMoonColors(colors[Math.floor(Math.random() * colors.length)]);
+          } else {
+            const colorMap = {
+              'red': '#ff0000',
+              'blue': '#0000ff',
+              'green': '#00ff00',
+              'pink': '#ff4080',
+              'purple': '#8040ff',
+              'yellow': '#ffff00',
+              'orange': '#ff8040',
+              'cyan': '#00ffff'
+            };
+            changeMoonColors(colorMap[color] || '#ff4080');
+          }
+        } else if (normalizedCommand === 'lights_dark') {
+          setSceneLighting('dark');
+        } else if (normalizedCommand === 'lights_bright') {
+          setSceneLighting('bright');
+        } else if (normalizedCommand === 'lights_disco') {
+          setSceneLighting('disco');
+        } else if (normalizedCommand === 'spawn_moon') {
+          spawnNewMoon();
+        } else if (normalizedCommand === 'spawn_ball') {
+          spawnBouncingBall();
+        } else if (normalizedCommand === 'camera_spin') {
+          startCameraSpin();
+        } else if (normalizedCommand === 'camera_stop') {
+          stopCameraSpin();
+        } else if (normalizedCommand === 'camera_shake') {
+          shakeCamera();
+        } else if (normalizedCommand === 'load_mary') {
+          loadMaryStatue();
+        } else if (normalizedCommand === 'load_tentacle') {
+          loadTentacleModel();
+        } else if (normalizedCommand.startsWith('load_')) {
+          const modelName = normalizedCommand.substring(5);
+          loadCustomModel(modelName);
+        }
+      }
+      
+      // Process chat commands to control the scene (legacy for backwards compatibility)
+      function processSceneCommand(message) {
+        // This now just calls the voting system
+        processCommandVote(message, window.userAddress, Date.now());
+      }
+      
+      // Change colors of all moons in the scene
+      function changeMoonColors(color) {
+        if (!window.scene) return;
+        
+        window.scene.traverse((object) => {
+          if (object.name === 'pointLight' && object.material) {
+            object.material.color = new window.THREE.Color(color);
+            // Also update the point light color
+            const light = object.children.find(child => child.isPointLight);
+            if (light) {
+              light.color = new window.THREE.Color(color);
+            }
+          }
+        });
+        console.log('Changed moon colors to:', color);
+      }
+      
+      // Variable to track the currently loaded main model (stored globally)
+      window.currentMainModel = null;
+      
+      // Load the Mary Statue model
+      function loadMaryStatue() {
+        if (!window.scene) return;
+        
+        // Remove current main model if exists
+        if (window.currentMainModel) {
+          window.scene.remove(window.currentMainModel);
+          // Dispose of the old model's resources
+          if (window.currentMainModel.traverse) {
+            window.currentMainModel.traverse((child) => {
+              if (child.geometry) child.geometry.dispose();
+              if (child.material) {
+                if (Array.isArray(child.material)) {
+                  child.material.forEach(m => m.dispose());
+                } else {
+                  child.material.dispose();
+                }
+              }
+            });
+          }
+          window.currentMainModel = null;
+        }
+        
+        // Remove the chair/tentacle completely from scene if it exists
+        if (window.chair && window.chair.parent === window.scene) {
+          window.scene.remove(window.chair);
+          // Don't delete the reference, just remove from scene
+        }
+        
+        const loader = new window.GLTFLoader();
+        loader.load(
+          '/models/maryStatue.glb',
+          (gltf) => {
+            window.currentMainModel = gltf.scene;
+            window.currentMainModel.position.set(0, 0, 0);
+            window.currentMainModel.scale.set(10, 10, 10); // Increased scale to match tentacle size
+            window.scene.add(window.currentMainModel);
+            console.log('Mary Statue loaded successfully');
+            sendBotMessage('✨ The sacred Mary Statue has materialized in the room');
+          },
+          undefined,
+          (error) => {
+            console.error('Error loading Mary Statue:', error);
+            sendBotMessage('⚠️ Failed to load Mary Statue model');
+          }
+        );
+      }
+      
+      // Load/show the tentacle model
+      function loadTentacleModel() {
+        if (!window.scene) return;
+        
+        // Remove current main model if exists (like Mary statue)
+        if (window.currentMainModel) {
+          window.scene.remove(window.currentMainModel);
+          window.currentMainModel = null;
+        }
+        
+        // Add the chair/tentacle back to scene if it exists
+        if (window.chair) {
+          // Check if it's already in the scene
+          if (window.chair.parent !== window.scene) {
+            // Only add if not already in scene
+            window.scene.add(window.chair);
+          }
+          window.chair.visible = true;
+          console.log('Tentacle model restored');
+          sendBotMessage('🦑 The tentacle has returned to its domain');
+        } else {
+          // If tentacle doesn't exist, try to load it
+          const loader = new window.GLTFLoader();
+          loader.load(
+            '/models/tentacle.glb',
+            (gltf) => {
+              window.chair = gltf.scene;
+              window.chair.position.set(0, 0, 0);
+              window.chair.scale.set(1, 1, 1);
+              window.scene.add(window.chair);
+              console.log('Tentacle model loaded');
+              sendBotMessage('🦑 The tentacle emerges from the void');
+            },
+            undefined,
+            (error) => {
+              console.error('Error loading tentacle:', error);
+              sendBotMessage('⚠️ Failed to load tentacle model');
+            }
+          );
+        }
+      }
+      
+      // Load a custom 3D model
+      function loadCustomModel(modelName) {
+        if (!window.scene) return;
+        
+        // Map model names to file paths
+        const modelPaths = {
+          'cube': '/models/cube.glb',
+          'sphere': '/models/sphere.glb',
+          // Add more models as needed
+        };
+        
+        const modelPath = modelPaths[modelName];
+        if (!modelPath) {
+          console.log('Unknown model:', modelName);
+          return;
+        }
+        
+        // Remove previously loaded custom models
+        currentLoadedModels.forEach(model => {
+          window.scene.remove(model);
+        });
+        currentLoadedModels = [];
+        
+        // Load new model
+        const loader = new window.GLTFLoader();
+        loader.load(
+          modelPath,
+          (gltf) => {
+            const model = gltf.scene;
+            model.position.set(0, 5, -10);
+            model.scale.set(2, 2, 2);
+            window.scene.add(model);
+            currentLoadedModels.push(model);
+            console.log('Loaded model:', modelName);
+          },
+          undefined,
+          (error) => {
+            console.error('Error loading model:', error);
+          }
+        );
+      }
+      
+      // Set scene lighting mode
+      function setSceneLighting(mode) {
+        if (!window.scene) return;
+        
+        // Find ambient light
+        const ambientLight = window.scene.children.find(child => child.isAmbientLight);
+        
+        switch(mode) {
+          case 'dark':
+            if (ambientLight) ambientLight.intensity = 0.1;
+            window.scene.fog = new window.THREE.Fog(0x000000, 1, 50);
+            break;
+          case 'bright':
+            if (ambientLight) ambientLight.intensity = 2;
+            window.scene.fog = null;
+            break;
+          case 'disco':
+            startDiscoMode();
+            break;
+        }
+        console.log('Set lighting mode:', mode);
+      }
+      
+      // Disco lighting effect
+      let discoInterval;
+      function startDiscoMode() {
+        if (discoInterval) clearInterval(discoInterval);
+        
+        discoInterval = setInterval(() => {
+          const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xff00ff, 0xffff00, 0x00ffff];
+          const randomColor = colors[Math.floor(Math.random() * colors.length)];
+          
+          window.scene.traverse((object) => {
+            if (object.isPointLight) {
+              object.color = new window.THREE.Color(randomColor);
+            }
+          });
+        }, 500);
+        
+        setTimeout(() => {
+          clearInterval(discoInterval);
+          discoInterval = null;
+        }, 10000); // Stop after 10 seconds
+      }
+      
+      // Spawn a new moon
+      function spawnNewMoon() {
+        if (!window.scene || !window.physics) return;
+        
+        const moonGeom = new window.THREE.SphereGeometry(2, 30, 30);
+        const moonMat = new window.THREE.MeshPhongMaterial({
+          color: new window.THREE.Color('#ff4080'),
+          emissive: new window.THREE.Color('#ff4080'),
+          emissiveIntensity: 0.5
+        });
+        
+        const newMoon = new window.THREE.Mesh(moonGeom, moonMat);
+        newMoon.position.set(
+          window.THREE.MathUtils.randFloat(-10, 10),
+          window.THREE.MathUtils.randFloat(15, 25),
+          window.THREE.MathUtils.randFloat(-10, 10)
+        );
+        
+        window.scene.add(newMoon);
+        window.physics.addMesh(newMoon, 1);
+        console.log('Spawned new moon');
+      }
+      
+      // Spawn a bouncing ball
+      function spawnBouncingBall() {
+        if (!window.scene || !window.physics) return;
+        
+        const ballGeom = new window.THREE.SphereGeometry(1, 16, 16);
+        const ballMat = new window.THREE.MeshPhongMaterial({
+          color: new window.THREE.Color(Math.random() * 0xffffff)
+        });
+        
+        const ball = new window.THREE.Mesh(ballGeom, ballMat);
+        ball.position.set(
+          window.THREE.MathUtils.randFloat(-5, 5),
+          20,
+          window.THREE.MathUtils.randFloat(-5, 5)
+        );
+        
+        window.scene.add(ball);
+        window.physics.addMesh(ball, 0.5);
+        
+        const body = window.meshMap ? window.meshMap.get(ball) : null;
+        if (body) {
+          body.setRestitution(0.9); // Make it bouncy
+        }
+        console.log('Spawned bouncing ball');
+      }
+      
+      // Camera effects
+      let cameraSpinning = false;
+      function startCameraSpin() {
+        cameraSpinning = true;
+        console.log('Camera spinning started');
+      }
+      
+      function stopCameraSpin() {
+        cameraSpinning = false;
+        console.log('Camera spinning stopped');
+      }
+      
+      function shakeCamera() {
+        if (!window.camera) return;
+        
+        const originalPosition = window.camera.position.clone();
+        let shakeCount = 0;
+        const shakeInterval = setInterval(() => {
+          window.camera.position.x = originalPosition.x + (Math.random() - 0.5) * 0.5;
+          window.camera.position.y = originalPosition.y + (Math.random() - 0.5) * 0.5;
+          shakeCount++;
+          
+          if (shakeCount > 20) {
+            clearInterval(shakeInterval);
+            window.camera.position.copy(originalPosition);
+          }
+        }, 50);
+        console.log('Camera shake triggered');
+      }
+      
+      // Show available commands
+      function showSceneCommands() {
+        const votesRequired = getVotesRequired();
+        const membersCount = Object.keys(window.currentMembers || {}).length;
+        
+        const commands = [
+          '🎮 Scene Control Commands (use / prefix):',
+          '• /mary - Load the sacred Mary Statue',
+          '• /tentacle - Switch back to tentacle model',
+          '• /hide - Trigger tentacle hide animation',
+          '• /moon [color] - Change moon colors (red, blue, green, pink, purple, yellow, orange, cyan)',
+          '• /lights off or /dark - Dark lighting mode',
+          '• /lights on or /bright - Bright lighting mode',
+          '• /disco or /party - Disco lighting mode (10 seconds)',
+          '• /spawn moon - Add a new moon to the scene',
+          '• /spawn ball - Add a bouncing ball',
+          '• /spin - Start camera rotation',
+          '• /stop - Stop camera rotation',
+          '• /shake - Shake the camera',
+          '• /help or /commands or /? - Show this list',
+          '',
+          membersCount > 1 ? 
+            `🗳️ Voting: ${votesRequired} votes needed (${membersCount} users online)` :
+            '👤 Solo Mode: Commands execute instantly!',
+          '',
+          '💡 Tip: Commands starting with / won\'t trigger bot responses!'
+        ];
+        
+        // Add help message to chat
+        const chatRef = database.ref('moonRoom/chat');
+        chatRef.push({
+          from: 'Scene Controller',
+          message: commands.join('\n'),
+          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          isBot: true
+        });
+      }
+      
+      // Add camera spin to render loop (needs to be called from the render function)
+      window.updateCameraEffects = function() {
+        if (cameraSpinning && window.camera) {
+          window.camera.position.x = Math.cos(Date.now() * 0.001) * 20;
+          window.camera.position.z = Math.sin(Date.now() * 0.001) * 20;
+          window.camera.lookAt(0, 0, 0);
+        }
+      };
+
       function sendMessage() {
         
         if (!messageInput) {
@@ -1256,6 +1798,8 @@
 
 
           chatRef.push(newMessage).then(() => {
+            // Process scene commands
+            processSceneCommand(messageText);
             messageInput.value = '';
             // Bot will respond via the chat listener now
           }).catch(error => {
@@ -1512,6 +2056,10 @@
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
+      
+      // Make THREE globally available for command functions
+      window.THREE = THREE;
+      window.GLTFLoader = GLTFLoader;
 
       console.clear();
       ("use strict");
@@ -2059,7 +2607,7 @@
       const mousePosition = new THREE.Vector2();
       const raycaster = new THREE.Raycaster();
       const meshMap = new WeakMap();
-      window.meshMap = meshMap; // Make meshMap globally available
+      window.meshMap = meshMap; // Make meshMap globally accessible
       async function AmmoPhysics() {
         if (!("Ammo" in window)) {
           console.error("AmmoPhysics: Couldn't find Ammo.js");
@@ -2479,6 +3027,7 @@
       // Main initialization
       (async function init() {
         let physics = await AmmoPhysics();
+        window.physics = physics; // Make physics globally accessible
         let camera, scene, renderer, controls;
         let sphereGeom, sphereMat, light, chair;
         let intensity = 40;
@@ -2489,6 +3038,7 @@
         // Scene setup
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0020);
+        window.scene = scene; // Make scene globally accessible
         
 
         // Renderer setup
@@ -2507,6 +3057,7 @@
         );
         camera.position.set(0, 3, 70);
         camera.lookAt(0, 0, 0);
+        window.camera = camera; // Make camera globally accessible
 
         // Controls setup
         controls = new OrbitControls(camera, renderer.domElement);
@@ -3593,6 +4144,11 @@
           
           function animate() {
             requestAnimationFrame(animate);
+            
+            // Update camera effects (spinning, etc.)
+            if (window.updateCameraEffects) {
+              window.updateCameraEffects();
+            }
             
             // Update animation mixer if it exists
             if (mixer) {

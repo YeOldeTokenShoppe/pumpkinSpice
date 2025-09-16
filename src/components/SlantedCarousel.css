@@ -5,6 +5,8 @@
   overflow: hidden;
   background: #000;
   font-family: "Arial", sans-serif;
+  /* Prevent layout shift */
+  min-height: 27rem;
 }
 
 /* Mobile responsive height */
@@ -157,11 +159,21 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  /* Prevent font flash */
+  font-family: 'UnifrakturMaguntia', 'Arial Black', serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* Ensure minimum dimensions to prevent layout shift */
+  min-height: 8rem;
+  position: relative;
 }
 
 .slide-title .title-line {
   display: block;
   line-height: 1.1;
+  /* Ensure consistent rendering */
+  font-synthesis: none;
 }
 
 .slide-description {

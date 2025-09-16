@@ -67,12 +67,30 @@ canvas {
   src: url('/fonts/UnifrakturMaguntia-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: block; /* Changed from swap to block to ensure font loads before rendering */
+  font-display: optional; /* Use optional for best performance - font loads if available quickly, otherwise uses fallback */
 }
 
 /* Preload font class */
 .unifraktur-font {
   font-family: 'UnifrakturMaguntia', serif;
+}
+
+/* Critical font loading - hide text until font loads */
+.font-loading-fix {
+  visibility: hidden;
+}
+
+.fonts-loaded .font-loading-fix {
+  visibility: visible;
+}
+
+/* Ensure headings use the custom font with fallback */
+h1, h2, h3, h4, h5, h6,
+.slide-title {
+  font-family: 'UnifrakturMaguntia', 'Georgia', serif;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 
