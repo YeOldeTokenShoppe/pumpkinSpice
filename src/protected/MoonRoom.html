@@ -1459,6 +1459,7 @@
         if (commandMessage === 'camera stop' || commandMessage === 'stop') return 'camera_stop';
         if (commandMessage === 'camera shake' || commandMessage === 'shake') return 'camera_shake';
         if (commandMessage === 'mary') return 'load_mary';
+        if (commandMessage === 'monster' || commandMessage === 'random monster') return 'load_random_monster';
         if (commandMessage.startsWith('load ')) {
           const modelMatch = commandMessage.match(/load (\w+)/);
           if (modelMatch) return `load_${modelMatch[1]}`;
@@ -1514,6 +1515,8 @@
           loadMaryStatue();
         } else if (normalizedCommand === 'load_tentacle') {
           loadTentacleModel();
+        } else if (normalizedCommand === 'load_random_monster') {
+          loadRandomMonster();
         } else if (normalizedCommand.startsWith('load_')) {
           const modelName = normalizedCommand.substring(5);
           loadCustomModel(modelName);
@@ -1888,6 +1891,230 @@
             }
           );
         }
+      }
+      
+      // Load a random monster model
+      function loadRandomMonster() {
+        if (!window.scene) return;
+        
+        // Array of monster models with their properties
+        // Note: compressed flag indicates if model uses DRACO compression
+        const monsterModels = [
+          { path: '/models/tentacle.glb', name: '🦑 Tentacle', scale: 15, compressed: false },
+          { path: '/models/maryStatue.glb', name: '👸 Mary Statue', scale: 10, compressed: false },
+          { path: '/models/whale.glb', name: '🐋 Whale', scale: 6, compressed: false },
+          { path: '/models/alligatorStroll5.glb', name: '🐊 Alligator', scale: 8, compressed: true },
+          { path: '/models/angel_devil.glb', name: '😈 Angel Devil', scale: 10, compressed: true },
+          { path: '/models/crying_emoji.glb', name: '😭 Crying Emoji', scale: 12, compressed: true },
+          { path: '/models/devil_emoji.glb', name: '👹 Devil', scale: 12, compressed: true },
+          { path: '/models/angel_emoji.glb', name: '😇 Angel', scale: 12, compressed: true },
+          { path: '/models/money_emoji.glb', name: '💰 Money Bags', scale: 10, compressed: true },
+          { path: '/models/saint_robot.glb', name: '🤖 Saint Robot', scale: 10, compressed: true }
+        ];
+        
+        // Pick a random monster
+        const randomMonster = monsterModels[Math.floor(Math.random() * monsterModels.length)];
+        
+        // Remove current main model if exists
+        if (window.currentMainModel) {
+          window.scene.remove(window.currentMainModel);
+          
+          // Clean up collision mesh
+          if (window.currentMainModel.collisionMesh) {
+            if (window.meshMap) {
+              const body = window.meshMap.get(window.currentMainModel.collisionMesh);
+              if (body && window.physics && window.physics.removeBody) {
+                window.physics.removeBody(body);
+                window.meshMap.delete(window.currentMainModel.collisionMesh);
+              }
+            }
+            window.scene.remove(window.currentMainModel.collisionMesh);
+            if (window.currentMainModel.collisionMesh.geometry) {
+              window.currentMainModel.collisionMesh.geometry.dispose();
+            }
+            if (window.currentMainModel.collisionMesh.material) {
+              window.currentMainModel.collisionMesh.material.dispose();
+            }
+          }
+          
+          // Dispose of resources
+          if (window.currentMainModel.traverse) {
+            window.currentMainModel.traverse((child) => {
+              if (child.geometry) child.geometry.dispose();
+              if (child.material) {
+                if (Array.isArray(child.material)) {
+                  child.material.forEach(m => m.dispose());
+                } else {
+                  child.material.dispose();
+                }
+              }
+            });
+          }
+          window.currentMainModel = null;
+        }
+        
+        // Remove chair/tentacle if it exists
+        if (window.chair && window.chair.parent === window.scene) {
+          // Stop the bone following interval if it exists
+          if (window.tentacleUpdateInterval) {
+            clearInterval(window.tentacleUpdateInterval);
+            window.tentacleUpdateInterval = null;
+          }
+          
+          // Remove old collision boxes if they exist
+          if (window.chair.collisionBoxes) {
+            window.chair.collisionBoxes.forEach(box => {
+              // Remove physics body properly
+              if (window.meshMap) {
+                const body = window.meshMap.get(box);
+                if (body && window.physics && window.physics.removeBody) {
+                  window.physics.removeBody(body);
+                  window.meshMap.delete(box);
+                }
+              }
+              // Remove from scene
+              window.scene.remove(box);
+            });
+            window.chair.collisionBoxes = [];
+          }
+          
+          window.scene.remove(window.chair);
+          window.chair = null;
+        }
+        
+        // Load the random monster
+        const loader = new window.GLTFLoader();
+        
+        // Set up DRACO loader if model is compressed
+        if (randomMonster.compressed) {
+          const dracoLoader = new window.DRACOLoader();
+          dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+          loader.setDRACOLoader(dracoLoader);
+        }
+        
+        loader.load(
+          randomMonster.path,
+          (gltf) => {
+            window.currentMainModel = gltf.scene;
+            window.currentMainModel.position.set(0, 0, 0);
+            window.currentMainModel.scale.set(randomMonster.scale, randomMonster.scale, randomMonster.scale);
+            window.scene.add(window.currentMainModel);
+            
+            // Special handling for tentacle - needs animated collision boxes
+            if (randomMonster.path === '/models/tentacle.glb') {
+              // Store as chair for compatibility with existing tentacle code
+              window.chair = window.currentMainModel;
+              
+              // Create dynamic collision boxes for tentacle
+              setTimeout(() => {
+                if (!window.chair.collisionBoxes) {
+                  window.chair.collisionBoxes = [];
+                }
+                
+                // Find the skinned mesh with skeleton
+                let skinnedMesh = null;
+                window.chair.traverse((child) => {
+                  if (child.isSkinnedMesh && child.skeleton) {
+                    skinnedMesh = child;
+                    console.log('Found skinned mesh with skeleton for tentacle collision');
+                  }
+                });
+                
+                // Create invisible collision boxes
+                for (let i = 0; i < 3; i++) {
+                  const geometry = new window.THREE.BoxGeometry(3, 2.5, 3);
+                  const material = new window.THREE.MeshBasicMaterial({
+                    color: 0x00ff00,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0,
+                    visible: false
+                  });
+                  const box = new window.THREE.Mesh(geometry, material);
+                  box.position.set(0, i * 2.5, -3);
+                  
+                  window.scene.add(box);
+                  
+                  // Add physics to the box
+                  if (window.physics && window.physics.addBoxMesh) {
+                    window.physics.addBoxMesh(box, 0, 3, 2.5, 3);
+                  }
+                  
+                  window.chair.collisionBoxes.push(box);
+                }
+                
+                // START FOLLOWING BONES AUTOMATICALLY
+                if (skinnedMesh && skinnedMesh.skeleton) {
+                  // Clear any existing interval
+                  if (window.tentacleUpdateInterval) {
+                    clearInterval(window.tentacleUpdateInterval);
+                  }
+                  
+                  window.tentacleUpdateInterval = setInterval(() => {
+                    const bones = skinnedMesh.skeleton.bones;
+                    window.chair.collisionBoxes.forEach((box, i) => {
+                      const boneIndex = Math.min(i * Math.floor(bones.length / 3), bones.length - 1);
+                      if (bones[boneIndex]) {
+                        const pos = new window.THREE.Vector3();
+                        bones[boneIndex].getWorldPosition(pos);
+                        box.position.copy(pos);
+                        
+                        // Update physics body position
+                        const body = window.meshMap?.get(box);
+                        if (body && window.Ammo) {
+                          const transform = new window.Ammo.btTransform();
+                          transform.setIdentity();
+                          transform.setOrigin(new window.Ammo.btVector3(box.position.x, box.position.y, box.position.z));
+                          body.setWorldTransform(transform);
+                          body.activate(true);
+                          window.Ammo.destroy(transform);
+                        }
+                      }
+                    });
+                  }, 16); // 60fps update
+                  console.log('Started automatic bone following for tentacle');
+                }
+              }, 500);
+              
+              console.log('Tentacle loaded with dynamic collision');
+            } else {
+              // Add simple collision box for other models
+              if (window.physics && window.physics.addBoxMesh) {
+                window.currentMainModel.updateMatrixWorld(true);
+                const box = new window.THREE.Box3().setFromObject(window.currentMainModel);
+                const size = box.getSize(new window.THREE.Vector3());
+                const center = box.getCenter(new window.THREE.Vector3());
+                
+                const collisionGeometry = new window.THREE.BoxGeometry(size.x, size.y, size.z);
+                const collisionMaterial = new window.THREE.MeshBasicMaterial({
+                  color: 0x00ff00,
+                  wireframe: true,
+                  visible: false
+                });
+                
+                const collisionMesh = new window.THREE.Mesh(collisionGeometry, collisionMaterial);
+                collisionMesh.position.copy(center);
+                window.scene.add(collisionMesh);
+                
+                // Add physics using the existing physics system
+                window.physics.addBoxMesh(collisionMesh, 0, size.x, size.y, size.z); // 0 mass = static
+                
+                // Store reference for cleanup
+                window.currentMainModel.collisionMesh = collisionMesh;
+                
+                console.log(`Added collision box for ${randomMonster.name}:`, { size, center });
+              }
+            }
+            
+            console.log(`Loaded random monster: ${randomMonster.name}`);
+            sendBotMessage(`${randomMonster.name} has appeared!`);
+          },
+          undefined,
+          (error) => {
+            console.error('Error loading monster:', error);
+            sendBotMessage('⚠️ Failed to summon monster');
+          }
+        );
       }
       
       // Load a custom 3D model
@@ -2503,11 +2730,13 @@
       import * as THREE from "three";
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
       import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
       
       // Make THREE globally available for command functions
       window.THREE = THREE;
       window.GLTFLoader = GLTFLoader;
+      window.DRACOLoader = DRACOLoader;
       window.BufferGeometryUtils = BufferGeometryUtils;
 
       console.clear();
@@ -3654,18 +3883,18 @@
           }),
           new Promise((resolve, reject) => {
             const loader = new GLTFLoader();
-            console.log("Loading tentacle model from /models/tentacle.glb...");
+            console.log("Loading Mary Statue model from /models/maryStatue.glb...");
             loader.load(
-              "/models/tentacle.glb",
+              "/models/maryStatue.glb",
               (gltf) => {
-                console.log("✅ Tentacle model loaded successfully!", gltf);
+                console.log("✅ Mary Statue model loaded successfully!", gltf);
                 resolve(gltf);
               },
               (progress) => {
                 console.log("Loading progress:", progress.loaded, "/", progress.total);
               },
               (error) => {
-                console.error("❌ Error loading tentacle model:", error);
+                console.error("❌ Error loading Mary Statue model:", error);
                 reject(error);
               }
             );
@@ -4217,126 +4446,88 @@
           // scene.add(cone1);
           // scene.add(cone2);
 
-          // Add GLB model - use the entire scene
-          chair = chairModel.scene;
-          chair.scale.set(10, 10, 10);
-          chair.position.set(0, -1, -3);
-          // chair.rotation.y = Math.PI;
+          // Add GLB model - use the entire scene (Mary Statue as default)
+          window.currentMainModel = chairModel.scene;
+          window.currentMainModel.scale.set(10, 10, 10);
+          window.currentMainModel.position.set(0, 0, 0);
           
           // Store original position to restore after animations
-          const originalPosition = chair.position.clone();
+          const originalPosition = window.currentMainModel.position.clone();
           
-          console.log("Chair model added to scene at position:", chair.position);
-          console.log("Chair scale:", chair.scale);
-          console.log("Chair visible:", chair.visible);
+          console.log("Mary Statue model added to scene at position:", window.currentMainModel.position);
+          console.log("Mary Statue scale:", window.currentMainModel.scale);
+          console.log("Mary Statue visible:", window.currentMainModel.visible);
           
           // Set shadows for all meshes in the model
-          chair.traverse((child) => {
+          window.currentMainModel.traverse((child) => {
             if (child.isMesh) {
               child.castShadow = true;
               child.receiveShadow = true;
             }
           });
           
-          chair.name = "chair";
-          scene.add(chair);
+          window.currentMainModel.name = "maryStatue";
+          scene.add(window.currentMainModel);
           
-          // Make chair globally accessible for collision detection AND debugging
-          window.tentacleChair = chair;
-          window.chair = chair;  // Also make it accessible as 'chair'
-          console.log("✅ Chair/tentacle is now globally accessible as window.chair");
+          // Make model globally accessible
+          window.defaultModel = window.currentMainModel;
+          console.log("✅ Mary Statue is now the default model");
           
-          // Create dynamic collision boxes automatically
-          console.log("Creating dynamic collision boxes automatically...");
+          // Add collision for Mary Statue
+          console.log("Creating collision box for Mary Statue...");
           
           // Wait a moment for everything to be fully loaded
           setTimeout(() => {
-            // Initialize collision boxes array
-            if (!chair.collisionBoxes) {
-              chair.collisionBoxes = [];
-            }
-            
-            // Find the skinned mesh with skeleton
-            let skinnedMesh = null;
-            chair.traverse((child) => {
-              if (child.isSkinnedMesh && child.skeleton) {
-                skinnedMesh = child;
-                console.log('Found skinned mesh with skeleton for collision');
-              }
-            });
-            
-            // Create collision boxes - EXACT WORKING CODE
-            for (let i = 0; i < 3; i++) {  // Reduced to 3 boxes
-              const geometry = new THREE.BoxGeometry(3, 2.5, 3);
-              const material = new THREE.MeshBasicMaterial({
+            // Create collision box for Mary Statue
+            if (physics && physics.addBoxMesh) {
+              // Update world matrices to get correct transforms
+              window.currentMainModel.updateMatrixWorld(true);
+              
+              // Create a simple box collision
+              const box = new THREE.Box3().setFromObject(window.currentMainModel);
+              const size = box.getSize(new THREE.Vector3());
+              const center = box.getCenter(new THREE.Vector3());
+              
+              console.log('Mary statue bounding box:', { size, center });
+              
+              // Create a box geometry for collision
+              const collisionGeometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+              const collisionMaterial = new THREE.MeshBasicMaterial({
                 color: 0x00ff00,
                 wireframe: true,
-                transparent: true,
-                opacity: 0,  // Invisible - set to 0.3 to see them for debugging
-                visible: false  // Completely hidden
+                visible: false
               });
-              const box = new THREE.Mesh(geometry, material);
-              box.position.set(0, i * 2.5, -3);
               
-              scene.add(box);
+              const collisionMesh = new THREE.Mesh(collisionGeometry, collisionMaterial);
+              collisionMesh.position.copy(center);
+              scene.add(collisionMesh);
               
-              // Add physics to the box
-              if (physics && physics.addBoxMesh) {
-                physics.addBoxMesh(box, 0, 3, 2.5, 3); // mass 0 = static
-                console.log('Added physics to box ' + i);
-              }
+              // Add physics
+              physics.addBoxMesh(collisionMesh, 0, size.x, size.y, size.z); // 0 mass = static
               
-              chair.collisionBoxes.push(box);
-            }
-            
-            console.log('Created ' + chair.collisionBoxes.length + ' collision boxes');
-            
-            // START FOLLOWING BONES AUTOMATICALLY
-            if (skinnedMesh && skinnedMesh.skeleton) {
-              window.tentacleUpdateInterval = setInterval(() => {
-                const bones = skinnedMesh.skeleton.bones;
-                chair.collisionBoxes.forEach((box, i) => {
-                  const boneIndex = Math.min(i * Math.floor(bones.length / 3), bones.length - 1);  // Updated for 3 boxes
-                  if (bones[boneIndex]) {
-                    const pos = new THREE.Vector3();
-                    bones[boneIndex].getWorldPosition(pos);
-                    
-                    // Update box position to follow bone
-                    box.position.copy(pos);
-                    
-                    // Update physics body position
-                    const body = meshMap?.get(box);
-                    if (body && typeof Ammo !== 'undefined') {
-                      const transform = new Ammo.btTransform();
-                      transform.setIdentity();
-                      transform.setOrigin(new Ammo.btVector3(box.position.x, box.position.y, box.position.z));
-                      body.setWorldTransform(transform);
-                      body.activate(true);
-                      Ammo.destroy(transform);
-                    }
-                  }
-                });
-              }, 16); // 60fps update
-              console.log('Started automatic bone following with physics');
+              // Store reference for cleanup
+              window.currentMainModel.collisionMesh = collisionMesh;
+              
+              console.log('Created collision box for Mary Statue');
             }
           }, 500); // Small delay to ensure everything is ready
           
-          window.tentacleReady = true;
+          window.modelReady = true;
           
-          // Create debug function immediately - use a different approach to ensure it's global
+          // Create debug function for model collision
           (function() {
-            window.debugTentacleCollision = function() {
-              console.log("=== Tentacle Collision Debug ===");
-              console.log("tentacleChair exists:", !!window.tentacleChair);
+            window.debugModelCollision = function() {
+              console.log("=== Model Collision Debug ===");
+              console.log("currentMainModel exists:", !!window.currentMainModel);
               console.log("meshMap exists:", typeof meshMap !== 'undefined');
               console.log("meshes array exists:", typeof meshes !== 'undefined');
               
-              if (window.tentacleChair) {
-                console.log("Collision boxes:", window.tentacleChair.collisionBoxes ? window.tentacleChair.collisionBoxes.length : 0);
-                console.log("Collision cylinder:", !!window.tentacleChair.collisionCylinder);
+              if (window.currentMainModel) {
+                console.log("Collision mesh:", !!window.currentMainModel.collisionMesh);
                 
-                if (window.tentacleChair.collisionBoxes) {
-                  console.log("Number of collision boxes:", window.tentacleChair.collisionBoxes.length);
+                if (window.currentMainModel.collisionMesh) {
+                  console.log("Collision mesh position:", window.currentMainModel.collisionMesh.position);
+                  console.log("Collision mesh visible:", window.currentMainModel.collisionMesh.visible);
                 }
               }
             };
@@ -4386,479 +4577,13 @@
             }
           });
           
-          // Find the visible mesh - check for skinned meshes too
-          let tentacleMesh = null;
-          let foundMeshes = [];
-          chair.traverse((child) => {
-            if (child.isMesh || child.isSkinnedMesh) {
-              foundMeshes.push(child);
-              // Look for the tentacle mesh by various possible names
-              if (child.name.includes('Tentacle') || 
-                  child.name.includes('tentacle') || 
-                  child.name === 'Object_8' ||
-                  child.name === 'TrapTentacle_Trap_Tentacle_0') {
-                tentacleMesh = child;
-                // console.log("Found target tentacle mesh:", child.name, "isSkinnedMesh:", child.isSkinnedMesh);
-              }
-            }
-          });
+          // TENTACLE-SPECIFIC CODE REMOVED
+          // All tentacle collision and animation setup is now handled in:
+          // - loadTentacleModel() when user types /tentacle
+          // - loadRandomMonster() when tentacle appears via /monster
+          // Since we're loading Mary statue by default, this code is not needed here
           
-          // If no specific tentacle mesh found, use the first mesh we find
-          if (!tentacleMesh && foundMeshes.length > 0) {
-            tentacleMesh = foundMeshes[0];
-            // console.log("Using first found mesh for collision:", tentacleMesh.name);
-          }
-          
-          // Add collision based on mesh type
-          if (tentacleMesh) {
-            if (tentacleMesh.isSkinnedMesh) {
-              // console.log("Tentacle is a skinned mesh - creating multiple collision approach");
-              
-              // Approach 1: Create a simple cylinder collision shape around the tentacle
-              // We need physics collision to stop the balls AND distance detection for animation trigger
-              /* DISABLED - OLD SINGLE BOX COLLISION - Using multi-box system instead
-              console.log("Setting up physics collision for tentacle");
-              
-              // Create a smaller box for physics collision at tentacle base
-              const collisionWidth = 3;   // Narrower to match tentacle base
-              const collisionHeight = 4;  // Shorter, just for the base
-              const collisionDepth = 3;   // Narrower
-              
-              const collisionGeometry = new THREE.BoxGeometry(collisionWidth, collisionHeight, collisionDepth);
-              const collisionMesh = new THREE.Mesh(
-                collisionGeometry,
-                new THREE.MeshBasicMaterial({
-                  visible: true,  // Visible for debugging
-                  wireframe: true,
-                  color: 0x00ff00,
-                  transparent: true,
-                  opacity: 0.5
-                })
-              );
-              
-              // Position at tentacle base on the floor
-              collisionMesh.position.set(
-                chair.position.x,
-                chair.position.y,  // At floor level where tentacle base is
-                chair.position.z
-              );
-              
-              scene.add(collisionMesh);
-              
-              // Add physics body with high mass so it doesn't move
-              physics.addBoxMesh(collisionMesh, 10000, collisionWidth, collisionHeight, collisionDepth);
-              
-              const collisionBody = meshMap.get(collisionMesh);
-              if (collisionBody) {
-                collisionBody.setDamping(0.99, 0.99);
-                collisionBody.setActivationState(2); // DISABLE_DEACTIVATION
-                collisionBody.setRestitution(0.5); // Some bounce
-                console.log("Added invisible physics collision for tentacle");
-              }
-              */
-              
-              /* Removed old collision boxes - using simple box instead
-              for (let i = 0; i < numBoxes; i++) {
-                const boxHeight = cylinderHeight / numBoxes;
-                
-                // ADJUST BOX SIZES HERE!
-                const boxWidth = cylinderRadius * 1;   // Width (X axis) - increase for wider boxes
-                const boxDepth = cylinderRadius * 1;   // Depth (Z axis) - increase for deeper boxes
-                const boxHeightAdjusted = boxHeight * 1; // Height (Y axis) - increase for taller boxes
-                
-                const boxGeometry = new THREE.BoxGeometry(
-                  boxWidth,         // X dimension
-                  boxHeightAdjusted, // Y dimension  
-                  boxDepth          // Z dimension
-                );
-                const boxMesh = new THREE.Mesh(
-                  boxGeometry,
-                  new THREE.MeshBasicMaterial({
-                    visible: false,  // Temporarily visible to see dynamic movement
-                    wireframe: true,
-                    color: 0xff0000,
-                    opacity: 0.3,
-                    transparent: true
-                  })
-                );
-                
-                boxMesh.position.set(
-                  chair.position.x,
-                  chair.position.y + (i * boxHeight) + boxHeight/2,
-                  chair.position.z
-                );
-                
-                scene.add(boxMesh);
-                
-                // Use addBoxMesh with proper box physics shape
-                // Parameters: mesh, mass, width, height, depth
-                physics.addBoxMesh(boxMesh, 10000, boxWidth, boxHeightAdjusted, boxDepth);
-                
-                // Make it nearly immovable
-                const boxBody = meshMap.get(boxMesh);
-                if (boxBody) {
-                  boxBody.setDamping(0.99, 0.99); // High damping
-                  boxBody.setActivationState(2); // DISABLE_DEACTIVATION
-                  boxBody.setRestitution(0.5); // Add some bounce
-                }
-                
-                chair.collisionBoxes.push(boxMesh);
-                console.log(`Added collision box ${i} with proper shape at:`, boxMesh.position, "body:", boxBody);
-              }
-              
-              console.log("Created multi-part collision system for skinned tentacle mesh");
-              
-              // OPTION FOR DYNAMIC COLLISION: Track bone positions
-              // We can make the collision follow the animation!
-              if (tentacleMesh.skeleton && tentacleMesh.skeleton.bones.length > 0) {
-                console.log("Skeleton found with", tentacleMesh.skeleton.bones.length, "bones");
-                
-                // Store original bone positions for reference
-                chair.boneTracking = {
-                  bones: tentacleMesh.skeleton.bones,
-                  collisionBoxes: chair.collisionBoxes
-                };
-                
-                // Function to update collision to follow animation
-                chair.updateAnimatedCollision = function() {
-                  if (!chair.boneTracking) return;
-                  
-                  const bones = chair.boneTracking.bones;
-                  const boxes = chair.boneTracking.collisionBoxes;
-                  
-                  // Update collision boxes to follow bone positions
-                  boxes.forEach((box, index) => {
-                    // Map each box to a bone position
-                    const boneIndex = Math.min(index * 2, bones.length - 1);
-                    if (bones[boneIndex]) {
-                      // Get world position of the bone
-                      const boneWorldPos = new THREE.Vector3();
-                      bones[boneIndex].getWorldPosition(boneWorldPos);
-                      
-                      // Update the physics body to match bone position
-                      const body = meshMap.get(box);
-                      if (body && window.Ammo) {
-                        const transform = new Ammo.btTransform();
-                        transform.setIdentity();
-                        transform.setOrigin(new Ammo.btVector3(
-                          boneWorldPos.x,
-                          boneWorldPos.y,
-                          boneWorldPos.z
-                        ));
-                        body.setWorldTransform(transform);
-                        // Keep the body active
-                        body.activate(true);
-                      }
-                      
-                      // Update visual collision box position (if visible for debugging)
-                      box.position.copy(boneWorldPos);
-                    }
-                  });
-                };
-                
-                console.log("Dynamic collision ready! Add 'chair.updateAnimatedCollision()' to animation loop for moving collision");
-              }
-              */
-            } else {
-              // Regular mesh - use convex hull
-              physics.addMesh(tentacleMesh, 0);
-              console.log("Added convex hull physics to regular mesh:", tentacleMesh.name);
-            }
-          } else {
-            console.warn("No mesh found in tentacle model!");
-          }
-          
-          // Find the Empty mesh that contains the animated object
-          let emptyMesh = null;
-          chair.traverse((child) => {
-            if (child.name === 'Empty') {
-              emptyMesh = child;
-              console.log("Found Empty mesh:", child);
-            }
-          });
-          
-          // Set up animation if the model has animations
-          let mixer = null;
-          let currentAction = null;
-          let idleAction = null;
-          let hiddenAction = null;
-          let isHiding = false;
-          let hideTimeout = null;
-          
-          console.log("Checking animations for tentacle model...");
-          console.log("chairModel.animations exists:", !!chairModel.animations);
-          console.log("Number of animations:", chairModel.animations ? chairModel.animations.length : 0);
-          
-          if (chairModel.animations && chairModel.animations.length > 0) {
-            // Create mixer for the entire scene (animations might target specific objects)
-            mixer = new THREE.AnimationMixer(chair);
-            
-            // Log available animations and what they target
-            console.log("=== ALL AVAILABLE ANIMATIONS IN TENTACLE MODEL ===");
-            console.log("Total animations found:", chairModel.animations.length);
-            chairModel.animations.forEach((clip, index) => {
-              console.log(`[${index}] Animation name: "${clip.name}"`);
-              // Log what objects the animation targets
-              if (clip.tracks && clip.tracks.length > 0) {
-                const targetObjects = new Set(clip.tracks.map(track => track.name.split('.')[0]));
-                console.log(`     Targets: ${Array.from(targetObjects).join(', ')}`);
-              }
-            });
-            console.log("=== END OF ANIMATION LIST ===");
-            
-            // Find the animations we need - just Idle01 and Idle02
-            let idleAnimation = chairModel.animations.find(clip => 
-              clip.name === 'Armature|Idle01' || clip.name === 'Idle01'
-            );
-            let idle2Animation = chairModel.animations.find(clip => 
-              clip.name === 'Armature|Idle02' || clip.name === 'Idle02'
-            );
-            
-            // Set up idle animation
-            if (idleAnimation) {
-              idleAction = mixer.clipAction(idleAnimation);
-              idleAction.setLoop(THREE.LoopRepeat);
-              idleAction.play();
-              currentAction = idleAction;
-              // console.log(`Playing animation: ${idleAnimation.name}`);
-            }
-            
-            // Set up Idle02 animation
-            let idle2Action = null;
-            
-            if (idle2Animation) {
-              idle2Action = mixer.clipAction(idle2Animation);
-              idle2Action.setLoop(THREE.LoopOnce);
-              idle2Action.clampWhenFinished = true;
-              console.log("Found animation: Idle02");
-            }
-            
-            // Function to trigger Idle02 animation on collision
-            chair.triggerHideAnimation = function() {
-              
-              if (isHiding || !idle2Action) {
-                if (isHiding) console.log("Already playing Idle02, skipping");
-                if (!idle2Action) console.log("No Idle02 animation found!");
-                return;
-              }
-              
-              console.log("Collision detected! Switching to Idle02 animation");
-              isHiding = true;
-              
-              // Clear any existing timeout
-              if (hideTimeout) {
-                clearTimeout(hideTimeout);
-              }
-              
-              // Play Idle02 animation
-              if (currentAction === idleAction && idle2Action) {
-                // Fade from Idle01 to Idle02
-                idleAction.fadeOut(0.3);
-                idle2Action.reset();
-                idle2Action.fadeIn(0.3);
-                idle2Action.play();
-                currentAction = idle2Action;
-                
-                // After Idle02 completes, return to Idle01
-                mixer.addEventListener('finished', function onIdle2Finished(e) {
-                  if (e.action === idle2Action && idleAction) {
-                    mixer.removeEventListener('finished', onIdle2Finished);
-                    console.log("Returning to Idle01 animation");
-                    
-                    // Go back to Idle01
-                    idleAction.reset();
-                    idleAction.fadeIn(0.3);
-                    idleAction.play();
-                    currentAction = idleAction;
-                    isHiding = false;
-                  }
-                });
-              }
-            };
-            
-            // Update the existing test function with animation capability
-            if (window.testTentacleHide) {
-              // Update existing function
-              window.testTentacleHide = function() {
-                console.log("Manual test: Triggering tentacle hide animation");
-                if (chair.triggerHideAnimation) {
-                  chair.triggerHideAnimation();
-                } else {
-                  console.error("Trigger function not found!");
-                }
-              };
-            }
-            
-            console.log("Tentacle animation ready. Test with: window.testTentacleHide()");
-            
-            // If we found the Empty mesh, we can control it directly if needed
-            if (emptyMesh) {
-              console.log("Empty mesh ready for additional control if needed");
-            }
-          } else {
-            console.warn("No animations found in tentacle model!");
-            
-            // Create placeholder functions so we can still test
-            chair.triggerHideAnimation = function() {
-              console.log("triggerHideAnimation called but no animations available!");
-            };
-          }
-          
-          // Debug functions were already created earlier
-          
-          // Update world matrices after scaling/positioning
-          chair.updateMatrixWorld(true);
-          
-          // Initialize collision boxes array (needed for animation tracking)
-          chair.collisionBoxes = [];
-          
-          // DISABLED - Using window.createTentacleCollisionBoxes instead
-          // console.log("Creating multi-box collision system for tentacle");
-          /* Commenting out duplicate collision system
-          
-          // Initialize collision boxes array
-          chair.collisionBoxes = [];
-          
-          // Get the overall bounding box for reference
-          const overallBox = new THREE.Box3().setFromObject(chair);
-          const overallSize = overallBox.getSize(new THREE.Vector3());
-          const overallCenter = overallBox.getCenter(new THREE.Vector3());
-          
-          // Create multiple boxes along the height of the tentacle
-          const numBoxes = 5; // Number of collision boxes
-          const boxHeight = overallSize.y / numBoxes;
-          const boxWidth = Math.max(overallSize.x * 1.2, 5); // Ensure minimum width
-          const boxDepth = Math.max(overallSize.z * 1.2, 5); // Ensure minimum depth
-          
-          console.log('Tentacle overall bounding box:', {
-            size: overallSize,
-            center: overallCenter,
-            boxDimensions: { width: boxWidth, height: boxHeight, depth: boxDepth }
-          });
-          
-          for (let i = 0; i < numBoxes; i++) {
-            const boxGeometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-            
-            const boxMaterial = new THREE.MeshBasicMaterial({
-              visible: true,  // Visible for debugging
-              wireframe: true,
-              color: new THREE.Color().setHSL(i / numBoxes, 1, 0.5), // Different colors for each box
-              opacity: 0.5,
-              transparent: true
-            });
-            
-            const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
-            
-            // Position boxes from bottom to top
-            const yOffset = (i - (numBoxes - 1) / 2) * boxHeight;
-            boxMesh.position.set(
-              overallCenter.x,
-              overallCenter.y + yOffset,
-              overallCenter.z
-            );
-            
-            // Add to scene and physics
-            scene.add(boxMesh);
-            // Use addBoxMesh with proper dimensions for box collision
-            // Using mass of 0 for static object instead of high mass
-            physics.addBoxMesh(boxMesh, 0, boxWidth, boxHeight, boxDepth); // 0 mass = truly static
-            
-            // Set up the physics body properly
-            const boxBody = meshMap.get(boxMesh);
-            if (boxBody) {
-              boxBody.setActivationState(4); // DISABLE_SIMULATION initially
-              boxBody.setActivationState(2); // Then DISABLE_DEACTIVATION for always active
-              boxBody.setRestitution(0.8); // More bounce when hit
-              boxBody.setFriction(0.5);
-              boxBody.setCollisionFlags(boxBody.getCollisionFlags() | 2); // CF_KINEMATIC_OBJECT
-              console.log(`Physics body configured for box ${i} as static/kinematic`);
-            }
-            
-            // Store reference
-            chair.collisionBoxes.push(boxMesh);
-            boxMesh.name = `tentacle_collision_${i}`;
-            
-            // Add a debug sphere to visualize the center of each collision box
-            const debugSphere = new THREE.Mesh(
-              new THREE.SphereGeometry(0.5, 8, 8),
-              new THREE.MeshBasicMaterial({ color: 0xffff00 })
-            );
-            debugSphere.position.copy(boxMesh.position);
-            scene.add(debugSphere);
-            
-            console.log(`Created collision box ${i} at:`, {
-              position: boxMesh.position,
-              dimensions: { width: boxWidth, height: boxHeight, depth: boxDepth },
-              hasPhysicsBody: !!boxBody
-            });
-          }
-          
-          // Store references globally
-          window.tentacleChair = chair;
-          window.tentacleChair.collisionBoxes = chair.collisionBoxes;
-          
-          // Find the skinned mesh with animation
-          // let tentacleMesh = null;
-          chair.traverse((child) => {
-            if (child.isSkinnedMesh && !tentacleMesh) {
-              tentacleMesh = child;
-              console.log("Found skinned tentacle mesh:", child.name);
-            }
-          });
-          
-          // Set up bone tracking for dynamic collision
-          if (tentacleMesh && tentacleMesh.skeleton && tentacleMesh.skeleton.bones.length > 0) {
-            console.log("Setting up dynamic collision tracking with", tentacleMesh.skeleton.bones.length, "bones");
-            
-            chair.boneTracking = {
-              skeleton: tentacleMesh.skeleton,
-              bones: tentacleMesh.skeleton.bones,
-              collisionBoxes: chair.collisionBoxes,
-              basePositions: chair.collisionBoxes.map(box => box.position.clone())
-            };
-            
-            // Function to update collision boxes to follow animation
-            chair.updateAnimatedCollision = function() {
-              if (!chair.boneTracking) return;
-              
-              const bones = chair.boneTracking.bones;
-              const boxes = chair.boneTracking.collisionBoxes;
-              const basePositions = chair.boneTracking.basePositions;
-              
-              boxes.forEach((box, index) => {
-                // Map each box to bones along the tentacle
-                const boneIndex = Math.floor((index / boxes.length) * bones.length);
-                const bone = bones[Math.min(boneIndex, bones.length - 1)];
-                
-                if (bone) {
-                  // Get bone world position
-                  const boneWorldPos = new THREE.Vector3();
-                  bone.getWorldPosition(boneWorldPos);
-                  
-                  // Update box position based on bone movement
-                  box.position.x = basePositions[index].x + (boneWorldPos.x - chair.position.x) * 0.5;
-                  box.position.z = basePositions[index].z + (boneWorldPos.z - chair.position.z) * 0.5;
-                  
-                  // Update physics body position if exists
-                  const body = meshMap.get(box);
-                  if (body) {
-                    const transform = body.getWorldTransform();
-                    transform.getOrigin().setValue(box.position.x, box.position.y, box.position.z);
-                    body.setWorldTransform(transform);
-                  }
-                }
-              });
-            };
-            
-            console.log("Dynamic collision system ready for tentacle");
-          } else {
-            console.log("No skeleton found for dynamic collision");
-          }
-          
-          console.log("Multi-box collision system created with", chair.collisionBoxes.length, "boxes");
-          */ // End of commented out duplicate collision system
-
-          // document.getElementById("loading").style.display = "none";
+          // The rest of tentacle animation code is also skipped for Mary statue
 
           // Animation loop
           const clock = new THREE.Clock();

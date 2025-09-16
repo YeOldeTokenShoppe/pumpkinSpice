@@ -1,4 +1,4 @@
-import React, { useState, Suspense, useRef, useEffect } from 'react';
+import React, { useState, Suspense, useRef, useEffect, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useTexture } from '@react-three/drei';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -773,9 +773,19 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [canvasKey, setCanvasKey] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isBurning, setIsBurning] = useState(false);
+  const [showRotateTooltip, setShowRotateTooltip] = useState(true);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [candleWasCreated, setCandleWasCreated] = useState(false);
   const modalContentRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  
+  // Hide tooltip on canvas interaction
+  const handleCanvasInteraction = useCallback(() => {
+    if (showRotateTooltip) {
+      setShowRotateTooltip(false);
+    }
+  }, [showRotateTooltip]);
   
   // AI Prayer Generation states
   const [isGenerating, setIsGenerating] = useState(false);
@@ -783,31 +793,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [aiPrompt, setAiPrompt] = useState('');
   const [remainingPrayers, setRemainingPrayers] = useState(10);
   
-  // Helper function to format numbers with commas
+  // Helper function to format numbers with commas for display
   const formatNumberWithCommas = (num) => {
     if (!num && num !== 0) return '';
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  };
-  
-  // Helper function to parse formatted numbers
-  const parseFormattedNumber = (str) => {
-    if (!str) return 0;
-    const cleaned = str.replace(/[^0-9]/g, '');
-    return parseInt(cleaned) || 0;
-  };
-  
-  // Handle amount input changes
-  const handleAmountChange = (e) => {
-    const rawValue = e.target.value;
-    const numericValue = parseFormattedNumber(rawValue);
-    
-    // Limit to reasonable maximum (e.g., 999 trillion)
-    if (numericValue <= 999999999999999) {
-      setFormData(prev => ({
-        ...prev,
-        burnedAmount: numericValue || ''
-      }));
-    }
   };
   
   // Reset form when modal opens and prepopulate with Clerk user data
@@ -843,6 +832,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setAiPrompt('');
       // Force Canvas to recreate by changing key
       setCanvasKey(prev => prev + 1);
+      // Reset tooltip
+      setShowRotateTooltip(true);
+      // Reset success indicators
+      setCandleWasCreated(false);
       
       // Clear the file input
       if (fileInputRef.current) {
@@ -1077,6 +1070,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
 
       const docRef = await addDoc(collection(db, 'results'), docData);
 
+      // Mark that candle was successfully created
+      setCandleWasCreated(true);
+      
+      // Show success toast
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 5000); // Hide after 5 seconds
+
       if (onCandleCreated) {
         onCandleCreated({
           ...docData,
@@ -1091,15 +1091,86 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       console.error('Error creating candle:', err);
       setError('Failed to create candle. Please try again.');
       setIsBurning(false);
+      setCandleWasCreated(false);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <>
+      {/* Success Toast Notification - Outside modal so it stays visible after close */}
+      {showSuccessToast && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#4CAF50',
+          color: 'white',
+          padding: '16px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 100000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          animation: 'slideDown 0.3s ease-out',
+          fontSize: '16px',
+          fontWeight: '500'
+        }}>
+          <span style={{ fontSize: '24px' }}>🕯️</span>
+          <span>Your candle has been lit successfully!</span>
+          <span style={{ fontSize: '20px' }}>✨</span>
+        </div>
+      )}
+      
+      <style>{`
+        @keyframes slideDown {
+          from {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+          }
+          to {
+            transform: translate(-50%, 0);
+            opacity: 1;
+          }
+        }
+      `}</style>
+      
+      {!isOpen ? null : (
+        <>
+          <style>{`
+        @keyframes tooltipFadeIn {
+          0%, 100% {
+            opacity: 0.9;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+        
+        @keyframes rotateHand {
+          0%, 100% {
+            transform: rotate(0deg) translateX(0px);
+          }
+          25% {
+            transform: rotate(-15deg) translateX(-10px);
+          }
+          75% {
+            transform: rotate(15deg) translateX(10px);
+          }
+        }
+        
+        .rotate-tooltip {
+          animation: tooltipFadeIn 4s ease-in-out infinite;
+        }
+        
+        .rotate-hand {
+          animation: rotateHand 2s ease-in-out infinite;
+        }
+      `}</style>
+      
       <BurningEffect 
         elementRef={modalContentRef}
         onComplete={() => {
@@ -1131,8 +1202,28 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           if (showPasswordDialog || showConfirmDialog) {
             return;
           }
-          // Close directly without confirmation
-          onClose();
+          
+          // Check if candle was already created or if there's unsaved data
+          if (candleWasCreated) {
+            // Candle was created, show fire effect before closing
+            setIsBurning(true);
+            setTimeout(() => {
+              setIsBurning(false);
+              onClose();
+            }, 2000);
+          } else {
+            // Check if user has entered any data
+            const hasUnsavedData = formData.username.trim() || formData.message.trim() || imageFile;
+            if (hasUnsavedData) {
+              // Show confirmation before closing with unsaved data
+              if (window.confirm('You have unsaved changes. Are you sure you want to close without saving your candle?')) {
+                onClose();
+              }
+            } else {
+              // No data entered, just close
+              onClose();
+            }
+          }
         }
         // Clean up the data attribute
         delete e.currentTarget.dataset.shouldClose;
@@ -1145,15 +1236,25 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       }}>
       <div className="compact-modal-content" ref={modalContentRef} onClick={e => e.stopPropagation()}>
         <button className="compact-modal-close" onClick={() => {
-          // If there's data entered, trigger burning effect before closing
-          if (formData.username.trim() || formData.message.trim() || imageFile) {
+          // Only trigger burning effect if candle was actually created
+          if (candleWasCreated) {
             setIsBurning(true);
             setTimeout(() => {
               setIsBurning(false);
               onClose();
             }, 2000);
           } else {
-            onClose();
+            // Check if user has entered any data
+            const hasUnsavedData = formData.username.trim() || formData.message.trim() || imageFile;
+            if (hasUnsavedData) {
+              // Show confirmation before closing with unsaved data
+              if (window.confirm('You have unsaved changes. Are you sure you want to close without saving your candle?')) {
+                onClose();
+              }
+            } else {
+              // No data entered, just close
+              onClose();
+            }
           }
         }}>×</button>
         
@@ -1161,7 +1262,37 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           {/* Left side - 3D Preview */}
           <div className="compact-candle-preview">
             <div className="preview-label">Your Candle Preview</div>
-            <div className="canvas-container">
+            <div className="canvas-container" style={{ position: 'relative' }}>
+              {/* Rotate Tooltip */}
+              {showRotateTooltip && (
+                <div 
+                  onClick={() => setShowRotateTooltip(false)}
+                  className="rotate-tooltip"
+                  style={{
+                    position: 'absolute',
+                    bottom: '40%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '15px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    zIndex: 10,
+                    pointerEvents: 'auto'
+                  }}
+                >
+                  <div className="rotate-hand" style={{
+                    fontSize: '3rem',
+                    transformOrigin: 'center bottom'
+                  }}>
+                    👆
+                  </div>
+                </div>
+              )}
               <Canvas
                 key={canvasKey}
                 camera={{ position: [0, 2, 5], fov: 45 }}
@@ -1173,6 +1304,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   powerPreference: "high-performance",
                   preserveDrawingBuffer: true,
                 }}
+                onPointerDown={handleCanvasInteraction}
+                onWheel={handleCanvasInteraction}
               >
                 <ambientLight intensity={0.6} />
                 <directionalLight 
@@ -1617,12 +1750,33 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   marginTop: '10px'
                 }}>
                   {/* RL80 Amount Input */}
-                  <div style={{ flex: '1', maxWidth: 'calc(100% - 130px)' }}>
+                  <div style={{ 
+                    flex: '1', 
+                    maxWidth: 'calc(100% - 130px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    position: 'relative'
+                  }}>
                     <input
                       type="text"
                       name="burnedAmount"
-                      value={formatNumberWithCommas(formData.burnedAmount)}
-                      onChange={handleAmountChange}
+                      value={formData.burnedAmount}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow numbers
+                        const numericValue = value.replace(/[^0-9]/g, '');
+                        
+                        if (numericValue === '') {
+                          setFormData(prev => ({ ...prev, burnedAmount: '' }));
+                          return;
+                        }
+                        
+                        const parsed = parseInt(numericValue);
+                        // Prevent negative numbers and limit to reasonable maximum
+                        if (parsed >= 0 && parsed <= 999999999999999) {
+                          setFormData(prev => ({ ...prev, burnedAmount: parsed }));
+                        }
+                      }}
                       onKeyDown={(e) => {
                         // Prevent Enter key from submitting form
                         if (e.key === 'Enter') {
@@ -1631,9 +1785,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       }}
                       placeholder="RL80 tokens to burn"
                       className="amount-input"
-                      required
                       style={{
-                        padding: '10px 12px',
+                        padding: '10px 40px 10px 12px',
                         borderRadius: '6px',
                         border: '1px solid rgba(255, 255, 255, 0.2)',
                         backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -1643,6 +1796,65 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         boxSizing: 'border-box'
                       }}
                     />
+                    {/* Custom spinner buttons */}
+                    <div style={{
+                      position: 'absolute',
+                      right: '2px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0'
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentValue = parseInt(formData.burnedAmount) || 0;
+                          const newValue = currentValue + 1000;
+                          if (newValue <= 999999999999999) {
+                            setFormData(prev => ({ ...prev, burnedAmount: newValue }));
+                          }
+                        }}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          border: 'none',
+                          borderRadius: '3px 3px 0 0',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          padding: '2px 8px',
+                          fontSize: '12px',
+                          lineHeight: '1',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentValue = parseInt(formData.burnedAmount) || 0;
+                          const newValue = Math.max(0, currentValue - 1000);
+                          setFormData(prev => ({ ...prev, burnedAmount: newValue || '' }));
+                        }}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          border: 'none',
+                          borderRadius: '0 0 3px 3px',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          padding: '2px 8px',
+                          fontSize: '12px',
+                          lineHeight: '1',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                      >
+                        ▼
+                      </button>
+                    </div>
                   </div>
                   
                   {/* Encrypt Button */}
@@ -1964,7 +2176,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       </div>
                       
                       <p><strong>Name:</strong> {formData.username}</p>
-                      <p><strong>Amount:</strong> {formatNumberWithCommas(formData.burnedAmount)}</p>
+                      <p><strong>Amount:</strong> {formData.burnedAmount ? formatNumberWithCommas(formData.burnedAmount) : '0'}</p>
                       <p><strong>Message:</strong> {formData.message.substring(0, 50)}{formData.message.length > 50 ? '...' : ''}</p>
                       {isEncrypted && <p className="encryption-notice">🔒 This message will be encrypted</p>}
                     </div>
@@ -2019,6 +2231,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         </div>
       </div>
     </div>
+        </>
+      )}
     </>
   );
 }

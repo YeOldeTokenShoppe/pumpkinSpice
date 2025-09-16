@@ -92,7 +92,38 @@
     };
 
     return (
-      <div
+      <>
+        <style>{`
+          @keyframes tooltipFadeIn {
+            0%, 100% {
+              opacity: 0.9;
+            }
+            50% {
+              opacity: 1;
+            }
+          }
+          
+          @keyframes rotateHand {
+            0%, 100% {
+              transform: rotate(0deg) translateX(0px);
+            }
+            25% {
+              transform: rotate(-15deg) translateX(-10px);
+            }
+            75% {
+              transform: rotate(15deg) translateX(10px);
+            }
+          }
+          
+          .rotate-tooltip {
+            animation: tooltipFadeIn 4s ease-in-out infinite;
+          }
+          
+          .rotate-hand {
+            animation: rotateHand 2s ease-in-out infinite;
+          }
+        `}</style>
+        <div
         style={{
           position: "absolute",
           top: 0,
@@ -132,6 +163,8 @@
             onCreated={({ gl }) => {
               gl.domElement.style.touchAction = 'none'; // Disable browser touch gestures
             }}
+            onPointerDown={handleCanvasInteraction}
+            onWheel={handleCanvasInteraction}
           >
             <SceneContent userData={userData} />
           </Canvas>
@@ -297,6 +330,7 @@
 
         </div>
       </div>
+      </>
     );
   }
 
