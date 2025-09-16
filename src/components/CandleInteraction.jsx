@@ -10,9 +10,15 @@
     const [hasLiked, setHasLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(userData?.likes || 0);
     const [isLiking, setIsLiking] = useState(false);
+    const [showRotateTooltip, setShowRotateTooltip] = useState(true);
 
     if (!isVisible) return null;
 
+    const handleCanvasInteraction = useCallback(() => {
+      if (showRotateTooltip) {
+        setShowRotateTooltip(false);
+      }
+    }, [showRotateTooltip]);
     // Add debugging to log the userData
     console.log("FloatingCandleViewer received userData:", userData, "Index:", currentIndex, "Total:", totalCandles);
 
@@ -167,6 +173,49 @@
           >
             ✕
           </button>
+           {/* Rotate Tooltip */}
+           {showRotateTooltip && (
+                <>
+                  <div 
+                    onClick={() => setShowRotateTooltip(false)}
+                    className="rotate-tooltip"
+                    style={{
+                      position: 'absolute',
+                      bottom: '40%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '15px 20px',
+                      // backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      // border: '1px solid rgba(212, 175, 55, 0.5)',
+                      // borderRadius: '12px',
+                      // color: '#d4af37',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      zIndex: 10000,
+                      // backdropFilter: 'blur(10px)',
+                      // boxShadow: '0 4px 20px rgba(212, 175, 55, 0.2)'
+                    }}
+                  >
+                    <div className="rotate-hand" style={{
+                      fontSize: '3rem',
+                      transformOrigin: 'center bottom'
+                    }}>
+                      👆
+                    </div>
+                    {/* <span style={{
+                      textAlign: 'center',
+                      lineHeight: '1.4'
+                    }}>
+                      Drag to rotate
+                    </span> */}
+                  </div>
+                </>
+              )}
 
           {/* Like Button - Only show if candle allows likes (default true for undefined) */}
           {userData && userData.allowLikes !== false && (
@@ -859,6 +908,8 @@
           maxDistance={10}
           makeDefault
         />
+
+  
       </>
     );
   }

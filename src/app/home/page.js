@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, Suspense } from 'react';
+import React, { useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import SlantedCarousel from '@/components/SlantedCarousel';
 import { useMusic } from '@/components/MusicContext';
@@ -641,13 +641,10 @@ export default function HomePage() {
   const [emoji, setEmoji] = useState("😇");
   const [showRotateTooltip, setShowRotateTooltip] = useState(true);
   
-  // Auto-hide tooltip after 8 seconds
-  useEffect(() => {
+  // Hide tooltip on first canvas interaction
+  const handleCanvasInteraction = useCallback(() => {
     if (showRotateTooltip) {
-      const timer = setTimeout(() => {
-        setShowRotateTooltip(false);
-      }, 8000);
-      return () => clearTimeout(timer);
+      setShowRotateTooltip(false);
     }
   }, [showRotateTooltip]);
   
@@ -915,6 +912,7 @@ export default function HomePage() {
         
         setFontLoaded(true);
         setFontsReady(true); // Fonts are loaded at this point
+        document.documentElement.classList.add('fonts-loaded'); // Add class to html element
         setLoadingProgress(60);
         
         // Check if client-side and set viewport
@@ -946,6 +944,7 @@ export default function HomePage() {
         // Even on error, eventually show the page
         setFontLoaded(true);
         setFontsReady(true); // Show text even if fonts fail to load
+        document.documentElement.classList.add('fonts-loaded'); // Ensure text shows even on error
         setIsClient(true);
         setTimeout(() => {
           setPageLoading(false);
@@ -1721,6 +1720,8 @@ export default function HomePage() {
               camera={{ position: [0, 2, 8], fov: 45 }}
               style={{ width: '100%', height: '100%' }}
               gl={{ alpha: true, antialias: true }}
+              onPointerDown={handleCanvasInteraction}
+              onWheel={handleCanvasInteraction}
             >
               <ambientLight intensity={1.5} />
               <OrbitControls 
@@ -2083,8 +2084,6 @@ export default function HomePage() {
               color: "#8e662b",
               fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
               textShadow: "3px 3px 5px #000, -1px -1px 5px pink",
-              opacity: fontsReady ? 1 : 0,
-              transition: 'opacity 0.2s ease-in',
               fontSize: "7rem",
               fontWeight: 900,
               lineHeight: 0.8,
@@ -2390,6 +2389,8 @@ export default function HomePage() {
                 camera={{ position: [0, 2, 8], fov: 45 }}  // Raised camera Y position and increased FOV
                 style={{ width: '100%', height: '100%' }}
                 gl={{ alpha: true, antialias: true }}
+                onPointerDown={handleCanvasInteraction}
+                onWheel={handleCanvasInteraction}
               >
                 <ambientLight intensity={1.5} />
                 {/* <pointLight position={[10, 10, 10]} intensity={1} />
@@ -2435,13 +2436,13 @@ export default function HomePage() {
                       fontSize: '14px',
                       fontWeight: '500',
                       cursor: 'pointer',
-                      zIndex: 100,
+                      zIndex: 100000,
                       // backdropFilter: 'blur(10px)',
                       // boxShadow: '0 4px 20px rgba(212, 175, 55, 0.2)'
                     }}
                   >
                     <div className="rotate-hand" style={{
-                      fontSize: '28px',
+                      fontSize: '3rem',
                       transformOrigin: 'center bottom'
                     }}>
                       👆
@@ -2541,7 +2542,7 @@ export default function HomePage() {
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isLandscape && viewportHeight < 800 ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)', opacity: fontsReady ? 1 : 0, transition: 'opacity 0.2s ease-in'}}>Get Lit With RL80</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isLandscape && viewportHeight < 800 ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}>Get Lit With RL80</h1>
               <p style={{
                 lineHeight: 1.2,
                 opacity: 0.9,
@@ -2967,9 +2968,7 @@ export default function HomePage() {
           transform: "rotate(-8deg) skew(-15deg)",
           zIndex: 1000,
           display: "block",
-          visibility: "visible",
-          opacity: fontsReady ? 1 : 0,
-          transition: 'opacity 0.2s ease-in'
+          visibility: "visible"
         }}>
           Our Lady <br />
           <span style={{ fontSize: "1.5rem" }}>of </span>

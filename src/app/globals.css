@@ -59,7 +59,7 @@ canvas {
   src: url('/fonts/UnifrakturCook-Bold.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block; /* Block rendering until font loads */
 }
 
 @font-face {
@@ -67,7 +67,7 @@ canvas {
   src: url('/fonts/UnifrakturMaguntia-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap; /* Use swap to show text immediately with fallback, then swap when loaded */
+  font-display: block; /* Block rendering until font loads */
 }
 
 /* Preload font class */
@@ -75,23 +75,18 @@ canvas {
   font-family: 'UnifrakturMaguntia', serif;
 }
 
-/* Critical font loading - use opacity instead of visibility for smoother transition */
-.font-loading-fix {
-  opacity: 0;
-  transition: opacity 0.1s ease-in;
+/* Critical CSS - Immediately hide text that will use custom fonts */
+/* This runs before any JavaScript */
+[style*="UnifrakturCook"],
+[style*="UnifrakturMaguntia"] {
+  opacity: 0 !important;
+  transition: opacity 0.3s ease-in;
 }
 
-.fonts-loaded .font-loading-fix {
-  opacity: 1;
-}
-
-/* Ensure headings use the custom font with fallback */
-h1, h2, h3, h4, h5, h6,
-.slide-title {
-  font-family: 'UnifrakturMaguntia', 'UnifrakturCook', 'Georgia', serif !important;
-  font-synthesis: none;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Show when fonts are confirmed loaded */
+html.fonts-loaded [style*="UnifrakturCook"],
+html.fonts-loaded [style*="UnifrakturMaguntia"] {
+  opacity: 1 !important;
 }
 
 

@@ -21,21 +21,29 @@ const CandleInteractionHint = ({ isMobileView }) => {
         }, 100);
       }, 2000);
 
-      // Auto-hide after 8 seconds
-      const hideTimer = setTimeout(() => {
-        setIsVisible(false);
-        // Mark as seen after animation completes
-        setTimeout(() => {
-          localStorage.setItem('hasSeenCandleHint', 'true');
-        }, 500);
-      }, 10000);
+      // Don't auto-hide - will hide on user interaction with a candle
 
       return () => {
         clearTimeout(mountTimer);
-        clearTimeout(hideTimer);
       };
     }
   }, []);
+
+  // Listen for candle viewer opening to hide the hint
+  useEffect(() => {
+    const checkViewerState = () => {
+      if (window.isCandleViewerOpen && isVisible) {
+        setIsVisible(false);
+        localStorage.setItem('hasSeenCandleHint', 'true');
+      }
+    };
+
+    // Check immediately and set up interval
+    checkViewerState();
+    const interval = setInterval(checkViewerState, 100);
+
+    return () => clearInterval(interval);
+  }, [isVisible]);
 
   const handleDismiss = () => {
     setIsVisible(false);

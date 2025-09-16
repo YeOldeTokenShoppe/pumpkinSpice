@@ -21,6 +21,19 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning style={{ margin: 0, padding: 0 }}>
+      <head>
+        <style dangerouslySetInnerHTML={{__html: `
+          /* Critical: Hide custom font text until loaded */
+          [style*="UnifrakturCook"],
+          [style*="UnifrakturMaguntia"] {
+            visibility: hidden !important;
+          }
+          .fonts-loaded [style*="UnifrakturCook"],
+          .fonts-loaded [style*="UnifrakturMaguntia"] {
+            visibility: visible !important;
+          }
+        `}} />
+      </head>
       <body suppressHydrationWarning style={{ margin: 0, padding: 0, backgroundColor: '#000000' }}>
         <ClerkProvider appearance={{
         baseTheme: dark,
