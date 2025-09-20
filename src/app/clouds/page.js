@@ -351,8 +351,8 @@ const EtherealCloudsPage = () => {
       <Canvas
         // ref={canvasRef}
         camera={{ 
-          position: isMobileDevice ? [0, 20, 65] : [0, 20, 60], 
-          fov: isMobileDevice ? 60 : 60, 
+          // position: isMobileDevice ? [0, 20, 65] : [0, 20, 60], 
+          // fov: isMobileDevice ? 60 : 60, 
           near: 0.1, 
           far: 1000 
         }}
@@ -402,11 +402,11 @@ const EtherealCloudsPage = () => {
           <OrbitControls
             enableRotate={true}
             enableDamping={true}
-            enablePan={true}
+            enablePan={false}
             enableZoom={true}
             minDistance={50}
             maxDistance={100}
-            // target={[0, 0, 0]}
+            target={[0, 0, 0]}
             // minAzimuthAngle={-Math.PI / 12}  // -60 degrees
             // maxAzimuthAngle={Math.PI / 12}   // +60 degrees
             // minPolarAngle={0}     // 45 degrees from top

@@ -616,8 +616,51 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
   );
 }
 
-// Preload the candle model
+// AngelEmoji Model component
+function AngelEmojiModel() {
+  const { scene, animations } = useGLTF('/models/angelEmoji.glb');
+  const { actions } = useAnimations(animations, scene);
+  const modelRef = useRef();
+
+  useEffect(() => {
+    // Log all available animations
+    console.log('Angel Emoji Animations:', animations);
+    if (animations && animations.length > 0) {
+      console.log('Available animation names:');
+      animations.forEach((clip, index) => {
+        console.log(`Animation ${index}: "${clip.name}"`);
+      });
+      
+      // Try to play the first animation if it exists
+      const firstAnimationName = animations[0]?.name;
+      if (firstAnimationName && actions[firstAnimationName]) {
+        console.log(`Playing animation: "${firstAnimationName}"`);
+        actions[firstAnimationName].play();
+      }
+    } else {
+      console.log('No animations found in angelEmoji.glb');
+    }
+  }, [animations, actions]);
+
+  // Auto-rotation
+  useFrame((state, delta) => {
+    if (!modelRef.current) return;
+    modelRef.current.rotation.y += delta * 0.3;
+  });
+
+  return (
+    <primitive 
+      ref={modelRef}
+      object={scene} 
+      scale={[1, 1, 1]}
+      position={[3, 0, 0]}  // Position to the right of the candle
+    />
+  );
+}
+
+// Preload the models
 useGLTF.preload('/models/singleCandleAnimatedFlame.glb');
+useGLTF.preload('/models/angelEmoji.glb');
 
 export default function HomePage() {
   const [fontLoaded, setFontLoaded] = useState(false);

@@ -1,7 +1,7 @@
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MusicProvider } from "@/components/MusicContext";
-import { MiniKitContextProvider } from "../../providers/MiniKitProvider";
+
 import { dark, shadesOfPurple } from '@clerk/themes';
 import ConditionalIllumin80 from "@/components/ConditionalIllumin80"
 
@@ -10,8 +10,7 @@ import ConditionalIllumin80 from "@/components/ConditionalIllumin80"
 
 export const metadata = {
   title: '𝓞𝖚𝖗 𝕷𝖆𝖉𝖞 𝔬𝔣 𝕻𝖊𝖗𝖕𝖊𝖙𝖚𝖆𝖑 𝕻𝖗𝖔𝖋𝖎𝖙',
-  viewport: 'width=device-width',
-  initialscale:'1',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes',
   icons: {
     icon: '/favicon.svg', // or '/icon.png' if you use PNG
     apple: '/apple-icon.png', // optional: for Apple devices
@@ -287,12 +286,12 @@ export default function RootLayout({ children }) {
           }
         }
       }}>
-          <MiniKitContextProvider>
+   
             <MusicProvider>
               <ConditionalIllumin80 />
               {children}
             </MusicProvider>
-          </MiniKitContextProvider>
+
         </ClerkProvider>
       </body>
     </html>

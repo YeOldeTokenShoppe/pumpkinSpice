@@ -101,9 +101,17 @@ export default function GalleryPage() {
         // Check if the font is available
         await document.fonts.load("1em 'UnifrakturMaguntia'");
         setFontLoaded(true);
+        // Add fonts-loaded class to reveal hidden font elements
+        document.documentElement.classList.add('fonts-loaded');
+        document.body.classList.add('fonts-loaded');
       } catch (e) {
         // Fallback: set as loaded after a short delay
-        setTimeout(() => setFontLoaded(true), 100);
+        setTimeout(() => {
+          setFontLoaded(true);
+          // Add fonts-loaded class even on error
+          document.documentElement.classList.add('fonts-loaded');
+          document.body.classList.add('fonts-loaded');
+        }, 100);
       }
     };
     checkFont();

@@ -19,33 +19,9 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
   // Load texture only on client side
   const [cloudTexture, setCloudTexture] = useState(null);
   
-  // Calculate cloud color based on Fear & Greed value
-  const getCloudColor = (value, isPink = false) => {
-    // Ensure value is a number and handle edge cases
-    const numValue = typeof value === 'number' ? value : 50;
-    
-    if (numValue <= 30) {  // Changed < to <= to include 0
-      // Extreme Fear: Dark purple/grey clouds
-      return "#3a2a4a";
-    } else if (numValue < 50) {
-      // Fear: Grey with purple tint
-      return "#5a4a6a";
-    } else if (numValue < 70) {
-      // Greed: Light pink-grey
-      return isPink ? "#daa0c0" : "#e8d8e8";
-    } else {
-      // Extreme Greed: Pink/white
-      return isPink ? "pink" : "white";
-    }
-  };
-  
-  // Debug log to check value changes
-  useEffect(() => {
-    console.log('Clouds: fearGreedValue changed to:', fearGreedValue, 'white:', getCloudColor(fearGreedValue, false), 'pink:', getCloudColor(fearGreedValue, true));
-  }, [fearGreedValue]);
-  
-  const whiteCloudColor = getCloudColor(fearGreedValue, false);
-  const pinkCloudColor = getCloudColor(fearGreedValue, true);
+  // Hardcode pink color for all clouds
+  const whiteCloudColor = "#ffc0cb";
+  const pinkCloudColor = "#ffc0cb";
 
   useEffect(() => {
     // Only load texture on client side
@@ -293,10 +269,12 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
         
         {/* Hemisphere light from below for sunset glow on cloud undersides */}
         <hemisphereLight
-          skyColor="#ff6b35"
-          groundColor="#ff6b35"
-          intensity={5}
-          position={[0, 0, -3]}
+          skyColor="#c449f4"
+          groundColor="#f7d5a3"
+          // skyColor="#f8b6f9"
+          // groundColor="#f7b34c"       
+          intensity={3}
+          position={[0, 0, 0]}
         />
         
         {/* Multiple lightning sources for dramatic effect */}
@@ -332,18 +310,18 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
               <Cloud 
                 ref={cloud0}
                 seed={1}
-                segments={10}
-                volume={45}
+                segments={5}
+                volume={25}
                 opacity={0.9}
-                fade={20}
+                fade={1}
                 growth={8}
                 speed={0.05}
-                bounds={[20, 8, 8]}
+                bounds={[10, 6, 6]}
                 color={whiteCloudColor}
                 position={[0, -11, -5]}
                 texture={cloudTexture}
               />
-              
+          
               {/* Large white cloud to the right */}
               <Cloud 
                 ref={cloud1}
@@ -351,7 +329,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 segments={15}
                 volume={32}
                 opacity={0.85}
-                fade={18}
+                fade={1}
                 growth={7}
                 speed={0.04}
                 bounds={[18, 7, 7]}
@@ -367,7 +345,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 segments={15}
                 volume={23}
                 opacity={0.85}
-                fade={18}
+                fade={1}
                 growth={7}
                 speed={0.04}
                 bounds={[18, 7, 7]}
@@ -379,11 +357,11 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
               {/* Background large cloud */}
               <Cloud 
                 ref={cloud3}
-                seed={4}
+                seed={14}
                 segments={10}
-                volume={30}
+                volume={20}
                 opacity={0.7}
-                fade={15}
+                fade={1}
                 growth={6}
                 speed={0.03}
                 bounds={[16, 6, 6]}
@@ -396,13 +374,13 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
               <Cloud 
                 ref={cloud4}
                 seed={5}
-                segments={28}
+                segments={5}
                 volume={31}
                 opacity={0.75}
-                fade={16}
+                fade={1}
                 growth={6}
                 speed={0.035}
-                bounds={[17, 6, 6]}
+                bounds={[17, 1, 6]}
                 color={whiteCloudColor}
                 position={[10, -27, 15]}
                 texture={cloudTexture}
@@ -417,13 +395,13 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 opacity={0.6}
                 seed={0.3}
                 bounds={100}
-                volume={80}
+                volume={40}
                 position={[0, -15, -30]}
                 texture={cloudTexture}
               />
               
               {/* Hidden light sources for glow effects */}
-              <pointLight
+              {/* <pointLight
                 ref={staticLightRef1}
                 color={pinkCloudColor}
                 intensity={0}
@@ -438,7 +416,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 position={[0, -10, 0]}
                 distance={20}
                 decay={2}
-              />
+              /> */}
             {/* </Clouds> */}
           </group>
     

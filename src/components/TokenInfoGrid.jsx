@@ -1615,7 +1615,7 @@ Descending from the Cloud, Behold! the mother of memes, an aider to traders, and
           }}> RL80 </span>tokens to devote a candle in appreciation for her tireless vigilance.
 Or hold them for luck, and to ward off evil.<br/><br/> */}
 
-Whether you need a Hail Mary for hard times, or just sanctuary in the digital economy, <span style={{
+Whether you need a Hail Mary for hard times, or just sanctuary in the digital economy <span style={{
             fontFamily: 'UnifrakturCook, serif',
             fontWeight: 'bold',
             fontSize: '1.1em',

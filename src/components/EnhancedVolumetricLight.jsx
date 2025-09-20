@@ -3,18 +3,18 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const EnhancedVolumetricLight = ({ 
-  position = [0, 100, 10], 
-  target = [0, 20, 0],
+  position = [-5, 100, 3], 
+  target = [0, -10, 0],
   color = '#ffffff',
-  intensity = 3,
-  rayCount = 50,
-  spread = 30,
-  opacity = 0.015
+  intensity = 1,
+  rayCount = 20,
+  spread = 10,
+  opacity = 0.005
 }) => {
   const groupRef = useRef();
   const time = useRef(0);
   
-  // Create ray data with more natural distribution
+  // Create ray data with more aligned, organized distribution
   const rays = useMemo(() => {
     const raysArray = [];
     const lightPos = new THREE.Vector3(...position);
@@ -22,38 +22,38 @@ const EnhancedVolumetricLight = ({
     const direction = targetPos.clone().sub(lightPos).normalize();
     const distance = lightPos.distanceTo(targetPos);
     
-    // Create multiple layers of rays for depth
-    for (let layer = 0; layer < 3; layer++) {
-      const layerRayCount = Math.floor(rayCount / 3);
-      const layerSpread = spread * (1 + layer * 0.3);
-      const layerOpacity = opacity * (1 - layer * 0.2);
+    // Create fewer layers with more separation
+    for (let layer = 0; layer < 2; layer++) {  // Reduced to 2 layers
+      const layerRayCount = Math.floor(rayCount / 2);
+      const layerSpread = spread * (1 + layer * 0.5); // More variation for depth
+      const layerOpacity = opacity * (1.2 - layer * 0.3); // Stronger front layer
       
       for (let i = 0; i < layerRayCount; i++) {
-        // Use golden ratio for better distribution
-        const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-        const theta = goldenAngle * i;
-        const y = 1 - (i / layerRayCount) * 2;
-        const radius = Math.sqrt(1 - y * y) * layerSpread;
+        // Create a more uniform circular pattern
+        const angle = (i / layerRayCount) * Math.PI * 2;
+        const radiusFactor = 0.6 + (layer * 0.2); // More consistent radius
+        const radius = layerSpread * radiusFactor;
         
-        const x = Math.cos(theta) * radius;
-        const z = Math.sin(theta) * radius;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
         
-        // Add deterministic offset for natural look based on index
-        const seedValue = ((i + layer * 100) * 137.5) % 1; // Golden angle
+        // Smaller, more controlled offset for slight variation
+        const seedValue = ((i + layer * 100) * 137.5) % 1;
         const randomOffset = new THREE.Vector3(
-          (seedValue - 0.5) * 5,
-          ((seedValue * 2) % 1 - 0.5) * 5,
-          ((seedValue * 3) % 1 - 0.5) * 5
+          (seedValue - 0.5) * 1.5, // Reduced from 5 to 1.5
+          0, // No vertical offset for better alignment
+          (seedValue - 0.5) * 1.5  // Reduced from 5 to 1.5
         );
         
-        const rayStart = lightPos.clone().add(new THREE.Vector3(x, 50, z)).add(randomOffset);
-        // Godray endpoints - shorter for more realistic light rays
-        const rayEnd = targetPos.clone().add(new THREE.Vector3(x * 0.5, -50, z * 0.5));
-        const rayLength = rayStart.distanceTo(rayEnd);
+        // More parallel ray positions - maintain separation at bottom
+        const rayStart = lightPos.clone().add(new THREE.Vector3(x, 0, z)).add(randomOffset);
+        // Keep rays more parallel by maintaining similar spread at bottom
+        const rayEnd = targetPos.clone().add(new THREE.Vector3(x * 0.8, 10, z * 0.8)); // Stop above model, maintain spread
+        const rayLength = rayStart.distanceTo(rayEnd) * 0.8; // Shorten rays
         const rayDirection = rayEnd.clone().sub(rayStart).normalize();
         
-        // Vary the cone width based on distance - deterministic
-        const coneRadius = (4 + seedValue * 3) * (1 + layer * 0.5);
+        // Thinner, more defined cone width for godray effect
+        const coneRadius = 1.5 + layer * 0.5; // Thinner cones
         
         raysArray.push({
           id: `${layer}-${i}`,
@@ -64,9 +64,9 @@ const EnhancedVolumetricLight = ({
             0
           ),
           scale: [coneRadius, rayLength, coneRadius],
-          opacity: layerOpacity * (0.5 + seedValue * 0.5),
-          pulseSpeed: 0.2 + seedValue * 0.3,
-          pulsePhase: seedValue * Math.PI * 2
+          opacity: layerOpacity * (0.9 + Math.sin(angle) * 0.1), // Slight variation in opacity
+          pulseSpeed: 0.1,
+          pulsePhase: (i / layerRayCount) * Math.PI * 2
         });
       }
     }
@@ -107,7 +107,7 @@ const EnhancedVolumetricLight = ({
         shadow-mapSize={[2048, 2048]}
         shadow-camera-near={0.1}
         shadow-camera-far={500}
-      />
+      /> 
       
       {/* Volumetric ray meshes */}
       {rays.map((ray) => (
@@ -129,24 +129,28 @@ const EnhancedVolumetricLight = ({
         </mesh>
       ))}
       
-      {/* Central bright core ray */}
-      {/* <mesh
-        position={[position[0], position[1] - 50, position[2]]}
+      {/* Central bright core ray - better aligned */}
+      <mesh
+        position={[
+          (position[0] + target[0]) / 2,  // Center between light and target
+          (position[1] + target[1]) / 2,  // Center vertically
+          (position[2] + target[2]) / 2   // Center in Z
+        ]}
         rotation={[Math.PI, 0, 0]}
       >
-        <cylinderGeometry args={[8, 25, 150, 8, 1, true]} />
+        <cylinderGeometry args={[2, 8, Math.abs(position[1] - target[1]), 8, 1, true]} />
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={opacity * 1.2}  // Reduced from 2
+          opacity={opacity * 2.5}  // More intense core
           side={THREE.DoubleSide}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
-      </mesh> */}
+      </mesh>
       
       {/* Atmospheric glow at the source - commented out to hide sphere */}
-      {/* <mesh position={position}>
+      <mesh position={position}>
         <sphereGeometry args={[20, 16, 16]} />
         <meshBasicMaterial
           color={color}
@@ -155,7 +159,7 @@ const EnhancedVolumetricLight = ({
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
-      </mesh> */}
+      </mesh>
     </group>
   );
 };
