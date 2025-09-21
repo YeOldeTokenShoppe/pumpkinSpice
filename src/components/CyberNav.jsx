@@ -27,7 +27,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
   }, [isMenuOpen]);
 
   const navItems = [
-    { id: '00', date: 'ICON ON I-80', title: "Roadmap", path: '/home', thumbnail: '/I80.jpg' },
+    { id: '00', date: 'ICON ON I-80', title: "Roadmap", path: '/home2', thumbnail: '/I80.jpg' },
     { id: '01', date: 'TOKEN UTIL80', title: 'Bless Us, RL80', path: '/gallery', thumbnail: '/sacred.png' },
     { id: '02', date: 'GENEROS80 FOUNTAIN', title: 'Toss Coins', path: '/fountain', thumbnail: '/fountain.png' },
     // { id: '03', date: 'MARKET ACTIV80', title: 'Cloud Computing', path: '/clouds', thumbnail: '/lightning.png' },
