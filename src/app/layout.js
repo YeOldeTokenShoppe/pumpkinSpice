@@ -10,11 +10,17 @@ import ConditionalIllumin80 from "@/components/ConditionalIllumin80"
 
 export const metadata = {
   title: '𝓞𝖚𝖗 𝕷𝖆𝖉𝖞 𝔬𝔣 𝕻𝖊𝖗𝖕𝖊𝖙𝖚𝖆𝖑 𝕻𝖗𝖔𝖋𝖎𝖙',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes',
   icons: {
     icon: '/favicon.svg', // or '/icon.png' if you use PNG
     apple: '/apple-icon.png', // optional: for Apple devices
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({ children }) {

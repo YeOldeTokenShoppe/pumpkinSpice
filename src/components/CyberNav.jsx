@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hoveredItemPath, setHoveredItemPath] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   
   // Check for mobile device
   React.useEffect(() => {
@@ -26,11 +27,10 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
   }, [isMenuOpen]);
 
   const navItems = [
-    { id: '00', date: 'ICON ON I-80', title: "Roadmap", path: '/', thumbnail: '/I80.jpg' },
+    { id: '00', date: 'ICON ON I-80', title: "Roadmap", path: '/home', thumbnail: '/I80.jpg' },
     { id: '01', date: 'TOKEN UTIL80', title: 'Bless Us, RL80', path: '/gallery', thumbnail: '/sacred.png' },
     { id: '02', date: 'GENEROS80 FOUNTAIN', title: 'Toss Coins', path: '/fountain', thumbnail: '/fountain.png' },
     // { id: '03', date: 'MARKET ACTIV80', title: 'Cloud Computing', path: '/clouds', thumbnail: '/lightning.png' },
-
     { id: '04', date: 'MORAL AUTHOR80', title: 'St. GR80\'s Scrolls', path: '/model-viewer', thumbnail: '/vvv.jpg' },
   ];
 
@@ -39,22 +39,22 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
       <>
         <button
           style={{
-            position: position,
-            top: position === "absolute" ? "10px" : "20px",
-            right: "20px",
-            zIndex: 10000000,
+            position: position === "relative" ? "relative" : position,
+            top: position === "relative" ? "0" : (position === "absolute" ? "10px" : "20px"),
+            right: position === "relative" ? "0" : "20px",
+            zIndex: position === "relative" ? 1 : 10000000,
             color: is80sMode ? "#D946EF" : "#ffff00",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             backdropFilter: "blur(10px)",
             border: "2px solid rgba(255, 255, 255, 0.2)",
             borderRadius: "8px",
-            padding: "8px",
+            padding: isMobile ? "8px" : "12px",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "40px",
-            height: "40px",
+            width: isMobile ? "40px" : "60px",
+            height: isMobile ? "40px" : "60px",
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
           }}
           aria-label="Menu"
@@ -64,7 +64,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
           onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(0, 0, 0, 0.8)"}
           onMouseLeave={(e) => e.target.style.backgroundColor = "rgba(0, 0, 0, 0.7)"}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width={isMobile ? "24" : "36"} height={isMobile ? "24" : "36"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             {isMenuOpen ? (
               <>
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -90,7 +90,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
               bottom: "0",
               backgroundColor: "rgba(0, 0, 0, 0.95)",
               backdropFilter: "blur(20px)",
-              zIndex: 9999999,
+              zIndex: 10000001,
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
@@ -101,31 +101,37 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
             onMouseLeave={() => setHoveredItemPath(null)}
           >
             {navItems.map((item, index) => {
-              // Handle both '/' and '/home' as the same route for the first nav item
-              const isActive = item.path === '/' 
-                ? (pathname === '/' || pathname === '/home')
-                : pathname === item.path;
+              // Handle route matching
+              const isActive = pathname === item.path || 
+                (item.path === '/home' && pathname === '/') ||
+                (item.path === '/home2' && pathname === '/home2');
               
               const isHovered = hoveredItemPath === item.path;
               
               return (
-                <Link key={`${item.id}-${pathname}`} href={item.path} passHref style={{ textDecoration: 'none' }}>
+                <div 
+                  key={`${item.id}-${pathname}`} 
+                  style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
+                  onClick={() => {
+                    console.log('Navigating to:', item.path);
+                    setIsMenuOpen(false);
+                    
+                    // Simple direct navigation
+                    window.location.href = item.path;
+                  }}
+                >
                   <div
                     style={{
                       display: "flex",
                       flexDirection: "row",
                       alignItems: "center",
                       gap: "15px",
-                      cursor: "pointer",
                       padding: "20px",
                       borderRadius: "10px",
                       backgroundColor: isActive 
                         ? (is80sMode ? "#67e8f9" : "#c896ff")
                         : (isHovered ? "rgb(200, 150, 255)" : "transparent"),
                       transition: "background-color 0.3s ease"
-                    }}
-                    onClick={() => {
-                      setIsMenuOpen(false);
                     }}
                     onMouseEnter={() => {
                       if (!isActive) {
@@ -173,7 +179,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                       </span>
                     </div>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>

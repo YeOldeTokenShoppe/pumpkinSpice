@@ -62,8 +62,8 @@ const SocialBar = ({ is80sMode = false }) => {
       {/* Main toggle button */}
       <button
           style={{
-            width: "40px",
-            height: "40px",
+            width: isMobile ? "40px" : "60px",
+            height: isMobile ? "40px" : "60px",
             borderRadius: "8px",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -88,7 +88,7 @@ const SocialBar = ({ is80sMode = false }) => {
           aria-label="Social Media"
           title="Social Media"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width={isMobile ? "20" : "30"} height={isMobile ? "20" : "30"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="18" cy="5" r="3"/>
             <circle cx="6" cy="12" r="3"/>
             <circle cx="18" cy="19" r="3"/>

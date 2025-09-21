@@ -27,7 +27,7 @@ export default function GalleryPage() {
   const { user, isSignedIn } = useUser();
   
   // Track if we're on a mobile device for responsive layout
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
 
   // Get music context functions
   const { play, pause, isPlaying: contextIsPlaying, nextTrack, currentTrackIndex, currentTrack, is80sMode: context80sMode, setIs80sMode: setContext80sMode } = useMusic();
@@ -367,17 +367,14 @@ export default function GalleryPage() {
           {/* Integrated Icon Bar - Menu, Music, and 80s Mode */}
           {!isLoading && (
         <>
-          {/* CyberNav Menu */}
-          <CyberNav is80sMode={is80sMode} />
-          
-          {/* Music, 80s Mode, and User Controls Container */}
+          {/* Top Controls Container - All buttons together */}
           <div style={{
             position: "fixed",
-            top: isMobileDevice ? "70px" : "20px", // Below menu on mobile
-            right: isMobileDevice ? "20px" : "72px", // Aligned with menu on mobile, spaced on desktop
+            top: "20px",
+            right: "20px",
             display: "flex",
-            flexDirection: isMobileDevice ? "column" : "row", // Vertical on mobile, horizontal on desktop
-            gap: "10px",
+            flexDirection: isMobileDevice ? "column" : "row",
+            gap: isMobileDevice ? "10px" : "15px",
             alignItems: isMobileDevice ? "flex-end" : "center",
             zIndex: 9999
           }}>
@@ -390,8 +387,8 @@ export default function GalleryPage() {
                   <SignInButton mode="modal" >
                     <button
                       style={{
-                        width: "40px",
-                        height: "40px",
+                        width: isMobileDevice ? "40px" : "60px",
+                        height: isMobileDevice ? "40px" : "60px",
                         borderRadius: "8px",
                         backgroundColor: "rgba(0, 0, 0, 0.7)",
                         border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -419,8 +416,8 @@ export default function GalleryPage() {
             <button
               onClick={() => handleMusicToggle(true)}
               style={{
-                width: "40px",
-                height: "40px",
+                width: isMobileDevice ? "40px" : "60px",
+                height: isMobileDevice ? "40px" : "60px",
                 borderRadius: "8px",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -436,8 +433,8 @@ export default function GalleryPage() {
               title="Toggle Music"
             >
               <svg
-                width="20"
-                height="20"
+                width={isMobileDevice ? "20" : "30"}
+                height={isMobileDevice ? "20" : "30"}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -462,8 +459,8 @@ export default function GalleryPage() {
               {/* Spinning Album Art */}
               <div
             style={{
-              width: "36px",
-              height: "36px",
+              width: isMobileDevice ? "36px" : "54px",
+              height: isMobileDevice ? "36px" : "54px",
               borderRadius: "50%",
               overflow: "hidden",
               animation: contextIsPlaying ? "spin 4s linear infinite" : "none",
@@ -510,8 +507,8 @@ export default function GalleryPage() {
                   }
                 }}
                 style={{
-                  width: "30px",
-                  height: "30px",
+                  width: isMobileDevice ? "30px" : "45px",
+                  height: isMobileDevice ? "30px" : "45px",
                   borderRadius: "4px",
                   backgroundColor: "rgba(255, 255, 255, 0.1)",
                   border: "none",
@@ -524,7 +521,7 @@ export default function GalleryPage() {
                 }}
                 title="Next Track"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width={isMobileDevice ? "16" : "24"} height={isMobileDevice ? "16" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="5 4 15 12 5 20 5 4"/>
                   <line x1="19" y1="5" x2="19" y2="19"/>
                 </svg>
@@ -542,8 +539,8 @@ export default function GalleryPage() {
                   }
                 }}
                 style={{
-                  width: "26px",
-                  height: "26px",
+                  width: isMobileDevice ? "26px" : "39px",
+                  height: isMobileDevice ? "26px" : "39px",
                   borderRadius: "4px",
                   backgroundColor: "rgba(255, 255, 255, 0.1)",
                   border: "1px solid rgba(255, 255, 255, 0.3)",
@@ -556,7 +553,7 @@ export default function GalleryPage() {
                 }}
                 title="Close Music"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width={isMobileDevice ? "14" : "21"} height={isMobileDevice ? "14" : "21"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/>
                   <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -570,8 +567,8 @@ export default function GalleryPage() {
             <button
               onClick={() => toggle80sMode(!is80sMode)}
               style={{
-                width: "40px",
-                height: "40px",
+                width: isMobileDevice ? "40px" : "60px",
+                height: isMobileDevice ? "40px" : "60px",
                 borderRadius: "8px",
               backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.3)" : "rgba(0, 0, 0, 0.7)",
               border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
@@ -605,7 +602,7 @@ export default function GalleryPage() {
             <span 
               translate="no"
               style={{ 
-                fontSize: "20px", 
+                fontSize: isMobileDevice ? "20px" : "24px", 
                 fontWeight: "bold",
                 color: is80sMode ? "#00ff41" : "#67e8f9",
                 textShadow: is80sMode ? "0 0 10px #00ff41" : "none",
@@ -617,8 +614,13 @@ export default function GalleryPage() {
           </button>
             </div>
             
+            {/* CyberNav Menu */}
+            <div style={{ order: isMobileDevice ? 0 : 3 }}>
+              <CyberNav is80sMode={is80sMode} position="relative" />
+            </div>
+            
             {/* Social Bar Icon */}
-            <div style={{ order: isMobileDevice ? 4 : 3 }}>
+            <div style={{ order: isMobileDevice ? 4 : 4 }}>
               <SocialBar is80sMode={is80sMode} />
             </div>
           </div>

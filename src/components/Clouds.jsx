@@ -307,7 +307,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
           <group ref={cloudsGroupRef}>
             {/* <Clouds material={THREE.MeshLambertMaterial} limit={400}> */}
               {/* Main large white cloud */}
-              <Cloud 
+              {/* <Cloud 
                 ref={cloud0}
                 seed={1}
                 segments={5}
@@ -320,7 +320,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[0, -11, -5]}
                 texture={cloudTexture}
-              />
+              /> */}
           
               {/* Large white cloud to the right */}
               <Cloud 
@@ -332,25 +332,25 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 fade={1}
                 growth={7}
                 speed={0.04}
-                bounds={[18, 7, 7]}
+                bounds={[18, 10, 7]}
                 color={whiteCloudColor}
-                position={[30, -15, 0]}
+                position={[30, -1, 0]}
                 texture={cloudTexture}
               />
               
-              {/* Large white cloud to the left */}
+              {/* Large white cloud to the left /under the bull */}
               <Cloud 
                 ref={cloud2}
                 seed={3}
                 segments={15}
-                volume={23}
+                volume={13}
                 opacity={0.85}
                 fade={1}
                 growth={7}
                 speed={0.04}
-                bounds={[18, 7, 7]}
+                bounds={[-18, 7, 7]}
                 color={whiteCloudColor}
-                position={[-30, -12, 0]}
+                position={[-40, -12, 0]}
                 texture={cloudTexture}
               />
               
@@ -390,12 +390,14 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
               <Cloud 
                 ref={cloud5}
                 concentrate="outside"
-                growth={50}
+                growth={10}
                 color={whiteCloudColor}
-                opacity={0.6}
+                opacity={0.4}
                 seed={0.3}
-                bounds={100}
-                volume={40}
+                bounds={50}
+                volume={30}
+                fade={10}
+                speed={0.02}
                 position={[0, -15, -30]}
                 texture={cloudTexture}
               />

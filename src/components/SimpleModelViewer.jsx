@@ -746,9 +746,14 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
       try {
         await document.fonts.load('700 1em UnifrakturCook');
         setFontLoaded(true);
+        // Add fonts-loaded class to body to reveal font elements
+        document.body.classList.add('fonts-loaded');
       } catch (e) {
         // Font might not load, but don't block the page
-        setTimeout(() => setFontLoaded(true), 2000);
+        setTimeout(() => {
+          setFontLoaded(true);
+          document.body.classList.add('fonts-loaded');
+        }, 2000);
       }
     };
     checkFont();
@@ -763,7 +768,9 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
   
   // Hide loader only when everything is loaded
   useEffect(() => {
+    console.log('SimpleModelViewer loading status:', { modelLoaded, fontLoaded, iframeLoaded, isDesktop });
     if (modelLoaded && fontLoaded && (iframeLoaded || !isDesktop)) {
+      console.log('All conditions met, hiding loader');
       // Add a small delay for smooth transition
       setTimeout(() => {
         setIsLoading(false);
@@ -1014,13 +1021,13 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 textAlign: 'left',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
               }}>Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic, medieval scholar, and retired service bot — forever pondering the ethics of leverage and the metaphysics of memes.
-{/* <span style={{
+<span style={{
                 fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
                 fontWeight: 'bold',
                 fontSize: '1.1em',
                 color: '#d4af37',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-              }}> Our Lady of Perpetual Profit.</span> */}
+              }}> Our Lady of Perpetual Profit.</span>
   
               </p>
             </div>
@@ -1111,6 +1118,14 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
       
       {/* 80s Mode CSS Animations */}
       <style jsx>{`
+        @font-face {
+          font-family: 'UnifrakturCook';
+          src: url('/fonts/UnifrakturCook-Bold.ttf') format('truetype');
+          font-weight: bold;
+          font-style: normal;
+          font-display: swap;
+        }
+        
         @keyframes scanlines {
           0% {
             transform: translateY(0);

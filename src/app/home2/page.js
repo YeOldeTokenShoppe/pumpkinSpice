@@ -14,6 +14,8 @@ import { useMusic } from '@/components/MusicContext';
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import CyberNav from '@/components/CyberNav';
+import InfinityLoader from '@/components/InfinityLoader';
+import Link from 'next/link';
 
 const GradientSkyMaterial = shaderMaterial(
   {
@@ -85,7 +87,7 @@ function DirectionalLightWithHelper() {
       <directionalLight
         ref={directionalLightRef}
         position={[15, 15, -10]}
-        intensity={10}
+        intensity={3}
         color="#ffffff"
         castShadow
         shadow-mapSize-width={2048}
@@ -98,7 +100,7 @@ function DirectionalLightWithHelper() {
   );
 }
 
-function SpotlightWithHelper() {
+function SpotlightWithHelper({ isMobile, scrollY }) {
   const spotlightRef = useRef();
   const targetRef = useRef();
 
@@ -108,16 +110,29 @@ function SpotlightWithHelper() {
     }
   }, []);
 
+  // Update target position to follow the model
+  useFrame(() => {
+    if (targetRef.current) {
+      // Match OurLadyRiderModel position logic
+      const baseY = isMobile ? -11 : -13;
+      targetRef.current.position.set(
+        isMobile ? -10 : -6,
+        baseY + scrollY * 0.015,
+        isMobile ? -10 : -18
+      );
+    }
+  });
+
   return (
     <>
       <spotLight
         ref={spotlightRef}
-        position={[-5, 25, 10]}
-        intensity={20}
-        angle={Math.PI / 6}
-        penumbra={0.3}
-        distance={45}
-        color="#ffffff"
+        position={[-5, 10, 5]}
+        intensity={35}
+        angle={Math.PI / 4}
+        penumbra={0.5}
+        distance={60}
+        color="#ffeedd"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -129,9 +144,11 @@ function SpotlightWithHelper() {
   );
 }
 
-function OurLadyRiderModel({ isMobile, scrollY }) {
+function OurLadyRiderModel({ isMobile, scrollY, onLoad }) {
   const { scene } = useGLTF('/models/ourlady_rider6.glb');
   const modelRef = useRef();
+  const groupRef = useRef();
+  const cloudRef = useRef();
 
   
   React.useEffect(() => {
@@ -142,50 +159,75 @@ function OurLadyRiderModel({ isMobile, scrollY }) {
           child.receiveShadow = true;
         }
       });
+      // Notify that this model is loaded
+      if (onLoad) onLoad();
     }
-  }, [scene]);
+  }, [scene, onLoad]);
 
   useFrame(() => {
-    if (modelRef.current) {
-      // Move model up as user scrolls down (creates descending effect)
-      modelRef.current.position.y = (isMobile ? -13 : -13) + scrollY * 0.015;
+    if (groupRef.current) {
+      // Move entire group (model + cloud) up as user scrolls down
+      const baseY = isMobile ? -11 : -13;
+      groupRef.current.position.y = baseY + scrollY * 0.015;
+    }
+    // Add gentle cloud rotation
+    if (cloudRef.current) {
+      cloudRef.current.rotation.y += 0.001;
     }
   });
 
   return (
-    <primitive 
-      ref={modelRef}
-      object={scene} 
-      scale={isMobile ? [10, 10, 10] : [10, 10, 10]}
-      position={isMobile ? [2, -13, -18] : [6, -13, -18]}
-      rotation={isMobile ? [0, -2.8, 0] : [0, -2.8, 0]}
-    />
+    <group 
+      ref={groupRef}
+      position={isMobile ? [-10, -11, -10] : [-6, -13, -12]}
+    >
+      <primitive 
+        ref={modelRef}
+        object={scene} 
+        scale={isMobile ? [10, 10, 10] : [12, 12, 12]}
+        rotation={isMobile ? [0, -2.5, 0] : [0, -2.4, 0]}
+      />
+      {/* Personal cloud that follows the model */}
+      <Cloud 
+        ref={cloudRef}
+        seed={99}
+        segments={10}
+        volume={30}
+        opacity={0.99}
+        fade={2}
+        growth={5}
+        speed={0.03}
+        bounds={[12, 6, 6]}
+        color="#ffc0cb"
+        position={[-5, 8, 5]}
+      />
+    </group>
   );
 }
 
-function AngelEmojiModel({ isMobile, scrollY }) {
-  const { scene, animations } = useGLTF('/models/angelEmojji.glb');
+function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
+  const { scene, animations } = useGLTF('/models/angelEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const modelRef = useRef();
 
   useEffect(() => {
     // Log all available animations
-    console.log('Angel Emoji Animations:', animations);
+    // console.log('Angel Emoji Animations:', animations);
     if (animations && animations.length > 0) {
-      console.log('Available animation names:');
+      // console.log('Available animation names:');
       animations.forEach((clip, index) => {
-        console.log(`Animation ${index}: "${clip.name}"`);
+        // console.log(`Animation ${index}: "${clip.name}"`);
       });
       
       // Play all animations simultaneously
       animations.forEach((clip) => {
         if (actions[clip.name]) {
-          console.log(`Playing animation: "${clip.name}"`);
+          // console.log(`Playing animation: "${clip.name}"`);
           actions[clip.name].play();
         }
       });
     } else {
-      console.log('No animations found in angelEmojji.glb');
+      // console.log('No animations found in angelEmojji.glb');
     }
 
     // Enable shadows on the model
@@ -196,8 +238,10 @@ function AngelEmojiModel({ isMobile, scrollY }) {
           child.receiveShadow = true;
         }
       });
+      // Notify that this model is loaded
+      if (onLoad) onLoad();
     }
-  }, [animations, actions, scene]);
+  }, [animations, actions, scene, onLoad]);
 
   // Orbit around center point and billboard effect
   useFrame((state, delta) => {
@@ -216,7 +260,7 @@ function AngelEmojiModel({ isMobile, scrollY }) {
     // Calculate orbital position
     const angle = time * orbitSpeed;
     modelRef.current.position.x = centerX + Math.cos(angle) * orbitRadius;
-    modelRef.current.position.z = centerZ + Math.sin(angle) * orbitRadius;
+    modelRef.current.position.z = centerZ + Math.sin(angle) * -orbitRadius;
     modelRef.current.position.y = orbitHeight + Math.sin(time * 2) * bobAmount + scrollY * 0.015;
     
     // Billboard - make model face the camera
@@ -234,23 +278,23 @@ function AngelEmojiModel({ isMobile, scrollY }) {
   );
 }
 
-function DevilEmojiModel({ isMobile, scrollY }) {
+function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
   const { scene, animations } = useGLTF('/models/devilEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const modelRef = useRef();
 
   useEffect(() => {
     // Log available animation
-    console.log('Devil Emoji Animations:', animations);
+    // console.log('Devil Emoji Animations:', animations);
     if (animations && animations.length > 0) {
       animations.forEach((clip, index) => {
-        console.log(`Animation ${index}: "${clip.name}"`);
+        // console.log(`Animation ${index}: "${clip.name}"`);
       });
       
       // Play the Armature|Idle animation
       const idleAnimation = animations.find(clip => clip.name === 'Armature|Idle') || animations[0];
       if (idleAnimation && actions[idleAnimation.name]) {
-        console.log(`Playing animation: "${idleAnimation.name}"`);
+        // console.log(`Playing animation: "${idleAnimation.name}"`);
         actions[idleAnimation.name].play();
       }
     }
@@ -263,8 +307,10 @@ function DevilEmojiModel({ isMobile, scrollY }) {
           child.receiveShadow = true;
         }
       });
+      // Notify that this model is loaded
+      if (onLoad) onLoad();
     }
-  }, [animations, actions, scene]);
+  }, [animations, actions, scene, onLoad]);
 
   // Orbit around center point (opposite side from angel) and billboard effect
   useFrame((state, delta) => {
@@ -283,7 +329,7 @@ function DevilEmojiModel({ isMobile, scrollY }) {
     // Calculate orbital position (start 180 degrees opposite from angel)
     const angle = time * orbitSpeed + Math.PI;
     modelRef.current.position.x = centerX + Math.cos(angle) * orbitRadius;
-    modelRef.current.position.z = centerZ + Math.sin(angle) * orbitRadius;
+    modelRef.current.position.z = centerZ + Math.sin(angle) * -orbitRadius;
     modelRef.current.position.y = orbitHeight + Math.sin(time * 2 + Math.PI) * bobAmount + scrollY * 0.015; // Opposite phase bobbing
     
     // Billboard - make model face the camera
@@ -302,7 +348,7 @@ function DevilEmojiModel({ isMobile, scrollY }) {
 }
 
 // Scene component that responds to scroll
-function Scene({ isMobile, scrollY }) {
+function Scene({ isMobile, scrollY, onAssetsLoaded }) {
   const { camera } = useThree();
   
   useFrame(() => {
@@ -319,29 +365,41 @@ function Scene({ isMobile, scrollY }) {
       <DirectionalLightWithHelper />
       <pointLight position={[-2, 2, -1]} intensity={1.5} />
       
-      <SpotlightWithHelper />
+      <SpotlightWithHelper isMobile={isMobile} scrollY={scrollY} />
       
       <GradientSkySphere />
       
       <Suspense fallback={null}>
         {/* Background layer - moves slowest */}
-        <group position={[-1, -2.5 + scrollY * 0.008, -6]}>
+        <group position={[-25, -2.5 + scrollY * 0.008, -6]}>
           <DarkClouds />
         </group>
 
         {/* Foreground layer - moves faster */}
-        <OurLadyRiderModel isMobile={isMobile} scrollY={scrollY} />
-        <AngelEmojiModel isMobile={isMobile} scrollY={scrollY} />
-        <DevilEmojiModel isMobile={isMobile} scrollY={scrollY} />
+        <OurLadyRiderModel 
+          isMobile={isMobile} 
+          scrollY={scrollY} 
+          onLoad={() => onAssetsLoaded?.('ourLadyModel')}
+        />
+        <AngelEmojiModel 
+          isMobile={isMobile} 
+          scrollY={scrollY} 
+          onLoad={() => onAssetsLoaded?.('angelModel')}
+        />
+        <DevilEmojiModel 
+          isMobile={isMobile} 
+          scrollY={scrollY} 
+          onLoad={() => onAssetsLoaded?.('devilModel')}
+        />
       </Suspense>
       <Suspense></Suspense>
       <PostProcessingEffects is80sMode={false} />
       <OrbitControls 
         enablePan={false}
-        enableZoom={false}
-        enableRotate={false}
+        enableZoom={true}
+        enableRotate={true}
         enableDamping={false}
-        touches={{ ONE: null, TWO: null }} // Disable touch controls to allow scrolling
+        enabled={false} // Completely disable OrbitControls for mobile scrolling
         target={isMobile ? [-45, 1.5 - scrollY * 0.015, -100] : [-50, 1.5 - scrollY * 0.015, -100]}
       />
     </>
@@ -360,9 +418,20 @@ export default function Home2() {
   const [isMobileView, setIsMobileView] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [flippedCards, setFlippedCards] = useState(new Set());
+  const [isSceneLoading, setIsSceneLoading] = useState(true);
+  const [assetsLoaded, setAssetsLoaded] = useState({
+    ourLadyModel: false,
+    angelModel: false,
+    devilModel: false,
+    images: []
+  });
   
   // Ref for sparkle effect
   const coinRef = useRef(null);
+  // Refs for card animations
+  const cardRefs = useRef([]);
+  const cardTransforms = useRef(new Map());
   
   // Auth state
   const { isSignedIn } = useUser();
@@ -395,6 +464,18 @@ export default function Home2() {
     setTimeout(() => setCopied(false), 2000);
   };
   
+  const handleCardFlip = (cardIndex) => {
+    setFlippedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cardIndex)) {
+        newSet.delete(cardIndex);
+      } else {
+        newSet.add(cardIndex);
+      }
+      return newSet;
+    });
+  };
+  
   // Helper function to get responsive values
   const getResponsiveValue = (mobile, tablet, tabletLandscape, desktop) => {
     if (isMobile) return mobile;
@@ -402,6 +483,40 @@ export default function Home2() {
     if (isTabletLandscape) return tabletLandscape;      // Tablet landscape
     return desktop;
   };
+
+  // Handle asset loading
+  const handleAssetLoaded = (assetName) => {
+    console.log('Asset loaded:', assetName);
+    setAssetsLoaded(prev => ({
+      ...prev,
+      [assetName]: true
+    }));
+  };
+
+  // Check if all assets are loaded
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const { ourLadyModel, angelModel, devilModel } = assetsLoaded;
+    const allModelsLoaded = ourLadyModel && angelModel && devilModel;
+    
+    console.log('Asset loading status:', { ourLadyModel, angelModel, devilModel, mounted, allModelsLoaded });
+    
+    if (allModelsLoaded) {
+      console.log('All assets loaded, hiding loader NOW');
+      setIsSceneLoading(false);
+    }
+  }, [assetsLoaded.ourLadyModel, assetsLoaded.angelModel, assetsLoaded.devilModel, mounted]);
+  
+  // Separate fallback timer
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      console.log('Loading timeout - forcing scene display');
+      setIsSceneLoading(false);
+    }, 5000);
+    
+    return () => clearTimeout(fallbackTimer);
+  }, []); // Run once on mount
 
   useEffect(() => {
     // Set mounted to true after hydration
@@ -455,6 +570,127 @@ export default function Home2() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Card scroll reveal animation
+  useEffect(() => {
+    if (!mounted) return;
+
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+
+    // Observe all card-wrap elements
+    cardRefs.current.forEach(card => {
+      if (card) observer.observe(card);
+    });
+
+    return () => {
+      cardRefs.current.forEach(card => {
+        if (card) observer.unobserve(card);
+      });
+    };
+  }, [mounted]);
+
+  // Card parallax mouse movement with enhanced depth effect
+  useEffect(() => {
+    if (!mounted) return;
+
+    const handleCardMouseMove = (e) => {
+      const card = e.currentTarget;
+      const cardRect = card.getBoundingClientRect();
+      const cardCenterX = cardRect.left + cardRect.width / 2;
+      const cardCenterY = cardRect.top + cardRect.height / 2;
+      
+      // Calculate mouse position relative to card center
+      const mouseX = (e.clientX - cardCenterX) / (cardRect.width / 2);
+      const mouseY = (e.clientY - cardCenterY) / (cardRect.height / 2);
+      
+      // Calculate rotation values (similar to codepen)
+      const rX = mouseX * 30; // Rotation on Y axis (left-right tilt)
+      const rY = mouseY * -30; // Rotation on X axis (up-down tilt)
+      
+      // Apply 3D rotation to card
+      const cardInner = card.querySelector('.card');
+      cardInner.style.transform = `rotateY(${rX}deg) rotateX(${rY}deg)`;
+      
+      // Move background opposite direction for depth
+      const cardBg = card.querySelector('.card-bg');
+      const tX = mouseX * -40;
+      const tY = mouseY * -40;
+      cardBg.style.transform = `translateX(${tX}px) translateY(${tY}px)`;
+    };
+
+    const handleCardMouseLeave = (e) => {
+      const card = e.currentTarget;
+      const cardInner = card.querySelector('.card');
+      const cardBg = card.querySelector('.card-bg');
+      
+      // Reset transforms with delay
+      setTimeout(() => {
+        cardInner.style.transform = '';
+        cardBg.style.transform = '';
+      }, 100);
+    };
+
+    // Add listeners to all card wraps
+    const cards = document.querySelectorAll('.card-wrap');
+    cards.forEach(card => {
+      card.addEventListener('mousemove', handleCardMouseMove);
+      card.addEventListener('mouseleave', handleCardMouseLeave);
+    });
+
+    return () => {
+      cards.forEach(card => {
+        card.removeEventListener('mousemove', handleCardMouseMove);
+        card.removeEventListener('mouseleave', handleCardMouseLeave);
+      });
+    };
+  }, [mounted]);
+
+  // Subtle parallax scroll effect for cards
+  useEffect(() => {
+    if (!mounted) return;
+
+    const handleCardScroll = () => {
+      const scrolled = window.pageYOffset;
+      const cards = document.querySelectorAll('.card-wrap.visible');
+      
+      cards.forEach((card, index) => {
+        const rect = card.getBoundingClientRect();
+        // Calculate distance from viewport center for parallax depth
+        const viewportCenter = window.innerHeight / 2;
+        const cardCenter = rect.top + rect.height / 2;
+        const distanceFromCenter = (cardCenter - viewportCenter) / window.innerHeight;
+        
+        // Subtle parallax based on distance from center, not alternating
+        const speed = 0.02; // Even more subtle
+        const yPos = distanceFromCenter * scrolled * speed;
+        
+        // Store the scroll transform
+        cardTransforms.current.set(card, yPos);
+        
+        // Only apply if card is in viewport
+        if (rect.bottom >= 0 && rect.top <= window.innerHeight) {
+          card.style.transform = `translateY(${yPos}px)`;
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleCardScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleCardScroll);
+    };
+  }, [mounted]);
   
   useEffect(() => {
     // Load local fonts that are declared in globals.css
@@ -483,14 +719,17 @@ export default function Home2() {
       loadFonts();
     }
   }, []);
- // Sparkle effect for coin
+ // Sparkle effect for coins (both main and card)
  useEffect(() => {
   // Wait for client and page to be ready
-  if (!isClient || !coinRef.current) {
+  if (!isClient) {
     return;
   }
 
-  const sparkle = coinRef.current;
+  // Get both coin containers
+  const mainCoin = coinRef.current;
+  const cardCoin = document.querySelector('.card-coin-sparkle');
+  const sparkleContainers = [mainCoin, cardCoin].filter(Boolean);
 
   const MAX_STARS = 60;
   const STAR_INTERVAL = 16;
@@ -501,8 +740,8 @@ export default function Home2() {
   const MAX_STAR_SIZE = 40;
   const MIN_STAR_SIZE = 20;
 
-  const MIN_STAR_TRAVEL_X = 100;
-  const MIN_STAR_TRAVEL_Y = 100;
+  const MIN_STAR_TRAVEL_X = 150;
+  const MIN_STAR_TRAVEL_Y = 150;
 
   const randomLimitedColor = () => {
     const randomHue = (() => {
@@ -521,21 +760,20 @@ export default function Home2() {
   };
 
   const Star = class {
-    constructor() {
+    constructor(container) {
+      this.container = container;
       this.size = this.random(MAX_STAR_SIZE, MIN_STAR_SIZE);
 
-      this.x = this.random(
-        sparkle.offsetWidth * 0.75,
-        sparkle.offsetWidth * 0.25
-      );
-      this.y = sparkle.offsetHeight / 2 - this.size / 2;
+      // Start from center of container
+      this.x = container.offsetWidth / 2;
+      this.y = container.offsetHeight / 2;
 
       this.x_dir = this.randomMinus();
       this.y_dir = this.randomMinus();
 
-      this.x_max_travel =
-        this.x_dir === -1 ? this.x : sparkle.offsetWidth - this.x - this.size;
-      this.y_max_travel = sparkle.offsetHeight / 2 - this.size;
+      // Allow stars to travel to edges of container
+      this.x_max_travel = container.offsetWidth / 2 - this.size / 2;
+      this.y_max_travel = container.offsetHeight / 2 - this.size / 2;
 
       this.x_travel_dist = this.random(this.x_max_travel, MIN_STAR_TRAVEL_X);
       this.y_travel_dist = this.random(this.y_max_travel, MIN_STAR_TRAVEL_Y);
@@ -562,11 +800,11 @@ export default function Home2() {
     }
 
     draw() {
-      sparkle.appendChild(this.star);
+      this.container.appendChild(this.star);
     }
 
     pop() {
-      sparkle.removeChild(this.star);
+      this.container.removeChild(this.star);
     }
 
     random(max, min) {
@@ -578,25 +816,32 @@ export default function Home2() {
     }
   };
 
-  let current_star_count = 0;
-  const intervalId = setInterval(() => {
-    if (current_star_count >= MAX_STARS) {
-      return;
-    }
+  // Create sparkle effects for each container
+  const intervals = [];
+  
+  sparkleContainers.forEach(container => {
+    let current_star_count = 0;
+    const intervalId = setInterval(() => {
+      if (current_star_count >= MAX_STARS) {
+        return;
+      }
 
-    current_star_count++;
+      current_star_count++;
 
-    const newStar = new Star();
-    newStar.draw();
+      const newStar = new Star(container);
+      newStar.draw();
 
-    setTimeout(() => {
-      current_star_count--;
-      newStar.pop();
-    }, newStar.life * 1000);
-  }, STAR_INTERVAL);
+      setTimeout(() => {
+        current_star_count--;
+        newStar.pop();
+      }, newStar.life * 1000);
+    }, STAR_INTERVAL);
+    
+    intervals.push(intervalId);
+  });
 
   return () => {
-    clearInterval(intervalId);
+    intervals.forEach(id => clearInterval(id));
   };
 }, [isClient]);
   return (
@@ -604,11 +849,30 @@ export default function Home2() {
       width: '100vw', 
       background: 'transparent', 
       position: 'relative',
-      minHeight: '300vh', // Ensure scrollable height for longer scroll
+      minHeight: '100vh',
       overflowX: 'hidden',
       overflowY: 'auto',
       WebkitOverflowScrolling: 'touch', // Enable smooth scrolling on iOS
     }}>
+      
+      {/* InfinityLoader - shows while scene is loading */}
+      {isSceneLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 10000,
+          backgroundColor: '#000',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          pointerEvents: isSceneLoading ? 'auto' : 'none', // Only block when actually loading
+        }}>
+          <InfinityLoader />
+        </div>
+      )}
 
 <style jsx global>{`
         @font-face {
@@ -660,6 +924,33 @@ export default function Home2() {
           100% {
             transform: translateX(-50%) scale(1);
             box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+          }
+        }
+        
+        @keyframes buyButtonPulse {
+          0% {
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(212, 175, 55, 0.3);
+          }
+          50% {
+            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.7), 0 0 80px rgba(212, 175, 55, 0.5);
+          }
+          100% {
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(212, 175, 55, 0.3);
+          }
+        }
+        
+        @keyframes candleFlicker {
+          0%, 100% {
+            box-shadow: 0 10px 30px rgba(74, 140, 38, 0.5), 0 0 60px rgba(45, 80, 22, 0.3);
+          }
+          25% {
+            box-shadow: 0 12px 35px rgba(74, 140, 38, 0.6), 0 0 65px rgba(45, 80, 22, 0.4);
+          }
+          50% {
+            box-shadow: 0 8px 25px rgba(74, 140, 38, 0.4), 0 0 55px rgba(45, 80, 22, 0.35);
+          }
+          75% {
+            box-shadow: 0 14px 38px rgba(74, 140, 38, 0.65), 0 0 70px rgba(45, 80, 22, 0.45);
           }
         }
         
@@ -798,6 +1089,416 @@ export default function Home2() {
             transform: rotate(15deg) translateX(10px);
           }
         }
+        
+        /* Cloud container animations */
+        @keyframes cloudFloat {
+          0%, 100% { 
+            transform: translateY(0px) scale(1);
+            opacity: 0.9;
+          }
+          25% { 
+            transform: translateY(-15px) scale(1.02);
+            opacity: 0.95;
+          }
+          50% { 
+            transform: translateY(-5px) scale(1.01);
+            opacity: 0.85;
+          }
+          75% { 
+            transform: translateY(-10px) scale(0.99);
+            opacity: 0.9;
+          }
+        }
+        
+        @keyframes cloudDrift {
+          0%, 100% { 
+            transform: translateX(0);
+          }
+          50% { 
+            transform: translateX(20px);
+          }
+        }
+        
+        .cloud-container {
+          animation: cloudFloat 15s ease-in-out infinite;
+          position: relative;
+        }
+        
+        .cloud-container::before {
+          content: '';
+          position: absolute;
+          top: -20%;
+          left: -20%;
+          right: -20%;
+          bottom: -20%;
+          background: radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+          filter: blur(40px);
+          animation: cloudDrift 20s ease-in-out infinite;
+          pointer-events: none;
+          z-index: -1;
+        }
+        /* Alternating cards styles with enhanced parallax depth */
+        .cards-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 5rem;
+          align-items: center;
+          padding: 80px 20px;
+          max-width: 1200px;
+          margin: 0 auto;
+          position: relative;
+          z-index: 10;
+        }
+
+        .card-wrap {
+          width: 90%;
+          max-width: 600px;
+          min-height: 400px;
+          position: relative;
+          perspective: 1000px;
+          cursor: pointer;
+          opacity: 0;
+          transform: translateY(50px);
+          margin-bottom: 0;
+          transition: transform 0.8s ease-out, opacity 0.8s ease-out;
+        }
+        
+        .card-container {
+          width: 100%;
+          height: 400px;
+          position: relative;
+          transform-style: preserve-3d;
+          transition: transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+        }
+        
+        .card-container.flipped {
+          transform: rotateY(180deg);
+        }
+        
+        .card-face {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+        
+        .card-face .card {
+          height: 100%;
+        }
+        
+        .card-front {
+          z-index: 2;
+        }
+        
+        .card-back {
+          transform: rotateY(180deg);
+          z-index: 1;
+        }
+        
+        .card-back .card {
+          background: linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%);
+        }
+        
+        .card-back-content {
+          padding: 30px;
+          color: #fff;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          overflow-y: auto;
+          box-sizing: border-box;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(212, 175, 55, 0.3) transparent;
+        }
+        
+        .card-back-content::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .card-back-content::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .card-back-content::-webkit-scrollbar-thumb {
+          background-color: rgba(212, 175, 55, 0.3);
+          border-radius: 3px;
+        }
+        
+        .card-back-content h3 {
+          color: #d4af37;
+          font-family: 'UnifrakturCook', serif;
+          font-size: 1.8em;
+          margin-bottom: 15px;
+          margin-top: 0;
+        }
+        
+        .card-back-content p {
+          font-size: 0.95em;
+          line-height: 1.6;
+          margin-bottom: 12px;
+          opacity: 0.95;
+        }
+        
+        .card-back-content ul {
+          list-style: none;
+          padding: 0;
+          margin: 15px 0;
+        }
+        
+        .card-back-content li {
+          padding: 6px 0;
+          border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+          font-size: 0.9em;
+          line-height: 1.4;
+        }
+        
+        .card-back-content li:before {
+          content: "✨";
+          margin-right: 10px;
+        }
+        
+        .flip-hint {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: rgba(212, 175, 55, 0.2);
+          padding: 5px 10px;
+          border-radius: 5px;
+          font-size: 0.8em;
+          color: #d4af37;
+          opacity: 0.8;
+          transition: opacity 0.3s;
+        }
+        
+        .card-wrap:hover .flip-hint {
+          opacity: 1;
+        }
+
+        .card-wrap:nth-child(odd) {
+          align-self: flex-start;
+          margin-left: 5%;
+        }
+
+        .card-wrap:nth-child(even) {
+          align-self: flex-end;
+          margin-right: 5%;
+        }
+
+        .card-wrap.visible {
+          opacity: 1;
+          transform: translateY(0);
+          transition: all 0.8s ease-out;
+        }
+
+        .card-wrap.visible:nth-child(1) {
+          transition-delay: 0.1s;
+        }
+
+        .card-wrap.visible:nth-child(2) {
+          transition-delay: 0.2s;
+        }
+
+        .card-wrap.visible:nth-child(3) {
+          transition-delay: 0.3s;
+        }
+
+        .card-wrap.visible:nth-child(4) {
+          transition-delay: 0.4s;
+        }
+
+        .card-wrap:hover .card {
+          transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+                      box-shadow 2s cubic-bezier(0.23, 1, 0.32, 1);
+          box-shadow: 
+            rgba(212, 175, 55, 0.4) 0 0 50px 10px,
+            rgba(255, 255, 255, 0.3) 0 0 40px 5px,
+            rgba(255, 255, 255, 1) 0 0 0 1px,
+            rgba(0, 0, 0, 0.66) 0 30px 60px 0,
+            inset #666 0 0 0 5px,
+            inset rgba(255, 255, 255, 0.4) 0 0 0 6px;
+        }
+
+        .card-wrap:hover .card-bg {
+          transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+                      opacity 5s cubic-bezier(0.23, 1, 0.32, 1);
+          opacity: 0.95;
+          filter: brightness(1.3) contrast(1.15) saturate(1.2);
+        }
+
+        .card-wrap:hover .card-info {
+          transform: translateY(0);
+          transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .card-wrap:hover .card-info p {
+          opacity: 1;
+          transform: translateY(0);
+          transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .card-wrap:hover .card-info::after {
+          transition: 5s cubic-bezier(0.23, 1, 0.32, 1);
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .card {
+          width: 100%;
+          min-height: 400px;
+          position: relative;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
+          overflow: hidden;
+          box-shadow: 
+            rgba(212, 175, 55, 0.15) 0 0 30px 0,
+            rgba(0, 0, 0, 0.66) 0 30px 60px 0,
+            inset #555 0 0 0 5px,
+            inset rgba(255, 255, 255, 0.6) 0 0 0 6px;
+          transition: 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+          pointer-events: auto;
+        }
+
+        .card-bg {
+          opacity: 0.75;
+          position: absolute;
+          top: -60px;
+          left: -60px;
+          width: calc(100% + 120px);
+          height: calc(100% + 120px);
+          background-repeat: no-repeat;
+          background-position: center center;
+          background-size: cover;
+          transition: 1s cubic-bezier(0.445, 0.05, 0.55, 0.95),
+                      opacity 5s 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+          pointer-events: none;
+          z-index: 0;
+          filter: brightness(1.2) contrast(1.1);
+        }
+        
+        /* Alternative background sizing options - can be applied inline */
+        .card-bg.contain {
+          background-size: contain;
+        }
+        
+        .card-bg.fit-width {
+          background-size: 100% auto;
+        }
+        
+        .card-bg.fit-height {
+          background-size: auto 100%;
+        }
+        
+        .card-bg.position-top {
+          background-position: center top;
+        }
+        
+        .card-bg.position-bottom {
+          background-position: center bottom;
+        }
+
+        .card-info {
+          padding: 30px;
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          color: #fff;
+          transform: translateY(40%);
+          transition: 0.6s 1.6s cubic-bezier(0.215, 0.61, 0.355, 1);
+          z-index: 2;
+          pointer-events: auto;
+        }
+
+        .card-info::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          z-index: 0;
+          width: 100%;
+          height: 100%;
+          background-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
+          background-blend-mode: overlay;
+          opacity: 0;
+          transform: translateY(100%);
+          transition: 5s 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+        }
+
+        .card-info h2 {
+          font-size: 2.5em;
+          margin-bottom: 15px;
+          text-shadow: rgba(0, 0, 0, 0.5) 0 10px 10px;
+          font-family: 'UnifrakturCook', serif;
+          color: #d4af37;
+          position: relative;
+          z-index: 1;
+        }
+
+        .card-info p {
+          font-size: 1.1em;
+          line-height: 1.6;
+          opacity: 0;
+          text-shadow: rgba(0, 0, 0, 1) 0 2px 3px;
+          font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+          transform: translateY(20px);
+          transition: 0.6s 1.6s cubic-bezier(0.215, 0.61, 0.355, 1);
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Mobile responsive cards */
+        @media (max-width: 768px) {
+          .cards-wrapper {
+            gap: 3rem;
+            padding: 60px 15px;
+          }
+
+          .card-wrap {
+            width: 95%;
+            min-height: 320px;
+            margin-bottom: 0;
+          }
+          
+          .card-wrap:nth-child(odd),
+          .card-wrap:nth-child(even) {
+            align-self: center;
+            margin: 0;
+          }
+          
+          .card {
+            min-height: 320px;
+          }
+
+          .card-bg {
+            opacity: 0.6;
+          }
+
+          .card-info {
+            padding: 20px;
+            transform: translateY(20%);
+          }
+
+          .card-info h2 {
+            font-size: 1.8em;
+          }
+
+          .card-info p {
+            font-size: 0.95em;
+            opacity: 0.9;
+            transform: translateY(0);
+          }
+
+          /* Simplify hover effects on mobile */
+          .card-wrap:hover .card-info {
+            transform: translateY(0);
+          }
+
+          .card-wrap:hover .card-bg {
+            opacity: 0.7;
+            transform: scale(1.05);
+          }
+        }
       `}</style>
       
       {/* Fixed Canvas */}
@@ -819,19 +1520,21 @@ export default function Home2() {
             left: 0,
             width: '100%', 
             height: '100%',
-            pointerEvents: 'auto', // Re-enable for 3D interactions
-            touchAction: 'none', // Prevent default touch behavior on canvas
+            pointerEvents: 'none', // Disable pointer events to allow scrolling
+            touchAction: 'auto', // Allow touch scrolling
           }}
         >
-          <Scene isMobile={isMobile} scrollY={scrollY} />
+          <Scene 
+            isMobile={isMobile} 
+            scrollY={scrollY} 
+            onAssetsLoaded={handleAssetLoaded}
+          />
         </Canvas>
       </div>
       
       {/* Scrollable Overlay Content */}
       <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
+          position: 'relative',
           width: '100%',
           minHeight: '100vh',
           zIndex: 10,
@@ -843,6 +1546,7 @@ export default function Home2() {
           flexDirection: 'column',
           width: '100%',
           paddingTop: '3rem',
+          minHeight: '100vh',
         }}>
 
           
@@ -873,479 +1577,357 @@ export default function Home2() {
               <span className="title-line" style={{ display: 'block', marginLeft: isMobile ? "2rem" : "6rem", position: 'relative' }}>Profit</span>
             </h1>
           
-          {/* Intro text box - below title */}
-          <div style={{
-            position: 'relative',
-            marginTop: getResponsiveValue('22rem', '45rem', '29rem', '18rem'),
-            marginLeft: getResponsiveValue('5%', '8%', '10%', '10%'),
-            marginRight: getResponsiveValue('5%', '8%', '40%', '50%'),
-            padding: '2rem',
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '15px',
-            border: '2px solid rgba(212, 175, 55, 0.3)',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-            pointerEvents: 'auto',
-          }}>
-
-        <p style={{ 
-          color: '#ffffff',
-          fontSize: isMobile ? '0.9rem' : '1.5rem',
-          lineHeight: 1.6,
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-          fontWeight: 400,
-          letterSpacing: '0.02em',
-          marginBottom: '1rem',
-  
-          opacity: 0.85,
-          textAlign: 'center',
-          maxWidth: isMobile ? '100%' : '800px',
-          margin: '0 auto 2rem auto',
-          padding: '0 1rem',
-        }}>
-     {/* Nowhere is the purifying presence of the virtual virgin needed more than the dark realm of defi.<br/> */}
-
-{/* Descending from the Cloud, Behold! the mother of memes, an aider to traders, and a fren to degens: <span style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontWeight: 'bold',
-            fontSize: '1.1em',
-            color: '#d4af37',
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-            marginLeft: '0.25em',
-          }}> Our Lady of Perpetual Profit </span>is your divine guide through the dark realm of crypto DeFi.<br/><br/> */}
-
-<span style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontWeight: 'bold',
-            fontSize: '1.1em',
-            color: '#d4af37',
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-            marginLeft: '0.25em',
-          }}> Our Lady of Perpetual Profit </span>has high ideals. That’s why this beloved icon of intercession is the perfect embodiment of the cryptocurrency ethos, representing core tenets such as decentralization and direct access.
-          {/* Invoked by peasants and princes alike, she is the perfect metaphor for a system that transcends hierarchies, resists corruption, and offers radical inclusion for both small traders and global institutions.<br/><br/> */}
-{/* Burn a few <span style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontWeight: 'bold',
-            fontSize: '1.1em',
-            color: '#d4af37',
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-            marginLeft: '0.25em',
-          }}> RL80 </span>tokens to devote a candle in appreciation for her tireless vigilance.
-Or hold them for luck, and to ward off evil.<br/><br/> */} And now, behold! She brings forth
-<span style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontWeight: 'bold',
-            fontSize: '1.1em',
-            color: '#d4af37',
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-            marginLeft: '0.25em',
-          }}>RL80, </span>the Holy Trin80 of digital tokens, representing liquid80, integr80, and prosper80. <br/><br/>
-Whether you need a Hail Mary for hard times, or just sanctuary in the new economy, <span style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontWeight: 'bold',
-            fontSize: '1.1em',
-            color: '#d4af37',
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-            marginLeft: '0.25em',
-          }}> RL80 </span>  is your divine guide through the dark realm of crypto DeFi.
-{/* Let <span style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontWeight: 'bold',
-            fontSize: '1.1em',
-            color: '#d4af37',
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-            marginLeft: '0.25em',
-          }}> Our Lady of Perpetual Profit </span>  light the way. */}
-           </p>
-              <p style={{
-                color: '#d4af37',
-                fontSize: '1rem',
-                lineHeight: '1.5',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                marginTop: '1rem',
-                fontStyle: 'italic',
-                opacity: 0.9,
-              }}>
-                {/* Ride the bull of eternal gains as Our Lady guides you through the volatile seas of fortune. */}
-              </p>
-          </div>
+          {/* Unified content box with description, coin, and contract info */}
           
-          {/* Contract Address Box - Mobile: below intro, Desktop: right side */}
-          <div style={{
-            position: getResponsiveValue('relative', 'relative', 'absolute', 'absolute'),
-            top: getResponsiveValue('auto', 'auto', '55rem', '60rem'),
-            right: getResponsiveValue('auto', 'auto', '5rem', '2rem'),
-            ...(isTablet && !isTabletLandscape ? {
-              margin: '4rem auto 0 auto',
-              width: '80%',
-              maxWidth: '600px',
-            } : {
-              marginTop: getResponsiveValue('2rem', '4rem', '0', '0'),
-              marginLeft: getResponsiveValue('5%', '8%', 'auto', 'auto'),
-              marginRight: getResponsiveValue('5%', '8%', '0', '10%'),
-              width: getResponsiveValue('auto', 'auto', '40%', '35%'),
-              maxWidth: getResponsiveValue('100%', '500px', '450px', '450px'),
-            }),
-            pointerEvents: 'auto',
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: '20px',
-              border: '2px solid rgba(212, 175, 55, 0.4)',
-              boxShadow: '0 15px 45px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
-              padding: '1.5rem 1.5rem 1rem 1.5rem',
-              transition: 'all 0.3s ease',
-              textAlign: 'center',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(196, 137, 1, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 15px 45px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)';
-            }}
-            >
-              {/* Coin centered inside the box */}
-              <div style={{ 
-                display: "flex",
-                justifyContent: "center",
-                marginBottom: "1.5rem",
-                marginTop: "0.5rem",
-                padding: "1rem 0",
-                pointerEvents: "auto",
-              }}>
-                <div
-                  ref={coinRef}
-                  style={{ 
-                    position: "relative", 
-                    width: isMobile ? "5rem" : "6rem", 
-                    height: isMobile ? "5rem" : "6rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <CoinInline />
+        </div>
+        
+        {/* Invisible spacer to push cards down and reveal background scene */}
+        {/* <div style={{ 
+          height: getResponsiveValue('60vh', '5vh', '50vh', '15vh'),
+          width: '100%',
+          position: 'relative',
+        }} /> */}
+        
+        {/* Alternating Cards Section */}
+        <div className="cards-wrapper" style={{ marginTop: getResponsiveValue('2rem', '0rem', '0rem', '2rem') }}>
+        <div className="card-wrap" ref={el => {
+            if (el && !cardRefs.current.includes(el)) {
+              cardRefs.current.push(el);
+            }
+          }} onClick={() => handleCardFlip(0)}>
+            <div className={`card-container ${flippedCards.has(0) ? 'flipped' : ''}`}>
+              {/* Front of card */}
+              <div className="card-face card-front">
+                <div className="card">
+                  <span className="flip-hint">Click to flip</span>
+                  <div className="card-bg" style={{ 
+                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")',
+                  }}></div>
+                  <div className="card-info">
+                    <h2>Divine Protection</h2>
+                    <p>As a symbol of protection, purity, and principled prosperity, Our Lady stands as the ideal counternarrative to crypto's malign influences and bad actors.</p>
+                  </div>
                 </div>
               </div>
-              
-              {/* Buy Button */}
-              <button
-                style={{
-                  background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
-                  border: '2px solid rgba(212, 175, 55, 0.6)',
-                  borderRadius: '12px',
-                  padding: '0.75rem 2.5rem',
-                  color: '#000000',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  fontFamily: '"Cyber", monospace',
-                  letterSpacing: '0.15em',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                  textTransform: 'uppercase',
-                  marginBottom: '1.5rem',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-                }}
-                onClick={() => {
-                  // Add buy action here
-                  window.open('https://app.uniswap.org', '_blank');
-                }}
-              >
-                BUY
-              </button>
-              
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                marginBottom: '0.5rem',
-                flexWrap: 'wrap',
-              }}>
-                <span style={{
-                  fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
-                  fontWeight: 'bold',
-                  fontSize: '0.9rem',
-                  color: '#d4af37',
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                }}> Our Lady of Perpetual Profit</span>
-                <span style={{
-                  fontFamily: 'cyber, monospace',
-                  fontWeight: 'bold',
-                  fontSize: '0.8rem',
-                  color: '#ffffff',
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                }}> • Ticker: </span>
-                <span style={{
-                  fontFamily: 'cyber, monospace',
-                  fontWeight: 'bold',
-                  fontSize: '0.9rem',
-                  color: '#d4af37',
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                }}>RL80 </span>
+              {/* Back of card */}
+              <div className="card-face card-back">
+                <div className="card">
+                  <span className="flip-hint">Click to flip</span>
+                  <div className="card-back-content">
+                    <h3>Sacred Shield Against Scams</h3>
+                    <p>In the volatile realm of cryptocurrency, Our Lady of Perpetual Profit serves as your divine guardian against:</p>
+                    <ul>
+                      <li>Rug pulls and exit scams</li>
+                      <li>Pump and dump schemes</li>
+                      <li>Malicious smart contracts</li>
+                      <li>FUD and market manipulation</li>
+                    </ul>
+                    <p>Through faith in sound tokenomics and community-driven governance, we create a sanctuary of sustainable growth and honest returns.</p>
+                    <p style={{ marginTop: '20px', fontStyle: 'italic', opacity: 0.8 }}>
+                      "In code we trust, but in Our Lady we verify."
+                    </p>
+                  </div>
+                </div>
               </div>
-              <h3 style={{
-                color: '#c48901',
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                marginBottom: '0.5rem',
-                marginTop: '0',
-                fontFamily: '"Cyber", monospace',
-                textAlign: 'center',
-              }}>
-                Contract Address (BASE Chain)
-              </h3>
-              
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                background: 'rgba(0, 0, 0, 0.3)',
-                padding: '0.4rem 0.6rem',
-                borderRadius: '8px',
-                border: '1px solid rgba(196, 137, 1, 0.2)',
-                width: '100%',
-              }}>
-                <code style={{
-                  color: '#ffffff',
-                  fontSize: '0.8rem',
-                  fontFamily: 'monospace',
-                  wordBreak: 'break-all',
-                  flex: 1,
-                  opacity: 0.9,
-                  textAlign: 'center',
-                }}>
-                  {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
-                </code>
-                
-                <button
-                  onClick={handleCopyAddress}
-                  style={{
-                    background: copied ? 'rgba(0, 255, 0, 0.2)' : 'rgba(196, 137, 1, 0.2)',
-                    border: `1px solid ${copied ? 'rgba(0, 255, 0, 0.5)' : 'rgba(196, 137, 1, 0.5)'}`,
-                    borderRadius: '6px',
-                    padding: '0.4rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  title={copied ? 'Copied!' : 'Copy address'}
-                >
-                  {copied ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff00" strokeWidth="2">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c48901" strokeWidth="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
-                  )}
-                </button>
+            </div>
+          </div>
+
+          <div className="card-wrap" ref={el => {
+            if (el && !cardRefs.current.includes(el)) {
+              cardRefs.current.push(el);
+            }
+          }} onClick={() => handleCardFlip(1)}>
+            <div className={`card-container ${flippedCards.has(1) ? 'flipped' : ''}`}>
+              {/* Front of card */}
+              <div className="card-face card-front">
+                <div className="card">
+                  <span className="flip-hint">Click to flip</span>
+                  <div className="card-bg" style={{ 
+                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/vsClown.jpg")',
+                  }}></div>
+                  <div className="card-info">
+                    <h2>Divine Protection</h2>
+                    <p>As a symbol of protection, purity, and principled prosperity, Our Lady stands as the ideal counternarrative to crypto's malign influences and bad actors.</p>
+                  </div>
+                </div>
+              </div>
+              {/* Back of card */}
+              <div className="card-face card-back">
+                <div className="card">
+                  <span className="flip-hint">Click to flip</span>
+                  <div className="card-back-content">
+                    <h3>Sacred Shield Against Scams</h3>
+                    <p>In the volatile realm of cryptocurrency, Our Lady of Perpetual Profit serves as your divine guardian against:</p>
+                    <ul>
+                      <li>Rug pulls and exit scams</li>
+                      <li>Pump and dump schemes</li>
+                      <li>Malicious smart contracts</li>
+                      <li>FUD and market manipulation</li>
+                    </ul>
+                    <p>Through faith in sound tokenomics and community-driven governance, we create a sanctuary of sustainable growth and honest returns.</p>
+                    <p style={{ marginTop: '20px', fontStyle: 'italic', opacity: 0.8 }}>
+                      "In code we trust, but in Our Lady we verify."
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card-wrap" ref={el => {
+            if (el && !cardRefs.current.includes(el)) {
+              cardRefs.current.push(el);
+            }
+          }} onClick={() => handleCardFlip(2)}>
+            <div className={`card-container ${flippedCards.has(2) ? 'flipped' : ''}`}>
+              {/* Front of card */}
+              <div className="card-face card-front">
+                <div className="card">
+                  <span className="flip-hint">Click to flip</span>
+                  <div className="card-bg" style={{ 
+                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/mosaic.jpg")'
+                  }}></div>
+                  <div className="card-info">
+                    <h2>$RL80 Token</h2>
+                    <p>The Holy Trin80 of digital assets - representing liquid80, util80, and integr80. Your divine guide through the volatile seas of cryptocurrency trading.</p>
+                  </div>
+                </div>
+              </div>
+              {/* Back of card */}
+              <div className="card-face card-back">
+                <div className="card">
+                  <span className="flip-hint">Click to flip</span>
+                  <div className="card-back-content">
+                    <h3>The Sacred Trinity of $RL80</h3>
+                    <p>Experience the divine trifecta of cryptocurrency innovation:</p>
+                    <ul>
+                      <li><strong>Liquid80:</strong> Deep liquidity pools ensuring smooth trades without slippage</li>
+                      <li><strong>Util80:</strong> Real-world utility through DeFi integrations and partnerships</li>
+                      <li><strong>Integr80:</strong> Seamless cross-chain compatibility and ecosystem growth</li>
+                    </ul>
+                    <p style={{ marginTop: '20px' }}>
+                      Built on BASE for low fees and high speed, $RL80 combines the best of traditional finance wisdom with blockchain innovation.
+                    </p>
+                    <p style={{ marginTop: '15px', padding: '10px', background: 'rgba(212, 175, 55, 0.1)', borderRadius: '5px' }}>
+                      <strong>Total Supply:</strong> 1,000,000,000 $RL80<br/>
+                      <strong>Tax:</strong> 0% Buy/Sell<br/>
+                      <strong>Liquidity:</strong> Locked Forever
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card-wrap" ref={el => {
+            if (el && !cardRefs.current.includes(el)) {
+              cardRefs.current.push(el);
+            }
+          }} onClick={() => handleCardFlip(3)}>
+            <div className={`card-container ${flippedCards.has(3) ? 'flipped' : ''}`}>
+              {/* Front of card */}
+              <div className="card-face card-front">
+                <div className="card">
+                  <span className="flip-hint">Click to flip</span>
+                  <div className="card-bg" style={{ 
+                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/lowrider.jpg")'
+                  }}></div>
+                  <div className="card-info">
+                    <h2>Join the Sanctuary</h2>
+                    <p>Whether you need a Hail Mary for hard times, or just sanctuary in the new economy, $RL80 is your path to enlightenment and perpetual profit.</p>
+                  </div>
+                </div>
+              </div>
+              {/* Back of card */}
+              <div className="card-face card-back">
+                <div className="card">
+                  <span className="flip-hint">Click to flip</span>
+                  <div className="card-back-content">
+                    <h3>Become a Blessed Holder</h3>
+                    <p>Join our divine community and receive the following blessings:</p>
+                    <ul>
+                      <li>Access to exclusive alpha and trading strategies</li>
+                      <li>Community governance voting rights</li>
+                      <li>Early access to partnerships and features</li>
+                      <li>24/7 support from fellow believers</li>
+                      <li>Educational resources on DeFi and crypto</li>
+                    </ul>
+                    <p style={{ marginTop: '20px' }}>
+                      Our congregation grows stronger with each new member. Together, we navigate the turbulent markets with faith, wisdom, and diamond hands.
+                    </p>
+                    <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(212, 175, 55, 0.1)', borderRadius: '8px', textAlign: 'center' }}>
+                      <p style={{ margin: 0, fontSize: '1.1em', color: '#d4af37' }}>
+                        "Where two or three gather in profit,<br/>there I am with them."
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+        </div>
         
-        {/* New Section - Full Width */}
-        <div style={{
+        {/* Footer - at the bottom of all content */}
+        <footer style={{
           position: 'relative',
-          marginTop: getResponsiveValue('3rem', '4rem', '5rem', '6rem'),
-          marginLeft: getResponsiveValue('5%', '8%', '10%', '10%'),
-          marginRight: getResponsiveValue('5%', '8%', '10%', '10%'),
-          padding: '3rem 2rem',
-          background: 'rgba(0, 0, 0, 0.5)',
+          marginTop: '8rem',
+          width: '100%',
+          padding: '1rem 2rem',
+          background: 'rgba(0, 0, 0, 0.9)',
+          borderTop: '1px solid rgba(212, 175, 55, 0.2)',
           backdropFilter: 'blur(10px)',
-          borderRadius: '15px',
-          border: '2px solid rgba(212, 175, 55, 0.3)',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '2rem',
+          flexWrap: 'wrap',
+          zIndex: 11,
           pointerEvents: 'auto',
         }}>
-          <h2 style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontSize: getResponsiveValue('2rem', '2.5rem', '3rem', '3rem'),
-            fontWeight: 'bold',
+          <p style={{
             color: '#d4af37',
-            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)',
-            textAlign: 'center',
-            marginBottom: '2rem',
-            letterSpacing: '0.05em',
-          }}>
-            The Divine Path to Prosperity
-          </h2>
-          
-          <p style={{
-            color: '#ffffff',
-            fontSize: isMobile ? '0.9rem' : '1.5rem',
-            lineHeight: 1.6,
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-            fontWeight: 400,
-            letterSpacing: '0.02em',
-            marginBottom: '1rem',
-            opacity: 0.85,
-            textAlign: 'center',
-            maxWidth: isMobile ? '100%' : '800px',
-            margin: '0 auto',
-            padding: '0 1rem',
-          }}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>
-            
-            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
-            Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<br/><br/>
-            
-            Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.
-            Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-          </p>
-        </div>
-        </div>
-      
-      {/* Scrollable content area - overlays on top */}
-      <div style={{
-        position: 'relative',
-        marginTop: '50vh',
-        minHeight: '100vh',
-        background: 'transparent',
-        padding: '4rem 0',
-        zIndex: 10,
-        pointerEvents: 'none', // Allow interaction with canvas below
-      }}>
-        {/* Content text box
-        <div style={{
-          padding: '2rem 5%',
-          background: 'rgba(0, 0, 0, 0.85)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '15px',
-          border: '2px solid rgba(212, 175, 55, 0.3)',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-          margin: '2rem auto',
-          maxWidth: '800px',
-          pointerEvents: 'auto', // Re-enable interaction for this element
-        }}>
-          <p style={{
-            color: '#ffd700',
-            fontSize: '1rem',
-            lineHeight: '1.5',
+            fontSize: '0.875rem',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             margin: 0,
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)',
-            textAlign: 'center',
+            opacity: 0.8,
           }}>
-            Welcome to the sacred realm of perpetual prosperity. Divine providence meets degenerate profits.
+            © 2025 Our Lady of Perpetual Profit
           </p>
-          <p style={{
-            color: '#d4af37',
-            fontSize: '0.9rem',
-            lineHeight: '1.4',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            marginTop: '0.75rem',
-            fontStyle: 'italic',
-            opacity: 0.9,
-            textAlign: 'center',
+          <div style={{
+            display: 'flex',
+            gap: '1.5rem',
+            alignItems: 'center',
           }}>
-            Ride the bull of eternal gains.
-          </p>
-        </div> */}
-      </div>
+            <a href="#" style={{
+              color: '#ffd700',
+              fontSize: '0.875rem',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              textDecoration: 'none',
+              opacity: 0.8,
+              transition: 'opacity 0.2s',
+            }}
+            onMouseEnter={(e) => e.target.style.opacity = '1'}
+            onMouseLeave={(e) => e.target.style.opacity = '0.8'}>
+              About
+            </a>
+            <a href="#" style={{
+              color: '#ffd700',
+              fontSize: '0.875rem',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              textDecoration: 'none',
+              opacity: 0.8,
+              transition: 'opacity 0.2s',
+            }}
+            onMouseEnter={(e) => e.target.style.opacity = '1'}
+            onMouseLeave={(e) => e.target.style.opacity = '0.8'}>
+              Token
+            </a>
+            <a href="#" style={{
+              color: '#ffd700',
+              fontSize: '0.875rem',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              textDecoration: 'none',
+              opacity: 0.8,
+              transition: 'opacity 0.2s',
+            }}
+            onMouseEnter={(e) => e.target.style.opacity = '1'}
+            onMouseLeave={(e) => e.target.style.opacity = '0.8'}>
+              Community
+            </a>
+          </div>
+        </footer>
       
-      {/* Footer - positioned at bottom */}
-      <footer style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: '1rem 2rem',
-        background: 'rgba(0, 0, 0, 0.9)',
-        borderTop: '1px solid rgba(212, 175, 55, 0.2)',
-        backdropFilter: 'blur(10px)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '2rem',
-        flexWrap: 'wrap',
-        zIndex: 11,
-      }}>
-        <p style={{
-          color: '#d4af37',
-          fontSize: '0.875rem',
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          margin: 0,
-          opacity: 0.8,
-        }}>
-          © 2025 Our Lady of Perpetual Profit
-        </p>
-        <div style={{
-          display: 'flex',
-          gap: '1.5rem',
-          alignItems: 'center',
-        }}>
-          <a href="#" style={{
-            color: '#ffd700',
-            fontSize: '0.875rem',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            textDecoration: 'none',
-            opacity: 0.8,
-            transition: 'opacity 0.2s',
-          }}
-          onMouseEnter={(e) => e.target.style.opacity = '1'}
-          onMouseLeave={(e) => e.target.style.opacity = '0.8'}>
-            About
-          </a>
-          <a href="#" style={{
-            color: '#ffd700',
-            fontSize: '0.875rem',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            textDecoration: 'none',
-            opacity: 0.8,
-            transition: 'opacity 0.2s',
-          }}
-          onMouseEnter={(e) => e.target.style.opacity = '1'}
-          onMouseLeave={(e) => e.target.style.opacity = '0.8'}>
-            Token
-          </a>
-          <a href="#" style={{
-            color: '#ffd700',
-            fontSize: '0.875rem',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            textDecoration: 'none',
-            opacity: 0.8,
-            transition: 'opacity 0.2s',
-          }}
-          onMouseEnter={(e) => e.target.style.opacity = '1'}
-          onMouseLeave={(e) => e.target.style.opacity = '0.8'}>
-            Community
-          </a>
-        </div>
-      </footer>
       
-      {/* CyberNav Menu - Outside main container */}
-      {mounted && <CyberNav is80sMode={is80sMode} />}
+      {/* Floating Action Buttons */}
+      {mounted && (
+        <>
+          {/* Burn/Light Candle Button - Left Side */}
+          <a
+            href="/gallery"
+            style={{
+              position: 'fixed',
+              bottom: isMobile ? '20px' : '30px',
+              left: isMobile ? '20px' : '30px',
+              padding: isMobile ? '15px 25px' : '20px 35px',
+              background: 'linear-gradient(135deg, #2d5016 0%, #4a8c26 100%)',
+              color: '#ffffff',
+              fontSize: isMobile ? '1.1rem' : '1.3rem',
+              fontFamily: 'UnifrakturCook, serif',
+              fontWeight: 'bold',
+              borderRadius: '50px',
+              boxShadow: '0 10px 30px rgba(74, 140, 38, 0.5), 0 0 60px rgba(45, 80, 22, 0.3)',
+              textDecoration: 'none',
+              zIndex: 9999,
+              transition: 'all 0.3s ease',
+              cursor: 'pointer',
+              animation: 'candleFlicker 3s infinite',
+              border: '2px solid rgba(255, 200, 100, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = '0 15px 40px rgba(74, 140, 38, 0.7), 0 0 80px rgba(45, 80, 22, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(74, 140, 38, 0.5), 0 0 60px rgba(45, 80, 22, 0.3)';
+            }}
+            title="Burn tokens to light a candle"
+          >
+            🕯️ Light Candle
+          </a>
+          
+          {/* Buy Button - Right Side */}
+          <a 
+            href="https://app.uniswap.org" // Replace with actual swap link
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              position: 'fixed',
+              bottom: isMobile ? '20px' : '30px',
+              right: isMobile ? '20px' : '30px',
+              padding: isMobile ? '15px 30px' : '20px 40px',
+              background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
+              color: '#1a0033',
+              fontSize: isMobile ? '1.2rem' : '1.5rem',
+              fontFamily: 'UnifrakturCook, serif',
+              fontWeight: 'bold',
+              borderRadius: '50px',
+              boxShadow: '0 10px 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(212, 175, 55, 0.3)',
+              textDecoration: 'none',
+              zIndex: 9999,
+              transition: 'all 0.3s ease',
+              cursor: 'pointer',
+              animation: 'buyButtonPulse 2s infinite',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = '0 15px 40px rgba(212, 175, 55, 0.7), 0 0 80px rgba(212, 175, 55, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(212, 175, 55, 0.3)';
+            }}
+          >
+            🙏 Buy $RL80
+          </a>
+        </>
+      )}
       
-      {/* Music and User Controls Container - Outside main container */}
+      {/* Top Controls Container - Music, User, and Nav - Outside main container */}
       {mounted && (
       <div
         style={{
           position: "fixed",
-          top: isMobile ? "70px" : "20px",
-          right: isMobile ? "20px" : "72px",
+          top: "20px",
+          right: "20px",
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
-          gap: "10px",
+          gap: isMobile ? "10px" : "15px",
           alignItems: isMobile ? "flex-end" : "center",
           zIndex: 9999999
         }}
@@ -1358,8 +1940,8 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
             <SignInButton mode="modal">
               <button
               style={{
-                width: "48px",
-                height: "48px",
+                width: isMobile ? "48px" : "72px",
+                height: isMobile ? "48px" : "72px",
                 borderRadius: "50%",
                 background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -1368,7 +1950,7 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "20px",
+                fontSize: isMobile ? "20px" : "30px",
                 transition: "all 0.3s ease",
               }}
               onMouseEnter={(e) => {
@@ -1400,8 +1982,8 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
                 }
               }}
               style={{
-                width: "40px",
-                height: "40px",
+                width: isMobile ? "40px" : "60px",
+                height: isMobile ? "40px" : "60px",
                 borderRadius: "8px",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -1417,8 +1999,8 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
               title="Toggle Music"
             >
               <svg
-                width="20"
-                height="20"
+                width={isMobile ? "20" : "30"}
+                height={isMobile ? "20" : "30"}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -1444,8 +2026,8 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
               <div
                 className={contextIsPlaying ? "spinning-record" : ""}
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  width: isMobile ? "40px" : "60px",
+                  height: isMobile ? "40px" : "60px",
                   borderRadius: "50%",
                   backgroundImage: "url('/virginRecords.jpg')",
                   backgroundSize: "cover",
@@ -1463,8 +2045,8 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
                   }
                 }}
                 style={{
-                  width: "32px",
-                  height: "32px",
+                  width: isMobile ? "32px" : "48px",
+                  height: isMobile ? "32px" : "48px",
                   borderRadius: "6px",
                   backgroundColor: "rgba(0, 0, 0, 0.7)",
                   border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -1479,7 +2061,7 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
                 }}
                 title="Next Track"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width={isMobile ? "16" : "24"} height={isMobile ? "16" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="5 4 15 12 5 20 5 4"/>
                   <line x1="19" y1="5" x2="19" y2="19"/>
                 </svg>
@@ -1496,8 +2078,8 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
                   }
                 }}
                 style={{
-                  width: "28px",
-                  height: "28px",
+                  width: isMobile ? "28px" : "42px",
+                  height: isMobile ? "28px" : "42px",
                   borderRadius: "6px",
                   backgroundColor: "rgba(0, 0, 0, 0.7)",
                   border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -1512,7 +2094,7 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
                 }}
                 title="Close Music"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width={isMobile ? "14" : "21"} height={isMobile ? "14" : "21"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/>
                   <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -1520,6 +2102,9 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
             </div>
           )}
         </div>
+        
+        {/* CyberNav Menu */}
+        <CyberNav is80sMode={is80sMode} position="relative" />
       </div>
       )}
     </div>
@@ -1527,5 +2112,5 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the new econom
 }
 
 useGLTF.preload('/models/ourlady_rider6.glb');
-useGLTF.preload('/models/angelEmojji.glb');
+useGLTF.preload('/models/angelEmoji.glb');
 useGLTF.preload('/models/devilEmoji.glb');

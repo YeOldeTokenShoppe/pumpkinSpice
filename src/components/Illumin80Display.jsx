@@ -279,6 +279,17 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
   const { user, isSignedIn } = useUser();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Check for mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   useEffect(() => {
     async function checkStatus() {
@@ -322,8 +333,8 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
       <SignInButton mode="modal">
         <button
           style={{
-            width: "40px",
-            height: "40px",
+            width: isMobile ? "40px" : "60px",
+            height: isMobile ? "40px" : "60px",
             borderRadius: "8px",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -336,7 +347,7 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <svg width={isMobile ? "20" : "30"} height={isMobile ? "20" : "30"} viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
           </svg>
         </button>
@@ -352,10 +363,10 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
           {/* Left laurel branch */}
           <div style={{
             position: 'absolute',
-            left: '-1.2rem',
+            left: isMobile ? '-1.2rem' : '-1.8rem',
             top: '50%',
             transform: 'translateY(-70%) rotate(-15deg) scaleX(-1)',
-            fontSize: '24px',
+            fontSize: isMobile ? '24px' : '36px',
             color: '#FFD700',
             filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.6))',
             pointerEvents: 'none',
@@ -367,10 +378,10 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
           {/* Right laurel branch */}
           <div style={{
             position: 'absolute',
-            right: '-1.2rem',
+            right: isMobile ? '-1.2rem' : '-1.8rem',
             top: '50%',
             transform: 'translateY(-70%) rotate(15deg) scaleX(1)',
-            fontSize: '24px',
+            fontSize: isMobile ? '24px' : '36px',
             color: '#FFD700',
             filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.6))',
             pointerEvents: 'none',
@@ -414,8 +425,8 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
         appearance={{
           elements: {
             avatarBox: {
-              width: "40px",
-              height: "40px",
+              width: isMobile ? "40px" : "60px",
+              height: isMobile ? "40px" : "60px",
               borderRadius: "8px",
               border: isIllumin80 ? "2px solid #FFD700" : "2px solid rgba(255, 255, 255, 0.2)",
               backgroundColor: "rgba(0, 0, 0, 0.7)",
