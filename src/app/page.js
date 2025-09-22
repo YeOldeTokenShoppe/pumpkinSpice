@@ -15,6 +15,7 @@ export default function Home() {
   const [fontLoaded, setFontLoaded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   
   // Get music context functions
   const { 
@@ -60,7 +61,9 @@ export default function Home() {
   // Check if mobile view
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobileView(window.innerWidth <= 768);
+      const isMobile = window.innerWidth <= 768;
+      setIsMobileView(isMobile);
+      setIsMobileDevice(isMobile);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -206,12 +209,12 @@ export default function Home() {
           }}
           style={{
             position: "fixed",
-            top: "1.5rem",
-            right: "1.5rem",
-            width: "64px",
-            height: "64px",
-            borderRadius: "50%",
-            backgroundColor: "rgba(0, 0, 0, 0.2)",
+            top: "20px",
+            right: "20px",
+            width: isMobileDevice ? "40px" : "60px",
+            height: isMobileDevice ? "40px" : "60px",
+            borderRadius: "8px",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
             border: "2px solid rgba(255, 255, 255, 0.2)",
             color: "#ffffff",
             display: "flex",
@@ -220,14 +223,14 @@ export default function Home() {
             cursor: "pointer",
             transition: "all 0.3s ease",
             backdropFilter: "blur(10px)",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
             zIndex: 9999,
           }}
           title="Toggle Music"
         >
           <svg
-            width="32"
-            height="32"
+            width={isMobileDevice ? "20" : "30"}
+            height={isMobileDevice ? "20" : "30"}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -257,13 +260,15 @@ export default function Home() {
           <div
             className={contextIsPlaying ? "spinning-record" : ""}
             style={{
-              width: "40px",
-              height: "40px",
+              width: isMobileDevice ? "36px" : "54px",
+              height: isMobileDevice ? "36px" : "54px",
               borderRadius: "50%",
               backgroundImage: "url('/virginRecords.jpg')",
               backgroundSize: "cover",
               backgroundPosition: "center",
+              cursor: "pointer"
             }}
+            onClick={() => contextIsPlaying ? pause() : play()}
           />
           
           {/* Skip Button */}
@@ -276,8 +281,8 @@ export default function Home() {
               }
             }}
             style={{
-              width: "32px",
-              height: "32px",
+              width: isMobileDevice ? "30px" : "45px",
+              height: isMobileDevice ? "30px" : "45px",
               borderRadius: "4px",
               backgroundColor: "rgba(255, 255, 255, 0.1)",
               border: "none",
@@ -290,7 +295,7 @@ export default function Home() {
             }}
             title="Next Track"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width={isMobileDevice ? "16" : "24"} height={isMobileDevice ? "16" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="5 4 15 12 5 20 5 4"/>
               <line x1="19" y1="5" x2="19" y2="19"/>
             </svg>
@@ -307,8 +312,8 @@ export default function Home() {
               }
             }}
             style={{
-              width: "28px",
-              height: "28px",
+              width: isMobileDevice ? "26px" : "39px",
+              height: isMobileDevice ? "26px" : "39px",
               borderRadius: "4px",
               backgroundColor: "rgba(255, 255, 255, 0.1)",
               border: "1px solid rgba(255, 255, 255, 0.3)",
@@ -321,7 +326,7 @@ export default function Home() {
             }}
             title="Close Music"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width={isMobileDevice ? "14" : "21"} height={isMobileDevice ? "14" : "21"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>

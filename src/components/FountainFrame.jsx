@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 
-export default function FountainFrame({ is80sMode = false }) {
+const FountainFrame = forwardRef(({ is80sMode = false }, ref) => {
   const iframeRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  
+  useImperativeHandle(ref, () => iframeRef.current);
 
   useEffect(() => {
     // Send 80s mode state to iframe when it changes
@@ -52,4 +54,7 @@ export default function FountainFrame({ is80sMode = false }) {
       />
     </div>
   );
-}
+});
+
+FountainFrame.displayName = 'FountainFrame';
+export default FountainFrame;

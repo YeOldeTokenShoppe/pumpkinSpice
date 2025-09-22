@@ -105,8 +105,8 @@ export default function ModelViewerPage() {
             <SignInButton mode="modal">
               <button
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  width: isMobileDevice ? "40px" : "60px",
+                  height: isMobileDevice ? "40px" : "60px",
                   borderRadius: "8px",
                   backgroundColor: "rgba(0, 0, 0, 0.7)",
                   border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -120,7 +120,7 @@ export default function ModelViewerPage() {
                 }}
                 title="Sign In"
               >
-                <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
+                <span style={{ fontSize: "2.5rem" }}>{emoji}</span>
               </button>
             </SignInButton>
           )}

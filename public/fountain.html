@@ -42,6 +42,33 @@
 				opacity: 0;
 				pointer-events: none;
 			}
+			
+			/* Animation for info box */
+			@keyframes slideInGlow {
+				from {
+					transform: translateX(-50%) translateY(20px) scale(0.95);
+					opacity: 0;
+				}
+				to {
+					transform: translateX(-50%) translateY(0) scale(1);
+					opacity: 1;
+				}
+			}
+			
+			@keyframes pulseGlow {
+				0%, 100% {
+					box-shadow: 
+						0 8px 32px rgba(255, 215, 0, 0.2),
+						0 0 80px rgba(255, 215, 0, 0.15),
+						inset 0 0 20px rgba(255, 255, 255, 0.1);
+				}
+				50% {
+					box-shadow: 
+						0 8px 40px rgba(255, 215, 0, 0.3),
+						0 0 100px rgba(255, 215, 0, 0.25),
+						inset 0 0 30px rgba(255, 255, 255, 0.15);
+				}
+			}
 
 			/* Hide mobile/desktop specific text */
 			.mobile-text { display: none; }
@@ -55,62 +82,65 @@
 				#info {
 					position: fixed !important;
 					right: 20px !important;
-					left: 160px !important;  /* Leave space for coin counter */
+					left: 20px !important;  /* Full width now that coin counter is removed */
 					top: auto !important;
-					bottom: 30px !important;
+					bottom: 15rem !important;  /* Moved up above buttons and coin count */
 					transform: none !important;
 					width: auto !important;
 					max-width: none !important;
-					padding: 12px 15px !important;
-					font-size: 13px !important;
-					line-height: 1.4 !important;
-					background: rgba(20, 20, 30, 0.9) !important;
-					border-width: 2px !important;
-					height: 8rem !important;  /* Fixed height */
+					padding: 20px 24px !important;
+					font-size: 16px !important;
+					line-height: 1.6 !important;
+					background: linear-gradient(135deg, 
+						rgba(255, 255, 255, 0.15) 0%, 
+						rgba(255, 215, 0, 0.12) 50%,
+						rgba(255, 183, 0, 0.10) 100%) !important;
+					border: 2px solid rgba(255, 215, 0, 0.4) !important;
+					border-radius: 24px !important;
+					height: auto !important;  /* Auto height to fit content */
+					min-height: 5rem !important;
+					max-height: 12rem !important;
 					display: flex;
 					flex-direction: column;
-					justify-content: flex-start;
+					justify-content: center;
+					align-items: center;
 					box-sizing: border-box;
 					overflow: visible;
 					word-wrap: break-word;
+					z-index: 10000 !important;  /* Ensure it appears above other elements */
+					backdrop-filter: blur(20px) saturate(180%) !important;
+					-webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+					box-shadow: 
+						0 8px 32px rgba(255, 215, 0, 0.2),
+						0 0 80px rgba(255, 215, 0, 0.15),
+						inset 0 0 20px rgba(255, 255, 255, 0.1) !important;
 				}
 				
 				#info > div:first-child {
-					font-size: 14px !important;  /* Smaller title on mobile */
-					margin-bottom: 6px !important;
+					font-size: 18px !important;
+					margin-bottom: 10px !important;
+					font-weight: 700 !important;
+					background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%) !important;
+					-webkit-background-clip: text !important;
+					-webkit-text-fill-color: transparent !important;
+					background-clip: text !important;
+					text-fill-color: transparent !important;
+					text-align: center !important;
+					text-transform: uppercase !important;
+					letter-spacing: 1.5px !important;
+				}
+				
+				#info > div:last-child {
+					color: rgba(255, 255, 255, 0.95) !important;
+					text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+					font-weight: 500 !important;
+					text-align: center !important;
+					font-size: 15px !important;
+					line-height: 1.4 !important;
 				}
 				
 				#coinCounter {
-					position: fixed !important;
-					left: 20px !important;
-					right: auto !important;
-					transform: none !important;
-					top: auto !important;
-					bottom: 30px !important;  /* Same level as info box */
-					padding: 12px 15px !important;  /* Match info box padding */
-					font-size: 11px !important;  /* Slightly smaller */
-					width: 130px !important;
-					min-width: 130px !important;
-					max-width: 130px !important;
-					background: rgba(20, 20, 30, 0.9) !important;
-					border-width: 2px !important;
-					height: 8rem !important;  /* Fixed height matching info box */
-					display: flex !important;
-					flex-direction: column !important;
-					justify-content: flex-start !important;
-					box-sizing: border-box !important;
-					overflow: visible !important;
-				}
-				
-				#coinCounter > div:first-child {
-					font-size: 11px !important;  /* Smaller title on mobile */
-					margin-bottom: 2px !important;
-					padding-bottom: 2px !important;
-					line-height: 1.2 !important;
-				}
-				
-				.coin-emoji {
-					font-size: 10px !important;
+					display: none !important;  /* Hide desktop coin counter on mobile */
 				}
 			}
 
@@ -222,6 +252,36 @@
 			z-index: 1 !important;
 		}
 		</style>
+		<script>
+			// Check if page is being viewed in portal
+			const urlParams = new URLSearchParams(window.location.search);
+			const isInPortal = urlParams.get('portal') === 'true';
+			
+			if (isInPortal) {
+				// Add class to body for CSS targeting
+				document.addEventListener('DOMContentLoaded', function() {
+					document.body.classList.add('portal-view');
+				});
+			}
+		</script>
+		<style>
+			/* Hide UI elements when in portal view */
+			body.portal-view #info,
+			body.portal-view #coinCounter,
+			body.portal-view .button-container,
+			body.portal-view #charityModal,
+			body.portal-view #coinTossButtons,
+			body.portal-view #mobileCollectionCounter,
+			body.portal-view #desktopInfoBtn {
+				display: none !important;
+			}
+			
+			/* Disable transforms and animations in portal view */
+			body.portal-view * {
+				animation: none !important;
+				transition: none !important;
+			}
+		</style>
 	</head>
 	<body>
 		<!-- Charity Selection Modal -->
@@ -245,76 +305,247 @@
 
 
 
-		<div id="info" style="
+		<div id="info" class="info-box" style="
 			position: absolute;
-			right: 30%;
+			right: 30px;
 			top: 50%;
 			transform: translateY(-50%);
-			background: rgba(20, 20, 30, 0.8);
-			border: 2px solid #30cfd0;
-			border-radius: 8px;
-			padding: 15px;
+			background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+			border: 2px solid rgba(255, 255, 255, 0.2);
+			border-radius: 20px;
+			padding: 20px;
 			color: white;
-			font-family: Arial, sans-serif;
-			font-size: 12px;
-			line-height: 1.4;
-			box-shadow: 0 0 15px rgba(48, 207, 208, 0.5);
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+			font-size: 14px;
+			line-height: 1.6;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 80px rgba(102, 126, 234, 0.2);
 			z-index: 1000;
-			width: 250px;
+			width: 280px;
 			box-sizing: border-box;
+			backdrop-filter: blur(10px);
+			-webkit-backdrop-filter: blur(10px);
+			transition: all 0.3s ease;
 		">
-			<div style="text-align: center; font-size: 16px; color: #30cfd0; text-shadow: 0 0 10px rgba(48, 207, 208, 0.5); margin-bottom: 8px; border-bottom: 1px solid rgba(48, 207, 208, 0.3); padding-bottom: 8px;">
-				📖 Instructions 📖
+			<!-- Title -->
+			<div class="info-title desktop-only" style="
+				text-align: center;
+				font-size: 18px;
+				font-weight: 600;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+				margin-bottom: 12px;
+				border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+				padding-bottom: 10px;
+				letter-spacing: 0.5px;
+			">
+				✨ Instructions ✨
 			</div>
-			<span class="mobile-text">Click water to aim. Then, press blue button to throw a virtual coin or orange button to donate a real coin.</span>
-			<span class="desktop-text">Click water to aim. Then, press blue button to throw a virtual coin or orange button to donate a real coin to charity.</span>
+			<!-- Content -->
+			<div class="info-content" style="
+				color: rgba(255, 255, 255, 0.95);
+				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+			">
+				<span class="mobile-text">Click water to aim. Then, press the purple button to toss a virtual coin or pink button to donate a real coin.</span>
+				<span class="desktop-text">Click the water to aim your throw. Then, press the purple button to toss a virtual coin or the pink button to donate a real coin to charity.</span>
+			</div>
 		</div>
 		
-		<!-- Coin Counter Display -->
-		<div id="coinCounter" style="
+		<!-- Collection Counter - Clean Text Only -->
+		<div id="mobileCollectionCounter" style="
+			position: fixed;
+			left: 50%;
+			transform: translateX(-50%);
+			bottom: 130px;
+			display: none;
+			flex-direction: column;
+			align-items: center;
+			z-index: 1000;
+		">
+			<div style="
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 2px;
+				position: relative;
+			">
+			<div style="
+				font-size: 72px;
+				font-weight: 900;
+				color: white;
+				line-height: 1;
+				letter-spacing: -2px;
+				/* text-shadow: 
+					0 0 20px rgba(255, 215, 0, 0.8),
+					0 0 10px rgba(255, 223, 0, 0.6),
+					0 4px 7px rgba(0, 0, 0, 0.95),
+					0 2px 2px rgba(0, 0, 0, 1); */
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+				background: linear-gradient(180deg, #ffffff 0%, #ffd700 50%, #ffb700 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+				text-fill-color: transparent;
+				text-align: center;
+			">
+				<span id="mobileCurrentCount">0</span>
+			</div>
+			<div style="
+				font-size: 12px;
+				font-weight: 700;
+				color: rgba(255, 255, 255, 0.8);
+				text-transform: uppercase;
+				letter-spacing: 2px;
+				text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+				margin-top: 4px;
+			">current pool</div>
+			</div>
+			<!-- Info button -->
+			<button id="desktopInfoBtn" onclick="toggleInstructions()" style="
+				display: none;
+				position: absolute;
+				right: -70px;
+				top: 15px;
+				width: 50px;
+				height: 50px;
+				border-radius: 50%;
+				background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 215, 0, 0.12) 50%, rgba(255, 183, 0, 0.10) 100%);
+				border: 2px solid rgba(255, 215, 0, 0.4);
+				color: #ffd700;
+				font-size: 24px;
+				font-weight: bold;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				backdrop-filter: blur(20px) saturate(180%);
+				-webkit-backdrop-filter: blur(20px) saturate(180%);
+				box-shadow: 
+					0 4px 16px rgba(255, 215, 0, 0.2),
+					0 0 40px rgba(255, 215, 0, 0.1),
+					inset 0 0 10px rgba(255, 255, 255, 0.1);
+			">❓</button>
+		</div>
+		
+		<!-- Coin Counter Display - Simplified for Mobile -->
+		<div id="coinCounter" class="coin-counter" style="
 			position: absolute;
-			right: 30%;
-			top: calc(50% + 120px);
-			transform: translateY(-50%);
-			background: rgba(20, 20, 30, 0.9);
-			border: 2px solid #cebb43;
-			border-radius: 8px;
-			padding: 10px;
-			color: #cebb43;
-			font-family: Arial, sans-serif;
-			font-size: 12px;
-			font-weight: bold;
-			box-shadow: 0 0 15px rgba(206, 187, 67, 0.4);
+			right: 30px;
+			top: calc(50% + 200px);
+			transform: translateY(0);
+			background: linear-gradient(135deg, rgba(240, 147, 251, 0.15) 0%, rgba(245, 87, 108, 0.15) 100%);
+			border: 2px solid rgba(255, 255, 255, 0.2);
+			border-radius: 20px;
+			padding: 20px;
+			color: white;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+			font-size: 14px;
+			font-weight: 600;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 80px rgba(240, 147, 251, 0.2);
 			z-index: 1000;
 			display: flex;
 			flex-direction: column;
-			gap: 2px;
-			width: 250px;
+			gap: 8px;
+			width: 280px;
 			box-sizing: border-box;
+			backdrop-filter: blur(10px);
+			-webkit-backdrop-filter: blur(10px);
+			transition: all 0.3s ease;
 		">
-			<div style="text-align: center; font-size: 12px; color: #30cfd0; text-shadow: 0 0 10px rgba(48, 207, 208, 0.5); margin-bottom: 2px; border-bottom: 1px solid rgba(48, 207, 208, 0.3); padding-bottom: 2px; line-height: 1;">
-				Charity Collection
+			<!-- Title for desktop -->
+			<div class="counter-title desktop-only" style="
+				text-align: center;
+				font-size: 18px;
+				font-weight: 600;
+				background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+				margin-bottom: 8px;
+				border-bottom: 2px solid rgba(240, 147, 251, 0.3);
+				padding-bottom: 8px;
+				letter-spacing: 0.5px;
+			">
+				💫 Charity Collection 💫
 			</div>
-			<div style="display: flex; align-items: center; gap: 6px;">
-				<span class="coin-emoji" style="font-size: 16px;">🪙</span>
-				<span style="font-size: 11px;"><span class="desktop-text">Current: </span><span id="coinCount">0</span> / 200</span>
-			</div>
-			<div style="display: flex; align-items: center; gap: 6px; padding-top: 2px; border-top: 1px solid rgba(206, 187, 67, 0.3);">
-				<span class="coin-emoji" style="font-size: 16px;">💰</span>
-				<span style="font-size: 11px;"><span class="desktop-text">Collected: </span><span id="collectedCount">0</span></span>
-			</div>
-			<div style="padding-top: 2px; border-top: 1px solid rgba(206, 187, 67, 0.3); font-size: 10px; line-height: 1.2;">
-				<div style="display: flex; align-items: center; gap: 3px; margin-bottom: 1px;">
-					<span style="font-size: 10px;">🍽️</span>
-					<span style="flex: 1;">WCK: <span id="wckPercentage">0</span>%</span>
+			<!-- Simplified mobile stats - large stylized number -->
+			<div class="compact-stats mobile-only" style="
+				display: none;
+				flex-direction: column;
+				align-items: flex-start;
+				justify-content: center;
+				gap: 0px;
+			">
+				<div style="
+					font-size: 42px;
+					font-weight: 900;
+					color: white;
+					line-height: 1;
+					letter-spacing: -1px;
+					text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 1);
+				">
+					<span id="collectedCountCompact">0</span>
 				</div>
-				<div style="display: flex; align-items: center; gap: 3px;">
-					<span style="font-size: 10px;">🐾</span>
-					<span style="flex: 1;">ASPCA: <span id="aspcaPercentage">0</span>%</span>
+				<div style="
+					font-size: 10px;
+					font-weight: 600;
+					color: rgba(255, 255, 255, 0.6);
+					text-transform: uppercase;
+					letter-spacing: 1.5px;
+					text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+				">Collected</div>
+			</div>
+			<!-- Full stats -->
+			<div class="full-stats desktop-only">
+			<div style="
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 8px 12px;
+				background: rgba(255, 255, 255, 0.05);
+				border-radius: 12px;
+			">
+				<span class="coin-emoji" style="font-size: 20px;">🪙</span>
+				<span style="flex: 1; color: rgba(255, 255, 255, 0.95);"><span class="desktop-text">Current Pool: </span><span id="coinCount" style="font-weight: 700;">0</span> / 200</span>
+			</div>
+			<div style="
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 8px 12px;
+				background: rgba(255, 255, 255, 0.05);
+				border-radius: 12px;
+			">
+				<span class="coin-emoji" style="font-size: 20px;">💰</span>
+				<span style="flex: 1; color: rgba(255, 255, 255, 0.95);"><span class="desktop-text">Total Donated: </span><span id="collectedCount" style="font-weight: 700;">0</span></span>
+			</div>
+			<div style="
+				padding: 10px 12px;
+				background: rgba(255, 255, 255, 0.05);
+				border-radius: 12px;
+			">
+				<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+					<span style="font-size: 16px;">🍽️</span>
+					<span style="flex: 1; color: rgba(255, 255, 255, 0.9);">WCK: <span id="wckPercentage" style="font-weight: 700;">0</span>%</span>
+				</div>
+				<div style="display: flex; align-items: center; gap: 8px;">
+					<span style="font-size: 16px;">🐾</span>
+					<span style="flex: 1; color: rgba(255, 255, 255, 0.9);">ASPCA: <span id="aspcaPercentage" style="font-weight: 700;">0</span>%</span>
 				</div>
 			</div>
-			<div id="resetMessage" style="display: none; color: #30cfd0; font-size: 12px; text-align: center; margin-top: 8px;">
-				Resetting fountain...
+			<div id="resetMessage" style="
+				display: none;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				font-size: 14px;
+				text-align: center;
+				padding: 10px;
+				border-radius: 10px;
+				margin-top: 4px;
+				font-weight: 600;
+			">
+				✨ Resetting fountain... ✨
+			</div>
 			</div>
 		</div> 
 
@@ -323,56 +554,141 @@
 			function updateInfoPosition() {
 				const info = document.getElementById('info');
 				const coinCounter = document.getElementById('coinCounter');
+				const mobileCollectionCounter = document.getElementById('mobileCollectionCounter');
 				if (window.innerWidth <= 768) {
-					// Mobile layout - side by side
-					info.style.right = '20px';
-					info.style.left = '150px';  // Leave space for coin counter
+					// Mobile layout - hide info box by default
+					info.style.position = 'fixed';
+					info.style.left = '50%';
+					info.style.transform = 'translateX(-50%)';
+					info.style.right = 'auto';
 					info.style.top = 'auto';
-					info.style.bottom = '30px';
-					info.style.transform = 'none';
-					info.style.width = 'auto';
-					info.style.maxWidth = 'none';
-					info.style.textAlign = 'center';
-					info.style.fontSize = '14px';
-					info.style.padding = '12px 15px';
-					info.style.minHeight = '6rem';
+					info.style.bottom = '200px';  // Above buttons and coin count
+					info.style.fontSize = '11px';
+					info.style.lineHeight = '1.3';
+					info.style.borderRadius = '12px';
+					info.style.width = '80%';
+					info.style.maxWidth = '280px';
+					info.style.display = 'none';
+					info.style.padding = '12px';
+					info.style.transition = 'all 0.3s ease';
+					info.style.zIndex = '10000';  // Ensure high z-index
 					
-					// Mobile coin counter position - left side
+					// Show mobile collection counter
+					if (mobileCollectionCounter) {
+						mobileCollectionCounter.style.display = 'flex';
+						mobileCollectionCounter.style.flexDirection = 'column';
+						
+						// Show info button on mobile too (smaller size, positioned to the right)
+						const desktopInfoBtn = document.getElementById('desktopInfoBtn');
+						if (desktopInfoBtn) {
+							desktopInfoBtn.style.display = 'block';
+							desktopInfoBtn.style.position = 'absolute';
+							desktopInfoBtn.style.right = '-60px';
+							desktopInfoBtn.style.top = '10px';
+							desktopInfoBtn.style.width = '40px';
+							desktopInfoBtn.style.height = '40px';
+							desktopInfoBtn.style.fontSize = '20px';
+						}
+					}
+					info.style.opacity = '0';
+					info.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 215, 0, 0.12) 50%, rgba(255, 183, 0, 0.10) 100%)';
+					info.style.backdropFilter = 'blur(20px) saturate(180%)';
+					info.style.webkitBackdropFilter = 'blur(20px) saturate(180%)';
+					info.style.boxShadow = '0 8px 32px rgba(255, 215, 0, 0.2), 0 0 80px rgba(255, 215, 0, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.1)';
+					info.style.border = '2px solid rgba(255, 215, 0, 0.3)';
+					info.style.borderRadius = '20px';
+					
+					// Adjust instruction text for mobile
+					const infoText = info.querySelector('div:last-child');
+					if (infoText) {
+						infoText.style.fontSize = '11px';
+						infoText.style.lineHeight = '1.3';
+					}
+					
+					// Hide desktop coin counter on mobile
 					if (coinCounter) {
-						coinCounter.style.position = 'fixed';
-						coinCounter.style.left = '20px';
-						coinCounter.style.right = 'auto';
-						coinCounter.style.top = 'auto';
-						coinCounter.style.bottom = '30px';
-						coinCounter.style.transform = 'none';
-						coinCounter.style.setProperty('height', '8rem', 'important');  // Match info box height
-						coinCounter.style.setProperty('min-height', '8rem', 'important');  // Ensure minimum height
-						coinCounter.style.fontSize = '13px';
-						coinCounter.style.padding = '12px 15px';  // Match info box padding
-						coinCounter.style.display = 'flex';
-						coinCounter.style.flexDirection = 'column';
-						coinCounter.style.alignItems = 'flex-start';
-						coinCounter.style.justifyContent = 'flex-start';
+						coinCounter.style.display = 'none';
+						
+						// Make sections more compact on mobile
+						const sections = coinCounter.querySelectorAll('div[style*="padding"]');
+						sections.forEach(section => {
+							if (section.style.padding && section.style.padding !== '8px') {
+								section.style.padding = '4px 6px';
+								section.style.borderRadius = '6px';
+							}
+						});
+						
+						// Make emoji smaller on mobile
+						const emojiElements = coinCounter.querySelectorAll('.coin-emoji, span[style*="font-size: 20px"], span[style*="font-size: 16px"]');
+						emojiElements.forEach(emoji => {
+							emoji.style.fontSize = '12px';
+						});
+						
+						// Make all text smaller and more compact
+						const allSpans = coinCounter.querySelectorAll('span');
+						allSpans.forEach(span => {
+							if (!span.style.fontSize || span.style.fontSize === '14px') {
+								span.style.fontSize = '9px';
+							}
+						});
+						
+						// Show only compact stats on mobile
+						const compactStats = coinCounter.querySelector('.compact-stats');
+						if (compactStats) {
+							compactStats.style.display = 'flex';
+						}
+						const desktopElements = coinCounter.querySelectorAll('.desktop-only, .full-stats, .counter-title');
+						desktopElements.forEach(el => {
+							el.style.display = 'none';
+						});
 					}
 				} else {
-					// Desktop layout
+					// Desktop layout - use same styling as mobile but adjusted positioning
+					info.style.position = 'fixed';
 					info.style.right = '30px';
 					info.style.left = 'auto';
 					info.style.top = '50%';
 					info.style.bottom = 'auto';
 					info.style.transform = 'translateY(-50%)';
-					info.style.width = '250px';
+					info.style.width = '320px';
 					info.style.maxWidth = 'none';
 					info.style.textAlign = 'left';
+					info.style.fontSize = '14px';
+					info.style.padding = '20px';
+					info.style.borderRadius = '24px';
+					info.style.display = 'none'; // Hidden by default on desktop too
+					info.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 215, 0, 0.12) 50%, rgba(255, 183, 0, 0.10) 100%)';
+					info.style.backdropFilter = 'blur(20px) saturate(180%)';
+					info.style.webkitBackdropFilter = 'blur(20px) saturate(180%)';
+					info.style.boxShadow = '0 8px 32px rgba(255, 215, 0, 0.2), 0 0 80px rgba(255, 215, 0, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.1)';
+					info.style.border = '2px solid rgba(255, 215, 0, 0.3)';
+					info.style.zIndex = '10000';
 					
-					// Desktop coin counter position (below info box)
+					// Remove collapsed class on desktop
+					info.classList.remove('collapsed');
+					
+					// Show collection counter on desktop too
+					if (mobileCollectionCounter) {
+						mobileCollectionCounter.style.display = 'flex';
+						mobileCollectionCounter.style.flexDirection = 'column';
+						mobileCollectionCounter.style.bottom = '160px'; // Higher on desktop
+						
+						// Show info button on desktop (keep original size and position)
+						const desktopInfoBtn = document.getElementById('desktopInfoBtn');
+						if (desktopInfoBtn) {
+							desktopInfoBtn.style.display = 'block';
+							desktopInfoBtn.style.position = 'absolute';
+							desktopInfoBtn.style.right = '-70px';
+							desktopInfoBtn.style.top = '15px';
+							desktopInfoBtn.style.width = '50px';
+							desktopInfoBtn.style.height = '50px';
+							desktopInfoBtn.style.fontSize = '24px';
+						}
+					}
+					
+					// Hide old desktop coin counter
 					if (coinCounter) {
-						coinCounter.style.right = '30px';
-						coinCounter.style.left = 'auto';
-						coinCounter.style.top = 'calc(50% + 140px)';
-						coinCounter.style.bottom = 'auto';
-						coinCounter.style.transform = 'translateY(-50%)';
-						coinCounter.style.width = '250px';
+						coinCounter.style.display = 'none';
 					}
 				}
 			}
@@ -380,6 +696,87 @@
 			// Run on load and resize
 			window.addEventListener('load', updateInfoPosition);
 			window.addEventListener('resize', updateInfoPosition);
+			
+			// Make toggle function global and accessible from parent frame
+			function toggleInstructions() {
+				const info = document.getElementById('info');
+				const isMobile = window.innerWidth <= 768;
+				
+				if (info.style.display === 'none' || info.style.display === '') {
+					// Show instructions with smooth animation
+					info.style.display = 'block';
+					info.style.animation = 'slideInGlow 0.4s ease-out forwards, pulseGlow 3s ease-in-out 0.4s infinite';
+					setTimeout(() => {
+						info.style.opacity = '1';
+						if (isMobile) {
+							info.style.transform = 'translateX(-50%) translateY(0)';
+						} else {
+							info.style.transform = 'translateY(-50%)';
+						}
+					}, 10);
+				} else {
+					// Hide instructions with animation
+					info.style.animation = 'none';
+					info.style.opacity = '0';
+					if (isMobile) {
+						info.style.transform = 'translateX(-50%) translateY(20px) scale(0.95)';
+					} else {
+						info.style.transform = 'translateY(-50%) translateX(20px) scale(0.95)';
+					}
+					setTimeout(() => {
+						info.style.display = 'none';
+					}, 300);
+				}
+			}
+			// Make it globally accessible
+			window.toggleInstructions = toggleInstructions
+			
+			// Add click outside to close functionality
+			document.addEventListener('click', function(event) {
+				const info = document.getElementById('info');
+				const helpButton = event.target.closest('button');
+				const isMobile = window.innerWidth <= 768;
+				
+				// Check if info is visible
+				if (info && info.style.display === 'block') {
+					// Check if click was outside the info box and not on the help button
+					if (!info.contains(event.target) && (!helpButton || !helpButton.textContent.includes('❓'))) {
+						// Close the info box
+						info.style.animation = 'none';
+						info.style.opacity = '0';
+						if (isMobile) {
+							info.style.transform = 'translateX(-50%) translateY(20px) scale(0.95)';
+						} else {
+							info.style.transform = 'translateY(-50%) translateX(20px) scale(0.95)';
+						}
+						setTimeout(() => {
+							info.style.display = 'none';
+							// Notify parent frame that instructions are closed (for mobile)
+							if (isMobile && window.parent !== window) {
+								window.parent.postMessage({ type: 'instructionsClosed' }, '*');
+							}
+						}, 300);
+					}
+				}
+			});
+			
+			// Update coin count displays
+			function updateCompactStats() {
+				const count = document.getElementById('coinCount');
+				const collected = document.getElementById('collectedCount');
+				const countCompact = document.getElementById('coinCountCompact');
+				const collectedCompact = document.getElementById('collectedCountCompact');
+				
+				if (count && countCompact) {
+					countCompact.textContent = count.textContent;
+				}
+				if (collected && collectedCompact) {
+					collectedCompact.textContent = collected.textContent;
+				}
+			}
+			
+			// Watch for coin count changes
+			setInterval(updateCompactStats, 100);
 		</script>
 
 		<!-- Glowing text effect - REMOVED to avoid duplication with parent page -->
@@ -588,6 +985,7 @@
 			function updateCoinCounter() {
 				const coinCountElement = document.getElementById('coinCount');
 				const collectedCountElement = document.getElementById('collectedCount');
+				const mobileCurrentCountElement = document.getElementById('mobileCurrentCount');
 				const wckPercentageElement = document.getElementById('wckPercentage');
 				const aspcaPercentageElement = document.getElementById('aspcaPercentage');
 				
@@ -598,6 +996,11 @@
 				
 				if (collectedCountElement) {
 					collectedCountElement.textContent = collectedCoinCount;
+				}
+				
+				// Update mobile counter with current pool count
+				if (mobileCurrentCountElement) {
+					mobileCurrentCountElement.textContent = totalCoinCount;
 				}
 				
 				// Update allocation percentages
@@ -1540,10 +1943,84 @@
 				modalContent.addEventListener('touchend', (e) => e.stopPropagation());
 			}
 
+			// Set up HTML button event handlers
+			function setupHTMLButtons() {
+				const localCoinBtn = document.getElementById('localCoinBtn');
+				const realCoinBtn = document.getElementById('realCoinBtn');
+
+				// Handle Local Coin Button Click
+				if (localCoinBtn) {
+					localCoinBtn.addEventListener('click', function(e) {
+						// Add ripple effect
+						this.classList.add('clicked');
+						setTimeout(() => this.classList.remove('clicked'), 600);
+
+						console.log('[HTML Button] Local Coin Button clicked!');
+						
+						// Check if user has aimed first
+						if (!hasAimed) {
+							showAimReminderModal();
+							return;
+						}
+						
+						// Toss local coin immediately
+						triggerCoinToss(true);
+					});
+				}
+
+				// Handle Real Coin Button Click
+				if (realCoinBtn) {
+					realCoinBtn.addEventListener('click', function(e) {
+						// Add ripple effect
+						this.classList.add('clicked');
+						setTimeout(() => this.classList.remove('clicked'), 600);
+
+						console.log('[HTML Button] Real Coin Button clicked!');
+						
+						// Check if user has aimed first
+						if (!hasAimed) {
+							showAimReminderModal();
+							return;
+						}
+						
+						// Check if charity is already selected
+						if (selectedCharity) {
+							// Charity selected - toss the coin
+							console.log(`Tossing coin for charity: ${selectedCharity}`);
+							triggerCoinToss(false);
+							
+							// Reset button text after toss
+							setTimeout(() => {
+								selectedCharity = null;
+								this.innerHTML = '<span class="btn-icon" style="margin-right: 8px; font-size: 18px;">💰</span>Connect Wallet & Donate<span class="ripple"></span>';
+							}, 100);
+						} else {
+							// No charity selected - show modal
+							showCharityModal();
+						}
+					});
+				}
+
+				// Listen for 80s mode changes from parent
+				window.addEventListener('message', function(event) {
+					if (event.data) {
+						// Support both message formats
+						if (event.data.type === 'toggle80sMode') {
+							document.body.classList.toggle('mode-80s', event.data.enabled);
+						} else if (event.data.type === '80sMode') {
+							document.body.classList.toggle('mode-80s', event.data.value);
+						}
+					}
+				});
+			}
+
 			async function init() {
 				
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
+
+				// Set up HTML button click handlers
+				setupHTMLButtons();
 
 				// Check for 80s mode in URL parameters
 				const urlParams = new URLSearchParams(window.location.search);
@@ -1822,27 +2299,31 @@
 				const fontSize2 = isMobile ? 42 : 48;  // Increased desktop font from 36 to 48
 				const buttonSpacing = isMobile ? 0.20 : 0.25;  // Increased desktop spacing from 0.18 to 0.25
 				
+				// Canvas buttons are now replaced with HTML overlay buttons
+				// Commenting out the 3D button creation
+				/*
 				localCoinButton3D = createButtonMesh(
-      "Click to Toss Coin",
-      new THREE.Vector3(-buttonSpacing, -0.38, 1.4),
-      {width: buttonWidth, height: buttonHeight},  // Same height as other button
-      fontSize1,                    // fontSize
-      '#30cfd0',            // bgColor (cyan to match the UI theme)
-      'black'               // textColor     
-  );
-  localCoinButton3D.userData.isLocalCoin = true; // Mark as local coin button
-  scene.add(localCoinButton3D);
+					"Click to Toss Coin",
+					new THREE.Vector3(-buttonSpacing, -0.38, 1.4),
+					{width: buttonWidth, height: buttonHeight},
+					fontSize1,
+					'#30cfd0',
+					'black'
+				);
+				localCoinButton3D.userData.isLocalCoin = true;
+				scene.add(localCoinButton3D);
 
-  tossCoinButton3D = createButtonMesh(
-      "Connect Wallet\n and Donate Token",
-      new THREE.Vector3(buttonSpacing, -0.38, 1.4),
-      {width: buttonWidth, height: buttonHeight},  // Same height now
-      fontSize2,                    // fontSize
-      '#ffa100',            // bgColor (orange to match the UI theme)
-      'black'               // textColor     
-  );
-  tossCoinButton3D.userData.isLocalCoin = false; // Mark as real coin button
-  scene.add(tossCoinButton3D);
+				tossCoinButton3D = createButtonMesh(
+					"Connect Wallet\n and Donate Token",
+					new THREE.Vector3(buttonSpacing, -0.38, 1.4),
+					{width: buttonWidth, height: buttonHeight},
+					fontSize2,
+					'#ffa100',
+					'black'
+				);
+				tossCoinButton3D.userData.isLocalCoin = false;
+				scene.add(tossCoinButton3D);
+				*/
 				// --- END NEW ---
 
 				initWater();
@@ -2553,47 +3034,18 @@
 				raycaster.setFromCamera( currentPointerCoords, camera ); 
 
 				// --- Modified Raycasting Logic ---
-				// First check for button clicks
+				// Button clicks are now handled by HTML buttons, not raycasting
+				// Commenting out the canvas button raycasting
+				/*
 				const buttonIntersects = raycaster.intersectObjects( [tossCoinButton3D, localCoinButton3D] );
-				let buttonClicked = false;
-				
 				if (buttonIntersects.length > 0) {
 					const button = buttonIntersects[0].object;
 					if (button.userData.isTossButton) {
-						const isLocalCoin = button.userData.isLocalCoin || false;
-						console.log(`[Pointer Down] ${isLocalCoin ? 'Local' : 'Real'} Coin Button clicked!`);
-						
-						// Check if user has aimed first
-						if (!hasAimed) {
-							// Show reminder to click water first
-							showAimReminderModal();
-							buttonClicked = true;
-							return;
-						}
-						
-						if (!isLocalCoin) {
-							// Check if charity is already selected
-							if (selectedCharity) {
-								// Charity selected - toss the coin
-								console.log(`Tossing coin for charity: ${selectedCharity}`);
-								triggerCoinToss(isLocalCoin);
-								
-								// Reset button text and clear charity after toss
-								setTimeout(() => {
-									selectedCharity = null;
-									updateButtonText(tossCoinButton3D, "Click to Connect Wallet\nand Toss Real Coin");
-								}, 100);
-							} else {
-								// No charity selected - show modal
-								showCharityModal();
-							}
-						} else {
-							// Local coin - toss immediately
-							triggerCoinToss(isLocalCoin);
-						}
-						buttonClicked = true;
+						// Old canvas button logic removed
 					}
 				}
+				*/
+				let buttonClicked = false;
 
 				// Only check for water interaction if button wasn't clicked
 				let waterClicked = false;
@@ -3381,6 +3833,315 @@
 
 		</script>
 
+		<!-- New HTML Overlay Buttons for Coin Toss -->
+		<div id="coinTossButtons" style="
+			position: fixed;
+			bottom: 80px;
+			left: 50%;
+			transform: translateX(-50%);
+			display: flex;
+			gap: 30px;
+			z-index: 1500;
+			transition: all 0.3s ease;
+		">
+			<!-- Local Coin Button -->
+			<button id="localCoinBtn" class="coin-toss-btn local-coin" style="
+				padding: 18px 35px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				border: 2px solid rgba(255, 255, 255, 0.3);
+				border-radius: 50px;
+				color: white;
+				font-size: 16px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+				position: relative;
+				overflow: hidden;
+				backdrop-filter: blur(10px);
+				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+				letter-spacing: 0.5px;
+			">
+				<span class="btn-icon" style="margin-right: 8px; font-size: 18px;">🪙</span>
+				<span class="btn-text desktop-text">Click to Toss Coin</span>
+				<span class="btn-text mobile-text" style="display: none;">Toss Coin</span>
+				<span class="ripple"></span>
+			</button>
+
+			<!-- Real Coin Button -->
+			<button id="realCoinBtn" class="coin-toss-btn real-coin" style="
+				padding: 18px 35px;
+				background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+				border: 2px solid rgba(255, 255, 255, 0.3);
+				border-radius: 50px;
+				color: white;
+				font-size: 16px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4);
+				position: relative;
+				overflow: hidden;
+				backdrop-filter: blur(10px);
+				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+				letter-spacing: 0.5px;
+			">
+				<span class="btn-icon" style="margin-right: 8px; font-size: 18px;">💰</span>
+				<span class="btn-text desktop-text">Connect Wallet & Donate</span>
+				<span class="btn-text mobile-text" style="display: none;">Donate</span>
+				<span class="ripple"></span>
+			</button>
+		</div>
+
+		<style>
+			/* Ripple effect */
+			.ripple {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				width: 0;
+				height: 0;
+				border-radius: 50%;
+				background: rgba(255, 255, 255, 0.5);
+				transform: translate(-50%, -50%);
+				pointer-events: none;
+			}
+
+			@keyframes rippleAnimation {
+				to {
+					width: 200px;
+					height: 200px;
+					opacity: 0;
+				}
+			}
+
+			.coin-toss-btn.clicked .ripple {
+				animation: rippleAnimation 0.6s ease-out;
+			}
+
+			/* Button hover effects */
+			.coin-toss-btn:hover {
+				transform: translateY(-2px) scale(1.05);
+				box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+			}
+
+			.coin-toss-btn:active {
+				transform: translateY(0) scale(0.98);
+			}
+
+			.coin-toss-btn.local-coin:hover {
+				background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+				box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+			}
+
+			.coin-toss-btn.real-coin:hover {
+				background: linear-gradient(135deg, #0083b0 0%, #00b4db 100%);
+				box-shadow: 0 8px 25px rgba(0, 180, 219, 0.6);
+			}
+
+			/* 80s mode styles */
+			body.mode-80s .coin-toss-btn.local-coin {
+				background: linear-gradient(135deg, #00ffff 0%, #ff00ff 100%);
+				border: 2px solid #00ff00;
+				box-shadow: 0 4px 15px rgba(0, 255, 255, 0.6), 0 0 30px rgba(255, 0, 255, 0.3);
+				text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+			}
+
+			body.mode-80s .coin-toss-btn.real-coin {
+				background: linear-gradient(135deg, #ff00ff 0%, #ffff00 100%);
+				border: 2px solid #00ff00;
+				box-shadow: 0 4px 15px rgba(255, 0, 255, 0.6), 0 0 30px rgba(255, 255, 0, 0.3);
+				text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+			}
+
+			/* Mobile responsive */
+			@media (max-width: 768px) {
+				#coinTossButtons {
+					/* bottom: 3rem !important; */
+					top: auto !important;
+					transform: translateX(-50%) !important;
+					flex-direction: row;
+					gap: 10px;
+					width: auto;
+					max-width: 95%;
+				}
+
+				.coin-toss-btn {
+					width: auto;
+					padding: 10px 16px !important;
+					font-size: 12px !important;
+					border-radius: 22px !important;
+					letter-spacing: 0 !important;
+					white-space: nowrap;
+					text-align: center;
+					min-height: 40px;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				}
+
+				.coin-toss-btn .btn-icon {
+					font-size: 14px !important;
+					margin-right: 6px !important;
+				}
+				
+				.coin-toss-btn .mobile-text {
+					display: inline !important;
+				}
+				
+				.coin-toss-btn .desktop-text {
+					display: none !important;
+				}
+
+				/* Compact mobile info boxes */
+				.info-box {
+					border-radius: 12px !important;
+				}
+				
+				#info > div:first-child,
+				#coinCounter > div:first-child {
+					font-size: 14px !important;
+					padding-bottom: 6px !important;
+					margin-bottom: 6px !important;
+				}
+			}
+
+			/* Disabled state */
+			.coin-toss-btn:disabled {
+				opacity: 0.5;
+				cursor: not-allowed;
+				transform: none !important;
+			}
+
+			/* Info box hover effects */
+			#info:hover {
+				transform: translateY(-50%) scale(1.02);
+				box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 100px rgba(102, 126, 234, 0.3);
+			}
+
+			#coinCounter:hover {
+				transform: translateY(0) scale(1.02);
+				box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 100px rgba(240, 147, 251, 0.3);
+			}
+
+			/* 80s mode for info boxes */
+			body.mode-80s .info-box {
+				background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(255, 0, 255, 0.2) 100%) !important;
+				border: 2px solid #00ff00 !important;
+				box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 80px rgba(0, 255, 255, 0.4), 0 0 120px rgba(255, 0, 255, 0.3) !important;
+			}
+
+			body.mode-80s #info > div:first-child {
+				background: linear-gradient(135deg, #00ffff 0%, #ff00ff 100%) !important;
+				-webkit-background-clip: text !important;
+				-webkit-text-fill-color: transparent !important;
+				background-clip: text !important;
+				border-bottom-color: rgba(0, 255, 255, 0.5) !important;
+				text-shadow: 0 0 20px rgba(0, 255, 255, 0.8) !important;
+			}
+
+			body.mode-80s #coinCounter > div:first-child {
+				background: linear-gradient(135deg, #ff00ff 0%, #ffff00 100%) !important;
+				-webkit-background-clip: text !important;
+				-webkit-text-fill-color: transparent !important;
+				background-clip: text !important;
+				border-bottom-color: rgba(255, 0, 255, 0.5) !important;
+				text-shadow: 0 0 20px rgba(255, 0, 255, 0.8) !important;
+			}
+
+			body.mode-80s .info-box div[style*="rgba(255, 255, 255, 0.05)"] {
+				background: rgba(0, 255, 0, 0.1) !important;
+				border: 1px solid rgba(0, 255, 0, 0.3);
+			}
+
+			body.mode-80s #resetMessage {
+				background: linear-gradient(135deg, #00ffff 0%, #ff00ff 100%) !important;
+				box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+			}
+
+			body.mode-80s .info-box {
+				text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+			}
+
+			/* Mobile/Desktop visibility classes */
+			@media (max-width: 768px) {
+				.desktop-only {
+					display: none !important;
+				}
+				.mobile-only {
+					display: block !important;
+				}
+				
+				/* Collapsed state for instructions */
+				#info.collapsed {
+					width: 60px !important;
+					max-width: 60px !important;
+					min-width: 60px !important;
+					height: 60px !important;
+					padding: 12px !important;
+					display: flex !important;
+					align-items: center !important;
+					justify-content: center !important;
+				}
+				
+				#info.collapsed .info-title,
+				#info.collapsed .info-content {
+					display: none !important;
+				}
+				
+				#info.collapsed .toggle-btn {
+					display: block !important;
+					margin: 0;
+					width: 100%;
+					height: 100%;
+					display: flex !important;
+					align-items: center !important;
+					justify-content: center !important;
+				}
+				
+				#info:not(.collapsed) .toggle-btn {
+					position: absolute;
+					top: 5px;
+					right: 5px;
+					width: 30px;
+					height: 30px;
+					font-size: 18px !important;
+					display: flex !important;
+					align-items: center;
+					justify-content: center;
+					background: rgba(255, 255, 255, 0.1);
+					border-radius: 50%;
+				}
+				
+				/* Compact coin counter on mobile */
+				#coinCounter .compact-stats {
+					display: flex !important;
+				}
+				
+				#coinCounter .full-stats {
+					display: none !important;
+				}
+				
+				#coinCounter {
+					padding: 12px !important;
+				}
+			}
+			
+			@media (min-width: 769px) {
+				.desktop-only {
+					display: block !important;
+				}
+				.mobile-only {
+					display: none !important;
+				}
+				
+				#coinCounter .full-stats {
+					display: flex !important;
+					flex-direction: column;
+					gap: 8px;
+				}
+			}
+		</style>
 		
 	</body>
 </html>

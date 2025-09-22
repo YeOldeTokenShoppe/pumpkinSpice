@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useRef, Suspense, useEffect, useState } from 'react';
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useAnimations, Cloud, Clouds } from '@react-three/drei';
+import { Canvas, useThree, useFrame, extend as fiberExtend } from '@react-three/fiber';
+import { OrbitControls, useGLTF, useAnimations, Cloud, Clouds, MeshPortalMaterial, CameraControls, Text, Sky, RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
+import { geometry } from 'maath';
 import DarkClouds from '@/components/Clouds';
 import PostProcessingEffects from '@/components/PostProcessingEffects';
 import { ParallaxGroup } from '@/components/ParallaxGroup';
@@ -16,6 +17,13 @@ import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import CyberNav from '@/components/CyberNav';
 import InfinityLoader from '@/components/InfinityLoader';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+// Extend geometry and setup constants for portal
+fiberExtend(geometry);
+const GOLDENRATIO = 1.61803398875;
+const zPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+const yPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1);
 
 const GradientSkyMaterial = shaderMaterial(
   {
@@ -87,7 +95,7 @@ function DirectionalLightWithHelper() {
       <directionalLight
         ref={directionalLightRef}
         position={[15, 15, -10]}
-        intensity={3}
+        intensity={2}
         color="#ffffff"
         castShadow
         shadow-mapSize-width={2048}
@@ -128,7 +136,7 @@ function SpotlightWithHelper({ isMobile, scrollY }) {
       <spotLight
         ref={spotlightRef}
         position={[-5, 10, 5]}
-        intensity={35}
+        intensity={25}
         angle={Math.PI / 4}
         penumbra={0.5}
         distance={60}
@@ -179,12 +187,12 @@ function OurLadyRiderModel({ isMobile, scrollY, onLoad }) {
   return (
     <group 
       ref={groupRef}
-      position={isMobile ? [-10, -11, -10] : [-6, -13, -12]}
+      position={isMobile ? [-10, -11, -10] : [-6, -15, -12]}
     >
       <primitive 
         ref={modelRef}
         object={scene} 
-        scale={isMobile ? [10, 10, 10] : [12, 12, 12]}
+        scale={isMobile ? [9, 9, 9] : [12, 12, 12]}
         rotation={isMobile ? [0, -2.5, 0] : [0, -2.4, 0]}
       />
       {/* Personal cloud that follows the model */}
@@ -347,6 +355,120 @@ function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
   );
 }
 
+// Animated pulsing text component
+function PulsingText({ children, ...props }) {
+  const textRef = useRef();
+  
+  useFrame(({ clock }) => {
+    if (textRef.current) {
+      const t = clock.getElapsedTime();
+      // Pulse the opacity
+      textRef.current.fillOpacity = 0.7 + Math.sin(t * 2) * 0.3;
+      // Add a subtle scale pulse
+      const scale = 1 + Math.sin(t * 2) * 0.05;
+      textRef.current.scale.setScalar(scale);
+    }
+  });
+  
+  return (
+    <Text ref={textRef} {...props}>
+      {children}
+    </Text>
+  );
+}
+
+// Portal Components
+function FountainModel({ clip, ...props }) {
+  const { scene } = useGLTF('/models/fountain.glb');
+  
+  React.useEffect(() => {
+    if (scene) {
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          if (clip) {
+            child.material.clippingPlanes = [zPlane, yPlane];
+            child.material.side = THREE.DoubleSide;
+          }
+        }
+      });
+    }
+  }, [scene, clip]);
+  
+  return <primitive object={scene} {...props} />;
+}
+
+function PortalFrame({ id, name, author, bg, width = 1.1, height = GOLDENRATIO * 1.1, children, ...props }) {
+  return (
+    <group {...props}>
+      <Text 
+        font="/fonts/UnifrakturCook-Bold.ttf"
+        color="#d4af37" 
+        fontSize={0.18} 
+        letterSpacing={-0.025} 
+        anchorY="top" 
+        anchorX="center" 
+        lineHeight={0.8} 
+        position={[0, 0.5, 0.01]}
+        maxWidth={width * 0.8}
+      >
+        {name}
+      </Text>
+      <Text 
+        font="/fonts/UnifrakturMaguntia-Regular.ttf"
+        color="#d4af37" 
+        fontSize={0.08} 
+        anchorX="right" 
+        position={[width * 0.4, -height * 0.42, 0.01]}
+      >
+        /{id}
+      </Text>
+      <Text 
+        font="/fonts/UnifrakturMaguntia-Regular.ttf"
+        color="#d4af37" 
+        fontSize={0.04} 
+        anchorX="center" 
+        position={[0, -height * 0.45, 0.01]}
+        maxWidth={width * 0.8}
+      >
+        {author}
+      </Text>
+      {/* Portal interaction hints - positioned inside the portal */}
+      <PulsingText
+        font="/fonts/UnifrakturMaguntia-Regular.ttf"
+        color="#d4af37"
+        fontSize={0.035}
+        anchorX="right"
+        anchorY="top"
+        position={[width * 0.42, height * 0.42, 0.02]}
+        fillOpacity={0.9}
+      >
+        Click to flip
+      </PulsingText>
+      <Text
+        font="/fonts/UnifrakturMaguntia-Regular.ttf"
+        color="#d4af37"
+        fontSize={0.03}
+        anchorX="right"
+        anchorY="top"
+        position={[width * 0.42, height * 0.39, 0.02]}
+        fillOpacity={0.7}
+      >
+        Double-click to enter
+      </Text>
+      <mesh name={id}>
+        <roundedPlaneGeometry args={[width, height, 0.1]} />
+        <MeshPortalMaterial>{children}</MeshPortalMaterial>
+      </mesh>
+      <mesh name={id} position={[0, 0, -0.001]}>
+        <roundedPlaneGeometry args={[width + 0.05, height + 0.05, 0.12]} />
+        <meshBasicMaterial color="#d4af37" />
+      </mesh>
+    </group>
+  );
+}
+
 // Scene component that responds to scroll
 function Scene({ isMobile, scrollY, onAssetsLoaded }) {
   const { camera } = useThree();
@@ -407,6 +529,7 @@ function Scene({ isMobile, scrollY, onAssetsLoaded }) {
 }
 
 export default function Home2() {
+  const router = useRouter();
   const [fontsLoaded, setFontsLoaded] = useState(false);
   // Initialize with false to avoid hydration mismatch
   const [isMobile, setIsMobile] = useState(false);
@@ -419,13 +542,32 @@ export default function Home2() {
   const [isClient, setIsClient] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [flippedCards, setFlippedCards] = useState(new Set());
+  const [portalFlipped, setPortalFlipped] = useState(false);
   const [isSceneLoading, setIsSceneLoading] = useState(true);
+  const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  const [emoji, setEmoji] = useState("😇");
+  const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(true); // Always treat as mobile
+
   const [assetsLoaded, setAssetsLoaded] = useState({
     ourLadyModel: false,
     angelModel: false,
     devilModel: false,
     images: []
   });
+
+    // Always use mobile view on mount + check for actual mobile device
+    useEffect(() => {
+      setIsDefinitelyPhone(true);
+      setIsMobileView(true);
+      
+      // Check if actually on mobile for icon layout
+      const checkMobileDevice = () => {
+        setIsMobileDevice(window.innerWidth <= 768);
+      };
+      checkMobileDevice();
+      window.addEventListener('resize', checkMobileDevice);
+      return () => window.removeEventListener('resize', checkMobileDevice);
+    }, []);
   
   // Ref for sparkle effect
   const coinRef = useRef(null);
@@ -517,6 +659,14 @@ export default function Home2() {
     
     return () => clearTimeout(fallbackTimer);
   }, []); // Run once on mount
+
+  // Alternate emoji for sign-in button
+  useEffect(() => {
+    const emojiInterval = setInterval(() => {
+      setEmoji((prevEmoji) => (prevEmoji === "😇" ? "😈" : "😇"));
+    }, 3000);
+    return () => clearInterval(emojiInterval);
+  }, []);
 
   useEffect(() => {
     // Set mounted to true after hydration
@@ -620,13 +770,17 @@ export default function Home2() {
       
       // Apply 3D rotation to card
       const cardInner = card.querySelector('.card');
-      cardInner.style.transform = `rotateY(${rX}deg) rotateX(${rY}deg)`;
+      if (cardInner) {
+        cardInner.style.transform = `rotateY(${rX}deg) rotateX(${rY}deg)`;
+      }
       
       // Move background opposite direction for depth
       const cardBg = card.querySelector('.card-bg');
-      const tX = mouseX * -40;
-      const tY = mouseY * -40;
-      cardBg.style.transform = `translateX(${tX}px) translateY(${tY}px)`;
+      if (cardBg) {
+        const tX = mouseX * -40;
+        const tY = mouseY * -40;
+        cardBg.style.transform = `translateX(${tX}px) translateY(${tY}px)`;
+      }
     };
 
     const handleCardMouseLeave = (e) => {
@@ -636,8 +790,12 @@ export default function Home2() {
       
       // Reset transforms with delay
       setTimeout(() => {
-        cardInner.style.transform = '';
-        cardBg.style.transform = '';
+        if (cardInner) {
+          cardInner.style.transform = '';
+        }
+        if (cardBg) {
+          cardBg.style.transform = '';
+        }
       }, 100);
     };
 
@@ -1119,6 +1277,17 @@ export default function Home2() {
           }
         }
         
+        @keyframes hintPulse {
+          0%, 100% {
+            opacity: 0.9;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+          }
+          50% {
+            opacity: 1;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 1), 0 0 30px rgba(212, 175, 55, 0.5);
+          }
+        }
+        
         .cloud-container {
           animation: cloudFloat 15s ease-in-out infinite;
           position: relative;
@@ -1137,6 +1306,43 @@ export default function Home2() {
           pointer-events: none;
           z-index: -1;
         }
+        /* Portal flip styles */
+        .portal-container {
+          width: 100%;
+          height: 100%;
+          position: relative;
+          transform-style: preserve-3d;
+          transition: transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+          cursor: pointer;
+          box-sizing: border-box;
+          overflow: visible;
+        }
+        
+        .portal-container.flipped {
+          transform: rotateY(180deg);
+        }
+        
+        .portal-face {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          box-sizing: border-box;
+          overflow: visible;
+        }
+        
+        .portal-front {
+          z-index: 2;
+        }
+        
+        .portal-back {
+          transform: rotateY(180deg);
+          z-index: 1;
+        }
+        
         /* Alternating cards styles with enhanced parallax depth */
         .cards-wrapper {
           display: flex;
@@ -1151,9 +1357,8 @@ export default function Home2() {
         }
 
         .card-wrap {
-          width: 90%;
-          max-width: 600px;
-          min-height: 400px;
+          width: 70%;
+          max-width: 450px;
           position: relative;
           perspective: 1000px;
           cursor: pointer;
@@ -1165,7 +1370,7 @@ export default function Home2() {
         
         .card-container {
           width: 100%;
-          height: 400px;
+          aspect-ratio: ${1 / GOLDENRATIO};
           position: relative;
           transform-style: preserve-3d;
           transition: transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95);
@@ -1198,6 +1403,8 @@ export default function Home2() {
         
         .card-back .card {
           background: linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%);
+          border: 6px solid #d4af37;
+          border-radius: 20px;
         }
         
         .card-back-content {
@@ -1312,12 +1519,9 @@ export default function Home2() {
           transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1),
                       box-shadow 2s cubic-bezier(0.23, 1, 0.32, 1);
           box-shadow: 
-            rgba(212, 175, 55, 0.4) 0 0 50px 10px,
-            rgba(255, 255, 255, 0.3) 0 0 40px 5px,
-            rgba(255, 255, 255, 1) 0 0 0 1px,
-            rgba(0, 0, 0, 0.66) 0 30px 60px 0,
-            inset #666 0 0 0 5px,
-            inset rgba(255, 255, 255, 0.4) 0 0 0 6px;
+            0 0 0 5px #d4af37,
+            0 0 0 6px #d4af37,
+            rgba(212, 175, 55, 0.4) 0 0 50px 10px;
         }
 
         .card-wrap:hover .card-bg {
@@ -1344,20 +1548,43 @@ export default function Home2() {
           transform: translateY(0);
         }
 
+        /* Override hover effects for portal to prevent vertical movement */
+        .portal-wrap.card-wrap:hover {
+          /* Prevent any inherited hover effects */
+        }
+        
+        .portal-wrap.card-wrap:hover .card {
+          box-shadow: none !important;
+        }
+        
+        .portal-wrap:hover .card-info {
+          transform: translateY(40%) !important;
+        }
+        
+        .portal-wrap:hover .portal-hover-container {
+          transform: inherit;
+        }
+        
+        /* Ensure portal container doesn't shift on hover */
+        .portal-wrap .portal-container,
+        .portal-wrap:hover .portal-container {
+          position: relative;
+          top: 0;
+          transform-origin: center center;
+        }
+
         .card {
           width: 100%;
-          min-height: 400px;
+          height: 100%;
+          aspect-ratio: ${1 / GOLDENRATIO};
           position: relative;
-          border-radius: 10px;
+          border-radius: 20px;
           background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
           overflow: hidden;
-          box-shadow: 
-            rgba(212, 175, 55, 0.15) 0 0 30px 0,
-            rgba(0, 0, 0, 0.66) 0 30px 60px 0,
-            inset #555 0 0 0 5px,
-            inset rgba(255, 255, 255, 0.6) 0 0 0 6px;
+          border: 6px solid #d4af37;
           transition: 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
           pointer-events: auto;
+          box-sizing: border-box;
         }
 
         .card-bg {
@@ -1455,8 +1682,8 @@ export default function Home2() {
           }
 
           .card-wrap {
-            width: 95%;
-            min-height: 320px;
+            width: 85%;
+            max-width: 400px;
             margin-bottom: 0;
           }
           
@@ -1467,7 +1694,7 @@ export default function Home2() {
           }
           
           .card {
-            min-height: 320px;
+            aspect-ratio: ${1 / GOLDENRATIO};
           }
 
           .card-bg {
@@ -1513,6 +1740,7 @@ export default function Home2() {
       }}>
         <Canvas
           shadows
+          // gl={{ alpha: true, antialias: true }}
           camera={{ position: isMobile ? [20, -2, 20] : [20, -2, 20], fov: isMobile ? 60 : 60}}
           style={{ 
             position: 'absolute',
@@ -1765,7 +1993,236 @@ export default function Home2() {
               </div>
             </div>
           </div>
-        </div>
+          
+          {/* Portal Section - In alternating layout with cards */}
+          <div 
+            className="card-wrap portal-wrap"
+            ref={el => {
+              if (el && !cardRefs.current.includes(el)) {
+                cardRefs.current.push(el);
+              }
+            }}
+            onMouseMove={(e) => {
+              const card = e.currentTarget;
+              const innerDiv = card.querySelector('.portal-hover-container');
+              if (!innerDiv) return;
+              
+              const cardRect = card.getBoundingClientRect();
+              const cardCenterX = cardRect.left + cardRect.width / 2;
+              const cardCenterY = cardRect.top + cardRect.height / 2;
+              
+              const mouseX = (e.clientX - cardCenterX) / (cardRect.width / 2);
+              const mouseY = (e.clientY - cardCenterY) / (cardRect.height / 2);
+              
+              const rX = mouseX * 30;
+              const rY = mouseY * -30;
+              
+              // Apply rotation without vertical translation to keep content within borders
+              innerDiv.style.transform = `rotateY(${rX}deg) rotateX(${rY}deg)`;
+            }}
+            onMouseLeave={(e) => {
+              const innerDiv = e.currentTarget.querySelector('.portal-hover-container');
+              if (innerDiv) {
+                // Instead of resetting to exactly 0, use a tiny value to prevent shift
+                innerDiv.style.transform = 'rotateY(0.01deg) rotateX(0.01deg)';
+              }
+            }}
+            onClick={() => setPortalFlipped(!portalFlipped)}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              // Navigate to fountain page using Next.js router
+              router.push('/fountain');
+            }}>
+            <div className="portal-hover-container" style={{
+              width: '130%',
+              aspectRatio: `${1 / GOLDENRATIO}`,
+              position: 'relative',
+              perspective: '1000px',
+              transition: 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
+              transformStyle: 'preserve-3d',
+              marginLeft: '-15%',
+              transform: 'rotateX(0.01deg) rotateY(0.01deg)', // Tiny initial rotation to trigger 3D context
+              overflow: 'visible',
+            }}>
+            <div className={`portal-container ${portalFlipped ? 'flipped' : ''}`}>
+              {/* Front of portal */}
+              <div className="portal-face portal-front">
+                {mounted && (
+                <Suspense fallback={<div>Loading...</div>}>
+                <Canvas 
+                  gl={{ localClippingEnabled: true, alpha: true }} 
+                  camera={{ fov: 75, position: [0, 0, 1.5] }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'transparent',
+                    borderRadius: '10px',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                  }}
+                >
+                  <Suspense fallback={null}>
+                    <ambientLight intensity={0.5} />
+                    <pointLight position={[10, 10, 10]} />
+                    <directionalLight 
+                      position={[3, 8, 5]}  // From above-right-front
+                      intensity={1.2}
+                      castShadow
+                    />
+                    <PortalFrame id="01" name="Sacred Gateway" author="Enter the Sanctuary">
+                      <ambientLight intensity={0.7} />
+                      <pointLight position={[0, 2, 2]} intensity={1.2} />  // Above and in front of model
+                      <pointLight position={[-2, -0.5, 1]} intensity={0.5} color="#ffd700" />  // Golden side fill
+                      {/* HTML iframe showing fountain.html */}
+                      <group>
+                        <mesh position={[0, 0, -0.5]}>
+                          <planeGeometry args={[0.9, GOLDENRATIO * 0.9]} />
+                          <meshBasicMaterial transparent opacity={0} />
+                        </mesh>
+                        <Html
+                          transform
+                          occlude="blending"
+                          position={[0, 0.00, -0.5]}
+                          scale={0.059}
+              
+                          style={{
+                            width: '1000px',
+                            height: `${1000 * GOLDENRATIO}px`,
+                            overflow: 'hidden',
+                
+                          }}
+                        >
+                          <div 
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              overflow: 'hidden',
+                              borderRadius: '80px',
+                              clipPath: 'inset(0 round 10px)',
+                              cursor: 'pointer',
+                              position: 'relative',
+                            }}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              // Use window.location for more reliable navigation
+                              window.location.href = '/fountain';
+                            }}
+                          >
+                            <iframe
+                              src="/fountain.html?portal=true"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                border: 'none',
+                                background: 'white',
+                                pointerEvents: 'none', // Prevent iframe from capturing clicks
+                              }}
+                              title="Fountain"
+                            />
+                          </div>
+                        </Html>
+                      </group>
+                      {/* Optional: Keep the model visible */}
+                      {/* <FountainModel position={[0, -0.6, -3]} scale={[1, 1, 1]} /> */}
+                      <Sky sunPosition={[100, 20, 100]} />
+                    </PortalFrame>
+                  </Suspense>
+                  <CameraControls 
+                    makeDefault 
+                    minAzimuthAngle={-Math.PI / 2.5} 
+                    maxAzimuthAngle={Math.PI / 2.5} 
+                    minPolarAngle={0.5} 
+                    maxPolarAngle={Math.PI / 2}
+                    enableZoom={false}
+                    enablePan={false}
+                    enableRotate={true}
+                    dollySpeed={0}
+                    truckSpeed={0} 
+                  />
+                </Canvas>
+                </Suspense>
+                )}
+              </div>
+              {/* Back of portal */}
+              <div className="portal-face portal-back">
+                {mounted && (
+                <Suspense fallback={<div>Loading...</div>}>
+                <Canvas 
+                  gl={{ alpha: true }} 
+                  camera={{ fov: 75, position: [0, 0, 1.5] }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'transparent',
+                    borderRadius: '10px',
+                  }}
+                >
+                  <group>
+                    {/* Portal frame background */}
+                    <mesh position={[0, 0, -0.001]}>
+                      {/* <roundedPlaneGeometry args={[1.1 + 0.05, GOLDENRATIO * 1.25 + 0.05, 0.12]} /> */}
+                      <meshBasicMaterial color="#d4af37" />
+                    </mesh>
+                    {/* Portal content background */}
+                    <mesh>
+                      <roundedPlaneGeometry args={[1.1, GOLDENRATIO * 1.25, 0.1]} />
+                      <meshBasicMaterial color="#2a1f0a" />
+                    </mesh>
+                    {/* Text content */}
+                    <Text 
+                      font="/fonts/UnifrakturCook-Bold.ttf"
+                      color="#d4af37" 
+                      fontSize={0.12} 
+                      anchorX="center" 
+                      position={[0, 0.45, 0.01]}
+                      maxWidth={0.8}
+                    >
+                      The Sacred Portal
+                    </Text>
+                    <Text 
+                      font="/fonts/UnifrakturMaguntia-Regular.ttf"
+                      color="#ffffff" 
+                      fontSize={0.04} 
+                      anchorX="center" 
+                      anchorY="top"
+                      position={[0, 0.3, 0.01]}
+                      maxWidth={0.8}
+                      lineHeight={1.4}
+                      textAlign="center"
+                    >
+                      {`This divine gateway represents the threshold
+between material and spiritual realms,
+where earthly ambitions meet heavenly providence.
+
+The Sacred Gateway serves as a mystical passage
+for blessed holders of $RL80, offering glimpses
+into realms of perpetual prosperity.
+
+Beyond the golden frame lies a sanctuary
+where traditional wisdom meets blockchain innovation.`}
+                    </Text>
+                    <Text 
+                      font="/fonts/UnifrakturMaguntia-Regular.ttf"
+                      color="#d4af37" 
+                      fontSize={0.035} 
+                      anchorX="center" 
+                      position={[0, -0.4, 0.01]}
+                      fontStyle="italic"
+                    >
+                      Click to return to the gateway
+                    </Text>
+                  </group>
+                </Canvas>
+                </Suspense>
+                )}
+              </div>
+            </div>
+            </div>
+            </div>
+          </div>
         </div>
         
         {/* Footer - at the bottom of all content */}
@@ -1934,40 +2391,34 @@ export default function Home2() {
       >
         {/* User Account Icon with Illumin80 Laurel */}
         <div>
+         {(!isMobileDevice || isMobileDevice) && (
+          <div style={{ order: isMobileDevice ? 3 : 0 }}>
           {isSignedIn ? (
             <Illumin80ClerkButton afterSignOutUrl="/" />
           ) : (
             <SignInButton mode="modal">
               <button
-              style={{
-                width: isMobile ? "48px" : "72px",
-                height: isMobile ? "48px" : "72px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                border: "2px solid rgba(255, 255, 255, 0.2)",
-                boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: isMobile ? "20px" : "30px",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.1)";
-                e.currentTarget.style.boxShadow =
-                  "0 6px 20px rgba(102, 126, 234, 0.6)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 15px rgba(102, 126, 234, 0.4)";
-              }}
-              title="Sign In"
-            >
-              👤
-            </button>
-          </SignInButton>
+                style={{
+                  width: isMobileDevice ? "2.5rem" : "3.75rem",
+                  height: isMobileDevice ? "2.5rem" : "3.75rem",
+                  borderRadius: "0.5rem",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  border: "2px solid rgba(255, 255, 255, 0.2)",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  backdropFilter: "blur(10px)",
+                  boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
+                }}
+                title="Sign In"
+              >
+                <span style={{ fontSize: "2.5rem" }}>{emoji}</span>
+              </button>
+            </SignInButton>
+          )}
+        </div>
         )}
         </div>
         
@@ -1982,9 +2433,9 @@ export default function Home2() {
                 }
               }}
               style={{
-                width: isMobile ? "40px" : "60px",
-                height: isMobile ? "40px" : "60px",
-                borderRadius: "8px",
+                width: isMobile ? "2.5rem" : "3.75rem",
+                height: isMobile ? "2.5rem" : "3.75rem",
+                borderRadius: "0.5rem",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
                 color: "#ffffff",
@@ -1994,7 +2445,7 @@ export default function Home2() {
                 cursor: "pointer",
                 transition: "all 0.3s ease",
                 backdropFilter: "blur(10px)",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
               }}
               title="Toggle Music"
             >
@@ -2019,15 +2470,15 @@ export default function Home2() {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
+                gap: "0.5rem",
               }}
             >
               {/* Spinning Album Art */}
               <div
                 className={contextIsPlaying ? "spinning-record" : ""}
                 style={{
-                  width: isMobile ? "40px" : "60px",
-                  height: isMobile ? "40px" : "60px",
+                  width: isMobile ? "2.5rem" : "3.75rem",
+                  height: isMobile ? "2.5rem" : "3.75rem",
                   borderRadius: "50%",
                   backgroundImage: "url('/virginRecords.jpg')",
                   backgroundSize: "cover",
@@ -2045,9 +2496,9 @@ export default function Home2() {
                   }
                 }}
                 style={{
-                  width: isMobile ? "32px" : "48px",
-                  height: isMobile ? "32px" : "48px",
-                  borderRadius: "6px",
+                  width: isMobile ? "2rem" : "3rem",
+                  height: isMobile ? "2rem" : "3rem",
+                  borderRadius: "0.375rem",
                   backgroundColor: "rgba(0, 0, 0, 0.7)",
                   border: "1px solid rgba(255, 255, 255, 0.2)",
                   color: "white",
@@ -2057,7 +2508,7 @@ export default function Home2() {
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                   backdropFilter: "blur(10px)",
-                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.3)",
+                  boxShadow: "0 0.125rem 0.375rem rgba(0, 0, 0, 0.3)",
                 }}
                 title="Next Track"
               >
@@ -2078,9 +2529,9 @@ export default function Home2() {
                   }
                 }}
                 style={{
-                  width: isMobile ? "28px" : "42px",
-                  height: isMobile ? "28px" : "42px",
-                  borderRadius: "6px",
+                  width: isMobile ? "1.75rem" : "2.625rem",
+                  height: isMobile ? "1.75rem" : "2.625rem",
+                  borderRadius: "0.375rem",
                   backgroundColor: "rgba(0, 0, 0, 0.7)",
                   border: "1px solid rgba(255, 255, 255, 0.2)",
                   color: "white",
@@ -2090,7 +2541,7 @@ export default function Home2() {
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                   backdropFilter: "blur(10px)",
-                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.3)",
+                  boxShadow: "0 0.125rem 0.375rem rgba(0, 0, 0, 0.3)",
                 }}
                 title="Close Music"
               >

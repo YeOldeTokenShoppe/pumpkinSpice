@@ -27,10 +27,11 @@ export default function FountainPage() {
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
   const [showCandleModal, setShowCandleModal] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const is80sMode = context80sMode;
   const isToggling80sRef = useRef(false);
   const [emoji, setEmoji] = useState("😇");
+  const iframeRef = useRef(null);
 
   // Alternate emoji for sign-in button
   useEffect(() => {
@@ -41,16 +42,22 @@ export default function FountainPage() {
     return () => clearInterval(emojiInterval);
   }, []);
   
-  // Check if mobile
+  // Check if mobile - run immediately on mount
   useEffect(() => {
     const checkMobile = () => {
       const isMobile = window.innerWidth <= 768;
       setIsMobileView(isMobile);
       setIsMobileDevice(isMobile);
     };
-    checkMobile();
+    // Run immediately
+    if (typeof window !== 'undefined') {
+      checkMobile();
+    }
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   // Check if font is loaded
@@ -59,8 +66,13 @@ export default function FountainPage() {
       try {
         await document.fonts.load("1em 'UnifrakturMaguntia'");
         setFontLoaded(true);
+        // Add fonts-loaded class to body to show the logo
+        document.body.classList.add('fonts-loaded');
       } catch (e) {
-        setTimeout(() => setFontLoaded(true), 100);
+        setTimeout(() => {
+          setFontLoaded(true);
+          document.body.classList.add('fonts-loaded');
+        }, 100);
       }
     };
     checkFont();
@@ -93,6 +105,13 @@ export default function FountainPage() {
     isToggling80sRef.current = true;
     const newMode = !is80sMode;
     setContext80sMode(newMode);
+    
+    // Send message to iframe to update button styles
+    const iframe = document.querySelector('iframe');
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({ type: 'toggle80sMode', enabled: newMode }, '*');
+    }
+    
     setTimeout(() => {
       isToggling80sRef.current = false;
     }, 100);
@@ -148,7 +167,7 @@ export default function FountainPage() {
       )}
 
       {/* The Fountain iframe */}
-      <FountainFrame is80sMode={is80sMode} />
+      <FountainFrame is80sMode={is80sMode} ref={iframeRef} />
 
       {/* UI Overlay - RL80 Logo */}
       <div style={{
@@ -237,11 +256,13 @@ export default function FountainPage() {
                 }}
                 title="Sign In"
               >
-                <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
+                <span style={{ fontSize: "2.5rem" }}>{emoji}</span>
               </button>
             </SignInButton>
           )}
         </div>
+        
+        {/* Help/Instructions Button - Removed, now in iframe */}
         
         {/* Music Controls */}
         <div style={{ order: isMobileDevice ? 1 : 1 }}>
@@ -397,18 +418,18 @@ export default function FountainPage() {
       </div>
 
       {/* Buy Token FAB */}
-      <div onClick={() => setShowCandleModal(true)}>
+      {/* <div onClick={() => setShowCandleModal(true)}>
         <BuyTokenFAB is80sMode={is80sMode} />
-      </div>
+      </div> */}
 
       {/* Candle Modal */}
-      <CompactCandleModal
+      {/* <CompactCandleModal
         isOpen={showCandleModal}
         onClose={() => setShowCandleModal(false)}
         onCandleCreated={(candle) => {
           console.log('New candle created:', candle);
         }}
-      />
+      /> */}
     </div>
   );
 }

@@ -403,7 +403,7 @@ export default function GalleryPage() {
                       }}
                       title="Sign In"
                     >
-                      <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
+                      <span style={{ fontSize: "2.5rem" }}>{emoji}</span>
                     </button>
                   </SignInButton>
                 )}
