@@ -1,9 +1,90 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Moon Room</title>
+    <title>Dunk Tank</title>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+      
+      /* Preloader styles */
+      #preloader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      
+      #preloader.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .infinity-symbol {
+        width: 200px;
+        height: 100px;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      
+      .infinity-symbol path {
+        stroke: #ff0066;
+        stroke-width: 84;
+        fill: none;
+        stroke-dasharray: 3000;
+        stroke-dashoffset: 3000;
+        animation: draw 3s ease-in-out forwards, glow 2s ease-in-out infinite 3s;
+      }
+      
+      @keyframes draw {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      
+      @keyframes glow {
+        0%, 100% {
+          filter: drop-shadow(0 0 10px #ff0066);
+          stroke: #ff0066;
+        }
+        50% {
+          filter: drop-shadow(0 0 20px #ff0066) drop-shadow(0 0 30px #ff0066);
+          stroke: #ff99cc;
+        }
+      }
+      
+      @keyframes pulse {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+      
+      .loading-text {
+        position: absolute;
+        bottom: 30%;
+        color: #ff0066;
+        font-family: 'Lato', sans-serif;
+        font-size: 1.2em;
+        letter-spacing: 2px;
+        animation: blink 1.5s ease-in-out infinite;
+      }
+      
+      @keyframes blink {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      
       * {
         margin: 0;
         padding: 0;
@@ -60,6 +141,14 @@
     <link rel="stylesheet" href="/moonRoom.css" />
   </head>
   <body>
+    <!-- Preloader -->
+    <div id="preloader">
+      <svg class="infinity-symbol" viewBox="0 0 1114 498" xmlns="http://www.w3.org/2000/svg">
+        <path d="M556.639,248.609c53.406,53.406 101.683,111.534 164.527,155.683c32.351,22.727 69.175,43.083 109.585,49.008c28.958,4.245 59.488,0.613 87.317,-7.576c26.905,-7.918 52.087,-20.892 73.811,-37.871c21.56,-16.851 39.677,-37.626 53.018,-60.895c10.19,-17.771 17.616,-36.957 21.888,-56.774c4.437,-20.585 5.532,-41.765 3.304,-62.666c-8.654,-81.211 -69.752,-151.815 -152.021,-176.024c-21.015,-6.185 -42.784,-9.169 -64.773,-9.286c-20.432,-0.109 -41.041,2.144 -60.735,7.389c-60.474,16.105 -104.752,61.37 -145.625,103.912c-25.822,26.876 -51.28,54.064 -76.924,81.093c-50.066,52.771 -98.707,107.45 -153.977,155.565c-26.704,23.247 -58.379,43.63 -92.848,54.868c-68.352,22.285 -146.537,6.002 -201.788,-37.182c-21.56,-16.851 -39.676,-37.626 -53.018,-60.895c-10.19,-17.771 -17.616,-36.957 -21.887,-56.774c-20.542,-95.293 34.073,-193.859 128.699,-231.746c26.53,-10.622 55.918,-16.645 84.79,-16.23c66.027,0.948 126.189,41.423 172.681,82.451c12.721,11.225 25.299,22.604 37.509,34.327c11.528,11.07 22.61,22.551 33.684,34.029c17.75,18.398 34.689,37.5 52.783,55.594Z" />
+      </svg>
+      <div class="loading-text">LOADING</div>
+    </div>
+    
     <main>
       <section></section>
     </main>
@@ -473,13 +562,13 @@
 
         // Camera setup
         camera = new THREE.PerspectiveCamera(
-          50, // Increase FOV to make the room appear larger
+          35, // Increase FOV to make the room appear larger
           window.innerWidth / window.innerHeight,
           0.01,
           1000 // Increase far clipping plane
         );
-        camera.position.set(0, 3, 150);
-        camera.lookAt(0, 0, 0);
+        camera.position.set(0, 5, 40);
+        camera.lookAt(0, 2, 0);
 
         // Controls setup
         controls = new OrbitControls(camera, renderer.domElement);
@@ -667,7 +756,7 @@
           // }
 
           // Create shooting balls
-          const ballGeometry = new THREE.IcosahedronGeometry(0.5, 1);
+          const ballGeometry = new THREE.IcosahedronGeometry(0.3, 1);
           const ballMaterial = new THREE.MeshPhongMaterial({
             color: 0x8888ff,
             flatShading: true,
@@ -1754,6 +1843,193 @@
           let swimAction = null;
           let attackAction = null;
           
+          // Volumetric blood effect for spreading in water
+          function createBloodCloud() {
+            // Get position near the character or reptiles
+            let bloodPosition = new THREE.Vector3();
+            if (character) {
+              character.getWorldPosition(bloodPosition);
+              bloodPosition.y += 1.5; // Position at mid-body
+            } else if (reptiles) {
+              reptiles.getWorldPosition(bloodPosition);
+              bloodPosition.y += 1.5;
+            }
+            
+            // Move blood position closer to attack point
+            bloodPosition.z += 0.5;
+            
+            console.log("[BLOOD] Creating volumetric effect at position:", bloodPosition);
+            
+            // Create multiple blood volumes for realistic spreading
+            const bloodVolumes = [];
+            const volumeCount = 12; // More volumes for bigger effect
+            
+            for (let i = 0; i < volumeCount; i++) {
+              // Create irregular sphere geometry for each blood volume - MUCH LARGER
+              const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+              
+              // Deform vertices for organic shape
+              const positionAttribute = geometry.attributes.position;
+              for (let j = 0; j < positionAttribute.count; j++) {
+                const x = positionAttribute.getX(j);
+                const y = positionAttribute.getY(j);
+                const z = positionAttribute.getZ(j);
+                
+                // Add noise for organic shape
+                const noise = Math.random() * 0.3 + 0.85;
+                positionAttribute.setXYZ(j, x * noise, y * noise * 0.7, z * noise);
+              }
+              
+              // Custom shader material for translucent blood in water
+              const bloodMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                  time: { value: 0 },
+                  opacity: { value: 0.4 }, // More opaque for visibility
+                  scale: { value: 1.0 }
+                },
+                vertexShader: `
+                  uniform float time;
+                  uniform float scale;
+                  varying vec3 vPosition;
+                  varying vec3 vNormal;
+                  
+                  void main() {
+                    vPosition = position;
+                    vNormal = normal;
+                    
+                    // Animate vertex positions for flowing effect
+                    vec3 pos = position * scale;
+                    float displacement = sin(position.x * 10.0 + time) * 0.02;
+                    pos += normal * displacement;
+                    
+                    vec4 modelViewPosition = modelViewMatrix * vec4(pos, 1.0);
+                    gl_Position = projectionMatrix * modelViewPosition;
+                  }
+                `,
+                fragmentShader: `
+                  uniform float opacity;
+                  uniform float time;
+                  varying vec3 vPosition;
+                  varying vec3 vNormal;
+                  
+                  void main() {
+                    // Brighter red color that varies with position
+                    vec3 bloodColor = vec3(0.6 + sin(vPosition.x * 5.0 + time) * 0.2, 0.0, 0.0);
+                    
+                    // Fresnel effect for better volume appearance
+                    vec3 viewDirection = normalize(cameraPosition - vPosition);
+                    float fresnel = pow(1.0 - dot(viewDirection, vNormal), 2.0);
+                    
+                    // More opaque at edges, translucent in center
+                    float alpha = opacity * (0.5 + fresnel * 0.5);
+                    
+                    gl_FragColor = vec4(bloodColor, alpha);
+                  }
+                `,
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                blending: THREE.NormalBlending
+              });
+              
+              const bloodMesh = new THREE.Mesh(geometry, bloodMaterial);
+              
+              // Position each volume with wider spread
+              const angle = (i / volumeCount) * Math.PI * 2;
+              const radius = Math.random() * 0.1; // Wider initial spread
+              bloodMesh.position.set(
+                bloodPosition.x + Math.cos(angle) * radius,
+                bloodPosition.y + (Math.random() - 0.5) * 0.3,
+                bloodPosition.z + Math.sin(angle) * radius
+              );
+              
+              // Larger initial scale
+              const initialScale = 0.8 + Math.random() * 0.4; // Start bigger
+              bloodMesh.scale.set(initialScale, initialScale * 0.6, initialScale);
+              
+              scene.add(bloodMesh);
+              bloodVolumes.push({
+                mesh: bloodMesh,
+                material: bloodMaterial,
+                velocity: new THREE.Vector3(
+                  (Math.random() - 0.5) * 0.01,
+                  (Math.random() - 0.7) * 0.005, // Downward bias
+                  (Math.random() - 0.5) * 0.01
+                ),
+                rotationSpeed: (Math.random() - 0.5) * 0.01
+              });
+            }
+            
+            // Animate the blood volumes
+            const startTime = Date.now();
+            const duration = 8000; // 15 seconds animation
+            
+            function animateBloodVolumes() {
+              const elapsed = Date.now() - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              
+              bloodVolumes.forEach((volume, index) => {
+                // Update shader time
+                volume.material.uniforms.time.value = elapsed * 0.001;
+                
+                // Move and expand each volume
+                volume.mesh.position.add(volume.velocity);
+                
+                // Slow down movement over time (viscosity)
+                volume.velocity.multiplyScalar(0.98);
+                
+                // Gradual expansion - MUCH LARGER
+                const expansionFactor = 1 + progress * 4.7; // Grow to 5x size
+                volume.material.uniforms.scale.value = expansionFactor;
+                
+                // Rotate slowly for organic movement
+                volume.mesh.rotation.y += volume.rotationSpeed;
+                volume.mesh.rotation.x += volume.rotationSpeed * 0.5;
+                
+                // Keep blood visible - no fade out
+                volume.material.uniforms.opacity.value = 0.6;
+                
+                // Flatten as it spreads (like liquid spreading on surface)
+                volume.mesh.scale.y = volume.mesh.scale.x * (0.6 - progress * 0.4);
+              });
+              
+              if (elapsed < duration) {
+                requestAnimationFrame(animateBloodVolumes);
+              } else {
+                // Keep blood visible and fade screen to black
+                console.log("[BLOOD] Blood spread complete - fading to darkness...");
+                
+                // Create a black overlay that fades in
+                const blackOverlay = document.createElement('div');
+                blackOverlay.style.position = 'fixed';
+                blackOverlay.style.top = '0';
+                blackOverlay.style.left = '0';
+                blackOverlay.style.width = '100%';
+                blackOverlay.style.height = '100%';
+                blackOverlay.style.backgroundColor = 'black';
+                blackOverlay.style.opacity = '0';
+                blackOverlay.style.pointerEvents = 'none';
+                blackOverlay.style.zIndex = '9999';
+                blackOverlay.style.transition = 'opacity 5s ease-in';
+                document.body.appendChild(blackOverlay);
+                
+                // Start fading to black
+                setTimeout(() => {
+                  blackOverlay.style.opacity = '1';
+                }, 100);
+                
+                // Optional: Reload page after fade completes
+                setTimeout(() => {
+                  console.log("[DEATH] Reloading...");
+                  window.location.reload();
+                }, 6000);
+              }
+            }
+            
+            animateBloodVolumes();
+            console.log("[BLOOD] Created", volumeCount, "blood volumes");
+          }
+          
           function setupReptiles() {
             if (!scene) {
               console.log("Scene not ready for reptiles, retrying...");
@@ -2042,6 +2318,89 @@
                   // Switch animations
                   swimAction.fadeOut(0.5);
                   attackAction.reset().fadeIn(0.5).play();
+                  
+                  // Zoom camera in on the action
+                  if (camera && character) {
+                    const startPos = camera.position.clone();
+                    const startFOV = camera.fov;
+                    
+                    // Target position closer to character
+                    const targetPos = new THREE.Vector3(
+                      character.position.x + 8,
+                      character.position.y + 8,  // Above character
+                      character.position.z + 20  // Closer than default
+                    );
+                    const targetFOV = 30; // Zoom in (narrower FOV)
+                    
+                    const zoomDuration = 2000; // 2 seconds zoom
+                    const zoomStart = Date.now();
+                    
+                    function animateZoom() {
+                      const elapsed = Date.now() - zoomStart;
+                      const progress = Math.min(elapsed / zoomDuration, 1);
+                      
+                      // Smooth easing
+                      const eased = 1 - Math.pow(1 - progress, 3);
+                      
+                      // Interpolate camera position
+                      camera.position.lerpVectors(startPos, targetPos, eased);
+                      
+                      // Interpolate FOV for zoom effect
+                      camera.fov = startFOV + (targetFOV - startFOV) * eased;
+                      camera.updateProjectionMatrix();
+                      
+                      // Keep looking at the character
+                      camera.lookAt(character.position);
+                      
+                      if (progress < 1) {
+                        requestAnimationFrame(animateZoom);
+                      } else {
+                        console.log("[CAMERA] Zoom complete!");
+                      }
+                    }
+                    
+                    animateZoom();
+                    console.log("[CAMERA] Zooming in on attack!");
+                  }
+                  
+                  // Speed up character's treading animation during attack
+                  if (treadingAction) {
+                    treadingAction.timeScale = 3.0; // Triple speed for panic
+                    console.log("[CHARACTER] Treading faster during attack!");
+                    
+                    // Add panic bobbing motion
+                    if (character) {
+                      const baseY = character.position.y;
+                      const baseX = character.position.x;
+                      let bobTime = 0;
+                      
+                      const panicBobInterval = setInterval(() => {
+                        bobTime += 0.03; // Slower time progression
+                        
+                        // Smoother, more natural bobbing
+                        const mainBob = Math.sin(bobTime * 2.5) * 0.15; // Main rhythm
+                        const secondaryBob = Math.sin(bobTime * 4.2) * 0.05; // Slight variation
+                        
+                        // Very subtle random movement
+                        const gentleNoise = (Math.random() - 0.5) * 0.01;
+                        
+                        character.position.y = baseY + mainBob + secondaryBob + gentleNoise;
+                        
+                        // Gentle side-to-side sway
+                        const sway = Math.sin(bobTime * 1.8) * 0.01;
+                        character.position.x = baseX + sway;
+                      }, 16); // ~60fps
+                      
+                      // Store interval ID for potential cleanup
+                      character.panicBobInterval = panicBobInterval;
+                      console.log("[CHARACTER] Panic bobbing started!");
+                    }
+                  }
+                  
+                  // Create blood cloud effect 2 seconds after attack starts
+                  setTimeout(() => {
+                    createBloodCloud();
+                  }, 1000);
                   
                   // Keep position stable
                   reptiles.position.copy(currentPos);
@@ -2591,17 +2950,29 @@
           function checkTargetCollision() {
             if (!targetHitbox || seatDropped) return;
             
-            // Create a bounding box for the target (update each frame in case it moves)
+            // Create a bounding box for the target
             const targetBox = new THREE.Box3().setFromObject(targetHitbox);
+            
+            // Make the hitbox smaller and more precise (shrink by 40%)
+            const center = new THREE.Vector3();
+            const size = new THREE.Vector3();
+            targetBox.getCenter(center);
+            targetBox.getSize(size);
+            
+            // Create a smaller hitbox (60% of original size for harder difficulty)
+            const smallerBox = new THREE.Box3();
+            const halfSize = size.multiplyScalar(0.3); // 0.3 = 60% of half-size
+            smallerBox.setFromCenterAndSize(center, halfSize);
             
             // Only check shooting balls (projectiles) for collision
             scene.traverse((object) => {
               if (object.name === "shootingBall" && object.isMesh) {
                 const ballBox = new THREE.Box3().setFromObject(object);
                 
-                if (targetBox.intersectsBox(ballBox)) {
+                // Use the smaller hitbox for detection
+                if (smallerBox.intersectsBox(ballBox)) {
                   dropSeat();
-                  console.log("Target hit by projectile!");
+                  console.log("BULLSEYE! Direct hit on target center!");
                   
                   // Optional: Remove the ball after hit
                   setTimeout(() => {
@@ -2621,7 +2992,18 @@
             initWater();
           }, 200);
 
-          // document.getElementById("loading").style.display = "none";
+          // Hide preloader once everything is loaded
+          setTimeout(() => {
+            const preloader = document.getElementById('preloader');
+            if (preloader) {
+              preloader.classList.add('fade-out');
+              // Remove from DOM after fade animation
+              setTimeout(() => {
+                preloader.remove();
+              }, 500);
+              console.log("Scene loaded - preloader hidden");
+            }
+          }, 3000); // Wait 3 seconds to ensure everything is loaded
 
           // Animation loop
           function animate() {

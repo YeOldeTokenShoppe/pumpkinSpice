@@ -28,10 +28,11 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
 
   const navItems = [
     { id: '00', date: 'ICON ON I-80', title: "Roadmap", path: '/home2', thumbnail: '/I80.jpg' },
-    { id: '01', date: 'TOKEN UTIL80', title: 'Bless Us, RL80', path: '/gallery', thumbnail: '/sacred.png' },
-    { id: '02', date: 'GENEROS80 FOUNTAIN', title: 'Toss Coins', path: '/fountain', thumbnail: '/fountain.png' },
+    { id: '01', date: 'CREDIBIL80', title: 'F8TH', path: '/model-viewer', thumbnail: '/vvv.jpg' },
+    { id: '02', date: 'LIGHT UTIL80', title: 'H0PE', path: '/gallery', thumbnail: '/sacred.png' },
+    { id: '03', date: 'LIQUID80', title: 'CHAR80', path: '/fountain', thumbnail: '/fountain.png' },
     // { id: '03', date: 'MARKET ACTIV80', title: 'Cloud Computing', path: '/clouds', thumbnail: '/lightning.png' },
-    { id: '04', date: 'MORAL AUTHOR80', title: 'St. GR80\'s Scrolls', path: '/model-viewer', thumbnail: '/vvv.jpg' },
+
   ];
 
   // Always use mobile-style menu
@@ -98,8 +99,34 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
               gap: "20px",
               padding: "20px"
             }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsMenuOpen(false);
+              }
+            }}
             onMouseLeave={() => setHoveredItemPath(null)}
           >
+            <button
+              style={{
+                position: "absolute",
+                top: "20px",
+                right: "20px",
+                backgroundColor: "transparent",
+                border: "none",
+                color: is80sMode ? "#D946EF" : "#ffff00",
+                cursor: "pointer",
+                padding: "10px",
+                fontSize: "24px",
+                zIndex: 10000002
+              }}
+              onClick={() => setIsMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
             {navItems.map((item, index) => {
               // Handle route matching
               const isActive = pathname === item.path || 
@@ -158,7 +185,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <span
                         style={{
-                          color: isActive ? '#000000' : (is80sMode ? "#D946EF" : '#ffff00'),
+                          color: isActive ? '#000000' : (is80sMode ? "#D946EF" : '#ffffff'),
                           fontWeight: "700",
                           fontSize: "14px",
                           fontFamily: "'Rajdhani', sans-serif",

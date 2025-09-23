@@ -326,13 +326,13 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
               <Cloud 
                 ref={cloud1}
                 seed={2}
-                segments={15}
-                volume={32}
-                opacity={0.85}
+                segments={8}
+                volume={25}
+                opacity={0.8}
                 fade={1}
-                growth={7}
-                speed={0.04}
-                bounds={[18, 10, 7]}
+                growth={6}
+                speed={0.03}
+                bounds={[15, 8, 6]}
                 color={whiteCloudColor}
                 position={[30, -1, 0]}
                 texture={cloudTexture}
@@ -342,13 +342,13 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
               <Cloud 
                 ref={cloud2}
                 seed={3}
-                segments={15}
-                volume={13}
-                opacity={0.85}
+                segments={8}
+                volume={10}
+                opacity={0.8}
                 fade={1}
-                growth={7}
-                speed={0.04}
-                bounds={[-18, 7, 7]}
+                growth={6}
+                speed={0.03}
+                bounds={[-15, 6, 6]}
                 color={whiteCloudColor}
                 position={[-40, -12, 0]}
                 texture={cloudTexture}
@@ -358,13 +358,13 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
               <Cloud 
                 ref={cloud3}
                 seed={14}
-                segments={10}
-                volume={20}
-                opacity={0.7}
+                segments={6}
+                volume={15}
+                opacity={0.6}
                 fade={1}
-                growth={6}
-                speed={0.03}
-                bounds={[16, 6, 6]}
+                growth={5}
+                speed={0.02}
+                bounds={[14, 5, 5]}
                 color={whiteCloudColor}
                 position={[0, -13, -20]}
                 texture={cloudTexture}
@@ -374,13 +374,13 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
               <Cloud 
                 ref={cloud4}
                 seed={5}
-                segments={5}
-                volume={31}
-                opacity={0.75}
+                segments={4}
+                volume={20}
+                opacity={0.7}
                 fade={1}
-                growth={6}
-                speed={0.035}
-                bounds={[17, 1, 6]}
+                growth={5}
+                speed={0.025}
+                bounds={[14, 1, 5]}
                 color={whiteCloudColor}
                 position={[10, -27, 15]}
                 texture={cloudTexture}
@@ -390,14 +390,15 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
               <Cloud 
                 ref={cloud5}
                 concentrate="outside"
-                growth={10}
+                growth={8}
                 color={whiteCloudColor}
-                opacity={0.4}
+                opacity={0.3}
                 seed={0.3}
-                bounds={50}
-                volume={30}
-                fade={10}
-                speed={0.02}
+                bounds={40}
+                volume={20}
+                segments={6}
+                fade={8}
+                speed={0.015}
                 position={[0, -15, -30]}
                 texture={cloudTexture}
               />

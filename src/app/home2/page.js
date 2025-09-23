@@ -68,8 +68,8 @@ extend({ GradientSkyMaterial });
 // Apply bloom effect to Halo mesh
 function GradientSkySphere() {
   return (
-    <mesh scale={[500, 500, 500]}>
-      <sphereGeometry args={[1, 32, 32]} />
+    <mesh scale={[200, 200, 200]}>
+      <sphereGeometry args={[1, 16, 16]} />
       <gradientSkyMaterial 
         side={THREE.BackSide}
         topColor={new THREE.Color(0x1a0033)} // Dark violet
@@ -157,6 +157,22 @@ function OurLadyRiderModel({ isMobile, scrollY, onLoad }) {
   const modelRef = useRef();
   const groupRef = useRef();
   const cloudRef = useRef();
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      scene.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(mat => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+    };
+  }, [scene]);
 
   
   React.useEffect(() => {
@@ -195,19 +211,45 @@ function OurLadyRiderModel({ isMobile, scrollY, onLoad }) {
         scale={isMobile ? [9, 9, 9] : [12, 12, 12]}
         rotation={isMobile ? [0, -2.5, 0] : [0, -2.4, 0]}
       />
-      {/* Personal cloud that follows the model */}
+      {/* Personal clouds that follow the model - multiple layers for depth */}
       <Cloud 
         ref={cloudRef}
         seed={99}
-        segments={10}
-        volume={30}
-        opacity={0.99}
+        segments={isMobile ? 12 : 20}
+        volume={isMobile ? 25 : 35}
+        opacity={0.85}
         fade={2}
-        growth={5}
-        speed={0.03}
-        bounds={[12, 6, 6]}
+        growth={6}
+        speed={0.02}
+        bounds={isMobile ? [12, 8, 8] : [15, 10, 10]}
         color="#ffc0cb"
         position={[-5, 8, 5]}
+      />
+      {/* Additional cloud layer for more volume */}
+      <Cloud 
+        seed={42}
+        segments={isMobile ? 10 : 15}
+        volume={isMobile ? 20 : 30}
+        opacity={0.7}
+        fade={3}
+        growth={5}
+        speed={0.015}
+        bounds={isMobile ? [14, 6, 10] : [18, 8, 12]}
+        color="#ffb6c1"
+        position={[3, 6, -2]}
+      />
+      {/* Lower cloud layer */}
+      <Cloud 
+        seed={7}
+        segments={isMobile ? 8 : 12}
+        volume={isMobile ? 18 : 25}
+        opacity={0.6}
+        fade={2.5}
+        growth={4}
+        speed={0.025}
+        bounds={isMobile ? [10, 4, 6] : [14, 6, 8]}
+        color="#ffd1dc"
+        position={[-2, 2, 3]}
       />
     </group>
   );
@@ -217,6 +259,22 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
   const { scene, animations } = useGLTF('/models/angelEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const modelRef = useRef();
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      scene.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(mat => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+    };
+  }, [scene]);
 
   useEffect(() => {
     // Log all available animations
@@ -290,6 +348,22 @@ function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
   const { scene, animations } = useGLTF('/models/devilEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const modelRef = useRef();
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      scene.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(mat => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+    };
+  }, [scene]);
 
   useEffect(() => {
     // Log available animation
@@ -470,7 +544,7 @@ function PortalFrame({ id, name, author, bg, width = 1.1, height = GOLDENRATIO *
 }
 
 // Scene component that responds to scroll
-function Scene({ isMobile, scrollY, onAssetsLoaded }) {
+function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
   const { camera } = useThree();
   
   useFrame(() => {
@@ -492,10 +566,12 @@ function Scene({ isMobile, scrollY, onAssetsLoaded }) {
       <GradientSkySphere />
       
       <Suspense fallback={null}>
-        {/* Background layer - moves slowest */}
-        <group position={[-25, -2.5 + scrollY * 0.008, -6]}>
-          <DarkClouds />
-        </group>
+        {/* Background layer - moves slowest - skip on low-end devices */}
+        {!isLowEndDevice && (
+          <group position={[-25, -2.5 + scrollY * 0.008, -6]}>
+            <DarkClouds />
+          </group>
+        )}
 
         {/* Foreground layer - moves faster */}
         <OurLadyRiderModel 
@@ -515,7 +591,7 @@ function Scene({ isMobile, scrollY, onAssetsLoaded }) {
         />
       </Suspense>
       <Suspense></Suspense>
-      <PostProcessingEffects is80sMode={false} />
+      {!isMobile && <PostProcessingEffects is80sMode={false} />}
       <OrbitControls 
         enablePan={false}
         enableZoom={true}
@@ -547,6 +623,7 @@ export default function Home2() {
   const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   const [emoji, setEmoji] = useState("😇");
   const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(true); // Always treat as mobile
+  const [isLowEndDevice, setIsLowEndDevice] = useState(false);
 
   const [assetsLoaded, setAssetsLoaded] = useState({
     ourLadyModel: false,
@@ -565,12 +642,21 @@ export default function Home2() {
         setIsMobileDevice(window.innerWidth <= 768);
       };
       checkMobileDevice();
+      
+      // Detect low-end device
+      const detectLowEndDevice = () => {
+        const cores = navigator.hardwareConcurrency || 4;
+        const memory = navigator.deviceMemory || 4; // GB
+        const connection = navigator.connection;
+        const isSlowConnection = connection?.effectiveType === '2g' || connection?.effectiveType === 'slow-2g';
+        
+        setIsLowEndDevice(cores <= 4 || memory <= 4 || isSlowConnection || isMobileDevice);
+      };
+      detectLowEndDevice();
+      
       window.addEventListener('resize', checkMobileDevice);
       return () => window.removeEventListener('resize', checkMobileDevice);
     }, []);
-  
-  // Ref for sparkle effect
-  const coinRef = useRef(null);
   // Refs for card animations
   const cardRefs = useRef([]);
   const cardTransforms = useRef(new Map());
@@ -877,131 +963,6 @@ export default function Home2() {
       loadFonts();
     }
   }, []);
- // Sparkle effect for coins (both main and card)
- useEffect(() => {
-  // Wait for client and page to be ready
-  if (!isClient) {
-    return;
-  }
-
-  // Get both coin containers
-  const mainCoin = coinRef.current;
-  const cardCoin = document.querySelector('.card-coin-sparkle');
-  const sparkleContainers = [mainCoin, cardCoin].filter(Boolean);
-
-  const MAX_STARS = 60;
-  const STAR_INTERVAL = 16;
-
-  const MAX_STAR_LIFE = 3;
-  const MIN_STAR_LIFE = 1;
-
-  const MAX_STAR_SIZE = 40;
-  const MIN_STAR_SIZE = 20;
-
-  const MIN_STAR_TRAVEL_X = 150;
-  const MIN_STAR_TRAVEL_Y = 150;
-
-  const randomLimitedColor = () => {
-    const randomHue = (() => {
-      const ranges = [
-        { min: 120, max: 150 }, // Blues
-        { min: 270, max: 290 }, // Violets/Purples
-        { min: 45, max: 60 }, // Yellows and Golds
-      ];
-      const range = ranges[Math.floor(Math.random() * ranges.length)];
-      return (
-        Math.floor(Math.random() * (range.max - range.min + 1)) + range.min
-      );
-    })();
-
-    return `hsla(${randomHue}, 100%, 50%, 1)`;
-  };
-
-  const Star = class {
-    constructor(container) {
-      this.container = container;
-      this.size = this.random(MAX_STAR_SIZE, MIN_STAR_SIZE);
-
-      // Start from center of container
-      this.x = container.offsetWidth / 2;
-      this.y = container.offsetHeight / 2;
-
-      this.x_dir = this.randomMinus();
-      this.y_dir = this.randomMinus();
-
-      // Allow stars to travel to edges of container
-      this.x_max_travel = container.offsetWidth / 2 - this.size / 2;
-      this.y_max_travel = container.offsetHeight / 2 - this.size / 2;
-
-      this.x_travel_dist = this.random(this.x_max_travel, MIN_STAR_TRAVEL_X);
-      this.y_travel_dist = this.random(this.y_max_travel, MIN_STAR_TRAVEL_Y);
-
-      this.x_end = this.x + this.x_travel_dist * this.x_dir;
-      this.y_end = this.y + this.y_travel_dist * this.y_dir;
-
-      this.life = this.random(MAX_STAR_LIFE, MIN_STAR_LIFE);
-
-      this.star = document.createElement("div");
-      this.star.classList.add("star");
-
-      this.star.style.setProperty("--start-left", this.x + "px");
-      this.star.style.setProperty("--start-top", this.y + "px");
-
-      this.star.style.setProperty("--end-left", this.x_end + "px");
-      this.star.style.setProperty("--end-top", this.y_end + "px");
-
-      this.star.style.setProperty("--star-life", this.life + "s");
-      this.star.style.setProperty("--star-life-num", this.life);
-
-      this.star.style.setProperty("--star-size", this.size + "px");
-      this.star.style.setProperty("--star-color", randomLimitedColor());
-    }
-
-    draw() {
-      this.container.appendChild(this.star);
-    }
-
-    pop() {
-      this.container.removeChild(this.star);
-    }
-
-    random(max, min) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    randomMinus() {
-      return Math.random() > 0.5 ? 1 : -1;
-    }
-  };
-
-  // Create sparkle effects for each container
-  const intervals = [];
-  
-  sparkleContainers.forEach(container => {
-    let current_star_count = 0;
-    const intervalId = setInterval(() => {
-      if (current_star_count >= MAX_STARS) {
-        return;
-      }
-
-      current_star_count++;
-
-      const newStar = new Star(container);
-      newStar.draw();
-
-      setTimeout(() => {
-        current_star_count--;
-        newStar.pop();
-      }, newStar.life * 1000);
-    }, STAR_INTERVAL);
-    
-    intervals.push(intervalId);
-  });
-
-  return () => {
-    intervals.forEach(id => clearInterval(id));
-  };
-}, [isClient]);
   return (
     <div style={{ 
       width: '100vw', 
@@ -1186,38 +1147,6 @@ export default function Home2() {
           margin-top: 0 !important;
           margin-left: 0 !important;
         }
-        
-        /* Sparkle styles */
-        .star {
-          position: absolute;
-          width: var(--star-size);
-          height: var(--star-size);
-          background: var(--star-color);
-          clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-          animation: starAnimation var(--star-life) ease-out forwards;
-          pointer-events: none;
-          z-index: -1;
-        }
-        
-        @keyframes starAnimation {
-          from {
-            left: var(--start-left);
-            top: var(--start-top);
-            opacity: 1;
-            transform: scale(0) rotate(0deg);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1) rotate(180deg);
-          }
-          to {
-            left: var(--end-left);
-            top: var(--end-top);
-            opacity: 0;
-            transform: scale(0) rotate(360deg);
-          }
-        }
-        
         /* Tooltip animations */
         .rotate-tooltip {
           animation: tooltipFadeIn 4s ease-in-out infinite;
@@ -1756,6 +1685,7 @@ export default function Home2() {
             isMobile={isMobile} 
             scrollY={scrollY} 
             onAssetsLoaded={handleAssetLoaded}
+            isLowEndDevice={isLowEndDevice}
           />
         </Canvas>
       </div>
@@ -1829,7 +1759,7 @@ export default function Home2() {
                 <div className="card">
                   <span className="flip-hint">Click to flip</span>
                   <div className="card-bg" style={{ 
-                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")',
+                    backgroundImage: flippedCards.has(0) || scrollY > 100 ? 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")' : 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2))',
                   }}></div>
                   <div className="card-info">
                     <h2>Divine Protection</h2>
