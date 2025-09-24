@@ -260,9 +260,10 @@ const PRAYERS_BY_LANGUAGE = {
 const PRAYERS = PRAYERS_BY_LANGUAGE[getUserLanguage()]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
 
 // 3D Candle Component
-function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'en' }) {
+function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'en', template = null, templatePosition = { x: 50, y: 50 }, templateScale = 100, templateRotation = 0, skinToneAdjustment = 0 }) {
   const { scene } = useGLTF('/models/singleCandleAnimatedFlame.glb');
   const candleRef = useRef();
+  const clonedSceneRef = useRef(null);
   const defaultTexture = useTexture('/defaultAvatar.png');
   const [userTexture, setUserTexture] = useState(null);
   const [textTexture, setTextTexture] = useState(null);
@@ -360,27 +361,36 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
   const label1MeshRef = useRef(null);
   const label2MeshRef = useRef(null);
   
-  // Find Label meshes once when scene loads
+  // Clone scene once and store reference
   useEffect(() => {
     if (scene) {
+      clonedSceneRef.current = scene.clone();
+    }
+  }, [scene]);
+  
+  // Find Label meshes in the cloned scene
+  useEffect(() => {
+    if (clonedSceneRef.current) {
       // Reset refs first
       label1MeshRef.current = null;
       label2MeshRef.current = null;
       
-      scene.traverse((child) => {
+      clonedSceneRef.current.traverse((child) => {
         if (child.isMesh) {
           if (child.name === 'Label1' || child.name.includes('Label1')) {
             label1MeshRef.current = child;
-            console.log('Found Label1 mesh:', child.name);
+            console.log('Found Label1 mesh in cloned scene:', child.name, child.scale, child.visible);
+            // Make sure it's visible
+            child.visible = true;
           }
           if (child.name === 'Label2' || child.name.includes('Label2')) {
             label2MeshRef.current = child;
-            console.log('Found Label2 mesh:', child.name);
+            console.log('Found Label2 mesh in cloned scene:', child.name);
           }
         }
       });
     }
-  }, [scene]); // Re-find labels when scene changes
+  }, [clonedSceneRef.current]); // Re-find labels when cloned scene changes
   
   // Create text texture for Label1
   useEffect(() => {
@@ -576,25 +586,23 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
     texture.needsUpdate = true;
     
     setTextTexture(texture);
-  }, [message, isEncrypted]); // Recreate texture when message or encryption changes
+  }, [message, isEncrypted, language]); // Recreate texture when message, encryption, or language changes
   
   // Apply text texture to Label1
   useEffect(() => {
     if (label1MeshRef.current && textTexture) {
-      console.log('Applying text to Label1');
+      console.log('Applying text to Label1', label1MeshRef.current);
       
-      if (label1MeshRef.current.material) {
-        label1MeshRef.current.material.map = textTexture;
-        label1MeshRef.current.material.needsUpdate = true;
-      } else {
-        label1MeshRef.current.material = new THREE.MeshStandardMaterial({
-          map: textTexture,
-          emissive: new THREE.Color(0xffffff),
-          emissiveIntensity: 0.05,
-          roughness: 0.9,
-          metalness: 0,
-        });
-      }
+      // Simply apply the texture without modifying geometry
+      label1MeshRef.current.material = new THREE.MeshStandardMaterial({
+        map: textTexture,
+        transparent: true,
+        side: THREE.DoubleSide,
+        color: 0xffffff,
+      });
+      
+      label1MeshRef.current.material.needsUpdate = true;
+      label1MeshRef.current.visible = true;
     }
   }, [textTexture]);
   
@@ -610,31 +618,138 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       ctx.fillStyle = '#f5f5f5';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Function to draw image and username
-      const drawImageWithName = (img) => {
+      // Function to draw image with template overlay if selected
+      const drawImageWithTemplate = (img, templateImg = null, handsImg = null) => {
         // Check if this is likely a Clerk letter avatar (small dimensions)
         const isLetterAvatar = img.width <= 200 && img.height <= 200;
         
         // Draw the image (leave space at bottom for name)
         const imageHeight = username ? canvas.height * 0.9 : canvas.height;
         
-        if (isLetterAvatar) {
-          // For letter avatars, center them and add padding
-          const size = Math.min(canvas.width, imageHeight) * 0.6;
-          const x = (canvas.width - size) / 2;
-          const y = (imageHeight - size) / 2;
+        if (templateImg) {
+          // When template is used, apply positioning
           
-          // Add a subtle background circle
-          ctx.fillStyle = '#e0e0e0';
-          ctx.beginPath();
-          ctx.arc(canvas.width / 2, imageHeight / 2, size / 2 + 20, 0, Math.PI * 2);
-          ctx.fill();
+          // Fill with a base color first for areas not covered
+          ctx.fillStyle = '#f5f5f5';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
           
-          // Draw the letter avatar centered
-          ctx.drawImage(img, x, y, size, size);
+          // FIRST: Draw template image (underneath)
+          ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+          
+          // SECOND: Draw user image on top (so it shows through the erased area)
+          ctx.save();
+          
+          // Calculate positioned dimensions - maintain aspect ratio
+          const scaleFactor = templateScale / 100;
+          const baseSize = Math.min(canvas.width, canvas.height) * 0.8; // Base size relative to canvas
+          
+          // Maintain aspect ratio of the user image
+          const aspectRatio = img.width / img.height;
+          let imgWidth, imgHeight;
+          
+          if (aspectRatio > 1) {
+            // Landscape image
+            imgWidth = baseSize * scaleFactor;
+            imgHeight = imgWidth / aspectRatio;
+          } else {
+            // Portrait or square image
+            imgHeight = baseSize * scaleFactor;
+            imgWidth = imgHeight * aspectRatio;
+          }
+          
+          const imgX = (templatePosition.x / 100) * canvas.width - imgWidth / 2;
+          const imgY = (templatePosition.y / 100) * canvas.height - imgHeight / 2;
+          
+          // Apply rotation around the image center
+          if (templateRotation !== 0) {
+            const centerX = (templatePosition.x / 100) * canvas.width;
+            const centerY = (templatePosition.y / 100) * canvas.height;
+            ctx.translate(centerX, centerY);
+            ctx.rotate((templateRotation * Math.PI) / 180);
+            ctx.translate(-centerX, -centerY);
+          }
+          
+          // Draw positioned user image ON TOP of template
+          ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+          
+          ctx.restore();
+          
+          // Draw hands/feet overlay if provided with skin tone adjustment
+          if (handsImg && handsImg.complete) {
+            if (skinToneAdjustment !== 0) {
+              // Create temporary canvas for color adjustment
+              const tempCanvas = document.createElement('canvas');
+              tempCanvas.width = canvas.width;
+              tempCanvas.height = canvas.height;
+              const tempCtx = tempCanvas.getContext('2d');
+              
+              // Draw hands/feet to temp canvas
+              tempCtx.drawImage(handsImg, 0, 0, canvas.width, canvas.height);
+              
+              // Get image data for manipulation
+              const imageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imageData.data;
+              
+              // Apply color adjustment
+              for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] > 0) { // Only adjust non-transparent pixels
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+                  
+                  // Simple adjustment approach
+                  let newR, newG, newB;
+                  
+                  if (skinToneAdjustment < 0) {
+                    // Lighter skin tone - add brightness
+                    const lightness = Math.abs(skinToneAdjustment) / 100;
+                    newR = Math.min(255, r + (255 - r) * lightness * 0.5);
+                    newG = Math.min(255, g + (255 - g) * lightness * 0.5);
+                    newB = Math.min(255, b + (255 - b) * lightness * 0.6);
+                  } else {
+                    // Darker skin tone - reduce brightness more aggressively and shift toward brown
+                    const darkness = skinToneAdjustment / 100;
+                    newR = Math.max(0, r - r * darkness * 0.5);
+                    newG = Math.max(0, g - g * darkness * 0.6);
+                    newB = Math.max(0, b - b * darkness * 0.7);
+                  }
+                  
+                  data[i] = newR;
+                  data[i + 1] = newG;
+                  data[i + 2] = newB;
+                }
+              }
+              
+              // Put adjusted image back
+              tempCtx.putImageData(imageData, 0, 0);
+              
+              // Draw adjusted hands/feet to main canvas (full size to match template)
+              ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+            } else {
+              // No adjustment - draw directly (full size to match template)
+              ctx.drawImage(handsImg, 0, 0, canvas.width, canvas.height);
+            }
+          }
         } else {
-          // Draw regular images full size
-          ctx.drawImage(img, 0, 0, canvas.width, imageHeight);
+          // No template - draw normally
+          if (isLetterAvatar) {
+            // For letter avatars, center them and add padding
+            const size = Math.min(canvas.width, imageHeight) * 0.6;
+            const x = (canvas.width - size) / 2;
+            const y = (imageHeight - size) / 2;
+            
+            // Add a subtle background circle
+            ctx.fillStyle = '#e0e0e0';
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, imageHeight / 2, size / 2 + 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw the letter avatar centered
+            ctx.drawImage(img, x, y, size, size);
+          } else {
+            // Draw regular images full size
+            ctx.drawImage(img, 0, 0, canvas.width, imageHeight);
+          }
         }
         
         // Draw username if provided
@@ -697,7 +812,55 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       // Load and draw the appropriate image
       const img = new Image();
       img.crossOrigin = 'anonymous'; // Enable CORS for external images
-      img.onload = () => drawImageWithName(img);
+      
+      // Handle template loading if one is selected
+      if (template) {
+        const templateImg = new Image();
+        const handsImg = template === '/images/face2.png' ? new Image() : null;
+        
+        templateImg.onload = () => {
+          // If we need hands overlay, load it
+          if (handsImg) {
+            handsImg.onload = () => {
+              img.onload = () => drawImageWithTemplate(img, templateImg, handsImg);
+              img.onerror = () => {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                drawImageWithTemplate(ctx.canvas, templateImg, handsImg);
+              };
+              
+              if (userTexture) {
+                img.src = userTexture.image.src;
+              } else if (defaultTexture) {
+                img.src = defaultTexture.image.src;
+              } else {
+                img.onerror();
+              }
+            };
+            handsImg.src = '/images/face2_hands_feet.png';
+          } else {
+            // No hands overlay needed
+            img.onload = () => drawImageWithTemplate(img, templateImg);
+            img.onerror = () => {
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              drawImageWithTemplate(ctx.canvas, templateImg);
+            };
+            
+            if (userTexture) {
+              img.src = userTexture.image.src;
+            } else if (defaultTexture) {
+              img.src = defaultTexture.image.src;
+            } else {
+              img.onerror();
+            }
+          }
+        };
+        templateImg.src = template;
+      } else {
+        img.onload = () => drawImageWithTemplate(img);
+      }
+      
       img.onerror = () => {
         console.error('Failed to load image for Label2');
         // Fallback to a solid color if image fails
@@ -727,28 +890,33 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
         }
       };
       
-      if (userTexture) {
-        // Use user texture's image source
-        img.src = userTexture.image.src;
-      } else if (defaultTexture) {
-        // Use default texture's image source
-        img.src = defaultTexture.image.src;
-      } else {
-        // No image available, trigger error handler
-        img.onerror();
+      // Handle non-template path
+      if (!template) {
+        if (userTexture) {
+          // Use user texture's image source
+          img.src = userTexture.image.src;
+        } else if (defaultTexture) {
+          // Use default texture's image source
+          img.src = defaultTexture.image.src;
+        } else {
+          // No image available, trigger error handler
+          img.onerror();
+        }
       }
     }
-  }, [userTexture, defaultTexture, username]);
+  }, [userTexture, defaultTexture, username, template, templatePosition, templateScale, templateRotation, skinToneAdjustment]);
   
   // Removed auto-rotation - user can control with OrbitControls
   
   return (
-    <primitive 
-      ref={candleRef}
-      object={scene.clone()} 
-      scale={[2, 2, 2]}
-      position={[0, -2, 0]}
-    />
+    clonedSceneRef.current ? (
+      <primitive 
+        ref={candleRef}
+        object={clonedSceneRef.current} 
+        scale={[2, 2, 2]}
+        position={[0, -2, 0]}
+      />
+    ) : null
   );
 }
 
@@ -764,6 +932,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [templatePosition, setTemplatePosition] = useState({ x: 67, y: 40 });
+  const [templateScale, setTemplateScale] = useState(25);
+  const [templateRotation, setTemplateRotation] = useState(0);
+  const [skinToneAdjustment, setSkinToneAdjustment] = useState(0); // -100 to 100, 0 is default
+  const [showPositionControls, setShowPositionControls] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isEncrypted, setIsEncrypted] = useState(false);
@@ -776,6 +950,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [showRotateTooltip, setShowRotateTooltip] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [candleWasCreated, setCandleWasCreated] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
   const modalContentRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -822,6 +997,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setImageFile(null);
       // Set Clerk profile image as preview if available
       setImagePreview(clerkImageUrl);
+      setSelectedTemplate(null);
+      setTemplatePosition({ x: 67, y: 40 });
+      setTemplateScale(25);
+      setTemplateRotation(0);
+      setSkinToneAdjustment(0);
+      setShowPositionControls(false);
       setError('');
       setIsSubmitting(false);
       setIsEncrypted(false);
@@ -941,6 +1122,198 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     }
   };
 
+  // Apply template overlay to image with positioning and skin tone
+  const applyTemplate = async (imageUrl, templatePath, position = templatePosition, scale = templateScale, rotation = templateRotation, skinTone = skinToneAdjustment) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      
+      const userImg = new Image();
+      const templateImg = new Image();
+      const handsImg = new Image();
+      
+      let loadedImages = 0;
+      const totalImages = templatePath === '/images/face2.png' ? 3 : 2; // Load hands overlay for Virgin Mary
+      
+      const checkAllLoaded = () => {
+        loadedImages++;
+        if (loadedImages === totalImages) {
+          // Clear canvas
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Fill with base color
+          ctx.fillStyle = '#f5f5f5';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // FIRST: Draw template image (underneath)
+          ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+          
+          // SECOND: Draw user image on top
+          ctx.save();
+          
+          // Calculate user image dimensions and position - maintain aspect ratio
+          const scaleFactor = scale / 100;
+          const baseSize = Math.min(canvas.width, canvas.height) * 0.8;
+          const aspectRatio = userImg.width / userImg.height;
+          let imgWidth, imgHeight;
+          
+          if (aspectRatio > 1) {
+            imgWidth = baseSize * scaleFactor;
+            imgHeight = imgWidth / aspectRatio;
+          } else {
+            imgHeight = baseSize * scaleFactor;
+            imgWidth = imgHeight * aspectRatio;
+          }
+          
+          const imgX = (position.x / 100) * canvas.width - imgWidth / 2;
+          const imgY = (position.y / 100) * canvas.height - imgHeight / 2;
+          
+          // Apply rotation if needed
+          if (rotation !== 0) {
+            const centerX = (position.x / 100) * canvas.width;
+            const centerY = (position.y / 100) * canvas.height;
+            ctx.translate(centerX, centerY);
+            ctx.rotate((rotation * Math.PI) / 180);
+            ctx.translate(-centerX, -centerY);
+          }
+          
+          // Draw user image ON TOP of template (so it shows through erased areas)
+          ctx.drawImage(userImg, imgX, imgY, imgWidth, imgHeight);
+          
+          // Restore context
+          ctx.restore();
+          
+          // THIRD: If Virgin Mary template, draw hands/feet overlay with skin tone adjustment
+          if (templatePath === '/images/face2.png' && handsImg.complete) {
+            ctx.save();
+            
+            // Apply filter for skin tone adjustment
+            if (skinTone !== 0) {
+              // Create a temporary canvas for the hands/feet with filter
+              const tempCanvas = document.createElement('canvas');
+              tempCanvas.width = canvas.width;
+              tempCanvas.height = canvas.height;
+              const tempCtx = tempCanvas.getContext('2d');
+              
+              // Draw hands/feet to temp canvas
+              tempCtx.drawImage(handsImg, 0, 0, canvas.width, canvas.height);
+              
+              // Apply color adjustment
+              const imageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imageData.data;
+              
+              // Adjust hue and saturation based on skinTone value
+              for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] > 0) { // Only adjust non-transparent pixels
+                  // Convert RGB to HSL
+                  const r = data[i] / 255;
+                  const g = data[i + 1] / 255;
+                  const b = data[i + 2] / 255;
+                  
+                  const max = Math.max(r, g, b);
+                  const min = Math.min(r, g, b);
+                  let h, s, l = (max + min) / 2;
+                  
+                  if (max !== min) {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    
+                    switch (max) {
+                      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                      case g: h = ((b - r) / d + 2) / 6; break;
+                      case b: h = ((r - g) / d + 4) / 6; break;
+                    }
+                    
+                    // Adjust hue based on skinTone
+                    h = h + (skinTone / 300); // Subtle hue shift
+                    if (h < 0) h += 1;
+                    if (h > 1) h -= 1;
+                    
+                    // Adjust saturation and lightness for skin tone
+                    if (skinTone < 0) {
+                      // Lighter skin tones
+                      l = Math.min(1, l + Math.abs(skinTone) / 200);
+                      s = Math.max(0, s - Math.abs(skinTone) / 300);
+                    } else {
+                      // Darker skin tones - more aggressive darkening
+                      l = Math.max(0, l - skinTone / 150);
+                      s = Math.min(1, s + skinTone / 300);
+                    }
+                    
+                    // Convert back to RGB
+                    let r2, g2, b2;
+                    if (s === 0) {
+                      r2 = g2 = b2 = l;
+                    } else {
+                      const hue2rgb = (p, q, t) => {
+                        if (t < 0) t += 1;
+                        if (t > 1) t -= 1;
+                        if (t < 1/6) return p + (q - p) * 6 * t;
+                        if (t < 1/2) return q;
+                        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                        return p;
+                      };
+                      
+                      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                      const p = 2 * l - q;
+                      r2 = hue2rgb(p, q, h + 1/3);
+                      g2 = hue2rgb(p, q, h);
+                      b2 = hue2rgb(p, q, h - 1/3);
+                    }
+                    
+                    data[i] = Math.round(r2 * 255);
+                    data[i + 1] = Math.round(g2 * 255);
+                    data[i + 2] = Math.round(b2 * 255);
+                  }
+                }
+              }
+              
+              tempCtx.putImageData(imageData, 0, 0);
+              
+              // Draw the adjusted hands/feet
+              ctx.drawImage(tempCanvas, 0, 0);
+            } else {
+              // Draw hands/feet without adjustment
+              ctx.drawImage(handsImg, 0, 0, canvas.width, canvas.height);
+            }
+            
+            ctx.restore();
+          }
+          
+          // Return composite image as data URL
+          resolve(canvas.toDataURL('image/png'));
+        }
+      };
+      
+      userImg.crossOrigin = 'anonymous';
+      userImg.onload = checkAllLoaded;
+      userImg.onerror = () => {
+        console.error('Failed to load user image');
+        resolve(imageUrl); // Fallback to original image
+      };
+      userImg.src = imageUrl;
+      
+      templateImg.onload = checkAllLoaded;
+      templateImg.onerror = () => {
+        console.error('Failed to load template');
+        resolve(imageUrl); // Fallback to original image
+      };
+      templateImg.src = templatePath;
+      
+      // Load hands/feet overlay for Virgin Mary template
+      if (templatePath === '/images/face2.png') {
+        handsImg.onload = checkAllLoaded;
+        handsImg.onerror = () => {
+          console.error('Failed to load hands/feet overlay');
+          checkAllLoaded(); // Continue without hands overlay
+        };
+        handsImg.src = '/images/face2_hands_feet.png';
+      }
+    });
+  };
+
   // AI Prayer Generation handlers
   const handleAIGenerate = async (customPrompt = null) => {
     setIsGenerating(true);
@@ -971,24 +1344,121 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   };
   
   const uploadImage = async () => {
-    // If user uploaded a file, use that
+    let finalImageUrl = null;
+    
+    // Get base image URL
     if (imageFile) {
-      const timestamp = Date.now();
-      const fileName = `candles/${timestamp}_${imageFile.name}`;
-      const storageRef = ref(storage, fileName);
-      
-      const snapshot = await uploadBytes(storageRef, imageFile);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      
-      return downloadURL;
+      // If template is selected, apply it before uploading
+      if (selectedTemplate) {
+        const compositeImage = await applyTemplate(imagePreview, selectedTemplate);
+        // Convert data URL to blob for upload
+        const response = await fetch(compositeImage);
+        const blob = await response.blob();
+        
+        const timestamp = Date.now();
+        const fileName = `candles/${timestamp}_templated.png`;
+        const storageRef = ref(storage, fileName);
+        
+        const snapshot = await uploadBytes(storageRef, blob);
+        finalImageUrl = await getDownloadURL(snapshot.ref);
+      } else {
+        // Upload original file without template
+        const timestamp = Date.now();
+        const fileName = `candles/${timestamp}_${imageFile.name}`;
+        const storageRef = ref(storage, fileName);
+        
+        const snapshot = await uploadBytes(storageRef, imageFile);
+        finalImageUrl = await getDownloadURL(snapshot.ref);
+      }
+    } else if (imagePreview && imagePreview.startsWith('http')) {
+      // If using Clerk image and template is selected
+      if (selectedTemplate) {
+        const compositeImage = await applyTemplate(imagePreview, selectedTemplate);
+        const response = await fetch(compositeImage);
+        const blob = await response.blob();
+        
+        const timestamp = Date.now();
+        const fileName = `candles/${timestamp}_templated.png`;
+        const storageRef = ref(storage, fileName);
+        
+        const snapshot = await uploadBytes(storageRef, blob);
+        finalImageUrl = await getDownloadURL(snapshot.ref);
+      } else {
+        // Use Clerk image directly
+        finalImageUrl = imagePreview;
+      }
     }
     
-    // If no file but we have a Clerk image preview, use that directly
-    if (imagePreview && imagePreview.startsWith('http')) {
-      return imagePreview;
+    return finalImageUrl;
+  };
+
+  // Capture the 3D candle as an image
+  const captureCandle = () => {
+    // Small delay to ensure canvas is fully rendered
+    setTimeout(() => {
+      const canvas = document.querySelector('canvas'); // Get the Three.js canvas
+      if (canvas) {
+        try {
+          const imageData = canvas.toDataURL('image/png');
+          console.log('Captured image data:', imageData ? 'Success' : 'Failed');
+          setCapturedImage(imageData);
+        } catch (error) {
+          console.error('Failed to capture canvas:', error);
+        }
+      } else {
+        console.error('Canvas not found');
+      }
+    }, 100);
+  };
+
+  // Social media sharing functions
+  const shareToX = () => {
+    const text = `I just lit a virtual candle for ${formData.username} 🕯️✨`;
+    // You could link to a specific page that has good Twitter Card meta tags
+    // Or link to the main site which should have a nice preview image
+    const url = window.location.origin; // Main site URL for better preview
+    const hashtags = 'virtualcandle,remembrance';
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`, '_blank');
+  };
+
+  const shareToInstagram = async () => {
+    if (capturedImage) {
+      try {
+        // Convert base64 to blob
+        const response = await fetch(capturedImage);
+        const blob = await response.blob();
+        
+        // Create FormData with the image
+        const postData = new FormData();
+        postData.append('image', blob, 'candle.png');
+        postData.append('caption', `Virtual candle lit for ${formData.username} 🕯️✨ #greenCandle #RL80`);
+        postData.append('dedicationName', formData.username);
+        
+        // Send to your backend to post on Instagram
+        // You'll need to implement this endpoint that uses Instagram Graph API
+        const result = await fetch('/api/instagram/post', {
+          method: 'POST',
+          body: postData
+        });
+        
+        if (result.ok) {
+          const data = await result.json();
+          // Open Instagram post or provide share link
+          if (data.postUrl) {
+            window.open(data.postUrl, '_blank');
+            alert('Posted to @yourappname! You can now share it to your story or repost it.');
+          }
+        }
+      } catch (error) {
+        console.error('Instagram posting failed:', error);
+        // Fallback to download
+        const link = document.createElement('a');
+        link.download = `candle-${formData.username.replace(/\s+/g, '-')}.png`;
+        link.href = capturedImage;
+        link.click();
+        alert('Image downloaded! Share it on Instagram.');
+      }
     }
-    
-    return null;
   };
 
   const handleSubmit = (e) => {
@@ -1016,12 +1486,16 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       return;
     }
     
+    // Capture the candle image before showing dialog
+    captureCandle();
+    
     // Show confirmation dialog instead of immediately saving
     setShowConfirmDialog(true);
   };
   
   const handleConfirmedSave = async () => {
     setShowConfirmDialog(false);
+    setCapturedImage(null); // Clear captured image until after save
     
     // Trigger burning effect
     setIsBurning(true);
@@ -1073,9 +1547,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       // Mark that candle was successfully created
       setCandleWasCreated(true);
       
-      // Show success toast
+      // Capture the candle image for sharing
+      captureCandle();
+      
+      // Show success toast with sharing options
       setShowSuccessToast(true);
-      setTimeout(() => setShowSuccessToast(false), 5000); // Hide after 5 seconds
+      // Don't auto-hide if we have sharing options
+      // setTimeout(() => setShowSuccessToast(false), 5000); // Hide after 5 seconds
 
       if (onCandleCreated) {
         onCandleCreated({
@@ -1099,29 +1577,112 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
 
   return (
     <>
-      {/* Success Toast Notification - Outside modal so it stays visible after close */}
+      {/* Success Toast with Sharing Options - Outside modal so it stays visible */}
       {showSuccessToast && (
         <div style={{
           position: 'fixed',
           top: '20px',
           left: '50%',
           transform: 'translateX(-50%)',
-          backgroundColor: '#4CAF50',
+          backgroundColor: 'rgba(30, 30, 30, 0.95)',
           color: 'white',
-          padding: '16px 24px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          padding: '20px',
+          borderRadius: '12px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
           zIndex: 100000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
           animation: 'slideDown 0.3s ease-out',
-          fontSize: '16px',
-          fontWeight: '500'
+          minWidth: '350px',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 102, 0, 0.3)'
         }}>
-          <span style={{ fontSize: '24px' }}>🕯️</span>
-          <span>Your candle has been lit successfully!</span>
-          <span style={{ fontSize: '20px' }}>✨</span>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              fontSize: '16px',
+              fontWeight: '500'
+            }}>
+              <span style={{ fontSize: '24px' }}>🕯️</span>
+              <span>Your candle has been lit successfully!</span>
+              <span style={{ fontSize: '20px' }}>✨</span>
+            </div>
+            
+            {/* Share buttons */}
+            <div style={{
+              display: 'flex',
+              gap: '10px',
+              width: '100%',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={shareToX}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#000000',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <span style={{ fontSize: '14px' }}>𝕏</span> Share
+              </button>
+              
+              <button
+                onClick={shareToInstagram}
+                style={{
+                  padding: '8px 16px',
+                  background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                📷 Share
+              </button>
+              
+              <button
+                onClick={() => setShowSuccessToast(false)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
       
@@ -1328,6 +1889,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     isEncrypted={isEncrypted}
                     username={formData.username}
                     language={currentLanguage}
+                    template={selectedTemplate}
+                    templatePosition={templatePosition}
+                    templateScale={templateScale}
+                    templateRotation={templateRotation}
+                    skinToneAdjustment={skinToneAdjustment}
                   />
                 </Suspense>
                 <OrbitControls
@@ -1593,12 +2159,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   }}>
                     {/* Prayer Template Dropdown */}
                     <select
-                      value={selectedPrayer || 'custom'}
+                      value={selectedPrayer || ''}
                       onChange={(e) => {
                         const value = e.target.value;
-                        if (value === 'custom') {
+                        if (value === '') {
                           setSelectedPrayer(null);
-                          setFormData(prev => ({ ...prev, message: '' }));
+                          // Don't clear message when deselecting
                         } else {
                           const prayers = PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
                           const prayer = prayers.find(p => p.id === value);
@@ -1625,9 +2191,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         paddingRight: '35px'
                       }}
                     >
-                      <option value="custom">✍️ Write Custom Prayer</option>
-                      <optgroup label="Pre-written Prayers">
-                        {(PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers).map((prayer) => (
+                      <option value="">Pick a prayer</option>
+                      {(PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers).map((prayer) => (
                           <option key={prayer.id} value={prayer.id}>
                             {currentLanguage === 'es' ? 
                               (prayer.id === 'scalper' ? '⚡ Scalper' :
@@ -1672,7 +2237,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                                prayer.id === 'chart' ? '📈 Chart Mystic\'s Prayer' : prayer.title)}
                           </option>
                         ))}
-                      </optgroup>
                     </select>
                     
                     {/* AI Button */}
@@ -1715,7 +2279,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         setSelectedPrayer(null);
                       }
                     }}
-                    placeholder={selectedPrayer ? "Edit the prayer or write your own..." : "Write a prayer, wish, dedication, or confession"}
+                    placeholder={selectedPrayer ? "Edit the selected prayer or write your own..." : "Write your message, prayer, wish, or dedication"}
                     rows={3}
                     maxLength={400}
                     required
@@ -2041,6 +2605,284 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 </label>
               </div>
 
+              {/* Template Selection */}
+              {(imageFile || imagePreview) && (
+                <div style={{
+                  marginTop: '15px',
+                  padding: '10px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <div style={{
+                    fontSize: '12px',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    marginBottom: '10px',
+                    textAlign: 'center'
+                  }}>
+                    Apply a Template (Optional)
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    gap: '10px',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center'
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplate(null)}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: selectedTemplate === null ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                        border: selectedTemplate === null ? '2px solid #ff6600' : '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: selectedTemplate === null ? '#ff6600' : 'rgba(255, 255, 255, 0.8)',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: selectedTemplate === null ? 'bold' : 'normal',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      No Template
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplate('/images/face2.png')}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: selectedTemplate === '/images/face2.png' ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                        border: selectedTemplate === '/images/face2.png' ? '2px solid #ff6600' : '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: selectedTemplate === '/images/face2.png' ? '#ff6600' : 'rgba(255, 255, 255, 0.8)',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: selectedTemplate === '/images/face2.png' ? 'bold' : 'normal',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      ✨ Virgin Mary
+                    </button>
+                  </div>
+                  {selectedTemplate && (
+                    <>
+                      <div style={{
+                        marginTop: '10px',
+                        padding: '8px',
+                        backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        color: '#00ff00',
+                        textAlign: 'center'
+                      }}>
+                        Template will be applied to your image
+                      </div>
+                      
+                      {/* Position Controls Button */}
+                      <button
+                        type="button"
+                        onClick={() => setShowPositionControls(!showPositionControls)}
+                        style={{
+                          marginTop: '10px',
+                          width: '100%',
+                          padding: '10px',
+                          backgroundColor: 'rgba(255, 102, 0, 0.2)',
+                          border: '1px solid #ff6600',
+                          borderRadius: '6px',
+                          color: '#ff6600',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {showPositionControls ? '🎯 Hide Position Controls' : '🎯 Adjust Position / Skin-tone'}
+                      </button>
+                      
+                      {/* Position Controls Panel */}
+                      {showPositionControls && (
+                        <div style={{
+                          marginTop: '15px',
+                          padding: '15px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(255, 102, 0, 0.3)'
+                        }}>
+                          <div style={{
+                            fontSize: '12px',
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            marginBottom: '15px',
+                            textAlign: 'center'
+                          }}>
+                            Adjust your position in the 3D preview above
+                          </div>
+                          
+                          {/* Control Sliders */}
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '12px',
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              marginBottom: '5px'
+                            }}>
+                              Horizontal Position: {templatePosition.x.toFixed(0)}%
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={templatePosition.x}
+                              onChange={(e) => setTemplatePosition({ ...templatePosition, x: parseFloat(e.target.value) })}
+                              style={{
+                                width: '100%',
+                                accentColor: '#ff6600'
+                              }}
+                            />
+                          </div>
+                          
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '12px',
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              marginBottom: '5px'
+                            }}>
+                              Vertical Position: {templatePosition.y.toFixed(0)}%
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={templatePosition.y}
+                              onChange={(e) => setTemplatePosition({ ...templatePosition, y: parseFloat(e.target.value) })}
+                              style={{
+                                width: '100%',
+                                accentColor: '#ff6600'
+                              }}
+                            />
+                          </div>
+                          
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '12px',
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              marginBottom: '5px'
+                            }}>
+                              Size: {templateScale}%
+                            </label>
+                            <input
+                              type="range"
+                              min="20"
+                              max="200"
+                              value={templateScale}
+                              onChange={(e) => setTemplateScale(parseFloat(e.target.value))}
+                              style={{
+                                width: '100%',
+                                accentColor: '#ff6600'
+                              }}
+                            />
+                          </div>
+                          
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '12px',
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              marginBottom: '5px'
+                            }}>
+                              Rotation: {templateRotation}°
+                            </label>
+                            <input
+                              type="range"
+                              min="-180"
+                              max="180"
+                              value={templateRotation}
+                              onChange={(e) => setTemplateRotation(parseFloat(e.target.value))}
+                              style={{
+                                width: '100%',
+                                accentColor: '#ff6600'
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Skin Tone Adjustment - Only for Virgin Mary template */}
+                          {selectedTemplate === '/images/face2.png' && (
+                            <div style={{ 
+                              marginBottom: '12px',
+                              paddingTop: '12px',
+                              borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+                            }}>
+                              <label style={{
+                                display: 'block',
+                                fontSize: '12px',
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                marginBottom: '5px'
+                              }}>
+                                Skin Tone Adjustment
+                              </label>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                marginBottom: '5px'
+                              }}>
+                                <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Lighter</span>
+                                <input
+                                  type="range"
+                                  min="-100"
+                                  max="100"
+                                  value={skinToneAdjustment}
+                                  onChange={(e) => setSkinToneAdjustment(parseFloat(e.target.value))}
+                                  style={{
+                                    flex: 1,
+                                    accentColor: '#ff6600'
+                                  }}
+                                />
+                                <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Darker</span>
+                              </div>
+                              <div style={{
+                                textAlign: 'center',
+                                fontSize: '10px',
+                                color: 'rgba(255, 255, 255, 0.5)'
+                              }}>
+                                Adjusts baby hands and feet color
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Reset Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTemplatePosition({ x: 67, y: 40 });
+                              setTemplateScale(25);
+                              setTemplateRotation(0);
+                              setSkinToneAdjustment(0);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              borderRadius: '4px',
+                              color: 'rgba(255, 255, 255, 0.8)',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            Reset Position
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Password Dialog for Encryption - moved outside confirmation dialog */}
               {showPasswordDialog && (
                 <div className="encryption-password-dialog" onClick={(e) => e.stopPropagation()}>
@@ -2180,6 +3022,95 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       <p><strong>Message:</strong> {formData.message.substring(0, 50)}{formData.message.length > 50 ? '...' : ''}</p>
                       {isEncrypted && <p className="encryption-notice">🔒 This message will be encrypted</p>}
                     </div>
+                    
+                    {/* Removed social sharing - will show after successful save */}
+                    {false && capturedImage && (
+                      <div style={{
+                        marginTop: '20px',
+                        padding: '15px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
+                        {/* Preview of captured candle */}
+                        <div style={{
+                          marginBottom: '15px',
+                          textAlign: 'center'
+                        }}>
+                          <img 
+                            src={capturedImage}
+                            alt="Your candle"
+                            style={{
+                              width: '150px',
+                              height: '150px',
+                              borderRadius: '8px',
+                              border: '2px solid rgba(255, 102, 0, 0.3)',
+                              objectFit: 'cover',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                            }}
+                          />
+                        </div>
+                        <p style={{
+                          fontSize: '13px',
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          marginBottom: '12px',
+                          textAlign: 'center'
+                        }}>
+                          Share your candle on social media
+                        </p>
+                        <div style={{
+                          display: 'flex',
+                          gap: '12px',
+                          justifyContent: 'center'
+                        }}>
+                          <button
+                            type="button"
+                            onClick={shareToX}
+                            style={{
+                              padding: '10px 20px',
+                              backgroundColor: '#000000',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              transition: 'transform 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          >
+                            <span style={{ fontSize: '16px' }}>𝕏</span> Share on X
+                          </button>
+                          <button
+                            type="button"
+                            onClick={shareToInstagram}
+                            style={{
+                              padding: '10px 20px',
+                              background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              transition: 'transform 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          >
+                            📷 Instagram
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
                     <p className="confirmation-warning">Once lit, your candle cannot be changed or removed.</p>
                     <div className="confirmation-actions">
                       <button

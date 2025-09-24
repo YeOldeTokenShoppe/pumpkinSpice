@@ -9,7 +9,7 @@ const EnhancedVolumetricLight = ({
   intensity = 1,
   rayCount = 20,
   spread = 10,
-  opacity = 0.005
+  opacity = 0.01
 }) => {
   const groupRef = useRef();
   const time = useRef(0);
@@ -87,13 +87,13 @@ const EnhancedVolumetricLight = ({
   return (
     <group ref={groupRef}>
       {/* Main light source */}
-      <pointLight
+      {/* <pointLight
         position={position}
         color={color}
         intensity={intensity}
         distance={500}
         decay={1.5}
-      />
+      /> */}
       
       {/* Additional spot light for focused beam */}
       <spotLight
@@ -130,7 +130,7 @@ const EnhancedVolumetricLight = ({
       ))}
       
       {/* Central bright core ray - better aligned */}
-      <mesh
+      {/* <mesh
         position={[
           (position[0] + target[0]) / 2,  // Center between light and target
           (position[1] + target[1]) / 2,  // Center vertically
@@ -147,10 +147,10 @@ const EnhancedVolumetricLight = ({
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
-      </mesh>
+      </mesh> */}
       
       {/* Atmospheric glow at the source - commented out to hide sphere */}
-      <mesh position={position}>
+      {/* <mesh position={position}>
         <sphereGeometry args={[20, 16, 16]} />
         <meshBasicMaterial
           color={color}
@@ -159,7 +159,7 @@ const EnhancedVolumetricLight = ({
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
-      </mesh>
+      </mesh> */}
     </group>
   );
 };

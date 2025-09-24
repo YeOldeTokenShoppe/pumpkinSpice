@@ -260,12 +260,12 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
         
         
         {/* Directional light from sun position */}
-        <directionalLight
+        {/* <directionalLight
           position={[0, 80, -30]}
           intensity={3}
           color="#ffeecc"
           castShadow
-        />
+        /> */}
         
         {/* Hemisphere light from below for sunset glow on cloud undersides */}
         <hemisphereLight
@@ -273,7 +273,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
           groundColor="#f7d5a3"
           // skyColor="#f8b6f9"
           // groundColor="#f7b34c"       
-          intensity={3}
+          intensity={2.5}
           position={[0, 0, 0]}
         />
         
@@ -304,8 +304,8 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
         />
 
         {/* {cloudTexture ? ( */}
-          <group ref={cloudsGroupRef}>
-            {/* <Clouds material={THREE.MeshLambertMaterial} limit={400}> */}
+          <group ref={cloudsGroupRef} frustumCulled={false}>
+            <Clouds material={THREE.MeshLambertMaterial} limit={400}>
               {/* Main large white cloud  that is DIRECTLY under the bull */}
               <Cloud 
                 ref={cloud0}
@@ -320,6 +320,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[-40, -98, 0]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
           
               {/* Large white cloud to the right - mid level */}
@@ -352,6 +353,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[-40, 10, 0]}
                 texture={cloudTexture}
+                
               /> 
               
               {/* Background large cloud - mid-high level */}
@@ -368,6 +370,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[0, -5, -20]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               {/* Front large cloud - low-mid level */}
@@ -384,6 +387,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[60, -60, 15]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               {/* Additional vertical clouds for cumulus effect */}
@@ -399,6 +403,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[-20, -40, 10]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               <Cloud 
@@ -413,6 +418,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[45, -10, -10]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               <Cloud 
@@ -427,6 +433,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[-50, -70, 5]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               <Cloud 
@@ -441,6 +448,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[20, 5, 20]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               <Cloud 
@@ -455,6 +463,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[-35, -50, -15]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               <Cloud 
@@ -469,6 +478,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[35, -35, -25]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               {/* Tall vertical cloud formations */}
@@ -484,6 +494,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[5, -10, 0]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               <Cloud 
@@ -498,6 +509,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 color={whiteCloudColor}
                 position={[-25, -15, 12]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               {/* Large background cloud - highest level */}
@@ -515,6 +527,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 speed={0.015}
                 position={[20, 20, -30]}
                 texture={cloudTexture}
+                frustumCulled={false}
               />
               
               {/* Hidden light sources for glow effects */}
@@ -534,7 +547,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 distance={20}
                 decay={2}
               /> */}
-            {/* </Clouds> */}
+            </Clouds>
           </group>
     
       </group>

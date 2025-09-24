@@ -2082,7 +2082,7 @@ export default function Home2() {
                 }}
                 title="Sign In"
               >
-                <span style={{ fontSize: "2.5rem" }}>{emoji}</span>
+                <span style={{ fontSize: "2.2rem" }}>{emoji}</span>
               </button>
             </SignInButton>
           )}

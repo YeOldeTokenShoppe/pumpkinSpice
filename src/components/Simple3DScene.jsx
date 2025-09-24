@@ -98,7 +98,7 @@ AngelModel.displayName = 'AngelModel';
 
 // Optimized Devil Model  
 const DevilModel = memo(({ isMobile, scrollY }) => {
-  const { scene, animations } = useGLTF('/models/devilEmoji.glb');
+  const { scene, animations } = useGLTF('/models/devilEmoji2.glb');
   const { actions } = useAnimations(animations, scene);
   const groupRef = useRef();
   
@@ -297,7 +297,7 @@ function SimpleScene({ isMobile, scrollY, enableBloom }) {
             luminanceThreshold={0.3}
             luminanceSmoothing={0.9}
             mipmapBlur
-            radius={0.5}
+            radius={0.8}
           />
         </EffectComposer>
       )}
@@ -315,7 +315,7 @@ function SimpleScene({ isMobile, scrollY, enableBloom }) {
         zoomSpeed={0.8}  // Moderate zoom speed
         dampingFactor={0.05}
         enableDamping={true}
-        target={[isMobile ? -10 : -2, -15 + scrollY * 0.015, -12]}  // Look at model
+        // target={[isMobile ? -10 : -2, -15 + scrollY * 0.015, -12]}  // Look at model
         zoomToCursor={true}  // Zoom towards cursor position
       /> */}
     </>
@@ -353,7 +353,7 @@ export default function Simple3DScene({ enabled = false, isMobile = false, scrol
   
   return (
     <Canvas
-      camera={{ position: [0, -10, 40], fov: 45 }}
+      camera={{ position: [0, -10, 40], fov: 40, near: 0.1, far: 300 }}
       gl={{
         antialias: false,
         alpha: false,
