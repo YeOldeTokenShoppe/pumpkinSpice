@@ -6,6 +6,7 @@ import { Cloud, Clouds, useGLTF, useAnimations, useHelper, OrbitControls } from 
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import DarkClouds from '@/components/Clouds';
+import EnhancedVolumetricLight from '@/components/EnhancedVolumetricLight';
 
 // Optimized Our Lady Model
 const OurLadyModel = memo(({ isMobile, scrollY }) => {
@@ -269,6 +270,12 @@ function SimpleScene({ isMobile, scrollY, enableBloom }) {
       }>
         <OurLadyModel isMobile={isMobile} scrollY={scrollY} />
       </Suspense>
+      <EnhancedVolumetricLight 
+        position={[0, 50 + scrollY * 0.015, 0]} 
+        target={[3, -30 + scrollY * 0.015, -5]}
+        color="#ffffee"
+        intensity={2.0}
+      />
       
       {/* Angel and Devil models - desktop only for memory */}
       {!isMobile && (

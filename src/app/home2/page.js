@@ -2038,7 +2038,7 @@ export default function Home2() {
               e.currentTarget.style.boxShadow = '0 10px 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(212, 175, 55, 0.3)';
             }}
           >
-            🙏 Buy $RL80
+            🙏 Buy <span translate="no">$RL80</span>
           </a>
         </>
       )}

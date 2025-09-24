@@ -138,7 +138,7 @@ const EnhancedVolumetricLight = ({
         ]}
         rotation={[Math.PI, 0, 0]}
       >
-        <cylinderGeometry args={[2, 8, Math.abs(position[1] - target[1]), 8, 1, true]} />
+        <cylinderGeometry args={[2, 8, Math.abs(position[1] - target[1]) * 0.5, 18, 1, true]} />
         <meshBasicMaterial
           color={color}
           transparent
