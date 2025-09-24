@@ -306,23 +306,23 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
         {/* {cloudTexture ? ( */}
           <group ref={cloudsGroupRef}>
             {/* <Clouds material={THREE.MeshLambertMaterial} limit={400}> */}
-              {/* Main large white cloud */}
-              {/* <Cloud 
+              {/* Main large white cloud  that is DIRECTLY under the bull */}
+              <Cloud 
                 ref={cloud0}
                 seed={1}
-                segments={5}
-                volume={25}
+                segments={10}
+                volume={15}
                 opacity={0.9}
                 fade={1}
-                growth={8}
-                speed={0.05}
-                bounds={[10, 6, 6]}
+                growth={0}
+                speed={0.00}
+                bounds={[10, 0, 2]}
                 color={whiteCloudColor}
-                position={[0, -11, -5]}
+                position={[-40, -98, 0]}
                 texture={cloudTexture}
-              /> */}
+              />
           
-              {/* Large white cloud to the right */}
+              {/* Large white cloud to the right - mid level */}
               <Cloud 
                 ref={cloud1}
                 seed={2}
@@ -334,27 +334,27 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 speed={0.03}
                 bounds={[15, 8, 6]}
                 color={whiteCloudColor}
-                position={[30, -1, 0]}
+                position={[30, -25, 0]}
                 texture={cloudTexture}
               />
               
-              {/* Large white cloud to the left /under the bull */}
+              {/* Large white cloud to the left - high level */}
               <Cloud 
                 ref={cloud2}
                 seed={3}
-                segments={8}
-                volume={10}
+                segments={12}
+                volume={15}
                 opacity={0.8}
                 fade={1}
                 growth={6}
                 speed={0.03}
-                bounds={[-15, 6, 6]}
+                bounds={[-10, 0, 6]}
                 color={whiteCloudColor}
-                position={[-40, -12, 0]}
+                position={[-40, 10, 0]}
                 texture={cloudTexture}
-              />
+              /> 
               
-              {/* Background large cloud */}
+              {/* Background large cloud - mid-high level */}
               <Cloud 
                 ref={cloud3}
                 seed={14}
@@ -366,15 +366,15 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 speed={0.02}
                 bounds={[14, 5, 5]}
                 color={whiteCloudColor}
-                position={[0, -13, -20]}
+                position={[0, -5, -20]}
                 texture={cloudTexture}
               />
               
-              {/* Front large cloud */}
+              {/* Front large cloud - low-mid level */}
               <Cloud 
                 ref={cloud4}
                 seed={5}
-                segments={4}
+                segments={14}
                 volume={20}
                 opacity={0.7}
                 fade={1}
@@ -382,11 +382,125 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 speed={0.025}
                 bounds={[14, 1, 5]}
                 color={whiteCloudColor}
-                position={[10, -27, 15]}
+                position={[60, -60, 15]}
                 texture={cloudTexture}
               />
               
-              {/* Large background cloud */}
+              {/* Additional vertical clouds for cumulus effect */}
+              <Cloud 
+                seed={6}
+                segments={10}
+                volume={18}
+                opacity={0.75}
+                fade={1}
+                growth={5}
+                speed={0.025}
+                bounds={[12, 10, 5]}
+                color={whiteCloudColor}
+                position={[-20, -40, 10]}
+                texture={cloudTexture}
+              />
+              
+              <Cloud 
+                seed={7}
+                segments={12}
+                volume={22}
+                opacity={0.7}
+                fade={1}
+                growth={6}
+                speed={0.02}
+                bounds={[15, 12, 6]}
+                color={whiteCloudColor}
+                position={[45, -10, -10]}
+                texture={cloudTexture}
+              />
+              
+              <Cloud 
+                seed={8}
+                segments={8}
+                volume={16}
+                opacity={0.65}
+                fade={1}
+                growth={4}
+                speed={0.03}
+                bounds={[10, 8, 5]}
+                color={whiteCloudColor}
+                position={[-50, -70, 5]}
+                texture={cloudTexture}
+              />
+              
+              <Cloud 
+                seed={9}
+                segments={10}
+                volume={20}
+                opacity={0.8}
+                fade={1}
+                growth={5}
+                speed={0.025}
+                bounds={[14, 15, 7]}
+                color={whiteCloudColor}
+                position={[20, 5, 20]}
+                texture={cloudTexture}
+              />
+              
+              <Cloud 
+                seed={10}
+                segments={9}
+                volume={14}
+                opacity={0.6}
+                fade={1}
+                growth={4}
+                speed={0.035}
+                bounds={[12, 10, 5]}
+                color={whiteCloudColor}
+                position={[-35, -50, -15]}
+                texture={cloudTexture}
+              />
+              
+              <Cloud 
+                seed={11}
+                segments={11}
+                volume={25}
+                opacity={0.75}
+                fade={1}
+                growth={6}
+                speed={0.02}
+                bounds={[16, 18, 8]}
+                color={whiteCloudColor}
+                position={[35, -35, -25]}
+                texture={cloudTexture}
+              />
+              
+              {/* Tall vertical cloud formations */}
+              <Cloud 
+                seed={12}
+                segments={14}
+                volume={18}
+                opacity={0.7}
+                fade={1}
+                growth={5}
+                speed={0.025}
+                bounds={[18, 25, 6]}
+                color={whiteCloudColor}
+                position={[5, -10, 0]}
+                texture={cloudTexture}
+              />
+              
+              <Cloud 
+                seed={13}
+                segments={12}
+                volume={16}
+                opacity={0.65}
+                fade={1}
+                growth={4}
+                speed={0.03}
+                bounds={[7, 20, 5]}
+                color={whiteCloudColor}
+                position={[-25, -15, 12]}
+                texture={cloudTexture}
+              />
+              
+              {/* Large background cloud - highest level */}
               <Cloud 
                 ref={cloud5}
                 concentrate="outside"
@@ -399,7 +513,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 segments={6}
                 fade={8}
                 speed={0.015}
-                position={[0, -15, -30]}
+                position={[20, 20, -30]}
                 texture={cloudTexture}
               />
               

@@ -1,14 +1,18 @@
 "use client";
 
-import React, { useRef, Suspense, useEffect, useState } from 'react';
+import React, { useRef, Suspense, useEffect, useState, lazy } from 'react';
+
+// Lazy load the 3D scene
+const Simple3DScene = lazy(() => import('@/components/Simple3DScene'));
 import { Canvas, useThree, useFrame, extend as fiberExtend } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations, Cloud, Clouds, MeshPortalMaterial, CameraControls, Text, Sky, RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 import { geometry } from 'maath';
-import DarkClouds from '@/components/Clouds';
+// import DarkClouds from '@/components/Clouds'; // Disabled for memory
 import PostProcessingEffects from '@/components/PostProcessingEffects';
+// import CSS3DClouds from '@/components/CSS3DClouds'; // Disabled for memory
 import { ParallaxGroup } from '@/components/ParallaxGroup';
 import CoinInline from '@/components/CoinInline';
 import { useMusic } from '@/components/MusicContext';
@@ -68,8 +72,8 @@ extend({ GradientSkyMaterial });
 // Apply bloom effect to Halo mesh
 function GradientSkySphere() {
   return (
-    <mesh scale={[200, 200, 200]}>
-      <sphereGeometry args={[1, 16, 16]} />
+    <mesh scale={[100, 100, 100]}>
+      <sphereGeometry args={[1, 8, 8]} />
       <gradientSkyMaterial 
         side={THREE.BackSide}
         topColor={new THREE.Color(0x1a0033)} // Dark violet
@@ -98,8 +102,8 @@ function DirectionalLightWithHelper() {
         intensity={2}
         color="#ffffff"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={512}
+        shadow-mapSize-height={512}
       />
       <mesh ref={targetRef} position={[-5, -10, -20]} visible={false}>
         <boxGeometry args={[0.1, 0.1, 0.1]} />
@@ -142,8 +146,8 @@ function SpotlightWithHelper({ isMobile, scrollY }) {
         distance={60}
         color="#ffeedd"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={512}
+        shadow-mapSize-height={512}
       />
       <mesh ref={targetRef} position={[0, -10, -20]} visible={false}>
         <boxGeometry args={[0.1, 0.1, 0.1]} />
@@ -152,53 +156,54 @@ function SpotlightWithHelper({ isMobile, scrollY }) {
   );
 }
 
-function OurLadyRiderModel({ isMobile, scrollY, onLoad }) {
+// Memoize the model component to prevent re-renders
+const OurLadyRiderModel = React.memo(({ isMobile, scrollY, onLoad }) => {
   const { scene } = useGLTF('/models/ourlady_rider6.glb');
   const modelRef = useRef();
   const groupRef = useRef();
   const cloudRef = useRef();
+  const hasCalledOnLoad = useRef(false);
   
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      scene.traverse((child) => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(mat => mat.dispose());
-          } else {
-            child.material.dispose();
-          }
-        }
-      });
-    };
-  }, [scene]);
+  // Disable cleanup for now to prevent context issues
+  // useEffect(() => {
+  //   return () => {
+  //     scene.traverse((child) => {
+  //       if (child.geometry) child.geometry.dispose();
+  //       if (child.material) {
+  //         if (Array.isArray(child.material)) {
+  //           child.material.forEach(mat => mat.dispose());
+  //         } else {
+  //           child.material.dispose();
+  //         }
+  //       }
+  //     });
+  //   };
+  // }, [scene]);
 
   
   React.useEffect(() => {
-    if (scene) {
+    if (scene && !hasCalledOnLoad.current) {
       scene.traverse((child) => {
         if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
+          child.castShadow = false; // Disable shadows
+          child.receiveShadow = false;
         }
       });
-      // Notify that this model is loaded
-      if (onLoad) onLoad();
+      // Only call onLoad once using ref to track
+      if (onLoad && !hasCalledOnLoad.current) {
+        hasCalledOnLoad.current = true;
+        onLoad();
+      }
     }
-  }, [scene, onLoad]);
+  }, [scene]); // Keep scene dependency but use ref to prevent multiple calls
 
-  useFrame(() => {
-    if (groupRef.current) {
-      // Move entire group (model + cloud) up as user scrolls down
-      const baseY = isMobile ? -11 : -13;
-      groupRef.current.position.y = baseY + scrollY * 0.015;
-    }
-    // Add gentle cloud rotation
-    if (cloudRef.current) {
-      cloudRef.current.rotation.y += 0.001;
-    }
-  });
+  // DISABLED useFrame for memory testing
+  // useFrame(() => {
+  //   if (groupRef.current) {
+  //     const baseY = isMobile ? -11 : -13;
+  //     groupRef.current.position.y = baseY + scrollY * 0.015;
+  //   }
+  // });
 
   return (
     <group 
@@ -209,51 +214,13 @@ function OurLadyRiderModel({ isMobile, scrollY, onLoad }) {
         ref={modelRef}
         object={scene} 
         scale={isMobile ? [9, 9, 9] : [12, 12, 12]}
-        rotation={isMobile ? [0, -2.5, 0] : [0, -2.4, 0]}
-      />
-      {/* Personal clouds that follow the model - multiple layers for depth */}
-      <Cloud 
-        ref={cloudRef}
-        seed={99}
-        segments={isMobile ? 12 : 20}
-        volume={isMobile ? 25 : 35}
-        opacity={0.85}
-        fade={2}
-        growth={6}
-        speed={0.02}
-        bounds={isMobile ? [12, 8, 8] : [15, 10, 10]}
-        color="#ffc0cb"
-        position={[-5, 8, 5]}
-      />
-      {/* Additional cloud layer for more volume */}
-      <Cloud 
-        seed={42}
-        segments={isMobile ? 10 : 15}
-        volume={isMobile ? 20 : 30}
-        opacity={0.7}
-        fade={3}
-        growth={5}
-        speed={0.015}
-        bounds={isMobile ? [14, 6, 10] : [18, 8, 12]}
-        color="#ffb6c1"
-        position={[3, 6, -2]}
-      />
-      {/* Lower cloud layer */}
-      <Cloud 
-        seed={7}
-        segments={isMobile ? 8 : 12}
-        volume={isMobile ? 18 : 25}
-        opacity={0.6}
-        fade={2.5}
-        growth={4}
-        speed={0.025}
-        bounds={isMobile ? [10, 4, 6] : [14, 6, 8]}
-        color="#ffd1dc"
-        position={[-2, 2, 3]}
+        rotation={isMobile ? [0, -1.5, 0] : [0, 0, 0]}
       />
     </group>
   );
-}
+});
+
+OurLadyRiderModel.displayName = 'OurLadyRiderModel';
 
 function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
   const { scene, animations } = useGLTF('/models/angelEmoji.glb');
@@ -452,96 +419,96 @@ function PulsingText({ children, ...props }) {
 }
 
 // Portal Components
-function FountainModel({ clip, ...props }) {
-  const { scene } = useGLTF('/models/fountain.glb');
+// function FountainModel({ clip, ...props }) {
+//   const { scene } = useGLTF('/models/fountain.glb');
   
-  React.useEffect(() => {
-    if (scene) {
-      scene.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-          if (clip) {
-            child.material.clippingPlanes = [zPlane, yPlane];
-            child.material.side = THREE.DoubleSide;
-          }
-        }
-      });
-    }
-  }, [scene, clip]);
+//   React.useEffect(() => {
+//     if (scene) {
+//       scene.traverse((child) => {
+//         if (child instanceof THREE.Mesh) {
+//           child.castShadow = true;
+//           child.receiveShadow = true;
+//           if (clip) {
+//             child.material.clippingPlanes = [zPlane, yPlane];
+//             child.material.side = THREE.DoubleSide;
+//           }
+//         }
+//       });
+//     }
+//   }, [scene, clip]);
   
-  return <primitive object={scene} {...props} />;
-}
+//   return <primitive object={scene} {...props} />;
+// }
 
-function PortalFrame({ id, name, author, bg, width = 1.1, height = GOLDENRATIO * 1.1, children, ...props }) {
-  return (
-    <group {...props}>
-      <Text 
-        font="/fonts/UnifrakturCook-Bold.ttf"
-        color="#d4af37" 
-        fontSize={0.18} 
-        letterSpacing={-0.025} 
-        anchorY="top" 
-        anchorX="center" 
-        lineHeight={0.8} 
-        position={[0, 0.5, 0.01]}
-        maxWidth={width * 0.8}
-      >
-        {name}
-      </Text>
-      <Text 
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        color="#d4af37" 
-        fontSize={0.08} 
-        anchorX="right" 
-        position={[width * 0.4, -height * 0.42, 0.01]}
-      >
-        /{id}
-      </Text>
-      <Text 
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        color="#d4af37" 
-        fontSize={0.04} 
-        anchorX="center" 
-        position={[0, -height * 0.45, 0.01]}
-        maxWidth={width * 0.8}
-      >
-        {author}
-      </Text>
-      {/* Portal interaction hints - positioned inside the portal */}
-      <PulsingText
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        color="#d4af37"
-        fontSize={0.035}
-        anchorX="right"
-        anchorY="top"
-        position={[width * 0.42, height * 0.42, 0.02]}
-        fillOpacity={0.9}
-      >
-        Click to flip
-      </PulsingText>
-      <Text
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        color="#d4af37"
-        fontSize={0.03}
-        anchorX="right"
-        anchorY="top"
-        position={[width * 0.42, height * 0.39, 0.02]}
-        fillOpacity={0.7}
-      >
-        Double-click to enter
-      </Text>
-      <mesh name={id}>
-        <roundedPlaneGeometry args={[width, height, 0.1]} />
-        <MeshPortalMaterial>{children}</MeshPortalMaterial>
-      </mesh>
-      <mesh name={id} position={[0, 0, -0.001]}>
-        <roundedPlaneGeometry args={[width + 0.05, height + 0.05, 0.12]} />
-        <meshBasicMaterial color="#d4af37" />
-      </mesh>
-    </group>
-  );
-}
+// function PortalFrame({ id, name, author, bg, width = 1.1, height = GOLDENRATIO * 1.1, children, ...props }) {
+//   return (
+//     <group {...props}>
+//       <Text 
+//         font="/fonts/UnifrakturCook-Bold.ttf"
+//         color="#d4af37" 
+//         fontSize={0.18} 
+//         letterSpacing={-0.025} 
+//         anchorY="top" 
+//         anchorX="center" 
+//         lineHeight={0.8} 
+//         position={[0, 0.5, 0.01]}
+//         maxWidth={width * 0.8}
+//       >
+//         {name}
+//       </Text>
+//       <Text 
+//         font="/fonts/UnifrakturMaguntia-Regular.ttf"
+//         color="#d4af37" 
+//         fontSize={0.08} 
+//         anchorX="right" 
+//         position={[width * 0.4, -height * 0.42, 0.01]}
+//       >
+//         /{id}
+//       </Text>
+//       <Text 
+//         font="/fonts/UnifrakturMaguntia-Regular.ttf"
+//         color="#d4af37" 
+//         fontSize={0.04} 
+//         anchorX="center" 
+//         position={[0, -height * 0.45, 0.01]}
+//         maxWidth={width * 0.8}
+//       >
+//         {author}
+//       </Text>
+//       {/* Portal interaction hints - positioned inside the portal */}
+//       <PulsingText
+//         font="/fonts/UnifrakturMaguntia-Regular.ttf"
+//         color="#d4af37"
+//         fontSize={0.035}
+//         anchorX="right"
+//         anchorY="top"
+//         position={[width * 0.42, height * 0.42, 0.02]}
+//         fillOpacity={0.9}
+//       >
+//         Click to flip
+//       </PulsingText>
+//       <Text
+//         font="/fonts/UnifrakturMaguntia-Regular.ttf"
+//         color="#d4af37"
+//         fontSize={0.03}
+//         anchorX="right"
+//         anchorY="top"
+//         position={[width * 0.42, height * 0.39, 0.02]}
+//         fillOpacity={0.7}
+//       >
+//         Double-click to enter
+//       </Text>
+//       <mesh name={id}>
+//         <roundedPlaneGeometry args={[width, height, 0.1]} />
+//         <MeshPortalMaterial>{children}</MeshPortalMaterial>
+//       </mesh>
+//       <mesh name={id} position={[0, 0, -0.001]}>
+//         <roundedPlaneGeometry args={[width + 0.05, height + 0.05, 0.12]} />
+//         <meshBasicMaterial color="#d4af37" />
+//       </mesh>
+//     </group>
+//   );
+// }
 
 // Scene component that responds to scroll
 function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
@@ -557,49 +524,53 @@ function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
 
   return (
     <>
-      <ambientLight intensity={1.5} />
-      <DirectionalLightWithHelper />
-      <pointLight position={[-2, 2, -1]} intensity={1.5} />
+      {/* <ambientLight intensity={1.5} /> */}
+      {/* <DirectionalLightWithHelper />
+      <pointLight position={[-2, 2, -1]} intensity={1.5} /> */}
       
-      <SpotlightWithHelper isMobile={isMobile} scrollY={scrollY} />
+      {/* <SpotlightWithHelper isMobile={isMobile} scrollY={scrollY} /> */}
       
       <GradientSkySphere />
       
+      {/* Temporarily disable clouds to test memory */}
+      
       <Suspense fallback={null}>
-        {/* Background layer - moves slowest - skip on low-end devices */}
-        {!isLowEndDevice && (
-          <group position={[-25, -2.5 + scrollY * 0.008, -6]}>
-            <DarkClouds />
-          </group>
-        )}
+        {/* DarkClouds disabled for memory optimization */}
 
-        {/* Foreground layer - moves faster */}
-        <OurLadyRiderModel 
+        {/* TEMPORARILY DISABLED MAIN MODEL FOR MEMORY TEST */}
+        {/* <OurLadyRiderModel 
           isMobile={isMobile} 
           scrollY={scrollY} 
           onLoad={() => onAssetsLoaded?.('ourLadyModel')}
-        />
-        <AngelEmojiModel 
-          isMobile={isMobile} 
-          scrollY={scrollY} 
-          onLoad={() => onAssetsLoaded?.('angelModel')}
-        />
-        <DevilEmojiModel 
-          isMobile={isMobile} 
-          scrollY={scrollY} 
-          onLoad={() => onAssetsLoaded?.('devilModel')}
-        />
+        /> */}
+        {/* TEMPORARILY DISABLED FOR MEMORY TESTING */}
+        {/* !isMobile && (
+          <>
+            <AngelEmojiModel 
+              isMobile={isMobile} 
+              scrollY={scrollY} 
+              onLoad={() => onAssetsLoaded?.('angelModel')}
+            />
+            <DevilEmojiModel 
+              isMobile={isMobile} 
+              scrollY={scrollY} 
+              onLoad={() => onAssetsLoaded?.('devilModel')}
+            />
+          </>
+        ) */}
       </Suspense>
       <Suspense></Suspense>
-      {!isMobile && <PostProcessingEffects is80sMode={false} />}
-      <OrbitControls 
+      {/* DISABLED POST PROCESSING FOR MEMORY TEST */}
+      {/* !isMobile && <PostProcessingEffects is80sMode={false} /> */}
+      {/* DISABLED ORBIT CONTROLS FOR MEMORY TEST */}
+      {/* <OrbitControls 
         enablePan={false}
         enableZoom={true}
         enableRotate={true}
         enableDamping={false}
-        enabled={false} // Completely disable OrbitControls for mobile scrolling
+        enabled={false}
         target={isMobile ? [-45, 1.5 - scrollY * 0.015, -100] : [-50, 1.5 - scrollY * 0.015, -100]}
-      />
+      /> */}
     </>
   );
 }
@@ -1657,7 +1628,7 @@ export default function Home2() {
         }
       `}</style>
       
-      {/* Fixed Canvas */}
+      {/* Simplified 3D Scene */}
       <div style={{
         position: 'fixed',
         top: 0,
@@ -1665,29 +1636,22 @@ export default function Home2() {
         width: '100vw',
         height: '100vh',
         zIndex: 0,
-        pointerEvents: 'none', // Prevent canvas from blocking scroll
+        pointerEvents: 'none',
       }}>
-        <Canvas
-          shadows
-          // gl={{ alpha: true, antialias: true }}
-          camera={{ position: isMobile ? [20, -2, 20] : [20, -2, 20], fov: isMobile ? 60 : 60}}
-          style={{ 
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%', 
+        <Suspense fallback={
+          <div style={{
+            width: '100%',
             height: '100%',
-            pointerEvents: 'none', // Disable pointer events to allow scrolling
-            touchAction: 'auto', // Allow touch scrolling
-          }}
-        >
-          <Scene 
-            isMobile={isMobile} 
-            scrollY={scrollY} 
-            onAssetsLoaded={handleAssetLoaded}
-            isLowEndDevice={isLowEndDevice}
-          />
-        </Canvas>
+            background: 'linear-gradient(to bottom, #87CEEB, #98D8E8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <p style={{ color: 'white' }}>Loading...</p>
+          </div>
+        }>
+          <Simple3DScene enabled={true} isMobile={isMobile} scrollY={scrollY} />
+        </Suspense>
       </div>
       
       {/* Scrollable Overlay Content */}
@@ -1759,7 +1723,7 @@ export default function Home2() {
                 <div className="card">
                   <span className="flip-hint">Click to flip</span>
                   <div className="card-bg" style={{ 
-                    backgroundImage: flippedCards.has(0) || scrollY > 100 ? 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")' : 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2))',
+                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")',
                   }}></div>
                   <div className="card-info">
                     <h2>Divine Protection</h2>
@@ -2266,6 +2230,5 @@ export default function Home2() {
   );
 }
 
-useGLTF.preload('/models/ourlady_rider6.glb');
-useGLTF.preload('/models/angelEmoji.glb');
-useGLTF.preload('/models/devilEmoji.glb');
+// Preloading disabled for memory optimization
+// Models load on demand instead
