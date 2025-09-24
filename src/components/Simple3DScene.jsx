@@ -40,12 +40,12 @@ const OurLadyModel = memo(({ isMobile, scrollY }) => {
   });
   
   return (
-    <group ref={groupRef} position={isMobile ? [-10, -11, -10] : [2, 8, -11]}>
+    <group ref={groupRef} position={isMobile ? [2, -8, -10] : [2, 8, -11]}>
       <primitive 
         ref={modelRef}
         object={scene} 
-        scale={isMobile ? [9, 9, 9] : [10, 10, 10]}
-        rotation={isMobile ? [0, -1.5, 0] : [0.1, -3.2, 0]}
+        scale={isMobile ? [10, 10, 10] : [10, 10, 10]}
+        rotation={isMobile ? [0, -3.3, 0] : [0.1, -3.2, 0]}
       />
     </group>
   );
