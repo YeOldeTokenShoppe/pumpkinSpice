@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import PerformanceMonitor from "@/components/PerformanceMonitor";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useUser, SignInButton } from "@clerk/nextjs";
@@ -22,32 +23,48 @@ const ThreeDVotiveStand = dynamic(() => import("@/components/index.jsx"), {
   loading: () => <InfinityLoader/>,
 });
 
+// Memoize the 3D scene component with proper comparison to prevent unnecessary re-renders
+const MemoizedThreeDVotiveStand = React.memo(ThreeDVotiveStand, (prevProps, nextProps) => {
+  // Only re-render if these specific props change
+  return (
+    prevProps.isMobileView === nextProps.isMobileView &&
+    prevProps.is80sMode === nextProps.is80sMode
+  );
+});
+
 export default function GalleryPage() {
   // Get user from Clerk
   const { user, isSignedIn } = useUser();
   
-  // Track if we're on a mobile device for responsive layout
-  const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
-
+  // Initialize states with stable values
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [fontLoaded, setFontLoaded] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showCandleModal, setShowCandleModal] = useState(false);
+  const [isSceneLoading, setIsSceneLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
   // Get music context functions
   const { play, pause, isPlaying: contextIsPlaying, nextTrack, currentTrackIndex, currentTrack, is80sMode: context80sMode, setIs80sMode: setContext80sMode } = useMusic();
   const isTogglingRef = useRef(false); // Prevent multiple rapid toggles
   const isToggling80sRef = useRef(false); // Track 80s mode toggle state
   const videoRef = useRef(null); // Reference for 80s video cleanup
-  const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   // Use context 80s mode instead of local state
   const is80sMode = context80sMode;
   
-
-  const [isMobileView, setIsMobileView] = useState(true); // Always use mobile view
-  const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(true); // Always treat as mobile
-  const [isSceneLoading, setIsSceneLoading] = useState(true);
+  // Always use mobile view
+  const [isMobileView, setIsMobileView] = useState(true); 
+  const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(true); 
   // Show music controls if music is already playing
-  const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
-  const [fontLoaded, setFontLoaded] = useState(false);
-  const [showCandleModal, setShowCandleModal] = useState(false);
-  const [sceneReady, setSceneReady] = useState(false);
+  const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying || false);
+  
+  // Memoize the callback to prevent re-renders
+  const handleSceneReady = useCallback((ready) => {
+    setSceneReady(ready);
+  }, []);
   const [emoji, setEmoji] = useState("😇");
   
   // Sync showMusicControls with playing state when it changes
@@ -55,7 +72,7 @@ export default function GalleryPage() {
     if (contextIsPlaying && !showMusicControls) {
       setShowMusicControls(true);
     }
-  }, [contextIsPlaying]);
+  }, [contextIsPlaying, showMusicControls]);
   
   // Alternate emoji for sign-in button
   useEffect(() => {
@@ -73,8 +90,9 @@ export default function GalleryPage() {
     return true; // Always return true for mobile
   }, []);
 
-  // Always use mobile view on mount + check for actual mobile device
+  // Initialize once on mount to prevent multiple renders
   useEffect(() => {
+    // Set all initial values at once
     setIsDefinitelyPhone(true);
     setIsMobileView(true);
     
@@ -83,6 +101,12 @@ export default function GalleryPage() {
       setIsMobileDevice(window.innerWidth <= 768);
     };
     checkMobileDevice();
+    
+    // Mark as initialized after a microtask to ensure all states are set
+    Promise.resolve().then(() => {
+      setIsInitialized(true);
+    });
+    
     window.addEventListener('resize', checkMobileDevice);
     return () => window.removeEventListener('resize', checkMobileDevice);
   }, []);
@@ -565,7 +589,7 @@ export default function GalleryPage() {
             {/* 80s Mode Toggle Icon */}
             <div style={{ order: isMobileDevice ? 2 : 2 }}>
             <button
-              onClick={() => toggle80sMode(!is80sMode)}
+              onClick={toggle80sMode}
               style={{
                 width: isMobileDevice ? "40px" : "60px",
                 height: isMobileDevice ? "40px" : "60px",
@@ -627,18 +651,21 @@ export default function GalleryPage() {
           </>
           )}
       
-      {/* 3D Scene - Always render but hide with opacity while loading */}
-      <div style={{
-        opacity: isLoading ? 0 : 1,
-        transition: 'opacity 0.5s ease-in-out',
-        pointerEvents: isLoading ? 'none' : 'auto'
-      }}>
-        <ThreeDVotiveStand 
-          setIsLoading={setSceneReady}
-          isMobileView={isMobileView}
-          is80sMode={is80sMode}
-        />
-      </div>
+      {/* 3D Scene - Only render after initialization and font loaded to prevent multiple mounts */}
+      {isInitialized && fontLoaded && (
+        <div style={{
+          opacity: isLoading ? 0 : 1,
+          transition: 'opacity 0.5s ease-in-out',
+          pointerEvents: isLoading ? 'none' : 'auto'
+        }}>
+          <PerformanceMonitor name="Gallery-3DScene" />
+          <MemoizedThreeDVotiveStand 
+            setIsLoading={handleSceneReady}
+            isMobileView={isMobileView}
+            is80sMode={is80sMode}
+          />
+        </div>
+      )}
       
       {/* Hidden Sign In Button for programmatic trigger */}
       {!isSignedIn && (

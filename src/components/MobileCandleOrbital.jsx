@@ -1,6 +1,13 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+
+// Global cache to prevent duplicate candle extraction across remounts
+const globalCandleCache = {
+  candles: null,
+  modelId: null
+};
 
 // Orbital candle component that receives a cloned VCANDLE
 function OrbitalCandle({ angle, radius, candleObject, userData, index, onClick, isLeader, transitionState, isViewerOpen }) {
@@ -8,6 +15,8 @@ function OrbitalCandle({ angle, radius, candleObject, userData, index, onClick, 
   const candleRef = useRef();
   const frozenTimeRef = useRef(null);
   const frozenRotationRef = useRef(null);
+  const createdTexturesRef = useRef([]);
+  const createdMaterialsRef = useRef([]);
   
   // Setup candle on mount
   useEffect(() => {
@@ -35,9 +44,10 @@ function OrbitalCandle({ angle, radius, candleObject, userData, index, onClick, 
       // Apply user image with username to labels if available
       if (userData.image || userData.username || userData.userName) {
         // Create canvas for combined image and username
+        // Use smaller texture on mobile to save memory
         const canvas = document.createElement('canvas');
-        canvas.width = 1024;
-        canvas.height = 1024;
+        canvas.width = 256;  // Reduced from 1024 for mobile memory
+        canvas.height = 256;  // Reduced from 1024 for mobile memory
         const ctx = canvas.getContext('2d');
         
         // Fill background
@@ -92,6 +102,7 @@ function OrbitalCandle({ angle, radius, candleObject, userData, index, onClick, 
           texture.anisotropy = 16;
           texture.generateMipmaps = true;
           texture.needsUpdate = true;
+          createdTexturesRef.current.push(texture); // Track for disposal
           
           // Apply texture to both labels
           candleObject.traverse((child) => {
@@ -324,7 +335,7 @@ function OrbitalCandle({ angle, radius, candleObject, userData, index, onClick, 
 }
 
 // Main orbital system to be added to existing scene
-export default function MobileCandleOrbital({ candleData = [], onCandleClick, modelRef, onPaginationChange, isViewerOpen = false, sortBy }) {
+function MobileCandleOrbital({ candleData = [], onCandleClick, modelRef, onPaginationChange, isViewerOpen = false, sortBy }) {
   const groupRef = useRef();
   const [vcandleObjects, setVcandleObjects] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -346,6 +357,15 @@ export default function MobileCandleOrbital({ candleData = [], onCandleClick, mo
   useEffect(() => {
     if (!modelRef?.current) return;
     
+    // Check global cache first to prevent duplicate extractions across remounts
+    const modelId = modelRef.current.uuid;
+    if (globalCandleCache.modelId === modelId && globalCandleCache.candles) {
+      console.log('[MobileCandleOrbital] Using cached candles from global cache');
+      setVcandleObjects(globalCandleCache.candles);
+      return;
+    }
+    
+    console.log('[MobileCandleOrbital] Extracting candles from model...');
     const extractedCandles = [];
     
     // Find all VCANDLE objects in the model
@@ -362,14 +382,8 @@ export default function MobileCandleOrbital({ candleData = [], onCandleClick, mo
         clonedCandle.traverse((descendant) => {
           descendant.visible = true;
           
-          // Also ensure materials are properly cloned to avoid affecting originals
-          if (descendant.material) {
-            if (Array.isArray(descendant.material)) {
-              descendant.material = descendant.material.map(mat => mat.clone());
-            } else {
-              descendant.material = descendant.material.clone();
-            }
-          }
+          // Don't clone materials here - we'll only clone when needed for labels
+          // This saves significant memory by reusing materials
         });
         
         extractedCandles.push({
@@ -390,9 +404,14 @@ export default function MobileCandleOrbital({ candleData = [], onCandleClick, mo
 
     
     // Debug: Log details about extracted candles
+    console.log(`[MobileCandleOrbital] Extracted ${extractedCandles.length} candles`);
     extractedCandles.forEach((candle, index) => {
-     
+     console.log(`  - ${candle.name}`);
     });
+    
+    // Cache the extracted candles globally
+    globalCandleCache.modelId = modelId;
+    globalCandleCache.candles = extractedCandles;
     
     setVcandleObjects(extractedCandles);
   }, [modelRef]);
@@ -446,16 +465,20 @@ export default function MobileCandleOrbital({ candleData = [], onCandleClick, mo
       // Deep clone the candle object
       const clonedCandle = vcandleObjects[vcandleIndex].object.clone(true);
       
-      // Make sure all materials are cloned to avoid affecting other instances
-      clonedCandle.traverse((child) => {
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material = child.material.map(mat => mat.clone());
-          } else {
-            child.material = child.material.clone();
+      // Only clone materials if we're going to modify them (for labels with userData)
+      // This saves significant memory by reusing materials when possible
+      if (userData && (userData.image || userData.username || userData.userName)) {
+        clonedCandle.traverse((child) => {
+          if (child.material && child.name && child.name.toLowerCase().includes('label')) {
+            // Only clone materials for label meshes that will be modified
+            if (Array.isArray(child.material)) {
+              child.material = child.material.map(mat => mat.clone());
+            } else {
+              child.material = child.material.clone();
+            }
           }
-        }
-      });
+        });
+      }
       
       return {
         userData: {
@@ -649,3 +672,16 @@ export default function MobileCandleOrbital({ candleData = [], onCandleClick, mo
     </group>
   );
 }
+
+// Wrap with React.memo to prevent unnecessary re-renders and re-extractions
+export default React.memo(MobileCandleOrbital, (prevProps, nextProps) => {
+  // Only re-render if these critical props change
+  return (
+    prevProps.candleData === nextProps.candleData &&
+    prevProps.modelRef === nextProps.modelRef &&
+    prevProps.isViewerOpen === nextProps.isViewerOpen &&
+    prevProps.sortBy === nextProps.sortBy &&
+    prevProps.onCandleClick === nextProps.onCandleClick &&
+    prevProps.onPaginationChange === nextProps.onPaginationChange
+  );
+});

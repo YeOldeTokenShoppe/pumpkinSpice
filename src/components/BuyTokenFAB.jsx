@@ -174,8 +174,8 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div style={{ 
-              width: "6rem", 
-              height: "6rem", 
+              width: "5rem", 
+              height: "5rem", 
               position: "relative",
               display: "flex",
               alignItems: "center",

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, Suspense, useCallback } from "react";
+import React, { useEffect, useState, useRef, Suspense, useCallback, memo } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import { useGLTF, useProgress, Text, Environment, useTexture, Plane, useAnimations } from "@react-three/drei";
 import * as THREE from "three";
@@ -17,7 +17,7 @@ import { db } from "@/utilities/firebaseClient";
 import { gsap } from "gsap";
 
 // Configure draco loader for useGLTF
-useGLTF.preload("/models/alligatorStroll5.glb");
+// Removed duplicate preload - it's already at the bottom of the file
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("/draco/");
 // Set up GLTFLoader to use Draco compression
@@ -60,6 +60,32 @@ function Model({
   const [modelUrl, setModelUrl] = useState("/models/alligatorStroll5.glb");
   const { progress } = useProgress();
   const gltf = useGLTF(modelUrl, true);
+  
+  // Optimize textures on mobile to reduce memory usage
+  useEffect(() => {
+    if (gltf && gltf.scene && isMobileView) {
+      gltf.scene.traverse((child) => {
+        if (child.isMesh && child.material) {
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          materials.forEach(mat => {
+            // Reduce texture size for mobile
+            if (mat.map) {
+              mat.map.minFilter = THREE.LinearMipmapLinearFilter;
+              mat.map.generateMipmaps = true;
+              mat.map.anisotropy = 1; // Reduce anisotropy on mobile
+            }
+            // Disable unnecessary maps on mobile
+            if (isMobileView) {
+              mat.aoMap = null; // Ambient occlusion
+              mat.bumpMap = null; // Bump mapping
+              mat.displacementMap = null; // Displacement
+              mat.envMap = null; // Environment mapping
+            }
+          });
+        }
+      });
+    }
+  }, [gltf, isMobileView]);
   const { camera, scene } = useThree();
   const results = useFirestoreResults();
 
@@ -90,8 +116,8 @@ function Model({
   const instancedMeshRef = useRef();
   const [candleInstances, setCandleInstances] = useState([]);
 
-  // Load candle model - using singleCandle instead of XCandle1 which contains Cathedral
-  const candle = useGLTF("/models/XCandle1.glb");
+  // Load candle model only on desktop (mobile uses VCANDLEs from main model)
+  const candle = !isMobileView ? useGLTF("/models/XCandle1.glb") : null;
 
   // Add these to your existing state variables
   const [showFloatingViewer, setShowFloatingViewer] = useState(false);
@@ -205,22 +231,12 @@ function Model({
     if (gltf.animations?.length > 0) {
 
       // Check for the new animation names
-      const walkSequenceAnim = gltf.animations.find(anim => 
-        anim.name === "WALK_SEQUENCE" || anim.name.includes("WALK"));
-      
-      const circleWalkAnim = gltf.animations.find(anim => 
-        anim.name === "CircleWalk" || anim.name.includes("Circle"));
+
       
       const experimentAnim = gltf.animations.find(anim => 
         anim.name === "Experiment.001" || anim.name.includes("Experiment"));
       
-      if (walkSequenceAnim) {
 
-      }
-      
-      if (circleWalkAnim) {
-
-      }
       
       if (experimentAnim) {
         console.log("Found Experiment animation:", experimentAnim.name);
@@ -230,7 +246,7 @@ function Model({
     if (actions) {
 
       // Updated animation names - added "Experiment" and other animations
-      const animationsToPlay = ["WALK_SEQUENCE", "CircleWalk", "Experiment", "Experiment.001", "Animation"];
+      const animationsToPlay = [ "Experiment", "Experiment.001", "Animation"];
       
       animationsToPlay.forEach(animName => {
         // Try direct access first
@@ -400,6 +416,10 @@ function Model({
       }
 
       // Create a deep clone of the original candle model
+      if (!candle) {
+        console.log("[placeCandleAtPoint] Candle model not loaded (mobile mode)");
+        return;
+      }
       const newCandle = candle.scene.clone();
 
       // IMPROVED FLOOR PLACEMENT LOGIC
@@ -820,29 +840,9 @@ function Model({
     }
   }, []);
 
-  // Add console logging to track progress
-  useEffect(() => {
-    if (progress === 100 && setIsModelLoaded) {
-      // Add a small delay to ensure everything is rendered
-      const timer = setTimeout(() => {
-        setIsModelLoaded(true);
-      }, 500);
 
-      return () => clearTimeout(timer);
-    }
-  }, [progress, setIsModelLoaded]);
 
-  // Ensure the model is displayed even if candles aren't fully loaded
-  useEffect(() => {
-    if (progress === 100 && setIsModelLoaded) {
-      // Force isModelLoaded to true after a reasonable timeout (e.g., 5 seconds)
-      const forceLoadTimer = setTimeout(() => {
-        setIsModelLoaded(true);
-      }, 5000); // Reduced from 10 seconds to 5 seconds
 
-      return () => clearTimeout(forceLoadTimer);
-    }
-  }, [progress, setIsModelLoaded]);
 
   // Update this useEffect to fix the model positioning
   useEffect(() => {
@@ -856,93 +856,6 @@ function Model({
   }, [gltf.scene, modelRef, setModelCenter]);
 
   // Modify the lighting setup to ensure proper values
-  useEffect(() => {
-    // Clean up any previous lights to prevent duplicates
-    scene.children.forEach(child => {
-      if (child.isHemisphereLight && child !== hemiLightRef.current) {
-        scene.remove(child);
-      }
-    });
-
-    // Convert hex string colors to numbers if they're provided as strings
-    let skyColorValue = skyColor;
-    let groundColorValue = groundColor;
-
-    if (parentSkyColor && typeof parentSkyColor === "string") {
-      skyColorValue = parseInt(parentSkyColor.replace("#", "0x"), 16);
-    }
-
-    if (parentGroundColor && typeof parentGroundColor === "string") {
-      groundColorValue = parseInt(parentGroundColor.replace("#", "0x"), 16);
-    }
-
-    // Create the hemisphere light with correct parameters
-    const lightIntensityValue =
-      parentLightIntensity !== undefined ? parentLightIntensity : lightIntensity;
-
-    // 🌈 Log HemisphereLight colors and intensity before creating the light
-    console.log("🌈 HemisphereLight colors:", {
-      skyColorValue,
-      groundColorValue,
-      lightIntensityValue,
-    });
-
-    const hemiLight = new THREE.HemisphereLight(
-      skyColorValue,
-      groundColorValue,
-      lightIntensityValue
-    );
-
-    // Use the explicit position values
-    hemiLight.position.set(lightPosition.x, lightPosition.y, lightPosition.z);
-
-    scene.add(hemiLight);
-    hemiLightRef.current = hemiLight;
-
-    return () => {
-      if (hemiLightRef.current) {
-        scene.remove(hemiLightRef.current);
-      }
-    };
-  }, [
-    scene,
-    lightPosition,
-    lightIntensity,
-    skyColor,
-    groundColor,
-    parentSkyColor,
-    parentGroundColor,
-    parentLightIntensity,
-  ]);
-
-  // Add this effect to reduce model complexity for better performance
-  useEffect(() => {
-    if (gltf && gltf.scene) {
-      // Apply some basic optimizations to the model
-      gltf.scene.traverse(object => {
-        // Skip instanced meshes
-        if (object.isInstancedMesh) return;
-
-        // Skip annotated objects
-        if (object.userData?.isAnnotation) return;
-
-        // Set frustum culling on all meshes
-        if (object.isMesh) {
-          object.frustumCulled = true;
-
-          // Simplify materials
-          if (object.material) {
-            // Disable unnecessary features
-            if (object.material.map) {
-              // Reduce texture quality for better performance
-              object.material.map.anisotropy = 1;
-              object.material.map.generateMipmaps = false;
-            }
-          }
-        }
-      });
-    }
-  }, [gltf]);
 
   useEffect(() => {
     if (is80sMode !== undefined) {
@@ -1226,6 +1139,9 @@ function Model({
   useEffect(() => {
     if (!gltf || !gltf.scene) return;
 
+    // Store loaded textures for cleanup
+    const loadedTextures = [];
+    
     // Create a texture loader
     const textureLoader = new THREE.TextureLoader();
 
@@ -1280,6 +1196,9 @@ function Model({
             // Success callback
             texture => {
               console.log('✅ 80s carpet texture loaded successfully');
+              
+              // Track texture for cleanup
+              loadedTextures.push(texture);
               
               // Apply texture settings
               const configuredTexture = applyTextureWithSettings(texture, textureConfig);
@@ -1349,6 +1268,15 @@ function Model({
     if (!floorFound) {
       console.warn('⚠️ Floor object not found in the model');
     }
+    
+    // Cleanup function to dispose of loaded textures
+    return () => {
+      loadedTextures.forEach(texture => {
+        if (texture && texture.dispose) {
+          texture.dispose();
+        }
+      });
+    };
   }, [gltf, is80sMode]); // Re-run when is80sMode changes
 
   // Create text texture for messages
@@ -1770,38 +1698,9 @@ function Model({
   }, [is80sMode]);
 
 
-  // Add flame flickering animation using useFrame
+  // Add flame flickering animation using useFrame - SIMPLIFIED
   useFrame((state, delta) => {
-    // Update video textures - more aggressive update
-    if (gltf && gltf.scene) {
-      gltf.scene.traverse(child => {
-        // Check for goldCircuit specifically
-        if ((child.name === "goldCircuit" || child.name.includes("goldCircuit")) && child.isMesh) {
-          // Ensure visibility
-          if (!child.visible) {
-            child.visible = true;
-            console.log('🔧 Force showing goldCircuit in render loop');
-          }
-          
-          // Update video texture if it exists
-          if (child.userData.videoTexture) {
-            child.userData.videoTexture.needsUpdate = true;
-            
-            // Only try to play if truly paused and has enough data
-            if (child.userData.videoElement && 
-                child.userData.videoElement.paused && 
-                child.userData.videoElement.readyState >= 2) {
-              child.userData.videoElement.play().catch(() => {
-                // Silently ignore - video might be in a transitional state
-              });
-            }
-          }
-        } else if (child.userData.videoTexture) {
-          // Update other video textures
-          child.userData.videoTexture.needsUpdate = true;
-        }
-      });
-    }
+    // Only animate candle flickering - no video textures or scene traversal!
     
     // Animate flickering materials for candle flames
     if (flickeringMaterials.size > 0) {
@@ -2164,9 +2063,24 @@ function Model({
   );
 }
 
-// Preload both models
-// useGLTF.preload("/catAltar.glb");
+// Wrap with React.memo to prevent unnecessary re-renders
+const MemoizedModel = memo(Model, (prevProps, nextProps) => {
+  // Only re-render if these critical props change
+  return (
+    prevProps.is80sMode === nextProps.is80sMode &&
+    prevProps.onCandleClick === nextProps.onCandleClick &&
+    prevProps.isMobileView === nextProps.isMobileView &&
+    prevProps.focusCam === nextProps.focusCam &&
+    prevProps.rocketModelVisible === nextProps.rocketModelVisible &&
+    prevProps.candleClickCount === nextProps.candleClickCount &&
+    prevProps.showDevIllusion === nextProps.showDevIllusion &&
+    prevProps.satanRotation === nextProps.satanRotation
+  );
+});
+
+// Preload models to prevent re-fetching
+useGLTF.preload("/models/alligatorStroll5.glb");
 useGLTF.preload("/models/XCandle1.glb");
 
-export default Model;
+export default MemoizedModel;
 

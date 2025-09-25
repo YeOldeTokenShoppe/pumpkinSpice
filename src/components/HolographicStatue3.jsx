@@ -6,7 +6,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 
 function HolographicStatue3({ 
   onLoad, 
-  position = [-0.3, 4.8, -0.8],  // Default position if not provided
+  position = [-0.3, 2.3, -0.2],  // Default position if not provided
   rotation = [0, Math.PI / 180, 0],  // Default rotation if not provided
   scale = [18, 18, 18],  // Default scale if not provided
   hover = false,  // Disable hover animation by default

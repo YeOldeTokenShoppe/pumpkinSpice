@@ -53,7 +53,7 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
   userData,
   onPaginationChange,
 }, ref) => {
-  console.log("ThreeDVotiveStand mounting with props:", { isMobileView, is80sMode });
+  console.log(`[${new Date().toISOString()}] ThreeDVotiveStand mounting with props:`, { isMobileView, is80sMode });
 
   
   
@@ -435,26 +435,51 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
           pointerEvents: 'auto',
           zIndex: 10
         }}
-        dpr={currentDpr}
+        // gl={{
+        //   antialias: false,
+        //   alpha: false,
+        //   powerPreference: 'high-performance',
+        //   preserveDrawingBuffer: false,
+        //   failIfMajorPerformanceCaveat: false,
+        // }}
+        dpr={[1, 1]} // Force low DPR for memory savings
         performance={{ min: 0.5 }}
         frameloop={frameloop}
+        flat // Disable tone mapping
+        linear // Disable color management
         gl={{ 
-          alpha: true,
+          alpha: false, // No transparency needed
           antialias: !isMobileView,
           preserveDrawingBuffer: false,
           powerPreference: isMobileView ? "low-power" : "high-performance",
           failIfMajorPerformanceCaveat: false,
           depth: true,
           stencil: false,
-          precision: isMobileView ? "mediump" : "highp"
+          precision: isMobileView ? "lowp" : "highp", // Even lower precision on mobile
+          logarithmicDepthBuffer: false, // Disable for performance
+          maxLights: isMobileView ? 4 : 8 // Limit lights on mobile
         }}
-        onCreated={({ gl, camera: createdCamera }) => {
+        onCreated={({ gl, camera: createdCamera, size }) => {
+          console.log('[Canvas] WebGL Context Created:');
+          console.log('  - Canvas size:', size.width, 'x', size.height);
+          // gl is the Three.js WebGLRenderer, get the actual context
+          const context = gl.getContext();
+          if (context) {
+            console.log('  - Drawing buffer:', context.drawingBufferWidth, 'x', context.drawingBufferHeight);
+            console.log('  - Max texture size:', context.getParameter(context.MAX_TEXTURE_SIZE));
+            console.log('  - Max viewport:', context.getParameter(context.MAX_VIEWPORT_DIMS));
+            const debugInfo = context.getExtension('WEBGL_debug_renderer_info');
+            if (debugInfo) {
+              console.log('  - GPU:', context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
+            }
+          }
           sceneCameraRef.current = createdCamera;
           // rendererRef.current = gl; // Assuming rendererRef is defined elsewhere
           
           // Configure the renderer
           gl.setClearColor(0x000000, 0);
-          gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          // Lower pixel ratio on mobile to save memory
+          gl.setPixelRatio(isMobileView ? 1 : Math.min(window.devicePixelRatio, 2));
         }}
       >
         {/* Add basic lighting to ensure scene is visible */}
@@ -487,9 +512,11 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
           }}
         />
 
-        {/* Model component needed for MobileCandleOrbital */}
+        {/* Model component - needed for MobileCandleOrbital */}
+        {/* On mobile, hide Model visually but keep it loaded for VCANDLE extraction */}
         <Suspense fallback={null}>
           <Model
+            visible={!isMobileView} // Hide on mobile to save rendering memory
             scale={Math.max(modelScale, MIN_MODEL_SCALE)} 
             rotation={[0, 0, 0]}
             modelRef={modelRef}
@@ -541,9 +568,7 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
         */}
 
 
-        {/* Rotating sky group - contains constellation and stars */}
-        <RotatingSky>
-          {/* ConstellationModel - disabled on mobile to save memory (whale.glb 1.4MB + marketFight.glb 351KB) */}
+        {/* <RotatingSky>
           {!isMobileView && (
             <Suspense fallback={null}>
               <ConstellationModel 
@@ -553,14 +578,14 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
             </Suspense>
           )}
 
-          {/* Render the stars last */}
+
           <Suspense fallback={null}>
             <StarField is80sMode={is80sMode} />
           </Suspense>
-        </RotatingSky>
+        </RotatingSky> */}
 
         <Suspense fallback={null}>
-          <PostProcessingEffects is80sMode={is80sMode} sunRef={null} />
+          {!isMobileView && <PostProcessingEffects is80sMode={is80sMode} sunRef={null} />}
         </Suspense>
 
         
