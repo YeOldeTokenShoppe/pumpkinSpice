@@ -46,7 +46,7 @@ const RotatingSky = ({ children }) => {
 
 
 
-const ThreeDVotiveStand = forwardRef(({
+const ThreeDVotiveStand = React.memo(forwardRef(({
   setIsLoading,
   isMobileView,
   is80sMode,
@@ -134,14 +134,16 @@ const ThreeDVotiveStand = forwardRef(({
   // Handle statue loaded
   useEffect(() => {
     setIsChildStatueLoaded(true);
-    // Notify parent that loading is complete
-    if (setIsLoading) {
+    // Notify parent that loading is complete - only once
+    if (setIsLoading && !hasNotifiedParentRef.current) {
+      hasNotifiedParentRef.current = true;
+      console.log('ThreeDVotiveStand: Calling setIsLoading(false) - should only happen once');
       // Add a small delay to ensure everything is rendered
       setTimeout(() => {
         setIsLoading(false);
       }, 500);
     }
-  }, [setIsLoading]);
+  }, []); // Remove setIsLoading from dependencies to prevent loops
 
 
 
@@ -485,32 +487,33 @@ const ThreeDVotiveStand = forwardRef(({
           }}
         />
 
+        {/* Model component needed for MobileCandleOrbital */}
         <Suspense fallback={null}>
           <Model
-          scale={Math.max(modelScale, MIN_MODEL_SCALE)} 
-          rotation={[0, 0, 0]}
-          modelRef={modelRef}
-          showFloatingViewer={showFloatingViewer}
-          setShowFloatingViewer={setShowFloatingViewer}
-          onCandleClick={handleCandleClick}
-          setModelCenter={setModelCenter}
+            scale={Math.max(modelScale, MIN_MODEL_SCALE)} 
+            rotation={[0, 0, 0]}
+            modelRef={modelRef}
+            showFloatingViewer={showFloatingViewer}
+            setShowFloatingViewer={setShowFloatingViewer}
+            onCandleClick={handleCandleClick}
+            setModelCenter={setModelCenter}
 
-          setIsModelLoaded={setIsModelLoaded}
-          onLightPositionChange={handleLightPositionChange}
-          lightIntensity={lightIntensity}
-          skyColor={skyColor}
-          groundColor={groundColor}
+            setIsModelLoaded={setIsModelLoaded}
+            onLightPositionChange={handleLightPositionChange}
+            lightIntensity={lightIntensity}
+            skyColor={skyColor}
+            groundColor={groundColor}
 
-          is80sMode={is80sMode}
+            is80sMode={is80sMode}
 
-  
-          onHoldStateChange={handleHoldStateChange}
-          isMobileView={isMobileView}
-     
     
-          onDesktopPaginationReady={setDesktopPaginationControls}
-          sortBy={sortBy}
-        />
+            onHoldStateChange={handleHoldStateChange}
+            isMobileView={isMobileView}
+       
+      
+            onDesktopPaginationReady={setDesktopPaginationControls}
+            sortBy={sortBy}
+          />
         </Suspense>
 
         {isMobileView && isModelLoaded && (
@@ -540,13 +543,15 @@ const ThreeDVotiveStand = forwardRef(({
 
         {/* Rotating sky group - contains constellation and stars */}
         <RotatingSky>
-          {/* Add the constellation model before the star field */}
-          <Suspense fallback={null}>
-            <ConstellationModel 
-              groupScale={[30, 30, 30]} // Original scale for 3DVotiveStand
-              groupPosition={[0, 0, -200]} // Original position for 3DVotiveStand
-            />
-          </Suspense>
+          {/* ConstellationModel - disabled on mobile to save memory (whale.glb 1.4MB + marketFight.glb 351KB) */}
+          {!isMobileView && (
+            <Suspense fallback={null}>
+              <ConstellationModel 
+                groupScale={[30, 30, 30]} // Original scale for 3DVotiveStand
+                groupPosition={[0, 0, -200]} // Original position for 3DVotiveStand
+              />
+            </Suspense>
+          )}
 
           {/* Render the stars last */}
           <Suspense fallback={null}>
@@ -989,6 +994,13 @@ const ThreeDVotiveStand = forwardRef(({
         </div>
       )}
       </div>
+  );
+}), (prevProps, nextProps) => {
+  // Custom comparison - only re-render if these specific props change
+  return (
+    prevProps.isMobileView === nextProps.isMobileView &&
+    prevProps.is80sMode === nextProps.is80sMode &&
+    prevProps.setIsLoading === nextProps.setIsLoading
   );
 });
 
