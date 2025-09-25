@@ -11,12 +11,14 @@ import FloatingCandleViewer from "@/components/CandleInteraction";
 const MobileCandleOrbital = lazy(() => import('@/components/MobileCandleOrbital'));
 const HolographicStatue3 = lazy(() => import('@/components/HolographicStatue3'));
 const StarField = lazy(() => import('@/components/StarField'));
+import ConstellationModel from "@/components/ConstellationModel";
 
 // Simplified alligator model component - match original approach
-const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false }) => {
+const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLoad }) => {
   const { scene } = useGLTF('/models/alligatorStroll5.glb');
   const outerGroupRef = useRef(); // For positioning
   const rotationGroupRef = useRef(); // For rotation
+  const hasLoadedRef = useRef(false);
   
   useEffect(() => {
     if (!scene || !rotationGroupRef.current) return;
@@ -48,23 +50,26 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false }) =>
       if (child instanceof THREE.Mesh) {
         child.castShadow = false;
         child.receiveShadow = false;
+        // Don't zero out material properties - let them use their defaults
         if (child.material) {
-          // Keep some environmental lighting for better visibility
-          child.material.envMapIntensity = 0.5;
-          if (child.material.metalness !== undefined) {
-            child.material.metalness = Math.min(child.material.metalness, 0.5);
-          }
-          if (child.material.roughness !== undefined) {
-            child.material.roughness = Math.max(child.material.roughness, 0.3);
-          }
-          // Ensure material responds to lights
           child.material.needsUpdate = true;
         }
       }
     });
     
     rotationGroupRef.current.add(clonedScene);
-  }, [scene, modelRef, hideCandles]);
+    
+    // Call onLoad only once when first loaded
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      if (onLoad) {
+        // Small delay to ensure the model is fully rendered
+        setTimeout(() => {
+          onLoad();
+        }, 100);
+      }
+    }
+  }, [scene, modelRef, hideCandles, onLoad]);
   
   // Simple rotation animation
   useFrame((state, delta) => {
@@ -87,8 +92,32 @@ AlligatorModel.displayName = 'AlligatorModel';
 useGLTF.preload('/models/alligatorStroll5.glb');
 
 // Main scene component
-function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer }) {
+function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer, onAssetsLoaded }) {
   const modelRef = useRef();
+  const [statueLoaded, setStatueLoaded] = useState(!enableStatue); // Consider loaded if not enabled
+  const [modelLoaded, setModelLoaded] = useState(false);
+  
+  // Track when all assets are loaded
+  useEffect(() => {
+    if (statueLoaded && modelLoaded) {
+      console.log('Gallery3Scene: All assets loaded');
+      if (onAssetsLoaded) {
+        onAssetsLoaded();
+      }
+    }
+  }, [statueLoaded, modelLoaded, onAssetsLoaded]);
+  
+  // Handle statue load
+  const handleStatueLoad = useCallback(() => {
+    console.log('Gallery3Scene: HolographicStatue3 loaded');
+    setStatueLoaded(true);
+  }, []);
+  
+  // Handle model load (called from AlligatorModel)
+  const handleModelLoad = useCallback(() => {
+    console.log('Gallery3Scene: AlligatorModel loaded');
+    setModelLoaded(true);
+  }, []);
   
   return (
     <>
@@ -97,38 +126,29 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
         <StarField is80sMode={is80sMode} />
       </Suspense>
       
-      {/* Lighting - Match original gallery brightness with Model's internal lighting compensation */}
-      <ambientLight intensity={3} />
+      {/* Lighting - Enhanced for better visibility */}
+      <ambientLight intensity={1.5} />
       
-      {/* Primary hemisphere light with stronger purple/magenta tones */}
+      {/* Hemisphere light for better ambient lighting */}
       <hemisphereLight
-        skyColor={is80sMode ? "#ff00ff" : "#ff00ff"}
-        groundColor={is80sMode ? "#00ffff" : "#7300ff"}
-        intensity={4}
-      />
-      
-      {/* Secondary hemisphere light to simulate Model's internal lighting */}
-      <hemisphereLight
-        skyColor="#7300ff"
-        groundColor="#ff0000"
-        intensity={1}
+        skyColor={is80sMode ? "#ff00ff" : "#7300ff"}
+        groundColor={is80sMode ? "#00ffff" : "#ff0000"}
+        intensity={1.5}
       />
       
       {/* Add some directional light for better visibility */}
       <directionalLight 
         position={[10, 10, 5]} 
-        intensity={4}
-        color="#ffffff"
+        intensity={1.5}
         castShadow={false}
       />
       
       {/* Point light for additional illumination */}
       <pointLight 
         position={[0, 10, 0]} 
-        intensity={3}
-        color="#ff88ff"
-        distance={100}
-        decay={1}
+        intensity={1.3}
+        distance={50}
+        decay={2}
       />
       
       {/* Model */}
@@ -136,14 +156,15 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
         <AlligatorModel 
           isMobileView={isMobileView} 
           modelRef={modelRef}
-          hideCandles={enableCandles} 
+          hideCandles={enableCandles}
+          onLoad={handleModelLoad}
         />
       </Suspense>
       
       {/* Holographic Statue - positioned like original */}
       {enableStatue && (
         <Suspense fallback={null}>
-          <HolographicStatue3 />
+          <HolographicStatue3 onLoad={handleStatueLoad} />
         </Suspense>
       )}
       
@@ -178,6 +199,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   const [mounted, setMounted] = useState(false);
   const [showFloatingViewer, setShowFloatingViewer] = useState(false);
   const [selectedCandleData, setSelectedCandleData] = useState(null);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
   
   // Handle candle click
   const handleCandleClick = useCallback((candleData) => {
@@ -192,29 +214,36 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
     setSelectedCandleData(null);
   }, []);
   
+  // Handle when all assets are loaded
+  const handleAssetsLoaded = useCallback(() => {
+    console.log('Gallery3Scene: All scene assets loaded');
+    setAssetsLoaded(true);
+    
+    // Notify parent that scene is ready
+    if (onSceneReady) {
+      // Small delay to ensure everything is rendered
+      setTimeout(() => {
+        onSceneReady(true);
+      }, 300);
+    }
+  }, [onSceneReady]);
+  
   useEffect(() => {
     // Delay mounting to avoid conflicts (from Simple3DScene)
     const timer = setTimeout(() => {
       setMounted(true);
       
-      // Add extra delay before notifying scene is ready
-      setTimeout(() => {
-        if (onSceneReady) {
-          onSceneReady(true);
-        }
-        
-        // Log memory
-        if (performance.memory) {
-          console.log('Gallery3Scene mounted - Memory:', {
-            used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB',
-            total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024) + 'MB'
-          });
-        }
-      }, 500); // Extra delay to ensure everything is rendered
+      // Log memory
+      // if (performance.memory) {
+      //   console.log('Gallery3Scene mounted - Memory:', {
+      //     used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB',
+      //     total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024) + 'MB'
+      //   });
+      // }
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, [onSceneReady]);
+  }, []);
   
   if (!enabled || !mounted) {
     return null; // Return nothing - InfinityLoader is already shown by the parent
@@ -237,10 +266,14 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
         failIfMajorPerformanceCaveat: false,
       }}
       dpr={[1, 1]} // Limit pixel ratio
-      flat // Disable tone mapping
-      linear // Disable color management
     >
       <color attach="background" args={['#000000']} />
+      <Suspense fallback={null}>
+            <ConstellationModel 
+              groupScale={[30, 30, 30]} // Original scale for 3DVotiveStand
+              groupPosition={[0, 0, -200]} // Original position for 3DVotiveStand
+            />
+          </Suspense>
       <Suspense fallback={null}>
         <SimpleScene 
           isMobileView={isMobileView} 
@@ -252,6 +285,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
           sortBy={sortBy}
           onCandleClick={handleCandleClick}
           showFloatingViewer={showFloatingViewer}
+          onAssetsLoaded={handleAssetsLoaded}
         />
       </Suspense>
       <Suspense fallback={null}>

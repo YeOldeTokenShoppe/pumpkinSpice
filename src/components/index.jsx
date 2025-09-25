@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo, Suspense, laz
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
-// import TickerDisplay from "@/components/TickerDisplay"; // Commented out - loads 10MB model
+import TickerDisplay from "@/components/TickerDisplay";
 
 import * as THREE from "three";
 
@@ -46,14 +46,14 @@ const RotatingSky = ({ children }) => {
 
 
 
-const ThreeDVotiveStand = React.memo(forwardRef(({
+const ThreeDVotiveStand = forwardRef(({
   setIsLoading,
   isMobileView,
   is80sMode,
   userData,
   onPaginationChange,
 }, ref) => {
-  console.log(`[${new Date().toISOString()}] ThreeDVotiveStand mounting with props:`, { isMobileView, is80sMode });
+  console.log("ThreeDVotiveStand mounting with props:", { isMobileView, is80sMode });
 
   
   
@@ -134,16 +134,14 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
   // Handle statue loaded
   useEffect(() => {
     setIsChildStatueLoaded(true);
-    // Notify parent that loading is complete - only once
-    if (setIsLoading && !hasNotifiedParentRef.current) {
-      hasNotifiedParentRef.current = true;
-      console.log('ThreeDVotiveStand: Calling setIsLoading(false) - should only happen once');
+    // Notify parent that loading is complete
+    if (setIsLoading) {
       // Add a small delay to ensure everything is rendered
       setTimeout(() => {
         setIsLoading(false);
       }, 500);
     }
-  }, []); // Remove setIsLoading from dependencies to prevent loops
+  }, [setIsLoading]);
 
 
 
@@ -435,51 +433,26 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
           pointerEvents: 'auto',
           zIndex: 10
         }}
-        // gl={{
-        //   antialias: false,
-        //   alpha: false,
-        //   powerPreference: 'high-performance',
-        //   preserveDrawingBuffer: false,
-        //   failIfMajorPerformanceCaveat: false,
-        // }}
-        dpr={[1, 1]} // Force low DPR for memory savings
+        dpr={currentDpr}
         performance={{ min: 0.5 }}
         frameloop={frameloop}
-        flat // Disable tone mapping
-        linear // Disable color management
         gl={{ 
-          alpha: false, // No transparency needed
+          alpha: true,
           antialias: !isMobileView,
           preserveDrawingBuffer: false,
           powerPreference: isMobileView ? "low-power" : "high-performance",
           failIfMajorPerformanceCaveat: false,
           depth: true,
           stencil: false,
-          precision: isMobileView ? "lowp" : "highp", // Even lower precision on mobile
-          logarithmicDepthBuffer: false, // Disable for performance
-          maxLights: isMobileView ? 4 : 8 // Limit lights on mobile
+          precision: isMobileView ? "mediump" : "highp"
         }}
-        onCreated={({ gl, camera: createdCamera, size }) => {
-          console.log('[Canvas] WebGL Context Created:');
-          console.log('  - Canvas size:', size.width, 'x', size.height);
-          // gl is the Three.js WebGLRenderer, get the actual context
-          const context = gl.getContext();
-          if (context) {
-            console.log('  - Drawing buffer:', context.drawingBufferWidth, 'x', context.drawingBufferHeight);
-            console.log('  - Max texture size:', context.getParameter(context.MAX_TEXTURE_SIZE));
-            console.log('  - Max viewport:', context.getParameter(context.MAX_VIEWPORT_DIMS));
-            const debugInfo = context.getExtension('WEBGL_debug_renderer_info');
-            if (debugInfo) {
-              console.log('  - GPU:', context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
-            }
-          }
+        onCreated={({ gl, camera: createdCamera }) => {
           sceneCameraRef.current = createdCamera;
           // rendererRef.current = gl; // Assuming rendererRef is defined elsewhere
           
           // Configure the renderer
           gl.setClearColor(0x000000, 0);
-          // Lower pixel ratio on mobile to save memory
-          gl.setPixelRatio(isMobileView ? 1 : Math.min(window.devicePixelRatio, 2));
+          gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         }}
       >
         {/* Add basic lighting to ensure scene is visible */}
@@ -493,16 +466,15 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
           autoRotate={false}
           autoRotateSpeed={-0.1}
           enableDamping={true}
-          enablePan={false}
-          // enableZoom={!isMobileView}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={isMobileView ? 3 : 3}
-          maxDistance={isMobileView ? 25 : 25}
+          enablePan={true}
+          enableZoom={!isMobileView}
+          enableRotate={true}  // Disabled to keep statue fixed
+          minDistance={isMobileView ? 0.001 : 1}
+          maxDistance={isMobileView ? 75 : 100}
           minPolarAngle={0}
           maxPolarAngle={Math.PI / 2}
           zoomToCursor={true}
-          zoomSpeed={0.5}
+          zoomSpeed={2.0}
           panSpeed={0.5}
           target={[0, 5, 0]}
           mouseButtons={{
@@ -512,35 +484,32 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
           }}
         />
 
-        {/* Model component - needed for MobileCandleOrbital */}
-        {/* On mobile, hide Model visually but keep it loaded for VCANDLE extraction */}
         <Suspense fallback={null}>
           <Model
-            visible={!isMobileView} // Hide on mobile to save rendering memory
-            scale={Math.max(modelScale, MIN_MODEL_SCALE)} 
-            rotation={[0, 0, 0]}
-            modelRef={modelRef}
-            showFloatingViewer={showFloatingViewer}
-            setShowFloatingViewer={setShowFloatingViewer}
-            onCandleClick={handleCandleClick}
-            setModelCenter={setModelCenter}
+          scale={Math.max(modelScale, MIN_MODEL_SCALE)} 
+          rotation={[0, 0, 0]}
+          modelRef={modelRef}
+          showFloatingViewer={showFloatingViewer}
+          setShowFloatingViewer={setShowFloatingViewer}
+          onCandleClick={handleCandleClick}
+          setModelCenter={setModelCenter}
 
-            setIsModelLoaded={setIsModelLoaded}
-            onLightPositionChange={handleLightPositionChange}
-            lightIntensity={lightIntensity}
-            skyColor={skyColor}
-            groundColor={groundColor}
+          setIsModelLoaded={setIsModelLoaded}
+          onLightPositionChange={handleLightPositionChange}
+          // lightIntensity={lightIntensity}
+          skyColor={skyColor}
+          groundColor={groundColor}
 
-            is80sMode={is80sMode}
+          is80sMode={is80sMode}
 
+  
+          onHoldStateChange={handleHoldStateChange}
+          isMobileView={isMobileView}
+     
     
-            onHoldStateChange={handleHoldStateChange}
-            isMobileView={isMobileView}
-       
-      
-            onDesktopPaginationReady={setDesktopPaginationControls}
-            sortBy={sortBy}
-          />
+          onDesktopPaginationReady={setDesktopPaginationControls}
+          sortBy={sortBy}
+        />
         </Suspense>
 
         {isMobileView && isModelLoaded && (
@@ -561,31 +530,29 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
             <HolographicStatue3/>
    
         </Suspense>
-        {/* TickerDisplay commented out - loads 10MB model
         <Suspense fallback={null}>
           {!isMobileView && <TickerDisplay modelRef={modelRef} />}
         </Suspense>
-        */}
 
 
-        {/* <RotatingSky>
-          {!isMobileView && (
-            <Suspense fallback={null}>
-              <ConstellationModel 
-                groupScale={[30, 30, 30]} // Original scale for 3DVotiveStand
-                groupPosition={[0, 0, -200]} // Original position for 3DVotiveStand
-              />
-            </Suspense>
-          )}
+        {/* Rotating sky group - contains constellation and stars */}
+        <RotatingSky>
+          {/* Add the constellation model before the star field */}
+          <Suspense fallback={null}>
+            <ConstellationModel 
+              groupScale={[30, 30, 30]} // Original scale for 3DVotiveStand
+              groupPosition={[0, 0, -200]} // Original position for 3DVotiveStand
+            />
+          </Suspense>
 
-
+          {/* Render the stars last */}
           <Suspense fallback={null}>
             <StarField is80sMode={is80sMode} />
           </Suspense>
-        </RotatingSky> */}
+        </RotatingSky>
 
         <Suspense fallback={null}>
-          {!isMobileView && <PostProcessingEffects is80sMode={is80sMode} sunRef={null} />}
+          <PostProcessingEffects is80sMode={is80sMode} sunRef={null} />
         </Suspense>
 
         
@@ -624,12 +591,7 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
         }}>
           {/* Sorting Toggle Button */}
           <button
-            onClick={() => setSortBy(
-              sortBy === 'burnedAmount' ? 'mostLiked' : 
-              sortBy === 'mostLiked' ? 'newest' : 
-              sortBy === 'newest' ? 'smallest' : 
-              'burnedAmount'
-            )}
+            onClick={() => setSortBy(sortBy === 'burnedAmount' ? 'newest' : sortBy === 'newest' ? 'smallest' : 'burnedAmount')}
             style={{
               background: 'rgba(0, 0, 0, 0.7)',
               border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -650,7 +612,7 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
               e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
             }}
           >
-            Sort by: {sortBy === 'burnedAmount' ? 'Top Burner' : sortBy === 'mostLiked' ? 'Most Liked' : sortBy === 'newest' ? 'Newest' : 'Smallest Burn'}
+            Sort by: {sortBy === 'burnedAmount' ? 'Top Burned' : sortBy === 'newest' ? 'Newest' : 'Smallest'}
           </button>
           
           <div style={{
@@ -738,7 +700,7 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
                 pointerEvents: 'none',
               }}
             >
-              {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'mostLiked' ? 'THE POPULAR80' : sortBy === 'newest' ? 'THE COMMUN80' : 'THE NOBIL80'}
+              {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'newest' ? 'THE COMMUN80' : 'THE NOBIL80'}
             </div>
             
             {/* Right Arrow */}
@@ -846,12 +808,7 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
         }}>
           {/* Sorting Toggle Button for Desktop */}
           <button
-            onClick={() => setSortBy(
-              sortBy === 'burnedAmount' ? 'mostLiked' : 
-              sortBy === 'mostLiked' ? 'newest' : 
-              sortBy === 'newest' ? 'smallest' : 
-              'burnedAmount'
-            )}
+            onClick={() => setSortBy(sortBy === 'burnedAmount' ? 'newest' : sortBy === 'newest' ? 'smallest' : 'burnedAmount')}
             style={{
               background: 'rgba(0, 0, 0, 0.7)',
               border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -873,7 +830,7 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
               e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
             }}
           >
-            Sort by: {sortBy === 'burnedAmount' ? 'Top Burned' : sortBy === 'mostLiked' ? 'Most Loved' : sortBy === 'newest' ? 'Newest' : 'Smallest'}
+            Sort by: {sortBy === 'burnedAmount' ? 'Top Burned' : sortBy === 'newest' ? 'Newest' : 'Smallest'}
           </button>
    
           <div 
@@ -909,7 +866,7 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
               pointerEvents: 'none',
             }}
           >
-              {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'mostLiked' ? 'THE BELOV80' : sortBy === 'newest' ? 'THE LAI80' : 'THE NOBIL80'}
+              {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'newest' ? 'THE LAI80' : 'THE NOBIL80'}
             {is80sMode && (
               <div style={{
                 content: "'THE ILLUMIN80'",
@@ -925,7 +882,7 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
                 opacity: 0.7,
                 pointerEvents: 'none',
               }}>
-                {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'mostLiked' ? 'THE BELOV80' : sortBy === 'newest' ? 'THE LAI80' : 'THE NOBIL80'}
+                {sortBy === 'burnedAmount' ? 'THE ILLUMIN80' : sortBy === 'newest' ? 'THE LAI80' : 'THE NOBIL80'}
               </div>
             )}
           </div>
@@ -1019,13 +976,6 @@ const ThreeDVotiveStand = React.memo(forwardRef(({
         </div>
       )}
       </div>
-  );
-}), (prevProps, nextProps) => {
-  // Custom comparison - only re-render if these specific props change
-  return (
-    prevProps.isMobileView === nextProps.isMobileView &&
-    prevProps.is80sMode === nextProps.is80sMode &&
-    prevProps.setIsLoading === nextProps.setIsLoading
   );
 });
 

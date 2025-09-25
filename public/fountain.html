@@ -776,7 +776,8 @@
 			}
 			
 			// Watch for coin count changes
-			setInterval(updateCompactStats, 100);
+			// Reduce database polling frequency to save resources
+			setInterval(updateCompactStats, 2000); // Poll every 2 seconds instead of 100ms
 		</script>
 
 		<!-- Glowing text effect - REMOVED to avoid duplication with parent page -->
@@ -978,9 +979,14 @@
 			let isResetting = false;
 			let staticCoinInstancedMesh = null;
 			let staticCoinData = [];
-			const MAX_STATIC_COINS = 300; // Maximum coins to render for performance
-			const COINS_TO_LOAD = 200; // Load more recent coins from Firestore
-			const RESET_THRESHOLD = 200; // Reset fountain when this many coins are reached
+			
+			// Mobile detection for other optimizations
+			const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+			
+			// Reduced performance settings for all devices to prevent crashes
+			const MAX_STATIC_COINS = 100; // Reduced from 300
+			const COINS_TO_LOAD = 75; // Reduced from 200
+			const RESET_THRESHOLD = 100; // Reduced from 200, same for all devices
 			
 			function updateCoinCounter() {
 				const coinCountElement = document.getElementById('coinCount');
@@ -1310,8 +1316,8 @@
 			
 			// --- End Firebase Functions ---
 
-			// Texture width for simulation
-			const WIDTH = 512;
+			// Texture width for simulation - reduced for better performance
+			const WIDTH = isMobileDevice ? 256 : 384; // Reduced from 512
 
 			// Water size in system units
 			const BOUNDS = 2.65;
@@ -1360,7 +1366,7 @@
 			// --- NEW: Splash Particle System Variables ---
 			let splashParticleSystem;
 			let splashParticles = [];
-			const maxSplashParticles = 500;
+			const maxSplashParticles = isMobileDevice ? 100 : 250; // Reduced from 500
 			const splashParticlePool = [];
 			// --- END NEW ---
 
@@ -1743,6 +1749,48 @@
 
 			init();
 
+			// Cleanup function for memory management
+			function cleanup() {
+				console.log('Cleaning up fountain resources...');
+				
+				// Stop animation
+				if (renderer) {
+					renderer.setAnimationLoop(null);
+				}
+				
+				// Dispose of GPU compute resources
+				if (gpuCompute) {
+					gpuCompute.dispose();
+				}
+				
+				// Dispose of geometries and materials
+				if (scene) {
+					scene.traverse((child) => {
+						if (child.geometry) {
+							child.geometry.dispose();
+						}
+						if (child.material) {
+							if (Array.isArray(child.material)) {
+								child.material.forEach(material => material.dispose());
+							} else {
+								child.material.dispose();
+							}
+						}
+					});
+				}
+				
+				// Dispose of renderer
+				if (renderer) {
+					renderer.dispose();
+				}
+				
+				// Clear intervals
+				clearInterval(updateCompactStats);
+			}
+			
+			// Add cleanup on page unload
+			window.addEventListener('beforeunload', cleanup);
+			window.addEventListener('pagehide', cleanup);
 
 			// Function to update button text
 			function updateButtonText(buttonMesh, newText, bgColorOverride = null, textColorOverride = null) {
@@ -2041,24 +2089,34 @@
 				sun.position.set( - 1, 2.6, -1.4 );
 				scene.add( sun );
 
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer = new THREE.WebGLRenderer( { 
+					antialias: !isMobileDevice, // Disable antialiasing on mobile
+					powerPreference: "high-performance",
+					stencil: false,
+					depth: true
+				} );
+				// Limit pixel ratio on mobile to reduce memory usage
+				const pixelRatio = isMobileDevice ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio;
+				renderer.setPixelRatio( pixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.toneMapping = THREE.ACESFilmicToneMapping;
 				renderer.toneMappingExposure = 0.5;
 				container.appendChild( renderer.domElement );
 				
-				// Setup bloom post-processing
+				// Setup bloom post-processing (reduced on mobile)
 				composer = new EffectComposer( renderer );
 				composer.addPass( new RenderPass( scene, camera ) );
 				
-				bloomPass = new UnrealBloomPass(
-					new THREE.Vector2( window.innerWidth, window.innerHeight ),
-					0.5,  // strength
-					0.4,  // radius  
-					0.85  // threshold
-				);
-				composer.addPass( bloomPass );
+				if (!isMobileDevice) {
+					// Only add bloom on desktop for performance
+					bloomPass = new UnrealBloomPass(
+						new THREE.Vector2( window.innerWidth, window.innerHeight ),
+						0.5,  // strength
+						0.4,  // radius  
+						0.85  // threshold
+					);
+					composer.addPass( bloomPass );
+				}
 
 				controls = new OrbitControls( camera, container );
 				controls.zoomToCursor = true;
@@ -2075,6 +2133,18 @@
 
 				window.addEventListener( 'resize', onWindowResize );
                 window.addEventListener( 'keydown', onKeyDown );
+                
+                // Handle WebGL context loss (important for mobile stability)
+                renderer.domElement.addEventListener('webglcontextlost', function(event) {
+                    event.preventDefault();
+                    console.log('WebGL context lost - attempting recovery');
+                    cancelAnimationFrame(animationId);
+                }, false);
+                
+                renderer.domElement.addEventListener('webglcontextrestored', function() {
+                    console.log('WebGL context restored');
+                    init(); // Reinitialize the scene
+                }, false);
                 
                 // Setup charity modal listeners
                 setupCharityModalListeners();
@@ -2969,7 +3039,9 @@
 
 					renderer.shadowMap.type = THREE.VSMShadowMap;
 					const shadow = sun.shadow;
-					shadow.mapSize.width = shadow.mapSize.height = 2048;
+					// Reduce shadow map size on mobile
+					const shadowSize = isMobileDevice ? 512 : 1024; // Reduced from 2048
+					shadow.mapSize.width = shadow.mapSize.height = shadowSize;
 					shadow.radius = 2;
 					shadow.bias = - 0.0005;
 					const shadowCam = shadow.camera, s = 5;
@@ -3228,6 +3300,8 @@
 			}
 
 			let lastTime = 0;
+			let animationId = null; // Store animation ID for cleanup
+			
 			function animate(currentTime) {
 				const deltaTime = Math.min((currentTime - lastTime) * 0.001, 0.1); // Convert to seconds, cap at 0.1s
 				lastTime = currentTime;

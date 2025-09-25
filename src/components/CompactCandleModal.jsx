@@ -932,7 +932,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState('/images/face2.png'); // Virgin Mary default
   const [templatePosition, setTemplatePosition] = useState({ x: 67, y: 40 });
   const [templateScale, setTemplateScale] = useState(25);
   const [templateRotation, setTemplateRotation] = useState(0);
@@ -997,7 +997,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setImageFile(null);
       // Set Clerk profile image as preview if available
       setImagePreview(clerkImageUrl);
-      setSelectedTemplate(null);
+      setSelectedTemplate('/images/face2.png'); // Reset to Virgin Mary default
       setTemplatePosition({ x: 67, y: 40 });
       setTemplateScale(25);
       setTemplateRotation(0);
@@ -2630,23 +2630,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   }}>
                     <button
                       type="button"
-                      onClick={() => setSelectedTemplate(null)}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: selectedTemplate === null ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                        border: selectedTemplate === null ? '2px solid #ff6600' : '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '6px',
-                        color: selectedTemplate === null ? '#ff6600' : 'rgba(255, 255, 255, 0.8)',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: selectedTemplate === null ? 'bold' : 'normal',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      No Template
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setSelectedTemplate('/images/face2.png')}
                       style={{
                         padding: '8px 16px',
@@ -2663,7 +2646,24 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         gap: '5px'
                       }}
                     >
-                      ✨ Virgin Mary
+                      ✨ Virgin Mary (Default)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplate(null)}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: selectedTemplate === null ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                        border: selectedTemplate === null ? '2px solid #ff6600' : '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: selectedTemplate === null ? '#ff6600' : 'rgba(255, 255, 255, 0.8)',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: selectedTemplate === null ? 'bold' : 'normal',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      No Template
                     </button>
                   </div>
                   {selectedTemplate && (

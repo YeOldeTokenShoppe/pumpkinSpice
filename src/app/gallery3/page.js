@@ -34,6 +34,7 @@ export default function Gallery3Page() {
   const [enableStatue, setEnableStatue] = useState(true); // Enable statue by default
   const [paginationState, setPaginationState] = useState(null); // Store pagination control
   const [sortBy, setSortBy] = useState('burnedAmount'); // 'burnedAmount', 'mostLiked', 'newest', or 'smallest'
+  const [minimumLoadTime, setMinimumLoadTime] = useState(false); // Track minimum load time
   
   // Get candle data from Firestore
   const results = useFirestoreResults(sortBy);
@@ -110,16 +111,33 @@ export default function Gallery3Page() {
     setPaginationState(paginationData);
   }, []);
   
+  // Set minimum load time on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinimumLoadTime(true);
+      console.log('Gallery3: Minimum load time reached');
+    }, 1500); // Minimum 1.5 seconds of loading
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
   // Manage loading state
   useEffect(() => {
-    if (fontLoaded && (!enable3D || sceneReady)) {
+    // Only hide loader when all conditions are met:
+    // - Minimum load time has passed
+    // - Fonts are loaded
+    // - Either 3D is not enabled yet, OR 3D is enabled AND scene is ready
+    if (minimumLoadTime && fontLoaded && (!enable3D || (enable3D && sceneReady))) {
       // Add delay to ensure scene is fully rendered
       setTimeout(() => {
         console.log('Gallery3: All assets loaded, hiding loader');
         setIsLoading(false);
-      }, 300); // Small delay for smooth transition
+      }, 500); // Increased delay for smooth transition
+    } else {
+      // Keep loading state true if conditions aren't met
+      setIsLoading(true);
     }
-  }, [fontLoaded, enable3D, sceneReady]);
+  }, [minimumLoadTime, fontLoaded, enable3D, sceneReady]);
   
   // Auto-enable 3D after fonts load
   useEffect(() => {
@@ -127,7 +145,7 @@ export default function Gallery3Page() {
       console.log('Gallery3: Fonts loaded, enabling 3D scene');
       const timer = setTimeout(() => {
         setEnable3D(true);
-      }, 500);
+      }, 200); // Reduced delay since we have better loading tracking
       return () => clearTimeout(timer);
     }
   }, [fontLoaded, enable3D]);
@@ -184,7 +202,10 @@ export default function Gallery3Page() {
           zIndex: 99999,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          opacity: isLoading ? 1 : 0,
+          transition: 'opacity 0.5s ease-out',
+          pointerEvents: isLoading ? 'auto' : 'none'
         }}>
           <InfinityLoader />
         </div>
