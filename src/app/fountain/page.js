@@ -237,7 +237,7 @@ export default function FountainPage() {
           {isSignedIn ? (
             <Illumin80ClerkButton afterSignOutUrl="/" />
           ) : (
-            <SignInButton mode="modal">
+            <SignInButton mode="modal" forceRedirectUrl="/fountain">
               <button
                 style={{
                   width: isMobileDevice ? "40px" : "60px",

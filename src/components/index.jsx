@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo, Suspense, laz
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
-import TickerDisplay from "@/components/TickerDisplay";
+// import TickerDisplay from "@/components/TickerDisplay"; // Commented out - loads 10MB model
 
 import * as THREE from "three";
 
@@ -531,9 +531,11 @@ const ThreeDVotiveStand = forwardRef(({
             <HolographicStatue3/>
    
         </Suspense>
+        {/* TickerDisplay commented out - loads 10MB model
         <Suspense fallback={null}>
           {!isMobileView && <TickerDisplay modelRef={modelRef} />}
         </Suspense>
+        */}
 
 
         {/* Rotating sky group - contains constellation and stars */}
@@ -992,5 +994,4 @@ const ThreeDVotiveStand = forwardRef(({
 
 // Ensure the default export is the one you intend to use (likely the memoized one)
 export default ThreeDVotiveStand;
-
 

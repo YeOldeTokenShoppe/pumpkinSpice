@@ -102,7 +102,7 @@ export default function ModelViewerPage() {
           {isSignedIn ? (
             <Illumin80ClerkButton afterSignOutUrl="/" />
           ) : (
-            <SignInButton mode="modal">
+            <SignInButton mode="modal" forceRedirectUrl="/model-viewer">
               <button
                 style={{
                   width: isMobileDevice ? "40px" : "60px",

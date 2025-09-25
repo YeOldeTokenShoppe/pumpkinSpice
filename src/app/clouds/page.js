@@ -464,7 +464,7 @@ const EtherealCloudsPage = () => {
           {isSignedIn ? (
             <Illumin80ClerkButton afterSignOutUrl="/" />
           ) : (
-            <SignInButton mode="modal">
+            <SignInButton mode="modal" forceRedirectUrl="/clouds">
               <button
                 style={{
                   width: "40px",

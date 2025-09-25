@@ -21,10 +21,15 @@ const CandleInteractionHint = ({ isMobileView }) => {
         }, 100);
       }, 2000);
 
-      // Don't auto-hide - will hide on user interaction with a candle
+      // Auto-hide after 4 seconds
+      const hideTimer = setTimeout(() => {
+        setIsVisible(false);
+        localStorage.setItem('hasSeenCandleHint', 'true');
+      }, 6000); // 2000ms delay + 4000ms visible = 6000ms total
 
       return () => {
         clearTimeout(mountTimer);
+        clearTimeout(hideTimer);
       };
     }
   }, []);
@@ -56,9 +61,11 @@ const CandleInteractionHint = ({ isMobileView }) => {
     <div
       style={{
         position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        transform: isVisible ? 'translateX(0)' : 'translateX(calc(100% + 40px))',
+        bottom: isMobileView ? '10rem' : '12rem',
+        right: isMobileView ? '50%' : '4rem',
+        transform: isVisible 
+          ? (isMobileView ? 'translateX(50%)' : 'translateX(0)') 
+          : (isMobileView ? 'translateX(50%) translateY(calc(100% + 40px))' : 'translateY(calc(100% + 40px))'),
         zIndex: 10001,
         pointerEvents: isVisible ? 'auto' : 'none',
         opacity: isVisible ? 1 : 0,
@@ -71,10 +78,10 @@ const CandleInteractionHint = ({ isMobileView }) => {
           background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(17, 17, 17, 0.95) 100%)',
           border: '1.5px solid #00ff41',
           borderRadius: '8px',
-          padding: isMobileView ? '16px' : '20px',
+          padding: isMobileView ? '12px' : '20px',
           backdropFilter: 'blur(10px)',
           boxShadow: '0 0 10px rgba(0, 255, 65, 0.3), 0 0 20px rgba(0, 255, 65, 0.15), inset 0 0 20px rgba(0, 255, 65, 0.05)',
-          maxWidth: isMobileView ? '260px' : '320px',
+          maxWidth: isMobileView ? '280px' : '320px',
           position: 'relative',
         }}
       >
@@ -120,8 +127,8 @@ const CandleInteractionHint = ({ isMobileView }) => {
           <div
             style={{
               position: 'relative',
-              width: '60px',
-              height: '60px',
+              width: isMobileView ? '40px' : '60px',
+              height: isMobileView ? '40px' : '60px',
             }}
           >
             {/* Candle icon */}
@@ -131,7 +138,7 @@ const CandleInteractionHint = ({ isMobileView }) => {
                 top: '50%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                fontSize: '32px',
+                fontSize: isMobileView ? '24px' : '32px',
                 filter: 'drop-shadow(0 0 12px #00ff41) drop-shadow(0 0 6px #67e8f9)',
                 animation: 'glowPulse 2s ease-in-out infinite',
               }}
@@ -146,7 +153,7 @@ const CandleInteractionHint = ({ isMobileView }) => {
                 top: '45%',
                 left: '60%',
                 animation: 'tapAnimation 2s ease-in-out infinite',
-                fontSize: '24px',
+                fontSize: isMobileView ? '18px' : '24px',
                 filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
               }}
             >
@@ -160,8 +167,8 @@ const CandleInteractionHint = ({ isMobileView }) => {
                 top: '50%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: '50px',
-                height: '50px',
+                width: isMobileView ? '35px' : '50px',
+                height: isMobileView ? '35px' : '50px',
                 borderRadius: '50%',
                 border: '2px solid #00ff41',
                 boxShadow: '0 0 10px rgba(0, 255, 65, 0.5)',
@@ -176,7 +183,7 @@ const CandleInteractionHint = ({ isMobileView }) => {
           style={{
             textAlign: 'center',
             color: '#00ff41',
-            fontSize: isMobileView ? '15px' : '16px',
+            fontSize: isMobileView ? '14px' : '16px',
             fontWeight: '600',
             marginBottom: '6px',
             textShadow: '0 0 8px #00ff41, 0 0 4px #00ff41',
@@ -191,7 +198,7 @@ const CandleInteractionHint = ({ isMobileView }) => {
           style={{
             textAlign: 'center',
             color: '#67e8f9',
-            fontSize: isMobileView ? '13px' : '14px',
+            fontSize: isMobileView ? '12px' : '14px',
             lineHeight: '1.3',
             textShadow: '0 0 6px rgba(103, 232, 249, 0.6)',
             fontFamily: 'monospace',

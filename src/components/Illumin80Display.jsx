@@ -280,14 +280,21 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [currentPath, setCurrentPath] = useState("/");
   
-  // Check for mobile device
+  // Check for mobile device and current path
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
+    
+    // Get current path
+    if (typeof window !== 'undefined') {
+      setCurrentPath(window.location.pathname);
+    }
+    
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
@@ -330,7 +337,7 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
   
   if (!isSignedIn) {
     return (
-      <SignInButton mode="modal">
+      <SignInButton mode="modal" forceRedirectUrl={currentPath}>
         <button
           style={{
             width: isMobile ? "40px" : "60px",

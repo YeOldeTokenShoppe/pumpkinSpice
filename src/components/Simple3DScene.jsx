@@ -34,7 +34,7 @@ const OurLadyModel = memo(({ isMobile, scrollY }) => {
   // Animate based on scroll
   useFrame(() => {
     if (groupRef.current) {
-      const baseY = isMobile ? -11 : -15;
+      const baseY = isMobile ? -15 : -15;
       groupRef.current.position.y = baseY + scrollY * 0.015;
     }
   });

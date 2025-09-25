@@ -384,7 +384,7 @@ export default function GalleryPage() {
                 {isSignedIn ? (
                   <Illumin80ClerkButton afterSignOutUrl="/" />
                 ) : (
-                  <SignInButton mode="modal" >
+                  <SignInButton mode="modal" forceRedirectUrl="/gallery" >
                     <button
                       style={{
                         width: isMobileDevice ? "40px" : "60px",
@@ -642,7 +642,7 @@ export default function GalleryPage() {
       
       {/* Hidden Sign In Button for programmatic trigger */}
       {!isSignedIn && (
-        <SignInButton mode="modal" >
+        <SignInButton mode="modal" forceRedirectUrl="/gallery" >
           <button
             id="hidden-sign-in-btn"
             style={{ display: 'none' }}
