@@ -5,11 +5,11 @@ import React, { useRef, Suspense, useEffect, useState, lazy } from 'react';
 // Lazy load the 3D scene
 const Simple3DScene = lazy(() => import('@/components/Simple3DScene'));
 import { Canvas, useThree, useFrame, extend as fiberExtend } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useAnimations, Cloud, Clouds, MeshPortalMaterial, CameraControls, Text, Sky, RoundedBox, Html } from '@react-three/drei';
+import { OrbitControls, useGLTF, useAnimations, Cloud, Clouds, MeshPortalMaterial, CameraControls, Text, Sky, RoundedBox, Html, useCursor, Gltf, Preload } from '@react-three/drei';
 import * as THREE from 'three';
 import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
-import { geometry } from 'maath';
+import { geometry, easing } from 'maath';
 // import DarkClouds from '@/components/Clouds'; // Disabled for memory
 import PostProcessingEffects from '@/components/PostProcessingEffects';
 // import CSS3DClouds from '@/components/CSS3DClouds'; // Disabled for memory
@@ -28,6 +28,7 @@ fiberExtend(geometry);
 const GOLDENRATIO = 1.61803398875;
 const zPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 const yPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1);
+
 
 const GradientSkyMaterial = shaderMaterial(
   {
@@ -511,6 +512,259 @@ function PortalFrame({ id, name, author, bg, width = 1.1, height = GOLDENRATIO *
   );
 }
 
+// New enhanced portal frame component with interactive features
+function EnhancedPortalFrame({ id, name, author, bg, width = 1.8, height = GOLDENRATIO * 1.8, children, isFlipped, onFlip, onEnter, activePortal, ...props }) {
+  const portal = useRef();
+  const groupRef = useRef();
+  const [hovered, hover] = useState(false);
+  useCursor(hovered);
+  
+  useFrame((state, dt) => {
+    if (portal.current) {
+      // Blend to 1 when THIS portal is active (for immersion)
+      easing.damp(portal.current, 'blend', activePortal === id ? 1 : 0, 0.2, dt);
+    }
+    // Animate flip
+    if (groupRef.current) {
+      const targetRotation = isFlipped ? Math.PI : 0;
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(
+        groupRef.current.rotation.y,
+        targetRotation,
+        0.1
+      );
+    }
+  });
+  
+  return (
+    <group {...props}>
+      <group ref={groupRef}>
+      <Text 
+        font="/fonts/UnifrakturCook-Bold.ttf"
+        fontSize={0.25} 
+        anchorY="top" 
+        anchorX="center" 
+        lineHeight={0.8} 
+        position={[0, height * 0.42, 0.01]} 
+        material-toneMapped={false}
+        color="#d4af37"
+        maxWidth={width * 0.8}
+      >
+        {name}
+      </Text>
+      
+      {/* Interaction hint - only show on front side */}
+      {!isFlipped && (
+        <PulsingText
+          font="/fonts/UnifrakturMaguntia-Regular.ttf"
+          color="#ffffff"
+          fontSize={0.1}
+          anchorX="right"
+          anchorY="top"
+          position={[width * 0.45, height * 0.43, 0.02]}
+          fillOpacity={0.9}
+          outlineWidth={0.002}
+          outlineColor="#000000"
+        >
+          Click to interact
+        </PulsingText>
+      )}
+      <Text 
+        font="/fonts/UnifrakturMaguntia-Regular.ttf"
+        fontSize={0.15} 
+        anchorX="right" 
+        position={[width * 0.42, -height * 0.42, 0.01]} 
+        material-toneMapped={false}
+        color="#d4af37"
+      >
+        /{id}
+      </Text>
+      <Text 
+        font="/fonts/UnifrakturMaguntia-Regular.ttf" 
+        fontSize={0.1} 
+        anchorX="center" 
+        position={[0, -height * 0.45, 0.01]} 
+        material-toneMapped={false}
+        color="#d4af37"
+        maxWidth={width * 0.8}
+      >
+        {author}
+      </Text>
+      <mesh 
+        name={id} 
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('Portal clicked:', id);
+          if (onFlip) onFlip(id);
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          console.log('Portal double-clicked:', id);
+          if (onEnter) onEnter(id);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          hover(true);
+        }} 
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          hover(false);
+        }}
+      >
+        <roundedPlaneGeometry args={[width, height, 0.1]} />
+        <MeshPortalMaterial ref={portal} events={activePortal === id} side={THREE.DoubleSide}>
+          <color attach="background" args={[bg]} />
+          {children}
+        </MeshPortalMaterial>
+      </mesh>
+      
+      {/* Back side of the card */}
+      <mesh position={[0, 0, -0.002]} rotation={[0, Math.PI, 0]}>
+        <roundedPlaneGeometry args={[width, height, 0.1]} />
+        <meshBasicMaterial color="#2a1f0a" side={THREE.FrontSide} />
+      </mesh>
+      
+      {/* Back side text */}
+      <Text
+        font="/fonts/UnifrakturCook-Bold.ttf"
+        fontSize={0.2}
+        color="#d4af37"
+        anchorX="center"
+        anchorY="middle"
+        position={[0, height * 0.3, -0.01]}
+        rotation={[0, Math.PI, 0]}
+        maxWidth={width * 0.8}
+      >
+        Sacred Wisdom
+      </Text>
+      
+      <Text
+        font="/fonts/UnifrakturMaguntia-Regular.ttf"
+        fontSize={0.12}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        position={[0, 0, -0.01]}
+        rotation={[0, Math.PI, 0]}
+        maxWidth={width * 0.8}
+        textAlign="center"
+      >
+        {`Double-click to enter\nthe sacred realm\nof ${name}`}
+      </Text>
+      
+      <Text
+        font="/fonts/UnifrakturMaguntia-Regular.ttf"
+        fontSize={0.08}
+        color="#d4af37"
+        anchorX="center"
+        anchorY="middle"
+        position={[0, -height * 0.35, -0.01]}
+        rotation={[0, Math.PI, 0]}
+      >
+        Click to flip back
+      </Text>
+      
+      {/* Gold border mesh behind the portal */}
+      <mesh name={`${id}-border`} position={[0, 0, -0.003]}>
+        <roundedPlaneGeometry args={[width + 0.1, height + 0.1, 0.12]} />
+        <meshBasicMaterial color="#d4af37" />
+      </mesh>
+      </group>
+    </group>
+  );
+}
+
+// Mouse-based rotation for portal
+function PortalMouseRotation({ children, isActive }) {
+  const groupRef = useRef();
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  
+  useFrame(() => {
+    if (groupRef.current && !isActive) {
+      // Smooth rotation based on mouse position
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(
+        groupRef.current.rotation.y,
+        mousePos.x * 0.3, // Horizontal mouse -> Y rotation
+        0.1
+      );
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(
+        groupRef.current.rotation.x,
+        -mousePos.y * 0.2, // Vertical mouse -> X rotation
+        0.1
+      );
+    } else if (groupRef.current && isActive) {
+      // Reset rotation when portal is active
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, 0, 0.1);
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, 0, 0.1);
+    }
+  });
+  
+  const handlePointerMove = (e) => {
+    if (!isActive) {
+      // Use Three.js pointer coordinates which are already normalized
+      const x = e.point ? e.point.x * 0.5 : 0;
+      const y = e.point ? e.point.y * 0.5 : 0;
+      setMousePos({ x, y });
+    }
+  };
+  
+  const handlePointerLeave = () => {
+    setMousePos({ x: 0, y: 0 });
+  };
+  
+  return (
+    <group 
+      ref={groupRef}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
+      {children}
+    </group>
+  );
+}
+
+// Camera rig for portal navigation
+function PortalRig({ activePortal }) {
+  const { controls, scene } = useThree();
+  const position = new THREE.Vector3(0, 0, 2);
+  const focus = new THREE.Vector3(0, 0, 0);
+  
+  useEffect(() => {
+    const active = scene.getObjectByName(activePortal);
+    if (active) {
+      active.parent.localToWorld(position.set(0, 0.5, 0.25));
+      active.parent.localToWorld(focus.set(0, 0, -2));
+    } else {
+      // Reset to default view when no portal is active
+      position.set(0, 0, 3);
+      focus.set(0, 0, 0);
+    }
+    controls?.setLookAt(...position.toArray(), ...focus.toArray(), true);
+  }, [activePortal, controls, scene]);
+  
+  // Force reset camera position on mount and when activePortal changes
+  useEffect(() => {
+    if (!activePortal && controls) {
+      // Force the camera to the correct distance
+      controls.dollyTo(3, true);
+    }
+  }, [activePortal, controls]);
+  
+  return (
+    <CameraControls 
+      makeDefault 
+      minPolarAngle={0} 
+      maxPolarAngle={Math.PI / 2}
+      enableZoom={!!activePortal}
+      enablePan={!!activePortal}
+      enableRotate={false}
+      dollySpeed={activePortal ? 1 : 0}
+      truckSpeed={activePortal ? 2 : 0}
+      minDistance={activePortal ? 0.1 : 3}   // Match the camera position
+      maxDistance={activePortal ? 100 : 3}   // Lock at exact distance when not in portal
+    />
+  );
+}
+
 // Scene component that responds to scroll
 function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
   const { camera } = useThree();
@@ -576,7 +830,7 @@ function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
   );
 }
 
-export default function Home2() {
+export default function Home3() {
   const router = useRouter();
   const [fontsLoaded, setFontsLoaded] = useState(false);
   // Initialize with false to avoid hydration mismatch
@@ -596,6 +850,33 @@ export default function Home2() {
   const [emoji, setEmoji] = useState("😇");
   const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(true); // Always treat as mobile
   const [isLowEndDevice, setIsLowEndDevice] = useState(false);
+  const [activePortal, setActivePortal] = useState(null);
+  const [portalFlippedStates, setPortalFlippedStates] = useState({
+    '01': false,
+    '02': false, 
+    '03': false
+  });
+  
+  // Portal carousel state
+  const [currentPortalPage, setCurrentPortalPage] = useState(0);
+  const [portalTransition, setPortalTransition] = useState(null);
+  const portalsPerPage = isMobileDevice ? 1 : 3; // Show 1 on mobile, 3 on desktop
+  
+  // Mock user data - replace with Firestore data later
+  const [portalUsers] = useState([
+    { id: '01', name: 'Divine Sanctuary', message: 'Peace and prosperity await', author: 'Sacred Realm' },
+    { id: '02', name: 'Holy Treasury', message: 'Abundance flows eternal', author: 'Blessed Vault' },
+    { id: '03', name: 'Celestial Garden', message: 'Growth through wisdom', author: 'Eternal Growth' },
+    { id: '04', name: 'Mystic Gateway', message: 'Enter the unknown', author: 'Ancient Path' },
+    { id: '05', name: 'Golden Temple', message: 'Wisdom illuminates', author: 'Enlightened One' },
+    { id: '06', name: 'Crystal Cavern', message: 'Hidden treasures within', author: 'Earth\'s Heart' },
+  ]);
+  
+  const totalPortalPages = Math.ceil(portalUsers.length / portalsPerPage);
+  const currentPortals = portalUsers.slice(
+    currentPortalPage * portalsPerPage,
+    (currentPortalPage + 1) * portalsPerPage
+  );
 
   const [assetsLoaded, setAssetsLoaded] = useState({
     ourLadyModel: false,
@@ -674,6 +955,42 @@ export default function Home2() {
       }
       return newSet;
     });
+  };
+  
+  const handlePortalFlip = (portalId) => {
+    setPortalFlippedStates(prev => ({
+      ...prev,
+      [portalId]: !prev[portalId]
+    }));
+  };
+  
+  const handlePortalEnter = (portalId) => {
+    console.log('Portal entered:', portalId);
+    setActivePortal(portalId);
+    // Don't navigate away, just zoom into the portal
+    // Navigation can be handled separately if needed
+  };
+  
+  const handlePortalExit = () => {
+    setActivePortal(null);
+  };
+  
+  const handleNextPortalPage = () => {
+    setPortalTransition({ isTransitioning: true, isFadingOut: true });
+    setTimeout(() => {
+      setCurrentPortalPage((prev) => (prev + 1) % totalPortalPages);
+      setPortalTransition({ isTransitioning: true, isFadingOut: false });
+      setTimeout(() => setPortalTransition(null), 500);
+    }, 300);
+  };
+  
+  const handlePrevPortalPage = () => {
+    setPortalTransition({ isTransitioning: true, isFadingOut: true });
+    setTimeout(() => {
+      setCurrentPortalPage((prev) => (prev - 1 + totalPortalPages) % totalPortalPages);
+      setPortalTransition({ isTransitioning: true, isFadingOut: false });
+      setTimeout(() => setPortalTransition(null), 500);
+    }, 300);
   };
   
   // Helper function to get responsive values
@@ -1448,6 +1765,29 @@ export default function Home2() {
           opacity: 1;
           transform: translateY(0);
         }
+        
+        /* Disable overlay for portal gallery to prevent button blocking */
+        .portal-gallery-wrap .card-info::after {
+          display: none !important;
+          pointer-events: none !important;
+        }
+        
+        .portal-gallery-wrap:hover .card-info {
+          transform: translateY(20%) !important;
+          pointer-events: none;
+        }
+        
+        .portal-gallery-wrap:hover .card-info * {
+          pointer-events: none;
+        }
+        
+        .portal-gallery-wrap:hover .card-info div {
+          pointer-events: auto !important;
+        }
+        
+        .portal-gallery-wrap:hover .card-info button {
+          pointer-events: auto !important;
+        }
 
         /* Override hover effects for portal to prevent vertical movement */
         .portal-wrap.card-wrap:hover {
@@ -1713,181 +2053,7 @@ export default function Home2() {
         
         {/* Alternating Cards Section */}
         <div className="cards-wrapper" style={{ marginTop: getResponsiveValue('2rem', '0rem', '0rem', '2rem') }}>
-        <div className="card-wrap" ref={el => {
-            if (el && !cardRefs.current.includes(el)) {
-              cardRefs.current.push(el);
-            }
-          }} onClick={() => handleCardFlip(0)}>
-            <div className={`card-container ${flippedCards.has(0) ? 'flipped' : ''}`}>
-              {/* Front of card */}
-              <div className="card-face card-front">
-                <div className="card">
-                  <span className="flip-hint">Click to flip</span>
-                  <div className="card-bg" style={{ 
-                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")',
-                  }}></div>
-                  <div className="card-info">
-                    <h2>Divine Protection</h2>
-                    <p>As a symbol of protection, purity, and principled prosperity, Our Lady stands as the ideal counternarrative to crypto's malign influences and bad actors.</p>
-                  </div>
-                </div>
-              </div>
-              {/* Back of card */}
-              <div className="card-face card-back">
-                <div className="card">
-                  <span className="flip-hint">Click to flip</span>
-                  <div className="card-back-content">
-                    <h3>Sacred Shield Against Scams</h3>
-                    <p>In the volatile realm of cryptocurrency, Our Lady of Perpetual Profit serves as your divine guardian against:</p>
-                    <ul>
-                      <li>Rug pulls and exit scams</li>
-                      <li>Pump and dump schemes</li>
-                      <li>Malicious smart contracts</li>
-                      <li>FUD and market manipulation</li>
-                    </ul>
-                    <p>Through faith in sound tokenomics and community-driven governance, we create a sanctuary of sustainable growth and honest returns.</p>
-                    <p style={{ marginTop: '20px', fontStyle: 'italic', opacity: 0.8 }}>
-                      "In code we trust, but in Our Lady we verify."
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card-wrap" ref={el => {
-            if (el && !cardRefs.current.includes(el)) {
-              cardRefs.current.push(el);
-            }
-          }} onClick={() => handleCardFlip(1)}>
-            <div className={`card-container ${flippedCards.has(1) ? 'flipped' : ''}`}>
-              {/* Front of card */}
-              <div className="card-face card-front">
-                <div className="card">
-                  <span className="flip-hint">Click to flip</span>
-                  <div className="card-bg" style={{ 
-                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/vsClown.jpg")',
-                  }}></div>
-                  <div className="card-info">
-                    <h2>Divine Protection</h2>
-                    <p>As a symbol of protection, purity, and principled prosperity, Our Lady stands as the ideal counternarrative to crypto's malign influences and bad actors.</p>
-                  </div>
-                </div>
-              </div>
-              {/* Back of card */}
-              <div className="card-face card-back">
-                <div className="card">
-                  <span className="flip-hint">Click to flip</span>
-                  <div className="card-back-content">
-                    <h3>Sacred Shield Against Scams</h3>
-                    <p>In the volatile realm of cryptocurrency, Our Lady of Perpetual Profit serves as your divine guardian against:</p>
-                    <ul>
-                      <li>Rug pulls and exit scams</li>
-                      <li>Pump and dump schemes</li>
-                      <li>Malicious smart contracts</li>
-                      <li>FUD and market manipulation</li>
-                    </ul>
-                    <p>Through faith in sound tokenomics and community-driven governance, we create a sanctuary of sustainable growth and honest returns.</p>
-                    <p style={{ marginTop: '20px', fontStyle: 'italic', opacity: 0.8 }}>
-                      "In code we trust, but in Our Lady we verify."
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card-wrap" ref={el => {
-            if (el && !cardRefs.current.includes(el)) {
-              cardRefs.current.push(el);
-            }
-          }} onClick={() => handleCardFlip(2)}>
-            <div className={`card-container ${flippedCards.has(2) ? 'flipped' : ''}`}>
-              {/* Front of card */}
-              <div className="card-face card-front">
-                <div className="card">
-                  <span className="flip-hint">Click to flip</span>
-                  <div className="card-bg" style={{ 
-                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/mosaic.jpg")'
-                  }}></div>
-                  <div className="card-info">
-                    <h2>$RL80 Token</h2>
-                    <p>The Holy Trin80 of digital assets - representing liquid80, util80, and integr80. Your divine guide through the volatile seas of cryptocurrency trading.</p>
-                  </div>
-                </div>
-              </div>
-              {/* Back of card */}
-              <div className="card-face card-back">
-                <div className="card">
-                  <span className="flip-hint">Click to flip</span>
-                  <div className="card-back-content">
-                    <h3>The Sacred Trinity of $RL80</h3>
-                    <p>Experience the divine trifecta of cryptocurrency innovation:</p>
-                    <ul>
-                      <li><strong>Liquid80:</strong> Deep liquidity pools ensuring smooth trades without slippage</li>
-                      <li><strong>Util80:</strong> Real-world utility through DeFi integrations and partnerships</li>
-                      <li><strong>Integr80:</strong> Seamless cross-chain compatibility and ecosystem growth</li>
-                    </ul>
-                    <p style={{ marginTop: '20px' }}>
-                      Built on BASE for low fees and high speed, $RL80 combines the best of traditional finance wisdom with blockchain innovation.
-                    </p>
-                    <p style={{ marginTop: '15px', padding: '10px', background: 'rgba(212, 175, 55, 0.1)', borderRadius: '5px' }}>
-                      <strong>Total Supply:</strong> 1,000,000,000 $RL80<br/>
-                      <strong>Tax:</strong> 0% Buy/Sell<br/>
-                      <strong>Liquidity:</strong> Locked Forever
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card-wrap" ref={el => {
-            if (el && !cardRefs.current.includes(el)) {
-              cardRefs.current.push(el);
-            }
-          }} onClick={() => handleCardFlip(3)}>
-            <div className={`card-container ${flippedCards.has(3) ? 'flipped' : ''}`}>
-              {/* Front of card */}
-              <div className="card-face card-front">
-                <div className="card">
-                  <span className="flip-hint">Click to flip</span>
-                  <div className="card-bg" style={{ 
-                    backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/lowrider.jpg")'
-                  }}></div>
-                  <div className="card-info">
-                    <h2>Join the Sanctuary</h2>
-                    <p>Whether you need a Hail Mary for hard times, or just sanctuary in the new economy, $RL80 is your path to enlightenment and perpetual profit.</p>
-                  </div>
-                </div>
-              </div>
-              {/* Back of card */}
-              <div className="card-face card-back">
-                <div className="card">
-                  <span className="flip-hint">Click to flip</span>
-                  <div className="card-back-content">
-                    <h3>Become a Blessed Holder</h3>
-                    <p>Join our divine community and receive the following blessings:</p>
-                    <ul>
-                      <li>Access to exclusive alpha and trading strategies</li>
-                      <li>Community governance voting rights</li>
-                      <li>Early access to partnerships and features</li>
-                      <li>24/7 support from fellow believers</li>
-                      <li>Educational resources on DeFi and crypto</li>
-                    </ul>
-                    <p style={{ marginTop: '20px' }}>
-                      Our congregation grows stronger with each new member. Together, we navigate the turbulent markets with faith, wisdom, and diamond hands.
-                    </p>
-                    <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(212, 175, 55, 0.1)', borderRadius: '8px', textAlign: 'center' }}>
-                      <p style={{ margin: 0, fontSize: '1.1em', color: '#d4af37' }}>
-                        "Where two or three gather in profit,<br/>there I am with them."
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      
           
           {/* Portal Section - In alternating layout with cards */}
  {/* Portal Section - In alternating layout with cards */}
@@ -2119,6 +2285,307 @@ where traditional wisdom meets blockchain innovation.`}
             </div>
             </div>
           </div>
+          
+          {/* Portal Gallery Section with Pagination */}
+          <div 
+            className="card-wrap portal-gallery-wrap"
+            ref={el => {
+              if (el && !cardRefs.current.includes(el)) {
+                cardRefs.current.push(el);
+              }
+            }}
+            style={{
+              width: activePortal ? '100vw' : '95%',
+              maxWidth: activePortal ? '100vw' : '1400px',
+              margin: activePortal ? '0' : '4rem auto',
+              position: activePortal ? 'fixed' : 'relative',
+              top: activePortal ? '0' : 'auto',
+              left: activePortal ? '0' : 'auto',
+              height: activePortal ? '100vh' : 'auto',
+              zIndex: activePortal ? 9999 : 'auto',
+              backgroundColor: activePortal ? '#000' : 'transparent',
+              transition: 'all 0.5s ease',
+            }}
+          >
+            <div 
+              style={{
+              width: '100%',
+              height: activePortal ? '100vh' : 'auto',
+              aspectRatio: activePortal ? 'auto' : `${3 / GOLDENRATIO}`,
+              position: 'relative',
+              perspective: '1000px',
+              display: 'flex',
+              gap: '2rem',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {/* Back button removed from here - moved inside portal div */}
+              {mounted && (
+                <>
+                  {/* Individual canvas for each portal */}
+                  {currentPortals.map((portal, index) => (
+                    <div
+                      key={portal.id}
+                      style={{
+                        flex: activePortal === portal.id ? 'none' : '1',
+                        maxWidth: activePortal === portal.id ? 'none' : (isMobileDevice ? '100%' : '450px'),
+                        aspectRatio: activePortal === portal.id ? 'auto' : `${1 / GOLDENRATIO}`,
+                        position: activePortal === portal.id ? 'fixed' : 'relative',
+                        transform: activePortal === portal.id ? 'scale(1)' : 'scale(1)',
+                        transition: 'transform 0.5s ease',
+                        display: activePortal && activePortal !== portal.id ? 'none' : 'block',
+                        width: activePortal === portal.id ? '100vw' : 'auto',
+                        height: activePortal === portal.id ? '100vh' : 'auto',
+                        top: activePortal === portal.id ? '0' : 'auto',
+                        left: activePortal === portal.id ? '0' : 'auto',
+                        right: activePortal === portal.id ? '0' : 'auto',
+                        bottom: activePortal === portal.id ? '0' : 'auto',
+                        zIndex: activePortal === portal.id ? '10000' : 'auto',
+                        backgroundColor: activePortal === portal.id ? '#000' : 'transparent',
+                      }}
+                    >
+                      {/* Back button inside portal div when active */}
+                      {activePortal === portal.id && (
+                        <button
+                          onClick={handlePortalExit}
+                          style={{
+                            position: 'absolute',
+                            top: '20px',
+                            left: '20px',
+                            padding: '12px 24px',
+                            background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
+                            color: '#1a0033',
+                            fontSize: '1.2rem',
+                            fontFamily: 'UnifrakturCook, serif',
+                            fontWeight: 'bold',
+                            borderRadius: '25px',
+                            border: '2px solid rgba(255, 255, 255, 0.3)',
+                            cursor: 'pointer',
+                            zIndex: 10001,
+                            transition: 'all 0.3s ease',
+                            boxShadow: '0 4px 15px rgba(212, 175, 55, 0.5)',
+                            pointerEvents: 'auto',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.7)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.5)';
+                          }}
+                        >
+                          ← Back to Portals
+                        </button>
+                      )}
+                      <Suspense fallback={<div>Loading portal...</div>}>
+                        <Canvas
+                          flat
+                          camera={{ fov: 50, position: [0, 0, 5] }}
+                          gl={{ alpha: true }}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            background: 'transparent',
+                            borderRadius: activePortal === portal.id ? '0' : '10px',
+                            pointerEvents: 'auto',
+                            touchAction: activePortal === portal.id ? 'none' : 'auto',
+                          }}
+                        >
+                          <ambientLight intensity={0.5} />
+                          <pointLight position={[10, 10, 10]} />
+                          <directionalLight position={[3, 8, 5]} intensity={1.2} />
+                          
+                          {/* Individual portal with mouse rotation */}
+                          <PortalMouseRotation isActive={activePortal === portal.id}>
+                            <EnhancedPortalFrame
+                              id={portal.id}
+                              name={portal.name}
+                              author={portal.author}
+                              bg={index % 3 === 0 ? "#e4cdac" : index % 3 === 1 ? "#8b6914" : "#c4a572"}
+                              position={[0, 0, 0]}
+                            isFlipped={portalFlippedStates[portal.id] || false}
+                            onFlip={handlePortalFlip}
+                            onEnter={handlePortalEnter}
+                            activePortal={activePortal}
+                          >
+                            <Gltf 
+                              src={index % 3 === 0 ? "/models/small_altar.glb" : index % 3 === 1 ? "/models/small_altar2.glb" : "/models/small_altar3.glb"} 
+                              scale={index % 3 === 1 ? 4 : 2} 
+                              position={index % 3 === 0 ? [0, -3, -5] : index % 3 === 1 ? [0, -1, -2] : [0, -.5, -5]} 
+                            />
+                            {/* Display user message inside portal */}
+                            <Text
+                              font="/fonts/UnifrakturMaguntia-Regular.ttf"
+                              fontSize={0.15}
+                              color="#ffffff"
+                              anchorX="center"
+                              position={[0, 0.5, 0.1]}
+                              maxWidth={1.5}
+                            >
+                              {portal.message}
+                            </Text>
+                            </EnhancedPortalFrame>
+                          </PortalMouseRotation>
+                          
+                          {/* Full camera controls when portal is active */}
+                          {activePortal === portal.id && (
+                            <OrbitControls
+                              enablePan={true}
+                              enableZoom={true}
+                              enableRotate={true}
+                              enableDamping={true}
+                              dampingFactor={0.05}
+                              minDistance={1}
+                              maxDistance={20}
+                            />
+                          )}
+                        </Canvas>
+                      </Suspense>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+            <div className="card-info portal-gallery-info" style={{ 
+              transform: 'translateY(30%)', 
+              pointerEvents: 'none',
+              display: activePortal ? 'none' : 'block',
+              padding: '20px',
+              maxWidth: '90%',
+              margin: '0 auto'
+            }}>
+      
+              <p style={{ 
+                pointerEvents: 'none',
+                fontSize: isMobileDevice ? '0.9em' : '1em',
+                marginBottom: '10px'
+              }}>
+                {isMobileDevice 
+                  ? `Portal ${currentPortalPage + 1} of ${totalPortalPages}` 
+                  : `Page ${currentPortalPage + 1} of ${totalPortalPages}`
+                }
+              </p>
+              
+              {/* Navigation controls */}
+              <div style={{ 
+                marginTop: '20px', 
+                display: 'flex', 
+                gap: '20px', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                pointerEvents: 'auto' 
+              }}>
+                <button
+                  onClick={handlePrevPortalPage}
+                  style={{
+                    padding: '10px 20px',
+                    background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
+                    color: '#1a0033',
+                    fontSize: '1rem',
+                    fontFamily: 'UnifrakturCook, serif',
+                    fontWeight: 'bold',
+                    borderRadius: '25px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
+                  }}
+                >
+                  ← Previous
+                </button>
+                
+                <span style={{ 
+                  color: '#d4af37', 
+                  fontSize: '1.2rem',
+                  fontFamily: 'UnifrakturMaguntia-Regular, serif',
+                  pointerEvents: 'none'
+                }}>
+                  {currentPortalPage + 1} / {totalPortalPages}
+                </span>
+                
+                <button
+                  onClick={handleNextPortalPage}
+                  style={{
+                    padding: '10px 20px',
+                    background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
+                    color: '#1a0033',
+                    fontSize: '1rem',
+                    fontFamily: 'UnifrakturCook, serif',
+                    fontWeight: 'bold',
+                    borderRadius: '25px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+              
+              {/* Test buttons hidden - set to true to show */}
+              {false && (
+              <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center', pointerEvents: 'auto' }}>
+                <button 
+                  onClick={() => handlePortalEnter('01')}
+                  style={{ 
+                    padding: '5px 10px', 
+                    background: '#d4af37', 
+                    border: 'none', 
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Enter Portal 1
+                </button>
+                <button 
+                  onClick={() => handlePortalEnter('02')}
+                  style={{ 
+                    padding: '5px 10px', 
+                    background: '#d4af37', 
+                    border: 'none', 
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Enter Portal 2
+                </button>
+                <button 
+                  onClick={() => handlePortalEnter('03')}
+                  style={{ 
+                    padding: '5px 10px', 
+                    background: '#d4af37', 
+                    border: 'none', 
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Enter Portal 3
+                </button>
+              </div>
+              )}
+            </div>
+          </div>
         </div>
      
   
@@ -2294,7 +2761,7 @@ where traditional wisdom meets blockchain innovation.`}
           {isSignedIn ? (
             <Illumin80ClerkButton afterSignOutUrl="/" />
           ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/home2">
+            <SignInButton mode="modal" forceRedirectUrl="/home3">
               <button
                 style={{
                   width: isMobileDevice ? "2.5rem" : "3.75rem",

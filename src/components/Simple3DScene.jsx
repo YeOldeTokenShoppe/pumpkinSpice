@@ -293,8 +293,8 @@ function SimpleScene({ isMobile, scrollY, enableBloom }) {
       {enableBloom && (
         <EffectComposer>
           <Bloom 
-            intensity={0.5}
-            luminanceThreshold={0.3}
+            intensity={0.99}
+            luminanceThreshold={0.4}
             luminanceSmoothing={0.9}
             mipmapBlur
             radius={0.8}
