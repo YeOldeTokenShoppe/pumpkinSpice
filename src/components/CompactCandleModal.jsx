@@ -928,7 +928,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     username: '',
     message: '',
     burnedAmount: '',
-    allowLikes: true, // Default to allowing appreciation
+    allowLikes: false, // Default to not allowing likes
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -991,7 +991,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         username: defaultUsername,
         message: '',
         burnedAmount: '',
-        allowLikes: true,
+        allowLikes: false,
       });
       setSelectedPrayer(null);
       setImageFile(null);
@@ -1741,7 +1741,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             username: '',
             message: '',
             burnedAmount: 1000,
-            allowLikes: true,
+            allowLikes: false,
           });
           setImageFile(null);
           setImagePreview(null);
@@ -1949,7 +1949,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             </div>
             
             <form onSubmit={handleSubmit}>
-              <div className="compact-form-group">
+              {/* Row 1: Username and Amount */}
+              <div className="compact-form-group" style={{
+                display: 'flex',
+                gap: '10px',
+                marginBottom: '12px'
+              }}>
+                {/* Username - Left */}
                 <input
                   type="text"
                   name="username"
@@ -1964,7 +1970,116 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   placeholder="Name (on behalf of)"
                   maxLength={50}
                   required
+                  style={{
+                    flex: '1.5',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    color: '#fff',
+                    fontSize: '14px'
+                  }}
                 />
+                
+                {/* Amount - Right */}
+                <div style={{
+                  flex: '1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(255, 215, 0, 0.3)'
+                }}>
+                  <span style={{
+                    color: 'rgba(255, 215, 0, 0.8)',
+                    fontSize: '13px',
+                    fontWeight: 'bold'
+                  }}>
+                    RL80:
+                  </span>
+                  <input
+                    type="text"
+                    name="burnedAmount"
+                    value={formData.burnedAmount}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numericValue = value.replace(/[^0-9]/g, '');
+                      
+                      if (numericValue === '') {
+                        setFormData(prev => ({ ...prev, burnedAmount: '' }));
+                        return;
+                      }
+                      
+                      const parsed = parseInt(numericValue, 10);
+                      if (parsed <= 999999999999999) {
+                        setFormData(prev => ({ ...prev, burnedAmount: parsed }));
+                      }
+                    }}
+                    placeholder="1000"
+                    required
+                    style={{
+                      flex: '1',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#fff',
+                      fontSize: '14px',
+                      outline: 'none',
+                      textAlign: 'right'
+                    }}
+                  />
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px'
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentValue = parseInt(formData.burnedAmount) || 0;
+                        const newValue = currentValue + 1000;
+                        if (newValue <= 999999999999999) {
+                          setFormData(prev => ({ ...prev, burnedAmount: newValue }));
+                        }
+                      }}
+                      style={{
+                        background: 'rgba(255, 215, 0, 0.2)',
+                        border: 'none',
+                        borderRadius: '3px',
+                        color: 'rgba(255, 215, 0, 0.8)',
+                        cursor: 'pointer',
+                        padding: '0 4px',
+                        fontSize: '10px',
+                        lineHeight: '1',
+                        height: '12px'
+                      }}
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentValue = parseInt(formData.burnedAmount) || 0;
+                        const newValue = Math.max(0, currentValue - 1000);
+                        setFormData(prev => ({ ...prev, burnedAmount: newValue || '' }));
+                      }}
+                      style={{
+                        background: 'rgba(255, 215, 0, 0.2)',
+                        border: 'none',
+                        borderRadius: '3px',
+                        color: 'rgba(255, 215, 0, 0.8)',
+                        cursor: 'pointer',
+                        padding: '0 4px',
+                        fontSize: '10px',
+                        lineHeight: '1',
+                        height: '12px'
+                      }}
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
               </div>
 
 
@@ -2148,17 +2263,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 </div>
               )}
 
-              <div className="compact-form-group message-group">
-                <div className="message-input-wrapper" style={{ position: 'relative' }}>
-                  {/* Prayer Template and AI controls bar */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '8px',
-                    marginBottom: '8px',
-                    alignItems: 'center'
-                  }}>
-                    {/* Prayer Template Dropdown */}
-                    <select
+              {/* Row 2: Prayer Template and AI Generator */}
+              <div className="compact-form-group" style={{
+                display: 'flex',
+                gap: '10px',
+                marginBottom: '12px'
+              }}>
+                {/* Prayer Template Dropdown - Left */}
+                <select
                       value={selectedPrayer || ''}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -2175,15 +2287,15 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         }
                       }}
                       style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        borderRadius: '6px',
+                        flex: '1',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
                         backgroundColor: 'rgba(0, 0, 0, 0.3)',
                         color: '#fff',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        fontSize: '13px',
+                        border: '1px solid rgba(255, 215, 0, 0.3)',
+                        fontSize: '14px',
                         cursor: 'pointer',
-                        backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                        backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'rgba(255,215,0,0.8)\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 10px center',
                         backgroundSize: '18px',
@@ -2191,7 +2303,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         paddingRight: '35px'
                       }}
                     >
-                      <option value="">Pick a prayer</option>
+                      <option value="">Preset Prayers</option>
                       {(PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers).map((prayer) => (
                           <option key={prayer.id} value={prayer.id}>
                             {currentLanguage === 'es' ? 
@@ -2239,38 +2351,41 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         ))}
                     </select>
                     
-                    {/* AI Button */}
-                    <button
-                      type="button"
-                      onClick={() => setShowAIPanel(!showAIPanel)}
-                      title="AI Prayer Generator"
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: '6px',
-                        background: showAIPanel ? 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: '#fff',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                        transition: 'all 0.2s',
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                      onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      ✨ AI
-                    </button>
-                  </div>
+                
+                {/* AI Button - Right */}
+                <button
+                  type="button"
+                  onClick={() => setShowAIPanel(!showAIPanel)}
+                  title="AI Prayer Generator"
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    background: showAIPanel ? 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  🤖 AI Prayer
+                </button>
+              </div>
                   
-                  <textarea
-                    ref={textareaRef}
-                    name="message"
-                    value={formData.message}
+              {/* Row 3: Message Textarea */}
+              <div className="compact-form-group message-group">
+                <textarea
+                  ref={textareaRef}
+                  name="message"
+                  value={formData.message}
                     onChange={(e) => {
                       handleInputChange(e);
                       // If user edits a pre-made prayer, mark as custom
@@ -2279,273 +2394,61 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         setSelectedPrayer(null);
                       }
                     }}
-                    placeholder={selectedPrayer ? "Edit the selected prayer or write your own..." : "Write your message, prayer, wish, or dedication"}
-                    rows={3}
-                    maxLength={400}
-                    required
-                    disabled={isEncrypted}
-                    onKeyDown={(e) => {
-                      // Prevent Enter key from submitting form in textarea
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        // Allow Shift+Enter for new lines
-                        if (e.shiftKey) {
-                          return;
-                        }
+                  placeholder={selectedPrayer ? "Edit the selected prayer or write your own..." : "Write your message, prayer, wish, or dedication"}
+                  rows={3}
+                  maxLength={400}
+                  required
+                  disabled={isEncrypted}
+                  onKeyDown={(e) => {
+                    // Prevent Enter key from submitting form in textarea
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      // Allow Shift+Enter for new lines
+                      if (e.shiftKey) {
+                        return;
                       }
-                    }}
-                    style={{
-                      paddingRight: '50px' // Make room for char counter
-                    }}
-                  />
-                  <span className="compact-char-count" style={{
-                    position: 'absolute',
-                    bottom: '8px',
-                    right: '12px',
-                    fontSize: '11px',
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    pointerEvents: 'none'
-                  }}>{formData.message.length}/400</span>
-                </div>
-                <div className="message-controls" style={{ 
-                  display: 'flex', 
-                  gap: '10px',
-                  alignItems: 'stretch',
-                  marginTop: '10px'
-                }}>
-                  {/* RL80 Amount Input */}
-                  <div style={{ 
-                    flex: '1', 
-                    maxWidth: 'calc(100% - 130px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    position: 'relative'
-                  }}>
-                    <input
-                      type="text"
-                      name="burnedAmount"
-                      value={formData.burnedAmount}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // Only allow numbers
-                        const numericValue = value.replace(/[^0-9]/g, '');
-                        
-                        if (numericValue === '') {
-                          setFormData(prev => ({ ...prev, burnedAmount: '' }));
-                          return;
-                        }
-                        
-                        const parsed = parseInt(numericValue);
-                        // Prevent negative numbers and limit to reasonable maximum
-                        if (parsed >= 0 && parsed <= 999999999999999) {
-                          setFormData(prev => ({ ...prev, burnedAmount: parsed }));
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        // Prevent Enter key from submitting form
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                        }
-                      }}
-                      placeholder="RL80 tokens to burn"
-                      className="amount-input"
-                      style={{
-                        padding: '10px 40px 10px 12px',
-                        borderRadius: '6px',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                        color: '#fff',
-                        fontSize: '14px',
-                        width: '100%',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                    {/* Custom spinner buttons */}
-                    <div style={{
-                      position: 'absolute',
-                      right: '2px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0'
-                    }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentValue = parseInt(formData.burnedAmount) || 0;
-                          const newValue = currentValue + 1000;
-                          if (newValue <= 999999999999999) {
-                            setFormData(prev => ({ ...prev, burnedAmount: newValue }));
-                          }
-                        }}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          border: 'none',
-                          borderRadius: '3px 3px 0 0',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          padding: '2px 8px',
-                          fontSize: '12px',
-                          lineHeight: '1',
-                          transition: 'background 0.2s'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                      >
-                        ▲
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentValue = parseInt(formData.burnedAmount) || 0;
-                          const newValue = Math.max(0, currentValue - 1000);
-                          setFormData(prev => ({ ...prev, burnedAmount: newValue || '' }));
-                        }}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          border: 'none',
-                          borderRadius: '0 0 3px 3px',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          padding: '2px 8px',
-                          fontSize: '12px',
-                          lineHeight: '1',
-                          transition: 'background 0.2s'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                      >
-                        ▼
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* Encrypt Button */}
-                  <button
-                    type="button"
-                    className={`encrypt-button ${isEncrypted ? 'is-encrypted' : ''}`}
-                    onClick={toggleEncryption}
-                    disabled={!formData.message.trim()}
-                    style={{ 
-                      flex: '0 0 auto',
-                      minWidth: '110px'
-                    }}
-                  >
-                    <span className="encrypt-text">{isEncrypted ? 'DECRYPT' : 'ENCRYPT?'}</span>
-                  </button>
-                  
-                  {isEncrypted && (
-                    <div className="message-status" style={{ 
-                      flex: '0 0 auto',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}>
-                      <span className="encrypted-badge">🔒</span>
-                    </div>
-                  )}
-                </div>
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    paddingRight: '50px', // Make room for char counter
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    color: '#fff',
+                    fontSize: '14px',
+                    resize: 'vertical',
+                    minHeight: '80px',
+                    maxHeight: '150px'
+                  }}
+                />
+                <span className="compact-char-count" style={{
+                  position: 'absolute',
+                  bottom: '12px',
+                  right: '12px',
+                  fontSize: '11px',
+                  color: 'rgba(255, 215, 0, 0.5)',
+                  pointerEvents: 'none'
+                }}>{formData.message.length}/400</span>
               </div>
 
-              {/* Combined Row: Mortal Appreciation + Image Selection */}
+              {/* Row 4: Image Upload and Template Selection */}
               <div className="compact-form-group" style={{
                 display: 'flex',
                 gap: '10px',
                 alignItems: 'stretch',
-                marginTop: '12px',
                 marginBottom: '12px'
               }}>
-                {/* Allow Mortal Appreciation Toggle - Left Side */}
-                <div style={{
-                  flex: '1',
-                  padding: '12px',
-                  background: 'rgba(139, 69, 19, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                }}>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    height: '100%'
-                  }}>
-                    <div style={{ 
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center'
-                    }}>
-                      <div style={{
-                        fontSize: '13px',
-                        color: '#fff',
-                        fontWeight: '500',
-                        marginBottom: '2px'
-                      }}>
-                        Allow Likes
-                      </div>
-                      <div style={{
-                        fontSize: '11px',
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        lineHeight: '1.2'
-                      }}>
-                        {formData.allowLikes ? "❤️ Public" : "🔒 Private"}
-                      </div>
-                    </div>
-                    <div style={{
-                      position: 'relative',
-                      width: '44px',
-                      height: '24px',
-                      backgroundColor: formData.allowLikes ? 'rgba(255, 105, 180, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '12px',
-                      border: formData.allowLikes ? '1px solid #ff69b4' : '1px solid rgba(255, 255, 255, 0.3)',
-                      transition: 'all 0.3s ease',
-                      boxShadow: formData.allowLikes ? '0 0 8px rgba(255, 105, 180, 0.3)' : 'none',
-                      marginLeft: '10px'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={formData.allowLikes || false}
-                        onChange={(e) => setFormData(prev => ({ ...prev, allowLikes: e.target.checked }))}
-                        style={{
-                          position: 'absolute',
-                          opacity: 0,
-                          width: '100%',
-                          height: '100%',
-                          cursor: 'pointer',
-                          margin: 0
-                        }}
-                      />
-                      <div style={{
-                        position: 'absolute',
-                        top: '2px',
-                        left: formData.allowLikes ? '20px' : '2px',
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: formData.allowLikes ? '#ff69b4' : '#666',
-                        borderRadius: '50%',
-                        transition: 'all 0.3s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '11px'
-                      }}>
-                        {formData.allowLikes ? '❤️' : '🔒'}
-                      </div>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Image Selection - Right Side */}
+                {/* Image Selection - Left */}
                 <label className="compact-file-label" style={{
                   flex: '1',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '12px',
+                  padding: '10px',
                   backgroundColor: (imageFile || imagePreview) ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 102, 0, 0.1)',
-                  border: (imageFile || imagePreview) ? '1px solid rgba(0, 255, 0, 0.3)' : '1px solid rgba(255, 102, 0, 0.3)',
+                  border: (imageFile || imagePreview) ? '1px solid rgba(0, 255, 0, 0.3)' : '1px solid rgba(255, 215, 0, 0.3)',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   margin: 0,
@@ -2553,13 +2456,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   position: 'relative'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = (imageFile || imagePreview) ? 
-                    'rgba(0, 255, 0, 0.2)' : 'rgba(255, 102, 0, 0.2)';
                   e.currentTarget.style.transform = 'scale(1.02)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = (imageFile || imagePreview) ? 
-                    'rgba(0, 255, 0, 0.1)' : 'rgba(255, 102, 0, 0.1)';
                   e.currentTarget.style.transform = 'scale(1)';
                 }}>
                   <input
@@ -2569,364 +2468,300 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     onChange={handleImageChange}
                     className="compact-file-input"
                   />
-                  <div style={{
+                  <span style={{ 
+                    color: (imageFile || imagePreview) ? '#00ff00' : 'rgba(255, 215, 0, 0.8)',
+                    fontWeight: '600',
+                    fontSize: '14px',
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '2px'
+                    gap: '6px'
                   }}>
-                    <span style={{ 
-                      color: (imageFile || imagePreview) ? '#00ff00' : '#ff6600',
-                      fontWeight: (imageFile || imagePreview) ? 'normal' : 'bold',
-                      fontSize: '13px',
-                      textAlign: 'center',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
-                      {imageFile ? (
-                        <>📷 Custom Image</>
-                      ) : (imagePreview && !imageFile) ? (
-                        <>👤 Profile Picture</>
-                      ) : (
-                        <>📷 Add Image</>
-                      )}
-                    </span>
-                    {(imagePreview && !imageFile) && (
-                      <span style={{
-                        fontSize: '10px',
-                        color: 'rgba(255, 255, 255, 0.5)',
-                        fontStyle: 'italic'
-                      }}>
-                        Click to change
-                      </span>
+                    {imageFile ? (
+                      <>📷 Custom</>
+                    ) : (imagePreview && !imageFile) ? (
+                      <>👤 Profile</>
+                    ) : (
+                      <>📷 Add Image</>
                     )}
-                  </div>
+                  </span>
                 </label>
-              </div>
-
-              {/* Template Selection */}
-              {(imageFile || imagePreview) && (
-                <div style={{
-                  marginTop: '15px',
-                  padding: '10px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
-                }}>
+                
+                {/* Template Selection - Right (only show if image selected) */}
+                {(imageFile || imagePreview) && (
                   <div style={{
-                    fontSize: '12px',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    marginBottom: '10px',
-                    textAlign: 'center'
-                  }}>
-                    Apply a Template (Optional)
-                  </div>
-                  <div style={{
+                    flex: '1',
                     display: 'flex',
-                    gap: '10px',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center'
+                    gap: '5px'
                   }}>
                     <button
                       type="button"
                       onClick={() => setSelectedTemplate('/images/face2.png')}
                       style={{
-                        padding: '8px 16px',
-                        backgroundColor: selectedTemplate === '/images/face2.png' ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                        border: selectedTemplate === '/images/face2.png' ? '2px solid #ff6600' : '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '6px',
+                        flex: 1,
+                        padding: '10px',
+                        backgroundColor: selectedTemplate === '/images/face2.png' ? 'rgba(255, 102, 0, 0.2)' : 'rgba(0, 0, 0, 0.3)',
+                        border: selectedTemplate === '/images/face2.png' ? '2px solid #ff6600' : '1px solid rgba(255, 215, 0, 0.3)',
+                        borderRadius: '8px',
                         color: selectedTemplate === '/images/face2.png' ? '#ff6600' : 'rgba(255, 255, 255, 0.8)',
                         cursor: 'pointer',
-                        fontSize: '12px',
+                        fontSize: '13px',
                         fontWeight: selectedTemplate === '/images/face2.png' ? 'bold' : 'normal',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px'
+                        transition: 'all 0.2s ease'
                       }}
                     >
-                      ✨ Virgin Mary (Default)
+                      ✨ Template
                     </button>
                     <button
                       type="button"
                       onClick={() => setSelectedTemplate(null)}
                       style={{
-                        padding: '8px 16px',
-                        backgroundColor: selectedTemplate === null ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                        border: selectedTemplate === null ? '2px solid #ff6600' : '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '6px',
-                        color: selectedTemplate === null ? '#ff6600' : 'rgba(255, 255, 255, 0.8)',
+                        flex: 1,
+                        padding: '10px',
+                        backgroundColor: selectedTemplate === null ? 'rgba(0, 255, 0, 0.2)' : 'rgba(0, 0, 0, 0.3)',
+                        border: selectedTemplate === null ? '2px solid #00ff00' : '1px solid rgba(255, 215, 0, 0.3)',
+                        borderRadius: '8px',
+                        color: selectedTemplate === null ? '#00ff00' : 'rgba(255, 255, 255, 0.8)',
                         cursor: 'pointer',
-                        fontSize: '12px',
+                        fontSize: '13px',
                         fontWeight: selectedTemplate === null ? 'bold' : 'normal',
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      No Template
+                      🎯 None
                     </button>
                   </div>
-                  {selectedTemplate && (
+                )}
+              </div>
+
+              {/* Template Position Controls - Compact Version */}
+              {(imageFile || imagePreview) && selectedTemplate && (
+                <div style={{
+                  marginBottom: '12px',
+                  padding: '8px',
+                  backgroundColor: 'rgba(255, 102, 0, 0.05)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 102, 0, 0.2)'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowPositionControls(!showPositionControls)}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      color: 'rgba(255, 102, 0, 0.8)',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {showPositionControls ? '▼' : '▶'} Template Controls
+                  </button>
+                  
+                  {showPositionControls && selectedTemplate && (
                     <>
                       <div style={{
-                        marginTop: '10px',
+                        marginTop: '8px',
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '8px',
                         padding: '8px',
-                        backgroundColor: 'rgba(0, 255, 0, 0.1)',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        color: '#00ff00',
-                        textAlign: 'center'
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                        borderRadius: '6px'
                       }}>
-                        Template will be applied to your image
-                      </div>
-                      
-                      {/* Position Controls Button */}
-                      <button
-                        type="button"
-                        onClick={() => setShowPositionControls(!showPositionControls)}
-                        style={{
-                          marginTop: '10px',
-                          width: '100%',
-                          padding: '10px',
-                          backgroundColor: 'rgba(255, 102, 0, 0.2)',
-                          border: '1px solid #ff6600',
-                          borderRadius: '6px',
-                          color: '#ff6600',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: 'bold',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        {showPositionControls ? '🎯 Hide Position Controls' : '🎯 Adjust Position / Skin-tone'}
-                      </button>
-                      
-                      {/* Position Controls Panel */}
-                      {showPositionControls && (
-                        <div style={{
-                          marginTop: '15px',
-                          padding: '15px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                          borderRadius: '8px',
-                          border: '1px solid rgba(255, 102, 0, 0.3)'
-                        }}>
-                          <div style={{
-                            fontSize: '12px',
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            marginBottom: '15px',
-                            textAlign: 'center'
+                        {/* Compact Control Sliders */}
+                        <div>
+                          <label style={{
+                            fontSize: '11px',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            marginBottom: '2px',
+                            display: 'block'
                           }}>
-                            Adjust your position in the 3D preview above
-                          </div>
-                          
-                          {/* Control Sliders */}
-                          <div style={{ marginBottom: '12px' }}>
-                            <label style={{
-                              display: 'block',
-                              fontSize: '12px',
-                              color: 'rgba(255, 255, 255, 0.7)',
-                              marginBottom: '5px'
-                            }}>
-                              Horizontal Position: {templatePosition.x.toFixed(0)}%
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={templatePosition.x}
-                              onChange={(e) => setTemplatePosition({ ...templatePosition, x: parseFloat(e.target.value) })}
-                              style={{
-                                width: '100%',
-                                accentColor: '#ff6600'
-                              }}
-                            />
-                          </div>
-                          
-                          <div style={{ marginBottom: '12px' }}>
-                            <label style={{
-                              display: 'block',
-                              fontSize: '12px',
-                              color: 'rgba(255, 255, 255, 0.7)',
-                              marginBottom: '5px'
-                            }}>
-                              Vertical Position: {templatePosition.y.toFixed(0)}%
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={templatePosition.y}
-                              onChange={(e) => setTemplatePosition({ ...templatePosition, y: parseFloat(e.target.value) })}
-                              style={{
-                                width: '100%',
-                                accentColor: '#ff6600'
-                              }}
-                            />
-                          </div>
-                          
-                          <div style={{ marginBottom: '12px' }}>
-                            <label style={{
-                              display: 'block',
-                              fontSize: '12px',
-                              color: 'rgba(255, 255, 255, 0.7)',
-                              marginBottom: '5px'
-                            }}>
-                              Size: {templateScale}%
-                            </label>
-                            <input
-                              type="range"
-                              min="20"
-                              max="200"
-                              value={templateScale}
-                              onChange={(e) => setTemplateScale(parseFloat(e.target.value))}
-                              style={{
-                                width: '100%',
-                                accentColor: '#ff6600'
-                              }}
-                            />
-                          </div>
-                          
-                          <div style={{ marginBottom: '12px' }}>
-                            <label style={{
-                              display: 'block',
-                              fontSize: '12px',
-                              color: 'rgba(255, 255, 255, 0.7)',
-                              marginBottom: '5px'
-                            }}>
-                              Rotation: {templateRotation}°
-                            </label>
-                            <input
-                              type="range"
-                              min="-180"
-                              max="180"
-                              value={templateRotation}
-                              onChange={(e) => setTemplateRotation(parseFloat(e.target.value))}
-                              style={{
-                                width: '100%',
-                                accentColor: '#ff6600'
-                              }}
-                            />
-                          </div>
-                          
-                          {/* Skin Tone Adjustment - Only for Virgin Mary template */}
-                          {selectedTemplate === '/images/face2.png' && (
-                            <div style={{ 
-                              marginBottom: '12px',
-                              paddingTop: '12px',
-                              borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-                            }}>
-                              <label style={{
-                                display: 'block',
-                                fontSize: '12px',
-                                color: 'rgba(255, 255, 255, 0.7)',
-                                marginBottom: '5px'
-                              }}>
-                                Skin Tone Adjustment
-                              </label>
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                marginBottom: '5px'
-                              }}>
-                                <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Lighter</span>
-                                <input
-                                  type="range"
-                                  min="-100"
-                                  max="100"
-                                  value={skinToneAdjustment}
-                                  onChange={(e) => setSkinToneAdjustment(parseFloat(e.target.value))}
-                                  style={{
-                                    flex: 1,
-                                    accentColor: '#ff6600'
-                                  }}
-                                />
-                                <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Darker</span>
-                              </div>
-                              <div style={{
-                                textAlign: 'center',
-                                fontSize: '10px',
-                                color: 'rgba(255, 255, 255, 0.5)'
-                              }}>
-                                Adjusts baby hands and feet color
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Reset Button */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setTemplatePosition({ x: 67, y: 40 });
-                              setTemplateScale(25);
-                              setTemplateRotation(0);
-                              setSkinToneAdjustment(0);
-                            }}
+                            X: {templatePosition.x.toFixed(0)}%
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={templatePosition.x}
+                            onChange={(e) => setTemplatePosition({ ...templatePosition, x: parseFloat(e.target.value) })}
                             style={{
                               width: '100%',
-                              padding: '8px',
-                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              borderRadius: '4px',
-                              color: 'rgba(255, 255, 255, 0.8)',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              transition: 'all 0.2s ease'
+                              height: '16px',
+                              accentColor: '#ff6600'
                             }}
-                          >
-                            Reset Position
-                          </button>
+                          />
+                        </div>
+                        
+                        <div>
+                          <label style={{
+                            fontSize: '11px',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            marginBottom: '2px',
+                            display: 'block'
+                          }}>
+                            Y: {templatePosition.y.toFixed(0)}%
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={templatePosition.y}
+                            onChange={(e) => setTemplatePosition({ ...templatePosition, y: parseFloat(e.target.value) })}
+                            style={{
+                              width: '100%',
+                              height: '16px',
+                              accentColor: '#ff6600'
+                            }}
+                          />
+                        </div>
+                        
+                        <div>
+                          <label style={{
+                            fontSize: '11px',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            marginBottom: '2px',
+                            display: 'block'
+                          }}>
+                            Size: {templateScale}%
+                          </label>
+                          <input
+                            type="range"
+                            min="20"
+                            max="200"
+                            value={templateScale}
+                            onChange={(e) => setTemplateScale(parseFloat(e.target.value))}
+                            style={{
+                              width: '100%',
+                              height: '16px',
+                              accentColor: '#ff6600'
+                            }}
+                          />
+                        </div>
+                        
+                        <div>
+                          <label style={{
+                            fontSize: '11px',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            marginBottom: '2px',
+                            display: 'block'
+                          }}>
+                            Rot: {templateRotation}°
+                          </label>
+                          <input
+                            type="range"
+                            min="-180"
+                            max="180"
+                            value={templateRotation}
+                            onChange={(e) => setTemplateRotation(parseFloat(e.target.value))}
+                            style={{
+                              width: '100%',
+                              height: '16px',
+                              accentColor: '#ff6600'
+                            }}
+                          />
+                        </div>
+                          
+                      </div>
+                      
+                      {/* Skin Tone Adjustment - Only for Virgin Mary template */}
+                      {selectedTemplate === '/images/face2.png' && (
+                        <div style={{ 
+                          marginTop: '8px',
+                          padding: '8px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                          borderRadius: '6px'
+                        }}>
+                          <label style={{
+                            display: 'block',
+                            fontSize: '11px',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            marginBottom: '4px'
+                          }}>
+                            Skin Tone
+                          </label>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Light</span>
+                            <input
+                              type="range"
+                              min="-100"
+                              max="100"
+                              value={skinToneAdjustment}
+                              onChange={(e) => setSkinToneAdjustment(parseFloat(e.target.value))}
+                              style={{
+                                flex: 1,
+                                height: '16px',
+                                accentColor: '#ff6600'
+                              }}
+                            />
+                            <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Dark</span>
+                          </div>
                         </div>
                       )}
                     </>
                   )}
                 </div>
               )}
+              
+              {/* Submit Buttons Row - More compact */}
+              <div className="compact-form-actions" style={{
+                display: 'flex',
+                gap: '10px',
+                marginTop: '16px'
+              }}>
+                <button 
+                  type="button" 
+                  onClick={onClose}
+                  className="compact-btn-cancel"
+                  disabled={isSubmitting}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="compact-btn-submit"
+                  disabled={isSubmitting || !formData.username.trim() || !formData.message.trim()}
+                  title={!formData.username.trim() || !formData.message.trim() ? 'Please fill in all required fields' : 'Review and light your candle'}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {isSubmitting ? (
+                    <span>Creating...</span>
+                  ) : (
+                    <span>🕯️ Light Candle</span>
+                  )}
+                </button>
+              </div>
 
-              {/* Password Dialog for Encryption - moved outside confirmation dialog */}
-              {showPasswordDialog && (
-                <div className="encryption-password-dialog" onClick={(e) => e.stopPropagation()}>
-                  <div className="password-dialog-content">
-                    <h3>Set Encryption Password</h3>
-                    <p>Others will need this password to read your message</p>
-                    <input
-                      type="password"
-                      value={encryptionPassword}
-                      onChange={(e) => setEncryptionPassword(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (encryptionPassword && encryptionPassword.length >= 4) {
-                            handleEncryptWithPassword();
-                          }
-                        }
-                      }}
-                      placeholder="Enter password (min 4 characters)"
-                      minLength={4}
-                      autoFocus
-                    />
-                    <div className="password-dialog-actions">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowPasswordDialog(false);
-                          setEncryptionPassword('');
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleEncryptWithPassword}
-                        disabled={!encryptionPassword || encryptionPassword.length < 4}
-                      >
-                        Encrypt Message
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Confirmation Dialog - shown only when user clicks submit */}
               {showConfirmDialog && (
@@ -3020,7 +2855,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       <p><strong>Name:</strong> {formData.username}</p>
                       <p><strong>Amount:</strong> {formData.burnedAmount ? formatNumberWithCommas(formData.burnedAmount) : '0'}</p>
                       <p><strong>Message:</strong> {formData.message.substring(0, 50)}{formData.message.length > 50 ? '...' : ''}</p>
-                      {isEncrypted && <p className="encryption-notice">🔒 This message will be encrypted</p>}
                     </div>
                     
                     {/* Removed social sharing - will show after successful save */}
@@ -3135,28 +2969,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
 
               {error && <div className="compact-error">{error}</div>}
 
-              <div className="compact-form-actions">
-                <button 
-                  type="button" 
-                  onClick={onClose} 
-                  className="compact-btn-cancel"
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="compact-btn-submit"
-                  disabled={isSubmitting || !formData.username.trim() || !formData.message.trim()}
-                  title={!formData.username.trim() || !formData.message.trim() ? 'Please fill in all required fields' : 'Review and light your candle'}
-                >
-                  {isSubmitting ? (
-                    <span>Creating...</span>
-                  ) : (
-                    <span>🕯️ Review & Light</span>
-                  )}
-                </button>
-              </div>
             </form>
           </div>
         </div>
