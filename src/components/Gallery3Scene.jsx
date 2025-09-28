@@ -341,7 +341,7 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
       />
       
       {/* Wireframe Grid */}
-      <WireframeGrid />
+      {/* <WireframeGrid /> */}
       
       {/* Jumping Arrow */}
       {/* <Suspense fallback={null}>

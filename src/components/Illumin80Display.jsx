@@ -376,16 +376,16 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
           <div style={{
             position: 'absolute',
             // left: isMobile ? '-1.2rem' : '-1.8rem',
-            left: '0',
-            top: '100%',
+            left: '25%',
+            top: '90%',
             transform: 'translateY(-50%) scaleX(1)',
-            fontSize: isMobile ? '24px' : '36px',
+            fontSize: isMobile ? '1rem' : '2rem',
             color: '#FFD700',
             filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.6))',
             pointerEvents: 'none',
             zIndex: 1
           }}>
-            🎱
+            ❤️‍🔥
           </div>
           
           {/* Right laurel branch */}

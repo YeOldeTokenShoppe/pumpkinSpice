@@ -31,7 +31,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
     { id: '01', date: 'HOME', title: 'TITLE TBD', path: '/home3', thumbnail: '/vvv.jpg' },
 
     { id: '02', date: 'F8TH', title: 'SCROLLS OF ST. GR80', path: '/model-viewer', thumbnail: '/vvv.jpg' },
-    { id: '03', date: 'H0PE', title: 'LIGHT UTIL80', path: '/gallery3', thumbnail: '/sacred.png' },
+    { id: '03', date: 'H0PE', title: 'GET LIT', path: '/gallery3', thumbnail: '/sacred.png' },
     { id: '04', date: 'CHAR80', title: 'COIN FOUNTAIN', path: '/fountain', thumbnail: '/fountain.png' },
     // { id: '03', date: 'MARKET ACTIV80', title: 'Cloud Computing', path: '/clouds', thumbnail: '/lightning.png' },
 

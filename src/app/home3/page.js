@@ -21,6 +21,7 @@ import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
 import InfinityLoader from '@/components/InfinityLoader';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 

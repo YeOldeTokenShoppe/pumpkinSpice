@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import { useMusic } from "@/components/MusicContext";
-import InfinityLoader from "@/components/InfinityLoader";
+import InfinityLoader from "@/components/InfinityLoader_optimized";
 import CyberNav from "@/components/CyberNav";
 import SocialBar from "@/components/SocialBar";
 import TokensBurned from "@/components/TokensBurned";

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.il-c{position:fixed;inset:0;height:100vh;background:#270245;display:grid;place-content:center;overflow:hidden;z-index:9999}
+.il-crt{position:absolute;inset:0;height:100vh;background:repeating-linear-gradient(0deg,transparent,transparent 1px,#270245 1px,#270245 3px);opacity:.8;z-index:2;pointer-events:none}
+.il-crt::after{content:"";width:100%;height:24px;background:#fff03;position:absolute;top:100%;left:0;animation:roll 5s linear infinite}
+.il-s{stroke-dasharray:3000;margin:auto;width:100%;max-width:320px;animation:loop 2s infinite cubic-bezier(.65,0,.35,1),pulse 10s infinite steps(1,end),fade 2s infinite ease-in-out;z-index:1}
+@media(min-width:1920px){.il-s{position:absolute;height:auto;left:calc(50% - 146px);top:calc(50% - 88px);animation:pulse 10s infinite steps(1,end),fade 2s infinite ease-in-out;transform:translate(var(--tX),var(--tY))}}
+@keyframes loop{0%{stroke-dashoffset:3150}50%{stroke-dashoffset:0}100%{stroke-dashoffset:-2850}}
+@keyframes pulse{0%{stroke:#fe18d3;filter:drop-shadow(0 0 12px #fe18d377)drop-shadow(0 0 36px #fe18d377)}20%{stroke:#ff2941;filter:drop-shadow(0 0 12px #ff294177)drop-shadow(0 0 36px #ff294177)}40%{stroke:#871a85;filter:drop-shadow(0 0 12px #871a8577)drop-shadow(0 0 36px #871a8577)}60%{stroke:#feff38;filter:drop-shadow(0 0 12px #feff3877)drop-shadow(0 0 36px #feff3877)}80%{stroke:#4206f1;filter:drop-shadow(0 0 12px #4206f177)drop-shadow(0 0 36px #4206f1dd)}}
+@keyframes roll{from{transform:translateY(0)}to{transform:translateY(-105vh)}}
+@keyframes fade{0%,95%{opacity:1}98%,100%{opacity:0}}
+</style>
+</head>
+<body>
+<div id="loader" class="il-c">
+<svg class="il-s" viewBox="0 0 1114 498" xmlns="http://www.w3.org/2000/svg">
+<path d="M557,249c53,53,102,112,165,156,32,23,69,43,110,49,29,4,59,1,87-8,27-8,52-21,74-38,22-17,40-38,53-61,10-18,18-37,22-57,4-21,6-42,3-63-9-81-70-152-152-176-21-6-43-9-65-9-20,0-41,2-61,7-60,16-105,61-146,104-26,27-51,54-77,81-50,53-99,107-154,156-27,23-58,44-93,55-68,22-147,6-202-37-22-17-40-38-53-61-10-18-18-37-22-57-21-95,34-194,129-232,27-11,56-17,85-16,66,1,126,41,173,82,13,11,25,23,38,34,12,11,23,23,34,34,18,18,35,38,53,56Z" fill="none" stroke-width="84"/>
+</svg>
+<div class="il-crt"></div>
+</div>
+<script>
+(function(){
+if(innerWidth<1920)return;
+var s={x:0,y:0,d:'h',rX:1,rY:1,t:0},r=document.documentElement.style;
+r.setProperty('--tX','0');r.setProperty('--tY','0');
+function a(n){
+if(n-s.t<16)return requestAnimationFrame(a);
+var w=innerWidth,h=innerHeight,e={t:h/2+s.y-88<=2,r:w/2+s.x+146>=w-2,b:h/2+s.y+88>=h-2,l:w/2+s.x-146<=2},f=0;
+if(s.d=='h'){s.x+=5*s.rX;if((s.rX>0&&e.r)||(s.rX<0&&e.l)){s.rX*=-1;f=1}}
+else{s.y+=5*s.rY;if((s.rY>0&&e.b)||(s.rY<0&&e.t)){s.rY*=-1;f=1}}
+if(f)s.d=s.d=='h'?'v':'h';
+s.x=Math.max(-(w-292)/2,Math.min((w-292)/2,s.x));
+s.y=Math.max(-(h-176)/2,Math.min((h-176)/2,s.y));
+r.setProperty('--tX',s.x+'px');r.setProperty('--tY',s.y+'px');
+s.t=n;requestAnimationFrame(a)}
+requestAnimationFrame(a)})();
+</script>
+</body>
+</html>
