@@ -78,7 +78,7 @@ function OrbitalCandle({ angle, radius, candleObject, userData, index, onClick, 
             
             // Draw the username
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+            ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             

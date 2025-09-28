@@ -19,6 +19,7 @@ import { useMusic } from '@/components/MusicContext';
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import CyberNav from '@/components/CyberNav';
+import SocialBar from '@/components/SocialBar';
 import InfinityLoader from '@/components/InfinityLoader';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -2147,11 +2148,13 @@ export default function Home3() {
             style={{
               position: 'fixed',
               bottom: isMobile ? '20px' : '30px',
-              left: isMobile ? '20px' : '30px',
-              padding: isMobile ? '15px 25px' : '20px 35px',
+              left: isMobile ? '10px' : '30px',
+              width: isMobile ? '140px' : '200px',
+              height: isMobile ? '44px' : '60px',
+              padding: 0,
               background: 'linear-gradient(135deg, #2d5016 0%, #4a8c26 100%)',
               color: '#ffffff',
-              fontSize: isMobile ? '1.1rem' : '1.3rem',
+              fontSize: isMobile ? '0.9rem' : '1.3rem',
               fontFamily: 'UnifrakturCook, serif',
               fontWeight: 'bold',
               borderRadius: '50px',
@@ -2164,7 +2167,10 @@ export default function Home3() {
               border: '2px solid rgba(255, 200, 100, 0.3)',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              justifyContent: 'center',
+              gap: '5px',
+              whiteSpace: 'nowrap',
+              boxSizing: 'border-box',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'scale(1.1)';
@@ -2176,7 +2182,7 @@ export default function Home3() {
             }}
             title="Burn tokens to light a candle"
           >
-            🕯️ Light Candle
+            🕯️ <span style={{ display: isMobile ? 'none' : 'inline' }}>Light</span> Candle
           </a>
           
           {/* Buy Button - Right Side */}
@@ -2187,11 +2193,13 @@ export default function Home3() {
             style={{
               position: 'fixed',
               bottom: isMobile ? '20px' : '30px',
-              right: isMobile ? '20px' : '30px',
-              padding: isMobile ? '15px 30px' : '20px 40px',
+              right: isMobile ? '10px' : '30px',
+              width: isMobile ? '140px' : '200px',
+              height: isMobile ? '44px' : '60px',
+              padding: 0,
               background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
               color: '#1a0033',
-              fontSize: isMobile ? '1.2rem' : '1.5rem',
+              fontSize: isMobile ? '0.9rem' : '1.3rem',
               fontFamily: 'UnifrakturCook, serif',
               fontWeight: 'bold',
               borderRadius: '50px',
@@ -2202,6 +2210,12 @@ export default function Home3() {
               cursor: 'pointer',
               animation: 'buyButtonPulse 2s infinite',
               border: '2px solid rgba(255, 255, 255, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '5px',
+              whiteSpace: 'nowrap',
+              boxSizing: 'border-box',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'scale(1.1)';
@@ -2231,41 +2245,8 @@ export default function Home3() {
           zIndex: 9999999
         }}
       >
-        {/* User Account Icon with Illumin80 Laurel */}
-        <div>
-         {(!isMobileDevice || isMobileDevice) && (
-          <div style={{ order: isMobileDevice ? 3 : 0 }}>
-          {isSignedIn ? (
-            <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
-          ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/home3">
-              <button
-                style={{
-                  width: isMobileDevice ? "2.5rem" : "3.75rem",
-                  height: isMobileDevice ? "2.5rem" : "3.75rem",
-                  borderRadius: "0.5rem",
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  border: "2px solid rgba(255, 255, 255, 0.2)",
-                  color: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  backdropFilter: "blur(10px)",
-                  boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
-                }}
-                title="Sign In"
-              >
-                <span style={{ fontSize: "2.2rem" }}>{emoji}</span>
-              </button>
-            </SignInButton>
-          )}
-        </div>
-        )}
-        </div>
-        
-        {/* Music Controls */}
-        <div>
+        {/* Music Controls - First on desktop, Third on mobile */}
+        <div style={{ order: isMobileDevice ? 2 : 0 }}>
           {!showMusicControls ? (
             <button
               onClick={() => {
@@ -2396,9 +2377,43 @@ export default function Home3() {
           )}
         </div>
         
-        {/* CyberNav Menu */}
-        <div style={{ order: isMobileDevice ? 0 : 3 }}>
+        {/* User Account - Second on desktop, Second on mobile */}
+        <div style={{ order: isMobileDevice ? 1 : 1 }}>
+          {isSignedIn ? (
+            <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
+          ) : (
+            <SignInButton mode="modal" forceRedirectUrl="/home3">
+              <button
+                style={{
+                  width: isMobileDevice ? "2.5rem" : "3.75rem",
+                  height: isMobileDevice ? "2.5rem" : "3.75rem",
+                  borderRadius: "0.5rem",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  border: "2px solid rgba(255, 255, 255, 0.2)",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  backdropFilter: "blur(10px)",
+                  boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
+                }}
+                title="Sign In"
+              >
+                <span style={{ fontSize: "2.2rem" }}>{emoji}</span>
+              </button>
+            </SignInButton>
+          )}
+        </div>
+        
+        {/* CyberNav Menu - Last on desktop, First on mobile */}
+        <div style={{ order: isMobileDevice ? 0 : 2 }}>
           <CyberNav is80sMode={is80sMode} position="relative" />
+        </div>
+        
+        {/* Social Bar - Last position */}
+        <div style={{ order: isMobileDevice ? 4 : 3 }}>
+          <SocialBar is80sMode={is80sMode} />
         </div>
       </div>
       )}

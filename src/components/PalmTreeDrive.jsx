@@ -2398,7 +2398,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         
         if (intersects.length > 0) {
           const isMobile = detectMobileDevice();
-          const destination = isMobile ? '/home2' : '/home2';
+          const destination = isMobile ? '/home3' : '/home3';
           console.log(`Mary clicked! Navigating to ${destination}...`);
           
           // Add fade out transition before navigating

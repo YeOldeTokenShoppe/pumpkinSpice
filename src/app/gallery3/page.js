@@ -266,34 +266,8 @@ export default function Gallery3Page() {
         alignItems: isMobileDevice ? "flex-end" : "center",
         zIndex: 9999
       }}>
-        {/* User Account */}
-        <div style={{ order: isMobileDevice ? 3 : 0 }}>
-          {isSignedIn ? (
-            <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
-          ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/gallery3">
-              <button style={{
-                width: isMobileDevice ? "40px" : "60px",
-                height: isMobileDevice ? "40px" : "60px",
-                borderRadius: "8px",
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                border: "2px solid rgba(255, 255, 255, 0.2)",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                backdropFilter: "blur(10px)",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
-              }}>
-                <span style={{ fontSize: "2.5rem" }}>{emoji}</span>
-              </button>
-            </SignInButton>
-          )}
-        </div>
-        
         {/* Music Controls */}
-        <div style={{ order: isMobileDevice ? 1 : 1 }}>
+        <div style={{ order: isMobileDevice ? 2 : 0 }}>
           {!showMusicControls ? (
             <button
               onClick={() => handleMusicToggle(true)}
@@ -391,8 +365,34 @@ export default function Gallery3Page() {
           )}
         </div>
         
+        {/* User Account */}
+        <div style={{ order: isMobileDevice ? 1 : 1 }}>
+          {isSignedIn ? (
+            <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
+          ) : (
+            <SignInButton mode="modal" forceRedirectUrl="/gallery3">
+              <button style={{
+                width: isMobileDevice ? "40px" : "60px",
+                height: isMobileDevice ? "40px" : "60px",
+                borderRadius: "8px",
+                backgroundColor: "rgba(0, 0, 0, 0.7)",
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                backdropFilter: "blur(10px)",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
+              }}>
+                <span style={{ fontSize: "2.5rem" }}>{emoji}</span>
+              </button>
+            </SignInButton>
+          )}
+        </div>
+        
         {/* 80s Mode Toggle */}
-        <div style={{ order: isMobileDevice ? 2 : 2 }}>
+        <div style={{ order: isMobileDevice ? 3 : 2 }}>
           <button
             onClick={toggle80sMode}
             style={{

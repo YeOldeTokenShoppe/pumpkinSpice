@@ -2479,7 +2479,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     {imageFile ? (
                       <>📷 Custom</>
                     ) : (imagePreview && !imageFile) ? (
-                      <>👤 Profile</>
+                      <>👤 Image</>
                     ) : (
                       <>📷 Add Image</>
                     )}

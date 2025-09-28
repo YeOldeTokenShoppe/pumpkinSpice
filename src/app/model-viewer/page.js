@@ -7,6 +7,7 @@ import { Illumin80ClerkButton } from '@/components/Illumin80Display';
 import { useMusic } from '@/components/MusicContext';
 import InfinityLoader from '@/components/InfinityLoader';
 import CyberNav from '@/components/CyberNav';
+import SocialBar from '@/components/SocialBar';
 import BuyTokenFAB from '@/components/BuyTokenFAB';
 import CompactCandleModal from '@/components/CompactCandleModal';
 
@@ -96,39 +97,8 @@ export default function ModelViewerPage() {
           zIndex: 9999
         }}
       >
-        {/* User Avatar/Sign In - Show on desktop or at bottom on mobile */}
-        {(!isMobileDevice || isMobileDevice) && (
-          <div style={{ order: isMobileDevice ? 3 : 0 }}>
-          {isSignedIn ? (
-            <Illumin80ClerkButton afterSignOutUrl="/" />
-          ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/model-viewer">
-              <button
-                style={{
-                  width: isMobileDevice ? "40px" : "60px",
-                  height: isMobileDevice ? "40px" : "60px",
-                  borderRadius: "8px",
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  border: "2px solid rgba(255, 255, 255, 0.2)",
-                  color: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  backdropFilter: "blur(10px)",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-                }}
-                title="Sign In"
-              >
-                <span style={{ fontSize: "2.2rem" }}>{emoji}</span>
-              </button>
-            </SignInButton>
-          )}
-        </div>
-        )}
-        
-        {/* Music Controls */}
-        <div style={{ order: isMobileDevice ? 1 : 1 }}>
+        {/* Music Controls - First on desktop, Third on mobile */}
+        <div style={{ order: isMobileDevice ? 2 : 0 }}>
           {!showMusicControls ? (
             <button
               onClick={() => handleMusicToggle(true)}
@@ -249,8 +219,37 @@ export default function ModelViewerPage() {
           )}
         </div>
         
-        {/* 80s Mode Toggle */}
-        <div style={{ order: isMobileDevice ? 2 : 2 }}>
+        {/* User Account - Second on desktop, Second on mobile */}
+        <div style={{ order: isMobileDevice ? 1 : 1 }}>
+          {isSignedIn ? (
+            <Illumin80ClerkButton afterSignOutUrl="/" />
+          ) : (
+            <SignInButton mode="modal" forceRedirectUrl="/model-viewer">
+              <button
+                style={{
+                  width: isMobileDevice ? "40px" : "60px",
+                  height: isMobileDevice ? "40px" : "60px",
+                  borderRadius: "8px",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  border: "2px solid rgba(255, 255, 255, 0.2)",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  backdropFilter: "blur(10px)",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                }}
+                title="Sign In"
+              >
+                <span style={{ fontSize: "2.2rem" }}>{emoji}</span>
+              </button>
+            </SignInButton>
+          )}
+        </div>
+        
+        {/* 80s Mode Toggle - Third on desktop, Fourth on mobile */}
+        <div style={{ order: isMobileDevice ? 3 : 2 }}>
           <button
             onClick={() => toggle80sMode(!is80sMode)}
             style={{
@@ -298,9 +297,14 @@ export default function ModelViewerPage() {
           </button>
         </div>
         
-        {/* CyberNav Menu */}
+        {/* CyberNav Menu - Last on desktop, First on mobile */}
         <div style={{ order: isMobileDevice ? 0 : 3 }}>
           <CyberNav is80sMode={is80sMode} position="relative" />
+        </div>
+        
+        {/* Social Bar - Last position */}
+        <div style={{ order: isMobileDevice ? 4 : 4 }}>
+          <SocialBar is80sMode={is80sMode} />
         </div>
       </div>
       )}

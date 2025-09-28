@@ -375,20 +375,21 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
           {/* Left laurel branch */}
           <div style={{
             position: 'absolute',
-            left: isMobile ? '-1.2rem' : '-1.8rem',
-            top: '50%',
-            transform: 'translateY(-70%) rotate(-15deg) scaleX(-1)',
+            // left: isMobile ? '-1.2rem' : '-1.8rem',
+            left: '0',
+            top: '100%',
+            transform: 'translateY(-50%) scaleX(1)',
             fontSize: isMobile ? '24px' : '36px',
             color: '#FFD700',
             filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.6))',
             pointerEvents: 'none',
             zIndex: 1
           }}>
-            🪽
+            🎱
           </div>
           
           {/* Right laurel branch */}
-          <div style={{
+          {/* <div style={{
             position: 'absolute',
             right: isMobile ? '-1.2rem' : '-1.8rem',
             top: '50%',
@@ -400,7 +401,7 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
             zIndex: 1
           }}>
            🪽
-          </div>
+          </div> */}
           
           {/* Top fleur-de-lis */}
           {/* <div style={{
