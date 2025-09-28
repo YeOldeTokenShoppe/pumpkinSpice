@@ -406,7 +406,7 @@ export default function GalleryPage() {
             {(!isMobileDevice || isMobileDevice) && (
               <div style={{ order: isMobileDevice ? 3 : 0 }}>
                 {isSignedIn ? (
-                  <Illumin80ClerkButton afterSignOutUrl="/" />
+                  <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
                 ) : (
                   <SignInButton mode="modal" forceRedirectUrl="/gallery" >
                     <button

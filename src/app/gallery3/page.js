@@ -269,7 +269,7 @@ export default function Gallery3Page() {
         {/* User Account */}
         <div style={{ order: isMobileDevice ? 3 : 0 }}>
           {isSignedIn ? (
-            <Illumin80ClerkButton afterSignOutUrl="/" />
+            <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
           ) : (
             <SignInButton mode="modal" forceRedirectUrl="/gallery3">
               <button style={{
@@ -537,12 +537,13 @@ export default function Gallery3Page() {
       {!isLoading && enableCandles && paginationState && paginationState.totalPages > 1 && (
         <div style={{
           position: 'fixed',
-          bottom: '30%',
-          left: '20px',
-          right: '20px',
+          top: '75%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'center',
           alignItems: 'center',
+          gap: '180px',
           pointerEvents: 'none',
           zIndex: 1000,
         }}>
@@ -556,11 +557,11 @@ export default function Gallery3Page() {
               }
             }}
             style={{
-              width: '40px',
-              height: '40px',
+              width: '50px',
+              height: '50px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              border: '2px solid rgba(255, 255, 255, 0.6)',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
@@ -568,17 +569,23 @@ export default function Gallery3Page() {
               cursor: 'pointer',
               pointerEvents: 'auto',
               transition: 'all 0.3s ease',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.1)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.transform = 'scale(1.15)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
               e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
@@ -593,11 +600,11 @@ export default function Gallery3Page() {
               }
             }}
             style={{
-              width: '40px',
-              height: '40px',
+              width: '50px',
+              height: '50px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              border: '2px solid rgba(255, 255, 255, 0.6)',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
@@ -605,17 +612,23 @@ export default function Gallery3Page() {
               cursor: 'pointer',
               pointerEvents: 'auto',
               transition: 'all 0.3s ease',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.1)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.transform = 'scale(1.15)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
               e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>

@@ -379,7 +379,7 @@ function HolographicStatue3({
       
       statue.traverse((child) => {
         if (child.isMesh) {
-          // console.log("Mesh name:", child.name); // Keep this for now
+          console.log("Mesh name:", child.name); // Enable debug logging
           const meshName = child.name.toLowerCase();
       
           if (
@@ -400,16 +400,44 @@ function HolographicStatue3({
               // needsUpdate: true, // Remove this line - it's causing the warning
             });
             child.renderOrder = 2;
-          } else if (meshName === "heart1" || meshName === "heart3" || meshName === "heart") {
-            // Be more specific with the heart names
-            // console.log("Found heart object:", child.name); // Debug log
+          } else if (meshName === "heart3_1" || meshName === "heart3_2") {
+            // Apply green shader to heart3 parts with enhanced visibility
+            const clonedMaterial = heartHolographicMaterial.clone();
+            clonedMaterial.uniforms = {
+              uTime: { value: 0 },
+              uColor: { value: new THREE.Color(0x00ff00) }, // Green color
+              uGlowIntensity: { value: 2.5 }
+            };
+            clonedMaterial.side = THREE.DoubleSide; // Render both sides
+            clonedMaterial.depthTest = false; // Always render on top
+            child.material = clonedMaterial;
+            child.renderOrder = 3; // Higher render order to draw last
+            animatedMaterialsRef.current.push(clonedMaterial);
+          } else if (meshName === "heart4_1" || meshName === "heart4_2" || meshName === "heart4") {
+            // Apply white shader to heart4 parts with enhanced visibility
+            const clonedMaterial = heartHolographicMaterial.clone();
+            clonedMaterial.uniforms = {
+              uTime: { value: 0 },
+              uColor: { value: new THREE.Color(0xffffff) }, // White color
+              uGlowIntensity: { value: 2.5 }
+            };
+            clonedMaterial.side = THREE.DoubleSide; // Render both sides
+            clonedMaterial.depthTest = false; // Always render on top
+            child.material = clonedMaterial;
+            child.renderOrder = 3; // Higher render order to draw last
+            animatedMaterialsRef.current.push(clonedMaterial);
+          } else if (meshName === "heart1" || meshName === "heart") {
+            // Hide heart1 temporarily
+            if (meshName === "heart") {
+              child.visible = true;
+            }
+            // Apply red shader to other hearts
             const clonedMaterial = holographicMaterial.clone();
             clonedMaterial.uniforms = {
               uTime: { value: 0 },
               uColor: { value: new THREE.Color(0xff0000) } // Make it bright red so we can see it
             };
             child.material = clonedMaterial;
-            // child.renderOrder = 0; // Between statue (1) and halo (2)
             animatedMaterialsRef.current.push(clonedMaterial);
           } else {
             // Main statue parts

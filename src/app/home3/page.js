@@ -552,21 +552,32 @@ function EnhancedPortalFrame({ id, name, author, bg, width = 1.8, height = GOLDE
         {name}
       </Text>
       
-      {/* Interaction hint - only show on front side */}
+      {/* Interaction hints - only show on front side */}
       {!isFlipped && (
-        <PulsingText
-          font="/fonts/UnifrakturMaguntia-Regular.ttf"
-          color="#ffffff"
-          fontSize={0.1}
-          anchorX="right"
-          anchorY="top"
-          position={[width * 0.45, height * 0.43, 0.02]}
-          fillOpacity={0.9}
-          outlineWidth={0.002}
-          outlineColor="#000000"
-        >
-          Click to interact
-        </PulsingText>
+        <>
+          <PulsingText
+            font="/fonts/UnifrakturMaguntia-Regular.ttf"
+            color="#d4af37"
+            fontSize={0.06}
+            anchorX="right"
+            anchorY="top"
+            position={[width * 0.45, height * 0.45, 0.02]}
+            fillOpacity={0.9}
+          >
+            Click to flip
+          </PulsingText>
+          <Text
+            font="/fonts/UnifrakturMaguntia-Regular.ttf"
+            color="#d4af37"
+            fontSize={0.05}
+            anchorX="right"
+            anchorY="top"
+            position={[width * 0.45, height * 0.38, 0.02]}
+            fillOpacity={0.7}
+          >
+            Double-click to enter
+          </Text>
+        </>
       )}
       <Text 
         font="/fonts/UnifrakturMaguntia-Regular.ttf"
@@ -2052,541 +2063,7 @@ export default function Home3() {
         }} /> */}
         
         {/* Alternating Cards Section */}
-        <div className="cards-wrapper" style={{ marginTop: getResponsiveValue('2rem', '0rem', '0rem', '2rem') }}>
-      
-          
-          {/* Portal Section - In alternating layout with cards */}
- {/* Portal Section - In alternating layout with cards */}
- <div 
-            className="card-wrap portal-wrap"
-            ref={el => {
-              if (el && !cardRefs.current.includes(el)) {
-                cardRefs.current.push(el);
-              }
-            }}
-            onMouseMove={(e) => {
-              const card = e.currentTarget;
-              const innerDiv = card.querySelector('.portal-hover-container');
-              if (!innerDiv) return;
-              
-              const cardRect = card.getBoundingClientRect();
-              const cardCenterX = cardRect.left + cardRect.width / 2;
-              const cardCenterY = cardRect.top + cardRect.height / 2;
-              
-              const mouseX = (e.clientX - cardCenterX) / (cardRect.width / 2);
-              const mouseY = (e.clientY - cardCenterY) / (cardRect.height / 2);
-              
-              const rX = mouseX * 30;
-              const rY = mouseY * -30;
-              
-              // Apply rotation without vertical translation to keep content within borders
-              innerDiv.style.transform = `rotateY(${rX}deg) rotateX(${rY}deg)`;
-            }}
-            onMouseLeave={(e) => {
-              const innerDiv = e.currentTarget.querySelector('.portal-hover-container');
-              if (innerDiv) {
-                // Instead of resetting to exactly 0, use a tiny value to prevent shift
-                innerDiv.style.transform = 'rotateY(0.01deg) rotateX(0.01deg)';
-              }
-            }}
-            onClick={() => setPortalFlipped(!portalFlipped)}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              // Navigate to fountain page using Next.js router
-              router.push('/fountain');
-            }}>
-            <div className="portal-hover-container" style={{
-              width: '130%',
-              aspectRatio: `${1 / GOLDENRATIO}`,
-              position: 'relative',
-              perspective: '1000px',
-              transition: 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
-              transformStyle: 'preserve-3d',
-              marginLeft: '-15%',
-              transform: 'rotateX(0.01deg) rotateY(0.01deg)', // Tiny initial rotation to trigger 3D context
-              overflow: 'visible',
-            }}>
-            <div className={`portal-container ${portalFlipped ? 'flipped' : ''}`}>
-              {/* Front of portal */}
-              <div className="portal-face portal-front">
-                {mounted && (
-                <Suspense fallback={<div>Loading...</div>}>
-                <Canvas 
-                  gl={{ localClippingEnabled: true, alpha: true }} 
-                  camera={{ fov: 75, position: [0, 0, 1.5] }}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    background: 'transparent',
-                    borderRadius: '10px',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                  }}
-                >
-                  <Suspense fallback={null}>
-                    <ambientLight intensity={0.5} />
-                    <pointLight position={[10, 10, 10]} />
-                    <directionalLight 
-                      position={[3, 8, 5]}  // From above-right-front
-                      intensity={1.2}
-                      castShadow
-                    />
-                    <PortalFrame id="01" name="Sacred Gateway" author="Enter the Sanctuary">
-                      <ambientLight intensity={0.7} />
-                      <pointLight position={[0, 2, 2]} intensity={1.2} />  // Above and in front of model
-                      <pointLight position={[-2, -0.5, 1]} intensity={0.5} color="#ffd700" />  // Golden side fill
-                      {/* HTML iframe showing fountain.html */}
-                      <group>
-                        <mesh position={[0, 0, -0.5]}>
-                          <planeGeometry args={[0.9, GOLDENRATIO * 0.9]} />
-                          <meshBasicMaterial transparent opacity={0} />
-                        </mesh>
-                        <Html
-                          transform
-                          occlude="blending"
-                          position={[0, 0.00, -0.04]}
-                          scale={0.045}
-              
-                          style={{
-                            width: '1000px',
-                            height: `${1000 * GOLDENRATIO}px`,
-                            overflow: 'hidden',
-                
-                          }}
-                        >
-                          <div 
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              overflow: 'hidden',
-                              borderRadius: '80px',
-                              clipPath: 'inset(0 round 10px)',
-                              cursor: 'pointer',
-                              position: 'relative',
-                            }}
-                            onDoubleClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              // Use window.location for more reliable navigation
-                              window.location.href = '/fountain';
-                            }}
-                          >
-                            <iframe
-                              src="/fountain.html?portal=true"
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                border: 'none',
-                                background: 'white',
-                                pointerEvents: 'none', // Prevent iframe from capturing clicks
-                              }}
-                              title="Fountain"
-                            />
-                          </div>
-                        </Html>
-                      </group>
-                      {/* Optional: Keep the model visible */}
-                      {/* <FountainModel position={[0, -0.6, -3]} scale={[1, 1, 1]} /> */}
-                      <Sky sunPosition={[100, 20, 100]} />
-                    </PortalFrame>
-                  </Suspense>
-                  <CameraControls 
-                    makeDefault 
-                    minAzimuthAngle={-Math.PI / 2.5} 
-                    maxAzimuthAngle={Math.PI / 2.5} 
-                    minPolarAngle={0.5} 
-                    maxPolarAngle={Math.PI / 2}
-                    enableZoom={false}
-                    enablePan={false}
-                    enableRotate={true}
-                    dollySpeed={0}
-                    truckSpeed={0} 
-                  />
-                </Canvas>
-                </Suspense>
-                )}
-              </div>
-              {/* Back of portal */}
-              <div className="portal-face portal-back">
-                {mounted && (
-                <Suspense fallback={<div>Loading...</div>}>
-                <Canvas 
-                  gl={{ alpha: true }} 
-                  camera={{ fov: 75, position: [0, 0, 1.5] }}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    background: 'transparent',
-                    borderRadius: '10px',
-                  }}
-                >
-                  <group>
-                    {/* Portal frame background */}
-                    <mesh position={[0, 0, -0.001]}>
-                      {/* <roundedPlaneGeometry args={[1.1 + 0.05, GOLDENRATIO * 1.25 + 0.05, 0.12]} /> */}
-                      <meshBasicMaterial color="#d4af37" />
-                    </mesh>
-                    {/* Portal content background */}
-                    <mesh>
-                      <roundedPlaneGeometry args={[1.1, GOLDENRATIO * 1.25, 0.1]} />
-                      <meshBasicMaterial color="#2a1f0a" />
-                    </mesh>
-                    {/* Text content */}
-                    <Text 
-                      font="/fonts/UnifrakturCook-Bold.ttf"
-                      color="#d4af37" 
-                      fontSize={0.12} 
-                      anchorX="center" 
-                      position={[0, 0.45, 0.01]}
-                      maxWidth={0.8}
-                    >
-                      The Sacred Portal
-                    </Text>
-                    <Text 
-                      font="/fonts/UnifrakturMaguntia-Regular.ttf"
-                      color="#ffffff" 
-                      fontSize={0.04} 
-                      anchorX="center" 
-                      anchorY="top"
-                      position={[0, 0.3, 0.01]}
-                      maxWidth={0.8}
-                      lineHeight={1.4}
-                      textAlign="center"
-                    >
-                      {`This divine gateway represents the threshold
-between material and spiritual realms,
-where earthly ambitions meet heavenly providence.
 
-The Sacred Gateway serves as a mystical passage
-for blessed holders of $RL80, offering glimpses
-into realms of perpetual prosperity.
-
-Beyond the golden frame lies a sanctuary
-where traditional wisdom meets blockchain innovation.`}
-                    </Text>
-                    <Text 
-                      font="/fonts/UnifrakturMaguntia-Regular.ttf"
-                      color="#d4af37" 
-                      fontSize={0.035} 
-                      anchorX="center" 
-                      position={[0, -0.4, 0.01]}
-                      fontStyle="italic"
-                    >
-                      Click to return to the gateway
-                    </Text>
-                  </group>
-                </Canvas>
-                </Suspense>
-                )}
-              </div>
-            </div>
-            </div>
-            </div>
-          </div>
-          
-          {/* Portal Gallery Section with Pagination */}
-          <div 
-            className="card-wrap portal-gallery-wrap"
-            ref={el => {
-              if (el && !cardRefs.current.includes(el)) {
-                cardRefs.current.push(el);
-              }
-            }}
-            style={{
-              width: activePortal ? '100vw' : '95%',
-              maxWidth: activePortal ? '100vw' : '1400px',
-              margin: activePortal ? '0' : '4rem auto',
-              position: activePortal ? 'fixed' : 'relative',
-              top: activePortal ? '0' : 'auto',
-              left: activePortal ? '0' : 'auto',
-              height: activePortal ? '100vh' : 'auto',
-              zIndex: activePortal ? 9999 : 'auto',
-              backgroundColor: activePortal ? '#000' : 'transparent',
-              transition: 'all 0.5s ease',
-            }}
-          >
-            <div 
-              style={{
-              width: '100%',
-              height: activePortal ? '100vh' : 'auto',
-              aspectRatio: activePortal ? 'auto' : `${3 / GOLDENRATIO}`,
-              position: 'relative',
-              perspective: '1000px',
-              display: 'flex',
-              gap: '2rem',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              {/* Back button removed from here - moved inside portal div */}
-              {mounted && (
-                <>
-                  {/* Individual canvas for each portal */}
-                  {currentPortals.map((portal, index) => (
-                    <div
-                      key={portal.id}
-                      style={{
-                        flex: activePortal === portal.id ? 'none' : '1',
-                        maxWidth: activePortal === portal.id ? 'none' : (isMobileDevice ? '100%' : '450px'),
-                        aspectRatio: activePortal === portal.id ? 'auto' : `${1 / GOLDENRATIO}`,
-                        position: activePortal === portal.id ? 'fixed' : 'relative',
-                        transform: activePortal === portal.id ? 'scale(1)' : 'scale(1)',
-                        transition: 'transform 0.5s ease',
-                        display: activePortal && activePortal !== portal.id ? 'none' : 'block',
-                        width: activePortal === portal.id ? '100vw' : 'auto',
-                        height: activePortal === portal.id ? '100vh' : 'auto',
-                        top: activePortal === portal.id ? '0' : 'auto',
-                        left: activePortal === portal.id ? '0' : 'auto',
-                        right: activePortal === portal.id ? '0' : 'auto',
-                        bottom: activePortal === portal.id ? '0' : 'auto',
-                        zIndex: activePortal === portal.id ? '10000' : 'auto',
-                        backgroundColor: activePortal === portal.id ? '#000' : 'transparent',
-                      }}
-                    >
-                      {/* Back button inside portal div when active */}
-                      {activePortal === portal.id && (
-                        <button
-                          onClick={handlePortalExit}
-                          style={{
-                            position: 'absolute',
-                            top: '20px',
-                            left: '20px',
-                            padding: '12px 24px',
-                            background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
-                            color: '#1a0033',
-                            fontSize: '1.2rem',
-                            fontFamily: 'UnifrakturCook, serif',
-                            fontWeight: 'bold',
-                            borderRadius: '25px',
-                            border: '2px solid rgba(255, 255, 255, 0.3)',
-                            cursor: 'pointer',
-                            zIndex: 10001,
-                            transition: 'all 0.3s ease',
-                            boxShadow: '0 4px 15px rgba(212, 175, 55, 0.5)',
-                            pointerEvents: 'auto',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.7)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.5)';
-                          }}
-                        >
-                          ← Back to Portals
-                        </button>
-                      )}
-                      <Suspense fallback={<div>Loading portal...</div>}>
-                        <Canvas
-                          flat
-                          camera={{ fov: 50, position: [0, 0, 5] }}
-                          gl={{ alpha: true }}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            background: 'transparent',
-                            borderRadius: activePortal === portal.id ? '0' : '10px',
-                            pointerEvents: 'auto',
-                            touchAction: activePortal === portal.id ? 'none' : 'auto',
-                          }}
-                        >
-                          <ambientLight intensity={0.5} />
-                          <pointLight position={[10, 10, 10]} />
-                          <directionalLight position={[3, 8, 5]} intensity={1.2} />
-                          
-                          {/* Individual portal with mouse rotation */}
-                          <PortalMouseRotation isActive={activePortal === portal.id}>
-                            <EnhancedPortalFrame
-                              id={portal.id}
-                              name={portal.name}
-                              author={portal.author}
-                              bg={index % 3 === 0 ? "#e4cdac" : index % 3 === 1 ? "#8b6914" : "#c4a572"}
-                              position={[0, 0, 0]}
-                            isFlipped={portalFlippedStates[portal.id] || false}
-                            onFlip={handlePortalFlip}
-                            onEnter={handlePortalEnter}
-                            activePortal={activePortal}
-                          >
-                            <Gltf 
-                              src={index % 3 === 0 ? "/models/small_altar.glb" : index % 3 === 1 ? "/models/small_altar2.glb" : "/models/small_altar3.glb"} 
-                              scale={index % 3 === 1 ? 4 : 2} 
-                              position={index % 3 === 0 ? [0, -3, -5] : index % 3 === 1 ? [0, -1, -2] : [0, -.5, -5]} 
-                            />
-                            {/* Display user message inside portal */}
-                            <Text
-                              font="/fonts/UnifrakturMaguntia-Regular.ttf"
-                              fontSize={0.15}
-                              color="#ffffff"
-                              anchorX="center"
-                              position={[0, 0.5, 0.1]}
-                              maxWidth={1.5}
-                            >
-                              {portal.message}
-                            </Text>
-                            </EnhancedPortalFrame>
-                          </PortalMouseRotation>
-                          
-                          {/* Full camera controls when portal is active */}
-                          {activePortal === portal.id && (
-                            <OrbitControls
-                              enablePan={true}
-                              enableZoom={true}
-                              enableRotate={true}
-                              enableDamping={true}
-                              dampingFactor={0.05}
-                              minDistance={1}
-                              maxDistance={20}
-                            />
-                          )}
-                        </Canvas>
-                      </Suspense>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-            <div className="card-info portal-gallery-info" style={{ 
-              transform: 'translateY(30%)', 
-              pointerEvents: 'none',
-              display: activePortal ? 'none' : 'block',
-              padding: '20px',
-              maxWidth: '90%',
-              margin: '0 auto'
-            }}>
-      
-              <p style={{ 
-                pointerEvents: 'none',
-                fontSize: isMobileDevice ? '0.9em' : '1em',
-                marginBottom: '10px'
-              }}>
-                {isMobileDevice 
-                  ? `Portal ${currentPortalPage + 1} of ${totalPortalPages}` 
-                  : `Page ${currentPortalPage + 1} of ${totalPortalPages}`
-                }
-              </p>
-              
-              {/* Navigation controls */}
-              <div style={{ 
-                marginTop: '20px', 
-                display: 'flex', 
-                gap: '20px', 
-                justifyContent: 'center', 
-                alignItems: 'center',
-                pointerEvents: 'auto' 
-              }}>
-                <button
-                  onClick={handlePrevPortalPage}
-                  style={{
-                    padding: '10px 20px',
-                    background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
-                    color: '#1a0033',
-                    fontSize: '1rem',
-                    fontFamily: 'UnifrakturCook, serif',
-                    fontWeight: 'bold',
-                    borderRadius: '25px',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
-                  }}
-                >
-                  ← Previous
-                </button>
-                
-                <span style={{ 
-                  color: '#d4af37', 
-                  fontSize: '1.2rem',
-                  fontFamily: 'UnifrakturMaguntia-Regular, serif',
-                  pointerEvents: 'none'
-                }}>
-                  {currentPortalPage + 1} / {totalPortalPages}
-                </span>
-                
-                <button
-                  onClick={handleNextPortalPage}
-                  style={{
-                    padding: '10px 20px',
-                    background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
-                    color: '#1a0033',
-                    fontSize: '1rem',
-                    fontFamily: 'UnifrakturCook, serif',
-                    fontWeight: 'bold',
-                    borderRadius: '25px',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
-                  }}
-                >
-                  Next →
-                </button>
-              </div>
-              
-              {/* Test buttons hidden - set to true to show */}
-              {false && (
-              <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center', pointerEvents: 'auto' }}>
-                <button 
-                  onClick={() => handlePortalEnter('01')}
-                  style={{ 
-                    padding: '5px 10px', 
-                    background: '#d4af37', 
-                    border: 'none', 
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  Enter Portal 1
-                </button>
-                <button 
-                  onClick={() => handlePortalEnter('02')}
-                  style={{ 
-                    padding: '5px 10px', 
-                    background: '#d4af37', 
-                    border: 'none', 
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  Enter Portal 2
-                </button>
-                <button 
-                  onClick={() => handlePortalEnter('03')}
-                  style={{ 
-                    padding: '5px 10px', 
-                    background: '#d4af37', 
-                    border: 'none', 
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  Enter Portal 3
-                </button>
-              </div>
-              )}
-            </div>
-          </div>
-        </div>
      
   
         
@@ -2659,7 +2136,7 @@ where traditional wisdom meets blockchain innovation.`}
             </a>
           </div>
         </footer>
-      
+      </div>
       
       {/* Floating Action Buttons */}
       {mounted && (
@@ -2759,7 +2236,7 @@ where traditional wisdom meets blockchain innovation.`}
          {(!isMobileDevice || isMobileDevice) && (
           <div style={{ order: isMobileDevice ? 3 : 0 }}>
           {isSignedIn ? (
-            <Illumin80ClerkButton afterSignOutUrl="/" />
+            <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
           ) : (
             <SignInButton mode="modal" forceRedirectUrl="/home3">
               <button
@@ -2920,10 +2397,13 @@ where traditional wisdom meets blockchain innovation.`}
         </div>
         
         {/* CyberNav Menu */}
-        <CyberNav is80sMode={is80sMode} position="relative" />
+        <div style={{ order: isMobileDevice ? 0 : 3 }}>
+          <CyberNav is80sMode={is80sMode} position="relative" />
+        </div>
       </div>
       )}
     </div>
+
   );
 }
 

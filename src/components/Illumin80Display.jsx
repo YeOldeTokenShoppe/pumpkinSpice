@@ -275,7 +275,7 @@ export function Illumin80Gate({ children, fallback }) {
 }
 
 // 5. Clerk Button with Laurel Wreath - wraps UserButton with elegant laurel for Illumin80 members
-export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
+export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) {
   const { user, isSignedIn } = useUser();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -284,19 +284,24 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/" }) {
   
   // Check for mobile device and current path
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
+    // Use parent's isMobileDevice prop if provided, otherwise detect locally
+    if (isMobileDevice !== undefined) {
+      setIsMobile(isMobileDevice);
+    } else {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth <= 768);
+      };
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      
+      return () => window.removeEventListener('resize', checkMobile);
+    }
     
     // Get current path
     if (typeof window !== 'undefined') {
       setCurrentPath(window.location.pathname);
     }
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [isMobileDevice]);
   
   useEffect(() => {
     async function checkStatus() {
