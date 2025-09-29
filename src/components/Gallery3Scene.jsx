@@ -384,6 +384,8 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
         // enableZoom={!isMobileView}
         enableZoom={true}
         zoomToCursor
+        enableDamping
+        dampingFactor={0.1}
         // minDistance={isMobileView ? 10 : 30}
         minDistance={1}
         maxDistance={20}

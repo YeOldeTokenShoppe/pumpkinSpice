@@ -921,6 +921,59 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
 }
 
 export default function CompactCandleModal({ isOpen, onClose, onCandleCreated }) {
+  // Template configurations
+  const templates = [
+    { 
+      id: null, 
+      name: 'None', 
+      preview: '🎯',
+      position: { x: 50, y: 50 },
+      scale: 100,
+      rotation: 0
+    },
+    { 
+      id: '/images/face2.png', 
+      name: 'Virgin Mary', 
+      preview: '👼',
+      hasHandsOverlay: true,
+      position: { x: 67, y: 40 },
+      scale: 25,
+      rotation: 0
+    },
+    { 
+      id: '/images/angel-template.png', 
+      name: 'Angel', 
+      preview: '😇',
+      position: { x: 50, y: 45 },
+      scale: 30,
+      rotation: 0
+    },
+    { 
+      id: '/images/heart-frame.png', 
+      name: 'Heart', 
+      preview: '❤️',
+      position: { x: 50, y: 50 },
+      scale: 35,
+      rotation: 0
+    },
+    { 
+      id: '/images/golden-frame.png', 
+      name: 'Golden', 
+      preview: '✨',
+      position: { x: 50, y: 50 },
+      scale: 40,
+      rotation: 0
+    },
+    { 
+      id: '/images/flower-frame.png', 
+      name: 'Flowers', 
+      preview: '🌸',
+      position: { x: 50, y: 50 },
+      scale: 35,
+      rotation: 0
+    }
+  ];
+
   const { user, isSignedIn } = useUser();
   const [selectedPrayer, setSelectedPrayer] = useState(null);
   const [currentLanguage, setCurrentLanguage] = useState(getUserLanguage());
@@ -977,18 +1030,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   // Reset form when modal opens and prepopulate with Clerk user data
   useEffect(() => {
     if (isOpen) {
-      // Prepopulate with Clerk user data if available
-      const defaultUsername = user ? 
-        (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` :
-         user.firstName || user.lastName || 
-         user.username || 
-         user.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 
-         '') : '';
-      
+      // Get Clerk user image if available
       const clerkImageUrl = user?.imageUrl || null;
       
       setFormData({
-        username: defaultUsername,
+        username: '',
         message: '',
         burnedAmount: '',
         allowLikes: false,
@@ -1040,6 +1086,18 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setIsEncrypted(false);
       setEncryptionPassword('');
       setScrambledDisplay('');
+    }
+  };
+
+  // Handle template selection from gallery
+  const selectTemplate = (template) => {
+    setSelectedTemplate(template.id);
+    setTemplatePosition(template.position);
+    setTemplateScale(template.scale);
+    setTemplateRotation(template.rotation);
+    // Reset skin tone for non-Virgin Mary templates
+    if (template.id !== '/images/face2.png') {
+      setSkinToneAdjustment(0);
     }
   };
 
@@ -2411,6 +2469,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   }}
                   style={{
                     width: '100%',
+                    boxSizing: 'border-box',
                     padding: '10px',
                     paddingRight: '50px', // Make room for char counter
                     borderRadius: '8px',
@@ -2486,52 +2545,87 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   </span>
                 </label>
                 
-                {/* Template Selection - Right (only show if image selected) */}
-                {(imageFile || imagePreview) && (
-                  <div style={{
-                    flex: '1',
-                    display: 'flex',
-                    gap: '5px'
-                  }}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTemplate('/images/face2.png')}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        backgroundColor: selectedTemplate === '/images/face2.png' ? 'rgba(255, 102, 0, 0.2)' : 'rgba(0, 0, 0, 0.3)',
-                        border: selectedTemplate === '/images/face2.png' ? '2px solid #ff6600' : '1px solid rgba(255, 215, 0, 0.3)',
-                        borderRadius: '8px',
-                        color: selectedTemplate === '/images/face2.png' ? '#ff6600' : 'rgba(255, 255, 255, 0.8)',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: selectedTemplate === '/images/face2.png' ? 'bold' : 'normal',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      ✨ Template
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTemplate(null)}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        backgroundColor: selectedTemplate === null ? 'rgba(0, 255, 0, 0.2)' : 'rgba(0, 0, 0, 0.3)',
-                        border: selectedTemplate === null ? '2px solid #00ff00' : '1px solid rgba(255, 215, 0, 0.3)',
-                        borderRadius: '8px',
-                        color: selectedTemplate === null ? '#00ff00' : 'rgba(255, 255, 255, 0.8)',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: selectedTemplate === null ? 'bold' : 'normal',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      🎯 None
-                    </button>
-                  </div>
-                )}
               </div>
+
+              {/* Template Gallery - Show if image selected */}
+              {(imageFile || imagePreview) && (
+                <div style={{
+                  marginTop: '15px',
+                  marginBottom: '10px'
+                }}>
+                  <div style={{
+                    color: 'rgba(255, 215, 0, 0.9)',
+                    fontSize: '12px',
+                    marginBottom: '8px',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px'
+                  }}>
+                    Choose Template:
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    gap: '10px',
+                    overflowX: 'auto',
+                    padding: '10px',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    borderRadius: '12px',
+                    WebkitOverflowScrolling: 'touch',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(255, 215, 0, 0.3) transparent'
+                  }}>
+                    {templates.map((template) => (
+                      <button
+                        key={template.id || 'none'}
+                        type="button"
+                        onClick={() => selectTemplate(template)}
+                        style={{
+                          minWidth: '80px',
+                          height: '80px',
+                          padding: '8px',
+                          backgroundColor: selectedTemplate === template.id ? 
+                            'rgba(255, 102, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)',
+                          border: selectedTemplate === template.id ? 
+                            '3px solid #ff6600' : '2px solid rgba(255, 215, 0, 0.2)',
+                          borderRadius: '12px',
+                          color: selectedTemplate === template.id ? 
+                            '#ff6600' : 'rgba(255, 255, 255, 0.9)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px',
+                          transition: 'all 0.3s ease',
+                          flexShrink: 0,
+                          transform: selectedTemplate === template.id ? 'scale(1.05)' : 'scale(1)',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selectedTemplate !== template.id) {
+                            e.target.style.transform = 'scale(1.05)';
+                            e.target.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedTemplate !== template.id) {
+                            e.target.style.transform = 'scale(1)';
+                            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                          }
+                        }}
+                      >
+                        <div style={{ fontSize: '28px' }}>{template.preview}</div>
+                        <div style={{ 
+                          fontSize: '11px', 
+                          fontWeight: selectedTemplate === template.id ? 'bold' : 'normal',
+                          opacity: selectedTemplate === template.id ? 1 : 0.8
+                        }}>
+                          {template.name}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Template Position Controls - Compact Version */}
               {(imageFile || imagePreview) && selectedTemplate && (
