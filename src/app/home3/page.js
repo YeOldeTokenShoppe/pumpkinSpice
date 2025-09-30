@@ -21,6 +21,8 @@ import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
 import InfinityLoader from '@/components/InfinityLoader';
+import CloudIntroSection from '@/components/CloudIntroSection';
+
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -1296,6 +1298,8 @@ export default function Home3() {
       )}
 
 <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css?family=Fjalla+One');
+        
         @font-face {
           font-family: 'UnifrakturCook';
           src: url('/fonts/UnifrakturCook-Bold.ttf') format('truetype');
@@ -2056,6 +2060,11 @@ export default function Home3() {
           {/* Unified content box with description, coin, and contract info */}
           
         </div>
+        
+        {/* Cloud Introduction Section - New Addition */}
+        <CloudIntroSection scrollY={scrollY} isMobile={isMobile} />
+        
+
         
         {/* Invisible spacer to push cards down and reveal background scene */}
         {/* <div style={{ 

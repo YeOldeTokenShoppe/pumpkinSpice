@@ -8,14 +8,18 @@ import * as THREE from 'three';
 import DarkClouds from '@/components/Clouds';
 import EnhancedVolumetricLight from '@/components/EnhancedVolumetricLight';
 
+
 // Optimized Our Lady Model
-const OurLadyModel = memo(({ isMobile, scrollY }) => {
+const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
   const { scene } = useGLTF('/models/ourlady_rider6.glb');
-  const modelRef = useRef();
   const groupRef = useRef();
   
   useEffect(() => {
     if (scene) {
+      // Store model reference
+      if (modelRef) {
+        modelRef.current = scene;
+      }
       // Optimize the model
       scene.traverse((child) => {
         if (child instanceof THREE.Mesh) {
@@ -28,8 +32,10 @@ const OurLadyModel = memo(({ isMobile, scrollY }) => {
           }
         }
       });
+      // Signal that model is loaded
+      if (onLoad) onLoad();
     }
-  }, [scene]);
+  }, [scene, modelRef, onLoad]);
   
   // Animate based on scroll
   useFrame(() => {
@@ -42,7 +48,6 @@ const OurLadyModel = memo(({ isMobile, scrollY }) => {
   return (
     <group ref={groupRef} position={isMobile ? [2, -8, -10] : [2, 8, -11]}>
       <primitive 
-        ref={modelRef}
         object={scene} 
         scale={isMobile ? [10, 10, 10] : [10, 10, 10]}
         rotation={isMobile ? [0, -3.3, 0] : [0.1, -3.2, 0]}
@@ -68,18 +73,33 @@ const AngelModel = memo(({ isMobile, scrollY }) => {
         }
       });
     }
-    // Play animation if available
-    if (actions && Object.keys(actions).length > 0) {
-      const firstAction = Object.values(actions)[0];
-      firstAction.play();
+    // Play animations
+    if (actions) {
+      // Play the first animation as before
+      if (Object.keys(actions).length > 0) {
+        const firstAction = Object.values(actions)[0];
+        firstAction.play();
+      }
+      
+      // Also play the 'Scene' animation if it exists
+      if (actions['Scene']) {
+        actions['Scene'].play();
+      }
     }
   }, [scene, actions]);
   
-  // Animate with scroll - moves at different speed for parallax
-  useFrame(() => {
+  // Animate with scroll and billboard
+  useFrame(({ camera, clock }) => {
     if (groupRef.current) {
-      groupRef.current.position.y = -5 + scrollY * 0.018; // Faster than main model
-      groupRef.current.rotation.y += 0.005; // Gentle rotation
+      // Base position with scroll
+      const baseY = -5 + scrollY * 0.018; // Faster than main model
+      
+      // Add hovering motion
+      const hover = Math.sin(clock.getElapsedTime() * 1.5) * 0.5; // Speed: 1.5, amplitude: 0.5
+      groupRef.current.position.y = baseY + hover;
+      
+      // Billboard effect - make the model face the camera
+      groupRef.current.lookAt(camera.position);
     }
   });
   
@@ -118,20 +138,28 @@ const DevilModel = memo(({ isMobile, scrollY }) => {
     }
   }, [scene, actions]);
   
-  // Animate with scroll - moves at different speed
-  useFrame(() => {
+  // Animate with scroll and billboard
+  useFrame(({ camera, clock }) => {
     if (groupRef.current) {
-      groupRef.current.position.y = -5 + scrollY * 0.01; // Slower than main model
-      groupRef.current.rotation.y -= 0.005; // Opposite rotation
+      // Base position with scroll
+      const baseY = -5 + scrollY * 0.01; // Slower than main model
+      
+      // Add hovering motion - different speed and phase offset for desync
+      const hover = Math.sin(clock.getElapsedTime() * 1.0 + Math.PI) * 0.4; // Speed: 1.0, amplitude: 0.4, phase offset: π
+      groupRef.current.position.y = baseY + hover;
+      
+      // Billboard effect - make the model face the camera
+      groupRef.current.lookAt(camera.position);
     }
   });
   
   return (
-    <group ref={groupRef} position={[15, -5, -8]}>
+    <group ref={groupRef} position={[1, -1, -1]}>
       <primitive 
         object={scene} 
         scale={isMobile ? [1, 1, 1] : [1, 1, 1]}
-        rotation={[0, Math.PI, 0]}
+        rotation={[0, 0, 0]}
+        position={[12, -5, -6]}
       />
     </group>
   );
@@ -222,6 +250,14 @@ const DirectionalLightWithHelper = ({ showHelper = false, isMobile, scrollY }) =
 
 function SimpleScene({ isMobile, scrollY, enableBloom }) {
   const cloudGroupRef = useRef();
+  const modelRef = useRef();
+  const [modelLoaded, setModelLoaded] = useState(false);
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[SimpleScene] Model loaded status:', modelLoaded);
+    console.log('[SimpleScene] ModelRef current:', modelRef.current);
+  }, [modelLoaded]);
   
   // Animate clouds with scroll
   useFrame(() => {
@@ -268,8 +304,14 @@ function SimpleScene({ isMobile, scrollY, enableBloom }) {
           <meshBasicMaterial color="#ffc0cb" />
         </mesh>
       }>
-        <OurLadyModel isMobile={isMobile} scrollY={scrollY} />
+        <OurLadyModel 
+          isMobile={isMobile} 
+          scrollY={scrollY} 
+          modelRef={modelRef}
+          onLoad={() => setModelLoaded(true)}
+        />
       </Suspense>
+      
       <EnhancedVolumetricLight 
         position={[0, 50 + scrollY * 0.015, 0]} 
         target={[3, -30 + scrollY * 0.015, -5]}

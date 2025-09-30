@@ -6,6 +6,8 @@ import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import PostProcessingEffects from "@/components/PostProcessingEffects";
 import FloatingCandleViewer from "@/components/CandleInteraction";
+import PyramidEffects from "@/components/PyramidEffects";
+import LightningEffect from '@/components/LightningEffect';
 
 // Lazy load components
 const MobileCandleOrbital = lazy(() => import('@/components/MobileCandleOrbital'));
@@ -20,6 +22,7 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
   const rotationGroupRef = useRef(); // For rotation
   const arrowRef = useRef(); // For the arrow object
   const hasLoadedRef = useRef(false);
+
   
   useEffect(() => {
     if (!scene || !rotationGroupRef.current || !outerGroupRef.current) return;
@@ -385,7 +388,7 @@ function JumpingArrow() {
 useGLTF.preload('/models/greenUpArrow.glb');
 
 // Main scene component
-function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer, onAssetsLoaded }) {
+function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer, onAssetsLoaded, onEffectChange }) {
   const modelRef = useRef();
   const [statueLoaded, setStatueLoaded] = useState(!enableStatue); // Consider loaded if not enabled
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -492,6 +495,13 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
         </Suspense>
       )}
       
+      {/* Pyramid Effects - positioned at model center */}
+      {/* <PyramidEffects 
+        position={[0, 0, 0]} 
+        scale={5}  // Increase this value to make effects larger (try 2, 3, 4, or 5)
+        onEffectTrigger={(theme) => onEffectChange && onEffectChange(theme.name)}
+      /> */}
+      
       {/* Controls */}
       <OrbitControls
         // enableZoom={!isMobileView}
@@ -517,7 +527,9 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   const [showFloatingViewer, setShowFloatingViewer] = useState(false);
   const [selectedCandleData, setSelectedCandleData] = useState(null);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
-  
+  const [showEffectButton, setShowEffectButton] = useState(true);
+  const [effectInfo, setEffectInfo] = useState('Click to trigger effect');
+  const [triggerLightning, setTriggerLightning] = useState(0);
   // Handle candle click
   const handleCandleClick = useCallback((candleData) => {
     console.log('Candle clicked:', candleData);
@@ -568,6 +580,9 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   
   return (
     <>
+    {/* Effect Trigger Button */}
+   
+    
     <Canvas
       camera={{ 
         position: isMobileView ? [0, 0, 20] : [0, 0, 80], // Match original gallery
@@ -606,13 +621,70 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
           onCandleClick={handleCandleClick}
           showFloatingViewer={showFloatingViewer}
           onAssetsLoaded={handleAssetsLoaded}
+          onEffectChange={(name) => setEffectInfo(name)}
         />
       </Suspense>
       <Suspense fallback={null}>
           <PostProcessingEffects is80sMode={is80sMode} sunRef={null} />
         </Suspense>
+        <LightningEffect 
+  trigger={triggerLightning} 
+  position={[0, 0, -2]}  // Moved forward toward camera
+  duration={1.0}
+  scale={4.0}  // Even bigger
+/>
+        
     </Canvas>
-    
+    {showEffectButton && (
+      <div style={{
+        position: 'fixed',
+        bottom: '30px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 10,
+        textAlign: 'center'
+      }}>
+        <button
+           onClick={() => setTriggerLightning(prev => prev + 1)}
+          style={{
+            padding: '12px 24px',
+            fontSize: '16px',
+            fontWeight: '600',
+            color: '#fff',
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '2px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            transition: 'background 0.3s, transform 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+          }}
+          onMouseDown={(e) => {
+            e.target.style.transform = 'scale(0.95)';
+          }}
+          onMouseUp={(e) => {
+            e.target.style.transform = 'scale(1)';
+          }}
+        >
+          Trigger Effect
+        </button>
+        <div style={{
+          marginTop: '10px',
+          color: 'rgba(255, 255, 255, 0.8)',
+          fontSize: '14px'
+        }}>
+          {effectInfo}
+        </div>
+      </div>
+    )}
     {/* FloatingCandleViewer - Outside Canvas */}
     {showFloatingViewer && selectedCandleData && (
       <FloatingCandleViewer

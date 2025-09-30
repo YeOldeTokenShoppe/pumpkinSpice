@@ -18,6 +18,7 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
   const composerRef = useRef();
   const timeRef = useRef(0);
   const [isReady, setIsReady] = useState(false);
+  const [bloomIntensity, setBloomIntensity] = useState(1);
 
   // Increase time for animated effects
   useFrame((_, delta) => {
@@ -102,7 +103,10 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
       // Store a reference to this component on window for external access
       window.postProcessingEffects = {
         composerRef,
-        filmScanlines: 0
+        filmScanlines: 0,
+        setBloomIntensity: (intensity) => {
+          setBloomIntensity(intensity);
+        }
       };
     } catch (error) {
       console.warn('PostProcessingEffects: Error setting window reference', error);
@@ -135,7 +139,7 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
         />
       )} */}
       <Bloom
-        intensity={1}           // Increased from 0.8
+        intensity={bloomIntensity}           // Dynamically controlled intensity
         luminanceThreshold={0.8}  // Lowered from 0.4 to catch more of the sunset colors
         luminanceSmoothing={0.7}  // Adjusted from 0.9 for sharper bloom edges
         height={400}              // Increased from 300 for more detail
@@ -163,7 +167,7 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
         />
       )} */}
       <Bloom
-        intensity={0.5}           // Much stronger bloom for that 80s glow
+        intensity={bloomIntensity * 0.5}  // Dynamically controlled, scaled for 80s mode
         luminanceThreshold={0.3} // Lower threshold to catch more colors
         luminanceSmoothing={0.6}  // Sharper, more pronounced bloom
         height={512}              // Higher resolution for better quality

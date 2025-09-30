@@ -1,309 +1,211 @@
-import React, { useRef, useEffect, useState, useMemo, Suspense } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { useFirestoreResults } from '@/utilities/useFirestoreResults';
 
-// Helper function to apply texture directly to cloned candle
-const applyTextureToClone = (candleObject, imageUrl) => {
-  if (!imageUrl) return;
-  
-  let labelMesh = null;
-  candleObject.traverse((child) => {
-    if (child.name?.includes('Label2')) {
-      labelMesh = child;
-    }
-  });
-  
-  if (!labelMesh) return;
-  
-  // Create a canvas to process the image with black background
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  const targetSize = 512; // Resolution for texture
-  
-  canvas.width = targetSize;
-  canvas.height = targetSize;
-  
-  // Load image and apply to canvas with black background
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  
-  img.onload = () => {
-    // Fill canvas with black background first
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, targetSize, targetSize);
-    
-    // Calculate aspect ratio to maintain proportions
-    const aspectRatio = img.width / img.height;
-    let drawWidth = targetSize;
-    let drawHeight = targetSize;
-    
-    if (aspectRatio > 1) {
-      drawHeight = targetSize / aspectRatio;
-    } else {
-      drawWidth = targetSize * aspectRatio;
-    }
-    
-    // Center the image on the canvas
-    const offsetX = (targetSize - drawWidth) / 2;
-    const offsetY = (targetSize - drawHeight) / 2;
-    
-    // Draw image on top of black background
-    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-    
-    // Create texture from canvas
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.flipY = false;
-    texture.needsUpdate = true;
-    
-    // Apply material with the processed texture
-    labelMesh.material = new THREE.MeshStandardMaterial({
-      map: texture,
-      transparent: true,
-      side: THREE.DoubleSide,
-      emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.5,
-      emissiveMap: texture,
-      metalness: 0.3,
-      roughness: 0.2,
-    });
-    labelMesh.material.needsUpdate = true;
-  };
-  
-  img.onerror = (error) => {
-    console.warn('Failed to load texture:', error);
-  };
-  
-  img.src = imageUrl;
+// Global cache to prevent duplicate candle extraction across remounts
+const globalCandleCache = {
+  candles: null,
+  modelId: null
 };
 
-// Helper function to apply text to Label1
-const applyTextToLabel1 = (candleObject, userData) => {
-  if (!candleObject || !userData) return;
+// Create a simple candle mesh
+function createCandleMesh() {
+  const group = new THREE.Group();
   
-  let label1Mesh = null;
-  candleObject.traverse((child) => {
-    if (child.name?.includes('Label1')) {
-      label1Mesh = child;
-    }
+  // Candle body (cylinder)
+  const candleGeometry = new THREE.CylinderGeometry(0.3, 0.35, 2, 8);
+  const candleMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0xFFF8DC,
+    emissive: 0x442211,
+    emissiveIntensity: 0.2
   });
+  const candleMesh = new THREE.Mesh(candleGeometry, candleMaterial);
+  candleMesh.position.y = 0;
+  group.add(candleMesh);
   
-  if (!label1Mesh) return;
+  // Wick
+  const wickGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 4);
+  const wickMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  const wickMesh = new THREE.Mesh(wickGeometry, wickMaterial);
+  wickMesh.position.y = 1.15;
+  group.add(wickMesh);
   
-  // Create canvas for text
-  const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 1024;
-  const context = canvas.getContext("2d");
-  
-  // Clear canvas and set background
-  context.fillStyle = "#F5F5DC"; // Parchment color
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  
-  // Save the context state
-  context.save();
-  
-  // Rotate the text 180 degrees to make it readable on the candle
-  context.translate(canvas.width / 2, canvas.height / 2);
-  context.rotate(Math.PI);
-  context.translate(-canvas.width / 2, -canvas.height / 2);
-  
-  // Set text properties
-  context.fillStyle = "#000000";
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.font = "bold 48px serif";
-  
-  // Create the message text
-  const userName = userData.userName || userData.username || "Friend";
-  const message = userData.message || "may the light of Our Lady of Perpetual Profit illuminate the path to prosperity.";
-  const fullText = `On behalf of ${userName},\n\n${message}`;
-  
-  // Word wrapping
-  const maxWidth = 600;
-  const lineHeight = 70;
-  const words = fullText.split(" ");
-  let lines = [];
-  let currentLine = "";
-  
-  words.forEach((word) => {
-    const testLine = currentLine + word + " ";
-    const metrics = context.measureText(testLine);
-    
-    if (metrics.width > maxWidth) {
-      lines.push(currentLine);
-      currentLine = word + " ";
-    } else {
-      currentLine = testLine;
-    }
-  });
-  lines.push(currentLine);
-  
-  // Draw text with shadow for better visibility
-  const startY = (canvas.height - lines.length * lineHeight) / 2;
-  lines.forEach((line, index) => {
-    // Add shadow
-    context.shadowColor = "rgba(0, 0, 0, 0.5)";
-    context.shadowBlur = 4;
-    context.shadowOffsetX = 2;
-    context.shadowOffsetY = 2;
-    
-    // Draw text
-    context.fillText(line, canvas.width / 2, startY + index * lineHeight);
-    
-    // Reset shadow
-    context.shadowColor = "transparent";
-  });
-  
-  // Restore the context state
-  context.restore();
-  
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  
-  // Apply material to Label1
-  label1Mesh.material = new THREE.MeshStandardMaterial({
-    map: texture,
+  // Flame
+  const flameGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+  const flameMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0xffaa00,
+    emissive: 0xffaa00,
+    emissiveIntensity: 2,
     transparent: true,
-    side: THREE.DoubleSide,
-    emissive: new THREE.Color(0xffffff),
-    emissiveIntensity: 0.5,
-    emissiveMap: texture,
-    metalness: 0.2,
-    roughness: 0.8,
+    opacity: 0.9
   });
-  label1Mesh.material.needsUpdate = true;
-};
-
-// Single candle component with fade animation for tablet/portrait
-function SingleFadeCandle({ candleObject, userData, onClick, isVisible }) {
-  const groupRef = useRef();
-  const candleRef = useRef();
-  const [opacity, setOpacity] = useState(0);
+  const flameMesh = new THREE.Mesh(flameGeometry, flameMaterial);
+  flameMesh.position.y = 1.4;
+  flameMesh.scale.y = 1.5;
+  flameMesh.name = 'flame';
+  group.add(flameMesh);
   
-  // Fade animation
-  useFrame(() => {
-    if (groupRef.current) {
-      // Rotate the candle slowly
-    //   groupRef.current.rotation.y += 0.01;
-      
-      // Handle fade in/out
-      const targetOpacity = isVisible ? 1 : 0;
-      const currentOpacity = groupRef.current.material?.opacity || opacity;
-      const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.05;
-      setOpacity(newOpacity);
-      
-      // Apply opacity to all materials
-      groupRef.current.traverse((child) => {
-        if (child.material) {
-          child.material.transparent = true;
-          child.material.opacity = newOpacity;
-        }
-      });
-    }
+  // Add a label plane for user image
+  const labelGeometry = new THREE.PlaneGeometry(0.6, 0.6);
+  const labelMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0xffffff,
+    side: THREE.DoubleSide
   });
+  const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
+  labelMesh.position.y = 0;
+  labelMesh.position.z = 0.36;
+  labelMesh.name = 'Label1';
+  group.add(labelMesh);
   
-  useEffect(() => {
-    if (!candleObject || !groupRef.current) return;
-    
-    candleObject.scale.set(1.3, 1.3, 1.3); // Even smaller scale for centered display
-    
-    if (userData) {
-      candleObject.userData = {
-        ...candleObject.userData,
-        ...userData,
-        hasUser: true
-      };
-    }
-    
-    candleRef.current = candleObject;
-    groupRef.current.add(candleObject);
-    
-    return () => {
-      if (candleRef.current && groupRef.current) {
-        groupRef.current.remove(candleRef.current);
-      }
-    };
-  }, [candleObject, userData]);
-  
-  return (
-    <group 
-      ref={groupRef} 
-      onClick={() => onClick && onClick(userData)}
-      position={[0, -1.5, 0]}  // Lower the candle position
-    />
-  );
+  return group;
 }
 
-// Individual candle component with smooth animation for marquee
-function MarqueeCandle({ basePosition, scrollRef, spacing, totalCount, candleObject, userData, index, onClick, direction, isSelected = false, isPaused = false }) {
+// Individual candle component for marquee
+function MarqueeCandle({ position, candleObject, userData, index, onClick, scrollSpeed }) {
   const groupRef = useRef();
   const candleRef = useRef();
-  const [textureLoaded, setTextureLoaded] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  
-  // Update position, rotation, and opacity smoothly
-  useFrame((state) => {
-    if (groupRef.current) {
-      // Position update
-      if (direction === 'vertical') {
-        let yPos = basePosition + (index * spacing) - scrollRef.current;
-        const totalHeight = totalCount * spacing; // No division needed with single set
-        
-        // Smooth wrapping
-        while (yPos < -totalHeight/2) yPos += totalHeight;
-        while (yPos > totalHeight/2) yPos -= totalHeight;
-        
-        groupRef.current.position.set(0, yPos, 0);
-      } else {
-        let xPos = basePosition + (index * spacing) - scrollRef.current;
-        const totalWidth = totalCount * spacing; // No division needed with single set
-        
-        // Smooth wrapping
-        while (xPos < -totalWidth/2) xPos += totalWidth;
-        while (xPos > totalWidth/2) xPos -= totalWidth;
-        
-        groupRef.current.position.set(xPos, -1, 3); // Lower position for bottom marquee
-      }
-      
-      // Rotate each candle with individual offset and speed based on index
-      // Use different multipliers to create variety in rotation positions
-      const rotationOffset = index * 2.3; // Irregular offset for more randomness
-      const rotationSpeed = 0.3 + (index % 3) * 0.1; // Vary speed slightly per candle
-      groupRef.current.rotation.y = state.clock.elapsedTime * rotationSpeed + rotationOffset;
-      
-      // Scale animation for hovered only (not selected)
-      const targetScale = hovered ? 1.1 : 1.0;
-      const currentScale = groupRef.current.scale.x;
-      const newScale = currentScale + (targetScale - currentScale) * 0.1;
-      groupRef.current.scale.set(newScale, newScale, newScale);
-    }
-  });
+  const createdTexturesRef = useRef([]);
+  const createdMaterialsRef = useRef([]);
   
   // Setup candle on mount
   useEffect(() => {
-    if (!candleObject || !groupRef.current) return;
+    if (!groupRef.current) return;
     
-    // Scale the candle appropriately (same as FloatingCandleViewer)
-    candleObject.scale.set(1.5, 1.5, 1.5);
+    console.log(`[MarqueeCandle ${index}] Setting up candle at position:`, position);
     
-    // Apply user data
+    // If no candleObject provided, create a simple one
+    let candle = candleObject;
+    if (!candle) {
+      console.log(`[MarqueeCandle ${index}] No candle object provided, creating mesh`);
+      candle = createCandleMesh();
+    }
+    
+    // Scale the candle appropriately
+    candle.scale.set(3, 3, 3);
+    
+    // Make sure the candle is visible
+    candle.visible = true;
+    candle.traverse((child) => {
+      child.visible = true;
+      if (child.isMesh) {
+        console.log(`[MarqueeCandle ${index}] Mesh found:`, child.name, 'Material:', child.material);
+      }
+    });
+    
+    // Center the candle in its group
+    const box = new THREE.Box3().setFromObject(candle);
+    const center = box.getCenter(new THREE.Vector3());
+    candle.position.sub(center);
+    candle.position.y = 0;
+    
+    // Apply user data to the cloned candle
     if (userData) {
-      candleObject.userData = {
-        ...candleObject.userData,
+      candle.userData = {
+        ...candle.userData,
         ...userData,
         hasUser: true
       };
+      
+      // Apply user image with username to labels if available
+      if (userData.image || userData.username || userData.userName) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const username = userData.username || userData.userName || userData.name || '';
+        
+        const createCombinedTexture = (img) => {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          const imageHeight = username ? canvas.height * 0.9 : canvas.height;
+          ctx.drawImage(img, 0, 0, canvas.width, imageHeight);
+          
+          if (username && username.trim()) {
+            const gradient = ctx.createLinearGradient(0, imageHeight, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, imageHeight, canvas.width, canvas.height - imageHeight);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const textY = imageHeight + (canvas.height - imageHeight) / 2;
+            
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            
+            ctx.fillText(username, canvas.width / 2, textY);
+          }
+          
+          const texture = new THREE.CanvasTexture(canvas);
+          texture.wrapS = THREE.ClampToEdgeWrapping;
+          texture.wrapT = THREE.ClampToEdgeWrapping;
+          texture.minFilter = THREE.LinearMipMapLinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.anisotropy = 16;
+          texture.generateMipmaps = true;
+          texture.needsUpdate = true;
+          createdTexturesRef.current.push(texture);
+          
+          candle.traverse((child) => {
+            if (child.name?.includes('Label1')) {
+              if (child.material) {
+                child.material = child.material.clone();
+                
+                const flippedTexture = texture.clone();
+                flippedTexture.center.set(0.5, 0.5);
+                flippedTexture.repeat.set(1, -1);
+                flippedTexture.needsUpdate = true;
+                
+                child.material.map = flippedTexture;
+                child.material.needsUpdate = true;
+              }
+            }
+            else if (child.name?.includes('Label2')) {
+              if (child.material) {
+                child.material = child.material.clone();
+                child.material.map = texture.clone();
+                child.material.needsUpdate = true;
+                
+                child.material.emissive = new THREE.Color(0xffffff);
+                child.material.emissiveMap = child.material.map;
+                child.material.emissiveIntensity = 0.2;
+              }
+            }
+          });
+        };
+        
+        if (userData.image) {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => createCombinedTexture(img);
+          img.onerror = () => {
+            const defaultImg = new Image();
+            defaultImg.onload = () => createCombinedTexture(defaultImg);
+            defaultImg.src = '/defaultAvatar.png';
+          };
+          img.src = userData.image;
+        } else {
+          const defaultImg = new Image();
+          defaultImg.onload = () => createCombinedTexture(defaultImg);
+          defaultImg.src = '/defaultAvatar.png';
+        }
+      }
     }
     
-    candleRef.current = candleObject;
-    groupRef.current.add(candleObject);
-    
-    // Texture is now applied during cloning in duplicatedData
-    // so we don't need to apply it here anymore
-    setTextureLoaded(true);
+    candleRef.current = candle;
+    groupRef.current.add(candle);
     
     return () => {
       if (candleRef.current && groupRef.current) {
@@ -312,6 +214,15 @@ function MarqueeCandle({ basePosition, scrollRef, spacing, totalCount, candleObj
     };
   }, [candleObject, userData]);
   
+  useFrame((state) => {
+    if (groupRef.current && candleRef.current) {
+      // Gentle rotation
+      candleRef.current.rotation.y = state.clock.elapsedTime * 0.3;
+      
+      // Keep Y position fixed for straight horizontal line
+      groupRef.current.position.y = position[1];
+    }
+  });
   
   const handleClick = (e) => {
     e.stopPropagation();
@@ -325,126 +236,121 @@ function MarqueeCandle({ basePosition, scrollRef, spacing, totalCount, candleObj
   };
   
   return (
-    <group 
-      ref={groupRef} 
-      onClick={handleClick}
-      onPointerOver={() => setHovered(true)}
-      onPointerOut={() => setHovered(false)}
-    >
-      {/* Candle object is added in useEffect, position updated in useFrame */}
+    <group ref={groupRef} position={position} onClick={handleClick}>
+      {/* Candle object is added dynamically in useEffect */}
     </group>
   );
 }
 
-// Inner marquee component that needs to be inside Canvas
-function CandleMarqueeInner({ 
+// Main marquee component
+function CandleMarquee({ 
   candleData = [], 
-  onCandleClick,
-  currentPage = 0,
-  itemsPerPage = 10,
-  scrollSpeed = 0.1,
-  direction = 'horizontal',
-  isPausedExternal = false,
-  useFirestore = true
+  onCandleClick, 
+  modelRef,
+  scrollSpeed = 0.5,
+  spacing = 4 
 }) {
   const groupRef = useRef();
   const [vcandleObjects, setVcandleObjects] = useState([]);
-  const scrollPositionRef = useRef(0);
-  const [selectedCandleIndex, setSelectedCandleIndex] = useState(null);
+  const scrollOffsetRef = useRef(0);
   
-  // Fetch results from Firestore if useFirestore is true
-  const firestoreResults = useFirestoreResults();
-  const results = useFirestore && firestoreResults.length > 0 ? firestoreResults : candleData;
-  
-  // Load the candle model
-  const { scene: candleModel } = useGLTF('/models/singleCandleAnimatedFlame.glb');
-  
-  // Extract candle object from loaded model
+  // Extract and clone VCANDLE objects from the main model OR create new ones
   useEffect(() => {
-    if (!candleModel) return;
+    // If we already have candles, don't recreate
+    if (vcandleObjects.length > 0) return;
     
-    // Create multiple clones of the candle for the marquee
-    const extractedCandles = [];
-    const numCandles = Math.max(itemsPerPage * 2, 20); // Double for seamless scrolling
-    
-    for (let i = 0; i < numCandles; i++) {
-      const clonedCandle = candleModel.clone(true);
-      clonedCandle.userData = { ...candleModel.userData };
-      clonedCandle.visible = true;
-      clonedCandle.traverse((descendant) => {
-        descendant.visible = true;
-        // Don't clone materials here - we'll do it when creating duplicatedData
-      });
-      
-      extractedCandles.push({
-        object: clonedCandle,
-        name: `CANDLE_${i}`,
-        userData: candleModel.userData
-      });
-    }
-    
-    setVcandleObjects(extractedCandles);
-  }, [candleModel, itemsPerPage]);
-  
-  // Get current page data
-  const currentPageData = useMemo(() => {
-    const startIdx = currentPage * itemsPerPage;
-    const endIdx = startIdx + itemsPerPage;
-    
-    if (results.length > 0) {
-      // Loop through results if we have fewer than needed
-      const dataToUse = [];
-      for (let i = startIdx; i < endIdx; i++) {
-        dataToUse.push(results[i % results.length]);
+    // Try to extract from model first
+    if (modelRef?.current) {
+      const modelId = modelRef.current.uuid;
+      if (globalCandleCache.modelId === modelId && globalCandleCache.candles && globalCandleCache.candles.length > 0) {
+        console.log('[CandleMarquee] Using cached candles from global cache');
+        setVcandleObjects(globalCandleCache.candles);
+        return;
       }
-      return dataToUse;
-    }
-    
-    // Mock data for testing if no results
-    return Array(itemsPerPage).fill(null).map((_, i) => ({
-      id: `mock-${startIdx + i}`,
-      userName: `Player${startIdx + i + 1}`,
-      burnedAmount: Math.floor(Math.random() * 1000),
-      image: i % 2 === 0 ? '/vvv.jpg' : '/vsClown.jpg',
-      message: `Test message ${i + 1}`
-    }));
-  }, [results, currentPage, itemsPerPage]);
-
-  // Create duplicated data for seamless scrolling
-  const duplicatedData = useMemo(() => {
-    if (vcandleObjects.length === 0) return [];
-    
-    // Use only one set of data - no duplication
-    const dataToUse = [...currentPageData];
-    
-    return dataToUse.map((userData, index) => {
-      const vcandleIndex = index % vcandleObjects.length;
-      const clonedCandle = vcandleObjects[vcandleIndex].object.clone(true);
       
-      // Clone all materials to ensure each candle has independent materials
-      clonedCandle.traverse((child) => {
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material = child.material.map(mat => mat.clone());
-          } else {
-            child.material = child.material.clone();
-          }
+      console.log('[CandleMarquee] Extracting candles from model...');
+      const extractedCandles = [];
+      
+      modelRef.current.traverse((child) => {
+        if (child.name && child.name.startsWith('VCANDLE')) {
+          const clonedCandle = child.clone(true);
+          clonedCandle.userData = { ...child.userData };
+          clonedCandle.visible = true;
+          clonedCandle.traverse((descendant) => {
+            descendant.visible = true;
+          });
+          
+          extractedCandles.push({
+            object: clonedCandle,
+            name: child.name,
+            userData: child.userData
+          });
         }
       });
       
-      // Center the candle BEFORE applying texture
-      const box = new THREE.Box3().setFromObject(clonedCandle);
-      const center = box.getCenter(new THREE.Vector3());
-      clonedCandle.position.sub(center);
-      clonedCandle.position.y = 0;
-      
-      // Apply texture AFTER centering
-      if (userData?.image || userData?.profileImage) {
-        applyTextureToClone(clonedCandle, userData.image || userData.profileImage);
+      if (extractedCandles.length > 0) {
+        extractedCandles.sort((a, b) => {
+          const numA = parseInt(a.name.replace('VCANDLE', ''));
+          const numB = parseInt(b.name.replace('VCANDLE', ''));
+          return numA - numB;
+        });
+        
+        console.log(`[CandleMarquee] Extracted ${extractedCandles.length} candles from model`);
+        globalCandleCache.modelId = modelId;
+        globalCandleCache.candles = extractedCandles;
+        setVcandleObjects(extractedCandles);
+        return;
       }
+    }
+    
+    // If no candles found in model, create our own
+    console.log('[CandleMarquee] No VCANDLE objects found, creating candles programmatically...');
+    const createdCandles = [];
+    for (let i = 0; i < 12; i++) {
+      createdCandles.push({
+        object: null, // Will be created by MarqueeCandle component
+        name: `CANDLE${i}`,
+        userData: {}
+      });
+    }
+    setVcandleObjects(createdCandles);
+  }, [modelRef, vcandleObjects.length]);
+  
+  // Prepare candle data with user information
+  const allCandleData = React.useMemo(() => {
+    if (candleData.length > 0) {
+      return candleData;
+    }
+    // Fallback mock data
+    return Array(12).fill(null).map((_, i) => ({
+      id: `mock-${i}`,
+      userName: `Player${i + 1}`,
+      username: `Player${i + 1}`,
+      burnedAmount: Math.floor(Math.random() * 1000),
+      image: i % 2 === 0 ? '/vvv.jpg' : '/vsClown.jpg'
+    }));
+  }, [candleData]);
+  
+  // Create combined data with doubled candles for seamless loop
+  const combinedData = React.useMemo(() => {
+    if (vcandleObjects.length === 0) return [];
+    
+    // Create two sets of candles for seamless scrolling
+    const singleSet = allCandleData.map((userData, index) => {
+      const vcandleIndex = index < vcandleObjects.length ? index : index % vcandleObjects.length;
+      const clonedCandle = vcandleObjects[vcandleIndex].object ? vcandleObjects[vcandleIndex].object.clone(true) : null;
       
-      // Apply text message to Label1
-      applyTextToLabel1(clonedCandle, userData);
+      if (clonedCandle && userData && (userData.image || userData.username || userData.userName)) {
+        clonedCandle.traverse((child) => {
+          if (child.material && child.name && child.name.toLowerCase().includes('label')) {
+            if (Array.isArray(child.material)) {
+              child.material = child.material.map(mat => mat.clone());
+            } else {
+              child.material = child.material.clone();
+            }
+          }
+        });
+      }
       
       return {
         userData: {
@@ -452,367 +358,80 @@ function CandleMarqueeInner({
           userName: userData.userName || userData.username || `Player ${index + 1}`,
           image: userData.image || userData.profileImage || null,
           burnedAmount: userData.burnedAmount || 0,
+          message: userData.message || '',
+          createdAt: userData.createdAt || new Date()
         },
         candleObject: clonedCandle,
-        originalName: `${vcandleObjects[vcandleIndex].name}-marquee-${index}`,
-        key: `candle-${index}-${userData.userName || index}` // Stable key
+        originalName: `${vcandleObjects[vcandleIndex].name}-${index}`
       };
     });
-  }, [currentPageData, vcandleObjects]);
+    
+    // Duplicate the set for seamless looping
+    return [...singleSet, ...singleSet];
+  }, [allCandleData, vcandleObjects]);
   
-  // Reset scroll position when page changes
-  useEffect(() => {
-    scrollPositionRef.current = 0;
-  }, [currentPage]);
+  // Calculate total width for one set of candles (half of combined since we doubled)
+  const singleSetLength = Math.ceil(combinedData.length / 2);
+  const totalWidth = singleSetLength * spacing;
   
-  // Calculate positions directly in render - no state updates
-  const spacing = direction === 'vertical' ? 5 : 15; // Space between candles (reduced for horizontal)
-  const setSize = currentPageData.length * spacing; // Size of one complete set
-  
-  // Animate the marquee (vertical or horizontal)
   useFrame((state, delta) => {
-    if (duplicatedData.length > 0 && !isPausedExternal) {
-      // Smooth continuous scrolling only when not paused
-      // Negative value to scroll from bottom to top (or right to left)
-      scrollPositionRef.current -= scrollSpeed * delta * 10;
+    if (groupRef.current && combinedData.length > 0) {
+      // Update scroll position (move left continuously)
+      scrollOffsetRef.current += scrollSpeed * delta;
       
-      // Reset scroll to prevent overflow
-      if (scrollPositionRef.current > setSize) {
-        scrollPositionRef.current = scrollPositionRef.current % setSize;
+      // Reset position seamlessly when we've scrolled through one complete set
+      // The candles start at -15 and we need to scroll the full width
+      if (scrollOffsetRef.current >= totalWidth) {
+        scrollOffsetRef.current = 0;
       }
+      
+      // Move the entire group left to create scrolling effect
+      groupRef.current.position.x = -scrollOffsetRef.current;
     }
   });
   
-  // Handle candle click
-  const handleCandleClick = (index, userData) => {
-    setSelectedCandleIndex(index);
-    if (onCandleClick) {
-      onCandleClick(userData);
-    }
-  };
+  // Debug logging
+  useEffect(() => {
+    console.log('[CandleMarquee] Combined data length:', combinedData.length);
+    console.log('[CandleMarquee] Total width:', totalWidth);
+  }, [combinedData.length, totalWidth]);
   
   return (
-    <group ref={groupRef} position={[0, 0, 0]}>
-      {duplicatedData.map((item, index) => (
-        <MarqueeCandle
-          key={item.key}
-          basePosition={0}
-          scrollRef={scrollPositionRef}
-          spacing={spacing}
-          totalCount={duplicatedData.length}
-          candleObject={item.candleObject}
-          userData={item.userData}
-          index={index}
-          onClick={() => handleCandleClick(index, item.userData)}
-          direction={direction}
-          isSelected={selectedCandleIndex === index}
-          isPaused={isPausedExternal}
-        />
-      ))}
+    <group ref={groupRef} position={[40, 0, 0]}>
+      {combinedData.map((item, index) => {
+        const xPosition = index * spacing; // Start from 0, group starts at 40
+        return (
+          <MarqueeCandle
+            key={`${item.originalName}-${index}`}
+            position={[xPosition, 0, 0]}  // All at same Y and Z position for horizontal line
+            candleObject={item.candleObject}
+            userData={item.userData}
+            index={index}
+            onClick={onCandleClick}
+            scrollSpeed={scrollSpeed}
+          />
+        );
+      })}
+      
+      {/* Ambient lighting for the marquee */}
+      <ambientLight intensity={0.3} />
+      <pointLight
+        position={[0, 2, 2]}
+        color="#ffa500"
+        intensity={0.5}
+        distance={20}
+        decay={2}
+      />
     </group>
   );
 }
 
-// Single candle display with timed transitions
-function SingleCandleDisplay({ 
-  candleData = [], 
-  onCandleClick,
-  useFirestore = true
-}) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [candleObject, setCandleObject] = useState(null);
-  const [isPaused, setIsPaused] = useState(false);
-  
-  // Fetch results from Firestore if useFirestore is true
-  const firestoreResults = useFirestoreResults();
-  const results = useFirestore && firestoreResults.length > 0 ? firestoreResults : candleData;
-  
-  // Navigation functions
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + results.length) % results.length);
-    setIsPaused(true);
-    setTimeout(() => setIsPaused(false), 5000); // Resume auto-cycle after 5 seconds
-  };
-  
-  const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % results.length);
-    setIsPaused(true);
-    setTimeout(() => setIsPaused(false), 5000); // Resume auto-cycle after 5 seconds
-  };
-  
-  // Load the candle model
-  const { scene: candleModel } = useGLTF('/models/singleCandleAnimatedFlame.glb');
-  
-  // Setup candle
-  useEffect(() => {
-    if (!candleModel) return;
-    
-    const clonedCandle = candleModel.clone(true);
-    clonedCandle.traverse((child) => {
-      if (child.material) {
-        if (Array.isArray(child.material)) {
-          child.material = child.material.map(mat => mat.clone());
-        } else {
-          child.material = child.material.clone();
-        }
-      }
-    });
-    
-    // Center and prepare the candle
-    const box = new THREE.Box3().setFromObject(clonedCandle);
-    const center = box.getCenter(new THREE.Vector3());
-    clonedCandle.position.sub(center);
-    clonedCandle.position.y = 0;
-    
-    // Apply texture and text if we have user data
-    if (results[currentIndex]) {
-      const userData = results[currentIndex];
-      if (userData.image || userData.profileImage) {
-        applyTextureToClone(clonedCandle, userData.image || userData.profileImage);
-      }
-      applyTextToLabel1(clonedCandle, userData);
-    }
-    
-    setCandleObject(clonedCandle);
-  }, [candleModel, currentIndex, results]);
-  
-  // Cycle through candles every 3 seconds (unless paused)
-  useEffect(() => {
-    if (results.length === 0 || isPaused) return;
-    
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % results.length);
-    }, 3000);
-    
-    return () => clearInterval(interval);
-  }, [results.length, isPaused]);
-  
-  const currentUserData = results[currentIndex] || {};
-  
+export default React.memo(CandleMarquee, (prevProps, nextProps) => {
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Canvas
-        camera={{ position: [0, 0, 5], fov: 40 }}  // Centered and closer camera
-        style={{ width: '100%', height: '100%' }}
-      >
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 5, 5]} intensity={1} />
-        <Suspense fallback={null}>
-          {candleObject && (
-            <SingleFadeCandle
-              candleObject={candleObject}
-              userData={currentUserData}
-              onClick={onCandleClick}
-              isVisible={true}
-            />
-          )}
-        </Suspense>
-      </Canvas>
-      
-      {/* Navigation arrows */}
-      <button
-        onClick={goToPrevious}
-        style={{
-          position: 'absolute',
-          left: '10px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: 'rgba(255, 255, 0, 0.2)',
-          border: '1px solid rgba(255, 255, 0, 0.6)',
-          color: 'rgba(255, 255, 255, 0.9)',
-          fontSize: '20px',
-          width: '30px',
-          height: '30px',
-          borderRadius: '50%',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease',
-          zIndex: 10
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.4)';
-          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-        }}
-        aria-label="Previous candle"
-      >
-        ‹
-      </button>
-      
-      <button
-        onClick={goToNext}
-        style={{
-          position: 'absolute',
-          right: '10px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: 'rgba(255, 255, 0, 0.2)',
-          border: '1px solid rgba(255, 255, 0, 0.6)',
-          color: 'rgba(255, 255, 255, 0.9)',
-          fontSize: '20px',
-          width: '30px',
-          height: '30px',
-          borderRadius: '50%',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease',
-          zIndex: 10
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.4)';
-          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-        }}
-        aria-label="Next candle"
-      >
-        ›
-      </button>
-      
-      {/* Candle counter */}
-      <div style={{
-        position: 'absolute',
-        bottom: '10px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        color: 'rgba(255, 255, 255, 0.7)',
-        fontSize: '12px',
-        fontFamily: 'monospace'
-      }}>
-        {currentIndex + 1} / {results.length}
-      </div>
-    </div>
+    prevProps.candleData === nextProps.candleData &&
+    prevProps.modelRef === nextProps.modelRef &&
+    prevProps.onCandleClick === nextProps.onCandleClick &&
+    prevProps.scrollSpeed === nextProps.scrollSpeed &&
+    prevProps.spacing === nextProps.spacing
   );
-}
-
-// Main component with its own Canvas
-export default function CandleMarquee({ 
-  candleData = [], 
-  onCandleClick,
-  currentPage = 0,
-  itemsPerPage = 10,
-  scrollSpeed = 0.5,
-  direction = 'vertical',
-  style = {},
-  canvasStyle = {},
-  useFirestore = true
-}) {
-  const [isPaused, setIsPaused] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isTabletMode, setIsTabletMode] = useState(false);
-  
-  // Detect screen size and orientation
-  useEffect(() => {
-    const checkScreenSize = () => {
-      // iPad Mini is 768px wide in portrait, 1024px in landscape
-      // Check for tablet/portrait mode
-      const isTablet = window.innerWidth <= 1024 && window.innerHeight > window.innerWidth;
-      setIsTabletMode(isTablet);
-    };
-    
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    window.addEventListener('orientationchange', checkScreenSize);
-    
-    return () => {
-      window.removeEventListener('resize', checkScreenSize);
-      window.removeEventListener('orientationchange', checkScreenSize);
-    };
-  }, []);
-  
-  // Always show single candle mode
-  if (true) {  // Changed to always show single candle
-    return (
-      <div 
-        style={{
-          position: 'fixed',
-          left: '0',
-          bottom: '0',
-          width: '20%',  // 20% of viewport width
-          height: '25vh',  // Quarter of viewport height
-          borderRadius: '10px',
-    
-          overflow: 'hidden',
-          background: 'rgba(0, 0, 0, 0.7)',  // Dark background
-          border: '2px solid rgba(255, 255, 0, 0.8)',  // Subtle border to set it off
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',  // Shadow for depth
-          margin: '15px',  // Slight margin from edges
-          ...style  // Apply parent positioning styles (can override)
-        }}
-      >
-        <SingleCandleDisplay
-          candleData={candleData}
-          onCandleClick={onCandleClick}
-          useFirestore={useFirestore}
-        />
-      </div>
-    );
-  }
-  
-  // Create the gradient mask based on direction
-  const maskImage = direction === 'vertical' 
-    ? 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)'
-    : 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)';
-  
-  return (
-    <div 
-      style={{
-        width: direction === 'vertical' ? '200px' : '100%',
-        height: direction === 'vertical' ? '100%' : '200px',
-        maskImage: maskImage,
-        WebkitMaskImage: maskImage, // For Safari support
-        ...style  // Parent positioning takes precedence
-      }}
-      onMouseEnter={() => {
-        setIsHovered(true);
-        setIsPaused(true);
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPaused(false);
-      }}
-    >
-      <Canvas
-        camera={{ 
-          position: direction === 'vertical' ? [8, 0, 5] : [0, 3, 8], 
-          fov: 50 
-        }}
-        style={{
-          width: '100%',
-          height: '100%',
-          cursor: 'pointer',
-          ...canvasStyle
-        }}
-      >
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 5, 5]} intensity={1} />
-        <Suspense fallback={null}>
-          <CandleMarqueeInner
-            candleData={candleData}
-            onCandleClick={(userData) => {
-              if (onCandleClick) onCandleClick(userData);
-            }}
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            scrollSpeed={scrollSpeed}
-            direction={direction}
-            isPausedExternal={isPaused}
-            useFirestore={useFirestore}
-          />
-        </Suspense>
-      </Canvas>
-    </div>
-  );
-}
-
-// Preload the candle model
-useGLTF.preload('/models/singleCandleAnimatedFlame.glb');
+});
