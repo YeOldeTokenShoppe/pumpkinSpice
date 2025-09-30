@@ -259,8 +259,40 @@ const PRAYERS_BY_LANGUAGE = {
 // Get current language prayers (defaults to English)
 const PRAYERS = PRAYERS_BY_LANGUAGE[getUserLanguage()]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
 
+// Cache for hands overlay image
+let cachedHandsImage = null;
+let handsImageLoading = false;
+let handsImageCallbacks = [];
+
+function loadHandsImage(callback) {
+  if (cachedHandsImage) {
+    callback(cachedHandsImage);
+    return;
+  }
+  
+  handsImageCallbacks.push(callback);
+  
+  if (!handsImageLoading) {
+    handsImageLoading = true;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      cachedHandsImage = img;
+      handsImageLoading = false;
+      handsImageCallbacks.forEach(cb => cb(img));
+      handsImageCallbacks = [];
+    };
+    img.onerror = () => {
+      handsImageLoading = false;
+      handsImageCallbacks.forEach(cb => cb(null));
+      handsImageCallbacks = [];
+    };
+    img.src = '/images/face2_hands_feet.png';
+  }
+}
+
 // 3D Candle Component
-function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'en', template = null, templatePosition = { x: 50, y: 50 }, templateScale = 100, templateRotation = 0, skinToneAdjustment = 0 }) {
+function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'en', template = null, templatePosition = { x: 50, y: 50 }, templateScale = 100, templateRotation = 0, skinToneAdjustment = 0, userImagePosition = { x: 50, y: 50 }, userImageScale = 100, userImageRotation = 0 }) {
   const { scene } = useGLTF('/models/singleCandleAnimatedFlame.glb');
   const candleRef = useRef();
   const clonedSceneRef = useRef(null);
@@ -360,6 +392,9 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
   // Store references to Label meshes
   const label1MeshRef = useRef(null);
   const label2MeshRef = useRef(null);
+  const lastSuccessfulImageUrl = useRef(null);
+  const lastTexture = useRef(null);
+  const effectActive = useRef(false);
   
   // Clone scene once and store reference
   useEffect(() => {
@@ -608,11 +643,30 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
   
   // Create combined texture with image and username for Label2
   useEffect(() => {
-    if (label2MeshRef.current) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1024;
-      canvas.height = 1024;
-      const ctx = canvas.getContext('2d');
+    if (!label2MeshRef.current) return;
+    
+    // Generate unique ID for this effect run
+    const effectId = Math.random().toString(36).substr(2, 9);
+    
+    // Debounce to prevent multiple rapid executions
+    const timeoutId = setTimeout(() => {
+      // Set active flag
+      effectActive.current = true;
+      
+      console.log('Effect starting for template:', template === '/images/face2.png' ? 'Virgin Mary' : 'Other', 'effectId:', effectId);
+    
+    // Use the current imageUrl if available, otherwise use the last successful one
+    const currentImageUrl = imageUrl || lastSuccessfulImageUrl.current;
+    
+    // Update the last successful image URL if we have a valid one
+    if (imageUrl && imageUrl !== '/defaultAvatar.png') {
+      lastSuccessfulImageUrl.current = imageUrl;
+    }
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
       
       // Fill background with a light color for better visibility
       ctx.fillStyle = '#f5f5f5';
@@ -620,12 +674,25 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       
       // Function to draw image with template overlay if selected
       const drawImageWithTemplate = (img, templateImg = null, handsImg = null) => {
+        const drawId = Math.random().toString(36).substr(2, 9);
+        console.log('drawImageWithTemplate called:', {
+          drawId,
+          effectId,
+          hasImg: !!img,
+          imgSize: img ? {w: img.width, h: img.height} : null,
+          hasTemplate: !!templateImg, 
+          hasHands: !!handsImg,
+          template,
+          effectActive: effectActive.current
+        });
         // Check if this is likely a Clerk letter avatar (small dimensions)
         const isLetterAvatar = img.width <= 200 && img.height <= 200;
+        console.log('isLetterAvatar:', isLetterAvatar, 'img dimensions:', img.width, 'x', img.height);
         
         // Draw the image (leave space at bottom for name)
         const imageHeight = username ? canvas.height * 0.9 : canvas.height;
         
+        console.log('Template check - templateImg:', !!templateImg);
         if (templateImg) {
           // When template is used, apply positioning
           
@@ -636,15 +703,20 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
           // FIRST: Draw template image (underneath)
           ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
           
-          // SECOND: Draw user image on top (so it shows through the erased area)
+          // SECOND: Draw user image
           ctx.save();
           
           // Calculate positioned dimensions - maintain aspect ratio
-          const scaleFactor = templateScale / 100;
-          const baseSize = Math.min(canvas.width, canvas.height) * 0.8; // Base size relative to canvas
+          const scaleFactor = userImageScale / 100;
+          const baseSize = Math.min(canvas.width, canvas.height) * 0.4; // Smaller base for better scale control
+          
+          console.log('User image dimensions:', {width: img.width, height: img.height, src: img.src?.substring(0, 50)});
           
           // Maintain aspect ratio of the user image
-          const aspectRatio = img.width / img.height;
+          // Fix for tiny images - use default size if image is too small
+          const actualWidth = img.width <= 10 ? 200 : img.width;
+          const actualHeight = img.height <= 10 ? 200 : img.height;
+          const aspectRatio = actualWidth / actualHeight;
           let imgWidth, imgHeight;
           
           if (aspectRatio > 1) {
@@ -657,25 +729,44 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
             imgWidth = imgHeight * aspectRatio;
           }
           
-          const imgX = (templatePosition.x / 100) * canvas.width - imgWidth / 2;
-          const imgY = (templatePosition.y / 100) * canvas.height - imgHeight / 2;
+          const imgX = (userImagePosition.x / 100) * canvas.width - imgWidth / 2;
+          const imgY = (userImagePosition.y / 100) * canvas.height - imgHeight / 2;
           
           // Apply rotation around the image center
-          if (templateRotation !== 0) {
-            const centerX = (templatePosition.x / 100) * canvas.width;
-            const centerY = (templatePosition.y / 100) * canvas.height;
+          if (userImageRotation !== 0) {
+            const centerX = (userImagePosition.x / 100) * canvas.width;
+            const centerY = (userImagePosition.y / 100) * canvas.height;
             ctx.translate(centerX, centerY);
-            ctx.rotate((templateRotation * Math.PI) / 180);
+            ctx.rotate((userImageRotation * Math.PI) / 180);
             ctx.translate(-centerX, -centerY);
           }
           
-          // Draw positioned user image ON TOP of template
+          // Create circular/oval clipping path for user image
+          ctx.save();
+          ctx.beginPath();
+          // Create an ellipse (oval) clipping path
+          const centerX = imgX + imgWidth / 2;
+          const centerY = imgY + imgHeight / 2;
+          const radiusX = imgWidth / 2;
+          const radiusY = imgHeight / 2;
+          ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+          ctx.clip();
+          
+          // Draw positioned user image (will be clipped to oval)
+          console.log('Drawing user image at:', {x: imgX, y: imgY, width: imgWidth, height: imgHeight});
           ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+          ctx.restore();
           
           ctx.restore();
           
-          // Draw hands/feet overlay if provided with skin tone adjustment
+          // THIRD: Draw hands/feet overlay if provided (on top)
           if (handsImg && handsImg.complete) {
+            console.log('Drawing hands overlay');
+            // Save the current composite operation
+            const prevComposite = ctx.globalCompositeOperation;
+            // Use source-over to preserve transparency
+            ctx.globalCompositeOperation = 'source-over';
+            
             if (skinToneAdjustment !== 0) {
               // Create temporary canvas for color adjustment
               const tempCanvas = document.createElement('canvas');
@@ -729,27 +820,15 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
               // No adjustment - draw directly (full size to match template)
               ctx.drawImage(handsImg, 0, 0, canvas.width, canvas.height);
             }
+            
+            // Restore composite operation
+            ctx.globalCompositeOperation = prevComposite;
           }
         } else {
-          // No template - draw normally
-          if (isLetterAvatar) {
-            // For letter avatars, center them and add padding
-            const size = Math.min(canvas.width, imageHeight) * 0.6;
-            const x = (canvas.width - size) / 2;
-            const y = (imageHeight - size) / 2;
-            
-            // Add a subtle background circle
-            ctx.fillStyle = '#e0e0e0';
-            ctx.beginPath();
-            ctx.arc(canvas.width / 2, imageHeight / 2, size / 2 + 20, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Draw the letter avatar centered
-            ctx.drawImage(img, x, y, size, size);
-          } else {
-            // Draw regular images full size
-            ctx.drawImage(img, 0, 0, canvas.width, imageHeight);
-          }
+          // No template - always draw full size to fill the canvas
+          console.log('No template path - drawing image to fill canvas');
+          console.log('Drawing non-template image to fill canvas:', canvas.width, 'x', canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
         
         // Draw username if provided
@@ -793,10 +872,16 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
         texture.needsUpdate = true;
         
         // Apply texture to Label2
-        if (label2MeshRef.current.material) {
+        console.log('Applying texture to Label2, effectActive:', effectActive.current);
+        if (label2MeshRef.current && label2MeshRef.current.material) {
+          // Don't dispose textures - just replace
           label2MeshRef.current.material.map = texture;
           label2MeshRef.current.material.needsUpdate = true;
-        } else {
+          // Save this texture as the last successful one
+          lastTexture.current = texture;
+          console.log('Texture applied successfully');
+        } else if (label2MeshRef.current) {
+          console.log('Creating new material with texture');
           label2MeshRef.current.material = new THREE.MeshStandardMaterial({
             map: texture,
             emissive: new THREE.Color(0xff6600),
@@ -815,50 +900,88 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       
       // Handle template loading if one is selected
       if (template) {
+        console.log('Starting template load:', template === '/images/face2.png' ? 'Virgin Mary' : template);
         const templateImg = new Image();
-        const handsImg = template === '/images/face2.png' ? new Image() : null;
+        templateImg.crossOrigin = 'anonymous';
         
+        // Load the main template first
         templateImg.onload = () => {
-          // If we need hands overlay, load it
-          if (handsImg) {
-            handsImg.onload = () => {
-              img.onload = () => drawImageWithTemplate(img, templateImg, handsImg);
-              img.onerror = () => {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                drawImageWithTemplate(ctx.canvas, templateImg, handsImg);
+          console.log('Template loaded, loading user image next');
+          // Set up the user image loading
+          img.onload = () => {
+            if (!effectActive.current) return;
+            
+            // Capture the user image reference to prevent it from being modified
+            const userImg = img;
+            
+            // Always ensure we draw at least once
+            drawImageWithTemplate(userImg, templateImg, null);
+            
+            // Load and redraw with hands overlay for Virgin Mary if needed
+            if (template === '/images/face2.png') {
+              const handsImg = new Image();
+              handsImg.crossOrigin = 'anonymous';
+              handsImg.onload = () => {
+                if (effectActive.current) {
+                  drawImageWithTemplate(userImg, templateImg, handsImg);
+                }
               };
-              
-              if (userTexture) {
-                img.src = userTexture.image.src;
-              } else if (defaultTexture) {
-                img.src = defaultTexture.image.src;
-              } else {
-                img.onerror();
+              handsImg.onerror = () => {
+                console.error('Failed to load hands overlay');
+              };
+              handsImg.src = '/images/face2_hands_feet.png';
+            }
+          };
+          
+          img.onerror = () => {
+            // Use a default placeholder image
+            const placeholderImg = new Image();
+            placeholderImg.crossOrigin = 'anonymous';
+            placeholderImg.onload = () => {
+              if (effectActive.current) {
+                // Draw immediately without hands first
+                drawImageWithTemplate(placeholderImg, templateImg, null);
+                
+                // Load and redraw with hands overlay for Virgin Mary if needed
+                if (template === '/images/face2.png') {
+                  const handsImg = new Image();
+                  handsImg.crossOrigin = 'anonymous';
+                  handsImg.onload = () => {
+                    if (effectActive.current) {
+                      drawImageWithTemplate(placeholderImg, templateImg, handsImg);
+                    }
+                  };
+                  handsImg.src = '/images/face2_hands_feet.png';
+                }
               }
             };
-            handsImg.src = '/images/face2_hands_feet.png';
+            placeholderImg.src = '/defaultAvatar.png';
+          };
+          
+          // Load user image
+          if (currentImageUrl && currentImageUrl !== '/defaultAvatar.png') {
+            img.src = currentImageUrl;
           } else {
-            // No hands overlay needed
-            img.onload = () => drawImageWithTemplate(img, templateImg);
-            img.onerror = () => {
-              ctx.fillStyle = '#ffffff';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              drawImageWithTemplate(ctx.canvas, templateImg);
-            };
-            
-            if (userTexture) {
-              img.src = userTexture.image.src;
-            } else if (defaultTexture) {
-              img.src = defaultTexture.image.src;
-            } else {
-              img.onerror();
-            }
+            // No custom image, use default avatar
+            img.src = '/defaultAvatar.png';
           }
         };
+        
+        templateImg.onerror = () => {
+          // Fallback to drawing without template
+          if (effectActive.current) {
+            img.onload = () => {
+              if (effectActive.current) {
+                drawImageWithTemplate(img, null, null);
+              }
+            };
+            img.src = currentImageUrl || defaultTexture?.image?.src || '/defaultAvatar.png';
+          }
+        };
+        
         templateImg.src = template;
       } else {
-        img.onload = () => drawImageWithTemplate(img);
+        // Non-template path handled below
       }
       
       img.onerror = () => {
@@ -892,19 +1015,40 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       
       // Handle non-template path
       if (!template) {
-        if (userTexture) {
-          // Use user texture's image source
+        console.log('Non-template path');
+        img.onload = () => {
+          if (effectActive.current) {
+            drawImageWithTemplate(img, null, null);
+          }
+        };
+        
+        img.onerror = () => {
+          console.error('Failed to load image for non-template path');
+        };
+        
+        if (currentImageUrl && currentImageUrl !== '/defaultAvatar.png') {
+          console.log('Non-template path: using imageUrl:', currentImageUrl);
+          img.src = currentImageUrl;
+        } else if (userTexture) {
+          console.log('Non-template path: using userTexture');
           img.src = userTexture.image.src;
         } else if (defaultTexture) {
-          // Use default texture's image source
+          console.log('Non-template path: using defaultTexture');
           img.src = defaultTexture.image.src;
         } else {
-          // No image available, trigger error handler
-          img.onerror();
+          console.log('Non-template path: no image available, using default');
+          img.src = '/defaultAvatar.png';
         }
       }
-    }
-  }, [userTexture, defaultTexture, username, template, templatePosition, templateScale, templateRotation, skinToneAdjustment]);
+    
+    }, 50); // 50ms debounce
+    
+    // Cleanup function
+    return () => {
+      clearTimeout(timeoutId);
+      effectActive.current = false;
+    };
+  }, [userTexture, defaultTexture, username, template, templatePosition, templateScale, templateRotation, skinToneAdjustment, userImagePosition, userImageScale, userImageRotation, imageUrl]); // Added imageUrl to trigger update
   
   // Removed auto-rotation - user can control with OrbitControls
   
@@ -928,8 +1072,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       name: 'None', 
       preview: '🎯',
       position: { x: 50, y: 50 },
-      scale: 100,
-      rotation: 0
+      scale: 70,
+      rotation: 0,
+      userImagePosition: { x: 50, y: 50 },  // Default centered
+      userImageScale: 200,  // Doubled for new base size
+      userImageRotation: 0
     },
     { 
       id: '/images/face2.png', 
@@ -938,41 +1085,66 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       hasHandsOverlay: true,
       position: { x: 67, y: 40 },
       scale: 25,
-      rotation: 0
+      rotation: 0,
+      userImagePosition: { x: 67, y: 40 },  // User face position for Virgin Mary
+      userImageScale: 50,  // Fixed scale value
+      userImageRotation: 0
     },
     { 
-      id: '/images/angel-template.png', 
-      name: 'Angel', 
-      preview: '😇',
-      position: { x: 50, y: 45 },
+      id: '/images/saint2.png', 
+      name: 'Saint2', 
+      preview: '/images/saint2.png',
+      position: { x: 50, y: 55 },
       scale: 30,
-      rotation: 0
+      rotation: 0,
+      userImagePosition: { x: 50, y: 25 },  // Adjusted for saint template
+      userImageScale: 70,  // Doubled for new base size
+      userImageRotation: 0
     },
-    { 
-      id: '/images/heart-frame.png', 
-      name: 'Heart', 
-      preview: '❤️',
-      position: { x: 50, y: 50 },
-      scale: 35,
-      rotation: 0
-    },
-    { 
-      id: '/images/golden-frame.png', 
-      name: 'Golden', 
-      preview: '✨',
-      position: { x: 50, y: 50 },
-      scale: 40,
-      rotation: 0
-    },
-    { 
-      id: '/images/flower-frame.png', 
-      name: 'Flowers', 
-      preview: '🌸',
-      position: { x: 50, y: 50 },
-      scale: 35,
-      rotation: 0
-    }
+    // { 
+    //   id: '/images/heart-frame.png', 
+    //   name: 'Heart', 
+    //   preview: '❤️',
+    //   position: { x: 50, y: 50 },
+    //   scale: 35,
+    //   rotation: 0,
+    //   userImagePosition: { x: 50, y: 48 },  // Centered in heart
+    //   userImageScale: 140,  // Doubled for new base size
+    //   userImageRotation: 0
+    // },
+    // { 
+    //   id: '/images/golden-frame.png', 
+    //   name: 'Golden', 
+    //   preview: '✨',
+    //   position: { x: 50, y: 50 },
+    //   scale: 40,
+    //   rotation: 0,
+    //   userImagePosition: { x: 50, y: 50 },  // Perfectly centered for frame
+    //   userImageScale: 130,  // Doubled for new base size
+    //   userImageRotation: 0
+    // },
+    // { 
+    //   id: '/images/flower-frame.png', 
+    //   name: 'Flowers', 
+    //   preview: '🌸',
+    //   position: { x: 50, y: 50 },
+    //   scale: 35,
+    //   rotation: 0,
+    //   userImagePosition: { x: 50, y: 48 },  // Slightly up for flower frame
+    //   userImageScale: 140,  // Doubled for new base size
+    //   userImageRotation: 0
+    // }
   ];
+  
+  // Apply default template (Virgin Mary) settings on component mount
+  useEffect(() => {
+    const virginMaryTemplate = templates.find(t => t.id === '/images/face2.png');
+    if (virginMaryTemplate) {
+      setUserImagePosition(virginMaryTemplate.userImagePosition);
+      setUserImageScale(virginMaryTemplate.userImageScale);
+      setUserImageRotation(virginMaryTemplate.userImageRotation);
+    }
+  }, []); // Only run once on mount
 
   const { user, isSignedIn } = useUser();
   const [selectedPrayer, setSelectedPrayer] = useState(null);
@@ -989,10 +1161,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [templatePosition, setTemplatePosition] = useState({ x: 67, y: 40 });
   const [templateScale, setTemplateScale] = useState(25);
   const [templateRotation, setTemplateRotation] = useState(0);
+  const [userImagePosition, setUserImagePosition] = useState({ x: 50, y: 35 }); // Default for Virgin Mary
+  const [userImageScale, setUserImageScale] = useState(150); // Doubled for new base size
+  const [userImageRotation, setUserImageRotation] = useState(0);
   const [skinToneAdjustment, setSkinToneAdjustment] = useState(0); // -100 to 100, 0 is default
   const [showPositionControls, setShowPositionControls] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
   const [isEncrypted, setIsEncrypted] = useState(false);
   const [encryptionPassword, setEncryptionPassword] = useState('');
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -1030,8 +1206,47 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   // Reset form when modal opens and prepopulate with Clerk user data
   useEffect(() => {
     if (isOpen) {
-      // Get Clerk user image if available
-      const clerkImageUrl = user?.imageUrl || null;
+      // Debug: Log the entire Clerk user object to see Discord avatar info
+      console.log('Clerk user object:', user);
+      console.log('User imageUrl:', user?.imageUrl);
+      console.log('User hasImage:', user?.hasImage);
+      console.log('External accounts:', user?.externalAccounts);
+      
+      // Get Clerk user image
+      let clerkImageUrl = null;
+      
+      // Check if user has a valid image (not the default avatar)
+      if (user?.hasImage && user?.imageUrl) {
+        console.log('User has custom image from OAuth or upload');
+        clerkImageUrl = user.imageUrl;
+      } else if (user?.imageUrl && !user?.imageUrl.includes('gravatar')) {
+        // Sometimes Clerk uses gravatar for default avatars
+        console.log('Using user imageUrl (non-gravatar)');
+        clerkImageUrl = user.imageUrl;
+      }
+      
+      // If still no image, try to get from external accounts
+      if (!clerkImageUrl && user?.externalAccounts && user.externalAccounts.length > 0) {
+        console.log('Checking external accounts for avatar...');
+        const discordAccount = user.externalAccounts.find(account => 
+          account.provider === 'discord' || account.provider === 'oauth_discord'
+        );
+        
+        if (discordAccount) {
+          console.log('Discord account found:', discordAccount);
+          // Try different possible properties
+          clerkImageUrl = discordAccount.imageUrl || 
+                         discordAccount.avatarUrl || 
+                         discordAccount.picture ||
+                         discordAccount.avatar_url ||
+                         null;
+          if (clerkImageUrl) {
+            console.log('Using Discord avatar:', clerkImageUrl);
+          }
+        }
+      }
+      
+      console.log('Final clerkImageUrl:', clerkImageUrl);
       
       setFormData({
         username: '',
@@ -1040,9 +1255,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         allowLikes: false,
       });
       setSelectedPrayer(null);
-      setImageFile(null);
-      // Set Clerk profile image as preview if available
-      setImagePreview(clerkImageUrl);
+      // Don't clear imageFile if we already have one (preserve across template changes)
+      if (!imageFile && !imagePreview) {
+        setImageFile(null);
+        // Set Clerk profile image as preview if available
+        setImagePreview(clerkImageUrl);
+      }
       setSelectedTemplate('/images/face2.png'); // Reset to Virgin Mary default
       setTemplatePosition({ x: 67, y: 40 });
       setTemplateScale(25);
@@ -1095,6 +1313,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     setTemplatePosition(template.position);
     setTemplateScale(template.scale);
     setTemplateRotation(template.rotation);
+    // Set user image positioning for this template
+    setUserImagePosition(template.userImagePosition);
+    setUserImageScale(template.userImageScale);
+    setUserImageRotation(template.userImageRotation);
     // Reset skin tone for non-Virgin Mary templates
     if (template.id !== '/images/face2.png') {
       setSkinToneAdjustment(0);
@@ -1174,6 +1396,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       reader.onloadend = () => {
         // Replace any existing preview (including Clerk image) with the uploaded file
         setImagePreview(reader.result);
+        // Clear the file input value so the same file can be re-selected if needed
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       };
       reader.readAsDataURL(file);
       setError('');
@@ -1181,7 +1407,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   };
 
   // Apply template overlay to image with positioning and skin tone
-  const applyTemplate = async (imageUrl, templatePath, position = templatePosition, scale = templateScale, rotation = templateRotation, skinTone = skinToneAdjustment) => {
+  const applyTemplate = async (imageUrl, templatePath, position = templatePosition, scale = templateScale, rotation = templateRotation, skinTone = skinToneAdjustment, userImgPosition = userImagePosition, userImgScale = userImageScale, userImgRotation = userImageRotation) => {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
       canvas.width = 1024;
@@ -1212,8 +1438,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           ctx.save();
           
           // Calculate user image dimensions and position - maintain aspect ratio
-          const scaleFactor = scale / 100;
-          const baseSize = Math.min(canvas.width, canvas.height) * 0.8;
+          const scaleFactor = userImgScale / 100;
+          const baseSize = Math.min(canvas.width, canvas.height) * 0.4; // Smaller base for better scale control
           const aspectRatio = userImg.width / userImg.height;
           let imgWidth, imgHeight;
           
@@ -1225,15 +1451,15 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             imgWidth = imgHeight * aspectRatio;
           }
           
-          const imgX = (position.x / 100) * canvas.width - imgWidth / 2;
-          const imgY = (position.y / 100) * canvas.height - imgHeight / 2;
+          const imgX = (userImgPosition.x / 100) * canvas.width - imgWidth / 2;
+          const imgY = (userImgPosition.y / 100) * canvas.height - imgHeight / 2;
           
           // Apply rotation if needed
-          if (rotation !== 0) {
-            const centerX = (position.x / 100) * canvas.width;
-            const centerY = (position.y / 100) * canvas.height;
+          if (userImgRotation !== 0) {
+            const centerX = (userImgPosition.x / 100) * canvas.width;
+            const centerY = (userImgPosition.y / 100) * canvas.height;
             ctx.translate(centerX, centerY);
-            ctx.rotate((rotation * Math.PI) / 180);
+            ctx.rotate((userImgRotation * Math.PI) / 180);
             ctx.translate(-centerX, -centerY);
           }
           
@@ -1429,7 +1655,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         finalImageUrl = await getDownloadURL(snapshot.ref);
       }
     } else if (imagePreview && imagePreview.startsWith('http')) {
-      // If using Clerk image and template is selected
+      // If using Clerk image (or any external URL)
       if (selectedTemplate) {
         const compositeImage = await applyTemplate(imagePreview, selectedTemplate);
         const response = await fetch(compositeImage);
@@ -1442,8 +1668,23 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         const snapshot = await uploadBytes(storageRef, blob);
         finalImageUrl = await getDownloadURL(snapshot.ref);
       } else {
-        // Use Clerk image directly
-        finalImageUrl = imagePreview;
+        // Re-upload Clerk image to Firebase Storage to ensure persistence
+        // This prevents 404 errors when Clerk development URLs expire
+        try {
+          const response = await fetch(imagePreview);
+          const blob = await response.blob();
+          
+          const timestamp = Date.now();
+          const fileName = `candles/${timestamp}_clerk_profile.png`;
+          const storageRef = ref(storage, fileName);
+          
+          const snapshot = await uploadBytes(storageRef, blob);
+          finalImageUrl = await getDownloadURL(snapshot.ref);
+        } catch (error) {
+          console.error('Failed to re-upload Clerk image:', error);
+          // Fallback to using the URL directly if fetch fails
+          finalImageUrl = imagePreview;
+        }
       }
     }
     
@@ -1952,6 +2193,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     templateScale={templateScale}
                     templateRotation={templateRotation}
                     skinToneAdjustment={skinToneAdjustment}
+                    userImagePosition={userImagePosition}
+                    userImageScale={userImageScale}
+                    userImageRotation={userImageRotation}
                   />
                 </Suspense>
                 <OrbitControls
@@ -2613,7 +2857,21 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                           }
                         }}
                       >
-                        <div style={{ fontSize: '28px' }}>{template.preview}</div>
+                        {template.id ? (
+                          <img 
+                            src={template.id} 
+                            alt={template.name}
+                            style={{
+                              width: '50px',
+                              height: '50px',
+                              objectFit: 'cover',
+                              borderRadius: '8px',
+                              marginBottom: '4px'
+                            }}
+                          />
+                        ) : (
+                          <div style={{ fontSize: '28px', marginBottom: '4px' }}>{template.preview}</div>
+                        )}
                         <div style={{ 
                           fontSize: '11px', 
                           fontWeight: selectedTemplate === template.id ? 'bold' : 'normal',
@@ -2627,7 +2885,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 </div>
               )}
 
-              {/* Template Position Controls - Compact Version */}
+              {/* User Image Position Controls - Compact Version */}
               {(imageFile || imagePreview) && selectedTemplate && (
                 <div style={{
                   marginBottom: '12px',
@@ -2653,7 +2911,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       gap: '4px'
                     }}
                   >
-                    {showPositionControls ? '▼' : '▶'} Template Controls
+                    {showPositionControls ? '▼' : '▶'} Adjust Your Image Position
                   </button>
                   
                   {showPositionControls && selectedTemplate && (
@@ -2675,14 +2933,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                             marginBottom: '2px',
                             display: 'block'
                           }}>
-                            X: {templatePosition.x.toFixed(0)}%
+                            X: {userImagePosition.x.toFixed(0)}%
                           </label>
                           <input
                             type="range"
                             min="0"
                             max="100"
-                            value={templatePosition.x}
-                            onChange={(e) => setTemplatePosition({ ...templatePosition, x: parseFloat(e.target.value) })}
+                            value={userImagePosition.x}
+                            onChange={(e) => setUserImagePosition({ ...userImagePosition, x: parseFloat(e.target.value) })}
                             style={{
                               width: '100%',
                               height: '16px',
@@ -2698,14 +2956,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                             marginBottom: '2px',
                             display: 'block'
                           }}>
-                            Y: {templatePosition.y.toFixed(0)}%
+                            Y: {userImagePosition.y.toFixed(0)}%
                           </label>
                           <input
                             type="range"
                             min="0"
                             max="100"
-                            value={templatePosition.y}
-                            onChange={(e) => setTemplatePosition({ ...templatePosition, y: parseFloat(e.target.value) })}
+                            value={userImagePosition.y}
+                            onChange={(e) => setUserImagePosition({ ...userImagePosition, y: parseFloat(e.target.value) })}
                             style={{
                               width: '100%',
                               height: '16px',
@@ -2721,37 +2979,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                             marginBottom: '2px',
                             display: 'block'
                           }}>
-                            Size: {templateScale}%
+                            Size: {userImageScale}%
                           </label>
                           <input
                             type="range"
                             min="20"
-                            max="200"
-                            value={templateScale}
-                            onChange={(e) => setTemplateScale(parseFloat(e.target.value))}
-                            style={{
-                              width: '100%',
-                              height: '16px',
-                              accentColor: '#ff6600'
-                            }}
-                          />
-                        </div>
-                        
-                        <div>
-                          <label style={{
-                            fontSize: '11px',
-                            color: 'rgba(255, 255, 255, 0.6)',
-                            marginBottom: '2px',
-                            display: 'block'
-                          }}>
-                            Rot: {templateRotation}°
-                          </label>
-                          <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            value={templateRotation}
-                            onChange={(e) => setTemplateRotation(parseFloat(e.target.value))}
+                            max="300"
+                            value={userImageScale}
+                            onChange={(e) => setUserImageScale(parseFloat(e.target.value))}
                             style={{
                               width: '100%',
                               height: '16px',

@@ -2,14 +2,9 @@
   import React, { useRef, useEffect, useCallback, useState } from "react";
   import { Canvas, useThree } from "@react-three/fiber";
   import { useGLTF, OrbitControls } from "@react-three/drei";
-  import { useUser } from "@clerk/nextjs";
-  import * as THREE from "three";
+    import * as THREE from "three";
 
   function FloatingCandleViewer({ isVisible, onClose, userData, onNavigate, currentIndex, totalCandles }) {
-    const { user, isSignedIn } = useUser();
-    const [hasLiked, setHasLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(userData?.likes || 0);
-    const [isLiking, setIsLiking] = useState(false);
     const [showRotateTooltip, setShowRotateTooltip] = useState(true);
 
     if (!isVisible) return null;
@@ -22,68 +17,6 @@
     // Add debugging to log the userData
     console.log("FloatingCandleViewer received userData:", userData, "Index:", currentIndex, "Total:", totalCandles);
 
-    // Check if user has liked this candle on mount
-    useEffect(() => {
-      const checkLikeStatus = async () => {
-        if (!isSignedIn || !userData?.id) return;
-        
-        try {
-          const response = await fetch(`/api/candle-likes?candleId=${userData.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            setHasLiked(data.hasLiked);
-          }
-        } catch (error) {
-          console.error('Error checking like status:', error);
-        }
-      };
-
-      checkLikeStatus();
-      // Reset like count when userData changes
-      setLikeCount(userData?.likes || 0);
-    }, [userData?.id, isSignedIn]);
-
-    const handleLikeClick = async (e) => {
-      e.stopPropagation();
-      
-      if (!isSignedIn) {
-        alert('Please sign in to appreciate candles');
-        return;
-      }
-
-      if (isLiking || !userData?.id) return;
-
-      setIsLiking(true);
-      const action = hasLiked ? 'unlike' : 'like';
-
-      try {
-        const response = await fetch('/api/candle-likes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            candleId: userData.id,
-            action: action
-          }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          setHasLiked(!hasLiked);
-          setLikeCount(data.newLikeCount);
-        } else {
-          console.error('Error:', data.error);
-          alert(data.error || 'Failed to update appreciation');
-        }
-      } catch (error) {
-        console.error('Error toggling like:', error);
-        alert('Failed to update appreciation');
-      } finally {
-        setIsLiking(false);
-      }
-    };
 
     const handleClick = (e) => {
       // Close viewer when clicking outside the canvas area
@@ -250,83 +183,6 @@
                 </>
               )}
 
-          {/* Like Button - Only show if candle allows likes (default true for undefined) */}
-          {userData && userData.allowLikes !== false && (
-            <div style={{
-              position: "absolute",
-              bottom: "30px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              padding: "12px 20px",
-              background: "rgba(0, 0, 0, 0.7)",
-              borderRadius: "25px",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              backdropFilter: "blur(10px)",
-              zIndex: 10001,
-            }}>
-              <button
-                onClick={handleLikeClick}
-                disabled={isLiking}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: hasLiked ? "#ff69b4" : "#fff",
-                  fontSize: "24px",
-                  cursor: isLiking ? "wait" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "all 0.3s ease",
-                  transform: hasLiked ? "scale(1.1)" : "scale(1)",
-                  opacity: isLiking ? 0.5 : 1,
-                }}
-                onMouseOver={(e) => {
-                  if (!isLiking) e.currentTarget.style.transform = "scale(1.2)";
-                }}
-                onMouseOut={(e) => {
-                  if (!isLiking) e.currentTarget.style.transform = hasLiked ? "scale(1.1)" : "scale(1)";
-                }}
-                aria-label="Like this candle"
-                title={hasLiked ? "Remove appreciation" : "Offer appreciation"}
-              >
-                {hasLiked ? "❤️" : "🤍"}
-              </button>
-              <span style={{
-                color: "#fff",
-                fontSize: "16px",
-                fontWeight: "500",
-              }}>
-                {likeCount}
-              </span>
-            </div>
-          )}
-
-          {/* Private Devotion Indicator - Show if likes are disabled */}
-          {userData && userData.allowLikes === false && (
-            <div style={{
-              position: "absolute",
-              bottom: "30px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              padding: "8px 16px",
-              background: "rgba(139, 69, 19, 0.3)",
-              borderRadius: "20px",
-              border: "1px solid rgba(255, 215, 0, 0.3)",
-              backdropFilter: "blur(10px)",
-              zIndex: 10001,
-            }}>
-              <span style={{
-                color: "rgba(255, 215, 0, 0.9)",
-                fontSize: "14px",
-                fontWeight: "500",
-              }}>
-                🕯️ Private Devotion
-              </span>
-            </div>
-          )}
 
         </div>
       </div>
@@ -524,23 +380,68 @@
       // Reduce maxWidth for shorter lines that are more readable on the curved label
       const maxWidth = 600; // Reduced from 800 to create shorter lines
       const lineHeight = 70; // Increased from 60 to add more space between lines
-      const words = formattedText.split(" ");
       let lines = [];
-      let currentLine = "";
 
-      // Word wrapping
-      words.forEach((word) => {
-        const testLine = currentLine + word + " ";
-        const metrics = context.measureText(testLine);
+      // Helper function to check if character is CJK (Chinese, Japanese, Korean)
+      const isCJKChar = (char) => {
+        const code = char.charCodeAt(0);
+        return (
+          // CJK Unified Ideographs
+          (code >= 0x4E00 && code <= 0x9FFF) ||
+          // CJK Extension A
+          (code >= 0x3400 && code <= 0x4DBF) ||
+          // Hiragana
+          (code >= 0x3040 && code <= 0x309F) ||
+          // Katakana
+          (code >= 0x30A0 && code <= 0x30FF) ||
+          // Hangul
+          (code >= 0xAC00 && code <= 0xD7AF) ||
+          // Full-width forms
+          (code >= 0xFF00 && code <= 0xFFEF)
+        );
+      };
 
-        if (metrics.width > maxWidth) {
-          lines.push(currentLine);
-          currentLine = word + " ";
-        } else {
-          currentLine = testLine;
+      // Check if text contains CJK characters
+      const hasCJK = formattedText.split('').some(isCJKChar);
+
+      if (hasCJK) {
+        // Character-based wrapping for CJK text
+        let currentLine = "";
+        const chars = formattedText.split('');
+        
+        for (let i = 0; i < chars.length; i++) {
+          const char = chars[i];
+          const testLine = currentLine + char;
+          const metrics = context.measureText(testLine);
+          
+          if (metrics.width > maxWidth && currentLine.length > 0) {
+            lines.push(currentLine);
+            currentLine = char;
+          } else {
+            currentLine = testLine;
+          }
         }
-      });
-      lines.push(currentLine);
+        if (currentLine) {
+          lines.push(currentLine);
+        }
+      } else {
+        // Word-based wrapping for non-CJK text (original logic)
+        const words = formattedText.split(" ");
+        let currentLine = "";
+
+        words.forEach((word) => {
+          const testLine = currentLine + word + " ";
+          const metrics = context.measureText(testLine);
+
+          if (metrics.width > maxWidth) {
+            lines.push(currentLine);
+            currentLine = word + " ";
+          } else {
+            currentLine = testLine;
+          }
+        });
+        lines.push(currentLine);
+      }
 
       // Draw text with shadow for better visibility
       // Adjust startY to account for the heading taking up space at top

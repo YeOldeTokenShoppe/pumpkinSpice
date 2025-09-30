@@ -2145,7 +2145,7 @@ export default function Home3() {
         <>
           {/* Burn/Light Candle Button - Left Side */}
           <a
-            href="/gallery"
+            href="/gallery3"
             style={{
               position: 'fixed',
               bottom: isMobile ? '20px' : '30px',

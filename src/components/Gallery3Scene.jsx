@@ -85,13 +85,117 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
     clonedScene.position.z = -center.z;
     clonedScene.position.y = -center.y;
     
-    // Hide or show candles based on prop
+    // Create iridescent shader material that respects texture alpha
+    const createIridescentMaterial = (originalTexture) => {
+      return new THREE.ShaderMaterial({
+        vertexShader: `
+          varying vec2 vUv;
+          varying vec3 vNormal;
+          varying vec3 vViewPosition;
+          
+          void main() {
+            vUv = uv;
+            vNormal = normalize(normalMatrix * normal);
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            vViewPosition = -mvPosition.xyz;
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          varying vec2 vUv;
+          varying vec3 vNormal;
+          varying vec3 vViewPosition;
+
+          uniform float time;
+          uniform vec2 mouse;
+          uniform sampler2D map;
+          uniform bool hasTexture;
+
+          void main() {
+            // Sample the original texture
+            vec4 textureColor = hasTexture ? texture2D(map, vUv) : vec4(1.0);
+            
+            // If alpha is very low, discard the fragment entirely
+            if (textureColor.a < 0.01) {
+              discard;
+            }
+            
+            // Create base gradient colors similar to the CSS refraction
+            vec3 color1 = vec3(1.0, 0.4, 0.6); // Pink
+            vec3 color2 = vec3(0.4, 1.0, 0.6); // Green  
+            vec3 color3 = vec3(0.4, 0.6, 1.0); // Blue
+            
+            // Use view angle for iridescence
+            vec3 viewDir = normalize(-vViewPosition);
+            float fresnel = dot(viewDir, vNormal);
+            
+            // Mix colors based on UV and view angle
+            vec3 iridescent = mix(color1, color2, sin(vUv.x * 10.0 + time));
+            iridescent = mix(iridescent, color3, cos(vUv.y * 10.0 - time));
+            
+            // Add texture pattern overlay
+            float pattern = sin(vUv.x * 50.0) * sin(vUv.y * 50.0);
+            
+            // Blend iridescent effect with original texture luminance
+            float luminance = dot(textureColor.rgb, vec3(0.299, 0.587, 0.114));
+            vec3 finalColor = iridescent + pattern * 0.1;
+            
+            // Mix iridescent color with texture brightness
+            finalColor = mix(finalColor * 0.5, finalColor, luminance);
+            
+            // Use the original texture's alpha channel
+            gl_FragColor = vec4(finalColor, textureColor.a);
+          }
+        `,
+        uniforms: {
+          time: { value: 0 },
+          mouse: { value: new THREE.Vector2(0, 0) },
+          map: { value: originalTexture },
+          hasTexture: { value: originalTexture !== null }
+        },
+        transparent: true,
+        side: THREE.DoubleSide,
+        alphaTest: 0.01
+      });
+    };
+    
+    // Store the shader material in a ref for animation
+    if (!window.iridiscentMaterials) {
+      window.iridiscentMaterials = [];
+    }
+    
+    // Hide or show candles based on prop AND apply iridescent shader to number_fields objects
     clonedScene.traverse((child) => {
       if (child.name && child.name.toUpperCase().includes('VCANDLE')) {
         child.visible = !hideCandles;
       }
       
+      // Apply iridescent shader to objects starting with 'number_fields' or just 'number'
       if (child instanceof THREE.Mesh) {
+        // Log all object names to help debug
+        if (child.name) {
+          console.log('Object name in model:', child.name);
+        }
+        
+        // Apply iridescent material to objects with 'symbol' in their name (case-insensitive)
+        if (child.name && child.name.toLowerCase().includes('symbol')) {
+          console.log('Applying iridescent shader to:', child.name);
+          
+          // Get the original texture from the material if it exists
+          let originalTexture = null;
+          if (child.material) {
+            if (child.material.map) {
+              originalTexture = child.material.map;
+            } else if (child.material.emissiveMap) {
+              originalTexture = child.material.emissiveMap;
+            }
+          }
+          
+          const iridescentMaterial = createIridescentMaterial(originalTexture);
+          child.material = iridescentMaterial;
+          window.iridiscentMaterials.push(iridescentMaterial);
+        }
+        
         child.castShadow = false;
         child.receiveShadow = false;
         // Don't zero out material properties - let them use their defaults
@@ -115,10 +219,19 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
     }
   }, [scene, modelRef, hideCandles, onLoad]);
   
-  // Simple rotation animation
+  // Simple rotation animation and update shader uniforms
   useFrame((state, delta) => {
     if (rotationGroupRef.current) {
       rotationGroupRef.current.rotation.y += delta * 0.1;
+    }
+    
+    // Update time uniform for all iridescent materials
+    if (window.iridiscentMaterials) {
+      window.iridiscentMaterials.forEach(material => {
+        if (material.uniforms && material.uniforms.time) {
+          material.uniforms.time.value = state.clock.elapsedTime;
+        }
+      });
     }
   });
   

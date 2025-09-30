@@ -684,6 +684,52 @@ const PalmsScene = ({ onLoadingChange }) => {
     rimLight.position.set(0, 15, -30);
     scene.add(rimLight);
 
+    // Add car-specific lighting immediately (before model loads)
+    // This prevents the scene from appearing dark if rendering starts before car loads
+    const carSpotlight = new THREE.SpotLight(
+      lightSettings.carSpotlight.color,
+      lightSettings.carSpotlight.intensity,
+      lightSettings.carSpotlight.distance,
+      lightSettings.carSpotlight.angle,
+      lightSettings.carSpotlight.penumbra
+    );
+    carSpotlight.position.set(
+      lightSettings.carSpotlight.position.x + 2.5, // Account for car position offset
+      lightSettings.carSpotlight.position.y,
+      lightSettings.carSpotlight.position.z + 25.6
+    );
+    carSpotlightRef.current = carSpotlight;
+    scene.add(carSpotlight);
+
+    // Add car accent light
+    const carAccentLight = new THREE.SpotLight(
+      lightSettings.carAccentLight.color,
+      lightSettings.carAccentLight.intensity,
+      lightSettings.carAccentLight.distance,
+      lightSettings.carAccentLight.angle,
+      lightSettings.carAccentLight.penumbra
+    );
+    carAccentLight.position.set(
+      lightSettings.carAccentLight.position.x + 2.5,
+      lightSettings.carAccentLight.position.y,
+      lightSettings.carAccentLight.position.z + 25.6
+    );
+    carAccentLightRef.current = carAccentLight;
+    scene.add(carAccentLight);
+
+    // Add rim lighting from behind for car
+    const carRimLight = new THREE.DirectionalLight(
+      lightSettings.rimLight.color,
+      lightSettings.rimLight.intensity
+    );
+    carRimLight.position.set(
+      lightSettings.rimLight.position.x,
+      lightSettings.rimLight.position.y,
+      lightSettings.rimLight.position.z
+    );
+    rimLightRef.current = carRimLight;
+    scene.add(carRimLight);
+
     // Add OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -1446,51 +1492,17 @@ const PalmsScene = ({ onLoadingChange }) => {
         document.addEventListener('click', startVideo);
       });
       
-      // Add a spotlight above the car
-      const carSpotlight = new THREE.SpotLight(
-        lightSettings.carSpotlight.color,
-        lightSettings.carSpotlight.intensity,
-        lightSettings.carSpotlight.distance,
-        lightSettings.carSpotlight.angle,
-        lightSettings.carSpotlight.penumbra
-      );
-      carSpotlight.position.set(
-        lightSettings.carSpotlight.position.x,
-        lightSettings.carSpotlight.position.y,
-        lightSettings.carSpotlight.position.z
-      );
-      carSpotlight.target = carScene;
-      carSpotlightRef.current = carSpotlight;
-      scene.add(carSpotlight);
-
-      // Add car accent light
-      const carAccentLight = new THREE.SpotLight(
-        lightSettings.carAccentLight.color,
-        lightSettings.carAccentLight.intensity,
-        lightSettings.carAccentLight.distance,
-        lightSettings.carAccentLight.angle,
-        lightSettings.carAccentLight.penumbra
-      );
-      carAccentLight.position.set(
-        lightSettings.carAccentLight.position.x,
-        lightSettings.carAccentLight.position.y,
-        lightSettings.carAccentLight.position.z
-      );
-      carAccentLightRef.current = carAccentLight;
-      scene.add(carAccentLight);
+      // Update existing car spotlight target to point at the loaded car
+      if (carSpotlightRef.current) {
+        carSpotlightRef.current.target = carScene;
+        scene.add(carSpotlightRef.current.target); // Add target to scene
+      }
       
-      // Add rim lighting from behind
-      const rimLight = new THREE.DirectionalLight(
-        lightSettings.rimLight.color,
-        lightSettings.rimLight.intensity
-      );
-      rimLight.position.set(
-        lightSettings.rimLight.position.x,
-        lightSettings.rimLight.position.y,
-        lightSettings.rimLight.position.z
-      );
-      rimLightRef.current = rimLight;
-      scene.add(rimLight);
+      // Update car accent light to follow the car if needed
+      if (carAccentLightRef.current) {
+        carAccentLightRef.current.target = carScene;
+        scene.add(carAccentLightRef.current.target);
+      }
       
       // Add underglow effect
       const underglowLight = new THREE.PointLight(
@@ -2862,7 +2874,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             <button
                 onClick={() => {
                   const isMobile = detectMobileDevice();
-                  const destination = isMobile ? '/home2' : '/home2';
+                  const destination = isMobile ? '/home3' : '/home3';
                   router.push(destination);
                 }}
                 style={{
