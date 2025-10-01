@@ -1,52 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { motion, useAnimation } from 'framer-motion';
-
-// Component for individual animated letters
-const AnimatedLetter = ({ children, delay, color }) => {
-  return (
-    <motion.span
-      initial={{ 
-        opacity: 0, 
-        y: 80,
-        rotateX: -90,
-        scale: 0.5
-      }}
-      animate={{ 
-        opacity: 1, 
-        y: 0,
-        rotateX: 0,
-        scale: 1
-      }}
-      transition={{
-        delay: delay,
-        duration: 0.5,
-        type: "spring",
-        damping: 12,
-        stiffness: 200
-      }}
-      style={{
-        display: 'inline-block',
-        transform: 'skew(-10deg)',
-        textShadow: `
-          rgba(83, 61, 74, 0.8) 1px 1px,
-          rgba(83, 61, 74, 0.6) 2px 2px,
-          rgba(83, 61, 74, 0.5) 3px 3px,
-          rgba(83, 61, 74, 0.4) 4px 4px,
-          rgba(83, 61, 74, 0.3) 5px 5px,
-          rgba(83, 61, 74, 0.2) 6px 6px
-        `,
-        minWidth: '10px',
-        minHeight: '10px',
-        position: 'relative',
-        color: color,
-      }}
-    >
-      {children}
-    </motion.span>
-  );
-};
+import React, { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
 
 // Main DropInTitle component
 export default function DropInTitle({ 
@@ -57,48 +12,50 @@ export default function DropInTitle({
   onAnimationComplete = () => {},
   triggerAnimation = true
 }) {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const controls = useAnimation();
+  const containerRef = useRef(null);
+  const buttonRef = useRef(null);
   
-  // Split text into individual letters for animation
-  const splitTextIntoLetters = (text) => {
-    return text.split('').map((char, index) => ({
-      char: char === ' ' ? '\u00A0' : char, // Use non-breaking space
-      id: `${text}-${index}`
-    }));
+  const playAnimation = () => {
+    if (!containerRef.current) return;
+    
+    const tl = gsap.timeline({
+      onComplete: onAnimationComplete
+    });
+    
+    // Hide button initially
+    tl.set(buttonRef.current, { visibility: 'hidden', opacity: 0 });
+    
+    // Animate each letter span
+    tl.fromTo('.title-letter', 
+      { 
+        opacity: 0, 
+        bottom: -80 
+      },
+      { 
+        opacity: 1, 
+        bottom: 0,
+        duration: 0.5,
+        ease: "back.out(1.7)",
+        stagger: 0.05
+      }
+    );
+    
+    // Show button after animation
+    tl.to(buttonRef.current, { 
+      visibility: 'visible', 
+      opacity: 1, 
+      duration: 0.2 
+    });
   };
   
-  // Create letter arrays for each line
-  const letterArrays = lines.map(line => splitTextIntoLetters(line));
-  
-  // Calculate delays for staggered animation
-  let globalDelay = 0;
-  const lettersWithDelay = letterArrays.map((letters, lineIndex) => {
-    return letters.map((letter, letterIndex) => {
-      const delay = globalDelay;
-      globalDelay += 0.05; // 50ms between each letter
-      return {
-        ...letter,
-        delay: delay,
-        color: colors[lineIndex % colors.length]
-      };
-    });
-  });
-  
   useEffect(() => {
-    if (triggerAnimation && !isAnimating) {
-      setIsAnimating(true);
-      // Call onAnimationComplete after the animation duration
-      const totalDuration = globalDelay * 1000 + 500; // Total delay + animation duration
-      setTimeout(() => {
-        onAnimationComplete();
-        setIsAnimating(false);
-      }, totalDuration);
+    if (triggerAnimation) {
+      playAnimation();
     }
   }, [triggerAnimation]);
   
   return (
-    <div style={{
+    <div ref={containerRef} style={{
       position: 'relative',
       display: 'inline-block',
       width: '100%',
@@ -106,6 +63,21 @@ export default function DropInTitle({
     }}>
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css?family=Fjalla+One');
+        
+        .title-letter {
+          transform: skew(-10deg);
+          display: block;
+          float: left;
+          text-shadow: rgba(83, 61, 74, 0.8) 1px 1px,
+                       rgba(83, 61, 74, 0.8) 2px 2px,
+                       rgba(83, 61, 74, 0.8) 3px 3px,
+                       rgba(83, 61, 74, 0.8) 4px 4px,
+                       rgba(83, 61, 74, 0.8) 5px 5px,
+                       rgba(83, 61, 74, 0.8) 6px 6px;
+          min-width: 10px;
+          min-height: 10px;
+          position: relative;
+        }
       `}</style>
       <h1 style={{
         color: '#fff',
@@ -116,69 +88,32 @@ export default function DropInTitle({
         letterSpacing: '2px',
         fontFamily: "'Fjalla One', sans-serif",
       }}>
-        {lettersWithDelay.map((letters, lineIndex) => (
-          <motion.span
+        {lines.map((line, lineIndex) => (
+          <div
             key={`line-${lineIndex}`}
             style={{
-              display: 'block',
+              display: 'flex',
+              justifyContent: 'center',
               transform: 'rotate(-10deg)',
-              position: 'relative',
-              margin: lineIndex === 1 ? '0 auto' : 'auto',
-              marginLeft: lineIndex === 2 ? '2rem' : 'auto',
+              margin: '0 auto',
+              width: 'fit-content',
             }}
           >
-            {letters.map((letter) => (
-              <AnimatedLetter 
-                key={letter.id} 
-                delay={letter.delay}
-                color={letter.color}
+            {line.split('').map((char, charIndex) => (
+              <span 
+                key={`${lineIndex}-${charIndex}`}
+                className="title-letter"
+                style={{ color: colors[lineIndex % colors.length] }}
               >
-                {letter.char}
-              </AnimatedLetter>
+                {char === ' ' ? '\u00A0' : char}
+              </span>
             ))}
-          </motion.span>
+          </div>
         ))}
       </h1>
       
-      {/* Optional replay button - hidden by default */}
-      <motion.button
-        initial={{ opacity: 0, visibility: 'hidden' }}
-        animate={{ 
-          opacity: isAnimating ? 0 : 1, 
-          visibility: isAnimating ? 'hidden' : 'visible' 
-        }}
-        transition={{ delay: 0.2 }}
-        onClick={() => window.location.reload()}
-        style={{
-          position: 'absolute',
-          bottom: '-80px',
-          left: '50%',
-          transform: 'translateX(-50%) rotate(-10deg)',
-          background: 'none',
-          border: 'none',
-          color: '#e55643',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-          fontSize: '1rem',
-          fontFamily: 'inherit',
-          padding: '10px 20px',
-          opacity: 0,
-          display: 'none', // Hidden for now
-        }}
-      >
-        <span style={{
-          transform: 'skew(-10deg)',
-          display: 'block',
-          textShadow: `
-            rgba(83, 61, 74, 0.8) 1px 1px,
-            rgba(83, 61, 74, 0.6) 2px 2px,
-            rgba(83, 61, 74, 0.5) 3px 3px,
-            rgba(83, 61, 74, 0.4) 4px 4px
-          `,
-        }}>
-          Replay
-        </span>
-      </motion.button>
+      {/* Optional replay button */}
+     
     </div>
   );
 }

@@ -22,6 +22,13 @@ import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
 import InfinityLoader from '@/components/InfinityLoader';
 import CloudIntroSection from '@/components/CloudIntroSection';
+import CandleMarqueeSection from '@/components/CandleMarqueeSection';
+
+import Numerology from '@/components/Numerology';
+import ScratchCard from '@/components/ScratchCard';
+import RotatingText from '@/components/RotatingText';
+import '@/components/RotatingText.css';
+
 
 
 import Link from 'next/link';
@@ -231,6 +238,8 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
   const { scene, animations } = useGLTF('/models/angelEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const modelRef = useRef();
+  const [visible, setVisible] = useState(false);
+  const [popScale, setPopScale] = useState(0);
   
   // Clean up on unmount
   useEffect(() => {
@@ -281,9 +290,24 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
     }
   }, [animations, actions, scene, onLoad]);
 
-  // Orbit around center point and billboard effect
+  // Check scroll threshold to trigger pop-in effect
+  useEffect(() => {
+    // Pop in when scrolled down just 50px
+    const threshold = 50;
+    if (scrollY > threshold && !visible) {
+      setVisible(true);
+      console.log('Angel emoji popping in at scroll:', scrollY);
+    }
+  }, [scrollY, visible]);
+
+  // Orbit around center point and billboard effect with pop-in animation
   useFrame((state, delta) => {
     if (!modelRef.current) return;
+    
+    // Smooth pop-in scale animation
+    if (visible && popScale < 1) {
+      setPopScale(prev => Math.min(prev + delta * 3, 1)); // Animate over ~0.3 seconds
+    }
     
     const time = state.clock.elapsedTime;
     
@@ -299,7 +323,14 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
     const angle = time * orbitSpeed;
     modelRef.current.position.x = centerX + Math.cos(angle) * orbitRadius;
     modelRef.current.position.z = centerZ + Math.sin(angle) * -orbitRadius;
-    modelRef.current.position.y = orbitHeight + Math.sin(time * 2) * bobAmount + scrollY * 0.015;
+    
+    // Add pop-in effect to Y position (starts lower, pops up)
+    const popOffset = visible ? (1 - popScale) * -20 : -30; // Start 30 units lower for more dramatic effect
+    modelRef.current.position.y = orbitHeight + Math.sin(time * 2) * bobAmount + scrollY * 0.015 + popOffset;
+    
+    // Apply pop-in scale with bounce effect
+    const bounceScale = visible ? popScale * (1 + Math.sin(popScale * Math.PI) * 0.2) : 0; // Start at 0 scale, more bounce
+    modelRef.current.scale.setScalar((isMobile ? 0.7 : 1) * bounceScale);
     
     // Billboard - make model face the camera
     modelRef.current.lookAt(state.camera.position);
@@ -309,7 +340,6 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
     <primitive 
       ref={modelRef}
       object={scene} 
-      scale={isMobile ? [0.7, 0.7, 0.7] : [1, 1, 1]}
       position={[0, 0, 0]}  // Initial position (will be overridden by animation)
       rotation={[0, 0, 0]}
     />
@@ -320,6 +350,8 @@ function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
   const { scene, animations } = useGLTF('/models/devilEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const modelRef = useRef();
+  const [visible, setVisible] = useState(false);
+  const [popScale, setPopScale] = useState(0);
   
   // Clean up on unmount
   useEffect(() => {
@@ -366,9 +398,24 @@ function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
     }
   }, [animations, actions, scene, onLoad]);
 
-  // Orbit around center point (opposite side from angel) and billboard effect
+  // Check scroll threshold to trigger pop-in effect (slightly delayed from angel)
+  useEffect(() => {
+    // Pop in when scrolled down 100px (50px after angel)
+    const threshold = 100;
+    if (scrollY > threshold && !visible) {
+      setVisible(true);
+      console.log('Devil emoji popping in at scroll:', scrollY);
+    }
+  }, [scrollY, visible]);
+
+  // Orbit around center point (opposite side from angel) and billboard effect with pop-in animation
   useFrame((state, delta) => {
     if (!modelRef.current) return;
+    
+    // Smooth pop-in scale animation
+    if (visible && popScale < 1) {
+      setPopScale(prev => Math.min(prev + delta * 3, 1)); // Animate over ~0.3 seconds
+    }
     
     const time = state.clock.elapsedTime;
     
@@ -384,7 +431,14 @@ function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
     const angle = time * orbitSpeed + Math.PI;
     modelRef.current.position.x = centerX + Math.cos(angle) * orbitRadius;
     modelRef.current.position.z = centerZ + Math.sin(angle) * -orbitRadius;
-    modelRef.current.position.y = orbitHeight + Math.sin(time * 2 + Math.PI) * bobAmount + scrollY * 0.015; // Opposite phase bobbing
+    
+    // Add pop-in effect to Y position (starts lower, pops up)
+    const popOffset = visible ? (1 - popScale) * -10 : -15; // Start 15 units lower
+    modelRef.current.position.y = orbitHeight + Math.sin(time * 2 + Math.PI) * bobAmount + scrollY * 0.015 + popOffset; // Opposite phase bobbing
+    
+    // Apply pop-in scale with bounce effect
+    const bounceScale = visible ? popScale * (1 + Math.sin(popScale * Math.PI) * 0.1) : 0; // Start at 0 scale
+    modelRef.current.scale.setScalar((isMobile ? 0.7 : 1) * bounceScale);
     
     // Billboard - make model face the camera
     modelRef.current.lookAt(state.camera.position);
@@ -394,7 +448,6 @@ function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
     <primitive 
       ref={modelRef}
       object={scene} 
-      scale={isMobile ? [0.7, 0.7, 0.7] : [1, 1, 1]}
       position={[0, 0, 0]}  // Initial position (will be overridden by animation)
       rotation={[0, 0, 0]}
     />
@@ -813,21 +866,17 @@ function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
           scrollY={scrollY} 
           onLoad={() => onAssetsLoaded?.('ourLadyModel')}
         /> */}
-        {/* TEMPORARILY DISABLED FOR MEMORY TESTING */}
-        {/* !isMobile && (
-          <>
-            <AngelEmojiModel 
-              isMobile={isMobile} 
-              scrollY={scrollY} 
-              onLoad={() => onAssetsLoaded?.('angelModel')}
-            />
-            <DevilEmojiModel 
-              isMobile={isMobile} 
-              scrollY={scrollY} 
-              onLoad={() => onAssetsLoaded?.('devilModel')}
-            />
-          </>
-        ) */}
+        {/* Emoji models with pop-in effect */}
+        <AngelEmojiModel 
+          isMobile={isMobile} 
+          scrollY={scrollY} 
+          onLoad={() => onAssetsLoaded?.('angelModel')}
+        />
+        <DevilEmojiModel 
+          isMobile={isMobile} 
+          scrollY={scrollY} 
+          onLoad={() => onAssetsLoaded?.('devilModel')}
+        />
       </Suspense>
       <Suspense></Suspense>
       {/* DISABLED POST PROCESSING FOR MEMORY TEST */}
@@ -2036,7 +2085,7 @@ export default function Home3() {
               style={{ 
               position: "relative",
               left: isMobile ? "5%" : "10%",
-              color: "#8e662b",
+              color: "#d4af37",
               fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
               textShadow: "3px 3px 5px #000, -1px -1px 5px pink",
               fontSize: getResponsiveValue("4rem", "5rem", "6rem", "7rem"),
@@ -2061,93 +2110,257 @@ export default function Home3() {
           
         </div>
         
+       
+
         {/* Cloud Introduction Section - New Addition */}
         <CloudIntroSection scrollY={scrollY} isMobile={isMobile} />
-        
 
+
+
+ {/* Introductory Text Section */}
+        {/* <div style={{
+          position: 'relative',
+          zIndex: 10,
+          padding: isMobile ? '2rem 1.5rem' : '3rem 2rem',
+          maxWidth: '900px',
+          margin: '0 auto',
+          marginTop: '-2rem', // Slight overlap with clouds
+          marginBottom: '3rem'
+        }}>
+          <div style={{
+            background: 'rgba(26, 0, 51, 0.45)', // Semi-transparent dark purple matching your theme
+            backdropFilter: 'blur(12px)',
+            borderRadius: '25px',
+            padding: isMobile ? '2rem 1.5rem' : '3rem 2.5rem',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 20px 60px rgba(212, 175, 55, 0.15), inset 0 0 30px rgba(135, 206, 235, 0.1)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+ 
+            <div style={{
+              position: 'absolute',
+              top: '-50%',
+              left: '-50%',
+              width: '200%',
+              height: '200%',
+              background: 'radial-gradient(circle at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%)',
+              pointerEvents: 'none'
+            }} />
+            
+            <h2 style={{
+              fontFamily: "'Bowlby One SC', cursive",
+              fontSize: isMobile ? '1.8rem' : '2.5rem',
+              color: '#d4af37',
+              textAlign: 'center',
+              marginBottom: '1.5rem',
+              textShadow: '0 0 20px rgba(212, 175, 55, 0.5)',
+              letterSpacing: '2px',
+              position: 'relative'
+            }}>BEHOLD! OUR LADY
+            </h2>
+            
+            
+            <p style={{
+              fontFamily: "'Fjalla One', sans-serif",
+              fontSize: isMobile ? '1rem' : '1.2rem',
+              color: '#ffffff',
+              textAlign: 'center',
+              lineHeight: '1.8',
+              opacity: 0.95,
+              marginBottom: '1rem',
+              position: 'relative'
+            }}>
+Descending from the Cloud, Behold! the mother of memes, an aider to traders, and a fren to degens: Our Lady of Perpetual Profit is the patron saint of day traders and your divine guide through the dark realm of crypto DeFi.
+
+Whether you need a Hail Mary for hard times, or just sanctuary in the digital economy RL80 is a token to believe in.            </p>
+            
+
+          </div>
+        </div> */}
+     
+  {/* <div style={{
+            position: "relative",
+            maxWidth: "1400px",
+            margin: "0 auto 4rem auto",
+            padding: '3rem 2rem'
+          }}
+          className="desktop-rotating-text">
+            <div
+              style={{
+                // position: "absolute",
+                // top: 0,
+                // left: 0,
+                // right: 0,
+                // bottom: 0,
+                // backgroundImage: "url(/sacred.png)",
+                // backgroundPosition: "90% 20%",
+                // backgroundRepeat: "no-repeat",
+                // backgroundSize: "100%",
+                // opacity: 0.3,
+                zIndex: 1,
+              }}
+            />
+            <div style={{ position: "relative", zIndex: 2 }}>
+              <RotatingText isDesktop={true} />
+            </div>
+          </div> */}
+   
         
         {/* Invisible spacer to push cards down and reveal background scene */}
-        {/* <div style={{ 
+        <div style={{ 
           height: getResponsiveValue('60vh', '5vh', '50vh', '15vh'),
-          width: '100%',
+          // width: '100%',
           position: 'relative',
-        }} /> */}
+          marginBottom: '5rem',
+          // bottom: '15rem'
+        }}>
+{/* 
+        <CandleMarqueeSection candleData={[]} /> */}
+ 
+               {/* <TextMarquee /> */}
+      </div>
+          <div style={{
+                        position: "relative",
+                        maxWidth: "1400px",
+                        margin: "0 auto 4rem auto",
+                        // marginTop: '8rem',
+                        // padding: '6rem 1.5rem',
+                      }}
+                      className="desktop-rotating-text">
+                        <div
+                          style={{
+                            // position: "absolute",
+                            // top: 0,
+                            // left: 0,
+                            // right: 0,
+                            // bottom: 0,
+                            // backgroundImage: "url(/sacred.png)",
+                            // backgroundPosition: "90% 20%",
+                            // backgroundRepeat: "no-repeat",
+                            // backgroundSize: "100%",
+                            // opacity: 0.3,
+                            zIndex: 1,
+                          }}
+                        />
+                        <div style={{ position: "relative", zIndex: 2 }}>
+                          <RotatingText isDesktop={true} />
+                        </div>
+                      </div>
         
-        {/* Alternating Cards Section */}
+{/*             
+           <div style={{
+            flex: 1,
+           width: '100%',
+            display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'center',
+       
+           transformOrigin: 'center',
+          }}>
+            <Numerology isMobile={true} />
+           </div> */}
+            {/* <ScratchCard 
+    onComplete={(number) => console.log('Scratched! Number:', number)}
+    onNumberRevealed={(number) => console.log('Generated number:', number)}
+  /> */}
 
      
   
         
         {/* Footer - at the bottom of all content */}
-        <footer style={{
-          position: 'relative',
-          marginTop: '8rem',
-          width: '100%',
-          padding: '1rem 2rem',
-          background: 'rgba(0, 0, 0, 0.9)',
-          borderTop: '1px solid rgba(212, 175, 55, 0.2)',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '2rem',
-          flexWrap: 'wrap',
-          zIndex: 11,
-          pointerEvents: 'auto',
+       <footer style={{
+        marginTop: '4rem',
+        padding: '3rem 2rem 2rem',
+        background: 'linear-gradient(to bottom, rgba(234, 124, 14, 0.0), rgba(14, 65, 234, 0.55))',
+        // borderTop: '1px solid rgba(212, 175, 55, 0.3)',
+        color: '#ffffff',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto'
         }}>
-          <p style={{
+          {/* Footer Title */}
+          <h3 style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontSize: '2.5rem',
             color: '#d4af37',
-            fontSize: '0.875rem',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            margin: 0,
-            opacity: 0.8,
+            marginBottom: '1rem',
+            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)'
           }}>
-            © 2025 Our Lady of Perpetual Profit
-          </p>
+            Our Lady of Perpetual Profit
+          </h3>
+          
+          {/* Divider */}
           <div style={{
-            display: 'flex',
-            gap: '1.5rem',
-            alignItems: 'center',
+            width: '100px',
+            height: '2px',
+            background: 'linear-gradient(90deg, transparent, #d4af37, transparent)',
+            margin: '1.5rem auto'
+          }} />
+          
+          {/* Contact Link */}
+          <div style={{
+            marginBottom: '2rem'
           }}>
-            <a href="#" style={{
-              color: '#ffd700',
-              fontSize: '0.875rem',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            <Link href="/contact" style={{
+              color: '#d4af37',
               textDecoration: 'none',
-              opacity: 0.8,
-              transition: 'opacity 0.2s',
+              fontSize: '1.2rem',
+              fontFamily: 'Cyber, monospace',
+              transition: 'all 0.3s ease',
+              textShadow: '0 0 5px rgba(212, 175, 55, 0.3)',
+              display: 'inline-block',
+              padding: '0.5rem 1.5rem',
+              border: '1px solid rgba(212, 175, 55, 0.5)',
+              borderRadius: '20px'
             }}
-            onMouseEnter={(e) => e.target.style.opacity = '1'}
-            onMouseLeave={(e) => e.target.style.opacity = '0.8'}>
-              About
-            </a>
-            <a href="#" style={{
-              color: '#ffd700',
-              fontSize: '0.875rem',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              textDecoration: 'none',
-              opacity: 0.8,
-              transition: 'opacity 0.2s',
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+              e.currentTarget.style.textShadow = '0 0 10px rgba(212, 175, 55, 0.7)';
             }}
-            onMouseEnter={(e) => e.target.style.opacity = '1'}
-            onMouseLeave={(e) => e.target.style.opacity = '0.8'}>
-              Token
-            </a>
-            <a href="#" style={{
-              color: '#ffd700',
-              fontSize: '0.875rem',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              textDecoration: 'none',
-              opacity: 0.8,
-              transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={(e) => e.target.style.opacity = '1'}
-            onMouseLeave={(e) => e.target.style.opacity = '0.8'}>
-              Community
-            </a>
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.textShadow = '0 0 5px rgba(212, 175, 55, 0.3)';
+            }}>
+              Contact
+            </Link>
           </div>
-        </footer>
+          
+          {/* Blessing Text */}
+          <p style={{
+            fontSize: '1rem',
+            fontStyle: 'italic',
+            opacity: 0.8,
+            marginBottom: '1.5rem',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+          }}>
+            "May your gains be eternal and your losses forgotten"
+          </p>
+          
+          {/* Copyright */}
+          <p style={{
+            fontSize: '0.9rem',
+            opacity: 0.6,
+            fontFamily: 'Cyber, monospace'
+          }}>
+            © 2024 Church of Perpetual Profit | Blessed by the Blockchain
+          </p>
+          
+          {/* Decorative Elements */}
+          <div style={{
+            marginTop: '1.5rem',
+            fontSize: '1.5rem',
+            color: '#d4af37',
+            opacity: 0.7
+          }}>
+            ✦ ✦ ✦
+          </div>
+        </div>
+      </footer>
       </div>
+     
       
       {/* Floating Action Buttons */}
       {mounted && (

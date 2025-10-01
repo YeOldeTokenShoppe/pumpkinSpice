@@ -113,7 +113,7 @@ const Numerology = ({ isMobile = false }) => {
                         justifyContent: 'center',
                         alignItems: 'center',
                         margin: '0 auto',
-                        border: 'solid 0.5em #c48901',
+                        // border: 'solid 0.5em #c48901',
                         width: '100%',
                         maxWidth: isMobile ? '250px' : '300px',
                         aspectRatio: '1',
@@ -122,7 +122,7 @@ const Numerology = ({ isMobile = false }) => {
                     >
                       
                       {/* Fluid background as the base layer */}
-                      <FluidBackground />
+                      {/* <FluidBackground /> */}
 
                       {/* Magic 8 ball as an iframe */}
                       <div

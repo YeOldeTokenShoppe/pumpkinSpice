@@ -322,6 +322,8 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
                 texture={cloudTexture}
                 frustumCulled={false}
               />
+             
+ 
           
               {/* Large white cloud to the right - mid level */}
               <Cloud 

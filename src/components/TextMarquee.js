@@ -250,14 +250,64 @@ const TextMarquee = ({ images, useFirestore = true }) => {
 
   return (
     <div
-      className="h-[2rem] px-8 mt-8 flex items-center"
+      className="relative mt-8"
+      style={{
+        background: 'rgba(0, 0, 0, 0.8)',
+        borderTop: '2px solid #00ff00',
+        borderBottom: '2px solid #00ff00',
+        boxShadow: '0 0 20px rgba(0, 255, 0, 0.2), inset 0 0 20px rgba(0, 255, 0, 0.05)',
+        // padding: '12px 0',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
     >
+      {/* Ticker label */}
+      <div style={{
+        position: 'absolute',
+        left: '0',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        backgroundColor: '#00ff00',
+        color: '#000',
+        padding: '4px 12px',
+        fontFamily: "'Bebas Neue', sans-serif",
+        fontWeight: 'bold',
+        fontSize: '1.2rem',
+        zIndex: 10,
+        borderRight: '3px solid #000'
+      }}>
+        LIVE
+      </div>
+      
+      {/* Grid pattern overlay for ticker feel */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: `
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 10px,
+            rgba(0, 255, 0, 0.02) 10px,
+            rgba(0, 255, 0, 0.02) 11px
+          )
+        `,
+        pointerEvents: 'none'
+      }} />
+      
       <Marquee
         pauseOnHover
         speed={30}
         gradient={false}
         loop={0}
-        style={{ height: "100%", overflow: "hidden" }}
+        style={{ 
+          height: "100%", 
+          overflow: "hidden",
+          paddingLeft: '60px' // Space for LIVE label
+        }}
       >
         {dataToDisplay.map((image, index) => (
           <TextItem key={index} image={image} />

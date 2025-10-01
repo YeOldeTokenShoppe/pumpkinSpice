@@ -1,13 +1,126 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useState, useRef, memo } from 'react';
-import { Cloud, Clouds, useGLTF, useAnimations, useHelper, OrbitControls } from '@react-three/drei';
+import { Suspense, useEffect, useState, useRef, memo, useMemo } from 'react';
+import { Cloud, Clouds, useGLTF, useAnimations, useHelper, OrbitControls, Text } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import DarkClouds from '@/components/Clouds';
 import EnhancedVolumetricLight from '@/components/EnhancedVolumetricLight';
+import { useFirestoreResults } from '@/utilities/useFirestoreResults';
 
+
+// Custom Ticker Curve Component
+const TickerCurve = ({ scrollY, scale = 1, position = [0, 0, -40] }) => {
+  const textRefs = useRef([]);
+  const curveRef = useRef();
+  
+  // Fetch live data from Firestore
+  const firestoreResults = useFirestoreResults();
+  
+  // Create the curve path
+  const curve = useMemo(() => {
+    // Create a wavy ribbon curve similar to your Blender model
+    const points = [];
+    const segments = 50;
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const x = (t - 0.5) * 40; // Wider curve to match ticker
+      const y = Math.sin(t * Math.PI * 2) * 1; // Wave amplitude
+      const z = Math.cos(t * Math.PI) * 2; // More depth variation
+      points.push(new THREE.Vector3(x, y, z));
+    }
+    return new THREE.CatmullRomCurve3(points);
+  }, []);
+  
+  // Animate text along curve
+  useFrame(({ clock }) => {
+    const time = clock.getElapsedTime();
+    const speed = 0.03;
+    
+    textRefs.current.forEach((mesh, index) => {
+      if (mesh && mesh.userData.baseIndex === undefined) {
+        // Store the initial index for each mesh
+        mesh.userData.baseIndex = index;
+      }
+      
+      if (mesh) {
+        // Calculate position along curve - ensure each item has unique position
+        const itemCount = Math.max(textRefs.current.length, 10); // Minimum 10 positions
+        const spacing = 1.0 / itemCount; // More spacing by using higher divisor
+        const baseIndex = mesh.userData.baseIndex || index;
+        const offset = ((time * speed) + (baseIndex * spacing)) % 1;
+        
+        // Get point on curve (these are in local space relative to the group)
+        const point = curve.getPoint(offset);
+        const tangent = curve.getTangent(offset);
+        
+        // Set position directly without creating new vectors
+        mesh.position.x = point.x;
+        mesh.position.y = point.y - 0.1;  // Slightly below the curve
+        mesh.position.z = point.z + 0.5;  // Offset in front of curve surface
+        
+        // Calculate proper orientation for text to follow curve smoothly
+        const up = new THREE.Vector3(0, 1, 0);
+        const axis = new THREE.Vector3().crossVectors(up, tangent).normalize();
+        const radians = Math.acos(up.dot(tangent));
+        const quaternion = new THREE.Quaternion().setFromAxisAngle(axis, radians);
+        
+        // Apply rotation to align text with curve direction
+        mesh.quaternion.copy(quaternion);
+        mesh.rotateY(Math.PI); // Rotate to face along the curve
+        mesh.rotateZ(Math.PI / 2); // Additional rotation for readability
+        mesh.rotateX(-Math.PI); // Flip 180 degrees over X-axis
+      }
+    });
+  });
+  
+  return (
+    <group position={position} scale={scale}>
+      {/* Render the curve as a visible ribbon */}
+      <mesh ref={curveRef} renderOrder={0}>
+        <tubeGeometry args={[curve, 100, 0.5, 3, false]} />
+        <meshBasicMaterial 
+          color="#1a1a1a" 
+          transparent 
+          opacity={0.8}
+          depthTest={true}
+          depthWrite={true}
+        />
+      </mesh>
+      
+      {/* Text elements as direct siblings to mesh */}
+      {(firestoreResults.length > 0 
+        ? firestoreResults.slice(0, 5).flatMap(item => [
+            `${item.userName || 'ANON'}`,
+            '▲',
+            `${(item.burnedAmount || 0).toLocaleString()}`,
+            '•'
+          ])
+        : ['$', 'DIVINE', '+', 'ENERGY', '▲', 'FLOWS', '$', 'REALM']
+      ).map((word, index) => (
+        <Text
+          key={index}
+          ref={el => textRefs.current[index] = el}
+          fontSize={0.35}
+          color="#00FF41"  // Matrix green
+          anchorX="center"
+          anchorY="middle"
+
+          material-emissiveIntensity={0.1}
+          letterSpacing={0.2}
+          material-toneMapped={false}
+          material-depthTest={true}
+          material-depthWrite={true}
+          renderOrder={0}  // Changed to 0 for proper depth sorting
+          segments={1}  // Lower segments for blockier appearance
+        >
+          {word.toUpperCase()}
+        </Text>
+      ))}
+    </group>
+  );
+};
 
 // Optimized Our Lady Model
 const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
@@ -20,8 +133,16 @@ const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
       if (modelRef) {
         modelRef.current = scene;
       }
-      // Optimize the model
+      
+      // Optimize the model and optionally hide the ticker
       scene.traverse((child) => {
+        // Hide or remove the original ticker mesh
+        if (child.name === 'ticker') {
+          child.visible = false; // Hide the original ticker
+          console.log('Hidden original ticker mesh');
+        }
+        
+        // Optimize all meshes
         if (child instanceof THREE.Mesh) {
           child.castShadow = false;
           child.receiveShadow = false;
@@ -32,6 +153,7 @@ const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
           }
         }
       });
+      
       // Signal that model is loaded
       if (onLoad) onLoad();
     }
@@ -43,6 +165,7 @@ const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
       const baseY = isMobile ? -15 : -15;
       groupRef.current.position.y = baseY + scrollY * 0.015;
     }
+    // Removed old ticker text animation - now handled by TickerCurve component
   });
   
   return (
@@ -51,6 +174,13 @@ const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
         object={scene} 
         scale={isMobile ? [10, 10, 10] : [10, 10, 10]}
         rotation={isMobile ? [0, -3.3, 0] : [0.1, -3.2, 0]}
+      />
+      
+      {/* Custom Ticker Curve - moves with model */}
+      <TickerCurve 
+        scrollY={scrollY}
+        scale={3}
+        position={[0, -2, 5]} // Position relative to model
       />
     </group>
   );
@@ -142,7 +272,7 @@ const DevilModel = memo(({ isMobile, scrollY }) => {
   useFrame(({ camera, clock }) => {
     if (groupRef.current) {
       // Base position with scroll
-      const baseY = -5 + scrollY * 0.01; // Slower than main model
+      const baseY = -5 + scrollY * 0.018; // Slower than main model
       
       // Add hovering motion - different speed and phase offset for desync
       const hover = Math.sin(clock.getElapsedTime() * 1.0 + Math.PI) * 0.4; // Speed: 1.0, amplitude: 0.4, phase offset: π
@@ -382,12 +512,12 @@ export default function Simple3DScene({ enabled = false, isMobile = false, scrol
         width: '100%',
         height: '100%',
         background: 'linear-gradient(to bottom, #87CEEB, #98D8E8)',
-        display: 'flex',
+        display: 'flex', 
         alignItems: 'center',
         justifyContent: 'center',
       }}>
         <p style={{ color: 'white', fontSize: '18px' }}>
-          {!enabled ? '3D Scene Disabled' : 'Loading 3D Scene...'}
+          {/* {!enabled ? '3D Scene Disabled' : 'Loading 3D Scene...'} */}
         </p>
       </div>
     );
@@ -398,10 +528,8 @@ export default function Simple3DScene({ enabled = false, isMobile = false, scrol
       camera={{ position: [0, -10, 40], fov: 40, near: 0.1, far: 300 }}
       gl={{
         antialias: false,
-        alpha: false,
         powerPreference: 'high-performance',
         preserveDrawingBuffer: false,
-        failIfMajorPerformanceCaveat: false,
       }}
       dpr={[1, 1]} // Limit pixel ratio
       flat // Disable tone mapping

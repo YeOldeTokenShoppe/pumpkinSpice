@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback, memo, Suspense, lazy } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import PostProcessingEffects from "@/components/PostProcessingEffects";
@@ -22,6 +22,66 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
   const rotationGroupRef = useRef(); // For rotation
   const arrowRef = useRef(); // For the arrow object
   const hasLoadedRef = useRef(false);
+  const wheelSectionsRef = useRef([]); // Store wheel section meshes
+  const originalMaterialsRef = useRef(new Map()); // Store original materials
+  
+  // Color mapping for wheel sections
+  const wheelColorMap = {
+    'wheel_section': '#CF0303FF',
+    'wheel_section004': '#CF0303FF',
+    'wheel_section008': '#CF0303FF',
+    'wheel_section012': '#CF0303FF',
+    'wheel_section001': '#69CF03FF',
+    'wheel_section005': '#69CF03FF',
+    'wheel_section009': '#69CF03FF',
+    'wheel_section013': '#69CF03FF',
+    'wheel_section002': '#03CFCFFF',
+    'wheel_section006': '#03CFCFFF',
+    'wheel_section010': '#03CFCFFF',
+    'wheel_section014': '#03CFCFFF',
+    'wheel_section003': '#6903CFFF',
+    'wheel_section007': '#6903CFFF',
+    'wheel_section011': '#6903CFFF',
+    'wheel_section015': '#6903CFFF'
+  };
+
+  // Handle wheel section click
+  const handleWheelClick = useCallback((event) => {
+    event.stopPropagation();
+    const object = event.object;
+    
+    if (object.userData.isWheel) {
+      console.log('Wheel clicked:', object.userData.wheelName);
+      
+      // Get the color for this wheel section
+      const colorHex = object.userData.wheelColor;
+      if (!colorHex) return;
+      
+      // Convert hex to THREE.Color
+      const color = new THREE.Color(colorHex.substring(0, 7)); // Remove alpha if present
+      
+      // Create emissive material
+      const emissiveMaterial = new THREE.MeshStandardMaterial({
+        color: color,
+        emissive: color,
+        emissiveIntensity: 2.0,
+        transparent: true,
+        opacity: 1.0,
+        side: THREE.DoubleSide
+      });
+      
+      // Apply emissive material
+      object.material = emissiveMaterial;
+      
+      // Reset after 2 seconds
+      setTimeout(() => {
+        const originalMaterial = originalMaterialsRef.current.get(object.userData.wheelName);
+        if (originalMaterial) {
+          object.material = originalMaterial;
+        }
+      }, 2000);
+    }
+  }, []);
 
   
   useEffect(() => {
@@ -167,10 +227,32 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
       window.iridiscentMaterials = [];
     }
     
+    // Clear wheel sections array
+    wheelSectionsRef.current = [];
+    originalMaterialsRef.current.clear();
+    
     // Hide or show candles based on prop AND apply iridescent shader to number_fields objects
     clonedScene.traverse((child) => {
       if (child.name && child.name.toUpperCase().includes('VCANDLE')) {
         child.visible = !hideCandles;
+      }
+      
+      // Check for wheel sections and store them
+      if (child instanceof THREE.Mesh && child.name && child.name.toLowerCase().includes('wheel_section')) {
+        console.log('Found wheel section:', child.name);
+        
+        // Store original material
+        if (child.material) {
+          originalMaterialsRef.current.set(child.name, child.material.clone());
+        }
+        
+        // Add to wheel sections array
+        wheelSectionsRef.current.push(child);
+        
+        // Make the object interactive
+        child.userData.isWheel = true;
+        child.userData.wheelName = child.name;
+        child.userData.wheelColor = wheelColorMap[child.name];
       }
       
       // Apply iridescent shader to objects starting with 'number_fields' or just 'number'
@@ -240,7 +322,12 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
   
   // Outer group positions the model, inner group rotates
   return (
-    <group ref={outerGroupRef} position={[0, -2, 0]} scale={[10, 10, 10]}>
+    <group 
+      ref={outerGroupRef} 
+      position={[0, -2, 0]} 
+      scale={[10, 10, 10]}
+      onClick={handleWheelClick}
+    >
       <group ref={rotationGroupRef} />
     </group>
   );
