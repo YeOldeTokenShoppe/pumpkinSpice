@@ -20,7 +20,6 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
   const { scene } = useGLTF('/models/alligatorStroll6.glb');
   const outerGroupRef = useRef(); // For positioning
   const rotationGroupRef = useRef(); // For rotation
-  const arrowRef = useRef(); // For the arrow object
   const hasLoadedRef = useRef(false);
   const wheelSectionsRef = useRef([]); // Store wheel section meshes
   const originalMaterialsRef = useRef(new Map()); // Store original materials
@@ -92,12 +91,7 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
       modelRef.current = scene;
     }
     
-    // Clear groups
-    rotationGroupRef.current.clear();
-    if (arrowRef.current) {
-      outerGroupRef.current.remove(arrowRef.current);
-      arrowRef.current = null;
-    }
+
     
     const clonedScene = scene.clone();
     
@@ -105,43 +99,7 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
     const box = new THREE.Box3().setFromObject(clonedScene);
     const center = box.getCenter(new THREE.Vector3());
     
-    // Find and extract the arrow object
-    let arrowObject = null;
-    clonedScene.traverse((child) => {
-      if (child.name && child.name.toLowerCase() === 'arrow') {
-        arrowObject = child;
-      }
-    });
     
-    // If arrow exists, remove it from the cloned scene
-    if (arrowObject) {
-      // Store the arrow's world position before removing
-      const arrowWorldPos = new THREE.Vector3();
-      const arrowWorldQuat = new THREE.Quaternion();
-      const arrowWorldScale = new THREE.Vector3();
-      arrowObject.getWorldPosition(arrowWorldPos);
-      arrowObject.getWorldQuaternion(arrowWorldQuat);
-      arrowObject.getWorldScale(arrowWorldScale);
-      
-      // Remove arrow from its parent
-      arrowObject.removeFromParent();
-      
-      // Create a new group for the arrow that won't rotate
-      const arrowGroup = new THREE.Group();
-      arrowGroup.add(arrowObject);
-      
-      // Apply the stored world transform adjusted for centering
-      arrowObject.position.copy(arrowWorldPos);
-      arrowObject.position.x -= center.x;
-      arrowObject.position.z -= center.z;
-      arrowObject.position.y -= center.y;
-      arrowObject.quaternion.copy(arrowWorldQuat);
-      arrowObject.scale.copy(arrowWorldScale);
-      
-      // Add arrow group to outer group (non-rotating)
-      arrowRef.current = arrowGroup;
-      outerGroupRef.current.add(arrowGroup);
-    }
     
     // Center the model for rotation
     clonedScene.position.x = -center.x;
@@ -354,125 +312,12 @@ function ShadowConfig({ isMobileView }) {
   return null;
 }
 
-// Wireframe Grid Component with wave animation
-function WireframeGrid() {
-  const gridRef = useRef();
-  const originalPositions = useRef(null);
-  
-  useEffect(() => {
-    if (gridRef.current) {
-      // Create a green wireframe material
-      const material = new THREE.LineBasicMaterial({ 
-        color: 0x00ff00, 
-        opacity: 0.3, 
-        transparent: true 
-      });
-      
-      // Update the grid material
-      gridRef.current.material = material;
-      
-      // Store original vertex positions
-      if (gridRef.current.geometry && gridRef.current.geometry.attributes.position) {
-        originalPositions.current = gridRef.current.geometry.attributes.position.array.slice();
-      }
-    }
-  }, []);
-  
-  // Animate the grid with waves
-  useFrame((state) => {
-    if (gridRef.current && originalPositions.current) {
-      const positions = gridRef.current.geometry.attributes.position.array;
-      const time = state.clock.elapsedTime;
-      
-      for (let i = 0; i < positions.length; i += 3) {
-        const x = originalPositions.current[i];
-        const z = originalPositions.current[i + 2];
-        
-        // Create multiple smaller wave effects
-        const wave1 = Math.sin(x * 0.3 - time * 2) * 0.15;
-        const wave2 = Math.sin(z * 0.3 - time * 1.5) * 0.15;
-        const wave3 = Math.sin((x + z) * 0.2 - time * 2.5) * 0.1;
-        
-        // Combine waves for a complex pattern
-        const waveHeight = wave1 + wave2 + wave3;
-        
-        // Apply wave to Y position
-        positions[i + 1] = originalPositions.current[i + 1] + waveHeight;
-      }
-      
-      gridRef.current.geometry.attributes.position.needsUpdate = true;
-    }
-  });
-  
-  return (
-    <gridHelper 
-      ref={gridRef}
-      args={[100, 50]} // size, divisions
-      position={[0, -7.5, 0]}
-      rotation={[0, 0, 0]}
-    />
-  );
-}
 
-// Jumping Arrow Component
-function JumpingArrow() {
-  const { scene } = useGLTF('/models/greenUpArrow.glb');
-  const arrowRef = useRef();
-  const startX = -30;
-  const endX = 30;
-  const jumpHeight = 15;
-  const baseY = -5; // Start from slightly above the grid
   
-  useEffect(() => {
-    if (scene && arrowRef.current) {
-      // Clear and add scene
-      arrowRef.current.clear();
-      const clonedScene = scene.clone();
-      
-      // Scale the arrow
-      clonedScene.scale.set(2, 2, 2);
-      
-      // Add material properties for visibility
-      clonedScene.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          if (child.material) {
-            child.material.emissive = new THREE.Color(0x00ff00);
-            child.material.emissiveIntensity = 0.3;
-          }
-        }
-      });
-      
-      arrowRef.current.add(clonedScene);
-    }
-  }, [scene]);
-  
-  // Animate the arrow in linear diagonal motion
-  useFrame((state) => {
-    if (arrowRef.current) {
-      const time = state.clock.elapsedTime;
-      const moveDuration = 4; // seconds for one diagonal pass
-      const progress = (time % moveDuration) / moveDuration;
-      
-      // Calculate linear diagonal position
-      const x = startX + (endX - startX) * progress;
-      const y = baseY + jumpHeight * progress; // Linear rise from baseY to baseY + jumpHeight
-      const z = -20 + 15 * progress; // Move forward as it goes across
-      
-      // Update position
-      arrowRef.current.position.x = x;
-      arrowRef.current.position.y = y;
-      arrowRef.current.position.z = z;
-      
-      // Keep arrow pointing in direction of motion (optional - remove if you want it completely still)
-      arrowRef.current.rotation.z = -Math.PI / 4; // Slight tilt to match diagonal trajectory
-    }
-  });
-  
-  return <group ref={arrowRef} />;
-}
 
-// Preload the arrow model
-useGLTF.preload('/models/greenUpArrow.glb');
+
+
+
 
 // Main scene component
 function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer, onAssetsLoaded, onEffectChange }) {

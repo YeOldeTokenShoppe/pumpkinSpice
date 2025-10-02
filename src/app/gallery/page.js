@@ -298,7 +298,7 @@ export default function GalleryPage() {
               cursor: "pointer",
             }}
           >
-            <Link href="/home" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
+            <Link href="/home3" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
               RL80
             </Link>
             {Array.from({length: 100}).map((_, i) => {

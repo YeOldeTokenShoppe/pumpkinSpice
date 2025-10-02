@@ -13,9 +13,9 @@ const RotatingText = ({ isDesktop = false }) => {
       ["💰 Buy", "❤️‍🔥 Burn", "🚀 Believe"],
       // ["Thou hast", "to give eth", "to get RL80"],
       // ["LUCRUM GAUDIUM", "is latin for", "'profit is joy'"],
-      ["prosper80", "infin80", "RL80"],
+      ["prosper80", "clar80", "RL80"],
       // ["It may be", "stupid, but", "it's also dumb"],
-      ["The lack of", "RL80 is the", "root of evil"],
+      // ["The lack of", "RL80 is the", "root of evil"],
       // ["A token ", "of appreciation"],
       ["Avoid", "false", " profits"],
     ];

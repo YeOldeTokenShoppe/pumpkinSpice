@@ -2439,7 +2439,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             // console.log('Intersection distance from Mary position:', distance);
             if (distance < 2) { // Within 2 units of Mary's position
               const isMobile = detectMobileDevice();
-              const destination = isMobile ? '/home' : '/home';
+              const destination = isMobile ? '/home3' : '/home3';
               console.log(`Close to Mary! Navigating to ${destination}...`);
               
               // Add fade out transition before navigating

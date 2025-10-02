@@ -2294,7 +2294,7 @@ where traditional wisdom meets blockchain innovation.`}
           {isSignedIn ? (
             <Illumin80ClerkButton afterSignOutUrl="/" />
           ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/home2">
+            <SignInButton mode="modal" forceRedirectUrl="/home3">
               <button
                 style={{
                   width: isMobileDevice ? "2.5rem" : "3.75rem",

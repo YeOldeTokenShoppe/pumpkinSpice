@@ -133,14 +133,14 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
     {
       id: 0,
       frontTitle: "Faith",
-      frontDescription: "Bridging sacred wisdom with blockchain innovation for a blessed financial future",
+      frontDescription: "Bridging sacred wisdom with smart contracts for financial salvation",
       backTitle: "Sacred Mission",
       backContent: "Our Lady of Perpetual Profit guides the faithful through:",
       backList: [
-        "Community-driven governance and decision making",
-        "Charitable initiatives supporting global causes",
-        "Educational programs for crypto enlightenment",
-        "Sustainable tokenomics for long-term growth"
+        "Deflationary tokenomics with burn incentives",
+        "Buybacks to support price stability",
+        "Liquidity building protocal",
+        "Vigilant and generous patronage of the creative faithful with #RL80 hashtags",
       ],
       backQuote: "Where faith meets fortune, miracles happen.",
       backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/vsClown.jpg")'
@@ -153,14 +153,14 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
       backContent: "Experience the divine trifecta of cryptocurrency innovation:",
       backList: [
         "Liquid80: Deep liquidity pools ensuring smooth trades",
-        "Util80: Real-world utility through DeFi integrations",
-        "Integr80: Seamless cross-chain compatibility",
+        "Util80: Light utility via on-chain dedications",
+        "Integr80: verified contract",
         "Built on BASE for low fees and high speed"
       ],
       backStats: {
-        supply: "1,000,000,000 $RL80",
+        supply: "80,000,000,000 $RL80",
         tax: "0% Buy/Sell",
-        liquidity: "Locked Forever"
+        liquidity: "Burned"
       },
             backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")'
 
@@ -169,14 +169,14 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
       id: 2,
       frontTitle: "Charity",
       frontDescription: "Your path to enlightenment and perpetual profit in the new economy",
-      backTitle: "Become a Blessed Holder",
-      backContent: "Join our divine community and receive these blessings:",
+      backTitle: "Give and Ye Shall Receive",
+      backContent: "Join the community of luminaries:",
       backList: [
-        "Access to exclusive alpha and trading strategies",
-        "Community governance voting rights",
-        "Early access to partnerships and features",
-        "24/7 support from fellow believers",
-        "Educational resources on DeFi and crypto"
+        "Access to exclusive content and features",
+       
+        "Members only chat and support",
+
+        "Elite status"
       ],
       backQuote: "Where two or three gather in profit, there I am with them.",
       backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/mosaic.jpg")'
@@ -411,7 +411,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
         }}>
           {/* Animated Drop-In Title */}
           <DropInTitle
-            lines={["Behold!", "RL80!", "HOLD RL80"]}
+            lines={["PROSPER80", "FOR ALL", "HUMAN80!"]}
             colors={["#d4af37", "#f4e4c1", "#ffd700"]}
             fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
             isMobile={isMobile}
@@ -584,38 +584,47 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                 // marginBottom: '1.5rem',
                 textAlign: 'center',
               }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: '1rem',
-                  // marginBottom: '0.5rem',
-                }}>
-                  <span style={{
-                    fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
-                    fontWeight: 'bold',
-                    fontSize: '2.2em',
-                    color: '#d4af37',
-                    textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)',
-                  }}>Our Lady of Perpetual Profit</span>
-                       </div>
-                         <div style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: '1rem',
-                  // marginBottom: '0.5rem',
-                }}>
-                  <span style={{
-                    fontFamily: 'cyber, monospace',
-                    fontWeight: 'bold',
-                    fontSize: '1.2em',
-                    color: '#ffffff',
-                    textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                    backgroundColor: 'rgba(196, 137, 1, 0.2)',
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '4px',
-                    border: '1px solid rgba(196, 137, 1, 0.4)',
-                  }}>TICKER: $RL80</span>
-           </div>
+                
+      <p style={{ 
+          color: '#ffffff',
+          fontSize: '1.5rem',
+          lineHeight: 1.6,
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          fontWeight: 400,
+          letterSpacing: '0.02em',
+          marginBottom: '1rem',
+  
+          opacity: 0.85,
+          textAlign: 'center',
+          maxWidth: isMobile ? '100%' : '800px',
+          margin: '0 auto 2rem auto',
+          padding: '0 1rem',
+        }}>
+     {/* Nowhere is the purifying presence of the virtual virgin needed more than the dark realm of defi.<br/> */}
+
+{/* Behold! the mother of memes, an aider to traders, and a fren to degens:  Our Lady of Perpetual Profit is the patron saint of day traders and your spiritual guide through the dark realm of crypto DeFi.<br/><br/> */}
+<br/>
+
+{/* Burn a few <span style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontWeight: 'bold',
+            fontSize: '1.1em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            marginLeft: '0.25em',
+          }}> RL80 </span>tokens to devote a candle in appreciation for her tireless vigilance.
+Or hold them for luck, and to ward off evil.<br/><br/> */}
+
+ Whether you need a Hail Mary for hard times, or just sanctuary from scams and false prophets, RL80  is a token to believe in.
+{/* Let <span style={{
+            fontFamily: 'UnifrakturCook, serif',
+            fontWeight: 'bold',
+            fontSize: '1.1em',
+            color: '#d4af37',
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+            marginLeft: '0.25em',
+          }}> Our Lady of Perpetual Profit </span>  light the way. */}
+</p>
               </div>
 
               {/* Contract Address Section with Coin */}
@@ -812,6 +821,40 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                   order: isMobile ? 3 : 1,
                   padding: isMobile ? '0 1rem' : '0',
                 }}>
+                  <div style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '1rem',
+                  // marginBottom: '0.5rem',
+                }}>
+                  <span style={{
+                    fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
+                    fontWeight: 'bold',
+                    fontSize: '2.2em',
+                    color: '#d4af37',
+                    textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)',
+                  }}>Our Lady of Perpetual Profit</span>
+                       </div>
+                         <div style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'center',
+                  gap: '1rem',
+                  // marginBottom: '0.5rem',
+                }}>
+                  <span style={{
+                    fontFamily: 'cyber, monospace',
+                    fontWeight: 'bold',
+                    fontSize: '1.2em',
+                    color: '#ffffff',
+                    textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+                    backgroundColor: 'rgba(196, 137, 1, 0.2)',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(196, 137, 1, 0.4)',
+             
+                  }}>TICKER: $RL80</span>
+           </div>
                   <h3 style={{
                     color: '#c48901',
                     fontSize: '0.8rem',
@@ -842,7 +885,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                       flex: 1,
                       letterSpacing: '0.05em',
                     }}>
-                      {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
+                      {contractAddress.slice(0, 12)}...{contractAddress.slice(-4)}
                     </code>
                     
                     <button

@@ -3133,7 +3133,7 @@ export default function HomePage() {
           {isSignedIn ? (
             <Illumin80ClerkButton afterSignOutUrl="/" />
           ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/home">
+            <SignInButton mode="modal" forceRedirectUrl="/home3">
               <button
                 style={{
                   width: "40px",

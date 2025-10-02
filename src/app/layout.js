@@ -27,6 +27,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning style={{ margin: 0, padding: 0 }}>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Bitcount+Single+Ink&display=swap" rel="stylesheet" />
         <style dangerouslySetInnerHTML={{__html: `
           /* Critical: Hide custom font text until loaded */
           [style*="UnifrakturCook"],

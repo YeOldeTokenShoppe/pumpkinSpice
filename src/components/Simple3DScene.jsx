@@ -14,6 +14,7 @@ import { useFirestoreResults } from '@/utilities/useFirestoreResults';
 const TickerCurve = ({ scrollY, scale = 1, position = [0, 0, -40] }) => {
   const textRefs = useRef([]);
   const curveRef = useRef();
+  const groupRef = useRef();
   
   // Fetch live data from Firestore
   const firestoreResults = useFirestoreResults();
@@ -57,7 +58,7 @@ const TickerCurve = ({ scrollY, scale = 1, position = [0, 0, -40] }) => {
         
         // Set position directly without creating new vectors
         mesh.position.x = point.x;
-        mesh.position.y = point.y - 0.1;  // Slightly below the curve
+        mesh.position.y = point.y + 0.1;  // Slightly below the curve
         mesh.position.z = point.z + 0.5;  // Offset in front of curve surface
         
         // Calculate proper orientation for text to follow curve smoothly
@@ -75,49 +76,92 @@ const TickerCurve = ({ scrollY, scale = 1, position = [0, 0, -40] }) => {
     });
   });
   
+  // Create a flat ribbon mesh from the curve
+  const ribbonGeometry = useMemo(() => {
+    const points = curve.getPoints(100);
+    const geometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const ribbonHeight = 0.6; // Height of the ribbon
+    
+    // Create vertices for a flat ribbon
+    points.forEach(point => {
+      // Top edge
+      vertices.push(point.x, point.y + ribbonHeight/2, point.z);
+      // Bottom edge  
+      vertices.push(point.x, point.y - ribbonHeight/2, point.z);
+    });
+    
+    // Create faces
+    const indices = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      const a = i * 2;
+      const b = i * 2 + 1;
+      const c = (i + 1) * 2;
+      const d = (i + 1) * 2 + 1;
+      
+      // Two triangles per segment
+      indices.push(a, b, c);
+      indices.push(b, d, c);
+    }
+    
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    
+    return geometry;
+  }, [curve]);
+  
+  // Create a small differential between text and mesh based on scroll
+  // Text moves slightly less than mesh to maintain alignment
+  const textOffsetY = scrollY * -0.00015; // Small negative offset to compensate for drift
+  
   return (
-    <group position={position} scale={scale}>
-      {/* Render the curve as a visible ribbon */}
-      <mesh ref={curveRef} renderOrder={0}>
-        <tubeGeometry args={[curve, 100, 0.5, 3, false]} />
+    <group ref={groupRef} position={position} scale={scale}>
+      {/* Render the curve as a flat ribbon */}
+      <mesh ref={curveRef} renderOrder={0} geometry={ribbonGeometry}>
         <meshBasicMaterial 
           color="#1a1a1a" 
           transparent 
           opacity={0.8}
           depthTest={true}
           depthWrite={true}
+          side={2} // DoubleSide
         />
       </mesh>
       
-      {/* Text elements as direct siblings to mesh */}
-      {(firestoreResults.length > 0 
-        ? firestoreResults.slice(0, 5).flatMap(item => [
-            `${item.userName || 'ANON'}`,
-            '▲',
-            `${(item.burnedAmount || 0).toLocaleString()}`,
-            '•'
-          ])
-        : ['$', 'DIVINE', '+', 'ENERGY', '▲', 'FLOWS', '$', 'REALM']
-      ).map((word, index) => (
-        <Text
-          key={index}
-          ref={el => textRefs.current[index] = el}
-          fontSize={0.35}
-          color="#00FF41"  // Matrix green
-          anchorX="center"
-          anchorY="middle"
-
-          material-emissiveIntensity={0.1}
-          letterSpacing={0.2}
-          material-toneMapped={false}
-          material-depthTest={true}
-          material-depthWrite={true}
-          renderOrder={0}  // Changed to 0 for proper depth sorting
-          segments={1}  // Lower segments for blockier appearance
-        >
-          {word.toUpperCase()}
-        </Text>
-      ))}
+      {/* Text elements with slight scroll differential relative to mesh */}
+      <group position={[0, textOffsetY, 0]}>
+        {(firestoreResults.length > 0 
+          ? firestoreResults.slice(0, 5).flatMap((item, i) => [
+              { text: `${item.userName || 'ANON'}`, isName: true, key: `name-${i}` },
+              { text: '▲', isName: false, key: `arrow-${i}` },
+              { text: `${(item.burnedAmount || 0).toLocaleString()}`, isName: false, key: `amount-${i}` },
+              { text: '•', isName: false, key: `dot-${i}` }
+            ])
+          : ['$', 'DIVINE', '+', 'ENERGY', '▲', 'FLOWS', '$', 'REALM'].map((text, i) => 
+              ({ text, isName: false, key: `default-${i}` }))
+        ).map((item, index) => {
+          const isNameItem = item && item.isName;
+          const textContent = item && item.text ? item.text : item;
+          const keyValue = item && item.key ? item.key : index;
+          
+          return (
+          <Text
+            key={keyValue}
+            ref={el => textRefs.current[index] = el}
+            font="/fonts/BitcountSingleInk.ttf"
+            fontSize={0.35}
+            color={isNameItem ? "#FFFFFF" : "#00FF41"}  // White for names, green for numbers
+            anchorX="center"
+            anchorY="middle"
+            letterSpacing={0.2}
+            renderOrder={0}  // Changed to 0 for proper depth sorting
+          >
+            {String(textContent).toUpperCase()}
+          </Text>
+        );
+      })}
+      </group>
     </group>
   );
 };
@@ -234,7 +278,7 @@ const AngelModel = memo(({ isMobile, scrollY }) => {
   });
   
   return (
-    <group ref={groupRef} position={[-15, -5, -8]}>
+    <group ref={groupRef} position={[-12, -5, -8]}>
       <primitive 
         object={scene} 
         scale={isMobile ? [1, 1, 1] : [1, 1, 1]}
@@ -289,7 +333,7 @@ const DevilModel = memo(({ isMobile, scrollY }) => {
         object={scene} 
         scale={isMobile ? [1, 1, 1] : [1, 1, 1]}
         rotation={[0, 0, 0]}
-        position={[12, -5, -6]}
+        position={[10, -5, -6]}
       />
     </group>
   );
