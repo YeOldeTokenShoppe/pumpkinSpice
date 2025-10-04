@@ -33,7 +33,7 @@ export async function getIllumin80Members() {
       };
       
       // Log each member with their rank
-      console.log(`Rank #${member.rank}: ${member.username} - ${member.burnedAmount} burned (type: ${typeof data.burnedAmount})`);
+      // console.log(`Rank #${member.rank}: ${member.username} - ${member.burnedAmount} burned (type: ${typeof data.burnedAmount})`);
       
       illumin80Members.push(member);
     });

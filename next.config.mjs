@@ -16,6 +16,12 @@ const nextConfig = {
       };
     }
     
+    // Add alias for Three.js BufferGeometryUtils compatibility
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'three/examples/jsm/utils/BufferGeometryUtils.js': new URL('./patches/BufferGeometryUtils.js', import.meta.url).pathname,
+    };
+    
     return config;
   },
   async headers() {

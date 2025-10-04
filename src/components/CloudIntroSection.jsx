@@ -6,10 +6,29 @@ import DropInTitle from './DropInTitle';
 import Coin from '@/components/Coin';
 import Link from 'next/link';
 import { gsap } from 'gsap';
+import { BuyWidget } from "thirdweb/react";
+import { defineChain } from "thirdweb";
+import { createWallet } from "thirdweb/wallets";
+import { client } from "../client";
+import PlayingCard from '@/components/PlayingCard';
+import HandsGLTFScene from '@/components/HandsGLTFScene';
 
 
 const GOLDENRATIO = 1.61803398875;
 
+function BuyWidgetComponent() {
+  return (
+    <BuyWidget
+      client={client}
+      // image={"https://rl80.com/vvv.jpg"}
+      currency={"USD"}
+      chain={defineChain(42161)}
+      amount={"0.002"}
+      tokenAddress={"0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8"}
+      seller={"0x0000000000000000000000000000000000000000"}
+    />
+  );
+}
 
 // Animated counter component
 const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2 }) => {
@@ -53,6 +72,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
   const [flippedCards, setFlippedCards] = useState(new Set());
   const [hoveredCard, setHoveredCard] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const playingCardRef = useRef(null);
   const isInView = useInView(sectionRef, { 
     once: false, 
     margin: "-100px" 
@@ -66,7 +86,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
   // Parallax transformations
   const cloudOpacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [1, 0.8, 0.3, 0]);
   const welcomeY = useTransform(scrollYProgress, [0, 0.5], [100, 0]);
-  const welcomeOpacity = useTransform(scrollYProgress, [0, 0.3], [0, 1]);
+  const welcomeOpacity = useTransform(scrollYProgress, [0, 0.1], [0, 1]);
   
   // Spring animations for smooth transitions
 
@@ -143,7 +163,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
         "Vigilant and generous patronage of the creative faithful with #RL80 hashtags",
       ],
       backQuote: "Where faith meets fortune, miracles happen.",
-      backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/vsClown.jpg")'
+      backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/vvv.jpg")'
     },
     {
       id: 1,
@@ -378,24 +398,9 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
           pointerEvents: 'auto',
         }}
       >
-      {/* Cloud particles background */}
-      {/* <motion.div 
-        style={{ 
-          opacity: smoothCloudOpacity,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          pointerEvents: 'none',
-        }}
-      >
-        {[...Array(5)].map((_, i) => (
-          <CloudParticle key={i} index={i} delay={i * 3} duration={20 + i * 5} />
-        ))}
-      </motion.div> */}
+     
       
-      {/* Ethereal Welcome Banner */}
+
       <motion.div
         style={{
           y: welcomeY,
@@ -432,388 +437,330 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
             Where faith meets fortune in the digital realm
           </motion.p> */}
         </div>
-      </motion.div>
-      
-<div style={{position: 'relative', zIndex: 1, marginTop: '10rem'}}></div>
-            {/* Floating Stats Section */}
-            <motion.div
+
+
+                 <motion.div
         initial={{ opacity: 0 }}
         animate={isInView ? { opacity: 1 } : {}}
         transition={{ duration: 1, delay: 1 }}
         style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-          gap: '2rem',
+          position: 'relative',
           padding: isMobile ? '3rem 1.5rem' : '4rem',
           maxWidth: '1200px',
           margin: '3rem auto',
           background: 'radial-gradient(ellipse, rgba(212,175,55,0.05) 0%, transparent 70%)',
         }}
       >
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontSize: isMobile ? '2rem' : '2.5rem',
-            fontWeight: 'bold',
-            color: '#d4af37',
-            textShadow: '0 0 20px rgba(212,175,55,0.5)',
-            fontFamily: "'Fjalla One', sans-serif",
+        {/* Centered Coin Container */}
+        <div
+          ref={coinRef}
+          style={{ 
+            position: "absolute",
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: isMobile ? "8rem" : "12rem",
+            height: isMobile ? "8rem" : "12rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10,
+          }}
+        >
+          <Link href="#" className="coin-link" style={{ 
+            display: "block",
+            width: isMobile ? "7rem" : "10rem",
+            height: isMobile ? "7rem" : "10rem"
           }}>
-            <AnimatedCounter target={8888} suffix="+" />
-          </div>
-          <div style={{
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.9)',
-            marginTop: '0.5rem',
-            fontFamily: "'Fjalla One', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-          }}>
-            Holders
-          </div>
+            <Coin />
+          </Link>
         </div>
-        
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontSize: isMobile ? '2rem' : '2.5rem',
-            fontWeight: 'bold',
-            color: '#d4af37',
-            textShadow: '0 0 20px rgba(212,175,55,0.5)',
-            fontFamily: "'Fjalla One', sans-serif",
+
+        {/* Stats Grid - 2x2 layout */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, max-content)',
+          gridTemplateRows: 'repeat(2, max-content)',
+          gap: isMobile ? '1.5rem' : '2rem',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: isMobile ? '300px' : '400px',
+        }}>
+          {/* Top Left - Holders */}
+          <div style={{ 
+            textAlign: 'center',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.1)',
+            padding: isMobile ? '1.5rem 2rem' : '2rem 2.5rem',
+            minWidth: isMobile ? '140px' : '180px',
+            aspectRatio: '1.2',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}>
-            <AnimatedCounter target={1.8} suffix="M" prefix="$" />
+            <div style={{
+              fontSize: isMobile ? '2rem' : '2.5rem',
+              fontWeight: 'bold',
+              color: '#d4af37',
+              textShadow: '0 0 20px rgba(212,175,55,0.5)',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              <AnimatedCounter target={8888} suffix="+" />
+            </div>
+            <div style={{
+              fontSize: '1.1rem',
+              color: 'rgba(255,255,255,0.9)',
+              marginTop: '0.5rem',
+              fontFamily: "'Fjalla One', sans-serif",
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            }}>
+              Holders
+            </div>
           </div>
-          <div style={{
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.9)',
-            marginTop: '0.5rem',
-            fontFamily: "'Fjalla One', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+          
+          {/* Top Right - Market Cap */}
+          <div style={{ 
+            textAlign: 'center',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.1)',
+            padding: isMobile ? '1.5rem 2rem' : '2rem 2.5rem',
+            minWidth: isMobile ? '140px' : '180px',
+            aspectRatio: '1.2',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}>
-            Market Cap
+            <div style={{
+              fontSize: isMobile ? '2rem' : '2.5rem',
+              fontWeight: 'bold',
+              color: '#d4af37',
+              textShadow: '0 0 20px rgba(212,175,55,0.5)',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              <AnimatedCounter target={1.8} suffix="M" prefix="$" />
+            </div>
+            <div style={{
+              fontSize: '1.1rem',
+              color: 'rgba(255,255,255,0.9)',
+              marginTop: '0.5rem',
+              fontFamily: "'Fjalla One', sans-serif",
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            }}>
+              Market Cap
+            </div>
           </div>
-        </div>
-        
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontSize: isMobile ? '2rem' : '2.5rem',
-            fontWeight: 'bold',
-            color: '#d4af37',
-            textShadow: '0 0 20px rgba(212,175,55,0.5)',
-            fontFamily: "'Fjalla One', sans-serif",
+
+          {/* Bottom Left - Tokens Burned */}
+          <div style={{ 
+            textAlign: 'center',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.1)',
+            padding: isMobile ? '1.5rem 2rem' : '2rem 2.5rem',
+            minWidth: isMobile ? '140px' : '180px',
+            aspectRatio: '1.2',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}>
-            <AnimatedCounter target={18} suffix="%" />
+            <div style={{
+              fontSize: isMobile ? '2rem' : '2.5rem',
+              fontWeight: 'bold',
+              color: '#d4af37',
+              textShadow: '0 0 20px rgba(212,175,55,0.5)',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              <AnimatedCounter target={18} suffix="%" />
+            </div>
+            <div style={{
+              fontSize: '1.1rem',
+              color: 'rgba(255,255,255,0.9)',
+              marginTop: '0.5rem',
+              fontFamily: "'Fjalla One', sans-serif",
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            }}>
+              Tokens Burned
+            </div>
           </div>
-          <div style={{
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.9)',
-            marginTop: '0.5rem',
-            fontFamily: "'Fjalla One', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+          
+          {/* Bottom Right - Total Rewards */}
+          <div style={{ 
+            textAlign: 'center',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.1)',
+            padding: isMobile ? '1.5rem 2rem' : '2rem 2.5rem',
+            minWidth: isMobile ? '140px' : '180px',
+            aspectRatio: '1.2',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}>
-            Tokens Burned
-          </div>
-        </div>
-        
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontSize: isMobile ? '2rem' : '2.5rem',
-            fontWeight: 'bold',
-            color: '#d4af37',
-            textShadow: '0 0 20px rgba(212,175,55,0.5)',
-            fontFamily: "'Fjalla One', sans-serif",
-          }}>
-            <AnimatedCounter target={80} suffix="K" prefix="$" />
-          </div>
-          <div style={{
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.9)',
-            marginTop: '0.5rem',
-            fontFamily: "'Fjalla One', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-          }}>
-            Total Rewards
+            <div style={{
+              fontSize: isMobile ? '2rem' : '2.5rem',
+              fontWeight: 'bold',
+              color: '#d4af37',
+              textShadow: '0 0 20px rgba(212,175,55,0.5)',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              <AnimatedCounter target={80} suffix="K" prefix="$" />
+            </div>
+            <div style={{
+              fontSize: '1.1rem',
+              color: 'rgba(255,255,255,0.9)',
+              marginTop: '0.5rem',
+              fontFamily: "'Fjalla One', sans-serif",
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            }}>
+              Total Rewards
+            </div>
           </div>
         </div>
       </motion.div>
-
-       <div style={{
+      </motion.div>
+                    {/* Playing Card Section */}
+                  <div style={{
+                    position: "relative",
+                    margin: "40vh auto 4rem auto",
+                    width: "80%",
+                    maxWidth: "1400px",
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 0.4fr) minmax(0, 0.6fr)", // 40% card, 60% text
+                    gap: "3rem",
+                    alignItems: "center",
+                    padding: '3rem 2rem',
+                    background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    borderRadius: '25px',
+                    border: '2px solid rgba(212, 175, 55, 0.4)',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+                    color: '#ffffff',
+                    gridColumn: '1 / -1'
+                  }}>
+                    {/* Left Column - Playing Card */}
+                    <section className="card-section" style={{ 
+                      position: "relative",
+                      height: "35rem",
+                      overflow: "visible",
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      zIndex: 100,
+                      pointerEvents: 'auto'
+                    }}>
+                      <div style={{ position: 'relative', zIndex: 101 }}>
+                        <PlayingCard frontImage="/queenOfHearts.png" scale={0.9} />
+                      </div>
+                      {/* BUY Button - Toggles card flip */}
+                      <button
+                        onClick={() => {
+                          // Check if card is flipped by looking for the flipped class
+                          const playingCard = document.querySelector('.playing-card');
+                          if (playingCard && playingCard.classList.contains('flipped')) {
+                            // Card is flipped, click the back button to flip it back
+                            const flipBackBtn = document.querySelector('.flip-back-btn');
+                            if (flipBackBtn) {
+                              flipBackBtn.click();
+                            }
+                          } else {
+                            // Card is not flipped, click the front to flip it
+                            const cardFront = document.querySelector('.card-front');
+                            if (cardFront) {
+                              cardFront.click();
+                            }
+                          }
+                        }}
+                        style={{
+                          marginTop: '2rem',
+                          padding: '1rem 3rem',
+                          fontSize: '1.4rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Fjalla One', sans-serif",
+                          textTransform: 'uppercase',
+                          letterSpacing: '2px',
+                          color: '#000000',
+                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                          border: '3px solid #d4af37',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          zIndex: 102,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                        }}
+                      >
+                        BUY $RL80
+                      </button>
+                    </section>
+                    {/* Right Column - Text Content */}
+                   <div style={{
+              padding: '0 1rem',
+              color: '#ffffff',
+              minHeight: '500px', // Match the candle container height
               display: 'flex',
               flexDirection: 'column',
-              border: '2px solid rgba(212, 175, 55, 0.4)',
-              borderRadius: '25px',
-              background: 'linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(26,26,26,0.4) 100%)',
-              alignItems: 'center',
-              // width: '100%',
-              maxWidth: '900px',
-              margin: '2rem auto',
-            paddingTop: '2rem',
+              justifyContent: 'center',
+              alignItems: 'center', // Center all children horizontally
+              width: '100%', // Ensure full width of grid column
+              boxSizing: 'border-box', // Include padding in width calculation
+              overflow: 'hidden', // Prevent content overflow
               position: 'relative',
-              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.4)',
+              marginTop: '-3rem'
             }}>
-              {/* Green checkbox emoji in top left corner */}
-              <span style={{
-                position: 'absolute',
-                top: '-20px',
-                left: '10px',
-                fontSize: '4rem',
-                transform: 'rotate(-15deg)',
-                padding: '0 4px',
-              }}>📜</span>
-              <span style={{
-                position: 'absolute',
-                top: '-20px',
-                left: '48px',
-                fontSize: '24px',
-                backgroundColor: '#1a1a1a',
-                padding: '0 4px',
-                borderRadius: '50%',
-              }}>✅</span>
-              
-              {/* Token Info Section */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                // marginBottom: '1.5rem',
+             
+     
+              <br/>
+     
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}> Fluke jib scourge oF</h1>
+              <p style={{
+                lineHeight: 1.2,
+                opacity: 0.9,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                fontWeight: 400,
+                letterSpacing: '0.02em',
+                fontSize: '1.5rem',
                 textAlign: 'center',
+                marginBottom: '3.5rem',
+                width: '80%',
+                maxWidth: '600px', // Add max width for better readability
               }}>
-                
-      <p style={{ 
-          color: '#ffffff',
-          fontSize: '1.5rem',
-          lineHeight: 1.6,
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-          fontWeight: 400,
-          letterSpacing: '0.02em',
-          marginBottom: '1rem',
-  
-          opacity: 0.85,
-          textAlign: 'center',
-          maxWidth: isMobile ? '100%' : '800px',
-          margin: '0 auto 2rem auto',
-          padding: '0 1rem',
-        }}>
-     {/* Nowhere is the purifying presence of the virtual virgin needed more than the dark realm of defi.<br/> */}
-
-{/* Behold! the mother of memes, an aider to traders, and a fren to degens:  Our Lady of Perpetual Profit is the patron saint of day traders and your spiritual guide through the dark realm of crypto DeFi.<br/><br/> */}
-<br/>
-
-{/* Burn a few <span style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontWeight: 'bold',
-            fontSize: '1.1em',
-            color: '#d4af37',
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-            marginLeft: '0.25em',
-          }}> RL80 </span>tokens to devote a candle in appreciation for her tireless vigilance.
-Or hold them for luck, and to ward off evil.<br/><br/> */}
-
- Whether you need a Hail Mary for hard times, or just sanctuary from scams and false prophets, RL80  is a token to believe in.
-{/* Let <span style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontWeight: 'bold',
-            fontSize: '1.1em',
-            color: '#d4af37',
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-            marginLeft: '0.25em',
-          }}> Our Lady of Perpetual Profit </span>  light the way. */}
-</p>
-              </div>
-
-              {/* Contract Address Section with Coin */}
-              <div style={{
-                display: 'flex',
-                flexDirection: isMobile ? 'column' : 'row',
-                alignItems: 'center',
-                gap: isMobile ? '1.5rem' : '2rem',
-                width: '100%',
-                marginTop: isMobile ? '1rem' : '-2.5rem',
-                // padding: '1rem',
-                borderRadius: '12px',
-                justifyContent: 'center',
-              }}>
-                {/* Left Buttons Container */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: isMobile ? 'row' : 'column',
-                  gap: '0.75rem',
-                  minWidth: isMobile ? 'auto' : '120px',
-                  flex: '0 0 auto',
-                  marginRight: isMobile ? '0' : '2rem',
-                  marginLeft: isMobile ? '0' : '2rem',
-                  order: isMobile ? 2 : 0,
-                }}>
-                  <button
-                    className="buy-button"
-                    ref={(el) => {
-                      if (el && !el.dataset.gsapInit) {
-                        el.dataset.gsapInit = 'true';
-                        // Create shine effect on hover
-                        el.addEventListener('mouseenter', () => {
-                          gsap.fromTo(el.querySelector('.button-shine'), 
-                            { x: '-100%' },
-                            { x: '200%', duration: 0.75, ease: 'power2.inOut' }
-                          );
-                        });
-                      }
-                    }}
-                    style={{
-                      background: 'linear-gradient(135deg, #d4af37 0%, #f4e4a3 50%, #d4af37 100%)',
-                      border: '2px solid #d4af37',
-                      borderRadius: '8px',
-                      padding: isMobile ? '0.6rem 0.8rem' : '0.75rem 1rem',
-                      color: '#000',
-                      width: isMobile ? '8rem' : '10rem',
-                      fontSize: isMobile ? '0.75rem' : '0.85rem',
-                      fontWeight: '700',
-                      fontFamily: '"Cyber", monospace',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      boxShadow: '0 4px 15px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.5)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-                    }}
-                  >
-                    <span className="button-shine" style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.7) 50%, transparent 60%)',
-                      transform: 'translateX(-100%)',
-                      pointerEvents: 'none'
-                    }} />
-                    Buy on Uniswap
-                  </button>
-                  
-                  <button
-                    className="buy-button"
-                    ref={(el) => {
-                      if (el && !el.dataset.gsapInit) {
-                        el.dataset.gsapInit = 'true';
-                        // Create shine effect on hover
-                        el.addEventListener('mouseenter', () => {
-                          gsap.fromTo(el.querySelector('.button-shine'), 
-                            { x: '-100%' },
-                            { x: '200%', duration: 0.75, ease: 'power2.inOut' }
-                          );
-                        });
-                      }
-                    }}
-                    style={{
-                      background: 'linear-gradient(135deg, #d4af37 0%, #f4e4a3 50%, #d4af37 100%)',
-                      border: '2px solid #d4af37',
-                      borderRadius: '8px',
-                      padding: isMobile ? '0.6rem 0.8rem' : '0.75rem 1rem',
-                      color: '#000',
-                      width: isMobile ? '8rem' : '10rem',
-                      fontSize: isMobile ? '0.75rem' : '0.85rem',
-                      fontWeight: '700',
-                      fontFamily: '"Cyber", monospace',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      boxShadow: '0 4px 15px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.5)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-                    }}
-                  >
-                    <span className="button-shine" style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.7) 50%, transparent 60%)',
-                      transform: 'translateX(-100%)',
-                      pointerEvents: 'none'
-                    }} />
-                    Buy on CoinBase
-                  </button>
-                  
-                  <button
-                    className="buy-button"
-                    ref={(el) => {
-                      if (el && !el.dataset.gsapInit) {
-                        el.dataset.gsapInit = 'true';
-                        // Create shine effect on hover
-                        el.addEventListener('mouseenter', () => {
-                          gsap.fromTo(el.querySelector('.button-shine'), 
-                            { x: '-100%' },
-                            { x: '200%', duration: 0.75, ease: 'power2.inOut' }
-                          );
-                        });
-                      }
-                    }}
-                    style={{
-                      background: 'linear-gradient(135deg, #d4af37 0%, #f4e4a3 50%, #d4af37 100%)',
-                      border: '2px solid #d4af37',
-                      borderRadius: '8px',
-                      padding: isMobile ? '0.6rem 0.8rem' : '0.75rem 1rem',
-                      color: '#000',
-                      width: isMobile ? '8rem' : '10rem',
-                      fontSize: isMobile ? '0.75rem' : '0.85rem',
-                      fontWeight: '700',
-                      fontFamily: '"Cyber", monospace',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      boxShadow: '0 4px 15px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.5)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-                    }}
-                  >
-                    <span className="button-shine" style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.7) 50%, transparent 60%)',
-                      transform: 'translateX(-100%)',
-                      pointerEvents: 'none'
-                    }} />
-                    Buy With Card
-                  </button>
-                </div>
-
-                {/* Contract Address Container */}
+Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot Shiver me timbers gangplank crack Jennys tea cup ballast Blimey lee snow crow's nest rutters. Fluke jib scourge of the seven seas boatswain schooner gaff booty Jack Tar transom spirits.       
+              </p>
+                  {/* Contract Address Container */}
                 <div style={{
                   flex: '0 0 auto',
                   minWidth: isMobile ? '100%' : '300px',
@@ -821,20 +768,7 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                   order: isMobile ? 3 : 1,
                   padding: isMobile ? '0 1rem' : '0',
                 }}>
-                  <div style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: '1rem',
-                  // marginBottom: '0.5rem',
-                }}>
-                  <span style={{
-                    fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
-                    fontWeight: 'bold',
-                    fontSize: '2.2em',
-                    color: '#d4af37',
-                    textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)',
-                  }}>Our Lady of Perpetual Profit</span>
-                       </div>
+          
                          <div style={{
                   display: 'flex',
                   alignItems: 'baseline',
@@ -929,190 +863,20 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                     </button>
                   </div>
                 </div>
-                
-                {/* Coin Container with Sparkles */}
-                <div
-                  ref={coinRef}
-                  style={{ 
-                    position: "relative", 
-                    marginLeft: isMobile ? '-2rem' : "0",
-                    width: isMobile ? "10rem" : "15rem",
-                    height: isMobile ? "10rem" : "15rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "visible",
-                    flex: '0 0 auto',
-                    order: isMobile ? 1 : 2
-                  }}
-                >
-                  <Link href="#" className="coin-link" style={{ 
-                    position: "absolute", 
-                    zIndex: 10,
-                    display: "block",
-                    width: isMobile ? "6rem" : "9rem",
-                    height: isMobile ? "6rem" : "9rem"
-                  }}>
-                    <Coin />
-                  </Link>
-                </div>
-              </div>
+                    </div>
+                    
+                  </div>
+      
+      
+<div style={{position: 'relative', zIndex: 1, marginTop: '10rem'}}></div>
+            {/* Floating Stats Section with Centered Coin */}
+   
 
-              {/* Links Section */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-around',
-                alignItems: 'center',
-                width: '100%',
-                gap: isMobile ? '1rem' : '2rem',
-                flexWrap: 'wrap',
-                padding: isMobile ? '0 0.5rem' : '0',
-              }}>
-                {/* DEXScreener Link */}
-                <a 
-                  href="#" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: isMobile ? '0.5rem' : '0.75rem',
-                    borderRadius: '8px',
-                    // background: 'rgba(196, 137, 1, 0.05)',
-                    border: '1px solid transparent',
-                    transition: 'all 0.3s ease',
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px) scale(1.05)';
-                    e.currentTarget.style.background = 'rgba(196, 137, 1, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.4)';
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(196, 137, 1, 0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.background = 'rgba(196, 137, 1, 0.05)';
-                    e.currentTarget.style.borderColor = 'transparent';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <img 
-                    src="/dexscreener.webp" 
-                    alt="DEXScreener" 
-                    style={{
-                      height: isMobile ? '35px' : '50px',
-                      width: 'auto',
-                      filter: 'brightness(0.95)',
-                    }}
-                  />
-                  <span style={{
-                    fontSize: isMobile ? '0.6rem' : '0.7rem',
-                    color: '#c48901',
-                    fontFamily: 'monospace',
-                    fontWeight: '500',
-                    letterSpacing: '0.05em',
-                  }}>DEXScreener</span>
-                </a>
-                
-                {/* Honeypot Link */}
-                <a 
-                  href="#" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: isMobile ? '0.5rem' : '0.75rem',
-                    borderRadius: '8px',
-                    // background: 'rgba(196, 137, 1, 0.05)',
-                    border: '1px solid transparent',
-                    transition: 'all 0.3s ease',
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px) scale(1.05)';
-                    e.currentTarget.style.background = 'rgba(196, 137, 1, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.4)';
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(196, 137, 1, 0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.background = 'rgba(196, 137, 1, 0.05)';
-                    e.currentTarget.style.borderColor = 'transparent';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <img 
-                    src="/honeypot.png" 
-                    alt="Honeypot" 
-                    style={{
-                      height: isMobile ? '25px' : '40px',
-                      width: 'auto',
-                      filter: 'brightness(0.95)',
-                    }}
-                  />
-                  <span style={{
-                    fontSize: isMobile ? '0.6rem' : '0.7rem',
-                    color: '#c48901',
-                    fontFamily: 'monospace',
-                    fontWeight: '500',
-                    letterSpacing: '0.05em',
-                  }}>Honeypot</span>
-                </a>
-                
-                {/* Token Sniffer Link */}
-                <a 
-                  href="#" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: isMobile ? '0.5rem' : '0.75rem',
-                    borderRadius: '8px',
-                    // background: 'rgba(196, 137, 1, 0.05)',
-                    border: '1px solid transparent',
-                    transition: 'all 0.3s ease',
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px) scale(1.05)';
-                    e.currentTarget.style.background = 'rgba(196, 137, 1, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(196, 137, 1, 0.4)';
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(196, 137, 1, 0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.background = 'rgba(196, 137, 1, 0.05)';
-                    e.currentTarget.style.borderColor = 'transparent';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <img 
-                    src="/tokensniffer.png" 
-                    alt="Token Sniffer" 
-                    style={{
-                      height: isMobile ? '35px' : '50px',
-                      width: 'auto',
-                      filter: 'brightness(0.95)',
-                    }}
-                  />
-                  <span style={{
-                    fontSize: isMobile ? '0.6rem' : '0.7rem',
-                    color: '#c48901',
-                    fontFamily: 'monospace',
-                    fontWeight: '500',
-                    letterSpacing: '0.05em',
-                  }}>Token Sniffer</span>
-                </a>
-              </div>
-            </div>
+           
+               
+         
+
+             
 <div style={{position: 'relative', zIndex: 1, marginTop: '10rem'}}>
           {/* <DropInTitle
             lines={["Prosper80", "for All", "Human80!"]}
@@ -1123,32 +887,38 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
           /> */}
 
          </div>
-      {/* Flippable Cards Section */}
+      {/* Flippable Cards Section - Triangle Layout */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         gap: isMobile ? '2rem' : '3rem',
         padding: isMobile ? '2rem 1.5rem' : '12rem 4rem',
         maxWidth: '1400px',
         margin: '0 auto',
       }}>
-        {cards.map((card, index) => (
+        {/* First row - Single card */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          width: '100%',
+        }}>
           <motion.div
-            key={card.id}
+            key={cards[0].id}
             className="cloud-card-wrap"
             ref={el => {
               if (el && !cardRefs.current.includes(el)) {
                 cardRefs.current.push(el);
               }
             }}
-            onClick={() => handleCardFlip(card.id)}
-            onMouseMove={(e) => handleCardMouseMove(e, card.id)}
+            onClick={() => handleCardFlip(cards[0].id)}
+            onMouseMove={(e) => handleCardMouseMove(e, cards[0].id)}
             onMouseLeave={handleCardMouseLeave}
             initial={{ opacity: 0, y: 100 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ 
               duration: 0.8, 
-              delay: 0.6 + index * 0.2,
+              delay: 0.6,
               type: "spring",
               stiffness: 100
             }}
@@ -1158,19 +928,21 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
               cursor: 'pointer',
               position: 'relative',
               transformStyle: 'preserve-3d',
+              width: isMobile ? '100%' : '400px',
+              maxWidth: '400px',
             }}
           >
-            <div className={`cloud-card-container ${flippedCards.has(card.id) ? 'flipped' : ''}`}
+            <div className={`cloud-card-container ${flippedCards.has(cards[0].id) ? 'flipped' : ''}`}
               style={{
                 width: '100%',
                 height: isMobile ? `${280 * GOLDENRATIO}px` : `${300 * GOLDENRATIO}px`,
                 position: 'relative',
                 transformStyle: 'preserve-3d',
                 transition: 'transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95), box-shadow 0.3s ease',
-                transform: flippedCards.has(card.id) 
+                transform: flippedCards.has(cards[0].id) 
                   ? 'rotateY(180deg)'
-                  : getTiltStyles(card.id).transform,
-                boxShadow: hoveredCard === card.id 
+                  : getTiltStyles(cards[0].id).transform,
+                boxShadow: hoveredCard === cards[0].id 
                   ? '0 25px 50px rgba(0,0,0,0.4), 0 0 50px rgba(212,175,55,0.2)' 
                   : '0 20px 40px rgba(0,0,0,0.3)',
               }}
@@ -1216,7 +988,7 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                   </span>
                   <div className="cloud-card-bg" 
                     style={{ 
-                      backgroundImage: card.backgroundImage,
+                      backgroundImage: cards[0].backgroundImage,
                       position: 'absolute',
                       top: '-20px',
                       left: '-20px',
@@ -1224,9 +996,9 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                       height: 'calc(100% + 40px)',
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
-                      opacity: hoveredCard === card.id ? 0.85 : 0.7,
-                      filter: hoveredCard === card.id ? 'brightness(1)' : 'brightness(0.8)',
-                      transform: hoveredCard === card.id 
+                      opacity: hoveredCard === cards[0].id ? 0.85 : 0.7,
+                      filter: hoveredCard === cards[0].id ? 'brightness(1)' : 'brightness(0.8)',
+                      transform: hoveredCard === cards[0].id 
                         ? `translateX(${-mousePosition.x * 40}px) translateY(${-mousePosition.y * 40}px) scale(1.1)`
                         : 'translateX(0) translateY(0) scale(1)',
                       transition: 'transform 0.1s ease-out, opacity 0.3s ease-out, filter 0.3s ease-out',
@@ -1248,7 +1020,7 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                       fontFamily: 'UnifrakturCook, serif',
                       color: '#d4af37',
                     }}>
-                      {card.frontTitle}
+                      {cards[0].frontTitle}
                     </h2>
                     <p style={{
                       fontSize: isMobile ? '0.95rem' : '1.05rem',
@@ -1259,7 +1031,7 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                       fontFamily: "'UnifrakturMaguntia', sans-serif",
                       // letterSpacing: '0.5px',
                     }}>
-                      {card.frontDescription}
+                      {cards[0].frontDescription}
                     </p>
                   </div>
                 </div>
@@ -1322,7 +1094,7 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                       marginBottom: '15px',
                       marginTop: 0,
                     }}>
-                      {card.backTitle}
+                      {cards[0].backTitle}
                     </h3>
                     <p style={{
                       fontSize: '0.95rem',
@@ -1330,14 +1102,14 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                       marginBottom: '15px',
                       opacity: 0.95,
                     }}>
-                      {card.backContent}
+                      {cards[0].backContent}
                     </p>
                     <ul style={{
                       listStyle: 'none',
                       padding: 0,
                       margin: '10px 0',
                     }}>
-                      {card.backList.map((item, i) => (
+                      {cards[0].backList.map((item, i) => (
                         <li key={i}
                           style={{
                             padding: '6px 0',
@@ -1353,7 +1125,7 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                     </ul>
                     
                     {/* Stats for token card */}
-                    {card.backStats && (
+                    {cards[0].backStats && (
                       <div style={{
                         marginTop: '15px',
                         padding: '10px',
@@ -1361,19 +1133,52 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                         borderRadius: '5px',
                       }}>
                         <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                          <strong>Total Supply:</strong> {card.backStats.supply}
+                          <strong>Total Supply:</strong> {cards[0].backStats.supply}
                         </p>
                         <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                          <strong>Tax:</strong> {card.backStats.tax}
+                          <strong>Tax:</strong> {cards[0].backStats.tax}
                         </p>
                         <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                          <strong>Liquidity:</strong> {card.backStats.liquidity}
+                          <strong>Liquidity:</strong> {cards[0].backStats.liquidity}
                         </p>
                       </div>
                     )}
                     
+                    {/* BuyWidget for the first card (Faith) - takes full card */}
+                    {cards[0].id === 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        padding: '15px',
+                        borderRadius: '20px',
+                        background: 'linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 10,
+                        overflow: 'hidden',
+                        boxSizing: 'border-box',
+                      }}>
+                        <div style={{
+                          width: '100%',
+                          height: '100%',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                        }}>
+                          <BuyWidgetComponent />
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* Quote if available */}
-                    {card.backQuote && (
+                    {cards[0].backQuote && (
                       <p style={{
                         marginTop: '20px',
                         fontStyle: 'italic',
@@ -1382,7 +1187,7 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
                         color: '#d4af37',
                         fontSize: '0.95rem',
                       }}>
-                        "{card.backQuote}"
+                        "{cards[0].backQuote}"
                       </p>
                     )}
                   </div>
@@ -1390,9 +1195,345 @@ Or hold them for luck, and to ward off evil.<br/><br/> */}
               </div>
             </div>
           </motion.div>
-        ))}
+        </div>
+
+        {/* Second row - Two cards */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: isMobile ? '2rem' : '3rem',
+          width: '100%',
+        }}>
+          {cards.slice(1).map((card, index) => (
+            <motion.div
+              key={card.id}
+              className="cloud-card-wrap"
+              ref={el => {
+                if (el && !cardRefs.current.includes(el)) {
+                  cardRefs.current.push(el);
+                }
+              }}
+              onClick={() => handleCardFlip(card.id)}
+              onMouseMove={(e) => handleCardMouseMove(e, card.id)}
+              onMouseLeave={handleCardMouseLeave}
+              initial={{ opacity: 0, y: 100 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ 
+                duration: 0.8, 
+                delay: 0.8 + index * 0.2,
+                type: "spring",
+                stiffness: 100
+              }}
+              whileHover={{ scale: 1.02 }}
+              style={{
+                perspective: '1000px',
+                cursor: 'pointer',
+                position: 'relative',
+                transformStyle: 'preserve-3d',
+                width: isMobile ? '100%' : '400px',
+                maxWidth: '400px',
+              }}
+            >
+              <div className={`cloud-card-container ${flippedCards.has(card.id) ? 'flipped' : ''}`}
+                style={{
+                  width: '100%',
+                  height: isMobile ? `${280 * GOLDENRATIO}px` : `${300 * GOLDENRATIO}px`,
+                  position: 'relative',
+                  transformStyle: 'preserve-3d',
+                  transition: 'transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95), box-shadow 0.3s ease',
+                  transform: flippedCards.has(card.id) 
+                    ? 'rotateY(180deg)'
+                    : getTiltStyles(card.id).transform,
+                  boxShadow: hoveredCard === card.id 
+                    ? '0 25px 50px rgba(0,0,0,0.4), 0 0 50px rgba(212,175,55,0.2)' 
+                    : '0 20px 40px rgba(0,0,0,0.3)',
+                }}
+              >
+                {/* Front of card */}
+                <div className="cloud-card-face cloud-card-front"
+                  style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                  }}
+                >
+                  <div className="cloud-card"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '20px',
+                      background: 'linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%)',
+                      overflow: 'hidden',
+                      border: '3px solid rgba(212,175,55,0.5)',
+                      position: 'relative',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    <span className="flip-hint"
+                      style={{
+                        position: 'absolute',
+                        top: '15px',
+                        right: '15px',
+                        background: 'rgba(212, 175, 55, 0.2)',
+                        padding: '5px 10px',
+                        borderRadius: '5px',
+                        fontSize: '0.8em',
+                        color: '#d4af37',
+                        opacity: 0.8,
+                        zIndex: 10,
+                        backdropFilter: 'blur(5px)',
+                      }}
+                    >
+                      Click to flip
+                    </span>
+                    <div className="cloud-card-bg" 
+                      style={{ 
+                        backgroundImage: card.backgroundImage,
+                        position: 'absolute',
+                        top: '-20px',
+                        left: '-20px',
+                        width: 'calc(100% + 40px)',
+                        height: 'calc(100% + 40px)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        opacity: hoveredCard === card.id ? 0.85 : 0.7,
+                        filter: hoveredCard === card.id ? 'brightness(1)' : 'brightness(0.8)',
+                        transform: hoveredCard === card.id 
+                          ? `translateX(${-mousePosition.x * 40}px) translateY(${-mousePosition.y * 40}px) scale(1.1)`
+                          : 'translateX(0) translateY(0) scale(1)',
+                        transition: 'transform 0.1s ease-out, opacity 0.3s ease-out, filter 0.3s ease-out',
+                      }}
+                    />
+                    <div className="cloud-card-info"
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        width: '100%',
+                        padding: '30px 40px 30px 30px',
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 50%, transparent 100%)',
+                      }}
+                    >
+                      <h2 style={{
+                        fontSize: isMobile ? '1.8rem' : '2rem',
+                        marginBottom: '10px',
+                        textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                        fontFamily: 'UnifrakturCook, serif',
+                        color: '#d4af37',
+                      }}>
+                        {card.frontTitle}
+                      </h2>
+                      <p style={{
+                        fontSize: isMobile ? '0.95rem' : '1.05rem',
+                        lineHeight: 1.2,
+                        width: '90%',
+                        color: 'rgba(255,255,255,0.9)',
+                        textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+                        fontFamily: "'UnifrakturMaguntia', sans-serif",
+                        // letterSpacing: '0.5px',
+                      }}>
+                        {card.frontDescription}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Back of card */}
+                <div className="cloud-card-face cloud-card-back"
+                  style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)',
+                  }}
+                >
+                  <div className="cloud-card"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      background: 'linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%)',
+                      border: '3px solid #d4af37',
+                      borderRadius: '20px',
+                      position: 'relative',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    <span className="flip-hint"
+                      style={{
+                        position: 'absolute',
+                        top: '15px',
+                        right: '15px',
+                        background: 'rgba(212, 175, 55, 0.2)',
+                        padding: '5px 10px',
+                        borderRadius: '5px',
+                        fontSize: '0.8em',
+                        color: '#d4af37',
+                        opacity: 0.8,
+                        zIndex: 10,
+                      }}
+                    >
+                      Click to flip
+                    </span>
+                    <div className="cloud-card-back-content"
+                      style={{
+                        padding: '30px',
+                        color: '#fff',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start',
+                        overflowY: 'auto',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <h3 style={{
+                        color: '#d4af37',
+                        fontFamily: 'UnifrakturCook, serif',
+                        fontSize: isMobile ? '1.5rem' : '1.8rem',
+                        marginBottom: '15px',
+                        marginTop: 0,
+                      }}>
+                        {card.backTitle}
+                      </h3>
+                      <p style={{
+                        fontSize: '0.95rem',
+                        lineHeight: 1.6,
+                        marginBottom: '15px',
+                        opacity: 0.95,
+                      }}>
+                        {card.backContent}
+                      </p>
+                      <ul style={{
+                        listStyle: 'none',
+                        padding: 0,
+                        margin: '10px 0',
+                      }}>
+                        {card.backList.map((item, i) => (
+                          <li key={i}
+                            style={{
+                              padding: '6px 0',
+                              borderBottom: '1px solid rgba(212, 175, 55, 0.2)',
+                              fontSize: isMobile ? '0.8rem' : '0.9rem',
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            <span style={{ color: '#d4af37', marginRight: '8px' }}>✨</span>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                      
+                      {/* Stats for token card */}
+                      {card.backStats && (
+                        <div style={{
+                          marginTop: '15px',
+                          padding: '10px',
+                          background: 'rgba(212, 175, 55, 0.1)',
+                          borderRadius: '5px',
+                        }}>
+                          <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
+                            <strong>Total Supply:</strong> {card.backStats.supply}
+                          </p>
+                          <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
+                            <strong>Tax:</strong> {card.backStats.tax}
+                          </p>
+                          <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
+                            <strong>Liquidity:</strong> {card.backStats.liquidity}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Quote if available */}
+                      {card.backQuote && (
+                        <p style={{
+                          marginTop: '20px',
+                          fontStyle: 'italic',
+                          opacity: 0.8,
+                          textAlign: 'center',
+                          color: '#d4af37',
+                          fontSize: '0.95rem',
+                        }}>
+                          "{card.backQuote}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
       
+  <div style={{
+                    position: "relative",
+                    margin: "4rem auto 40vh auto",
+                    width: "80%",
+                    maxWidth: "1400px",
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 0.6fr) minmax(0, 0.4fr)", // 60% hands scene, 40% text
+                    gap: "3rem",
+                    alignItems: "center",
+                    padding: '3rem 2rem',
+                    background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    borderRadius: '25px',
+                    border: '2px solid rgba(212, 175, 55, 0.4)',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+                    color: '#ffffff',
+                    gridColumn: '1 / -1'
+                  }}>
+                   
+                  <div style={{
+              height: isMobile ? '50vh' : '70vh',
+              minHeight: '400px',
+            }}>
+              <HandsGLTFScene />
+            </div>
+               
+                    {/* Right Column - Text Content */}
+                   <div style={{
+              padding: '0 1rem',
+              color: '#ffffff',
+              minHeight: '500px', // Match the candle container height
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center', // Center all children horizontally
+              width: '100%', // Ensure full width of grid column
+              boxSizing: 'border-box', // Include padding in width calculation
+              overflow: 'hidden', // Prevent content overflow
+              position: 'relative',
+              marginTop: '-3rem'
+            }}>
+             
+     
+              <br/>
+     
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}> Fluke jib scourge oF</h1>
+              <p style={{
+                lineHeight: 1.2,
+                opacity: 0.9,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                fontWeight: 400,
+                letterSpacing: '0.02em',
+                fontSize: '1.5rem',
+                textAlign: 'center',
+                marginBottom: '3.5rem',
+                width: '80%',
+                maxWidth: '600px', // Add max width for better readability
+              }}>
+Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot Shiver me timbers gangplank crack Jennys tea cup ballast Blimey lee snow crow's nest rutters. Fluke jib scourge of the seven seas boatswain schooner gaff booty Jack Tar transom spirits.       
+              </p>
+                  {/* Contract Address Container */}
+               
+           
+                    </div>
+                    
+                  </div>
       
       {/* Cloud Gateway Divider */}
       <div style={{

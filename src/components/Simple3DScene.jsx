@@ -233,7 +233,7 @@ const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
 OurLadyModel.displayName = 'OurLadyModel';
 
 // Optimized Angel Model
-const AngelModel = memo(({ isMobile, scrollY }) => {
+const AngelModel = memo(({ isMobile, scrollY, onLoad }) => {
   const { scene, animations } = useGLTF('/models/angelEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const groupRef = useRef();
@@ -246,6 +246,8 @@ const AngelModel = memo(({ isMobile, scrollY }) => {
           child.receiveShadow = false;
         }
       });
+      // Notify that angel model is loaded
+      if (onLoad) onLoad();
     }
     // Play animations
     if (actions) {
@@ -291,7 +293,7 @@ const AngelModel = memo(({ isMobile, scrollY }) => {
 AngelModel.displayName = 'AngelModel';
 
 // Optimized Devil Model  
-const DevilModel = memo(({ isMobile, scrollY }) => {
+const DevilModel = memo(({ isMobile, scrollY, onLoad }) => {
   const { scene, animations } = useGLTF('/models/devilEmoji2.glb');
   const { actions } = useAnimations(animations, scene);
   const groupRef = useRef();
@@ -304,6 +306,8 @@ const DevilModel = memo(({ isMobile, scrollY }) => {
           child.receiveShadow = false;
         }
       });
+      // Notify that devil model is loaded
+      if (onLoad) onLoad();
     }
     // Play animation if available
     if (actions && Object.keys(actions).length > 0) {
@@ -422,16 +426,21 @@ const DirectionalLightWithHelper = ({ showHelper = false, isMobile, scrollY }) =
   );
 };
 
-function SimpleScene({ isMobile, scrollY, enableBloom }) {
+function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
   const cloudGroupRef = useRef();
   const modelRef = useRef();
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [angelLoaded, setAngelLoaded] = useState(false);
+  const [devilLoaded, setDevilLoaded] = useState(false);
   
-  // Debug logging
+  // Notify when all models are loaded
   useEffect(() => {
-    console.log('[SimpleScene] Model loaded status:', modelLoaded);
-    console.log('[SimpleScene] ModelRef current:', modelRef.current);
-  }, [modelLoaded]);
+    const allLoaded = modelLoaded && (isMobile || (angelLoaded && devilLoaded));
+    if (allLoaded && onAssetsLoaded) {
+      console.log('[SimpleScene] All models loaded, notifying parent');
+      onAssetsLoaded();
+    }
+  }, [modelLoaded, angelLoaded, devilLoaded, isMobile, onAssetsLoaded]);
   
   // Animate clouds with scroll
   useFrame(() => {
@@ -472,12 +481,7 @@ function SimpleScene({ isMobile, scrollY, enableBloom }) {
       </group>
       
       {/* Our Lady Model */}
-      <Suspense fallback={
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[2, 4, 2]} />
-          <meshBasicMaterial color="#ffc0cb" />
-        </mesh>
-      }>
+      <Suspense fallback={null}>
         <OurLadyModel 
           isMobile={isMobile} 
           scrollY={scrollY} 
@@ -497,10 +501,10 @@ function SimpleScene({ isMobile, scrollY, enableBloom }) {
       {!isMobile && (
         <>
           <Suspense fallback={null}>
-            <AngelModel isMobile={isMobile} scrollY={scrollY} />
+            <AngelModel isMobile={isMobile} scrollY={scrollY} onLoad={() => setAngelLoaded(true)} />
           </Suspense>
           <Suspense fallback={null}>
-            <DevilModel isMobile={isMobile} scrollY={scrollY} />
+            <DevilModel isMobile={isMobile} scrollY={scrollY} onLoad={() => setDevilLoaded(true)} />
           </Suspense>
         </>
       )}
@@ -538,7 +542,7 @@ function SimpleScene({ isMobile, scrollY, enableBloom }) {
   );
 }
 
-export default function Simple3DScene({ enabled = false, isMobile = false, scrollY = 0, enableBloom = true }) {
+export default function Simple3DScene({ enabled = false, isMobile = false, scrollY = 0, enableBloom = true, onLoadComplete }) {
   const [mounted, setMounted] = useState(false);
   
   useEffect(() => {
@@ -581,7 +585,15 @@ export default function Simple3DScene({ enabled = false, isMobile = false, scrol
     >
       <color attach="background" args={['#87CEEB']} />
       <Suspense fallback={null}>
-        <SimpleScene isMobile={isMobile} scrollY={scrollY} enableBloom={enableBloom && !isMobile} />
+        <SimpleScene 
+          isMobile={isMobile} 
+          scrollY={scrollY} 
+          enableBloom={enableBloom && !isMobile}
+          onAssetsLoaded={() => {
+            console.log('[Simple3DScene] All assets loaded');
+            if (onLoadComplete) onLoadComplete();
+          }}
+        />
       </Suspense>
     </Canvas>
   );

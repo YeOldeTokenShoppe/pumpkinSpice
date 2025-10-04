@@ -1,0 +1,71 @@
+.playing-card-container {
+  perspective: 1000px;
+  display: inline-block;
+  
+  .playing-card {
+    width: 300px;
+    height: 420px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    cursor: pointer;
+    
+    .card-front,
+    .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .card-front {
+      overflow: hidden;
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: fill;
+        display: block;
+      }
+    }
+    
+    .card-back {
+      transform: rotateY(180deg);
+      overflow: hidden;
+      position: relative;
+      
+      .flip-back-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+        
+        &:hover {
+          background: rgba(0, 0, 0, 0.9);
+        }
+      }
+      
+      // Style the BuyWidget to fill the card
+      > div:not(.flip-back-btn) {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 0 !important;
+        
+        // Override any internal styles if needed
+        & > * {
+          border-radius: 0 !important;
+        }
+      }
+    }
+  }
+}

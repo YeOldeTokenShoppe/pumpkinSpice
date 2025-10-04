@@ -2,6 +2,7 @@
 
 import React, { useRef, Suspense, useEffect, useState, lazy } from 'react';
 
+
 // Lazy load the 3D scene
 const Simple3DScene = lazy(() => import('@/components/Simple3DScene'));
 import { Canvas, useThree, useFrame, extend as fiberExtend } from '@react-three/fiber';
@@ -23,6 +24,8 @@ import SocialBar from '@/components/SocialBar';
 import InfinityLoader from '@/components/InfinityLoader';
 import CloudIntroSection from '@/components/CloudIntroSection';
 import CandleMarqueeSection from '@/components/CandleMarqueeSection';
+import PlayingCard from '@/components/PlayingCard';
+import HandsGLTFScene from '@/components/HandsGLTFScene';
 
 import Numerology from '@/components/Numerology';
 import ScratchCard from '@/components/ScratchCard';
@@ -2057,17 +2060,27 @@ export default function Home3() {
             <p style={{ color: 'white' }}>Loading...</p>
           </div>
         }>
-          <Simple3DScene enabled={true} isMobile={isMobile} scrollY={scrollY} />
+          <Simple3DScene 
+            enabled={true} 
+            isMobile={isMobile} 
+            scrollY={scrollY} 
+            onLoadComplete={() => {
+              console.log('[Home3] Simple3DScene loaded, hiding loader');
+              setIsSceneLoading(false);
+            }}
+          />
         </Suspense>
       </div>
       
-      {/* Scrollable Overlay Content */}
+      {/* Scrollable Overlay Content - Hidden while loading */}
       <div style={{
           position: 'relative',
           width: '100%',
           minHeight: '100vh',
           zIndex: 10,
           pointerEvents: 'none',
+          opacity: isSceneLoading ? 0 : 1,
+          transition: 'opacity 0.5s ease-in-out',
         }}>
         <div style={{
           position: 'relative',
@@ -2111,11 +2124,12 @@ export default function Home3() {
         </div>
         
        
-
+     
         {/* Cloud Introduction Section - New Addition */}
         <CloudIntroSection scrollY={scrollY} isMobile={isMobile} />
 
 
+       
 
  {/* Introductory Text Section */}
         {/* <div style={{
@@ -2266,7 +2280,7 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the digital ec
   /> */}
 
      
-  
+
         
         {/* Footer - at the bottom of all content */}
        <footer style={{
