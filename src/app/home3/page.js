@@ -5,6 +5,8 @@ import React, { useRef, Suspense, useEffect, useState, lazy } from 'react';
 
 // Lazy load the 3D scene
 const Simple3DScene = lazy(() => import('@/components/Simple3DScene'));
+const EmojiOverlay = lazy(() => import('@/components/EmojiOverlay'));
+import ScrollDebug from '@/components/ScrollDebug'; // Temporary debug tool
 import { Canvas, useThree, useFrame, extend as fiberExtend } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations, Cloud, Clouds, MeshPortalMaterial, CameraControls, Text, Sky, RoundedBox, Html, useCursor, Gltf, Preload } from '@react-three/drei';
 import * as THREE from 'three';
@@ -897,6 +899,11 @@ function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
   );
 }
 
+// Preload critical 3D models to ensure they're ready before scene reveals
+useGLTF.preload('/models/ourlady_rider6.glb');
+// useGLTF.preload('/models/angelEmoji8.glb');
+// useGLTF.preload('/models/devilEmoji5.glb');
+
 export default function Home3() {
   const router = useRouter();
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -1092,12 +1099,12 @@ export default function Home3() {
     }
   }, [assetsLoaded.ourLadyModel, assetsLoaded.angelModel, assetsLoaded.devilModel, mounted]);
   
-  // Separate fallback timer
+  // Separate fallback timer with longer timeout for model loading
   useEffect(() => {
     const fallbackTimer = setTimeout(() => {
       console.log('Loading timeout - forcing scene display');
       setIsSceneLoading(false);
-    }, 5000);
+    }, 8000); // Increased to 8 seconds to ensure model loads
     
     return () => clearTimeout(fallbackTimer);
   }, []); // Run once on mount
@@ -2065,12 +2072,20 @@ export default function Home3() {
             isMobile={isMobile} 
             scrollY={scrollY} 
             onLoadComplete={() => {
-              console.log('[Home3] Simple3DScene loaded, hiding loader');
+              // console.log('[Home3] Simple3DScene loaded, hiding loader');
               setIsSceneLoading(false);
             }}
           />
         </Suspense>
       </div>
+      
+      {/* Emoji Overlay - appears OVER HTML content */}
+      <Suspense fallback={null}>
+        <EmojiOverlay scrollY={scrollY} />
+      </Suspense>
+      
+      {/* Temporary scroll debug - remove when done choreographing */}
+      <ScrollDebug />
       
       {/* Scrollable Overlay Content - Hidden while loading */}
       <div style={{

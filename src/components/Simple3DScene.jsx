@@ -3,6 +3,9 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useState, useRef, memo, useMemo } from 'react';
 import { Cloud, Clouds, useGLTF, useAnimations, useHelper, OrbitControls, Text } from '@react-three/drei';
+
+// Preload the model immediately when module loads
+useGLTF.preload('/models/ourlady_rider6.glb');
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import DarkClouds from '@/components/Clouds';
@@ -199,8 +202,14 @@ const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
         }
       });
       
-      // Signal that model is loaded
-      if (onLoad) onLoad();
+      // Signal that model is loaded - add small delay to ensure textures are ready
+      if (onLoad) {
+        // console.log('[OurLadyModel] Model loaded, signaling completion');
+        // Give textures time to fully load
+        setTimeout(() => {
+          onLoad();
+        }, 100);
+      }
     }
   }, [scene, modelRef, onLoad]);
   
@@ -438,7 +447,7 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
   useEffect(() => {
     const allLoaded = modelLoaded && (isMobile || (angelLoaded && devilLoaded));
     if (allLoaded && onAssetsLoaded) {
-      console.log('[SimpleScene] All models loaded, notifying parent');
+      // console.log('[SimpleScene] All models loaded, notifying parent');
       onAssetsLoaded();
     }
   }, [modelLoaded, angelLoaded, devilLoaded, isMobile, onAssetsLoaded]);
@@ -514,17 +523,17 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
       <Suspense fallback={null}>
         <SwoopingAngelEmojiSimple 
           id="swoop-angel-behind-1"
-          scrollThreshold={900}
+          scrollThreshold={1900}
           exitThreshold={100}  // Exit if scrolling back up
-          forwardExitThreshold={1350}  // Exit at 1150px forward, before overlay appears at 1200px
+          forwardExitThreshold={2500}  // Exit at 1150px forward, before overlay appears at 1200px
           swoopFrom="left"
-          finalPosition={[isMobile ? -8 : -15, -5, 5]}
+          finalPosition={[isMobile ? 8 : 30, -5, 5]}
           isMobile={isMobile}
         />
         
         <SwoopingDevilEmojiSimple 
           id="swoop-devil-behind-1"
-          scrollThreshold={1200}
+          scrollThreshold={9000}
           swoopFrom="right"
           finalPosition={[isMobile ? 8 : 15, -5, 5]}
           isMobile={isMobile}
@@ -612,7 +621,7 @@ export default function Simple3DScene({ enabled = false, isMobile = false, scrol
           scrollY={scrollY} 
           enableBloom={enableBloom && !isMobile}
           onAssetsLoaded={() => {
-            console.log('[Simple3DScene] All assets loaded');
+            // console.log('[Simple3DScene] All assets loaded');
             if (onLoadComplete) onLoadComplete();
           }}
         />

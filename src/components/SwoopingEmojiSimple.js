@@ -11,10 +11,14 @@ export function SwoopingAngelEmojiSimple({
   forwardExitThreshold = null, // When to exit if scrolling forward
   swoopFrom = "left", // "left", "right", "top"
   finalPosition = [0, 0, -10],
+  finalRotation = [0, 0, 0], // Allow custom rotation
   isMobile = false,
-  id = "swooping-angel"
+  id = "swooping-angel",
+  modelPath = '/models/angelEmojiSwoop.glb', // Allow custom model path
+  reverseEntryThreshold = null, // For special reverse-scroll entry
+  reverseExitTo = null // Direction to exit when reverse triggered
 }) {
-  const { scene, animations } = useGLTF('/models/angelEmojiSwoop.glb');
+  const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, scene);
   const groupRef = useRef();
   const [phase, setPhase] = useState('hidden'); // 'hidden', 'swooping', 'floating', 'exiting', 'disposed'
@@ -23,6 +27,19 @@ export function SwoopingAngelEmojiSimple({
   
   useEffect(() => {
     console.log(`[${id}] Component mounted, scene loaded:`, !!scene);
+    
+    // Cleanup on unmount
+    return () => {
+      if (scene) {
+        console.log(`[${id}] Cleaning up Three.js resources`);
+        scene.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry?.dispose();
+            child.material?.dispose();
+          }
+        });
+      }
+    };
   }, [id, scene]);
   
   useEffect(() => {
@@ -107,7 +124,8 @@ export function SwoopingAngelEmojiSimple({
       const startPositions = {
         left: [-20, 5, 20],
         right: [20, 5, 20],
-        top: [finalPosition[0], 20, 20]
+        top: [finalPosition[0], 20, 20],
+        bottom: [finalPosition[0], -20, 20]
       };
       
       const start = startPositions[swoopFrom] || startPositions.left;
@@ -134,31 +152,61 @@ export function SwoopingAngelEmojiSimple({
       // Gentle floating animation
       const time = state.clock.elapsedTime;
       groupRef.current.position.y = finalPosition[1] + Math.sin(time * 2) * 0.5;
-      groupRef.current.rotation.z = Math.sin(time * 1.5) * 0.1;
-      groupRef.current.scale.setScalar(scale);
       
-      // Billboard effect - face camera
-      const camera = state.camera;
-      groupRef.current.lookAt(camera.position);
+      // Apply final rotation if specified, otherwise billboard effect
+      if (finalRotation && (finalRotation[0] !== 0 || finalRotation[1] !== 0 || finalRotation[2] !== 0)) {
+        groupRef.current.rotation.x = finalRotation[0];
+        groupRef.current.rotation.y = finalRotation[1];
+        groupRef.current.rotation.z = finalRotation[2] + Math.sin(time * 1.5) * 0.1;
+      } else {
+        // Billboard effect - face camera
+        const camera = state.camera;
+        groupRef.current.lookAt(camera.position);
+        groupRef.current.rotation.z = Math.sin(time * 1.5) * 0.1;
+      }
+      
+      groupRef.current.scale.setScalar(scale);
     } else if (phase === 'exiting') {
-      // Exit animation - fall down and fade
+      // Exit animation - reverse the entry swoop
       exitTime.current += delta * 2;
       const t = Math.min(exitTime.current, 1);
       
-      // Fall down with acceleration
-      groupRef.current.position.y = finalPosition[1] - (t * t * 15); // Quadratic fall
+      // Starting positions based on swoop direction (same as entry)
+      const exitPositions = {
+        left: [-20, 5, 20],
+        right: [20, 5, 20],
+        top: [finalPosition[0], 20, 20],
+        bottom: [finalPosition[0], -20, 20]
+      };
       
-      // Spin while falling
-      groupRef.current.rotation.y += delta * 5;
-      groupRef.current.rotation.x += delta * 3;
+      const exitTarget = exitPositions[swoopFrom] || exitPositions.left;
       
-      // Shrink
-      const shrinkScale = scale * (1 - t * 0.8);
+      // Reverse interpolation - go from final position back to start
+      const easeIn = t * t; // Ease-in for exit
+      
+      groupRef.current.position.x = finalPosition[0] + (exitTarget[0] - finalPosition[0]) * easeIn;
+      groupRef.current.position.y = finalPosition[1] + (exitTarget[1] - finalPosition[1]) * easeIn;
+      groupRef.current.position.z = finalPosition[2] + (exitTarget[2] - finalPosition[2]) * easeIn;
+      
+      // Scale down while exiting
+      const shrinkScale = scale * (1 - t * 0.5);
       groupRef.current.scale.setScalar(shrinkScale);
+      
+      // Gentle rotation while exiting
+      groupRef.current.rotation.y = -t * Math.PI * 2;
       
       if (t >= 1) {
         console.log(`[${id}] Exit complete, disposing`);
         setPhase('disposed');
+        
+        // Optional: Set a timer to fully clean up after being disposed for a while
+        // This helps with memory management for long pages
+        setTimeout(() => {
+          if (groupRef.current) {
+            groupRef.current.visible = false;
+            // The geometry and materials will be cleaned up by useEffect return
+          }
+        }, 5000); // Clean up after 5 seconds
       }
     } else if (phase === 'disposed') {
       // Fully hidden after exit
@@ -187,9 +235,10 @@ export function SwoopingDevilEmojiSimple({
   swoopFrom = "right",
   finalPosition = [0, 0, -10],
   isMobile = false,
-  id = "swooping-devil"
+  id = "swooping-devil",
+  modelPath = '/models/devilEmojiSwoop.glb'
 }) {
-  const { scene, animations } = useGLTF('/models/devilEmojiSwoop.glb');
+  const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, scene);
   const groupRef = useRef();
   const [phase, setPhase] = useState('hidden'); // 'hidden', 'swooping', 'floating', 'exiting', 'disposed'
@@ -198,6 +247,19 @@ export function SwoopingDevilEmojiSimple({
   
   useEffect(() => {
     console.log(`[${id}] Component mounted, scene loaded:`, !!scene);
+    
+    // Cleanup on unmount
+    return () => {
+      if (scene) {
+        console.log(`[${id}] Cleaning up Three.js resources`);
+        scene.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry?.dispose();
+            child.material?.dispose();
+          }
+        });
+      }
+    };
   }, [id, scene]);
   
   useEffect(() => {
@@ -281,7 +343,8 @@ export function SwoopingDevilEmojiSimple({
       const startPositions = {
         left: [-20, 5, 20],
         right: [20, 5, 20],
-        bottom: [finalPosition[0], -20, 20]
+        bottom: [finalPosition[0], -20, 20],
+        top: [finalPosition[0], 20, 20]
       };
       
       const start = startPositions[swoopFrom] || startPositions.right;
