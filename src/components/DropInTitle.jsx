@@ -10,7 +10,8 @@ export default function DropInTitle({
   fontSize = { mobile: "2.5rem", desktop: "4rem" },
   isMobile = false,
   onAnimationComplete = () => {},
-  triggerAnimation = true
+  triggerAnimation = true,
+  instanceId = Math.random().toString(36).substr(2, 9) // Generate unique ID for this instance
 }) {
   const containerRef = useRef(null);
   const buttonRef = useRef(null);
@@ -25,8 +26,8 @@ export default function DropInTitle({
     // Hide button initially
     tl.set(buttonRef.current, { visibility: 'hidden', opacity: 0 });
     
-    // Animate each letter span
-    tl.fromTo('.title-letter', 
+    // Animate each letter span - use containerRef to scope the animation
+    tl.fromTo(containerRef.current.querySelectorAll('.title-letter'), 
       { 
         opacity: 0, 
         bottom: -80 
@@ -64,7 +65,7 @@ export default function DropInTitle({
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css?family=Fjalla+One');
         
-        .title-letter {
+        .title-letter-${instanceId} {
           transform: skew(-10deg);
           display: block;
           float: left;
@@ -102,7 +103,7 @@ export default function DropInTitle({
             {line.split('').map((char, charIndex) => (
               <span 
                 key={`${lineIndex}-${charIndex}`}
-                className="title-letter"
+                className={`title-letter title-letter-${instanceId}`}
                 style={{ color: colors[lineIndex % colors.length] }}
               >
                 {char === ' ' ? '\u00A0' : char}

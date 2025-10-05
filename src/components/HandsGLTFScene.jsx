@@ -177,88 +177,88 @@ function HandsModel({ mousePosition, canvasRef, onTweetClick }) {
   
   // Log what we loaded
   useEffect(() => {
-    console.log('GLTF loaded:', gltf)
+    // console.log('GLTF loaded:', gltf)
     if (gltf.scene) {
-      console.log('Scene found:', gltf.scene)
+      // console.log('Scene found:', gltf.scene)
       
       // Calculate bounding box to see the size
       const box = new THREE.Box3().setFromObject(gltf.scene)
       const size = box.getSize(new THREE.Vector3())
       const center = box.getCenter(new THREE.Vector3())
-      console.log('Scene bounds:', { size, center })
+      // console.log('Scene bounds:', { size, center })
       
       // Traverse the scene to find specific objects
       gltf.scene.traverse((child) => {
-        console.log('Found object:', child.name, 'Type:', child.type)
+        // console.log('Found object:', child.name, 'Type:', child.type)
         
         // Log all objects that contain 'emoji' or 'icon' in the name (case insensitive)
         if (child.name.toLowerCase().includes('emoji')) {
-          console.log('🟡 EMOJI FOUND:', child.name, 'Type:', child.type, 'Position:', child.position)
+          // console.log('🟡 EMOJI FOUND:', child.name, 'Type:', child.type, 'Position:', child.position)
         }
         if (child.name.toLowerCase().includes('icon')) {
-          console.log('🔵 ICON FOUND:', child.name, 'Type:', child.type, 'Position:', child.position)
+          // console.log('🔵 ICON FOUND:', child.name, 'Type:', child.type, 'Position:', child.position)
         }
         if (child.name === 'hand-r' || child.name === 'hand_r' || child.name === 'Hand-R' || 
             child.name.toLowerCase().includes('hand') && child.name.toLowerCase().includes('r')) {
           rightHandRef.current = child
-          console.log('Found right hand:', child.name, 'Position:', child.position)
-          console.log('Right hand type:', child.type)
-          console.log('Right hand children:', child.children.length)
-          console.log('Right hand world position:', child.getWorldPosition(new THREE.Vector3()))
+          // console.log('Found right hand:', child.name, 'Position:', child.position)
+          // console.log('Right hand type:', child.type)
+          // console.log('Right hand children:', child.children.length)
+          // console.log('Right hand world position:', child.getWorldPosition(new THREE.Vector3()))
           
-          if (child.type === 'Object3D' && child.children.length > 0) {
-            console.log('Right hand is a group, children:', child.children.map(c => ({name: c.name, type: c.type})))
-            // Store reference to the group itself - we'll move the whole group
-            console.log('Moving entire hand group for better control')
-          }
+          // if (child.type === 'Object3D' && child.children.length > 0) {
+          //   console.log('Right hand is a group, children:', child.children.map(c => ({name: c.name, type: c.type})))
+          //   // Store reference to the group itself - we'll move the whole group
+          //   console.log('Moving entire hand group for better control')
+          // }
         }
-        if (child.name === 'hand-l' || child.name === 'hand_l' || child.name === 'Hand-L') {
-          leftHandRef.current = child
-          console.log('Found left hand:', child.name)
-        }
+        // if (child.name === 'hand-l' || child.name === 'hand_l' || child.name === 'Hand-L') {
+        //   leftHandRef.current = child
+        //   console.log('Found left hand:', child.name)
+        // }
         
         // Find emoji objects with flexible matching
         if (child.name === 'Emoji-1' || child.name === 'emoji-1' || child.name === 'Emoji1') {
           emoji1Ref.current = child
-          console.log('✅ Found Emoji-1:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Emoji-1:', child.name, 'Position:', child.position)
         }
         if (child.name === 'Emoji-2' || child.name === 'emoji-2' || child.name === 'Emoji2') {
           emoji2Ref.current = child
-          console.log('✅ Found Emoji-2:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Emoji-2:', child.name, 'Position:', child.position)
         }
         if (child.name === 'Emoji-3' || child.name === 'emoji-3' || child.name === 'Emoji3') {
           emoji3Ref.current = child
-          console.log('✅ Found Emoji-3:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Emoji-3:', child.name, 'Position:', child.position)
         }
         if (child.name === 'Emoji-4' || child.name === 'emoji-4' || child.name === 'Emoji4') {
           emoji4Ref.current = child
-          console.log('✅ Found Emoji-4:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Emoji-4:', child.name, 'Position:', child.position)
         }
         
         // Find icon objects
         if (child.name === 'Icon-like' || child.name === 'icon-like' || child.name === 'IconLike') {
           iconLikeRef.current = child
-          console.log('✅ Found Icon-like:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Icon-like:', child.name, 'Position:', child.position)
         }
         if (child.name === 'Icon-love' || child.name === 'icon-love' || child.name === 'IconLove') {
           iconLoveRef.current = child
-          console.log('✅ Found Icon-love:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Icon-love:', child.name, 'Position:', child.position)
         }
         if (child.name === 'Icon-text-1' || child.name === 'icon-text-1' || child.name === 'IconText1') {
           iconText1Ref.current = child
-          console.log('✅ Found Icon-text-1:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Icon-text-1:', child.name, 'Position:', child.position)
         }
         if (child.name === 'Icon-text-2' || child.name === 'icon-text-2' || child.name === 'IconText2') {
           iconText2Ref.current = child
-          console.log('✅ Found Icon-text-2:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Icon-text-2:', child.name, 'Position:', child.position)
         }
         if (child.name === 'Icon-play' || child.name === 'icon-play' || child.name === 'IconPlay') {
           iconPlayRef.current = child
-          console.log('✅ Found Icon-play:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Icon-play:', child.name, 'Position:', child.position)
         }
         if (child.name === 'Icon-star' || child.name === 'icon-star' || child.name === 'IconStar') {
           iconStarRef.current = child
-          console.log('✅ Found Icon-star:', child.name, 'Position:', child.position)
+          // console.log('✅ Found Icon-star:', child.name, 'Position:', child.position)
         }
        // In the useEffect where you traverse the scene
 if (child.name === 'phone' || child.name === 'Phone') {
@@ -282,8 +282,8 @@ if (child.name === 'phone' || child.name === 'Phone') {
       center.multiplyScalar(0.5)
       size.multiplyScalar(0.5)
       
-      console.log('Screen center:', center)
-      console.log('Screen size:', size)
+      // console.log('Screen center:', center)
+      // console.log('Screen size:', size)
       
       // Convert to screen units for HTML
       // Adjust these values based on testing
@@ -662,7 +662,7 @@ export default function HandsGLTFScene() {
         src="https://platform.twitter.com/widgets.js" 
         strategy="afterInteractive"
         onLoad={() => {
-          console.log('Twitter script loaded successfully')
+          // console.log('Twitter script loaded successfully')
         }}
         onError={() => {
           console.error('Failed to load Twitter script')
@@ -767,7 +767,7 @@ export default function HandsGLTFScene() {
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                console.log('Close button clicked!')
+                // console.log('Close button clicked!')
                 closeModal()
               }}
               style={{

@@ -2846,15 +2846,16 @@ const PalmsScene = ({ onLoadingChange }) => {
             ))}
           </div>
           
-          {/* Scroll hint - always visible */}
+          {/* Scroll hint - fades out at end of sequence */}
           <div style={{
             marginTop: '1rem',
             fontSize: '12px',
             color: 'white',
-            opacity: 0.5,
+            opacity: currentCameraStage === 4 ? 0 : 0.5,
             textAlign: 'center',
             fontFamily: 'monospace',
-            animation: 'pulse 2s ease-in-out infinite',
+            animation: currentCameraStage === 4 ? 'none' : 'pulse 2s ease-in-out infinite',
+            transition: 'opacity 0.5s ease',
           }}>
             scroll up to continue
           </div>

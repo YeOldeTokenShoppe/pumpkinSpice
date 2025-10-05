@@ -73,9 +73,23 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const playingCardRef = useRef(null);
+  const firstTitleRef = useRef(null);
+  const secondTitleRef = useRef(null);
+  
   const isInView = useInView(sectionRef, { 
     once: false, 
     margin: "-100px" 
+  });
+  
+  // Separate scroll triggers for each DropInTitle
+  const firstTitleInView = useInView(firstTitleRef, { 
+    once: false, 
+    margin: "-100px" // Triggers when 100px before element comes into view
+  });
+  
+  const secondTitleInView = useInView(secondTitleRef, { 
+    once: false, 
+    margin: "-30px" // Different trigger point for second title
   });
   
   const { scrollYProgress } = useScroll({
@@ -408,7 +422,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
         }}
         className="welcome-banner"
       >
-        <div style={{
+        <div ref={firstTitleRef} style={{
           textAlign: 'center',
           padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
           maxWidth: '900px',
@@ -420,7 +434,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
             colors={["#d4af37", "#f4e4c1", "#ffd700"]}
             fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
             isMobile={isMobile}
-            triggerAnimation={isInView}
+            triggerAnimation={firstTitleInView}
           />
           
           {/* <motion.p
@@ -878,14 +892,21 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
 
              
 <div style={{position: 'relative', zIndex: 1, marginTop: '10rem'}}>
-          {/* <DropInTitle
-            lines={["Prosper80", "for All", "Human80!"]}
+ <div ref={secondTitleRef} style={{
+          textAlign: 'center',
+          padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
+          maxWidth: '900px',
+          margin: '0 auto',
+        }}>
+          {/* Animated Drop-In Title */}
+          <DropInTitle
+            lines={["SHE", "SELLS", "SANCTUARY!"]}
             colors={["#d4af37", "#f4e4c1", "#ffd700"]}
             fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
             isMobile={isMobile}
-            triggerAnimation={isInView}
-          /> */}
-
+            triggerAnimation={secondTitleInView}
+          />
+</div>
          </div>
       {/* Flippable Cards Section - Triangle Layout */}
       <div style={{

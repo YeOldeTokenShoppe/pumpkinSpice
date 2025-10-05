@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import DarkClouds from '@/components/Clouds';
 import EnhancedVolumetricLight from '@/components/EnhancedVolumetricLight';
 import { useFirestoreResults } from '@/utilities/useFirestoreResults';
+import { SwoopingAngelEmojiSimple, SwoopingDevilEmojiSimple } from '@/components/SwoopingEmojiSimple';
 
 
 // Custom Ticker Curve Component
@@ -508,6 +509,27 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
           </Suspense>
         </>
       )}
+      
+      {/* Swooping emoji instances - appear BEHIND HTML divs */}
+      <Suspense fallback={null}>
+        <SwoopingAngelEmojiSimple 
+          id="swoop-angel-behind-1"
+          scrollThreshold={900}
+          exitThreshold={100}  // Exit if scrolling back up
+          forwardExitThreshold={1350}  // Exit at 1150px forward, before overlay appears at 1200px
+          swoopFrom="left"
+          finalPosition={[isMobile ? -8 : -15, -5, 5]}
+          isMobile={isMobile}
+        />
+        
+        <SwoopingDevilEmojiSimple 
+          id="swoop-devil-behind-1"
+          scrollThreshold={1200}
+          swoopFrom="right"
+          finalPosition={[isMobile ? 8 : 15, -5, 5]}
+          isMobile={isMobile}
+        />
+      </Suspense>
       
       {/* Add bloom effect if enabled */}
       {enableBloom && (
