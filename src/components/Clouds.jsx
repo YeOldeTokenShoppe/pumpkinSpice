@@ -30,7 +30,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
       setCloudTexture(texture);
       // Notify that clouds are ready
       if (onLoad) {
-        console.log('[DarkClouds] Texture loaded, clouds ready');
+        // console.log('[DarkClouds] Texture loaded, clouds ready');
         onLoad();
       }
     });
@@ -194,7 +194,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
   useEffect(() => {
     // Clear any existing lightning state when value changes
     if (fearGreedValue > 30) {
-      console.log('Clouds: Disabling lightning, fearGreedValue:', fearGreedValue);
+      // console.log('Clouds: Disabling lightning, fearGreedValue:', fearGreedValue);
       // Reset flash generators to stop any ongoing lightning
       if (flash1) flash1.reset?.();
       if (flash2) flash2.reset?.();
@@ -202,7 +202,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
       return;
     }
     
-    console.log('Clouds: Enabling lightning, fearGreedValue:', fearGreedValue);
+    // console.log('Clouds: Enabling lightning, fearGreedValue:', fearGreedValue);
     
     let timers = [];
     

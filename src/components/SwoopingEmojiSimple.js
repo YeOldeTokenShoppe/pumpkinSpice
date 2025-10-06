@@ -20,7 +20,7 @@ export function SwoopingAngelEmojiSimple({
   triggerExit = false, // Not used in angel, but needed for consistency
   appearImmediately = false // Skip scroll check and appear right away
 }) {
-  console.log(`[${id}] Component initializing with scrollThreshold:`, scrollThreshold, 'finalPosition:', finalPosition, 'swoopFrom:', swoopFrom, 'modelPath:', modelPath, 'appearImmediately:', appearImmediately);
+  // console.log(`[${id}] Component initializing with scrollThreshold:`, scrollThreshold, 'finalPosition:', finalPosition, 'swoopFrom:', swoopFrom, 'modelPath:', modelPath, 'appearImmediately:', appearImmediately);
   const { scene, animations } = useGLTF(modelPath);
   
   // No need to clone anymore since we're using different models
@@ -34,13 +34,13 @@ export function SwoopingAngelEmojiSimple({
   const floatingTime = useRef(0); // Track time spent floating for chase delay
   const hoverCallbackFired = useRef(false); // Not used in angel, but referenced in shared code
   
-  useEffect(() => {
-    console.log(`[${id}] Component mounted, scene loaded:`, !!scene);
-    if (scene) {
-      console.log(`[${id}] Scene object:`, scene);
-      console.log(`[${id}] Scene children:`, scene.children);
-    }
-  }, [id, scene]);
+  // useEffect(() => {
+  //   console.log(`[${id}] Component mounted, scene loaded:`, !!scene);
+  //   if (scene) {
+  //     console.log(`[${id}] Scene object:`, scene);
+  //     console.log(`[${id}] Scene children:`, scene.children);
+  //   }
+  // }, [id, scene]);
   
   useEffect(() => {
     // Play animations
@@ -66,7 +66,7 @@ export function SwoopingAngelEmojiSimple({
   // Effect to handle external trigger for exit (devil only)
   useEffect(() => {
     if (triggerExit && phase === 'floating') {
-      console.log(`[${id}] External trigger received, starting exit`);
+      // console.log(`[${id}] External trigger received, starting exit`);
       setPhase('exiting');
       exitTime.current = 0;
     }
@@ -76,14 +76,14 @@ export function SwoopingAngelEmojiSimple({
   useEffect(() => {
     // Only apply this logic to the chase angel, not regular angels
     if (id === 'overlay-angel-chase') {
-      console.log(`[${id}] appearImmediately check: appearImmediately=${appearImmediately}, phase=${phase}`);
+      // console.log(`[${id}] appearImmediately check: appearImmediately=${appearImmediately}, phase=${phase}`);
       if (appearImmediately && phase === 'hidden') {
-        console.log(`[${id}] TRIGGERING IMMEDIATE APPEARANCE!`);
+        // console.log(`[${id}] TRIGGERING IMMEDIATE APPEARANCE!`);
         setPhase('swooping');
         animationTime.current = 0;
       } else if (appearImmediately === false && phase !== 'hidden' && phase !== 'disposed') {
         // Reset when appearImmediately becomes false (but only if explicitly false, not undefined)
-        console.log(`[${id}] Resetting to hidden (appearImmediately became false)`);
+        // console.log(`[${id}] Resetting to hidden (appearImmediately became false)`);
         setPhase('hidden');
         animationTime.current = 0;
         exitTime.current = 0;
@@ -95,11 +95,11 @@ export function SwoopingAngelEmojiSimple({
   useEffect(() => {
     // Skip scroll listener only for chase angel when it's set to appear immediately
     if (id === 'overlay-angel-chase' && appearImmediately) {
-      console.log(`[${id}] Skipping scroll listener - appearing immediately`);
+      // console.log(`[${id}] Skipping scroll listener - appearing immediately`);
       return;
     }
     
-    console.log(`[${id}] Setting up scroll listener`);
+    // console.log(`[${id}] Setting up scroll listener`);
     if (typeof window === 'undefined') {
       console.log(`[${id}] Window undefined, skipping scroll setup`);
       return;
@@ -110,32 +110,32 @@ export function SwoopingAngelEmojiSimple({
       
       // Debug for overlay angel specifically when near threshold
       if (id === 'overlay-angel-weave' && scrollY > 900 && scrollY < 1100) {
-        console.log(`[${id}] Near threshold - scrollY: ${scrollY}, phase: ${phase}, threshold: ${scrollThreshold}`);
+        // console.log(`[${id}] Near threshold - scrollY: ${scrollY}, phase: ${phase}, threshold: ${scrollThreshold}`);
       }
       
       // Enter animation
       if (scrollY > scrollThreshold || (id === 'overlay-angel-chase' && scrollThreshold === 0)) {
         if (phase === 'hidden') {
-          console.log(`[${id}] Activating swoop at scroll ${scrollY} (threshold: ${scrollThreshold})`);
+          // console.log(`[${id}] Activating swoop at scroll ${scrollY} (threshold: ${scrollThreshold})`);
           setPhase('swooping');
           animationTime.current = 0; // Reset animation
         } else if (id === 'overlay-angel-weave' && scrollY > 900 && scrollY < 1100) {
-          console.log(`[${id}] NOT activating at ${scrollY} - phase is "${phase}" not 'hidden'`);
+          // console.log(`[${id}] NOT activating at ${scrollY} - phase is "${phase}" not 'hidden'`);
         } else if (id === 'overlay-angel-chase' && phase === 'hidden') {
-          console.log(`[${id}] Chase angel should be activating immediately (threshold: ${scrollThreshold})`);
+          // console.log(`[${id}] Chase angel should be activating immediately (threshold: ${scrollThreshold})`);
         }
       }
       
       // Exit animation when scrolling back up
       if (scrollY < exitThreshold && phase === 'floating') {
-        console.log(`Exiting ${id} - scroll back up detected at ${scrollY}`);
+        // console.log(`Exiting ${id} - scroll back up detected at ${scrollY}`);
         setPhase('exiting');
         exitTime.current = 0; // Reset exit timer
       }
       
       // Chase exit animation (for devil being chased by angel) - only in devil component
       if (typeof chaseExitThreshold !== 'undefined' && chaseExitThreshold && scrollY > chaseExitThreshold && phase === 'floating') {
-        console.log(`[${id}] Being chased! Triggering exit at ${scrollY}`);
+        // console.log(`[${id}] Being chased! Triggering exit at ${scrollY}`);
         setPhase('exiting');
         exitTime.current = 0;
       }
@@ -143,19 +143,19 @@ export function SwoopingAngelEmojiSimple({
       // Forward exit animation (optional)
       if (forwardExitThreshold && scrollY > forwardExitThreshold) {
         if (phase === 'floating') {
-          console.log(`Forward exit ${id} - continuing scroll detected at ${scrollY}`);
+          // console.log(`Forward exit ${id} - continuing scroll detected at ${scrollY}`);
           setPhase('exiting');
           exitTime.current = 0;
         } else if (phase === 'hidden' && id === 'overlay-angel-weave') {
           // If we loaded the page already past the exit threshold, skip to disposed
-          console.log(`[${id}] Page loaded past exit threshold, skipping to disposed`);
+          // console.log(`[${id}] Page loaded past exit threshold, skipping to disposed`);
           setPhase('disposed');
         }
       }
       
       // Re-enter if scrolling back below threshold
       if (scrollY < scrollThreshold - 100 && (phase === 'disposed' || phase === 'exiting')) {
-        console.log(`[${id}] Reset to hidden - scroll below threshold at ${scrollY}`);
+        // console.log(`[${id}] Reset to hidden - scroll below threshold at ${scrollY}`);
         setPhase('hidden');
         animationTime.current = 0; // Reset animation timer
         exitTime.current = 0; // Reset exit timer
@@ -166,7 +166,7 @@ export function SwoopingAngelEmojiSimple({
 
     // Check immediately on mount, but with a small delay to ensure proper initialization
     setTimeout(() => {
-      console.log(`[${id}] Initial scroll check after mount`);
+      // console.log(`[${id}] Initial scroll check after mount`);
       checkScroll();
     }, 100);
     
@@ -177,7 +177,7 @@ export function SwoopingAngelEmojiSimple({
 
   useFrame((state, delta) => {
     if (!groupRef.current) {
-      console.log(`[${id}] No groupRef in useFrame`);
+      // console.log(`[${id}] No groupRef in useFrame`);
       return;
     }
     
@@ -193,7 +193,7 @@ export function SwoopingAngelEmojiSimple({
       groupRef.current.visible = true;
       
       if (animationTime.current === 0) {
-        console.log(`[${id}] Starting swoop animation - making visible`);
+        // console.log(`[${id}] Starting swoop animation - making visible`);
       }
       animationTime.current += delta * 1; // Animation speed
       const t = Math.min(animationTime.current, 1); // Clamp to 0-1
@@ -222,7 +222,7 @@ export function SwoopingAngelEmojiSimple({
       groupRef.current.rotation.y = t * Math.PI * 2;
       
       if (t >= 1) {
-        console.log(`[${id}] Swoop complete, switching to floating`);
+        // console.log(`[${id}] Swoop complete, switching to floating`);
         setPhase('floating');
         floatingTime.current = 0; // Reset floating timer when entering floating phase
       }
@@ -232,7 +232,7 @@ export function SwoopingAngelEmojiSimple({
       
       // Check if we should start chasing (for chase angel)
       if (chaseDelay !== null && floatingTime.current >= chaseDelay) {
-        console.log(`[${id}] Chase delay reached (${chaseDelay}s), starting chase!`);
+        // console.log(`[${id}] Chase delay reached (${chaseDelay}s), starting chase!`);
         setPhase('exiting');
         exitTime.current = 0;
         floatingTime.current = 0; // Reset
@@ -240,7 +240,7 @@ export function SwoopingAngelEmojiSimple({
       
       // Debug for overlay angel
       if (id === 'overlay-angel-weave' && state.clock.elapsedTime % 2 < 0.016) {
-        console.log(`[${id}] FLOATING - Visible: ${groupRef.current.visible}, Position:`, groupRef.current.position.toArray(), 'Scale:', scale);
+        // console.log(`[${id}] FLOATING - Visible: ${groupRef.current.visible}, Position:`, groupRef.current.position.toArray(), 'Scale:', scale);
       }
       
       // Gentle floating animation
@@ -298,7 +298,7 @@ export function SwoopingAngelEmojiSimple({
       groupRef.current.scale.setScalar(shrinkScale);
       
       if (t >= 1) {
-        console.log(`[${id}] Exit complete, disposing`);
+        // console.log(`[${id}] Exit complete, disposing`);
         setPhase('disposed');
       }
     } else if (phase === 'disposed') {
@@ -308,7 +308,7 @@ export function SwoopingAngelEmojiSimple({
     } else {
       // Hidden state (initial)
       if (id === 'overlay-angel-weave') {
-        console.log(`[${id}] Setting visible=false in hidden state`);
+        // console.log(`[${id}] Setting visible=false in hidden state`);
       }
       groupRef.current.visible = false;
       return;
@@ -316,7 +316,7 @@ export function SwoopingAngelEmojiSimple({
     
     // Make visible for all other phases
     if (!groupRef.current.visible && id === 'overlay-angel-weave') {
-      console.log(`[${id}] Setting visible=true for phase: ${phase}`);
+      // console.log(`[${id}] Setting visible=true for phase: ${phase}`);
     }
     groupRef.current.visible = true;
   });
@@ -352,13 +352,13 @@ export function SwoopingDevilEmojiSimple({
   const floatingTime = useRef(0); // Track time spent floating for hover duration
   const hoverCallbackFired = useRef(false); // Ensure callback only fires once
   
-  useEffect(() => {
-    console.log(`[${id}] Component mounted, scene loaded:`, !!scene);
-    if (scene) {
-      console.log(`[${id}] Scene object:`, scene);
-      console.log(`[${id}] Scene children:`, scene.children);
-    }
-  }, [id, scene]);
+  // useEffect(() => {
+  //   console.log(`[${id}] Component mounted, scene loaded:`, !!scene);
+  //   if (scene) {
+  //     console.log(`[${id}] Scene object:`, scene);
+  //     console.log(`[${id}] Scene children:`, scene.children);
+  //   }
+  // }, [id, scene]);
   
   useEffect(() => {
     // Play animations
@@ -383,7 +383,7 @@ export function SwoopingDevilEmojiSimple({
   // Effect to handle external trigger for exit (devil only)
   useEffect(() => {
     if (triggerExit && phase === 'floating') {
-      console.log(`[${id}] External trigger received, starting exit`);
+      // console.log(`[${id}] External trigger received, starting exit`);
       setPhase('exiting');
       exitTime.current = 0;
     }
@@ -393,14 +393,14 @@ export function SwoopingDevilEmojiSimple({
   useEffect(() => {
     // Only apply this logic to the chase angel, not regular angels
     if (id === 'overlay-angel-chase') {
-      console.log(`[${id}] appearImmediately check: appearImmediately=${appearImmediately}, phase=${phase}`);
+      // console.log(`[${id}] appearImmediately check: appearImmediately=${appearImmediately}, phase=${phase}`);
       if (appearImmediately && phase === 'hidden') {
-        console.log(`[${id}] TRIGGERING IMMEDIATE APPEARANCE!`);
+        // console.log(`[${id}] TRIGGERING IMMEDIATE APPEARANCE!`);
         setPhase('swooping');
         animationTime.current = 0;
       } else if (appearImmediately === false && phase !== 'hidden' && phase !== 'disposed') {
         // Reset when appearImmediately becomes false (but only if explicitly false, not undefined)
-        console.log(`[${id}] Resetting to hidden (appearImmediately became false)`);
+        // console.log(`[${id}] Resetting to hidden (appearImmediately became false)`);
         setPhase('hidden');
         animationTime.current = 0;
         exitTime.current = 0;
@@ -412,11 +412,11 @@ export function SwoopingDevilEmojiSimple({
   useEffect(() => {
     // Skip scroll listener only for chase angel when it's set to appear immediately
     if (id === 'overlay-angel-chase' && appearImmediately) {
-      console.log(`[${id}] Skipping scroll listener - appearing immediately`);
+      // console.log(`[${id}] Skipping scroll listener - appearing immediately`);
       return;
     }
     
-    console.log(`[${id}] Setting up scroll listener`);
+    // console.log(`[${id}] Setting up scroll listener`);
     if (typeof window === 'undefined') {
       console.log(`[${id}] Window undefined, skipping scroll setup`);
       return;
@@ -433,26 +433,26 @@ export function SwoopingDevilEmojiSimple({
       // Enter animation
       if (scrollY > scrollThreshold || (id === 'overlay-angel-chase' && scrollThreshold === 0)) {
         if (phase === 'hidden') {
-          console.log(`[${id}] Activating swoop at scroll ${scrollY} (threshold: ${scrollThreshold})`);
+          // console.log(`[${id}] Activating swoop at scroll ${scrollY} (threshold: ${scrollThreshold})`);
           setPhase('swooping');
           animationTime.current = 0; // Reset animation
         } else if (id === 'overlay-angel-weave' && scrollY > 900 && scrollY < 1100) {
-          console.log(`[${id}] NOT activating at ${scrollY} - phase is "${phase}" not 'hidden'`);
+          // console.log(`[${id}] NOT activating at ${scrollY} - phase is "${phase}" not 'hidden'`);
         } else if (id === 'overlay-angel-chase' && phase === 'hidden') {
-          console.log(`[${id}] Chase angel should be activating immediately (threshold: ${scrollThreshold})`);
+          // console.log(`[${id}] Chase angel should be activating immediately (threshold: ${scrollThreshold})`);
         }
       }
       
       // Exit animation when scrolling back up
       if (scrollY < exitThreshold && phase === 'floating') {
-        console.log(`Exiting ${id} - scroll back up detected at ${scrollY}`);
+        // console.log(`Exiting ${id} - scroll back up detected at ${scrollY}`);
         setPhase('exiting');
         exitTime.current = 0; // Reset exit timer
       }
       
       // Chase exit animation (for devil being chased by angel) - only in devil component
       if (typeof chaseExitThreshold !== 'undefined' && chaseExitThreshold && scrollY > chaseExitThreshold && phase === 'floating') {
-        console.log(`[${id}] Being chased! Triggering exit at ${scrollY}`);
+        // console.log(`[${id}] Being chased! Triggering exit at ${scrollY}`);
         setPhase('exiting');
         exitTime.current = 0;
       }
@@ -460,19 +460,19 @@ export function SwoopingDevilEmojiSimple({
       // Forward exit animation (optional)
       if (forwardExitThreshold && scrollY > forwardExitThreshold) {
         if (phase === 'floating') {
-          console.log(`Forward exit ${id} - continuing scroll detected at ${scrollY}`);
+          // console.log(`Forward exit ${id} - continuing scroll detected at ${scrollY}`);
           setPhase('exiting');
           exitTime.current = 0;
         } else if (phase === 'hidden' && id === 'overlay-angel-weave') {
           // If we loaded the page already past the exit threshold, skip to disposed
-          console.log(`[${id}] Page loaded past exit threshold, skipping to disposed`);
+          // console.log(`[${id}] Page loaded past exit threshold, skipping to disposed`);
           setPhase('disposed');
         }
       }
       
       // Re-enter if scrolling back below threshold
       if (scrollY < scrollThreshold - 100 && (phase === 'disposed' || phase === 'exiting')) {
-        console.log(`[${id}] Reset to hidden - scroll below threshold at ${scrollY}`);
+        // console.log(`[${id}] Reset to hidden - scroll below threshold at ${scrollY}`);
         setPhase('hidden');
         animationTime.current = 0; // Reset animation timer
         exitTime.current = 0; // Reset exit timer
@@ -483,7 +483,7 @@ export function SwoopingDevilEmojiSimple({
 
     // Check immediately on mount, but with a small delay to ensure proper initialization
     setTimeout(() => {
-      console.log(`[${id}] Initial scroll check after mount`);
+      // console.log(`[${id}] Initial scroll check after mount`);
       checkScroll();
     }, 100);
     
@@ -494,7 +494,7 @@ export function SwoopingDevilEmojiSimple({
 
   useFrame((state, delta) => {
     if (!groupRef.current) {
-      console.log(`[${id}] No groupRef in useFrame`);
+      // console.log(`[${id}] No groupRef in useFrame`);
       return;
     }
     
@@ -505,7 +505,7 @@ export function SwoopingDevilEmojiSimple({
       groupRef.current.visible = true;
       
       if (animationTime.current === 0) {
-        console.log(`[${id}] Starting swoop animation`);
+        // console.log(`[${id}] Starting swoop animation`);
       }
       animationTime.current += delta * 1.8; // Slightly slower than angel
       const t = Math.min(animationTime.current, 1);
@@ -536,7 +536,7 @@ export function SwoopingDevilEmojiSimple({
       groupRef.current.rotation.y = -t * Math.PI * 2.5;
       
       if (t >= 1) {
-        console.log(`[${id}] Swoop complete, switching to floating`);
+        // console.log(`[${id}] Swoop complete, switching to floating`);
         setPhase('floating');
         floatingTime.current = 0; // Reset floating timer
         hoverCallbackFired.current = false; // Reset callback flag
@@ -547,15 +547,15 @@ export function SwoopingDevilEmojiSimple({
       
       // Debug logging for devil hover
       if (id === 'overlay-devil-end' && Math.floor(floatingTime.current) !== Math.floor(floatingTime.current - delta)) {
-        console.log(`[${id}] Floating time: ${floatingTime.current.toFixed(1)}s / ${hoverDuration}s`);
+        // console.log(`[${id}] Floating time: ${floatingTime.current.toFixed(1)}s / ${hoverDuration}s`);
       }
       
       // Check if we should fire the hover complete callback
       if (hoverDuration !== null && !hoverCallbackFired.current && floatingTime.current >= hoverDuration) {
-        console.log(`[${id}] Hover duration reached (${hoverDuration}s), firing callback`);
+        // console.log(`[${id}] Hover duration reached (${hoverDuration}s), firing callback`);
         hoverCallbackFired.current = true;
         if (onHoverComplete) {
-          console.log(`[${id}] Calling onHoverComplete callback`);
+          // console.log(`[${id}] Calling onHoverComplete callback`);
           onHoverComplete();
         } else {
           console.log(`[${id}] No onHoverComplete callback provided`);

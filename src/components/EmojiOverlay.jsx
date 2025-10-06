@@ -8,18 +8,19 @@ import { SwoopingAngelEmojiSimple, SwoopingDevilEmojiSimple } from '@/components
 export default function EmojiOverlay({ scrollY }) {
   const [showChasingAngel, setShowChasingAngel] = useState(false);
   const [triggerDevilExit, setTriggerDevilExit] = useState(false);
+  const [sequenceComplete, setSequenceComplete] = useState(false);
   
   // Better mobile detection - separate phones from tablets
   const [isMobilePhone, setIsMobilePhone] = useState(false);
   
   useEffect(() => {
-    console.log('[EmojiOverlay] Component mounted');
+    // console.log('[EmojiOverlay] Component mounted');
     // Check if it's a mobile phone (not tablet)
     const checkMobile = () => {
       const width = window.innerWidth;
       const isPhone = width < 768; // Phones typically < 768px, tablets >= 768px
       setIsMobilePhone(isPhone);
-      console.log('[EmojiOverlay] Device check - width:', width, 'isPhone:', isPhone);
+      // console.log('[EmojiOverlay] Device check - width:', width, 'isPhone:', isPhone);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -27,25 +28,33 @@ export default function EmojiOverlay({ scrollY }) {
   }, []);
   
   useEffect(() => {
-    console.log('[EmojiOverlay] showChasingAngel changed to:', showChasingAngel);
+    // console.log('[EmojiOverlay] showChasingAngel changed to:', showChasingAngel);
   }, [showChasingAngel]);
   
-  // Reset chase scene when scrolling back up
+  // Reset chase scene when scrolling back up (only after sequence completes)
   useEffect(() => {
-    if (scrollY < 5700 && (showChasingAngel || triggerDevilExit)) {
-      console.log('[EmojiOverlay] Scrolled back up, resetting chase scene');
+    // Reset only if scrolling far up AND sequence has completed
+    if (scrollY < 5000 && sequenceComplete) {
+      // console.log('[EmojiOverlay] Scrolled far back up after sequence complete, resetting');
       setShowChasingAngel(false);
       setTriggerDevilExit(false);
+      setSequenceComplete(false);
     }
-  }, [scrollY]);
+    // Don't reset if the chase sequence is in progress - let it complete
+  }, [scrollY, sequenceComplete]);
   
   // Trigger devil exit after angel has been chasing for 2 seconds
   useEffect(() => {
     if (showChasingAngel) {
-      console.log('[EmojiOverlay] Angel should now be visible, starting timer for devil exit');
+      // console.log('[EmojiOverlay] Angel should now be visible, starting timer for devil exit');
       const timer = setTimeout(() => {
-        console.log('[EmojiOverlay] Triggering devil exit after angel chase delay');
+        // console.log('[EmojiOverlay] Triggering devil exit after angel chase delay');
         setTriggerDevilExit(true);
+        // Mark sequence as complete after a bit more time (for exit animations)
+        setTimeout(() => {
+          setSequenceComplete(true);
+          // console.log('[EmojiOverlay] Chase sequence complete');
+        }, 3000); // Give time for exit animations
       }, 2000); // Match the angel's chaseDelay
       return () => clearTimeout(timer);
     }
@@ -56,11 +65,11 @@ export default function EmojiOverlay({ scrollY }) {
   // Determine if we should use reduced quality based on GPU tier
   // Tier 0 = Low, 1 = Medium, 2 = High, 3 = Ultra
   const isLowEndDevice = GPUTier.tier < 2 || GPUTier.isMobile;
-  console.log('[EmojiOverlay] Rendering - GPU Tier:', GPUTier.tier, 'Mobile:', GPUTier.isMobile, 'isLowEndDevice:', isLowEndDevice);
+  // console.log('[EmojiOverlay] Rendering - GPU Tier:', GPUTier.tier, 'Mobile:', GPUTier.isMobile, 'isLowEndDevice:', isLowEndDevice);
   
   // Skip rendering on very low-end devices
   if (GPUTier.tier === 0) {
-    console.log('[EmojiOverlay] Skipping render due to low GPU tier');
+    // console.log('[EmojiOverlay] Skipping render due to low GPU tier');
     return null;
   }
   
@@ -90,7 +99,7 @@ export default function EmojiOverlay({ scrollY }) {
         }}
         eventSource={null} // Disable Three.js event system
         eventPrefix="client"
-        onCreated={() => console.log('[EmojiOverlay] Canvas created')}
+        // onCreated={() => console.log('[EmojiOverlay] Canvas created')}
       >
         <ambientLight intensity={3} />
         <directionalLight position={[10, 10, 5]} intensity={2} />
@@ -112,20 +121,20 @@ export default function EmojiOverlay({ scrollY }) {
           <SwoopingDevilEmojiSimple 
             id="overlay-devil-end"
             scrollThreshold={6100}  // Near end of page
-            exitThreshold={5700}  // Exit if scrolling back up
+            exitThreshold={-100}  // Don't exit on scroll back - let sequence complete
             forwardExitThreshold={null}  // Will be chased away by angel
             chaseExitThreshold={null}  // Don't use scroll-based chase, use timer instead
             swoopFrom="bottom"
-            finalPosition={isMobilePhone ? [4, -1, 1] : [12, -2, 1]} // Phone: more centered | Desktop/Tablet: right side
+            finalPosition={isMobilePhone ? [4, -1, 1] : [10, -2, 1]} // Phone: more centered | Desktop/Tablet: right side
             isMobile={isLowEndDevice}
             modelPath="/models/devilEmojiOverlay.glb"
             hoverDuration={2}  // Hover for 2 seconds
             onHoverComplete={() => {
-              console.log('[EmojiOverlay] Devil hover complete, triggering angel - showChasingAngel will be true');
+              // console.log('[EmojiOverlay] Devil hover complete, triggering angel - showChasingAngel will be true');
               setShowChasingAngel(true);
               // Force a re-render check
               setTimeout(() => {
-                console.log('[EmojiOverlay] showChasingAngel is now:', showChasingAngel);
+                // console.log('[EmojiOverlay] showChasingAngel is now:', showChasingAngel);
               }, 100);
             }}
             triggerExit={triggerDevilExit}  // External trigger for chase exit
@@ -139,7 +148,7 @@ export default function EmojiOverlay({ scrollY }) {
             exitThreshold={-100}  // Won't exit on scroll back
             forwardExitThreshold={null}  // No forward exit
             swoopFrom="right"  // Enters from right
-            finalPosition={isMobilePhone ? [-2, -1, 5] : [-10, -2, 5]} // Phone: closer to center | Desktop/Tablet: left side for chase
+            finalPosition={isMobilePhone ? [-2, -1, 5] : [-8, -2, 5]} // Phone: closer to center | Desktop/Tablet: left side for chase
             isMobile={isLowEndDevice}
             modelPath="/models/angelEmojiChase.glb"  // New unique model for chasing
             chaseDelay={0.9}  // Wait 0.9 seconds in floating phase before starting chase

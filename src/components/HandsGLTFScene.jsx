@@ -4,23 +4,15 @@ import { createPortal } from 'react-dom'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Box } from '@react-three/drei'
 import * as THREE from 'three'
-import Script from 'next/script'
+import { db } from '@/utilities/firebaseClient'
+import { collection, query, getDocs, limit } from 'firebase/firestore'
+import { m } from 'framer-motion'
 
-// Load Twitter widgets script
-if (typeof window !== 'undefined' && !window.twttr) {
-  const script = document.createElement('script')
-  script.async = true
-  script.src = 'https://platform.twitter.com/widgets.js'
-  document.head.appendChild(script)
-}
 
-function HandsModel({ mousePosition, canvasRef, onTweetClick }) {
+function HandsModel({ mousePosition }) {
   const gltf = useGLTF('/models/hands.glb')
   const rightHandRef = useRef()
-  const phoneRef = useRef()
   const leftHandRef = useRef()
-  const screenRef = useRef()
-  const textureRef = useRef()
   const emoji1Ref = useRef()
   const emoji2Ref = useRef()
   const emoji3Ref = useRef()
@@ -31,165 +23,89 @@ function HandsModel({ mousePosition, canvasRef, onTweetClick }) {
   const iconText2Ref = useRef()
   const iconPlayRef = useRef()
   const iconStarRef = useRef()
-  const [screenData, setScreenData] = useState({ 
-    position: [-0.3, -0.7, -0.3], 
-    size: { width: 80, height: 120 } 
-  })
-  const [twitterLoaded, setTwitterLoaded] = useState(false)
-  const [latestTweetData, setLatestTweetData] = useState(null)
-  const [showTweetModal, setShowTweetModal] = useState(false)
+  const candleLabel2Ref = useRef()
+  const [randomUserImages, setRandomUserImages] = useState([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const { camera } = useThree()
   
 
-  // Helper function for relative time
-  function getTimeAgo(date) {
-    const seconds = Math.floor((new Date() - date) / 1000)
-    
-    let interval = seconds / 31536000
-    if (interval > 1) return Math.floor(interval) + " years ago"
-    
-    interval = seconds / 2592000
-    if (interval > 1) return Math.floor(interval) + " months ago"
-    
-    interval = seconds / 86400
-    if (interval > 1) return Math.floor(interval) + " days ago"
-    
-    interval = seconds / 3600
-    if (interval > 1) return Math.floor(interval) + " hours ago"
-    
-    interval = seconds / 60
-    if (interval > 1) return Math.floor(interval) + " minutes ago"
-    
-    return Math.floor(seconds) + " seconds ago"
-  }
 
-  // Updated canvas rendering function with Twitter-like layout
-  const updateCanvasTexture = () => {
-    if (!canvasRef.current) return
-    
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    
-    // More phone-like proportions (Twitter mobile dimensions)
-    canvas.width = 400
-    canvas.height = 250
-    
-    // Twitter dark theme background
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    
-    // Subtle border
-    ctx.strokeStyle = '#333639'
-    ctx.lineWidth = 1
-    ctx.strokeRect(0, 0, canvas.width, canvas.height)
-    
-    if (latestTweetData && latestTweetData.latestTweet && !latestTweetData.error) {
-      // Avatar circle placeholder
-      ctx.fillStyle = '#1DA1F2'
-      ctx.beginPath()
-      ctx.arc(30, 35, 20, 0, 2 * Math.PI)
-      ctx.fill()
-      
-      // User initial in avatar
-      ctx.fillStyle = '#ffffff'
-      ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial'
-      ctx.textAlign = 'center'
-      const initial = (latestTweetData.name || latestTweetData.username || 'T')[0].toUpperCase()
-      ctx.fillText(initial, 30, 42)
-      ctx.textAlign = 'left'
-      
-      // Name and username on same line (more compact)
-      ctx.fillStyle = '#ffffff'
-      ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial'
-      const nameText = latestTweetData.name || 'Twitter User'
-      ctx.fillText(nameText, 60, 30)
-      
-      // Username and timestamp on same line
-      ctx.fillStyle = '#71767b'
-      ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial'
-      const usernameText = `@${latestTweetData.username}`
-      ctx.fillText(usernameText, 60, 45)
-      
-      // Add timestamp next to username
-      if (latestTweetData.createdAt) {
-        const date = new Date(latestTweetData.createdAt)
-        const timeAgo = getTimeAgo(date)
-        const usernameWidth = ctx.measureText(usernameText).width
-        ctx.fillText(` · ${timeAgo}`, 60 + usernameWidth, 45)
-      }
-      
-      // Tweet text with proper spacing and line height
-      ctx.fillStyle = '#ffffff'
-      ctx.font = '15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial'
-      
-      const words = latestTweetData.latestTweet.split(' ')
-      let line = ''
-      let y = 75
-      const maxWidth = canvas.width - 70 // Account for left margin
-      const lineHeight = 20
-      
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' '
-        const metrics = ctx.measureText(testLine)
-        if (metrics.width > maxWidth && n > 0) {
-          ctx.fillText(line, 60, y)
-          line = words[n] + ' '
-          y += lineHeight
-        } else {
-          line = testLine
-        }
-      }
-      ctx.fillText(line, 60, y)
-      
-      // Tweet action icons (like, retweet, etc.) - simple dots
-      const iconY = y + 30
-      ctx.fillStyle = '#71767b'
-      ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial'
-      
-      // Reply icon (placeholder)
-      ctx.fillText('💬', 60, iconY)
-      // Retweet icon
-      ctx.fillText('🔄', 110, iconY)
-      // Like icon  
-      ctx.fillText('❤️', 160, iconY)
-      // Share icon
-      ctx.fillText('📤', 210, iconY)
-    } else if (!twitterLoaded) {
-      // Loading state
-      ctx.fillStyle = '#1DA1F2'
-      ctx.font = 'bold 24px Arial'
-      ctx.textAlign = 'center'
-      ctx.fillText('Loading Latest Tweet...', canvas.width / 2, canvas.height / 2)
-      ctx.textAlign = 'left'
-    } else {
-      // Error state or no data - show clean blank phone screen
-      // Just show the dark background with border, no text or content
-      ctx.fillStyle = '#15202B'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-    }
-    
-    if (!textureRef.current) {
-      textureRef.current = new THREE.CanvasTexture(canvas)
-    } else {
-      textureRef.current.needsUpdate = true
-    }
-  }
   
+  // Fetch random user images from Firestore
+  useEffect(() => {
+    const fetchRandomUserImages = async () => {
+      try {
+        const q = query(collection(db, 'results'), limit(50))
+        const snapshot = await getDocs(q)
+        
+        const images = []
+        snapshot.forEach((doc) => {
+          const data = doc.data()
+          if (data.image && data.image !== '/defaultAvatar.png' && data.image !== '') {
+            images.push({
+              id: doc.id,
+              image: data.image,
+              username: data.username || 'Anonymous',
+              message: data.message || ''
+            })
+          }
+        })
+        
+        console.log('Fetched user images for candle Label2:', images.length)
+        if (images.length > 0) {
+          setRandomUserImages(images)
+          setCurrentImageIndex(Math.floor(Math.random() * images.length))
+        }
+      } catch (error) {
+        console.error('Error fetching user images:', error)
+      }
+    }
+    
+    fetchRandomUserImages()
+  }, [])
+  
+  // Rotate through images periodically
+  useEffect(() => {
+    if (randomUserImages.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentImageIndex((prevIndex) => 
+          (prevIndex + 1) % randomUserImages.length
+        )
+      }, 5000) // Change image every 5 seconds
+      
+      return () => clearInterval(interval)
+    }
+  }, [randomUserImages])
+
   // Log what we loaded
   useEffect(() => {
     // console.log('GLTF loaded:', gltf)
     if (gltf.scene) {
       // console.log('Scene found:', gltf.scene)
       
-      // Calculate bounding box to see the size
-      const box = new THREE.Box3().setFromObject(gltf.scene)
-      const size = box.getSize(new THREE.Vector3())
-      const center = box.getCenter(new THREE.Vector3())
-      // console.log('Scene bounds:', { size, center })
       
       // Traverse the scene to find specific objects
       gltf.scene.traverse((child) => {
         // console.log('Found object:', child.name, 'Type:', child.type)
+        
+        // Look for VCANDLE001 and its Label2 child
+        if (child.name === 'VCANDLE001' || child.name === 'VCandle001' || child.name === 'vcandle001') {
+          console.log('Found VCANDLE001 candle object!')
+          child.traverse((subChild) => {
+            if (subChild.name === 'Label2' || subChild.name === 'label2') {
+              console.log('Found Label2 under VCANDLE001!')
+              candleLabel2Ref.current = subChild
+            }
+          })
+        }
+        
+        // Also check if Label2 is directly in the scene
+        if ((child.name === 'Label2' || child.name === 'label2') && child.isMesh) {
+          console.log('Found Label2 mesh directly!')
+          if (!candleLabel2Ref.current) {
+            candleLabel2Ref.current = child
+          }
+        }
         
         // Log all objects that contain 'emoji' or 'icon' in the name (case insensitive)
         if (child.name.toLowerCase().includes('emoji')) {
@@ -260,109 +176,94 @@ function HandsModel({ mousePosition, canvasRef, onTweetClick }) {
           iconStarRef.current = child
           // console.log('✅ Found Icon-star:', child.name, 'Position:', child.position)
         }
-       // In the useEffect where you traverse the scene
-if (child.name === 'phone' || child.name === 'Phone') {
-  phoneRef.current = child
-  console.log('Found phone:', child.name, 'Position:', child.position)
-  
-  // Find the screen mesh directly on the phone
-  child.traverse((subChild) => {
-    if (subChild.isMesh && (subChild.name.toLowerCase().includes('screen') || 
-        subChild.name.toLowerCase().includes('display'))) {
-      screenRef.current = subChild
-      
-      // Get the bounding box in world space
-      const box = new THREE.Box3().setFromObject(subChild)
-      const center = new THREE.Vector3()
-      const size = new THREE.Vector3()
-      box.getCenter(center)
-      box.getSize(size)
-      
-      // Apply the scale from the primitive
-      center.multiplyScalar(0.5)
-      size.multiplyScalar(0.5)
-      
-      // console.log('Screen center:', center)
-      // console.log('Screen size:', size)
-      
-      // Convert to screen units for HTML
-      // Adjust these values based on testing
-      setScreenData({
-        position: [center.x, center.y, center.z - 0.1], // Slightly forward
-        size: { 
-          width: size.x * 150,  // Adjust multiplier as needed
-          height: size.y * 150  // Adjust multiplier as needed
-        }
-      })
-    }
-  })
-}
       })
       
 
     }
   }, [gltf])
 
-  // Fetch latest tweet on mount
+  
+  // Apply random user image to candle Label2
   useEffect(() => {
-    console.log('Attempting to fetch latest tweet...')
-    fetch('/api/latest-tweet')
-      .then(res => {
-        console.log('Response status:', res.status)
-        if (!res.ok) {
-          // For specific error handling based on status code
-          if (res.status === 500) {
-            console.warn('Twitter API temporarily unavailable (500 error)')
-            return res.json().catch(() => ({ error: 'API temporarily unavailable' }))
-          } else if (res.status === 503) {
-            console.warn('Tweet data not available yet (503 error)')
-            return res.json().catch(() => ({ error: 'Tweet data not available yet' }))
-          } else if (res.status === 404) {
-            console.warn('No tweet data found yet (404 error)')
-            return { error: 'No tweet data available yet' }
-          } else if (res.status === 429) {
-            console.warn('Rate limit exceeded, will retry later')
-            return { error: 'Rate limit exceeded' }
-          }
-          throw new Error(`HTTP error! status: ${res.status}`)
+    if (!candleLabel2Ref.current || randomUserImages.length === 0) return
+    
+    const imageData = randomUserImages[currentImageIndex]
+    console.log('Applying image to candle Label2:', imageData)
+    
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 512
+    const ctx = canvas.getContext('2d')
+    
+    if (imageData && imageData.image) {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      
+      img.onload = () => {
+        // Draw image with 180 degree rotation and horizontal flip
+        ctx.save()
+        ctx.translate(canvas.width / 2, canvas.height / 2)
+        ctx.rotate(Math.PI) // Rotate 180 degrees
+        ctx.scale(-1, 1) // Flip horizontally (mirror on Y-axis)
+        ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height)
+        ctx.restore()
+        
+        // Add username overlay if available (rotated and flipped)
+        if (imageData.username) {
+          ctx.save()
+          ctx.translate(canvas.width / 2, canvas.height / 2)
+          ctx.rotate(Math.PI) // Rotate 180 degrees
+          ctx.scale(-1, 1) // Flip horizontally to mirror the text
+          
+          // Add semi-transparent background for text at bottom (which is now top due to rotation)
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+          ctx.fillRect(-canvas.width / 2, canvas.height / 2 - 80, canvas.width, 80)
+          
+          // Draw username
+          ctx.fillStyle = '#ffffff'
+          ctx.font = 'bold 36px Arial'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          
+          // Add text shadow for better readability
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+          ctx.shadowBlur = 4
+          ctx.shadowOffsetX = 2
+          ctx.shadowOffsetY = 2
+          
+          ctx.fillText(imageData.username, 0, canvas.height / 2 - 40)
+          ctx.restore()
         }
-        return res.json()
-      })
-      .then(data => {
-        console.log('Tweet data received:', data)
-        if (data && data.error) {
-          console.warn('API returned error:', data.error)
-          // Still mark as loaded, but show fallback content
-          setLatestTweetData({ error: data.error })
-        } else {
-          setLatestTweetData(data)
-        }
-        setTwitterLoaded(true)
-      })
-      .catch(err => {
-        console.error('Error fetching tweet:', err)
-        // Set fallback data so the component shows something meaningful
-        setLatestTweetData({ 
-          error: 'Unable to load latest tweet',
-          fallback: true 
+        
+        // Create texture and apply to mesh
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.needsUpdate = true
+        
+        // Create or update material
+        candleLabel2Ref.current.material = new THREE.MeshStandardMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+          emissive: new THREE.Color(0xffffff),
+          emissiveIntensity: 0.05,
+          emissiveMap: texture,
+          metalness: 0.1,
+          roughness: 0.7
         })
-        setTwitterLoaded(true)
-      })
-  }, [])
-
-  // Update texture when tweet data changes
-  useEffect(() => {
-    if (latestTweetData && canvasRef.current) {
-      updateCanvasTexture()
+        candleLabel2Ref.current.material.needsUpdate = true
+        
+        console.log('Texture applied to candle Label2')
+      }
+      
+      img.onerror = () => {
+        console.error('Failed to load image for Label2:', imageData.image)
+      }
+      
+      img.src = imageData.image
     }
-  }, [latestTweetData])
+  }, [currentImageIndex, randomUserImages])
 
    // Update the useFrame in HandsModel to properly handle updates
 useFrame((state) => {
-  // Only update loading animation if NOT loaded
-  if (!twitterLoaded && canvasRef.current && textureRef.current) {
-    updateCanvasTexture()
-  }
   
   // Add floating animation to emojis
   const time = state.clock.getElapsedTime()
@@ -555,9 +456,10 @@ const movementScale = distanceFromCamera * 0.5 // Scale based on distance
 
 const targetX = original.x + (mousePosition.x * movementScale * 50)
 const targetY = original.y + (mousePosition.y * movementScale * 80)
+
     
     // Optional: add some Z movement for depth effect
-    const targetZ = original.z + (Math.abs(mousePosition.x) * 5)
+    const targetZ = original.z + (Math.abs(mousePosition.x) * 15)
     
     
     // Direct position update for immediate response
@@ -577,35 +479,6 @@ const targetY = original.y + (mousePosition.y * movementScale * 80)
 return (
   <>
     <primitive object={gltf.scene} scale={[0.5, 0.5, 0.5]}/>
-    
-    {/* Screen mesh with canvas texture - Twitter-like proportions */}
-    {textureRef.current && (
-      <mesh 
-        position={screenData.position}
-        onClick={(e) => {
-          e.stopPropagation()
-          if (latestTweetData && latestTweetData.latestTweet && onTweetClick) {
-            onTweetClick(latestTweetData)
-          }
-        }}
-        onPointerOver={(e) => {
-          document.body.style.cursor = 'pointer'
-        }}
-        onPointerOut={(e) => {
-          document.body.style.cursor = 'auto'
-        }}
-      >
-        <planeGeometry args={[1.2, 0.75]} />
-        <meshBasicMaterial 
-          map={textureRef.current}
-          transparent={true}
-          opacity={1}
-          side={THREE.DoubleSide}
-          depthWrite={true}
-          depthTest={true}
-        />
-      </mesh>
-    )}
   </>
 )
 }
@@ -633,21 +506,6 @@ function LoadingBox() {
 
 export default function HandsGLTFScene() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const [showTweetModal, setShowTweetModal] = useState(false)
-  const [modalTweetData, setModalTweetData] = useState(null)
-  const canvasRef = useRef()
-  
-  const handleTweetClick = (tweetData) => {
-    console.log('Tweet clicked, showing modal with data:', tweetData)
-    setModalTweetData(tweetData)
-    setShowTweetModal(true)
-  }
-  
-  const closeModal = () => {
-    console.log('Closing modal...')
-    setShowTweetModal(false)
-    setModalTweetData(null)
-  }
   
   return (
     <div style={{ 
@@ -658,19 +516,7 @@ export default function HandsGLTFScene() {
       pointerEvents: 'auto',
       isolation: 'isolate'
     }}>
-      <Script 
-        src="https://platform.twitter.com/widgets.js" 
-        strategy="afterInteractive"
-        onLoad={() => {
-          // console.log('Twitter script loaded successfully')
-        }}
-        onError={() => {
-          console.error('Failed to load Twitter script')
-        }}
-      />
       
-      {/* Hidden canvas for rendering texture */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
       
       {/* 3D Canvas */}
       <Canvas
@@ -690,11 +536,7 @@ export default function HandsGLTFScene() {
         <pointLight position={[-10, -10, -10]} intensity={1} />
         
         <Suspense fallback={<LoadingBox />}>
-          <HandsModel 
-            mousePosition={mousePosition} 
-            canvasRef={canvasRef}
-            onTweetClick={handleTweetClick}
-          />
+          <HandsModel mousePosition={mousePosition} />
         </Suspense>
         
         <MouseTracker setMousePosition={setMousePosition} />
@@ -702,8 +544,8 @@ export default function HandsGLTFScene() {
         <OrbitControls 
           enableZoom={false}
           enablePan={false}
-          maxPolarAngle={Math.PI / 2}
-          minPolarAngle={Math.PI / 3}
+          maxPolarAngle={0}
+          minPolarAngle={Math.PI / 2}
         />
       </Canvas>
       
@@ -722,194 +564,6 @@ export default function HandsGLTFScene() {
           zIndex: 10,
         }}
       /> */}
-      
-      {/* Tweet Modal - Rendered via Portal */}
-      {showTweetModal && modalTweetData && typeof document !== 'undefined' && createPortal(
-        <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 999999,
-            backdropFilter: 'blur(5px)',
-            pointerEvents: 'auto'
-          }}
-          onClick={closeModal}
-        >
-          <div 
-            style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e1e8ed',
-              borderRadius: '16px',
-              padding: '16px',
-              maxWidth: '550px',
-              width: 'fit-content',
-              minWidth: '400px',
-              maxHeight: '90vh',
-              overflow: 'hidden',
-              position: 'relative',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-              zIndex: 1000000,
-              pointerEvents: 'auto',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button */}
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                // console.log('Close button clicked!')
-                closeModal()
-              }}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: '#f7f9fa',
-                border: '1px solid #cfd9de',
-                color: '#536471',
-                fontSize: '20px',
-                cursor: 'pointer',
-                padding: '8px',
-                borderRadius: '50%',
-                width: '36px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                zIndex: 10001,
-                pointerEvents: 'auto'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#e1e8ed'
-                e.target.style.transform = 'scale(1.1)'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#f7f9fa'
-                e.target.style.transform = 'scale(1)'
-              }}
-            >
-              ×
-            </button>
-            
-            {/* Real Twitter Embed using iframe */}
-            {(() => {
-              // Extract tweet ID from embed HTML
-              let tweetId = null
-              if (modalTweetData.embedHtml) {
-                const tweetMatch = modalTweetData.embedHtml.match(/status\/(\d+)/)
-                tweetId = tweetMatch ? tweetMatch[1] : null
-              }
-              
-              return tweetId ? (
-                <div style={{ 
-                  width: '100%', 
-                  display: 'flex', 
-                  justifyContent: 'center',
-                  alignItems: 'flex-start'
-                }}>
-                  <iframe
-                    src={`https://platform.twitter.com/embed/Tweet.html?id=${tweetId}&theme=light&width=500&hide_thread=true`}
-                    width="500"
-                    height="320"
-                    style={{
-                      border: 'none',
-                      borderRadius: '12px',
-                      maxWidth: '100%',
-                      overflow: 'hidden',
-                      minHeight: '280px'
-                    }}
-                    allow="autoplay; camera; microphone; encrypted-media; geolocation;"
-                    title="Twitter Tweet"
-                  />
-                </div>
-              ) : modalTweetData.embedHtml ? (
-                <div 
-                  style={{ 
-                    width: '100%',
-                    maxHeight: '60vh',
-                    overflow: 'auto',
-                    border: '1px solid #e1e8ed',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    backgroundColor: '#ffffff'
-                  }}
-                  dangerouslySetInnerHTML={{ __html: modalTweetData.embedHtml }}
-                />
-              ) : (
-                <div>
-                {/* Fallback to custom styled version if no embed HTML */}
-                <div style={{ display: 'flex', marginBottom: '12px' }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '50%',
-                    backgroundColor: '#1DA1F2',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '12px'
-                  }}>
-                    <span style={{
-                      color: 'white',
-                      fontWeight: 'bold',
-                      fontSize: '20px'
-                    }}>
-                      {(modalTweetData.name || modalTweetData.username || 'T')[0].toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <div style={{
-                      color: '#ffffff',
-                      fontWeight: 'bold',
-                      fontSize: '16px',
-                      marginBottom: '2px'
-                    }}>
-                      {modalTweetData.name || 'Twitter User'}
-                    </div>
-                    <div style={{
-                      color: '#71767b',
-                      fontSize: '14px'
-                    }}>
-                      @{modalTweetData.username}
-                    </div>
-                  </div>
-                </div>
-                
-                <div style={{
-                  color: '#ffffff',
-                  fontSize: '20px',
-                  lineHeight: '1.5',
-                  marginBottom: '16px',
-                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial'
-                }}>
-                  {modalTweetData.latestTweet}
-                </div>
-                
-                <div style={{
-                  color: '#71767b',
-                  fontSize: '14px',
-                  marginBottom: '16px'
-                }}>
-                  {new Date(modalTweetData.createdAt).toLocaleString()}
-                </div>
-              </div>
-            )
-            })()}
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   )
 }

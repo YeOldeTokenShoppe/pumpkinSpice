@@ -187,7 +187,7 @@ const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
       
       // If the model has size, it's loaded and ready
       if (size.x > 0 && size.y > 0 && size.z > 0) {
-        console.log('[OurLadyModel] Model fully loaded and rendered');
+        // console.log('[OurLadyModel] Model fully loaded and rendered');
         hasCalledOnLoad.current = true;
         onLoad();
       }
@@ -529,7 +529,7 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
       <group ref={cloudGroupRef}>
         <DarkClouds 
           onLoad={() => {
-            console.log('[SimpleScene] Clouds loaded');
+            // console.log('[SimpleScene] Clouds loaded');
             setCloudsLoaded(true);
           }}
         />

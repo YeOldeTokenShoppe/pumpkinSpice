@@ -78,14 +78,15 @@ const PlayingCard = ({ frontImage = '/queenOfHearts.png', scale = 1 }) => {
           >
             ← Back
           </button>
-          <BuyWidget
-            client={client}
-            currency={"USD"}
-            chain={defineChain(42161)}
-            amount={"0.002"}
-            tokenAddress={"0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8"}
-            seller={"0x0000000000000000000000000000000000000000"}
-          />
+      <BuyWidget
+      client={client}
+      // image={"https://rl80.com/vvv.jpg"}
+      currency={"USD"}
+      chain={defineChain(8453)}
+      amount={"0.002"}
+      tokenAddress={"0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"}
+      seller={"0x0000000000000000000000000000000000000000"}
+    />
         </div>
       </div>
     </div>

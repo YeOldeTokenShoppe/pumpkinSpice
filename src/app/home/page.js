@@ -14,11 +14,11 @@ import '@/components/RotatingText.css';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
+import { db } from '@/utilities/firebaseClient';
+import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import TextMarquee from '@/components/TextMarquee';
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
-import { db } from '@/utilities/firebaseClient';
-import { collection, query, getDocs, limit, orderBy } from 'firebase/firestore';
 import '@/components/ArrowButton.css';
 import Numerology from '@/components/Numerology';
 import InfinityLoader from '@/components/InfinityLoader';
@@ -58,6 +58,8 @@ function SingleCandleModel({ candleData = null }) {
   const targetRotationRef = useRef(0);
   const currentRotationRef = useRef(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [randomUserImages, setRandomUserImages] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
 
   // Add this component for magical floating particles
@@ -273,12 +275,72 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
   );
 };
 
+  // Fetch random user images from Firestore
+  useEffect(() => {
+    const fetchRandomUserImages = async () => {
+      try {
+        // Get all candles with images (limited for performance)
+        const q = query(collection(db, 'results'), limit(50));
+        const snapshot = await getDocs(q);
+        
+        const images = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          // Only include candles with valid images
+          if (data.image && data.image !== '/defaultAvatar.png' && data.image !== '') {
+            images.push({
+              id: doc.id,
+              image: data.image,
+              username: data.username || 'Anonymous',
+              message: data.message || ''
+            });
+          }
+        });
+        
+        console.log('Fetched user images from Firestore:', images.length);
+        if (images.length > 0) {
+          setRandomUserImages(images);
+          // Select a random image to start
+          setCurrentImageIndex(Math.floor(Math.random() * images.length));
+        }
+      } catch (error) {
+        console.error('Error fetching user images:', error);
+      }
+    };
+    
+    fetchRandomUserImages();
+  }, []);
+  
+  // Rotate through images periodically
+  useEffect(() => {
+    if (randomUserImages.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentImageIndex((prevIndex) => 
+          (prevIndex + 1) % randomUserImages.length
+        );
+      }, 5000); // Change image every 5 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [randomUserImages]);
+
   // Clone the scene to avoid conflicts with other instances
   const clonedScene = React.useMemo(() => {
+    if (!scene) {
+      console.log('Scene not loaded yet');
+      return null;
+    }
+    
     const cloned = scene.clone();
+    console.log('Cloning scene, checking for VCANDLE001 and Label2...');
     
     // Traverse the cloned scene to find and update specific meshes
     cloned.traverse((child) => {
+      // Log all objects to see structure
+      if (child.name) {
+        console.log('Object in scene:', child.name, 'Type:', child.type, 'Parent:', child.parent?.name);
+      }
+      
       if (child.isMesh) {
         console.log('Found mesh:', child.name);
         
@@ -289,8 +351,9 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
           cloned.userData.label1Mesh = child;
         }
         
-        // Setup Label2 for text
-        if (child.name === 'Label2') {
+        // Setup Label2 for text - also check if it's part of VCANDLE001
+        if (child.name === 'Label2' || 
+            (child.parent && child.parent.name === 'VCANDLE001' && child.name === 'Label2')) {
           console.log('Found Label2!');
           // Store the mesh reference on the cloned scene itself
           cloned.userData.label2Mesh = child;
@@ -325,17 +388,55 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
           child.material = child.material.clone();
         }
       }
+      
+      // Also check for VCANDLE001 parent object
+      if (child.name === 'VCANDLE001' || child.name === 'VCandle001' || child.name === 'vcandle001') {
+        console.log('Found VCANDLE001, checking for Label2 child...');
+        child.traverse((subChild) => {
+          if (subChild.isMesh && (subChild.name === 'Label2' || subChild.name === 'label2')) {
+            console.log('Found Label2 under VCANDLE001!');
+            cloned.userData.label2Mesh = subChild;
+            
+            // Apply initial texture
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#d4af37';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2);
+            
+            const testTexture = new THREE.CanvasTexture(canvas);
+            
+            subChild.material = new THREE.MeshStandardMaterial({
+              map: testTexture,
+              side: THREE.DoubleSide,
+              metalness: 0.1,
+              roughness: 0.9
+            });
+          }
+        });
+      }
     });
     
     return cloned;
   }, [scene]);
   
-  // Update Label2 with candle data (image)
+  // Update Label2 with random user image or candle data
   useEffect(() => {
     // Get the label2 mesh from the cloned scene
     const label2 = clonedScene?.userData?.label2Mesh;
     
-    console.log('Updating Label2 with candle data:', candleData);
+    // Use random user image if available, otherwise use candle data
+    const imageData = randomUserImages.length > 0 
+      ? randomUserImages[currentImageIndex]
+      : candleData;
+    
+    console.log('Updating Label2 with image data:', imageData);
     
     if (!label2) return;
     
@@ -350,7 +451,7 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
     context.translate(0, canvas.height);
     context.scale(1, -1); // Flip on Y-axis
     
-    if (candleData && candleData.image) {
+    if (imageData && imageData.image) {
       // Load and display the user's image
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -360,7 +461,7 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
         context.drawImage(img, 0, 0, canvas.width, canvas.height);
         
         // Add username overlay if available
-        if (candleData.username) {
+        if (imageData.username) {
           // Add semi-transparent background for text
           context.fillStyle = 'rgba(0, 0, 0, 0.7)';
           context.fillRect(0, canvas.height - 80, canvas.width, 80);
@@ -379,7 +480,7 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
           context.shadowOffsetX = 2;
           context.shadowOffsetY = 2;
           
-          context.fillText(candleData.username, canvas.width / 2, textY);
+          context.fillText(imageData.username, canvas.width / 2, textY);
           
           // Reset shadow
           context.shadowColor = 'transparent';
@@ -402,12 +503,12 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
       };
       
       img.onerror = () => {
-        console.error('Failed to load candle image:', candleData.image);
+        console.error('Failed to load image:', imageData.image);
         // Fallback to text display
         displayDefaultLabel();
       };
       
-      img.src = candleData.image;
+      img.src = imageData.image;
       
     } else {
       // No candle data, show default
@@ -436,7 +537,7 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
       context.shadowOffsetX = 2;
       context.shadowOffsetY = 2;
       
-      context.fillText('Featured', canvas.width / 2, canvas.height / 2 - 30);
+      context.fillText(imageData?.username || 'Featured', canvas.width / 2, canvas.height / 2 - 30);
       context.fillText('Candle', canvas.width / 2, canvas.height / 2 + 30);
       
       // Reset shadow
@@ -480,7 +581,7 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
     label2.material.roughness = 0.9;
     
     console.log('Texture applied to Label2:', texture, label2);
-  }, [candleData, clonedScene]);
+  }, [candleData, clonedScene, randomUserImages, currentImageIndex]);
   
   // Update Label1 with message
   useEffect(() => {
@@ -605,6 +706,11 @@ const TaxProgressBar = ({ currentBuys = 150 }) => {
     // Continuous slow rotation
     modelRef.current.rotation.y += delta * 0.3;
   });
+  
+  // Don't render if scene isn't loaded yet
+  if (!clonedScene) {
+    return null;
+  }
   
   return (
     <primitive 

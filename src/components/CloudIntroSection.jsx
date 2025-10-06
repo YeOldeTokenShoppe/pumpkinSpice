@@ -18,13 +18,13 @@ const GOLDENRATIO = 1.61803398875;
 
 function BuyWidgetComponent() {
   return (
-    <BuyWidget
+<BuyWidget
       client={client}
-      // image={"https://rl80.com/vvv.jpg"}
+      image={"https://rl80.com/vvv.jpg"}
       currency={"USD"}
-      chain={defineChain(42161)}
+      chain={defineChain(8453)}
       amount={"0.002"}
-      tokenAddress={"0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8"}
+      tokenAddress={"0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"}
       seller={"0x0000000000000000000000000000000000000000"}
     />
   );
@@ -657,7 +657,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                     {/* Playing Card Section */}
                   <div style={{
                     position: "relative",
-                    margin: "40vh auto 4rem auto",
+                    margin: "20vh auto 4rem auto",
                     width: isMobile ? "90%" : "80%",
                     maxWidth: "1400px",
                     display: "grid",
