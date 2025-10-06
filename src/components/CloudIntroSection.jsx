@@ -430,7 +430,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
         }}>
           {/* Animated Drop-In Title */}
           <DropInTitle
-            lines={["PROSPER80", "FOR ALL", "HUMAN80!"]}
+            lines={["BEHOLD!", "OUR LADY!", "HOLD RL80!"]}
             colors={["#d4af37", "#f4e4c1", "#ffd700"]}
             fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
             isMobile={isMobile}
@@ -658,13 +658,13 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                   <div style={{
                     position: "relative",
                     margin: "40vh auto 4rem auto",
-                    width: "80%",
+                    width: isMobile ? "90%" : "80%",
                     maxWidth: "1400px",
                     display: "grid",
-                    gridTemplateColumns: "minmax(0, 0.4fr) minmax(0, 0.6fr)", // 40% card, 60% text
-                    gap: "3rem",
+                    gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.4fr) minmax(0, 0.6fr)", // Stack on mobile, 40% card, 60% text on desktop
+                    gap: isMobile ? "2rem" : "3rem",
                     alignItems: "center",
-                    padding: '3rem 2rem',
+                    padding: isMobile ? '2rem 1.5rem' : '3rem 2rem',
                     background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
                     backdropFilter: 'blur(12px)',
                     borderRadius: '25px',
@@ -676,17 +676,20 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                     {/* Left Column - Playing Card */}
                     <section className="card-section" style={{ 
                       position: "relative",
-                      height: "35rem",
+                      height: isMobile ? "auto" : "35rem",
+                      minHeight: isMobile ? "30rem" : "auto",
                       overflow: "visible",
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'center',
                       alignItems: 'center',
                       zIndex: 100,
-                      pointerEvents: 'auto'
+                      pointerEvents: 'auto',
+                      order: isMobile ? 2 : 1, // Move card below text on mobile
+                      paddingBottom: isMobile ? '2rem' : '0'
                     }}>
                       <div style={{ position: 'relative', zIndex: 101 }}>
-                        <PlayingCard frontImage="/queenOfHearts.png" scale={0.9} />
+                        <PlayingCard frontImage="/queenOfHearts.png" scale={isMobile ? 0.7 : 0.9} />
                       </div>
                       {/* BUY Button - Toggles card flip */}
                       <button
@@ -708,9 +711,9 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                           }
                         }}
                         style={{
-                          marginTop: '2rem',
-                          padding: '1rem 3rem',
-                          fontSize: '1.4rem',
+                          marginTop: isMobile ? '1.5rem' : '2rem',
+                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
+                          fontSize: isMobile ? '1.2rem' : '1.4rem',
                           fontWeight: 'bold',
                           fontFamily: "'Fjalla One', sans-serif",
                           textTransform: 'uppercase',
@@ -742,9 +745,9 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                     </section>
                     {/* Right Column - Text Content */}
                    <div style={{
-              padding: '0 1rem',
+              padding: isMobile ? '0 0.5rem' : '0 1rem',
               color: '#ffffff',
-              minHeight: '500px', // Match the candle container height
+              minHeight: isMobile ? '300px' : '500px', // Match the candle container height
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -753,20 +756,21 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
               boxSizing: 'border-box', // Include padding in width calculation
               overflow: 'hidden', // Prevent content overflow
               position: 'relative',
-              marginTop: '-3rem'
+              marginTop: isMobile ? '0' : '-3rem',
+              order: isMobile ? 1 : 2 // Move text above card on mobile
             }}>
              
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}> Fluke jib scourge oF</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}> Fluke jib scourge oF</h1>
               <p style={{
                 lineHeight: 1.2,
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
                 letterSpacing: '0.02em',
-                fontSize: '1.5rem',
+                fontSize: isMobile ? '1.1rem' : '1.5rem',
                 textAlign: 'center',
                 marginBottom: '3.5rem',
                 width: '80%',
@@ -900,7 +904,7 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
         }}>
           {/* Animated Drop-In Title */}
           <DropInTitle
-            lines={["SHE", "SELLS", "SANCTUARY!"]}
+            lines={["PROSPER80", "FOR ALL", "HUMAN80!"]}
             colors={["#d4af37", "#f4e4c1", "#ffd700"]}
             fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
             isMobile={isMobile}
@@ -1165,39 +1169,6 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
                       </div>
                     )}
                     
-                    {/* BuyWidget for the first card (Faith) - takes full card */}
-                    {cards[0].id === 0 && (
-                      <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        padding: '15px',
-                        borderRadius: '20px',
-                        background: 'linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        zIndex: 10,
-                        overflow: 'hidden',
-                        boxSizing: 'border-box',
-                      }}>
-                        <div style={{
-                          width: '100%',
-                          height: '100%',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          maxWidth: '100%',
-                          maxHeight: '100%',
-                        }}>
-                          <BuyWidgetComponent />
-                        </div>
-                      </div>
-                    )}
-                    
                     {/* Quote if available */}
                     {cards[0].backQuote && (
                       <p style={{
@@ -1221,7 +1192,9 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
         {/* Second row - Two cards */}
         <div style={{
           display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'center',
+          alignItems: isMobile ? 'center' : 'flex-start',
           gap: isMobile ? '2rem' : '3rem',
           width: '100%',
         }}>
@@ -1492,13 +1465,13 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
   <div style={{
                     position: "relative",
                     margin: "4rem auto 40vh auto",
-                    width: "80%",
+                    width: isMobile ? "90%" : "80%",
                     maxWidth: "1400px",
                     display: "grid",
-                    gridTemplateColumns: "minmax(0, 0.6fr) minmax(0, 0.4fr)", // 60% hands scene, 40% text
-                    gap: "3rem",
+                    gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.6fr) minmax(0, 0.4fr)", // Stack on mobile, 60% hands scene, 40% text on desktop
+                    gap: isMobile ? "2rem" : "3rem",
                     alignItems: "center",
-                    padding: '3rem 2rem',
+                    padding: isMobile ? '2rem 1.5rem' : '3rem 2rem',
                     background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
                     backdropFilter: 'blur(12px)',
                     borderRadius: '25px',
@@ -1517,9 +1490,9 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
                
                     {/* Right Column - Text Content */}
                    <div style={{
-              padding: '0 1rem',
+              padding: isMobile ? '0 0.5rem' : '0 1rem',
               color: '#ffffff',
-              minHeight: '500px', // Match the candle container height
+              minHeight: isMobile ? '300px' : '500px', // Match the candle container height
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -1528,20 +1501,20 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
               boxSizing: 'border-box', // Include padding in width calculation
               overflow: 'hidden', // Prevent content overflow
               position: 'relative',
-              marginTop: '-3rem'
+              marginTop: isMobile ? '0' : '-3rem'
             }}>
              
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}> Fluke jib scourge oF</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}> Fluke jib scourge oF</h1>
               <p style={{
                 lineHeight: 1.2,
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
                 letterSpacing: '0.02em',
-                fontSize: '1.5rem',
+                fontSize: isMobile ? '1.1rem' : '1.5rem',
                 textAlign: 'center',
                 marginBottom: '3.5rem',
                 width: '80%',

@@ -4,8 +4,10 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useState, useRef, memo, useMemo } from 'react';
 import { Cloud, Clouds, useGLTF, useAnimations, useHelper, OrbitControls, Text } from '@react-three/drei';
 
-// Preload the model immediately when module loads
+// Preload the models immediately when module loads
 useGLTF.preload('/models/ourlady_rider6.glb');
+useGLTF.preload('/models/angelEmoji.glb');
+useGLTF.preload('/models/devilEmoji2.glb');
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import DarkClouds from '@/components/Clouds';
@@ -174,6 +176,23 @@ const TickerCurve = ({ scrollY, scale = 1, position = [0, 0, -40] }) => {
 const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
   const { scene } = useGLTF('/models/ourlady_rider6.glb');
   const groupRef = useRef();
+  const hasCalledOnLoad = useRef(false);
+  
+  // Use useFrame to detect when model is actually rendered
+  useFrame(() => {
+    if (scene && onLoad && !hasCalledOnLoad.current && groupRef.current) {
+      // Check if the model is actually visible in the scene
+      const box = new THREE.Box3().setFromObject(groupRef.current);
+      const size = box.getSize(new THREE.Vector3());
+      
+      // If the model has size, it's loaded and ready
+      if (size.x > 0 && size.y > 0 && size.z > 0) {
+        console.log('[OurLadyModel] Model fully loaded and rendered');
+        hasCalledOnLoad.current = true;
+        onLoad();
+      }
+    }
+  });
   
   useEffect(() => {
     if (scene) {
@@ -201,17 +220,8 @@ const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
           }
         }
       });
-      
-      // Signal that model is loaded - add small delay to ensure textures are ready
-      if (onLoad) {
-        // console.log('[OurLadyModel] Model loaded, signaling completion');
-        // Give textures time to fully load
-        setTimeout(() => {
-          onLoad();
-        }, 100);
-      }
     }
-  }, [scene, modelRef, onLoad]);
+  }, [scene, modelRef]);
   
   // Animate based on scroll
   useFrame(() => {
@@ -247,6 +257,23 @@ const AngelModel = memo(({ isMobile, scrollY, onLoad }) => {
   const { scene, animations } = useGLTF('/models/angelEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const groupRef = useRef();
+  const hasCalledOnLoad = useRef(false);
+  
+  // Use useFrame to detect when model is actually rendered
+  useFrame(() => {
+    if (scene && onLoad && !hasCalledOnLoad.current && groupRef.current) {
+      // Check if the model is actually visible in the scene
+      const box = new THREE.Box3().setFromObject(groupRef.current);
+      const size = box.getSize(new THREE.Vector3());
+      
+      // If the model has size, it's loaded and ready
+      if (size.x > 0 && size.y > 0 && size.z > 0) {
+        console.log('[AngelModel] Model fully loaded and rendered');
+        hasCalledOnLoad.current = true;
+        onLoad();
+      }
+    }
+  });
   
   useEffect(() => {
     if (scene) {
@@ -256,8 +283,6 @@ const AngelModel = memo(({ isMobile, scrollY, onLoad }) => {
           child.receiveShadow = false;
         }
       });
-      // Notify that angel model is loaded
-      if (onLoad) onLoad();
     }
     // Play animations
     if (actions) {
@@ -307,6 +332,23 @@ const DevilModel = memo(({ isMobile, scrollY, onLoad }) => {
   const { scene, animations } = useGLTF('/models/devilEmoji2.glb');
   const { actions } = useAnimations(animations, scene);
   const groupRef = useRef();
+  const hasCalledOnLoad = useRef(false);
+  
+  // Use useFrame to detect when model is actually rendered
+  useFrame(() => {
+    if (scene && onLoad && !hasCalledOnLoad.current && groupRef.current) {
+      // Check if the model is actually visible in the scene
+      const box = new THREE.Box3().setFromObject(groupRef.current);
+      const size = box.getSize(new THREE.Vector3());
+      
+      // If the model has size, it's loaded and ready
+      if (size.x > 0 && size.y > 0 && size.z > 0) {
+        console.log('[DevilModel] Model fully loaded and rendered');
+        hasCalledOnLoad.current = true;
+        onLoad();
+      }
+    }
+  });
   
   useEffect(() => {
     if (scene) {
@@ -316,8 +358,6 @@ const DevilModel = memo(({ isMobile, scrollY, onLoad }) => {
           child.receiveShadow = false;
         }
       });
-      // Notify that devil model is loaded
-      if (onLoad) onLoad();
     }
     // Play animation if available
     if (actions && Object.keys(actions).length > 0) {
@@ -442,15 +482,16 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
   const [modelLoaded, setModelLoaded] = useState(false);
   const [angelLoaded, setAngelLoaded] = useState(false);
   const [devilLoaded, setDevilLoaded] = useState(false);
+  const [cloudsLoaded, setCloudsLoaded] = useState(false);
   
-  // Notify when all models are loaded
+  // Notify when all models and clouds are loaded
   useEffect(() => {
-    const allLoaded = modelLoaded && (isMobile || (angelLoaded && devilLoaded));
+    const allLoaded = modelLoaded && angelLoaded && devilLoaded && cloudsLoaded;
     if (allLoaded && onAssetsLoaded) {
-      // console.log('[SimpleScene] All models loaded, notifying parent');
+      console.log('[SimpleScene] All 3 models + clouds loaded, notifying parent');
       onAssetsLoaded();
     }
-  }, [modelLoaded, angelLoaded, devilLoaded, isMobile, onAssetsLoaded]);
+  }, [modelLoaded, angelLoaded, devilLoaded, cloudsLoaded, onAssetsLoaded]);
   
   // Animate clouds with scroll
   useFrame(() => {
@@ -486,8 +527,12 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
       
       {/* Add some heavenly clouds that move with scroll */}
       <group ref={cloudGroupRef}>
-        <DarkClouds />
- 
+        <DarkClouds 
+          onLoad={() => {
+            console.log('[SimpleScene] Clouds loaded');
+            setCloudsLoaded(true);
+          }}
+        />
       </group>
       
       {/* Our Lady Model */}
@@ -521,23 +566,33 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
       
       {/* Swooping emoji instances - appear BEHIND HTML divs */}
       <Suspense fallback={null}>
-        <SwoopingAngelEmojiSimple 
-          id="swoop-angel-behind-1"
-          scrollThreshold={1900}
-          exitThreshold={100}  // Exit if scrolling back up
-          forwardExitThreshold={2500}  // Exit at 1150px forward, before overlay appears at 1200px
-          swoopFrom="left"
-          finalPosition={[isMobile ? 8 : 30, -5, 5]}
-          isMobile={isMobile}
-        />
-        
-        <SwoopingDevilEmojiSimple 
-          id="swoop-devil-behind-1"
-          scrollThreshold={9000}
-          swoopFrom="right"
-          finalPosition={[isMobile ? 8 : 15, -5, 5]}
-          isMobile={isMobile}
-        />
+        <group>
+          {/* Add dedicated lighting for the swooping emojis */}
+          <pointLight position={[0, 5, 10]} intensity={3} />
+          <pointLight position={[-10, 0, 10]} intensity={2} />
+          
+          <SwoopingAngelEmojiSimple 
+            id="swoop-angel-behind-1"
+            scrollThreshold={2290}
+            exitThreshold={400}  // Exit if scrolling back up
+            forwardExitThreshold={3200}  // Exit at 900px forward
+            swoopFrom="left"
+            finalPosition={[
+              isMobile ? -4 : -8,  // X: Mobile closer to center | Desktop further left
+              isMobile ? -6 : -8,  // Y: Mobile higher | Desktop lower
+              isMobile ? 6 : 4     // Z: Mobile further back | Desktop closer
+            ]}
+            isMobile={isMobile}
+          />
+          
+          {/* <SwoopingDevilEmojiSimple 
+            id="swoop-devil-behind-1"
+            scrollThreshold={9000}
+            swoopFrom="right"
+            finalPosition={[isMobile ? 8 : 15, -5, 5]}
+            isMobile={isMobile}
+          /> */}
+        </group>
       </Suspense>
       
       {/* Add bloom effect if enabled */}

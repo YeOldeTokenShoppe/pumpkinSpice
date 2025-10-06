@@ -130,6 +130,12 @@ const PalmsScene = ({ onLoadingChange }) => {
   const clockRef = useRef(null);
   // Cinematic states removed for production
   const [isSceneLoadingInternal, setIsSceneLoadingInternal] = useState(true); // Loading state
+  const [modelsLoadState, setModelsLoadState] = useState({
+    palm: false,
+    sign: false,
+    sun: false,
+    car: false
+  });
   
   // Wrapper to update both internal state and parent
   const setIsSceneLoading = useCallback((loading) => {
@@ -140,6 +146,17 @@ const PalmsScene = ({ onLoadingChange }) => {
   }, [onLoadingChange]);
   
   const isSceneLoading = isSceneLoadingInternal; // Use internal state for reading
+  
+  // Check if all models are loaded
+  useEffect(() => {
+    const allLoaded = modelsLoadState.palm && modelsLoadState.sign && 
+                      modelsLoadState.sun && modelsLoadState.car;
+    
+    if (allLoaded) {
+      console.log('[PalmTreeDrive] All 4 models loaded, hiding loader');
+      setIsSceneLoading(false);
+    }
+  }, [modelsLoadState, setIsSceneLoading]);
   // Cinematic reverse removed
   const scrollCameraActive = true; // Scroll camera always active
   const [currentCameraStage, setCurrentCameraStage] = useState(0); // Track which camera position we're at
@@ -487,7 +504,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         console.log('Loading fallback triggered - forcing scene to show');
         setIsSceneLoading(false);
       }
-    }, 3000); // 3 seconds fallback
+    }, 8000); // 8 seconds fallback to match home3
 
     // Noise shader function
     const noise = `
@@ -865,10 +882,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     loadingManager.onLoad = () => {
       console.log('All assets loaded via LoadingManager');
-      // Wait a bit to ensure everything is rendered
-      setTimeout(() => {
-        setIsSceneLoading(false);
-      }, 500);
+      // Don't hide loader here - wait for individual model callbacks
     };
     
     loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
@@ -877,11 +891,11 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     loadingManager.onError = (url) => {
       console.error(`Error loading: ${url}`);
-      // Don't let errors prevent scene from showing
-      // Force complete after error
-      setTimeout(() => {
-        setIsSceneLoading(false);
-      }, 1000);
+      // Mark the failed model as loaded anyway to not block the scene
+      if (url.includes('palm2')) setModelsLoadState(prev => ({ ...prev, palm: true }));
+      if (url.includes('sign2')) setModelsLoadState(prev => ({ ...prev, sign: true }));
+      if (url.includes('synthSunset')) setModelsLoadState(prev => ({ ...prev, sun: true }));
+      if (url.includes('lambo5k3')) setModelsLoadState(prev => ({ ...prev, car: true }));
     };
     
     // Set up DRACO loader for compressed models
@@ -900,6 +914,10 @@ const PalmsScene = ({ onLoadingChange }) => {
     // Load Palm Tree GLB with error handling
     loader.load('/models/palm2.glb', (gltf) => {
       const palmModel = gltf.scene;
+      
+      // Mark palm model as loaded
+      console.log('[PalmTreeDrive] Palm model loaded');
+      setModelsLoadState(prev => ({ ...prev, palm: true }));
       
       // Debug: Log model structure
       // console.log('=== Palm Tree Model Debug ===');
@@ -1072,6 +1090,10 @@ const PalmsScene = ({ onLoadingChange }) => {
     loader.load('/models/sign2.glb', (gltf) => {
       const signModel = gltf.scene;
       
+      // Mark sign model as loaded
+      console.log('[PalmTreeDrive] Sign model loaded');
+      setModelsLoadState(prev => ({ ...prev, sign: true }));
+      
       // Find the first mesh in the sign model
       let signMesh = null;
       signModel.traverse((child) => {
@@ -1197,6 +1219,10 @@ const PalmsScene = ({ onLoadingChange }) => {
     loader.load('/models/synthSunset.glb', (gltf) => {
       const sun = gltf.scene;
       
+      // Mark sun model as loaded
+      console.log('[PalmTreeDrive] Sun model loaded');
+      setModelsLoadState(prev => ({ ...prev, sun: true }));
+      
       // Position and scale the sun
       sun.position.set(190, -110, 100);
       sun.scale.set(250, 250, 250);
@@ -1251,6 +1277,10 @@ const PalmsScene = ({ onLoadingChange }) => {
     // Load car model (now includes UFO)
     loader.load('/models/lambo5k3.glb', (gltf) => {
       const carScene = gltf.scene;
+      
+      // Mark car model as loaded
+      console.log('[PalmTreeDrive] Car/UFO model loaded');
+      setModelsLoadState(prev => ({ ...prev, car: true }));
       
       // Enhanced logging for model contents
       // console.log('=== Model Loading Debug ===');

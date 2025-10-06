@@ -15,7 +15,7 @@ import dynamic from "next/dynamic";
 const lightningContext = createContext();
 
 // Define the component first
-const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, ...props }, ref) => {
+const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, onLoad, ...props }, ref) => {
   // Load texture only on client side
   const [cloudTexture, setCloudTexture] = useState(null);
   
@@ -28,8 +28,13 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, .
     const loader = new THREE.TextureLoader();
     loader.load("/cloud.png", (texture) => {
       setCloudTexture(texture);
+      // Notify that clouds are ready
+      if (onLoad) {
+        console.log('[DarkClouds] Texture loaded, clouds ready');
+        onLoad();
+      }
     });
-  }, []);
+  }, [onLoad]);
 
   const shake = shakeRef || useRef(); // Use passed shakeRef or create local one
 

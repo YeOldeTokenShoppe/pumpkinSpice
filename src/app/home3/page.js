@@ -901,8 +901,8 @@ function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
 
 // Preload critical 3D models to ensure they're ready before scene reveals
 useGLTF.preload('/models/ourlady_rider6.glb');
-// useGLTF.preload('/models/angelEmoji8.glb');
-// useGLTF.preload('/models/devilEmoji5.glb');
+useGLTF.preload('/models/angelEmoji.glb');
+useGLTF.preload('/models/devilEmoji2.glb');
 
 export default function Home3() {
   const router = useRouter();
@@ -2055,24 +2055,13 @@ export default function Home3() {
         zIndex: 0,
         pointerEvents: 'none',
       }}>
-        <Suspense fallback={
-          <div style={{
-            width: '100%',
-            height: '100%',
-            background: 'linear-gradient(to bottom, #87CEEB, #98D8E8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <p style={{ color: 'white' }}>Loading...</p>
-          </div>
-        }>
+        <Suspense fallback={null}>
           <Simple3DScene 
             enabled={true} 
             isMobile={isMobile} 
             scrollY={scrollY} 
             onLoadComplete={() => {
-              // console.log('[Home3] Simple3DScene loaded, hiding loader');
+              console.log('[Home3] Simple3DScene onLoadComplete called');
               setIsSceneLoading(false);
             }}
           />
