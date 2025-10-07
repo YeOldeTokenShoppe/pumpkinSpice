@@ -3,20 +3,22 @@ import { useRef, useState, useEffect, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Box } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import { db } from '@/utilities/firebaseClient'
 import { collection, query, getDocs, limit } from 'firebase/firestore'
 import { m } from 'framer-motion'
 
 
-function HandsModel({ mousePosition }) {
-  const gltf = useGLTF('/models/hands.glb')
+function HandsModel({ mousePosition, scrollY }) {
+  const gltf = useGLTF('/models/hands2.glb')
   const rightHandRef = useRef()
   const leftHandRef = useRef()
   const emoji1Ref = useRef()
   const emoji2Ref = useRef()
   const emoji3Ref = useRef()
   const emoji4Ref = useRef()
+  const emoji5Ref = useRef()
   const iconLikeRef = useRef()
   const iconLoveRef = useRef()
   const iconText1Ref = useRef()
@@ -26,6 +28,9 @@ function HandsModel({ mousePosition }) {
   const candleLabel2Ref = useRef()
   const [randomUserImages, setRandomUserImages] = useState([])
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [rotationProgress, setRotationProgress] = useState(0)
+  const [hasReachedSection, setHasReachedSection] = useState(false)
+  const animationStartTime = useRef(null)
   const { camera } = useThree()
   
 
@@ -150,9 +155,13 @@ function HandsModel({ mousePosition }) {
           emoji4Ref.current = child
           // console.log('✅ Found Emoji-4:', child.name, 'Position:', child.position)
         }
+         if (child.name === 'Emoji-5' || child.name === 'emoji-5' || child.name === 'Emoji5') {
+          emoji5Ref.current = child
+          // console.log('✅ Found Emoji-5:', child.name, 'Position:', child.position)
+        }
         
         // Find icon objects
-        if (child.name === 'Icon-like' || child.name === 'icon-like' || child.name === 'IconLike') {
+        if (child.name === 'Icon-text3' || child.name === 'icon-like' || child.name === 'IconLike') {
           iconLikeRef.current = child
           // console.log('✅ Found Icon-like:', child.name, 'Position:', child.position)
         }
@@ -175,6 +184,23 @@ function HandsModel({ mousePosition }) {
         if (child.name === 'Icon-star' || child.name === 'icon-star' || child.name === 'IconStar') {
           iconStarRef.current = child
           // console.log('✅ Found Icon-star:', child.name, 'Position:', child.position)
+        }
+        
+        // Fix Backdrop transparency issue with bloom
+        if (child.name === 'Backdrop' || child.name === 'backdrop' || child.name.toLowerCase().includes('backdrop')) {
+          if (child.isMesh && child.material) {
+            console.log('Found Backdrop mesh, fixing transparency for bloom')
+            // Set the material to not be affected by post-processing
+            child.material.toneMapped = false
+            // Ensure proper transparency handling
+            child.material.transparent = true
+            child.material.alphaTest = 0.9 // Discard pixels below 50% opacity
+            child.material.depthWrite = false // Prevent depth writing issues
+            // Remove any emissive properties that might interact with bloom
+            child.material.emissive = new THREE.Color(0x000000)
+            child.material.emissiveIntensity = 0
+            child.material.needsUpdate = true
+          }
         }
       })
       
@@ -262,8 +288,46 @@ function HandsModel({ mousePosition }) {
     }
   }, [currentImageIndex, randomUserImages])
 
+  // Track when user reaches the target scroll position
+  useEffect(() => {
+    const targetScroll = 4700 // Trigger slightly before 4950 to account for viewport
+    
+    if (scrollY >= targetScroll && !hasReachedSection) {
+      setHasReachedSection(true)
+      // Start animation after 2 second delay
+      setTimeout(() => {
+        animationStartTime.current = Date.now()
+      }, 2000)
+    }
+  }, [scrollY, hasReachedSection])
+
+  // Calculate rotation based on animation progress
+  const calculateRotation = () => {
+    const initialRotation = -Math.PI * 0.8
+    
+    // If animation hasn't started yet, keep initial rotation
+    if (!animationStartTime.current) {
+      return initialRotation
+    }
+    
+    // Interpolate from initial rotation to 0 based on animation progress
+    const rotation = initialRotation * (1 - rotationProgress)
+    
+    return rotation
+  }
+
    // Update the useFrame in HandsModel to properly handle updates
 useFrame((state) => {
+  // Animate rotation progress
+  if (animationStartTime.current) {
+    const elapsed = Date.now() - animationStartTime.current
+    const duration = 2000 // 2 seconds for rotation animation
+    const progress = Math.min(elapsed / duration, 1)
+    
+    // Use easing function for smooth animation
+    const easedProgress = 1 - Math.pow(1 - progress, 3) // Cubic ease-out
+    setRotationProgress(easedProgress)
+  }
   
   // Add floating animation to emojis
   const time = state.clock.getElapsedTime()
@@ -280,6 +344,9 @@ useFrame((state) => {
   }
   if (emoji4Ref.current && !emoji4Ref.current.userData.initialY) {
     emoji4Ref.current.userData.initialY = emoji4Ref.current.position.y
+  }
+    if (emoji5Ref.current && !emoji5Ref.current.userData.initialY) {
+    emoji5Ref.current.userData.initialY = emoji5Ref.current.position.y
   }
   
   // Store initial positions for icons
@@ -355,6 +422,19 @@ useFrame((state) => {
     emoji4Ref.current.position.z = emoji4Ref.current.userData.initialZ + Math.sin(time * 1.3 + 3) * 1.1
     emoji4Ref.current.rotation.z = Math.sin(time * 2.0 + 3) * 0.35
     emoji4Ref.current.rotation.x = Math.cos(time * 1.9 + 3) * 0.18
+  }
+
+  if (emoji5Ref.current) {
+    if (!emoji5Ref.current.userData.initialX) {
+      emoji5Ref.current.userData.initialX = emoji5Ref.current.position.x
+      emoji5Ref.current.userData.initialZ = emoji5Ref.current.position.z
+    }
+    
+    emoji5Ref.current.position.y = emoji5Ref.current.userData.initialY + Math.sin(time * 2.3 + 3) * 1.9
+    emoji5Ref.current.position.x = emoji5Ref.current.userData.initialX + Math.cos(time * 1.7 + 3) * 0.9
+    emoji5Ref.current.position.z = emoji5Ref.current.userData.initialZ + Math.sin(time * 1.3 + 3) * 1.1
+    emoji5Ref.current.rotation.z = Math.sin(time * 2.0 + 3) * 0.35
+    emoji5Ref.current.rotation.x = Math.cos(time * 1.9 + 3) * 0.18
   }
   
   // Icon animations with unique patterns
@@ -475,10 +555,36 @@ const targetY = original.y + (mousePosition.y * movementScale * 80)
 })
 
 
+// Track when user reaches the target scroll position
+useEffect(() => {
+  const targetScroll = 4700 // Trigger slightly before 4950 to account for viewport
+  
+  if (scrollY >= targetScroll && !hasReachedSection) {
+    setHasReachedSection(true)
+    // Start animation after 2 second delay
+    setTimeout(() => {
+      animationStartTime.current = Date.now()
+    }, 2000)
+  }
+}, [scrollY, hasReachedSection])
+
+// Animate rotation progress
+useFrame(() => {
+  if (animationStartTime.current) {
+    const elapsed = Date.now() - animationStartTime.current
+    const duration = 2000 // 2 seconds for rotation animation
+    const progress = Math.min(elapsed / duration, 1)
+    
+    // Use easing function for smooth animation
+    const easedProgress = 1 - Math.pow(1 - progress, 3) // Cubic ease-out
+    setRotationProgress(easedProgress)
+  }
+})
+
 // Replace this part in your return statement
 return (
   <>
-    <primitive object={gltf.scene} scale={[0.5, 0.5, 0.5]}/>
+    <primitive object={gltf.scene} scale={[0.5, 0.5, 0.5]} rotation={[0, calculateRotation(), 0]} />
   </>
 )
 }
@@ -506,6 +612,19 @@ function LoadingBox() {
 
 export default function HandsGLTFScene() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [scrollY, setScrollY] = useState(0)
+  
+  // Add scroll listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY)
+    }
+    
+    window.addEventListener('scroll', handleScroll)
+    handleScroll() // Set initial scroll position
+    
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
   
   return (
     <div style={{ 
@@ -536,7 +655,7 @@ export default function HandsGLTFScene() {
         <pointLight position={[-10, -10, -10]} intensity={1} />
         
         <Suspense fallback={<LoadingBox />}>
-          <HandsModel mousePosition={mousePosition} />
+          <HandsModel mousePosition={mousePosition} scrollY={scrollY} />
         </Suspense>
         
         <MouseTracker setMousePosition={setMousePosition} />
@@ -547,6 +666,17 @@ export default function HandsGLTFScene() {
           maxPolarAngle={0}
           minPolarAngle={Math.PI / 2}
         />
+        
+        {/* Post-processing effects */}
+        <EffectComposer>
+          <Bloom 
+            intensity={0.2}
+            luminanceThreshold={0.3}
+            luminanceSmoothing={0.9}
+            mipmapBlur
+            radius={0.7}
+          />
+        </EffectComposer>
       </Canvas>
       
       {/* Frame Overlay */}

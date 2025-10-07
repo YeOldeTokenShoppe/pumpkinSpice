@@ -120,7 +120,7 @@ export default function EmojiOverlay({ scrollY }) {
           {/* Devil that pops up from bottom near end of page */}
           <SwoopingDevilEmojiSimple 
             id="overlay-devil-end"
-            scrollThreshold={6100}  // Near end of page
+            scrollThreshold={6000}  // Near end of page
             exitThreshold={-100}  // Don't exit on scroll back - let sequence complete
             forwardExitThreshold={null}  // Will be chased away by angel
             chaseExitThreshold={null}  // Don't use scroll-based chase, use timer instead

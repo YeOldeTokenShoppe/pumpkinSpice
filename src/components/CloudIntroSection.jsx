@@ -12,6 +12,7 @@ import { createWallet } from "thirdweb/wallets";
 import { client } from "../client";
 import PlayingCard from '@/components/PlayingCard';
 import HandsGLTFScene from '@/components/HandsGLTFScene';
+import { FAQSection } from '@/components/FAQSection';
 
 
 const GOLDENRATIO = 1.61803398875;
@@ -167,50 +168,53 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
     {
       id: 0,
       frontTitle: "Faith",
-      frontDescription: "Bridging sacred wisdom with smart contracts for financial salvation",
-      backTitle: "Sacred Mission",
-      backContent: "Our Lady of Perpetual Profit guides the faithful through:",
+      frontDescription: "She is your guardian of good vibes",
+      backTitle: "Sacred Covenant",
+      backContent: "Upholding the highest ideals of the cryptocurency ethos:",
       backList: [
         "Deflationary tokenomics with burn incentives",
         "Buybacks to support price stability",
         "Liquidity building protocal",
-        "Vigilant and generous patronage of the creative faithful with #RL80 hashtags",
+         "Built on BASE for low fees and high speed"
       ],
+      backStats: {
+        supply: "80,000,000,000 $RL80",
+        tax: "4% Buy/Sell",
+        liquidity: "Burned"
+      },
+
+    
       backQuote: "Where faith meets fortune, miracles happen.",
-      backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/vvv.jpg")'
+      backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/lowrider.jpg")'
     },
     {
       id: 1,
       frontTitle: "Hope",
-      frontDescription: "The Holy Trinity of digital assets - liquid80, util80, and integr80",
+      frontDescription: "Irrational markets call for irrational strategies",
       backTitle: "The Sacred Trinity of $RL80",
       backContent: "Experience the divine trifecta of cryptocurrency innovation:",
       backList: [
         "Liquid80: Deep liquidity pools ensuring smooth trades",
-        "Util80: Light utility via on-chain dedications",
-        "Integr80: verified contract",
-        "Built on BASE for low fees and high speed"
+        "Util80: Light utility via on-chain dedications are",
+        "Commun80: every transaction and devotion enriches all holders",
       ],
-      backStats: {
-        supply: "80,000,000,000 $RL80",
-        tax: "0% Buy/Sell",
-        liquidity: "Burned"
-      },
             backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")'
 
     },
     {
       id: 2,
       frontTitle: "Charity",
-      frontDescription: "Your path to enlightenment and perpetual profit in the new economy",
+      frontDescription: "From mimes to memes, she is a patron of the arts and worthy causes",
       backTitle: "Give and Ye Shall Receive",
-      backContent: "Join the community of luminaries:",
+      backContent: "Manifesting prosperity through devout liquidity and generosity:",
       backList: [
-        "Access to exclusive content and features",
-       
-        "Members only chat and support",
 
-        "Elite status"
+              "Ensuring sufficient liquidity",
+           "Rewards for exceptionally creative posts tagged #RL80",
+       
+        "Coin fountain as community-driven charity fund",
+
+    
       ],
       backQuote: "Where two or three gather in profit, there I am with them.",
       backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/mosaic.jpg")'
@@ -523,7 +527,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
               textShadow: '0 0 20px rgba(212,175,55,0.5)',
               fontFamily: "'Fjalla One', sans-serif",
             }}>
-              <AnimatedCounter target={8888} suffix="+" />
+              <AnimatedCounter target={8} suffix="+" />
             </div>
             <div style={{
               fontSize: '1.1rem',
@@ -561,7 +565,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
               textShadow: '0 0 20px rgba(212,175,55,0.5)',
               fontFamily: "'Fjalla One', sans-serif",
             }}>
-              <AnimatedCounter target={1.8} suffix="M" prefix="$" />
+              <AnimatedCounter target={4.8} suffix="K" prefix="$" />
             </div>
             <div style={{
               fontSize: '1.1rem',
@@ -599,7 +603,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
               textShadow: '0 0 20px rgba(212,175,55,0.5)',
               fontFamily: "'Fjalla One', sans-serif",
             }}>
-              <AnimatedCounter target={18} suffix="%" />
+              <AnimatedCounter target={0} suffix="%" />
             </div>
             <div style={{
               fontSize: '1.1rem',
@@ -763,21 +767,42 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}> Fluke jib scourge oF</h1>
+              <h1 style={{fontFamily: 'UnifrakturMaguntia, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: '#d4af37'}}>She Sells Sanctuary</h1>
               <p style={{
                 lineHeight: 1.2,
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
                 letterSpacing: '0.02em',
-                fontSize: isMobile ? '1.1rem' : '1.5rem',
+                fontSize: isMobile ? '1.1rem' : '1.3rem',
                 textAlign: 'center',
                 marginBottom: '3.5rem',
-                width: '80%',
+                width: '100%',
                 maxWidth: '600px', // Add max width for better readability
               }}>
-Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot Shiver me timbers gangplank crack Jennys tea cup ballast Blimey lee snow crow's nest rutters. Fluke jib scourge of the seven seas boatswain schooner gaff booty Jack Tar transom spirits.       
-              </p>
+<span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
+A timeless icon for the trustless economy
+</span>
+Whether you need a Hail Mary for hard times, or simply sanctuary in the dark realm of DeFi, <b>RL80</b> is a token to believe in. RL80 is a token backed by an open-source contract that requires no leaps of faith. Examine it here →  <a href="https://base.blockscout.com/address/0x1234567890123456789012345678901234567890/contracts" target="_blank" rel="noopener noreferrer" style={{ color: '#d4af37', textDecoration: 'none' }}> <span style={{
+
+              position: 'relative',
+              top: '2px',
+              fontSize: '20px',
+              // backgroundColor: '#1a1a1a',
+              padding: '0 4px',
+            }}>📜</span>
+            <span style={{
+              position: 'relative',
+              // top: '5px',
+              marginLeft: '-12px',
+              fontSize: '10px',
+              // backgroundColor: '#1a1a1a',
+              padding: '0 4px',
+            }}>✅</span></a><br/><br/>
+RL80 includes a higher, trust-optional layer of sacred principles, including <b><i>prosperity for all humanity</i></b> and <b><i>liquidity in perpetuity</i></b>.
+If these ideals speak to you, you may wish to test your faith with a small and cautious purchase of the RL80 token. 
+
+</p>
                   {/* Contract Address Container */}
                 <div style={{
                   flex: '0 0 auto',
@@ -792,7 +817,7 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
                   alignItems: 'baseline',
                   justifyContent: 'center',
                   gap: '1rem',
-                  // marginBottom: '0.5rem',
+                  marginBottom: '0.5rem',
                 }}>
                   <span style={{
                     fontFamily: 'cyber, monospace',
@@ -807,18 +832,7 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
              
                   }}>TICKER: $RL80</span>
            </div>
-                  <h3 style={{
-                    color: '#c48901',
-                    fontSize: '0.8rem',
-                    fontWeight: '600',
-                    letterSpacing: '0.15em',
-                    textTransform: 'uppercase',
-                    marginBottom: '0.75rem',
-                    fontFamily: '"Cyber", monospace',
-                    textAlign: 'center',
-                  }}>
-                    🔗 Contract Address (BASE Chain)
-                  </h3>
+                 
                   
                   <div style={{
                     display: 'flex',
@@ -880,7 +894,21 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
                       )}
                     </button>
                   </div>
+                   <h3 style={{
+                    color: '#c48901',
+                    fontSize: '0.8rem',
+                    fontWeight: '600',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.75rem',
+                    
+                    fontFamily: '"Cyber", monospace',
+                    textAlign: 'center',
+                  }}>
+                    🔗 Contract Address (BASE Chain)
+                  </h3>
                 </div>
+                
                     </div>
                     
                   </div>
@@ -918,7 +946,7 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
         flexDirection: 'column',
         alignItems: 'center',
         gap: isMobile ? '2rem' : '3rem',
-        padding: isMobile ? '2rem 1.5rem' : '12rem 4rem',
+        padding: isMobile ? '2rem 1.5rem' : '8rem 4rem',
         maxWidth: '1400px',
         margin: '0 auto',
       }}>
@@ -994,23 +1022,42 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
                     boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                   }}
                 >
-                  <span className="flip-hint"
+                 
+                  {/* Diagonal half-box tab in right corner */}
+                  <div
                     style={{
                       position: 'absolute',
-                      top: '15px',
-                      right: '15px',
-                      background: 'rgba(212, 175, 55, 0.2)',
-                      padding: '5px 10px',
-                      borderRadius: '5px',
-                      fontSize: '0.8em',
-                      color: '#d4af37',
-                      opacity: 0.8,
-                      zIndex: 10,
-                      backdropFilter: 'blur(5px)',
+                      top: 0,
+                      right: 0,
+                      width: '60px',
+                      height: '60px',
+                      background: '#d4af37',
+                      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
+                      zIndex: 5,
+                      pointerEvents: 'none',
+                      border: '2px solid #b8941f',
+                      borderTop: 'none',
+                      borderRight: 'none',
+                      borderTopRightRadius: '20px',
                     }}
                   >
-                    Click to flip
-                  </span>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '15px',
+                        right: '8px',
+                        transform: 'rotate(45deg)',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        color: '#000',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        textShadow: '0 1px 2px rgba(255,255,255,0.3)',
+                      }}
+                    >
+                      FLIP
+                    </div>
+                  </div>
                   <div className="cloud-card-bg" 
                     style={{ 
                       backgroundImage: cards[0].backgroundImage,
@@ -1084,22 +1131,40 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
                     boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                   }}
                 >
-                  <span className="flip-hint"
+                  <div
                     style={{
                       position: 'absolute',
-                      top: '15px',
-                      right: '15px',
-                      background: 'rgba(212, 175, 55, 0.2)',
-                      padding: '5px 10px',
-                      borderRadius: '5px',
-                      fontSize: '0.8em',
-                      color: '#d4af37',
-                      opacity: 0.8,
-                      zIndex: 10,
+                      top: 0,
+                      right: 0,
+                      width: '60px',
+                      height: '60px',
+                      background: '#d4af37',
+                      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
+                      zIndex: 5,
+                      pointerEvents: 'none',
+                      border: '2px solid #b8941f',
+                      borderTop: 'none',
+                      borderRight: 'none',
+                      borderTopRightRadius: '20px',
                     }}
                   >
-                    Click to flip
-                  </span>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '15px',
+                        right: '8px',
+                        transform: 'rotate(45deg)',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        color: '#000',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        textShadow: '0 1px 2px rgba(255,255,255,0.3)',
+                      }}
+                    >
+                      FLIP
+                    </div>
+                  </div>
                   <div className="cloud-card-back-content"
                     style={{
                       padding: '30px',
@@ -1265,23 +1330,42 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
                       boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                     }}
                   >
-                    <span className="flip-hint"
+                   
+                    {/* Diagonal half-box tab in right corner */}
+                      <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      width: '60px',
+                      height: '60px',
+                      background: '#d4af37',
+                      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
+                      zIndex: 5,
+                      pointerEvents: 'none',
+                      border: '2px solid #b8941f',
+                      borderTop: 'none',
+                      borderRight: 'none',
+                      borderTopRightRadius: '20px',
+                    }}
+                  >
+                    <div
                       style={{
                         position: 'absolute',
                         top: '15px',
-                        right: '15px',
-                        background: 'rgba(212, 175, 55, 0.2)',
-                        padding: '5px 10px',
-                        borderRadius: '5px',
-                        fontSize: '0.8em',
-                        color: '#d4af37',
-                        opacity: 0.8,
-                        zIndex: 10,
-                        backdropFilter: 'blur(5px)',
+                        right: '8px',
+                        transform: 'rotate(45deg)',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        color: '#000',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        textShadow: '0 1px 2px rgba(255,255,255,0.3)',
                       }}
                     >
-                      Click to flip
-                    </span>
+                      FLIP
+                    </div>
+                    </div>
                     <div className="cloud-card-bg" 
                       style={{ 
                         backgroundImage: card.backgroundImage,
@@ -1355,22 +1439,40 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
                       boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                     }}
                   >
-                    <span className="flip-hint"
+                    <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      width: '60px',
+                      height: '60px',
+                      background: '#d4af37',
+                      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
+                      zIndex: 5,
+                      pointerEvents: 'none',
+                      border: '2px solid #b8941f',
+                      borderTop: 'none',
+                      borderRight: 'none',
+                      borderTopRightRadius: '20px',
+                    }}
+                  >
+                    <div
                       style={{
                         position: 'absolute',
                         top: '15px',
-                        right: '15px',
-                        background: 'rgba(212, 175, 55, 0.2)',
-                        padding: '5px 10px',
-                        borderRadius: '5px',
-                        fontSize: '0.8em',
-                        color: '#d4af37',
-                        opacity: 0.8,
-                        zIndex: 10,
+                        right: '8px',
+                        transform: 'rotate(45deg)',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        color: '#000',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        textShadow: '0 1px 2px rgba(255,255,255,0.3)',
                       }}
                     >
-                      Click to flip
-                    </span>
+                      FLIP
+                    </div>
+                  </div>
                     <div className="cloud-card-back-content"
                       style={{
                         padding: '30px',
@@ -1464,7 +1566,7 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
       
   <div style={{
                     position: "relative",
-                    margin: "4rem auto 40vh auto",
+                    margin: "2rem auto 40vh auto",
                     width: isMobile ? "90%" : "80%",
                     maxWidth: "1400px",
                     display: "grid",
@@ -1507,28 +1609,65 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}> Fluke jib scourge oF</h1>
+              <h1 style={{fontFamily: 'UnifrakturMaguntia, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get Lit for Good LucK</h1>
+       
               <p style={{
                 lineHeight: 1.2,
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
                 letterSpacing: '0.02em',
-                fontSize: isMobile ? '1.1rem' : '1.5rem',
+                  fontSize: isMobile ? '1.1rem' : '1.3rem',
                 textAlign: 'center',
-                marginBottom: '3.5rem',
-                width: '80%',
+                // marginBottom: '3.5rem',
+                width: '100%',
                 maxWidth: '600px', // Add max width for better readability
               }}>
+                       <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
+              Green Candles Are Her Love Language</span>
 Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot Shiver me timbers gangplank crack Jennys tea cup ballast Blimey lee snow crow's nest rutters. Fluke jib scourge of the seven seas boatswain schooner gaff booty Jack Tar transom spirits.       
               </p>
-                  {/* Contract Address Container */}
+       <a
+                        href="./gallery3"
+                         style={{
+                          textDecoration: 'none',
+                          marginTop: isMobile ? '1.5rem' : '2rem',
+                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
+                          fontSize: isMobile ? '1.2rem' : '1.4rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Fjalla One', sans-serif",
+                          textTransform: 'uppercase',
+                          letterSpacing: '2px',
+                          color: '#000000',
+                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                          border: '3px solid #d4af37',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          zIndex: 102,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                        }}
+                      >
+                        DM $RL80
+                      </a>
                
            
                     </div>
                     
                   </div>
-      
+ 
       {/* Cloud Gateway Divider */}
       <div style={{
         position: 'relative',

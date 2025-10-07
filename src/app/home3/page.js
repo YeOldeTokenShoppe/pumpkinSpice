@@ -28,6 +28,7 @@ import CloudIntroSection from '@/components/CloudIntroSection';
 import CandleMarqueeSection from '@/components/CandleMarqueeSection';
 import PlayingCard from '@/components/PlayingCard';
 import HandsGLTFScene from '@/components/HandsGLTFScene';
+import FAQSection from '@/components/FAQSection';
 
 import Numerology from '@/components/Numerology';
 import ScratchCard from '@/components/ScratchCard';
@@ -2131,6 +2132,12 @@ export default function Home3() {
      
         {/* Cloud Introduction Section - New Addition */}
         <CloudIntroSection scrollY={scrollY} isMobile={isMobile} />
+
+        {/* Hands GLTF Scene */}
+        <HandsGLTFScene />
+
+        {/* <FAQSection/> */}
+   
 
 
        
