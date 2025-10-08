@@ -435,7 +435,7 @@ export default function Gallery3Page() {
       </div>
       
       {/* Tokens Burned Display */}
-      <div style={{
+      {/* <div style={{
         position: 'fixed',
         bottom: isMobileDevice ? '40px' : '20px',
         left: isMobileDevice ? 'auto' : '20px',
@@ -443,7 +443,7 @@ export default function Gallery3Page() {
         zIndex: 9998
       }}>
         <TokensBurned />
-      </div>
+      </div> */}
       
       {/* Illumin80 Heading and Sort Button */}
       {!isLoading && enableCandles && (

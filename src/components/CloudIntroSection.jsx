@@ -767,7 +767,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturMaguntia, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: '#d4af37'}}>She Sells Sanctuary</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: '#d4af37'}}>She Sells Sanctuary</h1>
               <p style={{
                 lineHeight: 1.2,
                 opacity: 0.9,
@@ -776,14 +776,14 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                 letterSpacing: '0.02em',
                 fontSize: isMobile ? '1.1rem' : '1.3rem',
                 textAlign: 'center',
-                marginBottom: '3.5rem',
+                // marginBottom: '3.5rem',
                 width: '100%',
                 maxWidth: '600px', // Add max width for better readability
               }}>
-<span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
+{/* <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
 A timeless icon for the trustless economy
-</span>
-Whether you need a Hail Mary for hard times, or simply sanctuary in the dark realm of DeFi, <b>RL80</b> is a token to believe in. RL80 is a token backed by an open-source contract that requires no leaps of faith. Examine it here →  <a href="https://base.blockscout.com/address/0x1234567890123456789012345678901234567890/contracts" target="_blank" rel="noopener noreferrer" style={{ color: '#d4af37', textDecoration: 'none' }}> <span style={{
+</span> */}
+Whether you need a Hail Mary for hard times, or simply sanctuary in the dark realm of DeFi, <b>Our Lady of Perpetual Profit</b> offers you her protection. The <b>RL80 </b>token is backed by an open-source contract that requires no leaps of faith. Examine it here →  <a href="https://base.blockscout.com/address/0x1234567890123456789012345678901234567890/contracts" target="_blank" rel="noopener noreferrer" style={{ color: '#d4af37', textDecoration: 'none' }}> <span style={{
 
               position: 'relative',
               top: '2px',
@@ -1609,7 +1609,7 @@ If these ideals speak to you, you may wish to test your faith with a small and c
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturMaguntia, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get Lit for Good LucK</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get Lit for Good Fortune</h1>
        
               <p style={{
                 lineHeight: 1.2,

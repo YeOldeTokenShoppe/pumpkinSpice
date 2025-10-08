@@ -1176,7 +1176,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [canvasKey, setCanvasKey] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isBurning, setIsBurning] = useState(false);
-  const [showRotateTooltip, setShowRotateTooltip] = useState(true);
+  const [showRotateTooltip, setShowRotateTooltip] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [candleWasCreated, setCandleWasCreated] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
@@ -1190,6 +1190,20 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setShowRotateTooltip(false);
     }
   }, [showRotateTooltip]);
+
+  // Show tooltip after 3 seconds when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        setShowRotateTooltip(true);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    } else {
+      // Reset tooltip when modal closes
+      setShowRotateTooltip(false);
+    }
+  }, [isOpen]);
   
   // AI Prayer Generation states
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1277,8 +1291,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setAiPrompt('');
       // Force Canvas to recreate by changing key
       setCanvasKey(prev => prev + 1);
-      // Reset tooltip
-      setShowRotateTooltip(true);
       // Reset success indicators
       setCandleWasCreated(false);
       

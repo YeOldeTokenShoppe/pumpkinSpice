@@ -4,10 +4,12 @@ import React, { useRef, useState, useEffect, useCallback, memo, Suspense, lazy }
 import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import Pizzicato from 'pizzicato';
 import PostProcessingEffects from "@/components/PostProcessingEffects";
 import FloatingCandleViewer from "@/components/CandleInteraction";
 import PyramidEffects from "@/components/PyramidEffects";
 import LightningEffect from '@/components/LightningEffect';
+import { useChoirWheel } from "@/components/useChoirWheel";
 
 // Lazy load components
 const MobileCandleOrbital = lazy(() => import('@/components/MobileCandleOrbital'));
@@ -16,13 +18,17 @@ const StarField = lazy(() => import('@/components/StarField'));
 import ConstellationModel from "@/components/ConstellationModel";
 
 // Simplified alligator model component - match original approach
-const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLoad }) => {
+const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLoad, choirWheel }) => {
   const { scene } = useGLTF('/models/alligatorStroll6.glb');
   const outerGroupRef = useRef(); // For positioning
   const rotationGroupRef = useRef(); // For rotation
   const hasLoadedRef = useRef(false);
   const wheelSectionsRef = useRef([]); // Store wheel section meshes
   const originalMaterialsRef = useRef(new Map()); // Store original materials
+  const arrowRef = useRef(); // Store arrow object separately
+  const choirSoundRef = useRef(null); // Store pizzicato sound
+  const audioContextRef = useRef(null); // Store Web Audio context
+  const audioBufferRef = useRef(null); // Store audio buffer
   
   // Color mapping for wheel sections
   const wheelColorMap = {
@@ -44,41 +50,126 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
     'wheel_section015': '#6903CFFF'
   };
 
-  // Handle wheel section click
+  // Pitch mapping for wheel sections (using playback rate ratios)
+
+const wheelPitchMap = {
+  'wheel_section':    1.0,    // G3 (196 Hz - reference)
+  'wheel_section001': 1.059,  // G#3/Ab3
+  'wheel_section002': 1.122,  // A3
+  'wheel_section003': 1.189,  // A#3/Bb3
+  'wheel_section004': 1.260,  // B3
+  'wheel_section005': 1.335,  // C4 (middle C)
+  'wheel_section006': 1.414,  // C#4/Db4
+  'wheel_section007': 1.498,  // D4
+  'wheel_section008': 1.587,  // D#4/Eb4
+  'wheel_section009': 1.682,  // E4
+  'wheel_section010': 1.782,  // F4
+  'wheel_section011': 1.888,  // F#4/Gb4
+  'wheel_section012': 2.0,    // G4 (octave)
+  'wheel_section013': 2.119,  // G#4/Ab4
+  'wheel_section014': 2.245,  // A4 (440 Hz - concert pitch)
+  'wheel_section015': 2.378   // A#4/Bb4
+};
+
+  // Handle wheel section and symbol click
   const handleWheelClick = useCallback((event) => {
     event.stopPropagation();
     const object = event.object;
     
+    let wheelSectionName = '';
+    let isSymbolClick = false;
+    
     if (object.userData.isWheel) {
-      console.log('Wheel clicked:', object.userData.wheelName);
-      
-      // Get the color for this wheel section
-      const colorHex = object.userData.wheelColor;
-      if (!colorHex) return;
-      
-      // Convert hex to THREE.Color
-      const color = new THREE.Color(colorHex.substring(0, 7)); // Remove alpha if present
-      
-      // Create emissive material
-      const emissiveMaterial = new THREE.MeshStandardMaterial({
-        color: color,
-        emissive: color,
-        emissiveIntensity: 2.0,
-        transparent: true,
-        opacity: 1.0,
-        side: THREE.DoubleSide
-      });
-      
-      // Apply emissive material
-      object.material = emissiveMaterial;
-      
-      // Reset after 2 seconds
-      setTimeout(() => {
-        const originalMaterial = originalMaterialsRef.current.get(object.userData.wheelName);
-        if (originalMaterial) {
-          object.material = originalMaterial;
+      wheelSectionName = object.userData.wheelName;
+      console.log('Wheel clicked:', wheelSectionName);
+    } else if (object.userData.isSymbol) {
+      wheelSectionName = object.userData.correspondingWheelSection;
+      isSymbolClick = true;
+      console.log('Symbol clicked:', object.userData.symbolName, 'corresponding to:', wheelSectionName);
+    }
+    
+    if (wheelSectionName) {
+      // Use ONLY original choir sound with pitch for this wheel section
+      if (audioContextRef.current && audioBufferRef.current && wheelPitchMap[wheelSectionName]) {
+        try {
+          // Get the pitch ratio for this wheel section
+          const pitchRatio = wheelPitchMap[wheelSectionName];
+          
+          // Create a new buffer source for each play
+          const source = audioContextRef.current.createBufferSource();
+          source.buffer = audioBufferRef.current;
+          
+          // Set the playback rate to change pitch
+          source.playbackRate.value = pitchRatio;
+          
+          // Connect to output and play
+          source.connect(audioContextRef.current.destination);
+          source.start();
+          
+          console.log(`Playing original choir: ${wheelSectionName} at pitch ratio: ${pitchRatio}`);
+          
+        } catch (error) {
+          console.error('Error playing sound:', error);
         }
-      }, 2000);
+      }
+      // Temporarily disabled choir wheel to avoid confusion
+      // } else if (choirWheel && choirWheel.playSection) {
+      //   choirWheel.playSection(wheelSectionName);
+      // }
+      
+      // Visual feedback for wheel sections, and for symbols find their corresponding wheel section
+      // This should always happen regardless of which audio system is used
+      let targetWheelObject = null;
+      let wheelColor = null;
+      
+      if (object.userData.isWheel) {
+        targetWheelObject = object;
+        wheelColor = object.userData.wheelColor;
+      } else if (object.userData.isSymbol) {
+        // Find the corresponding wheel section object to apply the emissive effect
+        wheelSectionsRef.current.forEach(wheelMesh => {
+          if (wheelMesh.name === wheelSectionName) {
+            targetWheelObject = wheelMesh;
+            wheelColor = wheelMesh.userData.wheelColor;
+          }
+        });
+      }
+      
+      if (targetWheelObject && wheelColor) {
+        // Convert hex to THREE.Color
+        const color = new THREE.Color(wheelColor.substring(0, 7)); // Remove alpha if present
+        
+        // Create emissive material
+        const emissiveMaterial = new THREE.MeshStandardMaterial({
+          color: color,
+          emissive: color,
+          emissiveIntensity: 2.0,
+          transparent: true,
+          opacity: 1.0,
+          side: THREE.DoubleSide
+        });
+        
+        // Apply emissive material
+        targetWheelObject.material = emissiveMaterial;
+        
+        // Add CSS class for additional visual effect if element exists in DOM
+        const wheelElement = document.getElementById(targetWheelObject.userData.wheelName);
+        if (wheelElement) {
+          wheelElement.classList.add('wheel-active');
+        }
+        
+        // Reset after 2 seconds
+        setTimeout(() => {
+          const originalMaterial = originalMaterialsRef.current.get(targetWheelObject.userData.wheelName);
+          if (originalMaterial) {
+            targetWheelObject.material = originalMaterial;
+          }
+          // Remove CSS class
+          if (wheelElement) {
+            wheelElement.classList.remove('wheel-active');
+          }
+        }, 2000);
+      }
     }
   }, []);
 
@@ -89,6 +180,25 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
     // Set the ref so MobileCandleOrbital can find the model
     if (modelRef) {
       modelRef.current = scene;
+    }
+    
+    // Load choir sound with Web Audio API for better pitch control
+    if (!audioContextRef.current) {
+      try {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Load the audio file
+        fetch('/sounds/choir.mp3')
+          .then(response => response.arrayBuffer())
+          .then(data => audioContextRef.current.decodeAudioData(data))
+          .then(buffer => {
+            audioBufferRef.current = buffer;
+            console.log('Choir sound loaded successfully');
+          })
+          .catch(error => console.error('Error loading choir sound:', error));
+      } catch (error) {
+        console.error('Error initializing audio context:', error);
+      }
     }
     
 
@@ -189,8 +299,17 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
     wheelSectionsRef.current = [];
     originalMaterialsRef.current.clear();
     
+    // Store reference to arrow object if found
+    let arrowObject = null;
+    
     // Hide or show candles based on prop AND apply iridescent shader to number_fields objects
     clonedScene.traverse((child) => {
+      // Check for arrow object and store it
+      if (child.name && child.name.toLowerCase() === 'arrow') {
+        console.log('Found arrow object:', child.name);
+        arrowObject = child;
+        return; // Skip further processing for arrow in this traversal
+      }
       if (child.name && child.name.toUpperCase().includes('VCANDLE')) {
         child.visible = !hideCandles;
       }
@@ -237,6 +356,25 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
           const iridescentMaterial = createIridescentMaterial(originalTexture);
           child.material = iridescentMaterial;
           window.iridiscentMaterials.push(iridescentMaterial);
+          
+          // Make symbol objects clickable and link to corresponding wheel sections
+          child.userData.isSymbol = true;
+          child.userData.symbolName = child.name;
+          
+          // Map symbol names to their corresponding wheel sections
+          let correspondingWheelSection = '';
+          if (child.name === 'symbol') {
+            correspondingWheelSection = 'wheel_section';
+          } else if (child.name.startsWith('symbol') && child.name.length > 6) {
+            // Extract number from symbol001, symbol002, symbol010, etc.
+            const symbolNumber = child.name.substring(6); // Remove 'symbol' prefix
+            if (symbolNumber) {
+              correspondingWheelSection = `wheel_section${symbolNumber}`;
+            }
+          }
+          
+          child.userData.correspondingWheelSection = correspondingWheelSection;
+          console.log(`Symbol ${child.name} linked to ${correspondingWheelSection}`);
         }
         
         child.castShadow = false;
@@ -247,6 +385,30 @@ const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLo
         }
       }
     });
+    
+    // Handle arrow object separately if found
+    if (arrowObject) {
+      // Store the arrow's original position relative to the cloned scene
+      const originalPosition = arrowObject.position.clone();
+      const originalRotation = arrowObject.rotation.clone();
+      const originalScale = arrowObject.scale.clone();
+      
+      // Remove arrow from its current parent (cloned scene)
+      if (arrowObject.parent) {
+        arrowObject.parent.remove(arrowObject);
+      }
+      
+      // Add arrow to outer group (non-rotating) 
+      arrowRef.current = arrowObject;
+      outerGroupRef.current.add(arrowObject);
+      
+      // Restore the arrow's original transform but account for the model centering
+      // The cloned scene is centered, so we need to apply the same centering offset
+      arrowObject.position.copy(originalPosition);
+      arrowObject.position.add(new THREE.Vector3(-center.x, -center.y, -center.z));
+      arrowObject.rotation.copy(originalRotation);
+      arrowObject.scale.copy(originalScale);
+    }
     
     rotationGroupRef.current.add(clonedScene);
     
@@ -320,11 +482,17 @@ function ShadowConfig({ isMobileView }) {
 
 
 // Main scene component
-function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer, onAssetsLoaded, onEffectChange }) {
+function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer, onAssetsLoaded, onEffectChange, choirWheel }) {
   const modelRef = useRef();
   const [statueLoaded, setStatueLoaded] = useState(!enableStatue); // Consider loaded if not enabled
   const [modelLoaded, setModelLoaded] = useState(false);
-  
+
+  useEffect(() => { 
+    if (choirWheel && choirWheel.bindClicks) {
+      choirWheel.bindClicks(); 
+    }
+  }, [choirWheel]);
+
   // Track when all assets are loaded
   useEffect(() => {
     if (statueLoaded && modelLoaded) {
@@ -403,6 +571,7 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
           modelRef={modelRef}
           hideCandles={enableCandles}
           onLoad={handleModelLoad}
+          choirWheel={choirWheel}
         />
       </Suspense>
       
@@ -462,6 +631,12 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   const [showEffectButton, setShowEffectButton] = useState(true);
   const [effectInfo, setEffectInfo] = useState('Click to trigger effect');
   const [triggerLightning, setTriggerLightning] = useState(0);
+  
+  // Initialize choir wheel hook at the top level
+  const choirWheel = useChoirWheel({
+    bpm: 100,
+    beatsPerBar: 4,
+  });
   // Handle candle click
   const handleCandleClick = useCallback((candleData) => {
     console.log('Candle clicked:', candleData);
@@ -512,7 +687,14 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   
   return (
     <>
-    {/* Effect Trigger Button */}
+    {/* Add wheel-active CSS styles */}
+    <style jsx global>{`
+      .wheel-active {
+        filter: drop-shadow(0 0 10px currentColor) brightness(1.35);
+        transition: filter .12s ease;
+      }
+    `}</style>
+    
    
     
     <Canvas
@@ -554,6 +736,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
           showFloatingViewer={showFloatingViewer}
           onAssetsLoaded={handleAssetsLoaded}
           onEffectChange={(name) => setEffectInfo(name)}
+          choirWheel={choirWheel}
         />
       </Suspense>
       <Suspense fallback={null}>
@@ -567,7 +750,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
 />
         
     </Canvas>
-    {showEffectButton && (
+    {/* {showEffectButton && (
       <div style={{
         position: 'fixed',
         bottom: '30px',
@@ -616,7 +799,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
           {effectInfo}
         </div>
       </div>
-    )}
+    )} */}
     {/* FloatingCandleViewer - Outside Canvas */}
     {showFloatingViewer && selectedCandleData && (
       <FloatingCandleViewer

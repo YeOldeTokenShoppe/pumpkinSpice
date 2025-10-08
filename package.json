@@ -35,15 +35,18 @@
     "maath": "^0.10.8",
     "next": "15.4.6",
     "openai": "^5.20.0",
+    "pizzicato": "^0.6.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-fast-marquee": "^1.6.5",
     "sass": "^1.93.2",
+    "soundfont-player": "^0.12.0",
     "styled-components": "^6.1.19",
     "tailwind-merge": "^3.3.1",
     "thirdweb": "^5.105.33",
     "three": "^0.164.1",
     "three-stdlib": "^2.36.0",
+    "tone": "^15.1.22",
     "wouter": "^3.7.1"
   },
   "devDependencies": {

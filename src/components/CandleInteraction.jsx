@@ -5,7 +5,7 @@
     import * as THREE from "three";
 
   function FloatingCandleViewer({ isVisible, onClose, userData, onNavigate, currentIndex, totalCandles }) {
-    const [showRotateTooltip, setShowRotateTooltip] = useState(true);
+    const [showRotateTooltip, setShowRotateTooltip] = useState(false);
 
     if (!isVisible) return null;
 
@@ -14,6 +14,21 @@
         setShowRotateTooltip(false);
       }
     }, [showRotateTooltip]);
+
+    // Show tooltip after 3 seconds when component becomes visible
+    useEffect(() => {
+      if (isVisible) {
+        const timer = setTimeout(() => {
+          setShowRotateTooltip(true);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+      } else {
+        // Reset tooltip when component is hidden
+        setShowRotateTooltip(false);
+      }
+    }, [isVisible]);
+
     // Add debugging to log the userData
     console.log("FloatingCandleViewer received userData:", userData, "Index:", currentIndex, "Total:", totalCandles);
 
@@ -168,7 +183,7 @@
                     }}
                   >
                     <div className="rotate-hand" style={{
-                      fontSize: '3rem',
+                      fontSize: '4rem',
                       transformOrigin: 'center bottom'
                     }}>
                       👆
