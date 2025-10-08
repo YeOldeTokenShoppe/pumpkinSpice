@@ -2061,15 +2061,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         isActive={isBurning}
       />
       <div className="compact-modal-overlay" 
-      onMouseDown={(e) => {
-        // Only mark as potential close if clicking directly on overlay
+      onClick={(e) => {
+        // Only close if clicking directly on the overlay (not on modal content)
         if (e.target === e.currentTarget) {
-          e.currentTarget.dataset.shouldClose = 'true';
-        }
-      }}
-      onMouseUp={(e) => {
-        // Only close if both mousedown and mouseup happened on the overlay
-        if (e.target === e.currentTarget && e.currentTarget.dataset.shouldClose === 'true') {
           // Don't close if any dialog is open
           if (showPasswordDialog || showConfirmDialog) {
             return;
@@ -2096,14 +2090,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               onClose();
             }
           }
-        }
-        // Clean up the data attribute
-        delete e.currentTarget.dataset.shouldClose;
-      }}
-      onClick={(e) => {
-        // Prevent any click propagation issues
-        if (e.target !== e.currentTarget) {
-          e.stopPropagation();
         }
       }}>
       <div className="compact-modal-content" ref={modalContentRef} onClick={e => e.stopPropagation()}>

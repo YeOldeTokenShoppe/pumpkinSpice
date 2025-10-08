@@ -22,6 +22,7 @@ import InfinityLoader from '@/components/InfinityLoader';
 import CloudIntroSection from '@/components/CloudIntroSection';
 import HandsGLTFScene from '@/components/HandsGLTFScene';
 import RotatingText from '@/components/RotatingText';
+import CompactCandleModal from '@/components/CompactCandleModal';
 import '@/components/RotatingText.css';
 
 
@@ -899,6 +900,7 @@ export default function Home3() {
   const [emoji, setEmoji] = useState("😇");
   const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(true); // Always treat as mobile
   const [isLowEndDevice, setIsLowEndDevice] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [activePortal, setActivePortal] = useState(null);
   const [portalFlippedStates, setPortalFlippedStates] = useState({
     '01': false,
@@ -1305,7 +1307,6 @@ export default function Home3() {
     <div style={{ 
       width: '100vw', 
       background: 'transparent', 
-      position: 'relative',
       minHeight: '100vh',
       overflowX: 'hidden',
       overflowY: 'auto',
@@ -2105,7 +2106,7 @@ export default function Home3() {
        
      
         {/* Cloud Introduction Section - New Addition */}
-        <CloudIntroSection scrollY={scrollY} isMobile={isMobile} />
+        <CloudIntroSection scrollY={scrollY} isMobile={isMobile} onOpenModal={() => setIsModalOpen(true)} />
 
         {/* Hands GLTF Scene */}
         <HandsGLTFScene />
@@ -2373,7 +2374,7 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the digital ec
           flexDirection: isMobile ? "column" : "row",
           gap: isMobile ? "10px" : "15px",
           alignItems: isMobile ? "flex-end" : "center",
-          zIndex: 9999999,
+          zIndex: 9999,
           opacity: isSceneLoading ? 0 : 1,
           transition: "opacity 0.5s ease-in-out"
         }}
@@ -2550,8 +2551,24 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the digital ec
         </div>
       </div>
       )}
+      
+      
+      {/* Hidden sign in button */}
+      {!isSignedIn && (
+        <SignInButton mode="modal" forceRedirectUrl="/home3">
+          <button id="hidden-sign-in-home3" style={{ display: 'none' }}>Sign In</button>
+        </SignInButton>
+      )}
+      
+      {/* Candle Modal */}
+      <CompactCandleModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCandleCreated={() => {
+          console.log('Candle created successfully');
+        }}
+      />
     </div>
-
   );
 }
 

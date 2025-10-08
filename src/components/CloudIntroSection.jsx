@@ -13,7 +13,7 @@ import { client } from "../client";
 import PlayingCard from '@/components/PlayingCard';
 import HandsGLTFScene from '@/components/HandsGLTFScene';
 import { FAQSection } from '@/components/FAQSection';
-import CompactCandleModal from '@/components/CompactCandleModal';
+import { useUser } from '@clerk/nextjs';
 
 
 const GOLDENRATIO = 1.61803398875;
@@ -65,7 +65,8 @@ const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2 }) => 
 };
 
 // Main CloudIntroSection component
-export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
+export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpenModal }) {
+  const { user, isSignedIn } = useUser();
   const sectionRef = useRef(null);
     const [copied, setCopied] = useState(false);
       const coinRef = useRef(null);
@@ -77,7 +78,19 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
   const playingCardRef = useRef(null);
   const firstTitleRef = useRef(null);
   const secondTitleRef = useRef(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Handle opening modal with authentication check
+  const handleOpenModal = () => {
+    console.log('handleOpenModal called', { isSignedIn, user, onOpenModal });
+    if (!isSignedIn) {
+      console.log('User not signed in, showing sign-in modal');
+      const btn = document.getElementById('hidden-sign-in-home3');
+      console.log('Hidden button found:', btn);
+      btn?.click();
+    } else {
+      console.log('User signed in, calling onOpenModal');
+      onOpenModal?.();
+    }
+  };
   
   const isInView = useInView(sectionRef, { 
     once: false, 
@@ -1417,7 +1430,7 @@ If these ideals speak to you, you may wish to test your faith with a small and c
                           <button
                             onClick={(e) => {
                               e.stopPropagation(); // Prevent card flip when clicking button
-                              setIsModalOpen(true);
+                              handleOpenModal();
                             }}
                             style={{
                               padding: isMobile ? '0.6rem 1.5rem' : '0.8rem 2rem',
@@ -1563,7 +1576,7 @@ If these ideals speak to you, you may wish to test your faith with a small and c
                 maxWidth: '600px', // Add max width for better readability
               }}>
                        <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
-              RL80 is The Token of Your Appreciation</span>
+              RL80 is The Token of Appreciation</span>
               Share a wish, prayer, or confession with <b>Our Lady of Perpetual Profit.</b>
 Your words will be immortalized on the blockchain for all of eternity.
 Customize your candle, and light it with an offering of $RL80.
@@ -1571,7 +1584,7 @@ Burn any amount — every token sacrificed lifts all holders up and to the right
 
           </p>
        <button
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={handleOpenModal}
                          style={{
                           marginTop: isMobile ? '1.5rem' : '2rem',
                           padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
@@ -1602,7 +1615,7 @@ Burn any amount — every token sacrificed lifts all holders up and to the right
                           e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
                         }}
                       >
-                        GET LIT!
+                        Burn An Offering
                       </button>
                
            
@@ -1674,15 +1687,6 @@ Burn any amount — every token sacrificed lifts all holders up and to the right
         </motion.div>
       </div>
       
-      {/* CompactCandleModal */}
-      <CompactCandleModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCandleCreated={() => {
-          // Optional: Handle candle creation success
-          console.log('Candle created successfully');
-        }}
-      />
     </section>
     </>
   );
