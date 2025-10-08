@@ -2,11 +2,11 @@
 import { useRef, useState, useEffect, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, useGLTF, Box } from '@react-three/drei'
+import { OrbitControls, useGLTF, Box, useCursor } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import { db } from '@/utilities/firebaseClient'
-import { collection, query, getDocs, limit } from 'firebase/firestore'
+import { collection, query, getDocs, limit, orderBy, onSnapshot } from 'firebase/firestore'
 import { m } from 'framer-motion'
 
 
@@ -30,19 +30,35 @@ function HandsModel({ mousePosition, scrollY }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [rotationProgress, setRotationProgress] = useState(0)
   const [hasReachedSection, setHasReachedSection] = useState(false)
+  const [hovered, setHovered] = useState(false)
   const animationStartTime = useRef(null)
   const { camera } = useThree()
+
+  // Function to advance to next image when clicking candle or label
+  const handleImageAdvance = () => {
+    if (randomUserImages.length > 1) {
+      setCurrentImageIndex((prevIndex) => 
+        (prevIndex + 1) % randomUserImages.length
+      )
+      console.log('Image advanced by click interaction')
+    }
+  }
   
 
 
   
-  // Fetch random user images from Firestore
+  // Fetch user images from Firestore with real-time updates
   useEffect(() => {
-    const fetchRandomUserImages = async () => {
-      try {
-        const q = query(collection(db, 'results'), limit(50))
-        const snapshot = await getDocs(q)
-        
+    try {
+      // Query with createdAt ordering (newest first) and limit
+      const q = query(
+        collection(db, 'results'), 
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      
+      // Set up real-time listener
+      const unsubscribe = onSnapshot(q, (snapshot) => {
         const images = []
         snapshot.forEach((doc) => {
           const data = doc.data()
@@ -51,23 +67,65 @@ function HandsModel({ mousePosition, scrollY }) {
               id: doc.id,
               image: data.image,
               username: data.username || 'Anonymous',
-              message: data.message || ''
+              message: data.message || '',
+              createdAt: data.createdAt
             })
           }
         })
         
-        console.log('Fetched user images for candle Label2:', images.length)
+        console.log('Images updated from Firestore:', images.length, 'total images')
         if (images.length > 0) {
           setRandomUserImages(images)
-          setCurrentImageIndex(Math.floor(Math.random() * images.length))
+          // Start with the newest image (index 0) when data updates
+          setCurrentImageIndex(0)
         }
-      } catch (error) {
+      }, (error) => {
         console.error('Error fetching user images:', error)
-      }
+        // Fallback to one-time fetch if real-time fails
+        fetchImagesFallback()
+      })
+      
+      // Cleanup listener on unmount
+      return () => unsubscribe()
+    } catch (error) {
+      console.error('Error setting up real-time listener:', error)
+      // Fallback to one-time fetch
+      fetchImagesFallback()
     }
-    
-    fetchRandomUserImages()
   }, [])
+
+  // Fallback function for one-time fetch
+  const fetchImagesFallback = async () => {
+    try {
+      const q = query(
+        collection(db, 'results'), 
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      const snapshot = await getDocs(q)
+      
+      const images = []
+      snapshot.forEach((doc) => {
+        const data = doc.data()
+        if (data.image && data.image !== '/defaultAvatar.png' && data.image !== '') {
+          images.push({
+            id: doc.id,
+            image: data.image,
+            username: data.username || 'Anonymous',
+            message: data.message || '',
+            createdAt: data.createdAt
+          })
+        }
+      })
+      
+      if (images.length > 0) {
+        setRandomUserImages(images)
+        setCurrentImageIndex(0) // Start with newest
+      }
+    } catch (error) {
+      console.error('Error in fallback fetch:', error)
+    }
+  }
   
   // Rotate through images periodically
   useEffect(() => {
@@ -96,10 +154,19 @@ function HandsModel({ mousePosition, scrollY }) {
         // Look for VCANDLE001 and its Label2 child
         if (child.name === 'VCANDLE001' || child.name === 'VCandle001' || child.name === 'vcandle001') {
           console.log('Found VCANDLE001 candle object!')
+          
+          // Add click handler to the candle object
+          child.userData.onClick = handleImageAdvance
+          child.cursor = 'pointer'
+          
           child.traverse((subChild) => {
             if (subChild.name === 'Label2' || subChild.name === 'label2') {
               console.log('Found Label2 under VCANDLE001!')
               candleLabel2Ref.current = subChild
+              
+              // Add click handler to Label2 as well
+              subChild.userData.onClick = handleImageAdvance
+              subChild.cursor = 'pointer'
             }
           })
         }
@@ -109,6 +176,10 @@ function HandsModel({ mousePosition, scrollY }) {
           console.log('Found Label2 mesh directly!')
           if (!candleLabel2Ref.current) {
             candleLabel2Ref.current = child
+            
+            // Add click handler to directly found Label2
+            child.userData.onClick = handleImageAdvance
+            child.cursor = 'pointer'
           }
         }
         
@@ -581,10 +652,57 @@ useFrame(() => {
   }
 })
 
+// Handle clicks on the 3D model
+const handleClick = (event) => {
+  // Stop propagation to prevent multiple handlers
+  event.stopPropagation()
+  
+  // Get the clicked object
+  const clickedObject = event.object
+  
+  // Check if the clicked object or any of its parents has a click handler
+  let current = clickedObject
+  while (current) {
+    if (current.userData.onClick) {
+      console.log('Clicked on:', current.name, 'triggering image advance')
+      current.userData.onClick()
+      break
+    }
+    current = current.parent
+  }
+}
+
+// Handle hover for cursor changes
+const handlePointerOver = (event) => {
+  const hoveredObject = event.object
+  let current = hoveredObject
+  while (current) {
+    if (current.userData.onClick) {
+      setHovered(true)
+      break
+    }
+    current = current.parent
+  }
+}
+
+const handlePointerOut = () => {
+  setHovered(false)
+}
+
+// Use cursor hook for pointer changes
+useCursor(hovered)
+
 // Replace this part in your return statement
 return (
   <>
-    <primitive object={gltf.scene} scale={[0.5, 0.5, 0.5]} rotation={[0, calculateRotation(), 0]} />
+    <primitive 
+      object={gltf.scene} 
+      scale={[0.5, 0.5, 0.5]} 
+      rotation={[0, calculateRotation(), 0]}
+      onClick={handleClick}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
+    />
   </>
 )
 }
@@ -613,7 +731,18 @@ function LoadingBox() {
 export default function HandsGLTFScene() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [scrollY, setScrollY] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
   
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   // Add scroll listener
   useEffect(() => {
     const handleScroll = () => {
@@ -667,16 +796,18 @@ export default function HandsGLTFScene() {
           minPolarAngle={Math.PI / 2}
         />
         
-        {/* Post-processing effects */}
-        <EffectComposer>
-          <Bloom 
-            intensity={0.2}
-            luminanceThreshold={0.3}
-            luminanceSmoothing={0.9}
-            mipmapBlur
-            radius={0.7}
-          />
-        </EffectComposer>
+        {/* Post-processing effects - disabled on mobile for performance */}
+        {!isMobile && (
+          <EffectComposer>
+            <Bloom 
+              intensity={0.2}
+              luminanceThreshold={0.3}
+              luminanceSmoothing={0.9}
+              mipmapBlur
+              radius={0.7}
+            />
+          </EffectComposer>
+        )}
       </Canvas>
       
       {/* Frame Overlay */}

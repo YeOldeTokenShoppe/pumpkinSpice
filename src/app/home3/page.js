@@ -6,18 +6,13 @@ import React, { useRef, Suspense, useEffect, useState, lazy } from 'react';
 // Lazy load the 3D scene
 const Simple3DScene = lazy(() => import('@/components/Simple3DScene'));
 const EmojiOverlay = lazy(() => import('@/components/EmojiOverlay'));
-import ScrollDebug from '@/components/ScrollDebug'; // Temporary debug tool
-import { Canvas, useThree, useFrame, extend as fiberExtend } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useAnimations, Cloud, Clouds, MeshPortalMaterial, CameraControls, Text, Sky, RoundedBox, Html, useCursor, Gltf, Preload } from '@react-three/drei';
+import { useGLTF, useAnimations, MeshPortalMaterial, CameraControls, Text, useCursor } from '@react-three/drei';
 import * as THREE from 'three';
 import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 import { geometry, easing } from 'maath';
 // import DarkClouds from '@/components/Clouds'; // Disabled for memory
-import PostProcessingEffects from '@/components/PostProcessingEffects';
-// import CSS3DClouds from '@/components/CSS3DClouds'; // Disabled for memory
-import { ParallaxGroup } from '@/components/ParallaxGroup';
-import CoinInline from '@/components/CoinInline';
+// Removed unused imports for memory optimization
 import { useMusic } from '@/components/MusicContext';
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { Illumin80ClerkButton } from "@/components/Illumin80Display";
@@ -25,13 +20,7 @@ import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
 import InfinityLoader from '@/components/InfinityLoader';
 import CloudIntroSection from '@/components/CloudIntroSection';
-import CandleMarqueeSection from '@/components/CandleMarqueeSection';
-import PlayingCard from '@/components/PlayingCard';
 import HandsGLTFScene from '@/components/HandsGLTFScene';
-import FAQSection from '@/components/FAQSection';
-
-import Numerology from '@/components/Numerology';
-import ScratchCard from '@/components/ScratchCard';
 import RotatingText from '@/components/RotatingText';
 import '@/components/RotatingText.css';
 
@@ -41,7 +30,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 // Extend geometry and setup constants for portal
-fiberExtend(geometry);
+extend(geometry);
 const GOLDENRATIO = 1.61803398875;
 const zPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 const yPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1);
@@ -353,6 +342,11 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
 }
 
 function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
+  // Don't load on mobile to save memory
+  if (isMobile) {
+    return null;
+  }
+  
   const { scene, animations } = useGLTF('/models/devilEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const modelRef = useRef();
@@ -483,26 +477,6 @@ function PulsingText({ children, ...props }) {
 }
 
 // Portal Components
-function FountainModel({ clip, ...props }) {
-  const { scene } = useGLTF('/models/fountain.glb');
-  
-  React.useEffect(() => {
-    if (scene) {
-      scene.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-          if (clip) {
-            child.material.clippingPlanes = [zPlane, yPlane];
-            child.material.side = THREE.DoubleSide;
-          }
-        }
-      });
-    }
-  }, [scene, clip]);
-  
-  return <primitive object={scene} {...props} />;
-}
 
 function PortalFrame({ id, name, author, bg, width = 1.1, height = GOLDENRATIO * 1.1, children, ...props }) {
   return (
@@ -903,7 +877,7 @@ function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
 // Preload critical 3D models to ensure they're ready before scene reveals
 useGLTF.preload('/models/ourlady_rider6.glb');
 useGLTF.preload('/models/angelEmoji.glb');
-useGLTF.preload('/models/devilEmoji2.glb');
+// Don't preload devilEmoji on mobile - it's conditionally loaded
 
 export default function Home3() {
   const router = useRouter();
@@ -2387,100 +2361,9 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the digital ec
       </div>
      
       
-      {/* Floating Action Buttons */}
-      {mounted && (
-        <>
-          {/* Burn/Light Candle Button - Left Side */}
-          <a
-            href="/gallery3"
-            style={{
-              position: 'fixed',
-              bottom: isMobile ? '20px' : '30px',
-              left: isMobile ? '10px' : '30px',
-              width: isMobile ? '140px' : '200px',
-              height: isMobile ? '44px' : '60px',
-              padding: 0,
-              background: 'linear-gradient(135deg, #2d5016 0%, #4a8c26 100%)',
-              color: '#ffffff',
-              fontSize: isMobile ? '0.9rem' : '1.3rem',
-              fontFamily: 'UnifrakturCook, serif',
-              fontWeight: 'bold',
-              borderRadius: '50px',
-              boxShadow: '0 10px 30px rgba(74, 140, 38, 0.5), 0 0 60px rgba(45, 80, 22, 0.3)',
-              textDecoration: 'none',
-              zIndex: 9999,
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-              animation: 'candleFlicker 3s infinite',
-              border: '2px solid rgba(255, 200, 100, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '5px',
-              whiteSpace: 'nowrap',
-              boxSizing: 'border-box',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)';
-              e.currentTarget.style.boxShadow = '0 15px 40px rgba(74, 140, 38, 0.7), 0 0 80px rgba(45, 80, 22, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 10px 30px rgba(74, 140, 38, 0.5), 0 0 60px rgba(45, 80, 22, 0.3)';
-            }}
-            title="Burn tokens to light a candle"
-          >
-            🕯️ <span style={{ display: isMobile ? 'none' : 'inline' }}>Light</span> Candle
-          </a>
-          
-          {/* Buy Button - Right Side */}
-          <a 
-            href="https://app.uniswap.org" // Replace with actual swap link
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              position: 'fixed',
-              bottom: isMobile ? '20px' : '30px',
-              right: isMobile ? '10px' : '30px',
-              width: isMobile ? '140px' : '200px',
-              height: isMobile ? '44px' : '60px',
-              padding: 0,
-              background: 'linear-gradient(135deg, #d4af37 0%, #c48901 100%)',
-              color: '#1a0033',
-              fontSize: isMobile ? '0.9rem' : '1.3rem',
-              fontFamily: 'UnifrakturCook, serif',
-              fontWeight: 'bold',
-              borderRadius: '50px',
-              boxShadow: '0 10px 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(212, 175, 55, 0.3)',
-              textDecoration: 'none',
-              zIndex: 9999,
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-              animation: 'buyButtonPulse 2s infinite',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '5px',
-              whiteSpace: 'nowrap',
-              boxSizing: 'border-box',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)';
-              e.currentTarget.style.boxShadow = '0 15px 40px rgba(212, 175, 55, 0.7), 0 0 80px rgba(212, 175, 55, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 10px 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(212, 175, 55, 0.3)';
-            }}
-          >
-            🙏 Buy <span translate="no">$RL80</span>
-          </a>
-        </>
-      )}
       
       {/* Top Controls Container - Music, User, and Nav - Outside main container */}
-      {mounted && (
+      {mounted && !isSceneLoading && (
       <div
         style={{
           position: "fixed",
@@ -2490,7 +2373,9 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the digital ec
           flexDirection: isMobile ? "column" : "row",
           gap: isMobile ? "10px" : "15px",
           alignItems: isMobile ? "flex-end" : "center",
-          zIndex: 9999999
+          zIndex: 9999999,
+          opacity: isSceneLoading ? 0 : 1,
+          transition: "opacity 0.5s ease-in-out"
         }}
       >
         {/* Music Controls - First on desktop, Third on mobile */}

@@ -84,7 +84,7 @@ const PlayingCard = ({ frontImage = '/queenOfHearts.png', scale = 1 }) => {
       currency={"USD"}
       chain={defineChain(8453)}
       amount={"0.002"}
-      tokenAddress={"0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"}
+      tokenAddress={"0x532f27101965dd16442E59d40670FaF5eBB142E4"}
       seller={"0x0000000000000000000000000000000000000000"}
     />
         </div>

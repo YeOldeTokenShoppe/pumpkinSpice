@@ -13,6 +13,7 @@ import { client } from "../client";
 import PlayingCard from '@/components/PlayingCard';
 import HandsGLTFScene from '@/components/HandsGLTFScene';
 import { FAQSection } from '@/components/FAQSection';
+import CompactCandleModal from '@/components/CompactCandleModal';
 
 
 const GOLDENRATIO = 1.61803398875;
@@ -25,7 +26,7 @@ function BuyWidgetComponent() {
       currency={"USD"}
       chain={defineChain(8453)}
       amount={"0.002"}
-      tokenAddress={"0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"}
+      tokenAddress={"0x532f27101965dd16442E59d40670FaF5eBB142E4"}
       seller={"0x0000000000000000000000000000000000000000"}
     />
   );
@@ -76,6 +77,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
   const playingCardRef = useRef(null);
   const firstTitleRef = useRef(null);
   const secondTitleRef = useRef(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const isInView = useInView(sectionRef, { 
     once: false, 
@@ -191,12 +193,10 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
       id: 1,
       frontTitle: "Hope",
       frontDescription: "Irrational markets call for irrational strategies",
-      backTitle: "The Sacred Trinity of $RL80",
-      backContent: "Experience the divine trifecta of cryptocurrency innovation:",
+      backTitle: "",
+      backContent: "",
       backList: [
-        "Liquid80: Deep liquidity pools ensuring smooth trades",
-        "Util80: Light utility via on-chain dedications are",
-        "Commun80: every transaction and devotion enriches all holders",
+      "Add a virtual green candle to the blockchain"
       ],
             backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")'
 
@@ -230,123 +230,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
       setTimeout(() => setCopied(false), 2000);
     };
 
-    useEffect(() => {
-        // Wait for client and page to be ready
-        if (!coinRef.current) {
-          return;
-        }
-    
-        const sparkle = coinRef.current;
-    
-        const MAX_STARS = 60;
-        const STAR_INTERVAL = 16;
-    
-        const MAX_STAR_LIFE = 3;
-        const MIN_STAR_LIFE = 1;
-    
-        const MAX_STAR_SIZE = 40;
-        const MIN_STAR_SIZE = 20;
-    
-        const MIN_STAR_TRAVEL_X = 100;
-        const MIN_STAR_TRAVEL_Y = 100;
-    
-        const randomLimitedColor = () => {
-          const randomHue = (() => {
-            const ranges = [
-              { min: 120, max: 150 }, // Blues
-              { min: 270, max: 290 }, // Violets/Purples
-              { min: 45, max: 60 }, // Yellows and Golds
-            ];
-            const range = ranges[Math.floor(Math.random() * ranges.length)];
-            return (
-              Math.floor(Math.random() * (range.max - range.min + 1)) + range.min
-            );
-          })();
-    
-          return `hsla(${randomHue}, 100%, 50%, 1)`;
-        };
-    
-        const Star = class {
-          constructor() {
-            this.size = this.random(MAX_STAR_SIZE, MIN_STAR_SIZE);
-    
-            this.x = this.random(
-              sparkle.offsetWidth * 0.75,
-              sparkle.offsetWidth * 0.25
-            );
-            this.y = sparkle.offsetHeight / 2 - this.size / 2;
-    
-            this.x_dir = this.randomMinus();
-            this.y_dir = this.randomMinus();
-    
-            this.x_max_travel =
-              this.x_dir === -1 ? this.x : sparkle.offsetWidth - this.x - this.size;
-            this.y_max_travel = sparkle.offsetHeight / 2 - this.size;
-    
-            this.x_travel_dist = this.random(this.x_max_travel, MIN_STAR_TRAVEL_X);
-            this.y_travel_dist = this.random(this.y_max_travel, MIN_STAR_TRAVEL_Y);
-    
-            this.x_end = this.x + this.x_travel_dist * this.x_dir;
-            this.y_end = this.y + this.y_travel_dist * this.y_dir;
-    
-            this.life = this.random(MAX_STAR_LIFE, MIN_STAR_LIFE);
-    
-            this.star = document.createElement("div");
-            this.star.classList.add("star");
-    
-            this.star.style.setProperty("--start-left", this.x + "px");
-            this.star.style.setProperty("--start-top", this.y + "px");
-    
-            this.star.style.setProperty("--end-left", this.x_end + "px");
-            this.star.style.setProperty("--end-top", this.y_end + "px");
-    
-            this.star.style.setProperty("--star-life", this.life + "s");
-            this.star.style.setProperty("--star-life-num", this.life);
-    
-            this.star.style.setProperty("--star-size", this.size + "px");
-            this.star.style.setProperty("--star-color", randomLimitedColor());
-          }
-    
-          draw() {
-            sparkle.appendChild(this.star);
-          }
-    
-          pop() {
-            if (sparkle.contains(this.star)) {
-              sparkle.removeChild(this.star);
-            }
-          }
-    
-          random(max, min) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-          }
-    
-          randomMinus() {
-            return Math.random() > 0.5 ? 1 : -1;
-          }
-        };
-    
-        let current_star_count = 0;
-        const intervalId = setInterval(() => {
-          if (current_star_count >= MAX_STARS) {
-            return;
-          }
-    
-          current_star_count++;
-    
-          const newStar = new Star();
-          newStar.draw();
-    
-          setTimeout(() => {
-            current_star_count--;
-            newStar.pop();
-          }, newStar.life * 1000);
-        }, STAR_INTERVAL);
-    
-        return () => {
-          clearInterval(intervalId);
-        };
-      }, );
+    // Star generation script removed to improve memory performance
   
   return (
     <>
@@ -370,39 +254,6 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
           background-color: #b8941f !important;
         }
         
-        .star {
-          position: absolute;
-          width: var(--star-size);
-          height: var(--star-size);
-          background: var(--star-color);
-          clip-path: polygon(50% 0, 60% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 40% 35%);
-          animation: star-twinkle var(--star-life) ease-in-out forwards;
-          z-index: 1;
-          pointer-events: none;
-        }
-
-        @keyframes star-twinkle {
-          0% {
-            opacity: 0;
-            transform: scale(0) translate(0, 0);
-            left: var(--start-left);
-            top: var(--start-top);
-          }
-          10% {
-            opacity: 1;
-            transform: scale(1) translate(0, 0);
-          }
-          90% {
-            opacity: 1;
-            transform: scale(1) translate(0, 0);
-          }
-          100% {
-            opacity: 0;
-            transform: scale(0) translate(0, 0);
-            left: var(--end-left);
-            top: var(--end-top);
-          }
-        }
       `}</style>
       <section 
         ref={sectionRef}
@@ -689,7 +540,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
                       alignItems: 'center',
                       zIndex: 100,
                       pointerEvents: 'auto',
-                      order: isMobile ? 2 : 1, // Move card below text on mobile
+                      order: isMobile ? 1 : 1, // Keep card at top on mobile
                       paddingBottom: isMobile ? '2rem' : '0'
                     }}>
                       <div style={{ position: 'relative', zIndex: 101 }}>
@@ -761,13 +612,13 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false }) {
               overflow: 'hidden', // Prevent content overflow
               position: 'relative',
               marginTop: isMobile ? '0' : '-3rem',
-              order: isMobile ? 1 : 2 // Move text above card on mobile
+              order: isMobile ? 2 : 2 // Move text below card on mobile
             }}>
              
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: '#d4af37'}}>She Sells Sanctuary</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '0rem', textAlign: 'center', color: '#d4af37'}}>She Sells Sanctuary</h1>
               <p style={{
                 lineHeight: 1.2,
                 opacity: 0.9,
@@ -1555,6 +1406,94 @@ If these ideals speak to you, you may wish to test your faith with a small and c
                           "{card.backQuote}"
                         </p>
                       )}
+                      
+                      {/* GET LIT button for card id 1 */}
+                      {card.id === 1 && (
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'center', 
+                          marginTop: '20px' 
+                        }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent card flip when clicking button
+                              setIsModalOpen(true);
+                            }}
+                            style={{
+                              padding: isMobile ? '0.6rem 1.5rem' : '0.8rem 2rem',
+                              fontSize: isMobile ? '1rem' : '1.1rem',
+                              fontWeight: 'bold',
+                              fontFamily: "'Fjalla One', sans-serif",
+                              textTransform: 'uppercase',
+                              letterSpacing: '1px',
+                              color: '#000000',
+                              background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                              border: '2px solid #d4af37',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 12px rgba(212, 175, 55, 0.4)',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                              e.currentTarget.style.boxShadow = '0 6px 18px rgba(212, 175, 55, 0.6)';
+                              e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.4)';
+                              e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                            }}
+                          >
+                            GET LIT!
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Fountain link button for card id 2 */}
+                      {card.id === 2 && (
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'center', 
+                          marginTop: '20px' 
+                        }}>
+                          <Link
+                            href="/fountain"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent card flip when clicking button
+                            }}
+                            style={{
+                              display: 'inline-block',
+                              textDecoration: 'none',
+                              padding: isMobile ? '0.6rem 1.5rem' : '0.8rem 2rem',
+                              fontSize: isMobile ? '1rem' : '1.1rem',
+                              fontWeight: 'bold',
+                              fontFamily: "'Fjalla One', sans-serif",
+                              textTransform: 'uppercase',
+                              letterSpacing: '1px',
+                              color: '#000000',
+                              background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                              border: '2px solid #d4af37',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 12px rgba(212, 175, 55, 0.4)',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                              e.currentTarget.style.boxShadow = '0 6px 18px rgba(212, 175, 55, 0.6)';
+                              e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.4)';
+                              e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                            }}
+                          >
+                            VISIT FOUNTAIN
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1609,7 +1548,7 @@ If these ideals speak to you, you may wish to test your faith with a small and c
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get Lit for Good Fortune</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '0rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get On Her Watchlist</h1>
        
               <p style={{
                 lineHeight: 1.2,
@@ -1624,13 +1563,16 @@ If these ideals speak to you, you may wish to test your faith with a small and c
                 maxWidth: '600px', // Add max width for better readability
               }}>
                        <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
-              Get Her Attention with a Green Candle</span>
-Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot Shiver me timbers gangplank crack Jennys tea cup ballast Blimey lee snow crow's nest rutters. Fluke jib scourge of the seven seas boatswain schooner gaff booty Jack Tar transom spirits.       
-              </p>
-       <a
-                        href="./gallery3"
+              RL80 is The Token of Your Appreciation</span>
+              Share a wish, prayer, or confession with <b>Our Lady of Perpetual Profit.</b>
+Your words will be immortalized on the blockchain for all of eternity.
+Customize your candle, and light it with an offering of $RL80.
+Burn any amount — every token sacrificed lifts all holders up and to the right.
+
+          </p>
+       <button
+                        onClick={() => setIsModalOpen(true)}
                          style={{
-                          textDecoration: 'none',
                           marginTop: isMobile ? '1.5rem' : '2rem',
                           padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
                           fontSize: isMobile ? '1.2rem' : '1.4rem',
@@ -1660,8 +1602,8 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
                           e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
                         }}
                       >
-                        DM $RL80
-                      </a>
+                        GET LIT!
+                      </button>
                
            
                     </div>
@@ -1731,6 +1673,16 @@ Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot 
           </div>
         </motion.div>
       </div>
+      
+      {/* CompactCandleModal */}
+      <CompactCandleModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCandleCreated={() => {
+          // Optional: Handle candle creation success
+          console.log('Candle created successfully');
+        }}
+      />
     </section>
     </>
   );

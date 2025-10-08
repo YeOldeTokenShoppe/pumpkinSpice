@@ -1836,6 +1836,7 @@
 			// Add loading state management
 			let isLoading = true;
 			let loadingProgress = 0;
+			let fountainModelLoaded = false;
 
 			// Function to update loading progress
 			function updateLoadingProgress(progress) {
@@ -2381,6 +2382,7 @@
 
 				// --- NEW: Load Fountain GLB ---
 				const loader = new GLTFLoader();
+				
 				loader.load(
 					// Resource URL - REPLACE WITH YOUR FILE PATH
 					'/models/fountain.glb',
@@ -2497,6 +2499,9 @@
 
 						scene.add( fountainModel );
 						console.log("Fountain model loaded and added.");
+						
+						// Mark model as loaded but don't hide loader yet
+						fountainModelLoaded = true;
 
 					},
 					// Called while loading is progressing
@@ -2573,7 +2578,18 @@
 
 				updateLoadingProgress(100);
 				isLoading = false;
-				hideLoader();
+				
+				// Don't hide loader immediately - wait for model to be fully rendered
+				console.log('[Fountain] Checking if fountain model is loaded:', fountainModelLoaded);
+				
+				// Fallback timer to ensure loader doesn't stay forever
+				setTimeout(() => {
+					if (!hasCheckedModelLoading) {
+						console.log('[Fountain] Fallback timer triggered - forcing loader to hide');
+						hideLoader();
+						hasCheckedModelLoading = true;
+					}
+				}, 8000); // 8 seconds fallback to match other components
 
 				// Enable 80s mode if it was set via URL parameter
 				if (is80sMode) {
@@ -3485,9 +3501,25 @@
 			let lastTime = 0;
 			let animationId = null; // Store animation ID for cleanup
 			
+			let hasCheckedModelLoading = false;
+			
 			function animate(currentTime) {
 				const deltaTime = Math.min((currentTime - lastTime) * 0.001, 0.1); // Convert to seconds, cap at 0.1s
 				lastTime = currentTime;
+				
+				// Check if fountain model is actually rendered - only once
+				if (fountainModelLoaded && !hasCheckedModelLoading && isLoading === false) {
+					// Check if model is visible in the scene by looking for its bounding box
+					const fountainInScene = scene.children.find(child => 
+						child.type === 'Group' && child.children.length > 0
+					);
+					
+					if (fountainInScene) {
+						console.log('[Fountain] Model fully loaded and rendered, hiding loader');
+						hideLoader();
+						hasCheckedModelLoading = true;
+					}
+				}
 				
 				fallingWaterUniforms.iTime.value = performance.now() / 1000.0; // Pass time in seconds
                 // --- END NEW ---
