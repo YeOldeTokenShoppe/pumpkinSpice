@@ -10,6 +10,7 @@ import FloatingCandleViewer from "@/components/CandleInteraction";
 import PyramidEffects from "@/components/PyramidEffects";
 import LightningEffect from '@/components/LightningEffect';
 import { useChoirWheel } from "@/components/useChoirWheel";
+import CoinStream from "@/components/CoinStream";
 
 // Lazy load components
 const MobileCandleOrbital = lazy(() => import('@/components/MobileCandleOrbital'));
@@ -18,7 +19,7 @@ const StarField = lazy(() => import('@/components/StarField'));
 import ConstellationModel from "@/components/ConstellationModel";
 
 // Simplified alligator model component - match original approach
-const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLoad, choirWheel }) => {
+const AlligatorModel = memo(({ isMobileView, modelRef, hideCandles = false, onLoad, choirWheel, onWheelClick }) => {
   const { scene } = useGLTF('/models/alligatorStroll6.glb');
   const outerGroupRef = useRef(); // For positioning
   const rotationGroupRef = useRef(); // For rotation
@@ -89,6 +90,11 @@ const wheelPitchMap = {
     }
     
     if (wheelSectionName) {
+      // Notify parent component about wheel click for sequence tracking
+      if (onWheelClick) {
+        onWheelClick(wheelSectionName);
+      }
+      
       // Use ONLY original choir sound with pitch for this wheel section
       if (audioContextRef.current && audioBufferRef.current && wheelPitchMap[wheelSectionName]) {
         try {
@@ -482,7 +488,7 @@ function ShadowConfig({ isMobileView }) {
 
 
 // Main scene component
-function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer, onAssetsLoaded, onEffectChange, choirWheel }) {
+function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer, onAssetsLoaded, onEffectChange, choirWheel, coinTrigger, onWheelClick }) {
   const modelRef = useRef();
   const [statueLoaded, setStatueLoaded] = useState(!enableStatue); // Consider loaded if not enabled
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -514,6 +520,7 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
     console.log('Gallery3Scene: AlligatorModel loaded');
     setModelLoaded(true);
   }, []);
+  
   
   return (
     <>
@@ -572,6 +579,7 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
           hideCandles={enableCandles}
           onLoad={handleModelLoad}
           choirWheel={choirWheel}
+          onWheelClick={onWheelClick}
         />
       </Suspense>
       
@@ -632,6 +640,11 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   const [effectInfo, setEffectInfo] = useState('Click to trigger effect');
   const [triggerLightning, setTriggerLightning] = useState(0);
   
+  // Click sequence tracking for coin stream trigger
+  const [clickSequence, setClickSequence] = useState([]);
+  const [coinTrigger, setCoinTrigger] = useState(0);
+  const requiredSequence = ['wheel_section008', 'wheel_section012', 'wheel_section013'];
+  
   // Initialize choir wheel hook at the top level
   const choirWheel = useChoirWheel({
     bpm: 100,
@@ -664,6 +677,46 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
     }
   }, [onSceneReady]);
   
+  // Handle wheel clicks for sequence tracking
+  const handleWheelClick = useCallback((wheelSectionName) => {
+    console.log('Wheel section clicked:', wheelSectionName);
+    
+    setClickSequence(prevSequence => {
+      const newSequence = [...prevSequence, wheelSectionName];
+      
+      // Keep only the last 3 clicks
+      if (newSequence.length > 3) {
+        newSequence.shift();
+      }
+      
+      // Check if the sequence matches the required pattern
+      if (newSequence.length === 3 && 
+          newSequence[0] === requiredSequence[0] &&
+          newSequence[1] === requiredSequence[1] &&
+          newSequence[2] === requiredSequence[2]) {
+        console.log('Correct sequence detected! Triggering coin streams...');
+        
+        // Play coin sound effect
+        try {
+          const coinAudio = new Audio('/sounds/coins.mp3');
+          coinAudio.volume = 0.7; // Adjust volume as needed
+          coinAudio.play().catch(error => {
+            console.error('Error playing coin sound:', error);
+          });
+        } catch (error) {
+          console.error('Error creating coin audio:', error);
+        }
+        
+        setCoinTrigger(prev => prev + 1);
+        
+        // Reset sequence after triggering
+        return [];
+      }
+      
+      return newSequence;
+    });
+  }, [requiredSequence]);
+  
   useEffect(() => {
     // Delay mounting to avoid conflicts (from Simple3DScene)
     const timer = setTimeout(() => {
@@ -695,7 +748,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
       }
     `}</style>
     
-   
+  
     
     <Canvas
       camera={{ 
@@ -737,6 +790,8 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
           onAssetsLoaded={handleAssetsLoaded}
           onEffectChange={(name) => setEffectInfo(name)}
           choirWheel={choirWheel}
+          coinTrigger={coinTrigger}
+          onWheelClick={handleWheelClick}
         />
       </Suspense>
       <Suspense fallback={null}>
@@ -748,7 +803,32 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   duration={1.0}
   scale={4.0}  // Even bigger
 />
-        
+         /* Right Hand */
+      <CoinStream 
+        startPosition={[-4, 3, 2.5]}  // Left hand position (adjusted for model scale/position)
+        endPosition={[0, -20, 0]}
+        coinCount={20}
+        coinSize={1}
+        streamWidth={1.5}
+        speed={0.8}
+        gravity={-8}
+        initialVelocity={[-4, 2, 7]}
+        trigger={coinTrigger}
+        // coinMesh={coinTemplate}
+      />
+       /* Left Hand */
+      <CoinStream 
+        startPosition={[3, 3, 2.5]}   // Right hand position (adjusted for model scale/position)
+        endPosition={[0, -20, 0]}
+        coinCount={20}
+        coinSize={1}
+        streamWidth={1.5}
+        speed={0.8}
+        gravity={-8}
+        initialVelocity={[4, 3, 6]}
+        trigger={coinTrigger}
+        // coinMesh={coinTemplate}
+      />
     </Canvas>
     {/* {showEffectButton && (
       <div style={{

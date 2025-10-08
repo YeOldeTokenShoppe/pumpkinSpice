@@ -6,20 +6,23 @@ const CoinStream = ({
   startPosition = [0, 0, 0], 
   endPosition = [0, -10, 5],
   coinCount = 30,
-  coinSize = 0.3,
+  coinSize = 0.1,
   streamWidth = 2,
   speed = 1,
   coinMesh = null,
   gravity = -9.8,
-  initialVelocity = [3, 2, 2]
+  initialVelocity = [3, 2, 2],
+  trigger = 0  // New prop: incremented to trigger a single event
 }) => {
   const meshRef = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const triggerStartTime = useRef(null);
+  const lastTrigger = useRef(0);
   
   // Create coin data with random offsets and phases
   const coins = useMemo(() => {
     return Array.from({ length: coinCount }, (_, i) => ({
-      phase: (i / coinCount) * Math.PI * 2,
+      delay: (i / coinCount) * 1.5, // Stagger coin release over 1.5 seconds
       offset: {
         x: (Math.random() - 0.5) * streamWidth,
         y: (Math.random() - 0.5) * 0.5,
@@ -41,35 +44,70 @@ const CoinStream = ({
   useFrame((state) => {
     if (!meshRef.current) return;
     
-    const time = state.clock.elapsedTime * speed;
+    // Check if we need to start a new trigger event
+    if (trigger !== lastTrigger.current) {
+      triggerStartTime.current = state.clock.elapsedTime;
+      lastTrigger.current = trigger;
+    }
     
-    coins.forEach((coin, i) => {
-      // Calculate time offset for this coin in the stream
-      const coinTime = (time + coin.phase) % 4; // 4 second loop
-      
-      // Parabolic arc physics
-      const t = coinTime;
-      const x = startPosition[0] + coin.velocity.x * t + coin.offset.x;
-      const y = startPosition[1] + coin.velocity.y * t + 0.5 * gravity * t * t + coin.offset.y;
-      const z = startPosition[2] + coin.velocity.z * t + coin.offset.z;
-      
-      // Fade out coins as they fall
-      const opacity = Math.max(0, 1 - (coinTime / 4));
-      
-      // Only show coins that haven't fallen too far
-      if (y > endPosition[1] && opacity > 0.1) {
-        dummy.position.set(x, y, z);
-        
-        // Spinning rotation
-        dummy.rotation.x = time * coin.rotationSpeed.x;
-        dummy.rotation.y = time * coin.rotationSpeed.y;
-        dummy.rotation.z = time * coin.rotationSpeed.z;
-        
-        dummy.scale.setScalar(coinSize * opacity);
+    // Only animate if we have an active trigger
+    if (triggerStartTime.current === null) {
+      // Hide all coins when not triggered
+      coins.forEach((coin, i) => {
+        dummy.position.set(0, -1000, 0);
         dummy.updateMatrix();
         meshRef.current.setMatrixAt(i, dummy.matrix);
+      });
+      meshRef.current.instanceMatrix.needsUpdate = true;
+      return;
+    }
+    
+    const timeSinceTrigger = state.clock.elapsedTime - triggerStartTime.current;
+    const animationDuration = 6; // Total animation duration (increased for longer effect)
+    
+    // Reset trigger after animation completes
+    if (timeSinceTrigger > animationDuration) {
+      triggerStartTime.current = null;
+      return;
+    }
+    
+    coins.forEach((coin, i) => {
+      // Calculate time for this specific coin (accounting for delay)
+      const coinStartTime = coin.delay;
+      const coinTime = timeSinceTrigger - coinStartTime;
+      
+      // Only animate coins whose time has come
+      if (coinTime >= 0) {
+        // Parabolic arc physics
+        const t = coinTime * speed;
+        const x = startPosition[0] + coin.velocity.x * t + coin.offset.x;
+        const y = startPosition[1] + coin.velocity.y * t + 0.5 * gravity * t * t + coin.offset.y;
+        const z = startPosition[2] + coin.velocity.z * t + coin.offset.z;
+        
+        // Fade out coins as they fall
+        const maxTime = animationDuration - coinStartTime;
+        const opacity = Math.max(0, 1 - (coinTime / maxTime));
+        
+        // Only show coins that haven't fallen too far
+        if (y > endPosition[1] && opacity > 0.1) {
+          dummy.position.set(x, y, z);
+          
+          // Spinning rotation
+          dummy.rotation.x = (timeSinceTrigger + coinStartTime) * coin.rotationSpeed.x;
+          dummy.rotation.y = (timeSinceTrigger + coinStartTime) * coin.rotationSpeed.y;
+          dummy.rotation.z = (timeSinceTrigger + coinStartTime) * coin.rotationSpeed.z;
+          
+          dummy.scale.setScalar(coinSize * opacity);
+          dummy.updateMatrix();
+          meshRef.current.setMatrixAt(i, dummy.matrix);
+        } else {
+          // Hide coins that have fallen too far
+          dummy.position.set(0, -1000, 0);
+          dummy.updateMatrix();
+          meshRef.current.setMatrixAt(i, dummy.matrix);
+        }
       } else {
-        // Hide coins that have fallen too far
+        // Hide coins that haven't started yet
         dummy.position.set(0, -1000, 0);
         dummy.updateMatrix();
         meshRef.current.setMatrixAt(i, dummy.matrix);
@@ -85,7 +123,7 @@ const CoinStream = ({
       return coinMesh.geometry;
     }
     // Fallback to a simple cylinder for coin shape
-    return new THREE.CylinderGeometry(0.5, 0.5, 0.1, 16);
+    return new THREE.CylinderGeometry(0.3, 0.3, 0.1, 16);
   }, [coinMesh]);
 
   const material = useMemo(() => {

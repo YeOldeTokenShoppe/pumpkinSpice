@@ -564,36 +564,34 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
         </>
       )}
       
-      {/* Swooping emoji instances - appear BEHIND HTML divs */}
-      <Suspense fallback={null}>
-        <group>
-          {/* Add dedicated lighting for the swooping emojis */}
-          <pointLight position={[0, 5, 10]} intensity={3} />
-          <pointLight position={[-10, 0, 10]} intensity={2} />
-          
-          <SwoopingAngelEmojiSimple 
-            id="swoop-angel-behind-1"
-            scrollThreshold={2290}
-            exitThreshold={400}  // Exit if scrolling back up
-            forwardExitThreshold={3200}  // Exit at 900px forward
-            swoopFrom="left"
-            finalPosition={[
-              isMobile ? -4 : -8,  // X: Mobile closer to center | Desktop further left
-              isMobile ? -6 : -8,  // Y: Mobile higher | Desktop lower
-              isMobile ? 6 : 4     // Z: Mobile further back | Desktop closer
-            ]}
-            isMobile={isMobile}
-          />
-          
-          {/* <SwoopingDevilEmojiSimple 
-            id="swoop-devil-behind-1"
-            scrollThreshold={9000}
-            swoopFrom="right"
-            finalPosition={[isMobile ? 8 : 15, -5, 5]}
-            isMobile={isMobile}
-          /> */}
-        </group>
-      </Suspense>
+      {/* Swooping emoji instances - appear BEHIND HTML divs - desktop only */}
+      {!isMobile && (
+        <Suspense fallback={null}>
+          <group>
+            {/* Add dedicated lighting for the swooping emojis */}
+            <pointLight position={[0, 5, 10]} intensity={3} />
+            <pointLight position={[-10, 0, 10]} intensity={2} />
+            
+            <SwoopingAngelEmojiSimple 
+              id="swoop-angel-behind-1"
+              scrollThreshold={2290}
+              exitThreshold={400}  // Exit if scrolling back up
+              forwardExitThreshold={3200}  // Exit at 900px forward
+              swoopFrom="left"
+              finalPosition={[-8, -8, 4]}  // Desktop only positioning
+              isMobile={isMobile}
+            />
+            
+            {/* <SwoopingDevilEmojiSimple 
+              id="swoop-devil-behind-1"
+              scrollThreshold={9000}
+              swoopFrom="right"
+              finalPosition={[15, -5, 5]}
+              isMobile={isMobile}
+            /> */}
+          </group>
+        </Suspense>
+      )}
       
       {/* Add bloom effect if enabled */}
       {enableBloom && (

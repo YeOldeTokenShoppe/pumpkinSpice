@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { gsap } from 'gsap';
 
 // Main DropInTitle component
@@ -11,8 +11,15 @@ export default function DropInTitle({
   isMobile = false,
   onAnimationComplete = () => {},
   triggerAnimation = true,
-  instanceId = Math.random().toString(36).substr(2, 9) // Generate unique ID for this instance
+  instanceId // Allow manual override if needed
 }) {
+  // Generate a stable ID based on the content, not random values
+  const stableId = useMemo(() => {
+    if (instanceId) return instanceId;
+    // Create a deterministic ID based on the lines content
+    const contentHash = lines.join('').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    return `dropin-${contentHash}`;
+  }, [instanceId, lines]);
   const containerRef = useRef(null);
   const buttonRef = useRef(null);
   
@@ -65,7 +72,7 @@ export default function DropInTitle({
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css?family=Fjalla+One');
         
-        .title-letter-${instanceId} {
+        .title-letter-${stableId} {
           transform: skew(-10deg);
           display: block;
           float: left;
@@ -103,7 +110,7 @@ export default function DropInTitle({
             {line.split('').map((char, charIndex) => (
               <span 
                 key={`${lineIndex}-${charIndex}`}
-                className={`title-letter title-letter-${instanceId}`}
+                className={`title-letter title-letter-${stableId}`}
                 style={{ color: colors[lineIndex % colors.length] }}
               >
                 {char === ' ' ? '\u00A0' : char}

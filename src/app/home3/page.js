@@ -2075,7 +2075,7 @@ export default function Home3() {
       </Suspense>
       
       {/* Temporary scroll debug - remove when done choreographing */}
-      <ScrollDebug />
+      {/* <ScrollDebug /> */}
       
       {/* Scrollable Overlay Content - Hidden while loading */}
       <div style={{

@@ -67,9 +67,9 @@ export default function EmojiOverlay({ scrollY }) {
   const isLowEndDevice = GPUTier.tier < 2 || GPUTier.isMobile;
   // console.log('[EmojiOverlay] Rendering - GPU Tier:', GPUTier.tier, 'Mobile:', GPUTier.isMobile, 'isLowEndDevice:', isLowEndDevice);
   
-  // Skip rendering on very low-end devices
-  if (GPUTier.tier === 0) {
-    // console.log('[EmojiOverlay] Skipping render due to low GPU tier');
+  // Skip rendering on very low-end devices or mobile phones
+  if (GPUTier.tier === 0 || isMobilePhone) {
+    // console.log('[EmojiOverlay] Skipping render due to low GPU tier or mobile device');
     return null;
   }
   
