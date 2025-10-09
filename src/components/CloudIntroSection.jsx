@@ -182,15 +182,15 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
   const cards = [
     {
       id: 0,
-      frontTitle: "Faith",
-      frontDescription: "She is your guardian of good vibes",
-      backTitle: "Sacred Covenant",
-      backContent: "Upholding the highest ideals of the cryptocurency ethos:",
+      frontTitle: "Excellence",
+      frontDescription: "Transforming vision into measurable outcomes through strategic innovation",
+      backTitle: "Strategic Framework",
+      backContent: "Delivering comprehensive solutions that drive sustainable growth and operational efficiency:",
       backList: [
-        "Deflationary tokenomics with burn incentives",
-        "Buybacks to support price stability",
-        "Liquidity building protocal",
-         "Built on BASE for low fees and high speed"
+        "Advanced analytics and performance optimization",
+        "Scalable infrastructure with automated workflows",
+        "Data-driven decision making protocols",
+        "Enterprise-grade security and compliance standards"
       ],
       backStats: {
         supply: "80,000,000,000 $RL80",
@@ -204,32 +204,31 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
     },
     {
       id: 1,
-      frontTitle: "Hope",
-      frontDescription: "Irrational markets call for irrational strategies",
-      backTitle: "",
-      backContent: "",
+      frontTitle: "Innovation",
+      frontDescription: "Pioneering next-generation solutions for complex business challenges",
+      backTitle: "Technology Leadership",
+      backContent: "Leveraging cutting-edge methodologies to accelerate digital transformation:",
       backList: [
-      "Add a virtual green candle to the blockchain"
+        "Machine learning and artificial intelligence integration",
+        "Cloud-native architecture and microservices",
+        "Real-time monitoring and predictive analytics"
       ],
             backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/teknoir.jpg")'
 
     },
     {
       id: 2,
-      frontTitle: "Charity",
-      frontDescription: "From mimes to memes, she is a patron of the arts and worthy causes",
-      backTitle: "Give and Ye Shall Receive",
-      backContent: "Manifesting prosperity through devout liquidity and generosity:",
+      frontTitle: "Partnership",
+      frontDescription: "Building sustainable relationships that create long-term value for all stakeholders",
+      backTitle: "Collaborative Excellence",
+      backContent: "Fostering strategic alliances through transparency, accountability, and shared success:",
       backList: [
-
-              "Ensuring sufficient liquidity",
-           "Rewards for exceptionally creative posts tagged #RL80",
-       
-        "Coin fountain as community-driven charity fund",
-
-    
+        "Cross-functional team collaboration",
+        "Stakeholder engagement and communication",
+        "Continuous improvement and knowledge sharing",
+        "Community-driven innovation initiatives"
       ],
-      backQuote: "Where two or three gather in profit, there I am with them.",
+      backQuote: "Excellence is achieved through collaborative innovation and shared vision.",
       backgroundImage: 'linear-gradient(rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.2)), url("/images/mosaic.jpg")'
     }
   ];
@@ -632,41 +631,26 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
               <br/>
      
               <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '0rem', textAlign: 'center', color: '#d4af37'}}>She Sells Sanctuary</h1>
-              <p style={{
-                lineHeight: 1.2,
+              <div style={{
+                lineHeight: 1.6,
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
                 letterSpacing: '0.02em',
-                fontSize: isMobile ? '1.1rem' : '1.3rem',
+                fontSize: isMobile ? '1.2rem' : '1.4rem',
                 textAlign: 'center',
-                // marginBottom: '3.5rem',
                 width: '100%',
-                maxWidth: '600px', // Add max width for better readability
+                maxWidth: '600px',
               }}>
-{/* <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
-A timeless icon for the trustless economy
-</span> */}
-Whether you need a Hail Mary for hard times, or simply sanctuary in the dark realm of DeFi, <b>Our Lady of Perpetual Profit</b> offers you her protection. The <b>RL80 </b>token is backed by an open-source contract that requires no leaps of faith. Examine it here →  <a href="https://base.blockscout.com/address/0x1234567890123456789012345678901234567890/contracts" target="_blank" rel="noopener noreferrer" style={{ color: '#d4af37', textDecoration: 'none' }}> <span style={{
+              <p style={{ marginBottom: '1.5rem' }}>
+                Transform your organization with <b>enterprise-grade solutions</b> designed for sustainable growth. Our technology-first approach ensures scalable, secure implementation.
+              </p>
+              
+              <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
+                Partner with us to unlock your organization's full potential through strategic technology implementation.
+              </p>
 
-              position: 'relative',
-              top: '2px',
-              fontSize: '20px',
-              // backgroundColor: '#1a1a1a',
-              padding: '0 4px',
-            }}>📜</span>
-            <span style={{
-              position: 'relative',
-              // top: '5px',
-              marginLeft: '-12px',
-              fontSize: '10px',
-              // backgroundColor: '#1a1a1a',
-              padding: '0 4px',
-            }}>✅</span></a><br/><br/>
-RL80 includes a higher, trust-optional layer of sacred principles, including <b><i>prosperity for all humanity</i></b> and <b><i>liquidity in perpetuity</i></b>.
-If these ideals speak to you, you may wish to test your faith with a small and cautious purchase of the RL80 token. 
-
-</p>
+</div>
                   {/* Contract Address Container */}
                 <div style={{
                   flex: '0 0 auto',
@@ -995,40 +979,6 @@ If these ideals speak to you, you may wish to test your faith with a small and c
                     boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                   }}
                 >
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      width: '60px',
-                      height: '60px',
-                      background: '#d4af37',
-                      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
-                      zIndex: 5,
-                      pointerEvents: 'none',
-                      border: '2px solid #b8941f',
-                      borderTop: 'none',
-                      borderRight: 'none',
-                      borderTopRightRadius: '20px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '15px',
-                        right: '8px',
-                        transform: 'rotate(45deg)',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold',
-                        color: '#000',
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px',
-                        textShadow: '0 1px 2px rgba(255,255,255,0.3)',
-                      }}
-                    >
-                      FLIP
-                    </div>
-                  </div>
                   <div className="cloud-card-back-content"
                     style={{
                       padding: '30px',
@@ -1303,40 +1253,6 @@ If these ideals speak to you, you may wish to test your faith with a small and c
                       boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                     }}
                   >
-                    <div
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      width: '60px',
-                      height: '60px',
-                      background: '#d4af37',
-                      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
-                      zIndex: 5,
-                      pointerEvents: 'none',
-                      border: '2px solid #b8941f',
-                      borderTop: 'none',
-                      borderRight: 'none',
-                      borderTopRightRadius: '20px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '15px',
-                        right: '8px',
-                        transform: 'rotate(45deg)',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold',
-                        color: '#000',
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px',
-                        textShadow: '0 1px 2px rgba(255,255,255,0.3)',
-                      }}
-                    >
-                      FLIP
-                    </div>
-                  </div>
                     <div className="cloud-card-back-content"
                       style={{
                         padding: '30px',
@@ -1561,28 +1477,32 @@ If these ideals speak to you, you may wish to test your faith with a small and c
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '0rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get On Her Watchlist</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get On Her Watchlist</h1>
        
-              <p style={{
-                lineHeight: 1.2,
+              <div style={{
+                lineHeight: 1.7,
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
                 letterSpacing: '0.02em',
-                  fontSize: isMobile ? '1.1rem' : '1.3rem',
+                fontSize: isMobile ? '1.2rem' : '1.4rem',
                 textAlign: 'center',
-                // marginBottom: '3.5rem',
                 width: '100%',
-                maxWidth: '600px', // Add max width for better readability
+                maxWidth: '600px',
               }}>
-                       <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
-              RL80 is The Token of Appreciation</span>
-              Share a wish, prayer, or confession with <b>Our Lady of Perpetual Profit.</b>
-Your words will be immortalized on the blockchain for all of eternity.
-Customize your candle, and light it with an offering of $RL80.
-Burn any amount — every token sacrificed lifts all holders up and to the right.
+              <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
+                Elevating Business Performance Through Innovation
+              </span>
+              
+              <p style={{ marginBottom: '2rem' }}>
+                Transform your organization with our <b>comprehensive digital transformation platform.</b> Experience seamless integration and maximum efficiency.
+              </p>
+              
+              <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
+                Leverage proven methodologies for strategic decision-making and measurable results.
+              </p>
 
-          </p>
+          </div>
        <button
                         onClick={handleOpenModal}
                          style={{

@@ -1,7 +1,7 @@
 import Image from "next/image";
 // import { Link, Button } from "@chakra-ui/react";
 import { ConnectButton, darkTheme } from "thirdweb/react";
-import { client } from "@/utilities/client";
+import { client } from "../client";
 import { CHAIN } from "@/utilities/constants";
 import { createWallet, walletConnect } from "thirdweb/wallets";
 import { ThirdwebProvider, MediaRenderer } from "thirdweb/react";
