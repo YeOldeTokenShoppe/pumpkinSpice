@@ -9,7 +9,7 @@ const EmojiOverlay = lazy(() => import('@/components/EmojiOverlay'));
 import { useGLTF, useAnimations, MeshPortalMaterial, CameraControls, Text, useCursor } from '@react-three/drei';
 import * as THREE from 'three';
 import { shaderMaterial } from '@react-three/drei';
-import { extend } from '@react-three/fiber';
+import { extend, useFrame, useThree } from '@react-three/fiber';
 import { geometry, easing } from 'maath';
 // import DarkClouds from '@/components/Clouds'; // Disabled for memory
 // Removed unused imports for memory optimization
@@ -172,21 +172,21 @@ const OurLadyRiderModel = React.memo(({ isMobile, scrollY, onLoad }) => {
   const cloudRef = useRef();
   const hasCalledOnLoad = useRef(false);
   
-  // Disable cleanup for now to prevent context issues
-  // useEffect(() => {
-  //   return () => {
-  //     scene.traverse((child) => {
-  //       if (child.geometry) child.geometry.dispose();
-  //       if (child.material) {
-  //         if (Array.isArray(child.material)) {
-  //           child.material.forEach(mat => mat.dispose());
-  //         } else {
-  //           child.material.dispose();
-  //         }
-  //       }
-  //     });
-  //   };
-  // }, [scene]);
+  // Re-enable cleanup for memory optimization
+  useEffect(() => {
+    return () => {
+      scene.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(mat => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+    };
+  }, [scene]);
 
   
   React.useEffect(() => {
@@ -300,8 +300,15 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
   useFrame((state, delta) => {
     if (!modelRef.current) return;
     
+    // Only animate when visible to save performance
+    if (!visible) {
+      modelRef.current.visible = false;
+      return;
+    }
+    modelRef.current.visible = true;
+    
     // Smooth pop-in scale animation
-    if (visible && popScale < 1) {
+    if (popScale < 1) {
       setPopScale(prev => Math.min(prev + delta * 3, 1)); // Animate over ~0.3 seconds
     }
     
@@ -321,11 +328,11 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
     modelRef.current.position.z = centerZ + Math.sin(angle) * -orbitRadius;
     
     // Add pop-in effect to Y position (starts lower, pops up)
-    const popOffset = visible ? (1 - popScale) * -20 : -30; // Start 30 units lower for more dramatic effect
+    const popOffset = (1 - popScale) * -20; // Start 20 units lower for dramatic effect
     modelRef.current.position.y = orbitHeight + Math.sin(time * 2) * bobAmount + scrollY * 0.015 + popOffset;
     
     // Apply pop-in scale with bounce effect
-    const bounceScale = visible ? popScale * (1 + Math.sin(popScale * Math.PI) * 0.2) : 0; // Start at 0 scale, more bounce
+    const bounceScale = popScale * (1 + Math.sin(popScale * Math.PI) * 0.2); // Bounce effect
     modelRef.current.scale.setScalar((isMobile ? 0.7 : 1) * bounceScale);
     
     // Billboard - make model face the camera
@@ -345,6 +352,10 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
 function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
   // Don't load on mobile to save memory
   if (isMobile) {
+    // Call onLoad immediately for mobile since we're not loading the model
+    useEffect(() => {
+      if (onLoad) onLoad();
+    }, [onLoad]);
     return null;
   }
   
@@ -413,8 +424,15 @@ function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
   useFrame((state, delta) => {
     if (!modelRef.current) return;
     
+    // Only animate when visible to save performance
+    if (!visible) {
+      modelRef.current.visible = false;
+      return;
+    }
+    modelRef.current.visible = true;
+    
     // Smooth pop-in scale animation
-    if (visible && popScale < 1) {
+    if (popScale < 1) {
       setPopScale(prev => Math.min(prev + delta * 3, 1)); // Animate over ~0.3 seconds
     }
     
@@ -434,11 +452,11 @@ function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
     modelRef.current.position.z = centerZ + Math.sin(angle) * -orbitRadius;
     
     // Add pop-in effect to Y position (starts lower, pops up)
-    const popOffset = visible ? (1 - popScale) * -10 : -15; // Start 15 units lower
+    const popOffset = (1 - popScale) * -10; // Start 10 units lower
     modelRef.current.position.y = orbitHeight + Math.sin(time * 2 + Math.PI) * bobAmount + scrollY * 0.015 + popOffset; // Opposite phase bobbing
     
     // Apply pop-in scale with bounce effect
-    const bounceScale = visible ? popScale * (1 + Math.sin(popScale * Math.PI) * 0.1) : 0; // Start at 0 scale
+    const bounceScale = popScale * (1 + Math.sin(popScale * Math.PI) * 0.1); // Bounce effect
     modelRef.current.scale.setScalar((isMobile ? 0.7 : 1) * bounceScale);
     
     // Billboard - make model face the camera
@@ -1086,7 +1104,7 @@ export default function Home3() {
     return () => clearTimeout(fallbackTimer);
   }, []); // Run once on mount
 
-  // Alternate emoji for sign-in button
+  // Alternate emoji for sign-in button with cleanup
   useEffect(() => {
     const emojiInterval = setInterval(() => {
       setEmoji((prevEmoji) => (prevEmoji === "😇" ? "😈" : "😇"));
@@ -1248,7 +1266,15 @@ export default function Home3() {
       const scrolled = window.pageYOffset;
       const cards = document.querySelectorAll('.card-wrap.visible');
       
-      cards.forEach((card, index) => {
+      // Clear old entries from the Map to prevent memory buildup
+      const currentCards = new Set(cards);
+      for (const [card] of cardTransforms.current) {
+        if (!currentCards.has(card)) {
+          cardTransforms.current.delete(card);
+        }
+      }
+      
+      cards.forEach((card) => {
         const rect = card.getBoundingClientRect();
         // Calculate distance from viewport center for parallax depth
         const viewportCenter = window.innerHeight / 2;
@@ -1273,6 +1299,8 @@ export default function Home3() {
 
     return () => {
       window.removeEventListener('scroll', handleCardScroll);
+      // Clear the Map on cleanup to free memory
+      cardTransforms.current.clear();
     };
   }, [mounted]);
   

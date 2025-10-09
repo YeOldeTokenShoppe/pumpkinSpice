@@ -20,7 +20,7 @@ env:
     
   # ThirdWeb
   - variable: NEXT_PUBLIC_THIRDWEB_CLIENT_ID
-    value: f2ebab44eccad7efe22c48f73c19e347
+    value: cbae42251fe95b7e26a19a326b96ce5c
     availability:
       - BUILD
       - RUNTIME

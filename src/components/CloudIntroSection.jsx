@@ -646,16 +646,15 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                 No Leap of Faith Required
               </span>
               <p style={{ marginBottom: '1rem' }}>
-                The RL80 token features a verified, open-source smart contract with transparent tokenomics. 
-                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
+Whether you need a Hail Mary for hard times, or simply sanctuary in the dark realm of DeFi, Our Lady of Perpetual Profit offers you her protection.                 <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
                   Liquidity Burned | 4% Tax (Buy/Sell) | 80 Billion Capped Supply
                 </span>
               </p>
-<p>RL80 includes a trust-optional layer of these sacred principles: <i><b>prosperity for all humanity</b></i> and <i><b>liquidity in perpetuity</b></i>.              </p>
+{/* <p>RL80 includes a trust-optional layer of these sacred principles: <i><b>prosperity for all humanity</b></i> and <i><b>liquidity in perpetuity</b></i>.              </p>
               
               <p style={{ marginBottom: '1.5rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
                 If these ideals resonate with you, consider testing your faith with a small, cautious purchase of the RL80 token.
-              </p>
+              </p> */}
               
               <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
                 <a href="https://base.blockscout.com/address/0x1234567890123456789012345678901234567890/contracts" target="_blank" rel="noopener noreferrer" style={{ color: '#d4af37', textDecoration: 'none', fontSize: isMobile ? '1rem' : '1.1rem' }}>
@@ -869,6 +868,9 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                   height: '100%',
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
+                  MozBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(0deg)',
+                  WebkitTransform: 'rotateY(0deg)',
                 }}
               >
                 <div className="cloud-card"
@@ -886,6 +888,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                  
                   {/* Diagonal half-box tab in right corner */}
                   <div
+                    className="flip-tab-front"
                     style={{
                       position: 'absolute',
                       top: 0,
@@ -898,6 +901,9 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                       pointerEvents: 'none',
                       backfaceVisibility: 'hidden',
                       WebkitBackfaceVisibility: 'hidden',
+                      MozBackfaceVisibility: 'hidden',
+                      opacity: flippedCards.has(cards[0].id) ? 0 : 1,
+                      visibility: flippedCards.has(cards[0].id) ? 'hidden' : 'visible',
                       border: '2px solid #b8941f',
                       borderTop: 'none',
                       borderRight: 'none',
@@ -916,6 +922,8 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                         textTransform: 'uppercase',
                         letterSpacing: '1px',
                         textShadow: '0 1px 2px rgba(255,255,255,0.3)',
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
                       }}
                     >
                       FLIP
@@ -1145,6 +1153,9 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                     height: '100%',
                     backfaceVisibility: 'hidden',
                     WebkitBackfaceVisibility: 'hidden',
+                    MozBackfaceVisibility: 'hidden',
+                    transform: 'rotateY(0deg)',
+                    WebkitTransform: 'rotateY(0deg)',
                   }}
                 >
                   <div className="cloud-card"
@@ -1162,6 +1173,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                    
                     {/* Diagonal half-box tab in right corner */}
                       <div
+                    className="flip-tab-front"
                     style={{
                       position: 'absolute',
                       top: 0,
@@ -1174,6 +1186,9 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                       pointerEvents: 'none',
                       backfaceVisibility: 'hidden',
                       WebkitBackfaceVisibility: 'hidden',
+                      MozBackfaceVisibility: 'hidden',
+                      opacity: flippedCards.has(card.id) ? 0 : 1,
+                      visibility: flippedCards.has(card.id) ? 'hidden' : 'visible',
                       border: '2px solid #b8941f',
                       borderTop: 'none',
                       borderRight: 'none',
@@ -1192,6 +1207,8 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                         textTransform: 'uppercase',
                         letterSpacing: '1px',
                         textShadow: '0 1px 2px rgba(255,255,255,0.3)',
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
                       }}
                     >
                       FLIP

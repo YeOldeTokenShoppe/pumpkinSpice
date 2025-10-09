@@ -142,6 +142,14 @@
 				#coinCounter {
 					display: none !important;  /* Hide desktop coin counter on mobile */
 				}
+				
+				#mobileCollectionCounter {
+					display: flex !important; /* Ensure mobile counter shows */
+				}
+				
+				.mobile-buttons-inline {
+					display: flex !important; /* Ensure mobile buttons show */
+				}
 			}
 
 		/* Charity Modal Styles */
@@ -357,13 +365,13 @@
 			position: fixed;
 			left: 50%;
 			transform: translateX(-50%);
-			bottom: 10vh;
+			bottom: 20vh;
 			display: none;
 			flex-direction: row;
 			align-items: center;
 			justify-content: center;
 			gap: 12px;
-			z-index: 1000;
+			z-index: 1600;
 			width: 95%;
 			max-width: 600px;
 		">
@@ -735,7 +743,7 @@
 					if (mobileCollectionCounter) {
 						mobileCollectionCounter.style.display = 'flex';
 						mobileCollectionCounter.style.flexDirection = 'column';
-						mobileCollectionCounter.style.bottom = '160px'; // Higher on desktop
+						mobileCollectionCounter.style.bottom = '25vh'; // Higher on desktop
 						
 						// Reset the mobile-counter-buttons container to column for desktop
 						const mobileCounterButtons = mobileCollectionCounter.querySelector('.mobile-counter-buttons');
@@ -4433,7 +4441,7 @@
 			/* Small phone screens (iPhone SE, older iPhones) */
 			@media (max-width: 480px) and (max-height: 700px) {
 				#mobileCollectionCounter {
-					bottom: 12vh !important;
+					bottom: 22vh !important;
 				}
 				
 				.mobile-counter-buttons {
@@ -4453,7 +4461,7 @@
 				
 				#mobileCollectionCounter {
 					display: flex !important;
-					bottom: 16vh !important;
+					bottom: 25vh !important;
 				}
 			}
 			
@@ -4465,7 +4473,7 @@
 				
 				#mobileCollectionCounter {
 					display: flex !important;
-					bottom: 22vh !important;
+					bottom: 28vh !important;
 				}
 			}
 			

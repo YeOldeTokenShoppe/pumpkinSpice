@@ -546,7 +546,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
   const position = isDesktop 
     ? [centerOffset.x + 1, centerOffset.y - 2, centerOffset.z + 3] // Desktop: offset to right side
     : isTablet
-    ? [centerOffset.x + 0.5, centerOffset.y - 1.5, centerOffset.z + 1] // Tablet: slightly offset
+    ? [centerOffset.x + 1.5, centerOffset.y - 1.5, centerOffset.z + 1] // Tablet: slightly offset
     : [centerOffset.x + 1, centerOffset.y - 1, centerOffset.z]; // Mobile: centered
   
   const scale = isDesktop ? 2 : isTablet ? 1.8 : 1.5; // Tablet: between desktop and mobile
@@ -1170,17 +1170,14 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 left: '1rem',
                 right: '1rem',
                 width: 'calc(100% - 2rem)',
-                height: windowWidth <= 480 ? '40%' : '45%',
+                height: windowWidth <= 480 ? '35%' : '40%',
                 border: 'none',
                 pointerEvents: 'auto',
                 background: 'transparent',
                 zIndex: 5,
                 opacity: 0.85,
                 mixBlendMode: 'screen',
-                borderRadius: '8px',
-                transform: 'scale(1)',
-                transformOrigin: 'center',
-                overflow: 'hidden'
+                borderRadius: '8px'
               }}
               title="Scroll Overlay"
             />
