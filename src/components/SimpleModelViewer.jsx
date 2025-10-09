@@ -384,12 +384,14 @@ function FloatingChart({ position, chartData, chartType = 'line', chartLabel = '
   );
 }
 
-function Model({ modelPath, onLoaded, is80sMode }) {
+function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
   const group = useRef();
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, group);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [centerOffset, setCenterOffset] = useState(new THREE.Vector3(0, 0, 0));
+  const scrollMaterialsRef = useRef([]);
+  const scrollMeshesRef = useRef({});
   
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -420,6 +422,69 @@ function Model({ modelPath, onLoaded, is80sMode }) {
       }
     }
   }, [scene, is80sMode]);
+  
+  // Add glow effects to scroll objects and make them clickable
+  useEffect(() => {
+    if (scene) {
+      const scrollObjects = ['Scroll1', 'Scroll2', 'Scroll3'];
+      scrollMaterialsRef.current = []; // Reset materials array
+      scrollMeshesRef.current = {}; // Reset meshes object
+      
+      scrollObjects.forEach(scrollName => {
+        const scrollMesh = scene.getObjectByName(scrollName);
+        if (scrollMesh) {
+          console.log(`Found ${scrollName}, applying glow effect and click handler`);
+          
+          // Store mesh reference for click handling
+          scrollMeshesRef.current[scrollName] = scrollMesh;
+          
+          // Add click handler
+          const handleScrollClick = (event) => {
+            event.stopPropagation();
+            console.log(`${scrollName} clicked!`);
+            if (onScrollClick) {
+              const scrollNumber = scrollName.toLowerCase().replace('scroll', '');
+              onScrollClick(`scroll${scrollNumber}.html`);
+            }
+          };
+          
+          // Make the scroll clickable
+          scrollMesh.traverse((child) => {
+            if (child.isMesh) {
+              child.userData.clickable = true;
+              child.userData.scrollName = scrollName;
+              child.userData.onClick = handleScrollClick;
+              
+              if (child.material) {
+                // Clone the material to avoid affecting other objects
+                const originalMaterial = child.material;
+                const glowMaterial = originalMaterial.clone();
+                
+                // Add emissive glow
+                glowMaterial.emissive = new THREE.Color(0xd4af37); // Golden glow
+                glowMaterial.emissiveIntensity = 0.1;
+                
+                // Make it slightly transparent for a magical effect
+                if (!glowMaterial.transparent) {
+                  glowMaterial.transparent = true;
+                  glowMaterial.opacity = 0.9;
+                }
+                
+                child.material = glowMaterial;
+                
+                // Store reference for pulsing animation
+                scrollMaterialsRef.current.push(glowMaterial);
+                
+                console.log(`Applied glow material to ${scrollName}`);
+              }
+            }
+          });
+        } else {
+          console.log(`${scrollName} not found in the model`);
+        }
+      });
+    }
+  }, [scene, onScrollClick]);
   
   useEffect(() => {
     // Play multiple animations simultaneously
@@ -466,21 +531,58 @@ function Model({ modelPath, onLoaded, is80sMode }) {
     }
   }, [actions, scene]);
   
-  // Check if desktop (non-mobile/tablet)
-  const isDesktop = windowWidth > 768;
-  // Apply rotation only on desktop
-  const rotation = isDesktop ? [0, -Math.PI/2, 0] : [0, 0, 0];
+  // Check device type
+  const isDesktop = windowWidth > 1024;
+  const isTablet = windowWidth > 768 && windowWidth <= 1024;
+  const isMobile = windowWidth <= 768;
   
-  // Apply the center offset to position the model at [0,0,0]
-  const position = [
-    centerOffset.x,
-    centerOffset.y - 2, // Keep the -2 vertical adjustment
-    centerOffset.z
-  ];
+  // Different settings for desktop vs tablet vs mobile
+  const rotation = isDesktop 
+    ? [0, -Math.PI/2, 0] 
+    : isTablet 
+    ? [0, -Math.PI/6, 0] // Tablet: 30° angle
+    : [0, -Math.PI/10, 0]; // Mobile: slight angle for better view
+  
+  const position = isDesktop 
+    ? [centerOffset.x + 1, centerOffset.y - 2, centerOffset.z + 3] // Desktop: offset to right side
+    : isTablet
+    ? [centerOffset.x + 0.5, centerOffset.y - 1.5, centerOffset.z + 1] // Tablet: slightly offset
+    : [centerOffset.x + 1, centerOffset.y - 1, centerOffset.z]; // Mobile: centered
+  
+  const scale = isDesktop ? 2 : isTablet ? 1.8 : 1.5; // Tablet: between desktop and mobile
+  
+  // Pulsing animation for scroll objects
+  useFrame(({ clock }) => {
+    if (scrollMaterialsRef.current.length > 0) {
+      const time = clock.getElapsedTime();
+      const pulseIntensity = 0.1 + Math.sin(time * 2) * 0.05; // Gentle pulse between 0.05 and 0.15
+      
+      scrollMaterialsRef.current.forEach(material => {
+        material.emissiveIntensity = pulseIntensity;
+      });
+    }
+  });
+  
+  // Handle clicks on scroll objects
+  const handleClick = (event) => {
+    const intersects = event.intersections;
+    if (intersects.length > 0) {
+      const clickedObject = intersects[0].object;
+      if (clickedObject.userData.clickable && clickedObject.userData.onClick) {
+        clickedObject.userData.onClick(event);
+      }
+    }
+  };
   
   return (
     <group ref={group}>
-      <primitive position={position} rotation={rotation} object={scene} scale={2} />
+      <primitive 
+        position={position} 
+        rotation={rotation} 
+        object={scene} 
+        scale={scale}
+        onClick={handleClick}
+      />
     </group>
   );
 }
@@ -727,6 +829,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
   const [modelLoaded, setModelLoaded] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [currentScrollSrc, setCurrentScrollSrc] = useState('/scroll.html'); // Default scroll
   
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -763,8 +866,9 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
     };
   }, []);
   
-  // Check if desktop (non-mobile/tablet)
-  const isDesktop = windowWidth > 768;
+  // Check device type for overlay logic
+  const isDesktop = windowWidth > 1024;
+  const isTablet = windowWidth > 768 && windowWidth <= 1024;
   
   // Hide loader only when everything is loaded
   useEffect(() => {
@@ -812,116 +916,144 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
       <div style={{
         width: '100%',
         height: '100%',
-        display: isDesktop ? 'flex' : 'block',
+        display: 'block',
         opacity: isLoading ? 0 : 1,
         transition: 'opacity 0.5s ease-in-out'
       }}>
-      {/* Left Column - Heading and Scroll (Desktop only) */}
-      {isDesktop && (
-        <div style={{
-          width: '50%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: '2rem',
-          position: 'relative'
-        }}>
-          {/* Heading */}
-          <div style={{
-            marginBottom: '2rem',
-            textAlign: 'center'
-          }}>
-            <h1 style={{ 
-              color: '#8e662b',
-              fontFamily: '"UnifrakturCook", serif',
-              textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
-              fontSize: '4rem',
-              fontWeight: 900,
-              lineHeight: 0.8,
-              transform: 'rotate(-8deg) skew(-15deg)',
-              margin: 0
-            }}>The Scrolls <br/>of St. GR80</h1>
-            
-            {/* Introduction text */}
-            <div style={{
-              marginTop: '1.5rem',
-              padding: '1rem',
-              backgroundColor: 'rgba(142, 102, 43, 0.1)',
-              border: '2px solid #8e662b',
-              borderRadius: '8px',
-              maxWidth: '400px',
-              margin: '1.5rem auto 0'
-            }}>
-              <p style={{
-                color: '#d4af37',
-                fontFamily: 'Georgia, serif',
-                fontSize: '1rem',
-                lineHeight: 1.6,
-                margin: 0,
-                textAlign: 'center',
-                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
-              }}>
-              Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
-  
-              </p>
-            </div>
-          </div>
-          
-          {/* Scroll iframe */}
-          <iframe
-            src="/scroll.html"
-            onLoad={() => setIframeLoaded(true)}
-            style={{
-              width: '100%',
-              height: '60%',
-              border: 'none',
-              pointerEvents: 'auto',
-              background: 'transparent',
-              opacity: 0.9,
-              mixBlendMode: 'screen'
-            }}
-            title="Scroll Overlay"
-          />
-        </div>
-      )}
       
-      {/* Right Column - 3D Model (Desktop) or Full Width (Mobile) */}
+      {/* Full-width 3D Model Container */}
       <div style={{
-        width: isDesktop ? '50%' : '100%',
+        width: '100%',
         height: '100%',
         position: 'relative'
       }}>
-      {/* 80s Mode Video Background */}
-      {is80sMode && (
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          style={{
-            position: 'absolute',
-            top: isDesktop ? '20%' : '30%',
-            ...(isDesktop ? { left: '20%' } : { right: '30%' }),
-            transform: isDesktop ? 'translate(-50%, -50%) scale(0.4)' : 'translate(50%, -50%) scale(0.4)',
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            zIndex: 0,
-            opacity: 0.7,
-            // borderRadius: '10px',
-            // boxShadow: '0 0 30px rgba(217, 70, 239, 0.5)'
+        
+        {/* Left Column Overlay - Heading and Scroll (Desktop and Tablet) */}
+        {(isDesktop || isTablet) && (
+          <>
+            {/* Heading Section - positioned at top */}
+            <div style={{
+              position: 'absolute',
+              left: '0',
+              top: '0',
+              width: '50%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              padding: '2rem',
+              paddingTop: '4rem',
+              zIndex: 1000,
+              pointerEvents: 'none'
+            }}>
+              {/* Heading */}
+              <div style={{
+                marginBottom: '2rem',
+                textAlign: 'center',
+                pointerEvents: 'none'
+              }}>
+                <h1 style={{ 
+                  color: '#8e662b',
+                  fontFamily: '"UnifrakturCook", serif',
+                  textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
+                  fontSize: '4rem',
+                  fontWeight: 900,
+                  lineHeight: 0.8,
+                  transform: 'rotate(-8deg) skew(-15deg)',
+                  margin: 0
+                }}>The Scrolls <br/>of St. GR80</h1>
+                
+                {/* Introduction text */}
+                <div style={{
+                  marginTop: isTablet ? '3rem' : '1.5rem',
+                  padding: '1rem',
+                  backgroundColor: 'rgba(142, 102, 43, 0.1)',
+                  border: '2px solid #8e662b',
+                  borderRadius: '8px',
+                  maxWidth: '400px',
+                  margin: `${isTablet ? '3rem' : '1.5rem'} auto 0`
+                }}>
+                  <p style={{
+                    color: '#d4af37',
+                    fontFamily: 'Georgia, serif',
+                    fontSize: '1rem',
+                    lineHeight: 1.6,
+                    margin: 0,
+                    textAlign: 'center',
+                    textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
+                  }}>
+                  Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
+      
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Scroll iframe - separate positioning */}
+            <div style={{
+              position: 'absolute',
+              left: '0',
+              bottom: isTablet ? '4rem' : '2rem',
+              width: '50%',
+              height: isTablet ? '40%' : '50%',
+              padding: '2rem',
+              zIndex: 1000,
+              pointerEvents: 'none'
+            }}>
+              <iframe
+                src={currentScrollSrc}
+                onLoad={() => setIframeLoaded(true)}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  pointerEvents: 'auto',
+                  background: 'transparent',
+                  opacity: 0.9,
+                  mixBlendMode: 'screen'
+                }}
+                title="Scroll Overlay"
+              />
+            </div>
+          </>
+        )}
+        {/* 80s Mode Video Background */}
+        {is80sMode && (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              position: 'absolute',
+              top: isDesktop ? '20%' : '30%',
+              ...(isDesktop ? { left: '50%' } : { right: '30%' }),
+              transform: isDesktop ? 'translate(-50%, -50%) scale(0.6)' : 'translate(50%, -50%) scale(0.4)',
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              zIndex: 0,
+              opacity: 0.7,
+              // borderRadius: '10px',
+              // boxShadow: '0 0 30px rgba(217, 70, 239, 0.5)'
+            }}
+          >
+            <source src="/videos/neon80s.mp4" type="video/mp4" />
+          </video>
+        )}
+        <Canvas
+          style={{ position: 'relative', zIndex: 1 }}
+          camera={{ 
+            position: isDesktop 
+              ? [-7, 1, 7] 
+              : isTablet 
+              ? [-6, 1.5, 6] 
+              : [4, 1, 5], 
+            fov: isDesktop ? 40 : isTablet ? 45 : 50 
           }}
+          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, alpha: true }}
         >
-          <source src="/videos/neon80s.mp4" type="video/mp4" />
-        </video>
-      )}
-      <Canvas
-        style={{ position: 'relative', zIndex: 1 }}
-        camera={{ position: [-7, 1, 7], fov: 40 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, alpha: true }}
-      >
         <ambientLight intensity={0.2} />
         {/* Multiple point lights around the cylinder */}
         {/* <pointLight position={[0, 3, 0]} color="#00ffff" intensity={0.3} />
@@ -931,7 +1063,12 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         <pointLight position={[0, 2, -3]} color="#00ffff" intensity={0.3} /> */}
         
         <Suspense fallback={null}>
-          <Model modelPath={modelPath} onLoaded={() => setModelLoaded(true)} is80sMode={is80sMode} />
+          <Model 
+            modelPath={modelPath} 
+            onLoaded={() => setModelLoaded(true)} 
+            is80sMode={is80sMode} 
+            onScrollClick={setCurrentScrollSrc}
+          />
           <Environment preset="night" />
           {/* <FlatCharts onChartClick={setSelectedChart} /> */}
         </Suspense>
@@ -975,79 +1112,80 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           </EffectComposer>
         )}
       </Canvas>
-      
-      {/* Mobile overlays - only show on mobile/tablet */}
-      {!isDesktop && (
-        <>
-          {/* Heading overlay for mobile */}
-          <div
-            style={{
-              position: 'absolute',
-              top: windowWidth <= 480 ? '3rem' : '10%',
-              left: windowWidth <= 480 ? '2rem' : '15%',
-              zIndex: 1000,
-              textAlign: 'left',
-              pointerEvents: 'none'
-            }}
-          >
-            <h1 style={{ 
-              color: '#8e662b',
-              fontFamily: '"UnifrakturCook", serif',
-              textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
-              fontSize: windowWidth <= 480 ? '3rem' : '4rem',
-              fontWeight: 900,
-              lineHeight: 0.8,
-              transform: 'rotate(-8deg) skew(-15deg)',
-              margin: 0
-            }}>The Scrolls <br/>of St. GR80</h1>
-            
-            {/* Introduction text for mobile */}
-            <div style={{
-              marginTop: '1rem',
-              padding: '0.75rem',
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-
-              border: '2px solid #8e662b',
-              borderRadius: '8px',
-              maxWidth: windowWidth <= 480 ? '280px' : '350px'
-            }}>
-              <p style={{
-                color: '#d4af37',
-
-                fontFamily: 'Georgia, serif',
-                fontSize: windowWidth <= 480 ? '0.9rem' : '1rem',
-                lineHeight: 1.5,
-                margin: 0,
+        
+        {/* Mobile overlays - only show on mobile */}
+        {windowWidth <= 768 && (
+          <>
+            {/* Heading overlay for mobile - positioned at top left */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '2rem',
+                left: '1rem',
+                right: '1rem',
+                zIndex: 1000,
                 textAlign: 'left',
-                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
-              }}>              Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
-
-              </p>
+                pointerEvents: 'none'
+              }}
+            >
+              <h1 style={{ 
+                color: '#8e662b',
+                fontFamily: '"UnifrakturCook", serif',
+                textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
+                fontSize: windowWidth <= 480 ? '2.5rem' : '3rem',
+                fontWeight: 900,
+                lineHeight: 0.8,
+                transform: 'rotate(-8deg) skew(-15deg)',
+                margin: 0
+              }}>The Scrolls <br/>of St. GR80</h1>
+              
+              {/* Introduction text for mobile - more compact */}
+              <div style={{
+                marginTop: '0.8rem',
+                padding: '0.6rem',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                border: '2px solid #8e662b',
+                borderRadius: '6px',
+                maxWidth: windowWidth <= 480 ? '260px' : '320px'
+              }}>
+                <p style={{
+                  color: '#d4af37',
+                  fontFamily: 'Georgia, serif',
+                  fontSize: windowWidth <= 480 ? '0.8rem' : '0.9rem',
+                  lineHeight: 1.4,
+                  margin: 0,
+                  textAlign: 'left',
+                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
+                }}>Works of RL80 devotee, Saint GR80 — a mechanized mystic pondering markets and memes.
+                </p>
+              </div>
             </div>
-          </div>
-          
-          {/* Scroll overlay for mobile */}
-          <iframe
-            src="/scroll.html"
-            style={{
-              position: 'absolute',
-              bottom: windowWidth <= 480 ? '4rem' : '0',
-              left: '0',
-              width: windowWidth <= 480 ? '125%' : '75%',
-              height: windowWidth <= 480 ? '50%' : '45%',
-              border: 'none',
-              pointerEvents: 'auto',
-              background: 'transparent',
-              zIndex: 5,
-              opacity: 0.9,
-              mixBlendMode: 'screen',
-              transform: windowWidth <= 480 ? 'scale(0.7)' : 'scale(1)',
-              transformOrigin: 'bottom left'
-            }}
-            title="Scroll Overlay"
-          />
-        </>
-      )}
+            
+            {/* Scroll overlay for mobile - repositioned and resized */}
+            <iframe
+              src={currentScrollSrc}
+              style={{
+                position: 'absolute',
+                bottom: '1rem',
+                left: '1rem',
+                right: '1rem',
+                width: 'calc(100% - 2rem)',
+                height: windowWidth <= 480 ? '40%' : '45%',
+                border: 'none',
+                pointerEvents: 'auto',
+                background: 'transparent',
+                zIndex: 5,
+                opacity: 0.85,
+                mixBlendMode: 'screen',
+                borderRadius: '8px',
+                transform: 'scale(1)',
+                transformOrigin: 'center',
+                overflow: 'hidden'
+              }}
+              title="Scroll Overlay"
+            />
+          </>
+        )}
       </div>
       </div>
       

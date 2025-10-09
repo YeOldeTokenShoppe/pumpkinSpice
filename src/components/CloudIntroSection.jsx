@@ -182,7 +182,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
   const cards = [
     {
       id: 0,
-      frontTitle: "Excellence",
+      frontTitle: "Faith",
       frontDescription: "Transforming vision into measurable outcomes through strategic innovation",
       backTitle: "Strategic Framework",
       backContent: "Delivering comprehensive solutions that drive sustainable growth and operational efficiency:",
@@ -204,7 +204,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
     },
     {
       id: 1,
-      frontTitle: "Innovation",
+      frontTitle: "Hope",
       frontDescription: "Pioneering next-generation solutions for complex business challenges",
       backTitle: "Technology Leadership",
       backContent: "Leveraging cutting-edge methodologies to accelerate digital transformation:",
@@ -218,7 +218,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
     },
     {
       id: 2,
-      frontTitle: "Partnership",
+      frontTitle: "Charity",
       frontDescription: "Building sustainable relationships that create long-term value for all stakeholders",
       backTitle: "Collaborative Excellence",
       backContent: "Fostering strategic alliances through transparency, accountability, and shared success:",
@@ -630,9 +630,9 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '0rem', textAlign: 'center', color: '#d4af37'}}>She Sells Sanctuary</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#d4af37'}}>She Sells Sanctuary</h1>
               <div style={{
-                lineHeight: 1.6,
+                lineHeight: 1.7,
                 opacity: 0.9,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 fontWeight: 400,
@@ -642,13 +642,26 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                 width: '100%',
                 maxWidth: '600px',
               }}>
-              <p style={{ marginBottom: '1.5rem' }}>
-                Transform your organization with <b>enterprise-grade solutions</b> designed for sustainable growth. Our technology-first approach ensures scalable, secure implementation.
+              <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
+                No Leap of Faith Required
+              </span>
+              <p style={{ marginBottom: '1rem' }}>
+                The RL80 token features a verified, open-source smart contract with transparent tokenomics. 
+                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
+                  Liquidity Burned | 4% Tax (Buy/Sell) | 80 Billion Capped Supply
+                </span>
+              </p>
+<p>RL80 includes a trust-optional layer of these sacred principles: <i><b>prosperity for all humanity</b></i> and <i><b>liquidity in perpetuity</b></i>.              </p>
+              
+              <p style={{ marginBottom: '1.5rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
+                If these ideals resonate with you, consider testing your faith with a small, cautious purchase of the RL80 token.
               </p>
               
-              <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
-                Partner with us to unlock your organization's full potential through strategic technology implementation.
-              </p>
+              <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+                <a href="https://base.blockscout.com/address/0x1234567890123456789012345678901234567890/contracts" target="_blank" rel="noopener noreferrer" style={{ color: '#d4af37', textDecoration: 'none', fontSize: isMobile ? '1rem' : '1.1rem' }}>
+                  Examine the verified contract → <span style={{ position: 'relative', top: '2px', fontSize: '20px', padding: '0 4px' }}>📜</span><span style={{ position: 'relative', marginLeft: '-8px', fontSize: '8px', padding: '0 4px' }}>✅</span>
+                </a>
+              </div>
 
 </div>
                   {/* Contract Address Container */}
@@ -883,6 +896,8 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                       clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
                       zIndex: 5,
                       pointerEvents: 'none',
+                      backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden',
                       border: '2px solid #b8941f',
                       borderTop: 'none',
                       borderRight: 'none',
@@ -1157,6 +1172,8 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                       clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
                       zIndex: 5,
                       pointerEvents: 'none',
+                      backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden',
                       border: '2px solid #b8941f',
                       borderTop: 'none',
                       borderRight: 'none',
@@ -1491,15 +1508,16 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                 maxWidth: '600px',
               }}>
               <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-                Elevating Business Performance Through Innovation
+                Light Up Her DMs with a Green Candle
               </span>
               
               <p style={{ marginBottom: '2rem' }}>
-                Transform your organization with our <b>comprehensive digital transformation platform.</b> Experience seamless integration and maximum efficiency.
-              </p>
+Share your wish, dedication or confession.
+Your message will be immortalized on the blockchain —
+because <b>RL80 is a token of your appreciation</b>.              </p>
               
               <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
-                Leverage proven methodologies for strategic decision-making and measurable results.
+                Create a custom votive candle and burn any amount of RL80 to light it up.
               </p>
 
           </div>
@@ -1535,7 +1553,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                           e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
                         }}
                       >
-                        Burn An Offering
+                        Get Lit
                       </button>
                
            
