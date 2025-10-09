@@ -1306,9 +1306,33 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Input validation and sanitization
+    let sanitizedValue = value;
+    
+    if (name === 'username') {
+      // Limit username length and remove dangerous characters
+      sanitizedValue = value
+        .slice(0, 50) // Max 50 characters
+        .replace(/[<>\"'&]/g, ''); // Remove potentially dangerous HTML characters
+      
+      // Block file extensions in username
+      const suspiciousExtensions = /\.(exe|bat|cmd|sh|ps1|vbs|js|jar|com|scr|msi|dll|app|deb|dmg|pkg|run|php|asp|jsp|cgi|pl|py|rb|java|c|cpp|cs|vb|swift|go|rs|kt|scala|lua|r|m|sql|db|zip|rar|7z|tar|gz|bz2|xz|iso|img|vmdk|vhd|pdf|doc|docx|xls|xlsx|ppt|pptx|html|htm|xml|json|yaml|yml|ini|cfg|conf|txt|log|bak|tmp|temp|swp|DS_Store)$/i;
+      if (suspiciousExtensions.test(sanitizedValue)) {
+        sanitizedValue = sanitizedValue.replace(suspiciousExtensions, '');
+      }
+    } else if (name === 'message') {
+      // Limit message length
+      sanitizedValue = value.slice(0, 500); // Max 500 characters
+      
+      // Block file paths and extensions in messages (but be less strict than username)
+      // Remove obvious file paths
+      sanitizedValue = sanitizedValue.replace(/([C-Z]:\\|\/usr\/|\/etc\/|\/var\/|\.\.\/|\.\/)/gi, '');
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: sanitizedValue
     }));
     
     // Reset encryption state when message is manually changed
@@ -1397,8 +1421,35 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Security: Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Image must be less than 5MB');
+        e.target.value = '';
+        return;
+      }
+      
+      // Security: Validate file type (only allow JPG, PNG, WebP)
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setError('Please upload a valid image file (JPEG, PNG, or WebP only)');
+        e.target.value = '';
+        return;
+      }
+      
+      // Additional security: Check file extension
+      const fileName = file.name.toLowerCase();
+      const validExtensions = /\.(jpg|jpeg|png|webp)$/i;
+      if (!validExtensions.test(fileName)) {
+        setError('Invalid file extension. Only .jpg, .png, or .webp files are allowed');
+        e.target.value = '';
+        return;
+      }
+      
+      // Block double extensions that could be malicious
+      const doubleExtension = /\.[^.]+\.(jpg|jpeg|png|webp)$/i;
+      if (fileName.split('.').length > 2 && !doubleExtension.test(fileName)) {
+        setError('Suspicious filename detected. Please rename your file and try again');
+        e.target.value = '';
         return;
       }
 
@@ -1781,14 +1832,28 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       return;
     }
     
-    // Validate fields
-    if (!formData.username.trim()) {
+    // Validate and sanitize fields
+    const trimmedUsername = formData.username.trim();
+    const trimmedMessage = formData.message.trim();
+    
+    if (!trimmedUsername) {
       setError('Please enter a dedication name');
       return;
     }
-
-    if (!formData.message.trim()) {
+    
+    if (!trimmedMessage) {
       setError('Please enter a message or select a prayer');
+      return;
+    }
+    
+    // Additional validation
+    if (trimmedUsername.length > 50) {
+      setError('Name must be less than 50 characters');
+      return;
+    }
+    
+    if (trimmedMessage.length > 500) {
+      setError('Message must be less than 500 characters');
       return;
     }
     
@@ -1808,6 +1873,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     setShowConfirmDialog(false);
     setCapturedImage(null); // Clear captured image until after save
     
+    // Get sanitized values
+    const trimmedUsername = formData.username.trim();
+    const trimmedMessage = formData.message.trim();
+    
     // Trigger burning effect
     setIsBurning(true);
     
@@ -1825,9 +1894,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       
       if (isEncrypted && encryptionPassword) {
         // Encrypt the message before saving
-        const encryptedData = await encryptMessage(formData.message, encryptionPassword);
+        const encryptedData = await encryptMessage(trimmedMessage, encryptionPassword);
         docData = {
-          username: formData.username,
+          username: trimmedUsername,
           encrypted: encryptedData.encrypted,
           salt: encryptedData.salt,
           iv: encryptedData.iv,
@@ -1842,8 +1911,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       } else {
         // Save unencrypted message
         docData = {
-          username: formData.username,
-          message: formData.message,
+          username: trimmedUsername,
+          message: trimmedMessage,
           burnedAmount: parseInt(formData.burnedAmount) || 1000,
           image: imageUrl,
           staked: false,
@@ -2694,9 +2763,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         setSelectedPrayer(null);
                       }
                     }}
-                  placeholder={selectedPrayer ? "Edit the selected prayer or write your own..." : "Write your message, prayer, wish, or dedication"}
+                  placeholder={selectedPrayer ? "Edit the selected prayer or write your own..." : "Write your message, prayer, wish, or dedication (max 500 chars)"}
                   rows={3}
-                  maxLength={400}
+                  maxLength={500}
                   required
                   disabled={isEncrypted}
                   onKeyDown={(e) => {
@@ -2731,7 +2800,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   fontSize: '11px',
                   color: 'rgba(255, 215, 0, 0.5)',
                   pointerEvents: 'none'
-                }}>{formData.message.length}/400</span>
+                }}>{formData.message.length}/500</span>
               </div>
 
               {/* Row 4: Image Upload and Template Selection */}
@@ -2765,7 +2834,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
                     onChange={handleImageChange}
                     className="compact-file-input"
                   />

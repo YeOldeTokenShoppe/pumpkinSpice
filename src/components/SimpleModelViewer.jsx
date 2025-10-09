@@ -540,14 +540,14 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
   const rotation = isDesktop 
     ? [0, -Math.PI/2, 0] 
     : isTablet 
-    ? [0, -Math.PI/6, 0] // Tablet: 30° angle
-    : [0, -Math.PI/10, 0]; // Mobile: slight angle for better view
+    ? [0, -Math.PI/2.5, 0] // Tablet: 30° angle
+    : [0, -Math.PI/14, 0]; // Mobile: slight angle for better view
   
   const position = isDesktop 
     ? [centerOffset.x + 1, centerOffset.y - 2, centerOffset.z + 3] // Desktop: offset to right side
     : isTablet
     ? [centerOffset.x + 1.5, centerOffset.y - 1.5, centerOffset.z + 1] // Tablet: slightly offset
-    : [centerOffset.x + 1, centerOffset.y - 1, centerOffset.z]; // Mobile: centered
+    : [centerOffset.x, centerOffset.y - 1, centerOffset.z - 1]; // Mobile: centered
   
   const scale = isDesktop ? 2 : isTablet ? 1.8 : 1.5; // Tablet: between desktop and mobile
   

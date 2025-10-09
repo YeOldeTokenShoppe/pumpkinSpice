@@ -259,6 +259,99 @@
 		body.modal-open > *:not(.charity-modal) {
 			z-index: 1 !important;
 		}
+
+		/* UNIFIED MODAL SYSTEM */
+		.pumpkin-modal {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			border: 2px solid rgba(255, 255, 255, 0.2);
+			border-radius: 20px;
+			padding: 30px;
+			color: white;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+			text-align: center;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 80px rgba(102, 126, 234, 0.2);
+			backdrop-filter: blur(15px);
+			-webkit-backdrop-filter: blur(15px);
+		}
+
+		.pumpkin-modal h2,
+		.pumpkin-modal h3 {
+			margin: 0 0 20px 0;
+			font-size: 24px;
+			font-weight: bold;
+			color: white;
+		}
+
+		/* Remove extra spacing from info box */
+		#info.pumpkin-modal {
+			padding-top: -10px !important;
+		}
+
+		/* Hide the invisible title that's taking up space */
+		#info .info-title {
+			display: none !important;
+		}
+
+		.pumpkin-modal p {
+			margin: 0 0 25px 0;
+			font-size: 16px;
+			line-height: 1.4;
+			opacity: 0.95;
+		}
+
+		.pumpkin-modal-button {
+			background: rgba(255, 255, 255, 0.9);
+			color: #333;
+			border: none;
+			padding: 12px 25px;
+			border-radius: 12px;
+			font-size: 16px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			margin: 5px;
+		}
+
+		.pumpkin-modal-button:hover {
+			background: rgba(255, 255, 255, 1);
+			transform: translateY(-2px);
+		}
+
+		.pumpkin-modal-button.cancel {
+			background: rgba(0, 0, 0, 0.3);
+			color: white;
+			border: 1px solid rgba(255, 255, 255, 0.3);
+		}
+
+		.pumpkin-modal-button.cancel:hover {
+			background: rgba(0, 0, 0, 0.5);
+		}
+
+		/* Info button unified styling */
+		.pumpkin-info-button {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+			border: 2px solid rgba(255, 255, 255, 0.2) !important;
+			color: white !important;
+			box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+			backdrop-filter: blur(10px) !important;
+			transition: all 0.3s ease !important;
+		}
+
+		.pumpkin-info-button:hover {
+			transform: translateY(-2px) !important;
+			box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4) !important;
+		}
+
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+				transform: translate(-50%, -60%) scale(0.9);
+			}
+			to {
+				opacity: 1;
+				transform: translate(-50%, -50%) scale(1);
+			}
+		}
 		</style>
 		<script>
 			// Check if page is being viewed in portal
@@ -294,18 +387,18 @@
 	<body>
 		<!-- Charity Selection Modal -->
 		<div id="charityModal" class="charity-modal">
-			<div class="charity-modal-content">
+			<div class="charity-modal-content pumpkin-modal">
 				<h2>Choose Your Charity</h2>
 				<p>Your coin toss will support one of these amazing organizations:</p>
 				<div class="charity-options">
-					<button class="charity-button" data-charity="world-central-kitchen">
+					<button class="charity-button pumpkin-modal-button" data-charity="world-central-kitchen">
 						🍽️ World Central Kitchen
 					</button>
-					<button class="charity-button" data-charity="aspca">
+					<button class="charity-button pumpkin-modal-button" data-charity="aspca">
 						🐾 ASPCA
 					</button>
 				</div>
-				<button class="modal-cancel">Cancel</button>
+				<button class="modal-cancel pumpkin-modal-button cancel">Cancel</button>
 			</div>
 		</div>
 
@@ -313,25 +406,16 @@
 
 
 
-		<div id="info" class="info-box" style="
+		<div id="info" class="info-box pumpkin-modal" style="
 			position: absolute;
 			right: 30px;
 			top: 50%;
 			transform: translateY(-50%);
-			background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-			border: 2px solid rgba(255, 255, 255, 0.2);
-			border-radius: 20px;
-			padding: 20px;
-			color: white;
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-			font-size: 14px;
-			line-height: 1.6;
-			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 80px rgba(102, 126, 234, 0.2);
 			z-index: 1000;
 			width: 280px;
 			box-sizing: border-box;
-			backdrop-filter: blur(10px);
-			-webkit-backdrop-filter: blur(10px);
+			font-size: 14px;
+			line-height: 1.6;
 			transition: all 0.3s ease;
 		">
 			<!-- Title -->
@@ -423,17 +507,13 @@
 					<span id="mobileCurrentCount">0</span>
 				</div>
 				<!-- Info button moved here -->
-				<button id="mobileInfoBtn" onclick="toggleInstructions()" style="
+				<button id="mobileInfoBtn" onclick="toggleInstructions()" class="pumpkin-info-button" style="
 					display: none;
-					width: 30px;
-					height: 30px;
+					width: 32px;
+					height: 32px;
 					font-size: 16px;
-					background-color: rgba(0, 0, 0, 0.5);
-					border: 2px solid rgba(255, 255, 255, 0.3);
 					border-radius: 50%;
-					color: #ffffff;
 					cursor: pointer;
-					box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 				">❓</button>
 			</div>
 			</div>
@@ -448,7 +528,7 @@
 			</div>
 			</div>
 			<!-- Info button -->
-			<button id="desktopInfoBtn" onclick="toggleInstructions()" style="
+			<button id="desktopInfoBtn" onclick="toggleInstructions()" class="pumpkin-info-button" style="
 				display: none;
 				position: absolute;
 				right: -70px;
@@ -456,19 +536,9 @@
 				width: 50px;
 				height: 50px;
 				border-radius: 50%;
-				background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 215, 0, 0.12) 50%, rgba(255, 183, 0, 0.10) 100%);
-				border: 2px solid rgba(255, 215, 0, 0.4);
-				color: #ffd700;
 				font-size: 24px;
 				font-weight: bold;
 				cursor: pointer;
-				transition: all 0.3s ease;
-				backdrop-filter: blur(20px) saturate(180%);
-				-webkit-backdrop-filter: blur(20px) saturate(180%);
-				box-shadow: 
-					0 4px 16px rgba(255, 215, 0, 0.2),
-					0 0 40px rgba(255, 215, 0, 0.1),
-					inset 0 0 10px rgba(255, 255, 255, 0.1);
 			">❓</button>
 		</div>
 		
@@ -663,12 +733,7 @@
 						}
 					}
 					info.style.opacity = '0';
-					info.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 215, 0, 0.12) 50%, rgba(255, 183, 0, 0.10) 100%)';
-					info.style.backdropFilter = 'blur(20px) saturate(180%)';
-					info.style.webkitBackdropFilter = 'blur(20px) saturate(180%)';
-					info.style.boxShadow = '0 8px 32px rgba(255, 215, 0, 0.2), 0 0 80px rgba(255, 215, 0, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.1)';
-					info.style.border = '2px solid rgba(255, 215, 0, 0.3)';
-					info.style.borderRadius = '20px';
+					// Unified styling is handled by the pumpkin-modal class
 					
 					// Adjust instruction text for mobile
 					const infoText = info.querySelector('div:last-child');
@@ -729,11 +794,7 @@
 					info.style.padding = '20px';
 					info.style.borderRadius = '24px';
 					info.style.display = 'none'; // Hidden by default on desktop too
-					info.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 215, 0, 0.12) 50%, rgba(255, 183, 0, 0.10) 100%)';
-					info.style.backdropFilter = 'blur(20px) saturate(180%)';
-					info.style.webkitBackdropFilter = 'blur(20px) saturate(180%)';
-					info.style.boxShadow = '0 8px 32px rgba(255, 215, 0, 0.2), 0 0 80px rgba(255, 215, 0, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.1)';
-					info.style.border = '2px solid rgba(255, 215, 0, 0.3)';
+					// Unified styling is handled by the pumpkin-modal class
 					info.style.zIndex = '10000';
 					
 					// Remove collapsed class on desktop
@@ -787,10 +848,8 @@
 							desktopInfoBtn.style.width = '35px';
 							desktopInfoBtn.style.height = '35px';
 							desktopInfoBtn.style.fontSize = '18px';
-							desktopInfoBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-							desktopInfoBtn.style.border = '2px solid rgba(255, 255, 255, 0.3)';
 							desktopInfoBtn.style.borderRadius = '50%';
-							desktopInfoBtn.style.color = '#ffffff';
+							// Unified styling is handled by the pumpkin-info-button class
 						}
 					}
 					
@@ -1970,43 +2029,22 @@
 				
 				const reminder = document.createElement('div');
 				reminder.id = 'aimReminder';
+				reminder.className = 'pumpkin-modal';
 				reminder.style.cssText = `
 					position: fixed;
 					top: 50%;
 					left: 50%;
 					transform: translate(-50%, -50%);
-					background: rgba(20, 20, 30, 0.95);
-					border: 2px solid #30cfd0;
-					border-radius: 12px;
-					padding: 25px 30px;
-					color: white;
-					font-family: Arial, sans-serif;
-					font-size: 16px;
-					text-align: center;
 					z-index: 10001;
-					box-shadow: 0 0 30px rgba(48, 207, 208, 0.6);
-					max-width: 90%;
-					width: 300px;
+					max-width: 90vw;
+					width: min(400px, 90vw);
+					animation: fadeIn 0.3s ease-out;
 				`;
 				
 				reminder.innerHTML = `
-					<h3 style="margin: 0 0 15px 0; color: #30cfd0; font-size: 20px;">
-						⚠️ Aim First! ⚠️
-					</h3>
-					<p style="margin: 0 0 20px 0; line-height: 1.4;">
-						Please click on the water to aim where you want to toss your coin!
-					</p>
-					<button onclick="document.getElementById('aimReminder').remove()" style="
-						background: #30cfd0;
-						color: #000;
-						border: none;
-						padding: 10px 25px;
-						border-radius: 6px;
-						font-size: 16px;
-						font-weight: bold;
-						cursor: pointer;
-						transition: all 0.3s ease;
-					" onmouseover="this.style.background='#40dfe0'" onmouseout="this.style.background='#30cfd0'">
+					<h3>⚠️ Aim First! ⚠️</h3>
+					<p>Please click on the water to aim where you want to toss your coin!</p>
+					<button onclick="document.getElementById('aimReminder').remove()" class="pumpkin-modal-button">
 						Got it!
 					</button>
 				`;

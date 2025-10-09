@@ -11,8 +11,7 @@ import * as THREE from 'three';
 import { shaderMaterial } from '@react-three/drei';
 import { extend, useFrame, useThree } from '@react-three/fiber';
 import { geometry, easing } from 'maath';
-// import DarkClouds from '@/components/Clouds'; // Disabled for memory
-// Removed unused imports for memory optimization
+import DarkClouds from '@/components/Clouds';
 import { useMusic } from '@/components/MusicContext';
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { Illumin80ClerkButton } from "@/components/Illumin80Display";
@@ -231,6 +230,14 @@ const OurLadyRiderModel = React.memo(({ isMobile, scrollY, onLoad }) => {
 OurLadyRiderModel.displayName = 'OurLadyRiderModel';
 
 function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
+  // Skip all emoji models on mobile to save memory
+  if (isMobile) {
+    React.useEffect(() => {
+      if (onLoad) onLoad();
+    }, [onLoad]);
+    return null;
+  }
+  
   const { scene, animations } = useGLTF('/models/angelEmoji.glb');
   const { actions } = useAnimations(animations, scene);
   const modelRef = useRef();
@@ -854,18 +861,22 @@ function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
       
       <GradientSkySphere />
       
-      {/* Temporarily disable clouds to test memory */}
+      {/* DarkClouds restored - skip on mobile for performance */}
+      {!isMobile && (
+        <Suspense fallback={null}>
+          <DarkClouds />
+        </Suspense>
+      )}
       
       <Suspense fallback={null}>
-        {/* DarkClouds disabled for memory optimization */}
-
-        {/* TEMPORARILY DISABLED MAIN MODEL FOR MEMORY TEST */}
-        {/* <OurLadyRiderModel 
+        {/* Main model - loads on all devices */}
+        <OurLadyRiderModel 
           isMobile={isMobile} 
           scrollY={scrollY} 
           onLoad={() => onAssetsLoaded?.('ourLadyModel')}
-        /> */}
-        {/* Emoji models with pop-in effect */}
+        />
+        
+        {/* Emoji models - skip on mobile for performance */}
         <AngelEmojiModel 
           isMobile={isMobile} 
           scrollY={scrollY} 
