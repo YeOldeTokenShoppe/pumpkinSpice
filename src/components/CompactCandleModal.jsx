@@ -287,7 +287,7 @@ function loadHandsImage(callback) {
       handsImageCallbacks.forEach(cb => cb(null));
       handsImageCallbacks = [];
     };
-    img.src = '/images/face2_hands_feet.png';
+    img.src = '/images/FaceHands.png';
   }
 }
 
@@ -947,7 +947,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
               handsImg.onerror = () => {
                 console.error('Failed to load hands overlay');
               };
-              handsImg.src = '/images/face2_hands_feet.png';
+              handsImg.src = '/images/FeetHands.png';
             }
           };
           
@@ -969,7 +969,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
                       drawImageWithTemplate(placeholderImg, templateImg, handsImg);
                     }
                   };
-                  handsImg.src = '/images/face2_hands_feet.png';
+                  handsImg.src = '/images/FeetHands.png';
                 }
               }
             };
@@ -1674,7 +1674,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           console.error('Failed to load hands/feet overlay');
           checkAllLoaded(); // Continue without hands overlay
         };
-        handsImg.src = '/images/face2_hands_feet.png';
+        handsImg.src = '/images/FeetHands.png';
       }
     });
   };
@@ -2299,12 +2299,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   />
                 </Suspense>
                 <OrbitControls
-                  enablePan={true}
+                  enablePan={false}
                   enableZoom={true}
                   minPolarAngle={Math.PI / 3}
                   maxPolarAngle={Math.PI / 2}
                   autoRotate={false}
-                  zoomToCursor={true}
+                  // zoomToCursor={true}
                 />
               </Canvas>
             </div>
@@ -3011,7 +3011,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       gap: '4px'
                     }}
                   >
-                    {showPositionControls ? '▼' : '▶'} Adjust Your Image Position
+                    {showPositionControls ? '▼' : '▶'} Adjust Your Image
                   </button>
                   
                   {showPositionControls && selectedTemplate && (

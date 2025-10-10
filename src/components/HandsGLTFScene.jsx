@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState, useEffect, Suspense } from 'react'
+import { useRef, useState, useEffect, Suspense, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Box, useCursor } from '@react-three/drei'
@@ -31,18 +31,31 @@ function HandsModel({ mousePosition, scrollY }) {
   const [rotationProgress, setRotationProgress] = useState(0)
   const [hasReachedSection, setHasReachedSection] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const [clickFeedback, setClickFeedback] = useState(false)
+  const [imageTransition, setImageTransition] = useState(false)
   const animationStartTime = useRef(null)
+  const lastMousePosition = useRef({ x: 0, y: 0 })
+  const mouseVelocity = useRef({ x: 0, y: 0 })
   const { camera } = useThree()
 
   // Function to advance to next image when clicking candle or label
-  const handleImageAdvance = () => {
+  const handleImageAdvance = useCallback(() => {
     if (randomUserImages.length > 1) {
+      // Trigger visual feedback
+      setClickFeedback(true)
+      setImageTransition(true)
+      
+      // Advance image
       setCurrentImageIndex((prevIndex) => 
         (prevIndex + 1) % randomUserImages.length
       )
       console.log('Image advanced by click interaction')
+      
+      // Reset feedback after animation
+      setTimeout(() => setClickFeedback(false), 300)
+      setTimeout(() => setImageTransition(false), 600)
     }
-  }
+  }, [randomUserImages.length])
   
 
 
@@ -280,7 +293,7 @@ function HandsModel({ mousePosition, scrollY }) {
   }, [gltf])
 
   
-  // Apply random user image to candle Label2
+  // Apply random user image to candle Label2 with transition effect
   useEffect(() => {
     if (!candleLabel2Ref.current || randomUserImages.length === 0) return
     
@@ -336,16 +349,20 @@ function HandsModel({ mousePosition, scrollY }) {
         const texture = new THREE.CanvasTexture(canvas)
         texture.needsUpdate = true
         
-        // Create or update material
-        candleLabel2Ref.current.material = new THREE.MeshStandardMaterial({
+        // Create or update material with transition effect
+        const newMaterial = new THREE.MeshStandardMaterial({
           map: texture,
           side: THREE.DoubleSide,
           emissive: new THREE.Color(0xffffff),
-          emissiveIntensity: 0.05,
+          emissiveIntensity: imageTransition ? 0.2 : 0.05, // Brighten during transition
           emissiveMap: texture,
           metalness: 0.1,
-          roughness: 0.7
+          roughness: 0.7,
+          transparent: true,
+          opacity: imageTransition ? 0.8 : 1.0 // Slight fade during transition
         })
+        
+        candleLabel2Ref.current.material = newMaterial
         candleLabel2Ref.current.material.needsUpdate = true
         
         console.log('Texture applied to candle Label2')
@@ -357,7 +374,7 @@ function HandsModel({ mousePosition, scrollY }) {
       
       img.src = imageData.image
     }
-  }, [currentImageIndex, randomUserImages])
+  }, [currentImageIndex, randomUserImages, imageTransition])
 
   // Track when user reaches the target scroll position
   useEffect(() => {
@@ -372,8 +389,8 @@ function HandsModel({ mousePosition, scrollY }) {
     }
   }, [scrollY, hasReachedSection])
 
-  // Calculate rotation based on animation progress
-  const calculateRotation = () => {
+  // Memoized rotation calculation
+  const calculateRotation = useMemo(() => {
     const initialRotation = -Math.PI * 0.8
     
     // If animation hasn't started yet, keep initial rotation
@@ -385,7 +402,7 @@ function HandsModel({ mousePosition, scrollY }) {
     const rotation = initialRotation * (1 - rotationProgress)
     
     return rotation
-  }
+  }, [rotationProgress])
 
    // Update the useFrame in HandsModel to properly handle updates
 useFrame((state) => {
@@ -587,7 +604,15 @@ useFrame((state) => {
     iconStarRef.current.rotation.x = Math.cos(time * 2.2 + 9) * 0.25
   }
   
-  // Handle mouse movement for both hands
+  // Add pulse effect to candle when clicked
+  if (candleLabel2Ref.current && clickFeedback) {
+    const pulseScale = 1.0 + Math.sin(time * 20) * 0.1
+    candleLabel2Ref.current.scale.setScalar(pulseScale)
+  } else if (candleLabel2Ref.current) {
+    candleLabel2Ref.current.scale.setScalar(1.0)
+  }
+  
+  // Optimized mouse movement with smoothing and velocity
   if (rightHandRef.current && mousePosition) {
     // Store the original center position only once
     if (!rightHandRef.current.userData.originalPosition) {
@@ -600,27 +625,30 @@ useFrame((state) => {
     
     const original = rightHandRef.current.userData.originalPosition
     
-    // MUCH larger movement range - the hand will move across the entire viewport
-    // mousePosition.x and .y range from -1 to 1, so multiply by larger values
-const distanceFromCamera = camera.position.z - rightHandRef.current.position.z
-const movementScale = distanceFromCamera * 0.5 // Scale based on distance
-
-const targetX = original.x + (mousePosition.x * movementScale * 50)
-const targetY = original.y + (mousePosition.y * movementScale * 80)
-
+    // Calculate velocity for smoother movement
+    mouseVelocity.current.x = mousePosition.x - lastMousePosition.current.x
+    mouseVelocity.current.y = mousePosition.y - lastMousePosition.current.y
+    lastMousePosition.current = { ...mousePosition }
     
-    // Optional: add some Z movement for depth effect
+    // Optimized movement calculation
+    const distanceFromCamera = camera.position.z - rightHandRef.current.position.z
+    const movementScale = distanceFromCamera * 0.5
+    
+    // Use lerp for smoother movement
+    const lerpFactor = 0.15 // Adjust for responsiveness vs smoothness
+    const targetX = original.x + (mousePosition.x * movementScale * 50)
+    const targetY = original.y + (mousePosition.y * movementScale * 80)
     const targetZ = original.z + (Math.abs(mousePosition.x) * 15)
     
+    // Smooth interpolation
+    rightHandRef.current.position.x += (targetX - rightHandRef.current.position.x) * lerpFactor
+    rightHandRef.current.position.y += (targetY - rightHandRef.current.position.y) * lerpFactor
+    rightHandRef.current.position.z += (targetZ - rightHandRef.current.position.z) * lerpFactor
     
-    // Direct position update for immediate response
-    rightHandRef.current.position.set(targetX, targetY, targetZ)
-    
-    // Optional: Reduce or remove rotation if you want pure translation
-    // Comment these out if you want NO rotation
-    rightHandRef.current.rotation.z = -mousePosition.x * 0.3  // Reduced rotation
-    rightHandRef.current.rotation.x = mousePosition.y * 0.2   // Reduced rotation
-    rightHandRef.current.rotation.y = mousePosition.x * 0.1   // Reduced rotation
+    // Smoother rotation
+    rightHandRef.current.rotation.z += (-mousePosition.x * 0.3 - rightHandRef.current.rotation.z) * lerpFactor
+    rightHandRef.current.rotation.x += (mousePosition.y * 0.2 - rightHandRef.current.rotation.x) * lerpFactor
+    rightHandRef.current.rotation.y += (mousePosition.x * 0.1 - rightHandRef.current.rotation.y) * lerpFactor
   }
   
 })
@@ -652,8 +680,8 @@ useFrame(() => {
   }
 })
 
-// Handle clicks on the 3D model
-const handleClick = (event) => {
+// Memoized click handler to reduce re-renders
+const handleClick = useCallback((event) => {
   // Stop propagation to prevent multiple handlers
   event.stopPropagation()
   
@@ -670,10 +698,10 @@ const handleClick = (event) => {
     }
     current = current.parent
   }
-}
+}, [])
 
-// Handle hover for cursor changes
-const handlePointerOver = (event) => {
+// Memoized hover handlers
+const handlePointerOver = useCallback((event) => {
   const hoveredObject = event.object
   let current = hoveredObject
   while (current) {
@@ -683,11 +711,11 @@ const handlePointerOver = (event) => {
     }
     current = current.parent
   }
-}
+}, [])
 
-const handlePointerOut = () => {
+const handlePointerOut = useCallback(() => {
   setHovered(false)
-}
+}, [])
 
 // Use cursor hook for pointer changes
 useCursor(hovered)
@@ -698,7 +726,7 @@ return (
     <primitive 
       object={gltf.scene} 
       scale={[0.5, 0.5, 0.5]} 
-      rotation={[0, calculateRotation(), 0]}
+      rotation={[0, calculateRotation, 0]}
       onClick={handleClick}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
@@ -708,13 +736,18 @@ return (
 }
 
 function MouseTracker({ setMousePosition }) {
-  const { pointer } = useThree() // Use pointer instead of deprecated mouse
+  const { pointer } = useThree()
+  const frameCount = useRef(0)
   
   useFrame(() => {
-    setMousePosition({
-      x: pointer.x,
-      y: pointer.y
-    })
+    // Throttle updates to every 2nd frame for better performance
+    frameCount.current++
+    if (frameCount.current % 2 === 0) {
+      setMousePosition({
+        x: pointer.x,
+        y: pointer.y
+      })
+    }
   })
   
   return null
@@ -732,6 +765,7 @@ export default function HandsGLTFScene() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [scrollY, setScrollY] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  const [showClickIndicator, setShowClickIndicator] = useState(false)
   
   // Mobile detection
   useEffect(() => {
@@ -825,6 +859,20 @@ export default function HandsGLTFScene() {
           zIndex: 10,
         }}
       /> */}
+      
+      {/* CSS for animations */}
+      <style jsx>{`
+        @keyframes pulse {
+          0% {
+            transform: scale(0.5);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(2);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   )
 }

@@ -32,7 +32,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
     { id: '02', date: 'LIGHT UTIL80', title: 'THE ILLUMIN80', path: '/gallery3', thumbnail: '/sacred.png' },
 
     { id: '03', date: 'ETHICS & MORAL80', title: 'SCROLLS OF ST. GR80', path: '/model-viewer', thumbnail: '/vvv.jpg' },
-    { id: '04', date: 'CLAR80 FOUNTAIN', title: 'LOOSE CHANGE', path: '/fountain', thumbnail: '/fountain.png' },
+    { id: '04', date: 'COMMUN80 FOUNTAIN', title: 'COIN FOUNTAIN', path: '/fountain', thumbnail: '/fountain.png' },
     // { id: '03', date: 'MARKET ACTIV80', title: 'Cloud Computing', path: '/clouds', thumbnail: '/lightning.png' },
 
   ];
