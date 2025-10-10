@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState, useRef, memo, useMemo } from 'react';
 import { Cloud, Clouds, useGLTF, useAnimations, useHelper, OrbitControls, Text } from '@react-three/drei';
 
 // Preload the models immediately when module loads
-useGLTF.preload('/models/ourlady_rider6.glb');
+useGLTF.preload('/models/ourlady_rider7.glb');
 useGLTF.preload('/models/angelEmoji.glb');
 useGLTF.preload('/models/devilEmoji2.glb');
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -174,7 +174,7 @@ const TickerCurve = ({ scrollY, scale = 1, position = [0, 0, -40] }) => {
 
 // Optimized Our Lady Model
 const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
-  const { scene } = useGLTF('/models/ourlady_rider6.glb');
+  const { scene } = useGLTF('/models/ourlady_rider7.glb');
   const groupRef = useRef();
   const hasCalledOnLoad = useRef(false);
   
@@ -672,7 +672,7 @@ export default function Simple3DScene({ enabled = false, isMobile = false, scrol
         <SimpleScene 
           isMobile={isMobile} 
           scrollY={scrollY} 
-          enableBloom={enableBloom && !isMobile}
+          enableBloom={enableBloom}
           onAssetsLoaded={() => {
             // console.log('[Simple3DScene] All assets loaded');
             if (onLoadComplete) onLoadComplete();

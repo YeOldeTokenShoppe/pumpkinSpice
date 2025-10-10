@@ -32,7 +32,7 @@
   max-height: 85vh; /* Increased from 480px for better visibility */
   height: auto;
   position: relative;
-  z-index: 1000000000;
+  z-index: 100000000;
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.8),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);

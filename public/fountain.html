@@ -282,9 +282,14 @@
 			color: white;
 		}
 
-		/* Remove extra spacing from info box */
+		/* Force unified styling for info box */
 		#info.pumpkin-modal {
-			padding-top: -10px !important;
+			padding-top: 10px !important;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+			border: 2px solid rgba(255, 255, 255, 0.2) !important;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 80px rgba(102, 126, 234, 0.2) !important;
+			backdrop-filter: blur(15px) !important;
+			-webkit-backdrop-filter: blur(15px) !important;
 		}
 
 		/* Hide the invisible title that's taking up space */
@@ -439,8 +444,8 @@
 				color: rgba(255, 255, 255, 0.95);
 				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 			">
-				<span class="mobile-text">Click water to aim. Then, press the purple button to toss a virtual coin or blue button to donate a real coin.</span>
-				<span class="desktop-text">Click the water to aim your throw. Then, press the purple button to toss a virtual coin or the blue button to donate a real coin to charity.</span>
+				<span class="mobile-text">Amount of coins collected for charity. Resets at 200 Coins. Coins transferred to dedicated wallet and dispersed when cash value reaches $500. See more details here.</span>
+				<span class="desktop-text">Amount of coins collected for charity. Resets at 200 Coins. Coins transferred to dedicated wallet and dispersed when cash value reaches $500. See more details here.</span>
 			</div>
 		</div>
 		
@@ -451,38 +456,24 @@
 			transform: translateX(-50%);
 			bottom: 20vh;
 			display: none;
-			flex-direction: row;
+			flex-direction: column;
 			align-items: center;
 			justify-content: center;
-			gap: 12px;
+			gap: 8px;
 			z-index: 1600;
 			width: 95%;
 			max-width: 600px;
 		">
-			<!-- Mobile-only container for counter and buttons -->
-			<div class="mobile-counter-buttons" style="
-				display: flex;
-				flex-direction: row;
-				align-items: center;
-				gap: 10px;
-				width: 100%;
-				justify-content: space-between;
-			">
-			<div style="
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-				gap: 2px;
-				position: relative;
-				flex: 0 0 auto;
-			">
+			<!-- Pool counter row -->
 			<div style="
 				display: flex;
 				align-items: center;
+				justify-content: center;
 				gap: 8px;
+				width: 100%;
 			">
 				<div style="
-					font-size: 10px;
+					font-size: 12px;
 					font-weight: 700;
 					color: rgba(255, 255, 255, 0.8);
 					text-transform: uppercase;
@@ -491,7 +482,7 @@
 					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 				">Pool:</div>
 				<div style="
-					font-size: 48px;
+					font-size: 32px;
 					font-weight: 900;
 					color: white;
 					line-height: 1;
@@ -506,28 +497,29 @@
 				">
 					<span id="mobileCurrentCount">0</span>
 				</div>
-				<!-- Info button moved here -->
+				<!-- Info button -->
 				<button id="mobileInfoBtn" onclick="toggleInstructions()" class="pumpkin-info-button" style="
 					display: none;
-					width: 32px;
-					height: 32px;
-					font-size: 16px;
+					width: 28px;
+					height: 28px;
+					font-size: 14px;
 					border-radius: 50%;
 					cursor: pointer;
 				">❓</button>
 			</div>
-			</div>
+			
 			<!-- Mobile buttons container -->
 			<div class="mobile-buttons-inline" style="
 				display: flex;
-				gap: 8px;
-				flex: 1;
-				justify-content: flex-end;
+				gap: 12px;
+				justify-content: center;
+				width: 100%;
 			">
 				<!-- These will be populated by JavaScript -->
 			</div>
-			</div>
-			<!-- Info button -->
+		</div>
+		
+		<!-- Desktop info button -->
 			<button id="desktopInfoBtn" onclick="toggleInstructions()" class="pumpkin-info-button" style="
 				display: none;
 				position: absolute;
@@ -674,22 +666,17 @@
 				const mobileButtonsContainer = document.querySelector('.mobile-buttons-inline');
 				
 				if (window.innerWidth <= 768) {
-					// Mobile layout - hide info box by default
+					// Mobile layout - position only, styling handled by pumpkin-modal
 					info.style.position = 'fixed';
 					info.style.left = '50%';
 					info.style.transform = 'translateX(-50%)';
 					info.style.right = 'auto';
 					info.style.top = 'auto';
-					info.style.bottom = '18vh';  // Above the combined counter and buttons
-					info.style.fontSize = '11px';
-					info.style.lineHeight = '1.3';
-					info.style.borderRadius = '12px';
+					info.style.bottom = '18vh';
 					info.style.width = '80%';
 					info.style.maxWidth = '280px';
 					info.style.display = 'none';
-					info.style.padding = '12px';
-					info.style.transition = 'all 0.3s ease';
-					info.style.zIndex = '10000';  // Ensure high z-index
+					info.style.zIndex = '10000';
 					
 					// Show mobile collection counter
 					if (mobileCollectionCounter) {
@@ -780,22 +767,16 @@
 						});
 					}
 				} else {
-					// Desktop layout - use same styling as mobile but adjusted positioning
-					info.style.position = 'fixed';
+					// Desktop layout - position only, styling handled by pumpkin-modal
+					info.style.position = 'absolute';
 					info.style.right = '30px';
 					info.style.left = 'auto';
 					info.style.top = '50%';
 					info.style.bottom = 'auto';
 					info.style.transform = 'translateY(-50%)';
-					info.style.width = '320px';
-					info.style.maxWidth = 'none';
-					info.style.textAlign = 'left';
-					info.style.fontSize = '14px';
-					info.style.padding = '20px';
-					info.style.borderRadius = '24px';
-					info.style.display = 'none'; // Hidden by default on desktop too
-					// Unified styling is handled by the pumpkin-modal class
-					info.style.zIndex = '10000';
+					info.style.width = '280px';
+					info.style.display = 'none';
+					info.style.zIndex = '1000';
 					
 					// Remove collapsed class on desktop
 					info.classList.remove('collapsed');
@@ -831,25 +812,13 @@
 						const desktopInfoBtn = document.getElementById('desktopInfoBtn');
 						const mobileInfoBtn = document.getElementById('mobileInfoBtn');
 						const desktopCountElement = document.querySelector('#mobileCurrentCount');
-						if (desktopInfoBtn && desktopCountElement) {
-							// Hide mobile button on desktop
-							if (mobileInfoBtn) {
-								mobileInfoBtn.style.display = 'none';
-							}
-							// Get position of the counter number and place button to its right
-							const countRect = desktopCountElement.parentElement.getBoundingClientRect();
-							const containerRect = mobileCollectionCounter.getBoundingClientRect();
-							
-							desktopInfoBtn.style.display = 'block';
-							desktopInfoBtn.style.position = 'absolute';
-							desktopInfoBtn.style.left = `${countRect.right - containerRect.left + 30}px`; // 25px spacing from the number
-							desktopInfoBtn.style.top = '45%';
-							desktopInfoBtn.style.transform = 'translateY(-50%)'; // Center vertically
-							desktopInfoBtn.style.width = '35px';
-							desktopInfoBtn.style.height = '35px';
-							desktopInfoBtn.style.fontSize = '18px';
-							desktopInfoBtn.style.borderRadius = '50%';
-							// Unified styling is handled by the pumpkin-info-button class
+						// Show mobile info button on desktop too since it's already positioned correctly
+						if (mobileInfoBtn) {
+							mobileInfoBtn.style.display = 'block';
+						}
+						// Hide desktop info button since mobile one is better positioned
+						if (desktopInfoBtn) {
+							desktopInfoBtn.style.display = 'none';
 						}
 					}
 					
@@ -3209,9 +3178,9 @@
 				
 				if (localCoinButton3D) {
 					if (enabled) {
-						updateButtonText(localCoinButton3D, "Click to Toss Coin", '#00ffff', '#ff00ff');
+						updateButtonText(localCoinButton3D, "Click to Toss Coin (free toss)", '#00ffff', '#ff00ff');
 					} else {
-						updateButtonText(localCoinButton3D, "Click to Toss Coin", '#30cfd0', 'black');
+						updateButtonText(localCoinButton3D, "Click to Toss Coin free toss", '#30cfd0', 'black');
 					}
 				}
 			}
@@ -4198,8 +4167,8 @@
 				width: 250px;
 			">
 				<span class="btn-icon" style="margin-right: 8px; font-size: 18px;">🪙</span>
-				<span class="btn-text desktop-text">Click to Toss Coin</span>
-				<span class="btn-text mobile-text" style="display: none;">Toss Coin</span>
+				<span class="btn-text desktop-text">Click to Toss Coin (free toss)</span>
+				<span class="btn-text mobile-text" style="display: none;">Toss Coin (free toss)</span>
 				<span class="ripple"></span>
 			</button>
 

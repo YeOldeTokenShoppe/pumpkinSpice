@@ -453,8 +453,8 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
     // Check if we have a message to display
     if (!message || !message.trim()) {
       // Show placeholder text when empty
-      ctx.fillStyle = '#cccccc';
-      ctx.font = 'italic 48px Arial';
+      ctx.fillStyle = '#000000';
+     ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Your message here', canvas.width / 2, canvas.height / 2);
@@ -653,7 +653,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       // Set active flag
       effectActive.current = true;
       
-      console.log('Effect starting for template:', template === '/images/face2.png' ? 'Virgin Mary' : 'Other', 'effectId:', effectId);
+      console.log('Effect starting for template:', template === '/images/face.png' ? 'Virgin Mary' : 'Other', 'effectId:', effectId);
     
     // Use the current imageUrl if available, otherwise use the last successful one
     const currentImageUrl = imageUrl || lastSuccessfulImageUrl.current;
@@ -706,33 +706,34 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
           // SECOND: Draw user image
           ctx.save();
           
-          // Calculate positioned dimensions - maintain aspect ratio
+          // Calculate positioned dimensions - use circle
           const scaleFactor = userImageScale / 100;
-          const baseSize = Math.min(canvas.width, canvas.height) * 0.4; // Smaller base for better scale control
+          const baseSize = Math.min(canvas.width, canvas.height) * 0.4;
           
           console.log('User image dimensions:', {width: img.width, height: img.height, src: img.src?.substring(0, 50)});
           
-          // Maintain aspect ratio of the user image
-          // Fix for tiny images - use default size if image is too small
+          // Fix for tiny images
           const actualWidth = img.width <= 10 ? 200 : img.width;
           const actualHeight = img.height <= 10 ? 200 : img.height;
           const aspectRatio = actualWidth / actualHeight;
-          let imgWidth, imgHeight;
           
+          // Circle size
+          const circleSize = baseSize * scaleFactor;
+          const radius = circleSize / 2;
+          
+          // Calculate the image draw size to cover the circle while maintaining aspect ratio
+          let drawWidth, drawHeight;
           if (aspectRatio > 1) {
-            // Landscape image
-            imgWidth = baseSize * scaleFactor;
-            imgHeight = imgWidth / aspectRatio;
+            // Image is wider - fit to height
+            drawHeight = circleSize;
+            drawWidth = circleSize * aspectRatio;
           } else {
-            // Portrait or square image
-            imgHeight = baseSize * scaleFactor;
-            imgWidth = imgHeight * aspectRatio;
+            // Image is taller or square - fit to width
+            drawWidth = circleSize;
+            drawHeight = circleSize / aspectRatio;
           }
           
-          const imgX = (userImagePosition.x / 100) * canvas.width - imgWidth / 2;
-          const imgY = (userImagePosition.y / 100) * canvas.height - imgHeight / 2;
-          
-          // Apply rotation around the image center
+          // Apply rotation
           if (userImageRotation !== 0) {
             const centerX = (userImagePosition.x / 100) * canvas.width;
             const centerY = (userImagePosition.y / 100) * canvas.height;
@@ -741,20 +742,37 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
             ctx.translate(-centerX, -centerY);
           }
           
-          // Create circular/oval clipping path for user image
+          // Create circular clipping path
           ctx.save();
           ctx.beginPath();
-          // Create an ellipse (oval) clipping path
-          const centerX = imgX + imgWidth / 2;
-          const centerY = imgY + imgHeight / 2;
-          const radiusX = imgWidth / 2;
-          const radiusY = imgHeight / 2;
-          ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+          const centerX = (userImagePosition.x / 100) * canvas.width;
+          const centerY = (userImagePosition.y / 100) * canvas.height;
+          
+          // Compress the Y-axis for cylinder projection
+          // Adjust this compression factor based on your cylinder's curvature
+          const yCompressionFactor = 0.7; // Start with 0.7, adjust as needed (lower = more compressed)
+          
+          // Create an elliptical clipping path (compressed on Y-axis)
+          ctx.ellipse(
+            centerX, 
+            centerY, 
+            radius,                        // X radius (unchanged)
+            radius * yCompressionFactor,   // Y radius (compressed)
+            0,                             // rotation
+            0,                             // start angle
+            Math.PI * 2                    // end angle
+          );
           ctx.clip();
           
-          // Draw positioned user image (will be clipped to oval)
-          console.log('Drawing user image at:', {x: imgX, y: imgY, width: imgWidth, height: imgHeight});
-          ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+          // Also compress the drawn image on Y-axis
+          ctx.drawImage(
+            img,
+            centerX - drawWidth / 2,
+            centerY - (drawHeight * yCompressionFactor) / 2,
+            drawWidth,
+            drawHeight * yCompressionFactor
+          );
+          
           ctx.restore();
           
           ctx.restore();
@@ -1086,8 +1104,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       position: { x: 67, y: 40 },
       scale: 25,
       rotation: 0,
-      userImagePosition: { x: 67, y: 40 },  // User face position for Virgin Mary
-      userImageScale: 50,  // Fixed scale value
+      userImagePosition: { x: 64, y: 40 },  // User face position for Virgin Mary
+      userImageScale: 60,  // Fixed scale value
       userImageRotation: 0
     },
     { 
@@ -1097,8 +1115,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       position: { x: 50, y: 55 },
       scale: 30,
       rotation: 0,
-      userImagePosition: { x: 50, y: 25 },  // Adjusted for saint template
-      userImageScale: 70,  // Doubled for new base size
+      userImagePosition: { x: 50, y: 23 },  // Adjusted for saint template
+      userImageScale: 85,  // Doubled for new base size
       userImageRotation: 0
     },
     // { 
@@ -2136,6 +2154,21 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           // Don't close if any dialog is open
           if (showPasswordDialog || showConfirmDialog) {
             return;
+          }
+          
+          // Check if the click is near the modal edges (might be accidental during rotation)
+          const modalContent = modalContentRef.current;
+          if (modalContent) {
+            const rect = modalContent.getBoundingClientRect();
+            const margin = 150; // Large tolerance around the modal (150px)
+            
+            // If click is within margin of modal, ignore it
+            if (e.clientX >= rect.left - margin && 
+                e.clientX <= rect.right + margin &&
+                e.clientY >= rect.top - margin && 
+                e.clientY <= rect.bottom + margin) {
+              return; // Too close to modal, likely accidental while rotating the 3D model
+            }
           }
           
           // Check if candle was already created or if there's unsaved data

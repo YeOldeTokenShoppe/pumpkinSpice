@@ -23,6 +23,7 @@ import HandsGLTFScene from '@/components/HandsGLTFScene';
 import RotatingText from '@/components/RotatingText';
 import CompactCandleModal from '@/components/CompactCandleModal';
 import '@/components/RotatingText.css';
+import ScrollDebug from '@/components/ScrollDebug';
 
 
 

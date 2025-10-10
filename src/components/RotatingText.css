@@ -17,6 +17,21 @@
   background-repeat: no-repeat;
   /* height: 30vh; */
   width: 100%;
+  transform-origin: center center;
+}
+
+@media (max-width: 768px) {
+  .rotating-text-body {
+    transform: scale(0.9) translateX(0);
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .rotating-text-body {
+    transform: scale(0.8) translateX(0);
+    margin: 0 auto;
+  }
 }
 
 .t3xts {

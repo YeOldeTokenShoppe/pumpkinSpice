@@ -78,6 +78,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
   const playingCardRef = useRef(null);
   const firstTitleRef = useRef(null);
   const secondTitleRef = useRef(null);
+  const [isCardFlipped, setIsCardFlipped] = useState(false);
   // Handle opening modal with authentication check
   const handleOpenModal = () => {
     console.log('handleOpenModal called', { isSignedIn, user, onOpenModal });
@@ -568,12 +569,14 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                             const flipBackBtn = document.querySelector('.flip-back-btn');
                             if (flipBackBtn) {
                               flipBackBtn.click();
+                              setIsCardFlipped(false);
                             }
                           } else {
                             // Card is not flipped, click the front to flip it
                             const cardFront = document.querySelector('.card-front');
                             if (cardFront) {
                               cardFront.click();
+                              setIsCardFlipped(true);
                             }
                           }
                         }}
@@ -607,7 +610,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                           e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
                         }}
                       >
-                        BUY $RL80
+                        {isCardFlipped ? 'COMPLETE PURCHASE ABOVE' : 'BUY $RL80'}
                       </button>
                     </section>
                     {/* Right Column - Text Content */}
@@ -630,7 +633,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#d4af37'}}>She Sells Sanctuary</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '1.6rem', color: '#d4af37'}}>She Sells Sanctuary</h1>
               <div style={{
                 lineHeight: 1.7,
                 opacity: 0.9,
@@ -646,7 +649,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                 No Leap of Faith Required
               </span>
               <p style={{ marginBottom: '1rem' }}>
-Whether you need a Hail Mary for hard times, or simply sanctuary in the dark realm of DeFi, Our Lady of Perpetual Profit offers you her protection.                 <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
+Whether you need a Hail Mary for hard times, or just a sanctuary in the dark realm of DeFi, Our Lady of Perpetual Profit offers you her protection.                 <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
                   Liquidity Burned | 4% Tax (Buy/Sell) | 80 Billion Capped Supply
                 </span>
               </p>
@@ -1525,16 +1528,17 @@ Whether you need a Hail Mary for hard times, or simply sanctuary in the dark rea
                 maxWidth: '600px',
               }}>
               <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-                Light Up Her DMs with a Green Candle
+                Devote a Green Candle
               </span>
               
               <p style={{ marginBottom: '2rem' }}>
 Share your wish, dedication or confession.
-Your message will be immortalized on the blockchain —
-because <b>RL80 is a token of your appreciation</b>.              </p>
+Your message will be immortalized on the blockchain and her socials while reducing supply.
+          
+ </p>
               
               <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
-                Create a custom votive candle and burn any amount of RL80 to light it up.
+                Create a custom votive candle and burn any amount of RL80 to light, publish, and share it.
               </p>
 
           </div>
