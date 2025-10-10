@@ -10,6 +10,27 @@
     transition: transform 0.6s;
     cursor: pointer;
     
+    // When card becomes visible, trigger wiggle animation
+    &.card-visible {
+      animation: cardWiggle 2.5s ease-in-out;
+      opacity: 1;
+      box-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
+      
+      // Add glow effect during animation
+      &::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
+        animation: glow 2.5s ease-in-out;
+        pointer-events: none;
+        z-index: -1;
+      }
+    }
+    
     .card-front,
     .card-back {
       position: absolute;
@@ -67,5 +88,34 @@
         }
       }
     }
+  }
+}
+
+// Wiggle animation - just 2 tilts left and right
+@keyframes cardWiggle {
+  0% {
+    transform: rotateY(0deg) rotateZ(0deg) scale(1);
+  }
+  25% {
+    transform: rotateY(-30deg) rotateZ(-5deg) scale(1.05);
+  }
+  50% {
+    transform: rotateY(30deg) rotateZ(5deg) scale(1.05);
+  }
+  75% {
+    transform: rotateY(-30deg) rotateZ(-5deg) scale(1.05);
+  }
+  100% {
+    transform: rotateY(0deg) rotateZ(0deg) scale(1);
+  }
+}
+
+// Glow animation
+@keyframes glow {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
   }
 }

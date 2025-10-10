@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './PlayingCard.scss';
 import { BuyWidget } from "thirdweb/react";
 import { defineChain } from "thirdweb";
@@ -9,9 +9,47 @@ const PlayingCard = ({ frontImage = '/queenOfHearts.png', scale = 1 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [tiltX, setTiltX] = useState(0);
   const [tiltY, setTiltY] = useState(0);
+  const [isInView, setIsInView] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
   const cardRef = useRef(null);
+  const containerRef = useRef(null);
 
-  const handleClick = (e) => {
+  // Intersection Observer to detect when card comes into view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Trigger animation every time card comes into view
+            console.log('Card is in view, triggering animation!');
+            setIsInView(false); // Reset first to retrigger animation
+            setTimeout(() => {
+              setIsInView(true); // Then trigger animation
+            }, 10);
+          } else {
+            // Reset when card goes out of view
+            setIsInView(false);
+          }
+        });
+      },
+      {
+        threshold: 0.1, // Trigger when 10% of the card is visible
+        rootMargin: '0px' // Trigger as soon as it enters viewport
+      }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
+  }, []);
+
+  const handleClick = () => {
     // Only flip if clicking the front of the card
     if (!isFlipped) {
       setIsFlipped(true);
@@ -51,12 +89,13 @@ const PlayingCard = ({ frontImage = '/queenOfHearts.png', scale = 1 }) => {
 
   return (
     <div 
-      className="playing-card-container"
+      className={`playing-card-container ${isInView ? 'card-animate-in' : ''}`}
       style={{ transform: `scale(${scale})` }}
-      ref={cardRef}
+      ref={containerRef}
     >
       <div 
-        className={`playing-card ${isFlipped ? 'flipped' : ''}`}
+        className={`playing-card ${isFlipped ? 'flipped' : ''} ${isInView ? 'card-visible' : ''}`}
+        ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         style={{
