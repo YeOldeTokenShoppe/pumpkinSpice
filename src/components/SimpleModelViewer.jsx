@@ -13,7 +13,7 @@ import {
 import { BlendFunction, GlitchMode } from "postprocessing";
 import * as THREE from 'three';
 import Chart from 'chart.js/auto';
-import InfinityLoader from '@/components/InfinityLoader';
+import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
 import PostProcessingEffects from './PostProcessingEffects';
 import '../app/globals.css';
 
@@ -389,14 +389,22 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, group);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 768);
   const [centerOffset, setCenterOffset] = useState(new THREE.Vector3(0, 0, 0));
   const scrollMaterialsRef = useRef([]);
   const scrollMeshesRef = useRef({});
   
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      setWindowHeight(window.innerHeight);
+    };
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, []);
   
   // Signal when model is loaded and calculate center
@@ -536,17 +544,24 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
   const isTablet = windowWidth > 768 && windowWidth <= 1024;
   const isMobile = windowWidth <= 768;
   
+  // Check if tablet is in portrait mode (height > width)
+  const isTabletPortrait = isTablet && windowHeight > windowWidth;
+  
   // Different settings for desktop vs tablet vs mobile
   const rotation = isDesktop 
     ? [0, -Math.PI/2, 0] 
+    : isTabletPortrait
+    ? [0, -Math.PI/6, 0] // Tablet portrait: slight angle for centered view
     : isTablet 
-    ? [0, -Math.PI/2.5, 0] // Tablet: 30° angle
+    ? [0, -Math.PI/2.5, 0] // Tablet landscape: 30° angle
     : [0, -Math.PI/14, 0]; // Mobile: slight angle for better view
   
   const position = isDesktop 
     ? [centerOffset.x + 1, centerOffset.y - 2, centerOffset.z + 3] // Desktop: offset to right side
+    : isTabletPortrait
+    ? [centerOffset.x, centerOffset.y - 1, centerOffset.z + 2] // Tablet portrait: centered
     : isTablet
-    ? [centerOffset.x + 1.5, centerOffset.y - 1.5, centerOffset.z + 1] // Tablet: slightly offset
+    ? [centerOffset.x + 1.5, centerOffset.y - 1.5, centerOffset.z + 1] // Tablet landscape: slightly offset
     : [centerOffset.x, centerOffset.y - 1, centerOffset.z - 1]; // Mobile: centered
   
   const scale = isDesktop ? 2 : isTablet ? 1.8 : 1.5; // Tablet: between desktop and mobile
@@ -555,7 +570,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
   useFrame(({ clock }) => {
     if (scrollMaterialsRef.current.length > 0) {
       const time = clock.getElapsedTime();
-      const pulseIntensity = 0.1 + Math.sin(time * 2) * 0.05; // Gentle pulse between 0.05 and 0.15
+      const pulseIntensity = 0.2 + Math.sin(time * 2) * 0.05; // Gentle pulse between 0.05 and 0.15
       
       scrollMaterialsRef.current.forEach(material => {
         material.emissiveIntensity = pulseIntensity;
@@ -908,7 +923,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           zIndex: 9999,
           background: '#000000'
         }}>
-          <InfinityLoader />
+          <SimpleInfinityLoader />
         </div>
       )}
       
@@ -1156,7 +1171,8 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                   margin: 0,
                   textAlign: 'left',
                   textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
-                }}>Works of RL80 devotee, Saint GR80 — a mechanized mystic pondering markets and memes.
+                }}>                  Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
+
                 </p>
               </div>
             </div>

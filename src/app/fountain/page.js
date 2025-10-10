@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMusic } from '@/components/MusicContext';
-import InfinityLoader from '@/components/InfinityLoader';
+import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
 import BuyTokenFAB from '@/components/BuyTokenFAB';
 import CompactCandleModal from '@/components/CompactCandleModal';
 import CyberNav from '@/components/CyberNav';
@@ -15,7 +15,7 @@ import { Illumin80ClerkButton } from '@/components/Illumin80Display';
 // Dynamic import for the FountainFrame component
 const FountainFrame = dynamic(() => import('@/components/FountainFrame'), {
   ssr: false,
-  loading: () => <InfinityLoader />
+  loading: () => <SimpleInfinityLoader />
 });
 
 export default function FountainPage() {
@@ -33,6 +33,7 @@ export default function FountainPage() {
   const isToggling80sRef = useRef(false);
   const [emoji, setEmoji] = useState("😇");
   const iframeRef = useRef(null);
+  const loadingTimeoutRef = useRef(null);
 
   // Alternate emoji for sign-in button
   useEffect(() => {
@@ -86,12 +87,27 @@ export default function FountainPage() {
     }
   }, [contextIsPlaying]);
 
-  // Loading timeout fallback
+  // Handle fountain ready signal from iframe
+  const handleFountainReady = useCallback(() => {
+    console.log('Fountain ready signal received');
+    setIsLoading(false);
+    // Clear the fallback timeout if it exists
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+    }
+  }, []);
+
+  // Loading timeout fallback (increased to 10 seconds for model loading)
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    loadingTimeoutRef.current = setTimeout(() => {
+      console.log('Loading timeout reached, hiding loader as fallback');
       setIsLoading(false);
-    }, 3000);
-    return () => clearTimeout(timeout);
+    }, 10000);
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleMusicToggle = useCallback((show) => {
@@ -163,12 +179,12 @@ export default function FountainPage() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <InfinityLoader />
+          <SimpleInfinityLoader />
         </div>
       )}
 
       {/* The Fountain iframe */}
-      <FountainFrame is80sMode={is80sMode} ref={iframeRef} />
+      <FountainFrame is80sMode={is80sMode} ref={iframeRef} onFullyLoaded={handleFountainReady} />
 
       {/* UI Overlay - RL80 Logo */}
       <div style={{

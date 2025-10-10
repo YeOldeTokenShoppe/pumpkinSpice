@@ -444,8 +444,8 @@
 				color: rgba(255, 255, 255, 0.95);
 				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 			">
-				<span class="mobile-text">Amount of coins collected for charity. Resets at 200 Coins. Coins transferred to dedicated wallet and dispersed when cash value reaches $500. See more details here.</span>
-				<span class="desktop-text">Amount of coins collected for charity. Resets at 200 Coins. Coins transferred to dedicated wallet and dispersed when cash value reaches $500. See more details here.</span>
+				<span class="mobile-text">Amount of coins collected for charity. Resets at 200 Coins. Coins transferred to dedicated wallet and dispersed when cash value reaches $500. See more details <a href="#" style="color: #FFD700; text-decoration: underline;">here</a>.</span>
+				<span class="desktop-text">Amount of coins collected for charity. Resets at 200 Coins. Coins transferred to dedicated wallet and dispersed when cash value reaches $500. See more details <a href="#" style="color: #FFD700; text-decoration: underline;">here</a>.</span>
 			</div>
 		</div>
 		
@@ -495,7 +495,7 @@
 					text-fill-color: transparent;
 					text-align: center;
 				">
-					<span id="mobileCurrentCount">0</span>
+					<span id="mobileCurrentCount">0</span><span style="font-size: 0.3em; opacity: 0.8; background: inherit; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-fill-color: transparent;">/200</span>
 				</div>
 				<!-- Info button -->
 				<button id="mobileInfoBtn" onclick="toggleInstructions()" class="pumpkin-info-button" style="
@@ -1182,6 +1182,45 @@
 				}
 			}
 			
+			// Set up real-time listener for coin count updates
+			function setupRealtimeCoinCounter() {
+				if (!coinsCollection || !db) {
+					console.warn("Firestore not initialized, cannot set up real-time listener");
+					return;
+				}
+				
+				// Listen for changes to the collection
+				coinsCollection.onSnapshot(
+					(snapshot) => {
+						// Update total count based on the collection size
+						totalCoinCount = snapshot.size;
+						
+						// Update charity allocation based on changes
+						charityAllocation = { 'world-central-kitchen': 0, 'aspca': 0 };
+						snapshot.forEach((doc) => {
+							const data = doc.data();
+							if (data.charity && charityAllocation[data.charity] !== undefined) {
+								charityAllocation[data.charity]++;
+							}
+						});
+						
+						// Update the display
+						updateCoinCounter();
+						
+						// Check if we need to reset the fountain
+						if (totalCoinCount >= RESET_THRESHOLD && !isResetting) {
+							console.log('Fountain full (real-time update)! Archiving and resetting...');
+							archiveAndResetFountain();
+						}
+						
+						console.log('Real-time update: Total coins =', totalCoinCount);
+					},
+					(error) => {
+						console.error('Error with real-time listener:', error);
+					}
+				);
+			}
+			
 			// Archive and reset the fountain
 			async function archiveAndResetFountain() {
 				console.log('archiveAndResetFountain called, isResetting:', isResetting, 'totalCoinCount:', totalCoinCount);
@@ -1329,6 +1368,9 @@
 					
 					// Load collected total first
 					await loadCollectedTotal();
+					
+					// Set up real-time listener for coin count
+					setupRealtimeCoinCounter();
 					
 					// Load existing coins
 					loadSavedCoins();
@@ -1891,6 +1933,12 @@
 					setTimeout(() => {
 						loaderContainer.style.display = 'none';
 					}, 500);
+				}
+				
+				// Notify parent window that fountain is fully loaded
+				if (window.parent !== window) {
+					window.parent.postMessage({ type: 'fountainReady' }, '*');
+					console.log('[Fountain] Sent fountainReady message to parent');
 				}
 			}
 

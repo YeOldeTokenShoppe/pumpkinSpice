@@ -17,7 +17,7 @@ import { useUser, SignInButton } from "@clerk/nextjs";
 import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
-import InfinityLoader from '@/components/InfinityLoader';
+import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
 import CloudIntroSection from '@/components/CloudIntroSection';
 import HandsGLTFScene from '@/components/HandsGLTFScene';
 import RotatingText from '@/components/RotatingText';
@@ -1368,7 +1368,7 @@ export default function Home3() {
           alignItems: 'center',
           pointerEvents: isSceneLoading ? 'auto' : 'none', // Only block when actually loading
         }}>
-          <InfinityLoader />
+          <SimpleInfinityLoader />
         </div>
       )}
 

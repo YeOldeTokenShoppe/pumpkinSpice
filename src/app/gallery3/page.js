@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import { useMusic } from "@/components/MusicContext";
-import InfinityLoader from "@/components/InfinityLoader_optimized";
+import SimpleInfinityLoader from "@/components/SimpleInfinityLoader";
 import CyberNav from "@/components/CyberNav";
 import SocialBar from "@/components/SocialBar";
 import TokensBurned from "@/components/TokensBurned";
@@ -17,7 +17,7 @@ import { useFirestoreResults } from "@/utilities/useFirestoreResults";
 // Dynamically import 3D scene
 const Gallery3Scene = dynamic(() => import("@/components/Gallery3Scene"), {
   ssr: false,
-  loading: () => <InfinityLoader />
+  loading: () => <SimpleInfinityLoader />
 });
 
 export default function Gallery3Page() {
@@ -207,7 +207,7 @@ export default function Gallery3Page() {
           transition: 'opacity 0.5s ease-out',
           pointerEvents: isLoading ? 'auto' : 'none'
         }}>
-          <InfinityLoader />
+          <SimpleInfinityLoader />
         </div>
       )}
       

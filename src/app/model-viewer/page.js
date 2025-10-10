@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useUser, SignInButton } from '@clerk/nextjs';
 import { Illumin80ClerkButton } from '@/components/Illumin80Display';
 import { useMusic } from '@/components/MusicContext';
-import InfinityLoader from '@/components/InfinityLoader';
+import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
 import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
 import BuyTokenFAB from '@/components/BuyTokenFAB';
@@ -13,7 +13,7 @@ import CompactCandleModal from '@/components/CompactCandleModal';
 
 const SimpleModelViewer = dynamic(() => import('@/components/SimpleModelViewer'), {
   ssr: false,
-  loading: () => <InfinityLoader />
+  loading: () => <SimpleInfinityLoader />
 });
 
 export default function ModelViewerPage() {

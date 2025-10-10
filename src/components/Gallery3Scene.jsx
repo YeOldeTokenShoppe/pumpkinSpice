@@ -695,18 +695,6 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
           newSequence[1] === requiredSequence[1] &&
           newSequence[2] === requiredSequence[2]) {
         console.log('Correct sequence detected! Triggering coin streams...');
-        
-        // Play coin sound effect
-        try {
-          const coinAudio = new Audio('/sounds/coins.mp3');
-          coinAudio.volume = 0.7; // Adjust volume as needed
-          coinAudio.play().catch(error => {
-            console.error('Error playing coin sound:', error);
-          });
-        } catch (error) {
-          console.error('Error creating coin audio:', error);
-        }
-        
         setCoinTrigger(prev => prev + 1);
         
         // Reset sequence after triggering

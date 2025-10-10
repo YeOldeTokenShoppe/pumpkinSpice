@@ -1,10 +1,25 @@
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 
-const FountainFrame = forwardRef(({ is80sMode = false }, ref) => {
+const FountainFrame = forwardRef(({ is80sMode = false, onFullyLoaded }, ref) => {
   const iframeRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
   
   useImperativeHandle(ref, () => iframeRef.current);
+
+  useEffect(() => {
+    // Listen for messages from the iframe
+    const handleMessage = (event) => {
+      if (event.data?.type === 'fountainReady') {
+        console.log('Fountain fully loaded and ready');
+        if (onFullyLoaded) {
+          onFullyLoaded();
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onFullyLoaded]);
 
   useEffect(() => {
     // Send 80s mode state to iframe when it changes

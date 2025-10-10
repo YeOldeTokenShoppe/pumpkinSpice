@@ -659,11 +659,11 @@ Whether you need a Hail Mary for hard times, or just a sanctuary in the dark rea
                 If these ideals resonate with you, consider testing your faith with a small, cautious purchase of the RL80 token.
               </p> */}
               
-              <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+              {/* <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
                 <a href="https://base.blockscout.com/address/0x1234567890123456789012345678901234567890/contracts" target="_blank" rel="noopener noreferrer" style={{ color: '#d4af37', textDecoration: 'none', fontSize: isMobile ? '1rem' : '1.1rem' }}>
                   Examine the verified contract → <span style={{ position: 'relative', top: '2px', fontSize: '20px', padding: '0 4px' }}>📜</span><span style={{ position: 'relative', marginLeft: '-8px', fontSize: '8px', padding: '0 4px' }}>✅</span>
                 </a>
-              </div>
+              </div> */}
 
 </div>
                   {/* Contract Address Container */}

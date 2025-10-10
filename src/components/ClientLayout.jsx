@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import InfinityLoader from '@/components/InfinityLoader';
+import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
 import NavigationLoader from "@/components/NavigationLoader";
 import { MusicProvider } from "@/components/MusicContext";
 
@@ -20,7 +20,7 @@ export default function ClientLayout({ children }) {
 
   return (
     <MusicProvider>
-      <Suspense fallback={<InfinityLoader />}>
+      <Suspense fallback={<SimpleInfinityLoader />}>
         <NavigationLoader />
       </Suspense>
       
@@ -38,10 +38,10 @@ export default function ClientLayout({ children }) {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <InfinityLoader />
+          <SimpleInfinityLoader />
         </div>
       ) : (
-        <Suspense fallback={<InfinityLoader />}>
+        <Suspense fallback={<SimpleInfinityLoader />}>
           {children}
         </Suspense>
       )}

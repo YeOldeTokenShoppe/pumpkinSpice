@@ -17,18 +17,18 @@ body {
     z-index: 0;
   }
   
-  #container {
-    font-family: UnifrakturMaguntia;
-    width: 40rem;
-    height: 60%;
-    max-height: 45rem;
-    top: 50%;
-    left: 50%;
-    -webkit-perspective: 290rem;
-    perspective: 290rem;
-    transform: translate(-50%, -50%) rotateY(20deg) scale(0.7);
-    font-size: 1.8em;
-  }
+#container {
+  font-family: UnifrakturMaguntia;
+  width: 22rem !important;
+  height: 60%;
+  max-height: 45rem;
+  top: 50%;
+  left: 50%;
+  -webkit-perspective: 290rem;
+  perspective: 290rem;
+  transform: translate(-50%, -50%) rotateY(20deg);
+  font-size: 1em !important;
+}
   
   #container p {
     padding: 0 0.3rem 0 1rem;
@@ -100,14 +100,14 @@ body {
   }
   
 @media (max-width: 768px) {
-    #container {
-      width: 90vw;
-      height: 60vh;
-      max-height: none;
-      font-size: 1.2em;
-      transform: translate(-50%, -50%) rotateY(20deg);
-    }
-  
+  #container {
+    width: 70vw !important;
+    height: 60vh;
+    max-height: none;
+    font-size: 1em !important;
+    transform: translate(-50%, -50%) rotateY(20deg);
+  }
+}
     /* #lorem {
       font-size: 4em;
       width: 6em;
@@ -118,5 +118,5 @@ body {
       width: 6em;
       height: 6em;
     } */
-  }
+  
   
