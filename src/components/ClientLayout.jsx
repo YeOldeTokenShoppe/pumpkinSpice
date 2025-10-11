@@ -3,7 +3,6 @@
 import { Suspense, useState, useEffect } from "react";
 import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
 import NavigationLoader from "@/components/NavigationLoader";
-import { MusicProvider } from "@/components/MusicContext";
 
 export default function ClientLayout({ children }) {
   const [mounted, setMounted] = useState(false);
@@ -19,7 +18,7 @@ export default function ClientLayout({ children }) {
   }, []);
 
   return (
-    <MusicProvider>
+    <>
       <Suspense fallback={<SimpleInfinityLoader />}>
         <NavigationLoader />
       </Suspense>
@@ -45,6 +44,6 @@ export default function ClientLayout({ children }) {
           {children}
         </Suspense>
       )}
-    </MusicProvider>
+    </>
   );
 }

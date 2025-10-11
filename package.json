@@ -16,6 +16,7 @@
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.3.0",
     "@react-three/postprocessing": "^3.0.4",
+    "@react-three/rapier": "^2.1.0",
     "@thirdweb-dev/react": "^4.9.4",
     "@thirdweb-dev/sdk": "^4.0.99",
     "@types/three": "^0.179.0",

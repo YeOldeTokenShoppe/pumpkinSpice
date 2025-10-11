@@ -488,7 +488,7 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
   useEffect(() => {
     const allLoaded = modelLoaded && angelLoaded && devilLoaded && cloudsLoaded;
     if (allLoaded && onAssetsLoaded) {
-      console.log('[SimpleScene] All 3 models + clouds loaded, notifying parent');
+      // console.log('[SimpleScene] All 3 models + clouds loaded, notifying parent');
       onAssetsLoaded();
     }
   }, [modelLoaded, angelLoaded, devilLoaded, cloudsLoaded, onAssetsLoaded]);

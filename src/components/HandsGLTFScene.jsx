@@ -3,6 +3,9 @@ import { useRef, useState, useEffect, Suspense, useCallback, useMemo } from 'rea
 import { createPortal } from 'react-dom'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Box, useCursor } from '@react-three/drei'
+
+// Preload the model immediately when module loads
+useGLTF.preload('/models/hands2.glb')
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import { db } from '@/utilities/firebaseClient'
@@ -10,8 +13,9 @@ import { collection, query, getDocs, limit, orderBy, onSnapshot } from 'firebase
 import { m } from 'framer-motion'
 
 
-function HandsModel({ mousePosition, scrollY }) {
+function HandsModel({ mousePosition, scrollY, onLoad }) {
   const gltf = useGLTF('/models/hands2.glb')
+  const hasReportedLoad = useRef(false)
   const rightHandRef = useRef()
   const leftHandRef = useRef()
   const emoji1Ref = useRef()
@@ -49,7 +53,7 @@ function HandsModel({ mousePosition, scrollY }) {
       setCurrentImageIndex((prevIndex) => 
         (prevIndex + 1) % randomUserImages.length
       )
-      console.log('Image advanced by click interaction')
+      // console.log('Image advanced by click interaction')
       
       // Reset feedback after animation
       setTimeout(() => setClickFeedback(false), 300)
@@ -153,9 +157,15 @@ function HandsModel({ mousePosition, scrollY }) {
     }
   }, [randomUserImages])
 
-  // Log what we loaded
+  // Log what we loaded and report when loaded
   useEffect(() => {
     // console.log('GLTF loaded:', gltf)
+    if (gltf.scene && !hasReportedLoad.current && onLoad) {
+      hasReportedLoad.current = true;
+      console.log('[HandsModel] Model loaded, reporting to parent');
+      onLoad();
+    }
+    
     if (gltf.scene) {
       // console.log('Scene found:', gltf.scene)
       
@@ -174,7 +184,7 @@ function HandsModel({ mousePosition, scrollY }) {
           
           child.traverse((subChild) => {
             if (subChild.name === 'Label2' || subChild.name === 'label2') {
-              console.log('Found Label2 under VCANDLE001!')
+              // console.log('Found Label2 under VCANDLE001!')
               candleLabel2Ref.current = subChild
               
               // Add click handler to Label2 as well
@@ -186,7 +196,7 @@ function HandsModel({ mousePosition, scrollY }) {
         
         // Also check if Label2 is directly in the scene
         if ((child.name === 'Label2' || child.name === 'label2') && child.isMesh) {
-          console.log('Found Label2 mesh directly!')
+          // console.log('Found Label2 mesh directly!')
           if (!candleLabel2Ref.current) {
             candleLabel2Ref.current = child
             
@@ -365,7 +375,7 @@ function HandsModel({ mousePosition, scrollY }) {
         candleLabel2Ref.current.material = newMaterial
         candleLabel2Ref.current.material.needsUpdate = true
         
-        console.log('Texture applied to candle Label2')
+        // console.log('Texture applied to candle Label2')
       }
       
       img.onerror = () => {
@@ -692,7 +702,7 @@ const handleClick = useCallback((event) => {
   let current = clickedObject
   while (current) {
     if (current.userData.onClick) {
-      console.log('Clicked on:', current.name, 'triggering image advance')
+      // console.log('Clicked on:', current.name, 'triggering image advance')
       current.userData.onClick()
       break
     }
@@ -753,19 +763,14 @@ function MouseTracker({ setMousePosition }) {
   return null
 }
 
-function LoadingBox() {
-  return (
-    <Box args={[1, 1, 1]}>
-      <meshStandardMaterial color="orange" />
-    </Box>
-  )
-}
+// Removed LoadingBox - no fallback cube needed
 
-export default function HandsGLTFScene() {
+export default function HandsGLTFScene({ onLoadComplete }) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [scrollY, setScrollY] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
   const [showClickIndicator, setShowClickIndicator] = useState(false)
+  const [modelLoaded, setModelLoaded] = useState(false)
   
   // Mobile detection
   useEffect(() => {
@@ -817,8 +822,15 @@ export default function HandsGLTFScene() {
         <directionalLight position={[10, 10, 5]} intensity={1} />
         <pointLight position={[-10, -10, -10]} intensity={1} />
         
-        <Suspense fallback={<LoadingBox />}>
-          <HandsModel mousePosition={mousePosition} scrollY={scrollY} />
+        <Suspense fallback={null}>
+          <HandsModel 
+            mousePosition={mousePosition} 
+            scrollY={scrollY}
+            onLoad={() => {
+              setModelLoaded(true);
+              if (onLoadComplete) onLoadComplete();
+            }}
+          />
         </Suspense>
         
         <MouseTracker setMousePosition={setMousePosition} />

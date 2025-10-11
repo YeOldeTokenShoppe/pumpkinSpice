@@ -1,6 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { storage } from "@/utilities/firebaseClient";
-import { ref as storageRefUtil, getDownloadURL } from "firebase/storage";
+import React, { useState, useEffect, useCallback } from "react";
 import { useMusic } from "@/components/MusicContext";
 
 
@@ -8,48 +6,37 @@ const MusicPlayer3 = React.forwardRef(
   ({ isVisible, autoPlay = true, is80sMode = false }, ref) => {
     
 
-    // Get shared audio element and context functions from MusicContext FIRST
-    const { audioRef, setCurrentTrackBPM, currentTrackIndex: contextTrackIndex, setCurrentTrackIndex: setContextTrackIndex, setIsPlaying: setContextIsPlaying, isPlaying: contextIsPlaying } = useMusic();
+    // Get ALL shared functions and state from MusicContext
+    const { 
+      audioRef, 
+      currentTrackIndex: contextTrackIndex,
+      isPlaying: contextIsPlaying,
+      volume: contextVolume,
+      setVolume: setContextVolume,
+      loadTrack: contextLoadTrack,
+      play: contextPlay,
+      pause: contextPause,
+      nextTrack: contextNextTrack,
+      prevTrack: contextPrevTrack,
+      currentTrack,
+      isLoadingTrack,
+      non80sTracks,
+      eightyTracks,
+      setIs80sMode: setContext80sMode
+    } = useMusic();
     
-    // State - initialize from context where applicable
-    const [currentTrackIndex, setCurrentTrackIndex] = useState(contextTrackIndex || 0);
-    const [isPlaying, setIsPlaying] = useState(contextIsPlaying || false);
-    const [isLoading, setIsLoading] = useState(false);
-    const isLoadingRef = useRef(false);
+    // Use context values directly, only keep local state for UI-specific things
+    const currentTrackIndex = contextTrackIndex || 0;
+    const isPlaying = contextIsPlaying || false;
+    const isLoading = isLoadingTrack || false;
+    const volume = contextVolume;
     const [currentTime, setCurrentTime] = useState("00:00");
     const [duration, setDuration] = useState("00:00");
     const [playProgress, setPlayProgress] = useState(0);
     const [isShuffled, setIsShuffled] = useState(false);
     const [shuffledQueue, setShuffledQueue] = useState([]);
-    const [volume, setVolume] = useState(0.2);
     
-    // Use context track index as the source of truth, with local ref for quick access
-    const currentTrackIndexRef = useRef(contextTrackIndex || 0);
-    
-    // Always sync ref with context
-    useEffect(() => {
-      currentTrackIndexRef.current = contextTrackIndex || 0;
-    }, [contextTrackIndex]);
-    
-    
-    // Track lists
-    const non80sTracks = [
-      { name: "Lifetimes", path: "audio/192k/07-lifetimes.m4a", bpm: 135 },
-      { name: "Magnetic - Tunde Adebimpe", path: "audio/320k/01-magnetic.m4a", bpm: 130 },
-      { name: "Rocket Man - Steven Drozd", path: "audio/320k/rocket-man---steven-drozd.m4a", bpm: 75 }
-    ];
-    
-    const eightyTracks = [
-      { name: "For Those About To Rock - AC/DC", path: "audio/320k/for-those-about-to-rock-ac-dc.m4a", bpm: 75 },
-      { name: "Dirty Cash - The Adventures of Stevie V", path: "audio/320k/dirty-cash.m4a", bpm: 100 },
-      { name: "Intergalactic - Beastie Boys", path: "audio/320k/intergalactic-beastie-boys.m4a", bpm: 108 },
-      { name: "Good Life - Inner City", path: "audio/320k/good-life-inner-city.m4a", bpm: 120 },
-      { name: "Like A Prayer - Madonna", path: "audio/320k/like-a-prayer-madonna.m4a", bpm: 85 },
-      { name: "99 Luftballoons - Nena", path: "audio/320k/99-luftballoons-nena.m4a", bpm: 85 },
-      { name: "Sweet Dreams - Eurythmics", path: "audio/320k/sweet-dreams-eurythmics.m4a", bpm: 85 }
-    ];
-    
-    // Get current playlist based on mode
+    // Get current playlist based on mode from context
     const currentPlaylist = is80sMode ? eightyTracks : non80sTracks;
     
     // Format time
@@ -75,201 +62,30 @@ const MusicPlayer3 = React.forwardRef(
       setPlayProgress((currentTimeValue / durationValue) * 100);
     }, [audioRef]);
     
-    // Load and play track
-    const loadTrack = useCallback(async (index, shouldAutoPlay = null) => {
-      console.log('🎵 loadTrack called', {
-        index,
-        shouldAutoPlay,
-        autoPlay
-      });
-      
-      // Check if we're trying to load the same track that's already loaded
-      const playlist = is80sMode ? eightyTracks : non80sTracks;
-      const currentLoadedTrack = audioRef.current?.src;
-      
-      // IMPROVED CHECK: If audio exists, check if it's the same track
-      if (audioRef.current?.src) {
-        // Check if we switched modes (80s vs non-80s)
-        const currentIs80s = eightyTracks.some(track => 
-          currentLoadedTrack && currentLoadedTrack.includes(track.path.split('/').pop())
-        );
-        
-        // Check if we're trying to load the exact same track index
-        const isSameTrack = currentTrackIndexRef.current === index && currentIs80s === is80sMode;
-        
-        if (isSameTrack) {
-          // Same track, just sync state and potentially resume
-          console.log('🎵 Same track already loaded, syncing state', {
-            isPaused: audioRef.current.paused,
-            requestedIndex: index,
-            currentIs80s,
-            is80sMode
-          });
-          
-          // Update UI state to match current audio
-          setIsPlaying(!audioRef.current.paused);
-          setContextIsPlaying(!audioRef.current.paused);
-          
-          // Update track index if we have it from global state
-          if (contextTrackIndex !== undefined) {
-            setCurrentTrackIndex(contextTrackIndex);
-            currentTrackIndexRef.current = contextTrackIndex;
-            setContextTrackIndex(contextTrackIndex);
-          }
-          
-          // If paused and should play, just resume
-          if (audioRef.current.paused && (shouldAutoPlay || autoPlay)) {
-            console.log('🎵 Resuming existing audio');
-            audioRef.current.play().then(() => {
-              setIsPlaying(true);
-              setContextIsPlaying(true);
-            }).catch(e => console.log('Play blocked:', e));
-          }
-          return;
-        } else if (currentIs80s !== is80sMode) {
-          // Mode changed, need to load new track
-          console.log('🎵 Mode changed, loading new track for different playlist');
-        } else {
-          // Different track in same mode
-          console.log('🎵 Loading different track:', index, 'from current:', currentTrackIndexRef.current);
-        }
+    // Update 80s mode in context when prop changes
+    useEffect(() => {
+      if (setContext80sMode) {
+        setContext80sMode(is80sMode);
       }
-      
-      console.log('🎵🔴 loadTrack - NO EXISTING AUDIO, proceeding', {
-        index,
-        shouldAutoPlay,
-        autoPlay
-      });
-      
-      // playlist already declared at the top of this function
-      if (!audioRef.current || index < 0 || index >= playlist.length) return;
-      
-      setIsLoading(true);
-      isLoadingRef.current = true;
-      
-      try {
-        console.log('🎵🔴 ACTUALLY LOADING NEW TRACK!', index, playlist[index].name);
-        // Get track URL from Firebase
-        const trackRef = storageRefUtil(storage, playlist[index].path);
-        const url = await getDownloadURL(trackRef);
-        
-        // Update audio element
-        audioRef.current.src = url;
-        audioRef.current.load();
-        
-        // Wait for track to be ready
-        await new Promise((resolve) => {
-          const handleCanPlay = () => {
-            audioRef.current.removeEventListener('canplaythrough', handleCanPlay);
-            resolve();
-          };
-          audioRef.current.addEventListener('canplaythrough', handleCanPlay);
-        });
-        
-        setCurrentTrackIndex(index);
-        currentTrackIndexRef.current = index;
-        setContextTrackIndex(index);
-        setCurrentTrackBPM(playlist[index].bpm || 100);
-        setIsLoading(false);
-        isLoadingRef.current = false;
-        
-        // Auto-play if requested
-        const shouldPlay = shouldAutoPlay !== null ? shouldAutoPlay : autoPlay;
-        if (shouldPlay && audioRef.current) {
-          audioRef.current.play().then(() => {
-            setIsPlaying(true);
-          }).catch(e => console.log('Auto-play blocked:', e));
-        }
-      } catch (error) {
-        console.error('Error loading track:', error);
-        setIsLoading(false);
-        isLoadingRef.current = false;
-      }
-    }, [audioRef, autoPlay, is80sMode, setCurrentTrackBPM, setContextTrackIndex, setContextIsPlaying]);
+    }, [is80sMode, setContext80sMode]);
     
-    // Play/pause controls
-    const play = useCallback(() => {
-      console.log('🎵 play() called', {
-        hasAudio: !!audioRef.current,
-        hasSrc: !!audioRef.current?.src,
-        isLoading
-      });
-      
-      if (audioRef.current && audioRef.current.src && !isLoading) {
-        audioRef.current.play().then(() => {
-          console.log('🎵 Playback started successfully');
-          setIsPlaying(true);
-        }).catch(e => console.log('Play blocked:', e));
-      } else if (audioRef.current && !audioRef.current.src) {
-        console.log('⚠️ No audio source loaded yet');
-      }
-    }, [audioRef, isLoading]);
-    
-    const pause = useCallback(() => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
-    }, [audioRef]);
-    
+    // Use context functions for play/pause
     const togglePlayPause = useCallback(() => {
       if (isPlaying) {
-        pause();
+        contextPause();
       } else {
-        play();
+        contextPlay();
       }
-    }, [isPlaying, play, pause]);
+    }, [isPlaying, contextPlay, contextPause]);
     
-    // Get next track index
-    const getNextTrackIndex = useCallback((direction) => {
-      const playlist = is80sMode ? eightyTracks : non80sTracks;
-      const currentIndex = currentTrackIndexRef.current;
-      
-      if (!isShuffled) {
-        return (currentIndex + direction + playlist.length) % playlist.length;
-      }
-      
-      // Handle shuffle mode
-      if (shuffledQueue.length === 0) {
-        const allTracks = [...Array(playlist.length).keys()];
-        const newQueue = allTracks
-          .filter((index) => index !== currentIndex)
-          .sort(() => Math.random() - 0.5);
-        setShuffledQueue([currentIndex, ...newQueue]);
-        return newQueue.length > 0 ? newQueue[0] : currentIndex;
-      }
-      
-      const currentQueueIndex = shuffledQueue.indexOf(currentIndex);
-      let nextQueueIndex;
+    // Skip to next/prev track using context functions
+    const changeTrack = useCallback((direction) => {
       if (direction === 1) {
-        nextQueueIndex = (currentQueueIndex + 1) % shuffledQueue.length;
+        contextNextTrack();
       } else {
-        nextQueueIndex = (currentQueueIndex - 1 + shuffledQueue.length) % shuffledQueue.length;
+        contextPrevTrack();
       }
-      return shuffledQueue[nextQueueIndex];
-    }, [is80sMode, isShuffled, shuffledQueue]);
-    
-    // Skip to next/prev track
-    const changeTrack = useCallback(async (direction) => {
-      if (isLoading) return;
-      
-      const nextIndex = getNextTrackIndex(direction);
-      // Check if we should auto-play: either currently playing OR track has ended but isPlaying is still true
-      const wasPlaying = audioRef.current && (!audioRef.current.paused || 
-                          (audioRef.current.ended && isPlaying));
-      
-      console.log('🎵 changeTrack:', { 
-        direction, 
-        nextIndex, 
-        wasPlaying,
-        paused: audioRef.current?.paused,
-        ended: audioRef.current?.ended,
-        isPlaying 
-      });
-      
-      // Force load the new track
-      await loadTrack(nextIndex, wasPlaying);
-    }, [loadTrack, getNextTrackIndex, isLoading, audioRef, isPlaying]);
+    }, [contextNextTrack, contextPrevTrack]);
     
     // Toggle shuffle
     const toggleShuffle = useCallback(() => {
@@ -279,24 +95,21 @@ const MusicPlayer3 = React.forwardRef(
         const playlist = is80sMode ? eightyTracks : non80sTracks;
         const allTracks = [...Array(playlist.length).keys()];
         const shuffled = allTracks
-          .filter((index) => index !== currentTrackIndexRef.current)
+          .filter((index) => index !== currentTrackIndex)
           .sort(() => Math.random() - 0.5);
-        const newQueue = [currentTrackIndexRef.current, ...shuffled];
+        const newQueue = [currentTrackIndex, ...shuffled];
         setShuffledQueue(newQueue);
       } else {
         setShuffledQueue([]);
       }
       
       setIsShuffled(newShuffleState);
-    }, [isShuffled, is80sMode]);
+    }, [isShuffled, is80sMode, currentTrackIndex]);
     
     // Handle volume change
     const handleVolumeChange = (e) => {
       const newVolume = parseFloat(e.target.value);
-      setVolume(newVolume);
-      if (audioRef.current) {
-        audioRef.current.volume = newVolume;
-      }
+      setContextVolume(newVolume);
     };
     
     // Handle seek
@@ -309,16 +122,10 @@ const MusicPlayer3 = React.forwardRef(
       }
     };
     
-    // Update volume when it changes
-    useEffect(() => {
-      if (audioRef.current) {
-        audioRef.current.volume = volume;
-      }
-    }, [volume, audioRef]);
+    // Volume is now handled by context
     
-    // Initialize and sync with existing audio - ONLY sync, never load
+    // Initialize and sync with existing audio
     useEffect(() => {
-      // Skip if audio element doesn't exist or we've already checked
       if (!audioRef.current) return;
       
       const hasAudioSource = !!audioRef.current.src;
@@ -331,222 +138,92 @@ const MusicPlayer3 = React.forwardRef(
         contextTrackIndex
       });
       
-
-      
-      // If audio exists (from any previous page), just sync the UI
+      // If audio exists, update progress
       if (hasAudioSource) {
-        console.log('🎵 Audio already exists on mount, syncing UI only');
-        setIsPlaying(isAudioPlaying);
-        setContextIsPlaying(isAudioPlaying); // Sync context state too
-        if (contextTrackIndex !== undefined) {
-          setCurrentTrackIndex(contextTrackIndex);
-          currentTrackIndexRef.current = contextTrackIndex;
-        }
         updateProgress();
-        // Mark that we've already loaded
-
       }
-      // DO NOT load new tracks here - let the visibility effect handle it
-    }, [audioRef, contextTrackIndex, updateProgress, setContextIsPlaying]);
+    }, [audioRef, contextTrackIndex, contextIsPlaying, updateProgress]);
     
     // Handle first-time initialization when becoming visible
-    const lastAutoPlayState = useRef(autoPlay);
-    
     useEffect(() => {
-      console.log('🎵 Visibility/AutoPlay effect triggered', {
+      console.log('🎵 Visibility effect triggered', {
         isVisible,
         autoPlay,
-        hasAudioRefSrc: !!audioRef.current?.src
+        hasAudioRefSrc: !!audioRef.current?.src,
+        contextIsPlaying
       });
       
-      // EARLY RETURN if we've already loaded a track
+      if (!isVisible) return;
+      
+      // If we have audio already playing/loaded from context
       if (audioRef.current?.src) {
-        console.log('🎵 Track already loaded globally, just syncing state');
-        if (audioRef.current) {
-          const isPaused = audioRef.current.paused;
-          setIsPlaying(!isPaused);
-          setContextIsPlaying(!isPaused);
-          updateProgress();
-          
-          // Resume if needed
-          if (autoPlay && isPaused) {
-            audioRef.current.play().catch(e => console.log('Play blocked:', e));
-          }
-        }
-        return;
-      }
-      
-      // Check for any existing audio
-      if (audioRef.current?.src) {
-        const hasSource = audioRef.current?.src;
-        const isPaused = audioRef.current?.paused ?? true;
-        
-        console.log('🎵✅ Audio exists, just syncing UI', {
-          hasSource,
-          isPaused,
-          autoPlay,
-          autoPlayChanged: lastAutoPlayState.current !== autoPlay
-        });
-        
-        
-        // Just sync UI state
-        if (audioRef.current) {
-          setIsPlaying(!isPaused);
-          setContextIsPlaying(!isPaused);
-          updateProgress();
-          
-          // Only play if autoPlay is explicitly requested AND audio is paused
-          // BUT don't reload the track
-          if (autoPlay && isPaused) {
-            console.log('🎵 Resuming paused audio (no reload)');
-            audioRef.current.play().then(() => {
-              setIsPlaying(true);
-              setContextIsPlaying(true);
-            }).catch(e => console.log('Play blocked:', e));
-          }
-          
-          lastAutoPlayState.current = autoPlay;
-        }
-        return; // Audio already loaded, nothing to do
-      }
-      
-      if (!audioRef.current) return;
-      
-      const hasAudioSource = !!audioRef.current.src;
-      
-      console.log('🎵 Initialization check:', {
-        isVisible,
-        hasAudioSource,
-        isLoading,
-        autoPlay,
-        autoPlayChanged: lastAutoPlayState.current !== autoPlay
-      });
-      
-      // If audio exists, just sync state
-      if (hasAudioSource) {
-        console.log('🎵 Audio source exists, syncing state only');
-        setIsPlaying(!audioRef.current.paused);
+        console.log('🎵 Track already loaded globally');
         updateProgress();
         
-        // If autoPlay changed from false to true, play the audio
-        if (autoPlay && !lastAutoPlayState.current && audioRef.current.paused) {
-          console.log('🎵🎯 AutoPlay toggled ON, playing existing audio');
-          audioRef.current.play().then(() => {
-            setIsPlaying(true);
-            setContextIsPlaying(true);
-          }).catch(e => console.log('Play blocked:', e));
+        // Resume if autoPlay is true and audio is paused
+        if (autoPlay && audioRef.current.paused) {
+          contextPlay();
         }
-        
-        lastAutoPlayState.current = autoPlay;
         return;
       }
       
-      // Only load ONCE - check if we've loaded a track
-      if (isVisible && !audioRef.current?.src && !isLoading) {
-        let trackToLoad = 0;
-        
-        console.log('🎵 First time initialization, loading track', trackToLoad, {
-          autoPlay,
-          willPlay: autoPlay
-        });
-        lastAutoPlayState.current = autoPlay;
-        // Load and play if autoPlay is true
-        loadTrack(trackToLoad, autoPlay);
-      } else if (isVisible) {
-        console.log('🎵 Not loading - audio already exists', {
-          hasAudioSrc: !!audioRef.current?.src
-        });
+      // First time initialization - load first track
+      if (!audioRef.current?.src && !isLoading) {
+        console.log('🎵 First time initialization, loading track 0');
+        contextLoadTrack(0, autoPlay);
       }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isVisible]); // Only depend on visibility, not autoPlay
+    }, [isVisible, autoPlay, audioRef, isLoading, contextPlay, contextLoadTrack, updateProgress]);
     
     
-    // Set up event listeners for play/pause/timeupdate only (ended is handled in MusicContext)
+    // Set up event listeners for timeupdate only (play/pause handled by context)
     useEffect(() => {
       if (!audioRef.current) return;
-      
-      const handlePlay = () => {
-        console.log('🎵 Play event fired');
-        setIsPlaying(true);
-        if (setContextIsPlaying) setContextIsPlaying(true);
-      };
-      
-      const handlePause = () => {
-        console.log('🎵 Pause event fired');
-        setIsPlaying(false);
-        if (setContextIsPlaying) setContextIsPlaying(false);
-      };
       
       const handleTimeUpdate = () => {
         updateProgress();
       };
       
-      const audio = audioRef.current;
-      audio.addEventListener('play', handlePlay);
-      audio.addEventListener('pause', handlePause);
-      audio.addEventListener('timeupdate', handleTimeUpdate);
-      
-      // Also listen for loadedmetadata to ensure duration is available
       const handleLoadedMetadata = () => {
-        console.log('🎵 Track metadata loaded, duration:', audio.duration);
+        console.log('🎵 Track metadata loaded, duration:', audioRef.current.duration);
+        updateProgress();
       };
+      
+      const audio = audioRef.current;
+      audio.addEventListener('timeupdate', handleTimeUpdate);
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);
       
       return () => {
-        audio.removeEventListener('play', handlePlay);
-        audio.removeEventListener('pause', handlePause);
         audio.removeEventListener('timeupdate', handleTimeUpdate);
         audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       };
-    }, [audioRef, updateProgress, setContextIsPlaying]);
+    }, [audioRef, updateProgress]);
     
     // Handle visibility changes
     useEffect(() => {
       if (!isVisible && audioRef.current && isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
+        contextPause();
       }
-    }, [isVisible, audioRef, isPlaying]);
+    }, [isVisible, audioRef, isPlaying, contextPause]);
     
     // Expose controls via ref
     React.useImperativeHandle(ref, () => {
       console.log('🎵 Setting up imperative handle');
       return {
         play: async () => {
-          console.log('🎵 play() called via ref', {
-            hasAudioRef: !!audioRef.current,
-            hasSrc: !!audioRef.current?.src,
-            currentIsLoading: isLoadingRef.current
-          });
-          
-          // Wait for any current loading to finish
-          if (isLoadingRef.current) {
-            console.log('🎵 Waiting for current load to finish...');
-            await new Promise(resolve => {
-              const checkLoading = setInterval(() => {
-                if (!isLoadingRef.current) {
-                  clearInterval(checkLoading);
-                  resolve();
-                }
-              }, 100);
-            });
-          }
-          
-          // If no audio loaded yet, load first track
           if (!audioRef.current?.src) {
             console.log('🎵 No audio loaded, loading track 0 before playing');
-            await loadTrack(0, true);
+            await contextLoadTrack(0, true);
           } else {
             console.log('🎵 Audio already loaded, calling play()');
-            play();
+            contextPlay();
           }
         },
-        pause: () => pause(),
+        pause: () => contextPause(),
         togglePlayPause: () => togglePlayPause(),
-        nextTrack: () => changeTrack(1),
-        prevTrack: () => changeTrack(-1),
+        nextTrack: () => contextNextTrack(),
+        prevTrack: () => contextPrevTrack(),
       };
-    }, [play, pause, togglePlayPause, changeTrack, loadTrack, audioRef]);
+    }, [togglePlayPause, contextPlay, contextPause, contextNextTrack, contextPrevTrack, contextLoadTrack, audioRef]);
     
     // Define colors based on mode
     const accentColor = is80sMode ? "#ff71ce" : "#1DB954";
@@ -621,7 +298,7 @@ const MusicPlayer3 = React.forwardRef(
                   textAlign: 'center'
                 }}
               >
-                {currentPlaylist[currentTrackIndex]?.name || 'Loading...'}
+                {currentTrack?.name || currentPlaylist[currentTrackIndex]?.name || 'Loading...'}
               </div>
               
               {/* Player controls */}

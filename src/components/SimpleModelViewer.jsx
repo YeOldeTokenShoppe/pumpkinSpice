@@ -407,11 +407,9 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
     };
   }, []);
   
-  // Signal when model is loaded and calculate center
+  // Signal when model is loaded
   useEffect(() => {
     if (scene) {
-      // Calculate the bounding box and center of the model
-      
       if (onLoaded) {
         onLoaded();
       }

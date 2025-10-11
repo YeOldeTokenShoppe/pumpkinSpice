@@ -12,8 +12,9 @@ import { createWallet } from "thirdweb/wallets";
 import { client } from "../client";
 import PlayingCard from '@/components/PlayingCard';
 import HandsGLTFScene from '@/components/HandsGLTFScene';
-import { FAQSection } from '@/components/FAQSection';
+import FAQSection from '@/components/FAQSection';
 import { useUser } from '@clerk/nextjs';
+
 
 
 const GOLDENRATIO = 1.61803398875;
@@ -1581,6 +1582,17 @@ Your message will be immortalized on the blockchain and her socials while reduci
                     </div>
                     
                   </div>
+                          {/* FAQ Section */}
+        <div style={{
+          position: 'relative',
+          zIndex: 50,
+          margin: '2rem auto',
+          width: isMobile ? '90%' : '80%',
+          maxWidth: '1400px',
+          pointerEvents: 'auto'
+        }}>
+          <FAQSection />
+        </div>
  
       {/* Cloud Gateway Divider */}
       <div style={{

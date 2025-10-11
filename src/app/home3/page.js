@@ -19,7 +19,7 @@ import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
 import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
 import CloudIntroSection from '@/components/CloudIntroSection';
-import HandsGLTFScene from '@/components/HandsGLTFScene';
+
 import RotatingText from '@/components/RotatingText';
 import CompactCandleModal from '@/components/CompactCandleModal';
 import '@/components/RotatingText.css';
@@ -963,6 +963,7 @@ export default function Home3() {
     ourLadyModel: false,
     angelModel: false,
     devilModel: false,
+    handsModel: false,
     images: []
   });
 
@@ -1095,23 +1096,23 @@ export default function Home3() {
   useEffect(() => {
     if (!mounted) return;
     
-    const { ourLadyModel, angelModel, devilModel } = assetsLoaded;
-    const allModelsLoaded = ourLadyModel && angelModel && devilModel;
+    const { ourLadyModel, angelModel, devilModel, handsModel } = assetsLoaded;
+    const allModelsLoaded = ourLadyModel && angelModel && devilModel && handsModel;
     
-    console.log('Asset loading status:', { ourLadyModel, angelModel, devilModel, mounted, allModelsLoaded });
+    console.log('Asset loading status:', { ourLadyModel, angelModel, devilModel, handsModel, mounted, allModelsLoaded });
     
     if (allModelsLoaded) {
       console.log('All assets loaded, hiding loader NOW');
       setIsSceneLoading(false);
     }
-  }, [assetsLoaded.ourLadyModel, assetsLoaded.angelModel, assetsLoaded.devilModel, mounted]);
+  }, [assetsLoaded.ourLadyModel, assetsLoaded.angelModel, assetsLoaded.devilModel, assetsLoaded.handsModel, mounted]);
   
   // Separate fallback timer with longer timeout for model loading
   useEffect(() => {
     const fallbackTimer = setTimeout(() => {
-      console.log('Loading timeout - forcing scene display');
+      console.log('Loading timeout - forcing scene display after 15 seconds');
       setIsSceneLoading(false);
-    }, 8000); // Increased to 8 seconds to ensure model loads
+    }, 15000); // Increased to 15 seconds to ensure all models load on slow connections
     
     return () => clearTimeout(fallbackTimer);
   }, []); // Run once on mount
@@ -2077,8 +2078,14 @@ export default function Home3() {
             isMobile={isMobile} 
             scrollY={scrollY} 
             onLoadComplete={() => {
-              console.log('[Home3] Simple3DScene onLoadComplete called');
-              setIsSceneLoading(false);
+              // console.log('[Home3] Simple3DScene onLoadComplete called');
+              // Track individual model loadings from Simple3DScene
+              setAssetsLoaded(prev => ({ 
+                ...prev, 
+                ourLadyModel: true,
+                angelModel: isMobile ? true : true, // Mobile doesn't load angel/devil models
+                devilModel: isMobile ? true : true   // So mark as loaded on mobile
+              }));
             }}
           />
         </Suspense>
@@ -2148,10 +2155,7 @@ export default function Home3() {
         {/* Cloud Introduction Section - New Addition */}
         <CloudIntroSection scrollY={scrollY} isMobile={isMobile} onOpenModal={() => setIsModalOpen(true)} />
 
-        {/* Hands GLTF Scene */}
-        <HandsGLTFScene />
 
-        {/* <FAQSection/> */}
    
 
 

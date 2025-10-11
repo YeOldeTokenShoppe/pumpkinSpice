@@ -19,7 +19,15 @@ const SimpleModelViewer = dynamic(() => import('@/components/SimpleModelViewer')
 export default function ModelViewerPage() {
   const { user, isSignedIn } = useUser();
   const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
-  const { play, pause, isPlaying: contextIsPlaying, nextTrack, currentTrack, is80sMode: context80sMode, setIs80sMode: setContext80sMode } = useMusic();
+  const { 
+    play, 
+    pause, 
+    isPlaying: contextIsPlaying, 
+    nextTrack, 
+    currentTrack, 
+    is80sMode: context80sMode, 
+    setIs80sMode: setContext80sMode
+  } = useMusic();
   const [showMusicControls, setShowMusicControls] = useState(contextIsPlaying);
   const [showCandleModal, setShowCandleModal] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
@@ -58,6 +66,7 @@ export default function ModelViewerPage() {
   const handleMusicToggle = useCallback((show) => {
     setShowMusicControls(show);
     if (show && !contextIsPlaying) {
+      // Use play() which handles random track selection
       play();
     }
   }, [contextIsPlaying, play]);
@@ -152,7 +161,14 @@ export default function ModelViewerPage() {
                   animation: contextIsPlaying ? "spin 4s linear infinite" : "none",
                   cursor: "pointer"
                 }}
-                onClick={() => contextIsPlaying ? pause() : play()}
+                onClick={() => {
+                  if (contextIsPlaying) {
+                    pause();
+                  } else {
+                    // Use play() which handles random track selection
+                    play();
+                  }
+                }}
               >
                 <div
                   style={{
@@ -302,8 +318,9 @@ export default function ModelViewerPage() {
           <CyberNav is80sMode={is80sMode} position="relative" />
         </div>
         
+        
         {/* Social Bar - Last position */}
-        <div style={{ order: isMobileDevice ? 4 : 4 }}>
+        <div style={{ order: isMobileDevice ? 6 : 5 }}>
           <SocialBar is80sMode={is80sMode} />
         </div>
       </div>

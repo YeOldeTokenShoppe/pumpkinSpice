@@ -45,7 +45,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
             position: position === "relative" ? "relative" : position,
             top: position === "relative" ? "0" : (position === "absolute" ? "10px" : "20px"),
             right: position === "relative" ? "0" : "20px",
-            zIndex: position === "relative" ? 1 : 10000000,
+            zIndex: position === "relative" ? 1 : 99999998,
             color: is80sMode ? "#D946EF" : "#ffffff",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             backdropFilter: "blur(10px)",
@@ -93,7 +93,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
               bottom: "0",
               backgroundColor: "rgba(0, 0, 0, 0.95)",
               backdropFilter: "blur(20px)",
-              zIndex: 10000001,
+              zIndex: 99999999,
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
@@ -119,7 +119,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                 cursor: "pointer",
                 padding: "10px",
                 fontSize: "24px",
-                zIndex: 10000002
+                zIndex: 100000000
               }}
               onClick={() => setIsMenuOpen(false)}
               aria-label="Close menu"
@@ -141,12 +141,21 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                 <div 
                   key={`${item.id}-${pathname}`} 
                   style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log('Navigating to:', item.path);
                     setIsMenuOpen(false);
                     
-                    // Simple direct navigation
-                    window.location.href = item.path;
+                    // Small delay to ensure menu closes before navigation
+                    setTimeout(() => {
+                      // Force a hard navigation if on the same page to reset state
+                      if (pathname === item.path) {
+                        window.location.href = item.path;
+                      } else {
+                        router.push(item.path);
+                      }
+                    }, 100);
                   }}
                 >
                   <div
