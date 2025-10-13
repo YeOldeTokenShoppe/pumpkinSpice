@@ -249,7 +249,15 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
   return (
     <>
       <link rel="stylesheet" href="/coin.css" />
+      <link rel="preload" href="/fonts/PirataOne-Regular.ttf" as="font" type="font/ttf" crossOrigin="" />
       <style jsx>{`
+        @font-face {
+          font-family: 'PirataOne';
+          src: url('/fonts/PirataOne-Regular.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+          font-display: swap;
+        }
         /* Override purse centering for inline display */
         .purse {
           position: relative !important;
@@ -557,10 +565,20 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                       order: isMobile ? 1 : 1, // Keep card at top on mobile
                       paddingBottom: isMobile ? '2rem' : '0'
                     }}>
-                      <div style={{ position: 'relative', zIndex: 101 }}>
-                        <PlayingCard frontImage="/queenOfHearts.png" scale={isMobile ? 0.7 : 0.9} />
+                      <div style={{ position: 'relative', zIndex: 101, marginBottom: '2rem' }}>
+                        <img 
+                          src="/images/lowrider.jpg" 
+                          alt="Lowrider" 
+                          style={{
+                            width: isMobile ? '280px' : '350px',
+                            height: 'auto',
+                            borderRadius: '15px',
+                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+                            border: '3px solid rgba(212, 175, 55, 0.4)'
+                          }}
+                        />
                       </div>
-                      {/* BUY Button - Toggles card flip */}
+                      {/* BUY Button */}
                       <button
                         onClick={() => {
                           // Check if card is flipped by looking for the flipped class
@@ -634,7 +652,7 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '1.6rem', color: '#d4af37'}}>She Sells Sanctuary</h1>
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '2.2rem', color: '#d4af37'}}>She Sells Sanctuary</h1>
               <div style={{
                 lineHeight: 1.7,
                 opacity: 0.9,
@@ -646,11 +664,35 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                 width: '100%',
                 maxWidth: '600px',
               }}>
-              <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-                No Leap of Faith Required
-              </span>
+              <blockquote style={{ 
+                fontSize: isMobile ? '1.4rem' : '1.9rem', 
+                fontWeight: '600', 
+                display: 'block', 
+                marginBottom: '1.5rem', 
+                lineHeight: '1.4',
+                fontStyle: 'italic',
+                textAlign: 'center',
+                position: 'relative',
+                padding: '1rem 2rem',
+                borderLeft: '4px solid rgba(212, 175, 55, 0.6)',
+                background: 'rgba(212, 175, 55, 0.05)',
+                borderRadius: '8px'
+              }}>
+                "Trust Not, for the Code is Proof Enough."
+                <cite style={{ 
+                  display: 'block', 
+                  marginTop: '0.8rem', 
+                  fontSize: isMobile ? '0.9rem' : '1rem', 
+                  fontWeight: '400', 
+                  fontStyle: 'normal',
+                  opacity: 0.8,
+                  color: '#d4af37'
+                }}>
+                  — The Gospel of the Block 9:13
+                </cite>
+              </blockquote>
               <p style={{ marginBottom: '1rem' }}>
-Whether you need a Hail Mary for hard times, or just a sanctuary in the dark realm of DeFi, Our Lady of Perpetual Profit offers you her protection.                 <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
+Whether you need a Hail Mary for hard times, or just sanctuary from the dark realm of DeFi, let Our Lady of Perpetual Profit light the way.                 <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
                   Liquidity Burned | 4% Tax (Buy/Sell) | 80 Billion Capped Supply
                 </span>
               </p>
@@ -777,6 +819,181 @@ Whether you need a Hail Mary for hard times, or just a sanctuary in the dark rea
                     
                   </div>
       
+
+{/*Staking Section*/}
+ <div style={{
+                    position: "relative",
+                    margin: "20vh auto 4rem auto",
+                    width: isMobile ? "90%" : "80%",
+                    maxWidth: "1400px",
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.6fr) minmax(0, 0.4fr)", // Stack on mobile, 60% text, 40% card on desktop
+                    gap: isMobile ? "2rem" : "3rem",
+                    alignItems: "center",
+                    padding: isMobile ? '2rem 1.5rem' : '3rem 2rem',
+                    background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    borderRadius: '25px',
+                    border: '2px solid rgba(212, 175, 55, 0.4)',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+                    color: '#ffffff',
+                    gridColumn: '1 / -1'
+                  }}>
+                    {/* Left Column - Text Content */}
+                   <div style={{
+              padding: isMobile ? '0 0.5rem' : '0 1rem',
+              color: '#ffffff',
+              minHeight: isMobile ? '300px' : '500px', // Match the candle container height
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center', // Center all children horizontally
+              width: '100%', // Ensure full width of grid column
+              boxSizing: 'border-box', // Include padding in width calculation
+              overflow: 'hidden', // Prevent content overflow
+              position: 'relative',
+              marginTop: isMobile ? '0' : '-3rem',
+              order: isMobile ? 2 : 1 // Move text above card on mobile, left on desktop
+            }}>
+             
+     
+              <br/>
+     
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', textAlign: 'center', lineHeight: '2.2rem', color: '#d4af37'}}>Money For Sta<span style={{fontFamily: 'PirataOne, serif'}}>k</span>ing</h1>
+                            <h2 style={{fontFamily: 'UnifrakturCook, serif', textAlign: 'center', marginTop: '-1.5rem', color: '#d4af37'}}>(and Your Wic<span style={{fontFamily: 'PirataOne, serif'}}>k</span>s For Free)</h2>
+              <div style={{
+                lineHeight: 1.7,
+                opacity: 0.9,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                fontWeight: 400,
+                letterSpacing: '0.02em',
+                fontSize: isMobile ? '1.2rem' : '1.4rem',
+                textAlign: 'center',
+                width: '100%',
+                maxWidth: '600px',
+              }}>
+              <blockquote style={{ 
+                fontSize: isMobile ? '1.4rem' : '1.9rem', 
+                fontWeight: '600', 
+                display: 'block', 
+                marginBottom: '1.5rem', 
+                lineHeight: '1.4',
+                fontStyle: 'italic',
+                textAlign: 'center',
+                position: 'relative',
+                padding: '1rem 2rem',
+                borderLeft: '4px solid rgba(212, 175, 55, 0.6)',
+                background: 'rgba(212, 175, 55, 0.05)',
+                borderRadius: '8px'
+              }}>
+                "Ye must Staketh, that Ye May Get Eth."
+                <cite style={{ 
+                  display: 'block', 
+                  marginTop: '0.8rem', 
+                  fontSize: isMobile ? '0.9rem' : '1rem', 
+                  fontWeight: '400', 
+                  fontStyle: 'normal',
+                  opacity: 0.8,
+                  color: '#d4af37'
+                }}>
+                  — Book of Profit 4:20
+                </cite>
+              </blockquote>
+              <p style={{ marginBottom: '1rem' }}>
+Get some righteous returns by staking your $RL80 and earn a share of the 4% tax on buys and sells. The more you stake, the more you earn - it's that simple. Includes a free virtual green candle.                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
+                </span>
+              </p>
+</div>
+                    </div>
+                    {/* Right Column - Playing Card */}
+                    <section className="card-section" style={{ 
+                      position: "relative",
+                      height: isMobile ? "auto" : "35rem",
+                      minHeight: isMobile ? "30rem" : "auto",
+                      overflow: "visible",
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      zIndex: 100,
+                      pointerEvents: 'auto',
+                      order: isMobile ? 1 : 2, // Keep card at top on mobile, right on desktop
+                      paddingBottom: isMobile ? '2rem' : '0'
+                    }}>
+                      <div style={{ position: 'relative', zIndex: 101, marginBottom: '2rem' }}>
+                        <img 
+                          src="/images/mosaic.jpg" 
+                          alt="Mosaic" 
+                          style={{
+                            width: isMobile ? '280px' : '350px',
+                            height: 'auto',
+                            borderRadius: '15px',
+                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+                            border: '3px solid rgba(212, 175, 55, 0.4)'
+                          }}
+                        />
+                      </div>
+                      {/* STAKE Button */}
+                      <button
+                        onClick={() => {
+                          // Check if card is flipped by looking for the flipped class
+                          const playingCard = document.querySelector('.playing-card');
+                          if (playingCard && playingCard.classList.contains('flipped')) {
+                            // Card is flipped, click the back button to flip it back
+                            const flipBackBtn = document.querySelector('.flip-back-btn');
+                            if (flipBackBtn) {
+                              flipBackBtn.click();
+                              setIsCardFlipped(false);
+                            }
+                          } else {
+                            // Card is not flipped, click the front to flip it
+                            const cardFront = document.querySelector('.card-front');
+                            if (cardFront) {
+                              cardFront.click();
+                              setIsCardFlipped(true);
+                            }
+                          }
+                        }}
+                        style={{
+                          marginTop: isMobile ? '1.5rem' : '2rem',
+                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
+                          fontSize: isMobile ? '1.2rem' : '1.4rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Fjalla One', sans-serif",
+                          textTransform: 'uppercase',
+                          letterSpacing: '2px',
+                          color: '#000000',
+                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                          border: '3px solid #d4af37',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          zIndex: 102,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                        }}
+                      >
+                        {isCardFlipped ? 'COMPLETE PURCHASE ABOVE' : 'STAKE $RL80'}
+                      </button>
+                    </section>
+                    
+                  </div>
+
+
+
+
+
       
 <div style={{position: 'relative', zIndex: 1, marginTop: '10rem'}}></div>
             {/* Floating Stats Section with Centered Coin */}
@@ -805,670 +1022,7 @@ Whether you need a Hail Mary for hard times, or just a sanctuary in the dark rea
 </div>
          </div>
       {/* Flippable Cards Section - Triangle Layout */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: isMobile ? '2rem' : '3rem',
-        padding: isMobile ? '2rem 1.5rem' : '8rem 4rem',
-        maxWidth: '1400px',
-        margin: '0 auto',
-      }}>
-        {/* First row - Single card */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          width: '100%',
-        }}>
-          <motion.div
-            key={cards[0].id}
-            className="cloud-card-wrap"
-            ref={el => {
-              if (el && !cardRefs.current.includes(el)) {
-                cardRefs.current.push(el);
-              }
-            }}
-            onClick={() => handleCardFlip(cards[0].id)}
-            onMouseMove={(e) => handleCardMouseMove(e, cards[0].id)}
-            onMouseLeave={handleCardMouseLeave}
-            initial={{ opacity: 0, y: 100 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ 
-              duration: 0.8, 
-              delay: 0.6,
-              type: "spring",
-              stiffness: 100
-            }}
-            whileHover={{ scale: 1.02 }}
-            style={{
-              perspective: '1000px',
-              cursor: 'pointer',
-              position: 'relative',
-              transformStyle: 'preserve-3d',
-              width: isMobile ? '100%' : '400px',
-              maxWidth: '400px',
-            }}
-          >
-            <div className={`cloud-card-container ${flippedCards.has(cards[0].id) ? 'flipped' : ''}`}
-              style={{
-                width: '100%',
-                height: isMobile ? `${280 * GOLDENRATIO}px` : `${300 * GOLDENRATIO}px`,
-                position: 'relative',
-                transformStyle: 'preserve-3d',
-                transition: 'transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95), box-shadow 0.3s ease',
-                transform: flippedCards.has(cards[0].id) 
-                  ? 'rotateY(180deg)'
-                  : getTiltStyles(cards[0].id).transform,
-                boxShadow: hoveredCard === cards[0].id 
-                  ? '0 25px 50px rgba(0,0,0,0.4), 0 0 50px rgba(212,175,55,0.2)' 
-                  : '0 20px 40px rgba(0,0,0,0.3)',
-              }}
-            >
-              {/* Front of card */}
-              <div className="cloud-card-face cloud-card-front"
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%',
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden',
-                  MozBackfaceVisibility: 'hidden',
-                  transform: 'rotateY(0deg)',
-                  WebkitTransform: 'rotateY(0deg)',
-                }}
-              >
-                <div className="cloud-card"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '20px',
-                    background: 'linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%)',
-                    overflow: 'hidden',
-                    border: '3px solid rgba(212,175,55,0.5)',
-                    position: 'relative',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-                  }}
-                >
-                 
-                  {/* Diagonal half-box tab in right corner */}
-                  <div
-                    className="flip-tab-front"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      width: '60px',
-                      height: '60px',
-                      background: '#d4af37',
-                      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
-                      zIndex: 5,
-                      pointerEvents: 'none',
-                      backfaceVisibility: 'hidden',
-                      WebkitBackfaceVisibility: 'hidden',
-                      MozBackfaceVisibility: 'hidden',
-                      opacity: flippedCards.has(cards[0].id) ? 0 : 1,
-                      visibility: flippedCards.has(cards[0].id) ? 'hidden' : 'visible',
-                      border: '2px solid #b8941f',
-                      borderTop: 'none',
-                      borderRight: 'none',
-                      borderTopRightRadius: '20px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '15px',
-                        right: '8px',
-                        transform: 'rotate(45deg)',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold',
-                        color: '#000',
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px',
-                        textShadow: '0 1px 2px rgba(255,255,255,0.3)',
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                      }}
-                    >
-                      FLIP
-                    </div>
-                  </div>
-                  <div className="cloud-card-bg" 
-                    style={{ 
-                      backgroundImage: cards[0].backgroundImage,
-                      position: 'absolute',
-                      top: '-20px',
-                      left: '-20px',
-                      width: 'calc(100% + 40px)',
-                      height: 'calc(100% + 40px)',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      opacity: hoveredCard === cards[0].id ? 0.85 : 0.7,
-                      filter: hoveredCard === cards[0].id ? 'brightness(1)' : 'brightness(0.8)',
-                      transform: hoveredCard === cards[0].id 
-                        ? `translateX(${-mousePosition.x * 40}px) translateY(${-mousePosition.y * 40}px) scale(1.1)`
-                        : 'translateX(0) translateY(0) scale(1)',
-                      transition: 'transform 0.1s ease-out, opacity 0.3s ease-out, filter 0.3s ease-out',
-                    }}
-                  />
-                  <div className="cloud-card-info"
-                    style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      width: '100%',
-                      padding: '30px 40px 30px 30px',
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 50%, transparent 100%)',
-                    }}
-                  >
-                    <h2 style={{
-                      fontSize: isMobile ? '1.8rem' : '2rem',
-                      marginBottom: '10px',
-                      textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-                      fontFamily: 'UnifrakturCook, serif',
-                      color: '#d4af37',
-                    }}>
-                      {cards[0].frontTitle}
-                    </h2>
-                    <p style={{
-                      fontSize: isMobile ? '0.95rem' : '1.05rem',
-                      lineHeight: 1.2,
-                      width: '90%',
-                      color: 'rgba(255,255,255,0.9)',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-                      fontFamily: "'UnifrakturMaguntia', sans-serif",
-                      // letterSpacing: '0.5px',
-                    }}>
-                      {cards[0].frontDescription}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Back of card */}
-              <div className="cloud-card-face cloud-card-back"
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%',
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden',
-                  transform: 'rotateY(180deg)',
-                }}
-              >
-                <div className="cloud-card"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%)',
-                    border: '3px solid #d4af37',
-                    borderRadius: '20px',
-                    position: 'relative',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-                  }}
-                >
-                  <div className="cloud-card-back-content"
-                    style={{
-                      padding: '30px',
-                      color: '#fff',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-start',
-                      overflowY: 'auto',
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    <h3 style={{
-                      color: '#d4af37',
-                      fontFamily: 'UnifrakturCook, serif',
-                      fontSize: isMobile ? '1.5rem' : '1.8rem',
-                      marginBottom: '15px',
-                      marginTop: 0,
-                    }}>
-                      {cards[0].backTitle}
-                    </h3>
-                    <p style={{
-                      fontSize: '0.95rem',
-                      lineHeight: 1.6,
-                      marginBottom: '15px',
-                      opacity: 0.95,
-                    }}>
-                      {cards[0].backContent}
-                    </p>
-                    <ul style={{
-                      listStyle: 'none',
-                      padding: 0,
-                      margin: '10px 0',
-                    }}>
-                      {cards[0].backList.map((item, i) => (
-                        <li key={i}
-                          style={{
-                            padding: '6px 0',
-                            borderBottom: '1px solid rgba(212, 175, 55, 0.2)',
-                            fontSize: isMobile ? '0.8rem' : '0.9rem',
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          <span style={{ color: '#d4af37', marginRight: '8px' }}>✨</span>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                    
-                    {/* Stats for token card */}
-                    {cards[0].backStats && (
-                      <div style={{
-                        marginTop: '15px',
-                        padding: '10px',
-                        background: 'rgba(212, 175, 55, 0.1)',
-                        borderRadius: '5px',
-                      }}>
-                        <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                          <strong>Total Supply:</strong> {cards[0].backStats.supply}
-                        </p>
-                        <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                          <strong>Tax:</strong> {cards[0].backStats.tax}
-                        </p>
-                        <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                          <strong>Liquidity:</strong> {cards[0].backStats.liquidity}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Quote if available */}
-                    {cards[0].backQuote && (
-                      <p style={{
-                        marginTop: '20px',
-                        fontStyle: 'italic',
-                        opacity: 0.8,
-                        textAlign: 'center',
-                        color: '#d4af37',
-                        fontSize: '0.95rem',
-                      }}>
-                        "{cards[0].backQuote}"
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Second row - Two cards */}
-        <div style={{
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          justifyContent: 'center',
-          alignItems: isMobile ? 'center' : 'flex-start',
-          gap: isMobile ? '2rem' : '3rem',
-          width: '100%',
-        }}>
-          {cards.slice(1).map((card, index) => (
-            <motion.div
-              key={card.id}
-              className="cloud-card-wrap"
-              ref={el => {
-                if (el && !cardRefs.current.includes(el)) {
-                  cardRefs.current.push(el);
-                }
-              }}
-              onClick={() => handleCardFlip(card.id)}
-              onMouseMove={(e) => handleCardMouseMove(e, card.id)}
-              onMouseLeave={handleCardMouseLeave}
-              initial={{ opacity: 0, y: 100 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ 
-                duration: 0.8, 
-                delay: 0.8 + index * 0.2,
-                type: "spring",
-                stiffness: 100
-              }}
-              whileHover={{ scale: 1.02 }}
-              style={{
-                perspective: '1000px',
-                cursor: 'pointer',
-                position: 'relative',
-                transformStyle: 'preserve-3d',
-                width: isMobile ? '100%' : '400px',
-                maxWidth: '400px',
-              }}
-            >
-              <div className={`cloud-card-container ${flippedCards.has(card.id) ? 'flipped' : ''}`}
-                style={{
-                  width: '100%',
-                  height: isMobile ? `${280 * GOLDENRATIO}px` : `${300 * GOLDENRATIO}px`,
-                  position: 'relative',
-                  transformStyle: 'preserve-3d',
-                  transition: 'transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95), box-shadow 0.3s ease',
-                  transform: flippedCards.has(card.id) 
-                    ? 'rotateY(180deg)'
-                    : getTiltStyles(card.id).transform,
-                  boxShadow: hoveredCard === card.id 
-                    ? '0 25px 50px rgba(0,0,0,0.4), 0 0 50px rgba(212,175,55,0.2)' 
-                    : '0 20px 40px rgba(0,0,0,0.3)',
-                }}
-              >
-                {/* Front of card */}
-                <div className="cloud-card-face cloud-card-front"
-                  style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '100%',
-                    backfaceVisibility: 'hidden',
-                    WebkitBackfaceVisibility: 'hidden',
-                    MozBackfaceVisibility: 'hidden',
-                    transform: 'rotateY(0deg)',
-                    WebkitTransform: 'rotateY(0deg)',
-                  }}
-                >
-                  <div className="cloud-card"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: '20px',
-                      background: 'linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%)',
-                      overflow: 'hidden',
-                      border: '3px solid rgba(212,175,55,0.5)',
-                      position: 'relative',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-                    }}
-                  >
-                   
-                    {/* Diagonal half-box tab in right corner */}
-                      <div
-                    className="flip-tab-front"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      width: '60px',
-                      height: '60px',
-                      background: '#d4af37',
-                      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)',
-                      zIndex: 5,
-                      pointerEvents: 'none',
-                      backfaceVisibility: 'hidden',
-                      WebkitBackfaceVisibility: 'hidden',
-                      MozBackfaceVisibility: 'hidden',
-                      opacity: flippedCards.has(card.id) ? 0 : 1,
-                      visibility: flippedCards.has(card.id) ? 'hidden' : 'visible',
-                      border: '2px solid #b8941f',
-                      borderTop: 'none',
-                      borderRight: 'none',
-                      borderTopRightRadius: '20px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '15px',
-                        right: '8px',
-                        transform: 'rotate(45deg)',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold',
-                        color: '#000',
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px',
-                        textShadow: '0 1px 2px rgba(255,255,255,0.3)',
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                      }}
-                    >
-                      FLIP
-                    </div>
-                    </div>
-                    <div className="cloud-card-bg" 
-                      style={{ 
-                        backgroundImage: card.backgroundImage,
-                        position: 'absolute',
-                        top: '-20px',
-                        left: '-20px',
-                        width: 'calc(100% + 40px)',
-                        height: 'calc(100% + 40px)',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        opacity: hoveredCard === card.id ? 0.85 : 0.7,
-                        filter: hoveredCard === card.id ? 'brightness(1)' : 'brightness(0.8)',
-                        transform: hoveredCard === card.id 
-                          ? `translateX(${-mousePosition.x * 40}px) translateY(${-mousePosition.y * 40}px) scale(1.1)`
-                          : 'translateX(0) translateY(0) scale(1)',
-                        transition: 'transform 0.1s ease-out, opacity 0.3s ease-out, filter 0.3s ease-out',
-                      }}
-                    />
-                    <div className="cloud-card-info"
-                      style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        width: '100%',
-                        padding: '30px 40px 30px 30px',
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 50%, transparent 100%)',
-                      }}
-                    >
-                      <h2 style={{
-                        fontSize: isMobile ? '1.8rem' : '2rem',
-                        marginBottom: '10px',
-                        textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-                        fontFamily: 'UnifrakturCook, serif',
-                        color: '#d4af37',
-                      }}>
-                        {card.frontTitle}
-                      </h2>
-                      <p style={{
-                        fontSize: isMobile ? '0.95rem' : '1.05rem',
-                        lineHeight: 1.2,
-                        width: '90%',
-                        color: 'rgba(255,255,255,0.9)',
-                        textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-                        fontFamily: "'UnifrakturMaguntia', sans-serif",
-                        // letterSpacing: '0.5px',
-                      }}>
-                        {card.frontDescription}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Back of card */}
-                <div className="cloud-card-face cloud-card-back"
-                  style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '100%',
-                    backfaceVisibility: 'hidden',
-                    WebkitBackfaceVisibility: 'hidden',
-                    transform: 'rotateY(180deg)',
-                  }}
-                >
-                  <div className="cloud-card"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      background: 'linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%)',
-                      border: '3px solid #d4af37',
-                      borderRadius: '20px',
-                      position: 'relative',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-                    }}
-                  >
-                    <div className="cloud-card-back-content"
-                      style={{
-                        padding: '30px',
-                        color: '#fff',
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-start',
-                        overflowY: 'auto',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      <h3 style={{
-                        color: '#d4af37',
-                        fontFamily: 'UnifrakturCook, serif',
-                        fontSize: isMobile ? '1.5rem' : '1.8rem',
-                        marginBottom: '15px',
-                        marginTop: 0,
-                      }}>
-                        {card.backTitle}
-                      </h3>
-                      <p style={{
-                        fontSize: '0.95rem',
-                        lineHeight: 1.6,
-                        marginBottom: '15px',
-                        opacity: 0.95,
-                      }}>
-                        {card.backContent}
-                      </p>
-                      <ul style={{
-                        listStyle: 'none',
-                        padding: 0,
-                        margin: '10px 0',
-                      }}>
-                        {card.backList.map((item, i) => (
-                          <li key={i}
-                            style={{
-                              padding: '6px 0',
-                              borderBottom: '1px solid rgba(212, 175, 55, 0.2)',
-                              fontSize: isMobile ? '0.8rem' : '0.9rem',
-                              lineHeight: 1.4,
-                            }}
-                          >
-                            <span style={{ color: '#d4af37', marginRight: '8px' }}>✨</span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                      
-                      {/* Stats for token card */}
-                      {card.backStats && (
-                        <div style={{
-                          marginTop: '15px',
-                          padding: '10px',
-                          background: 'rgba(212, 175, 55, 0.1)',
-                          borderRadius: '5px',
-                        }}>
-                          <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                            <strong>Total Supply:</strong> {card.backStats.supply}
-                          </p>
-                          <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                            <strong>Tax:</strong> {card.backStats.tax}
-                          </p>
-                          <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                            <strong>Liquidity:</strong> {card.backStats.liquidity}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Quote if available */}
-                      {card.backQuote && (
-                        <p style={{
-                          marginTop: '20px',
-                          fontStyle: 'italic',
-                          opacity: 0.8,
-                          textAlign: 'center',
-                          color: '#d4af37',
-                          fontSize: '0.95rem',
-                        }}>
-                          "{card.backQuote}"
-                        </p>
-                      )}
-                      
-                      {/* GET LIT button for card id 1 */}
-                      {card.id === 1 && (
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'center', 
-                          marginTop: '20px' 
-                        }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent card flip when clicking button
-                              handleOpenModal();
-                            }}
-                            style={{
-                              padding: isMobile ? '0.6rem 1.5rem' : '0.8rem 2rem',
-                              fontSize: isMobile ? '1rem' : '1.1rem',
-                              fontWeight: 'bold',
-                              fontFamily: "'Fjalla One', sans-serif",
-                              textTransform: 'uppercase',
-                              letterSpacing: '1px',
-                              color: '#000000',
-                              background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
-                              border: '2px solid #d4af37',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 12px rgba(212, 175, 55, 0.4)',
-                              cursor: 'pointer',
-                              transition: 'all 0.3s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-                              e.currentTarget.style.boxShadow = '0 6px 18px rgba(212, 175, 55, 0.6)';
-                              e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.4)';
-                              e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
-                            }}
-                          >
-                            GET LIT!
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* Fountain link button for card id 2 */}
-                      {card.id === 2 && (
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'center', 
-                          marginTop: '20px' 
-                        }}>
-                          <Link
-                            href="/fountain"
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent card flip when clicking button
-                            }}
-                            style={{
-                              display: 'inline-block',
-                              textDecoration: 'none',
-                              padding: isMobile ? '0.6rem 1.5rem' : '0.8rem 2rem',
-                              fontSize: isMobile ? '1rem' : '1.1rem',
-                              fontWeight: 'bold',
-                              fontFamily: "'Fjalla One', sans-serif",
-                              textTransform: 'uppercase',
-                              letterSpacing: '1px',
-                              color: '#000000',
-                              background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
-                              border: '2px solid #d4af37',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 12px rgba(212, 175, 55, 0.4)',
-                              cursor: 'pointer',
-                              transition: 'all 0.3s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-                              e.currentTarget.style.boxShadow = '0 6px 18px rgba(212, 175, 55, 0.6)';
-                              e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.4)';
-                              e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
-                            }}
-                          >
-                            VISIT FOUNTAIN
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+    
       
   <div style={{
                     position: "relative",
@@ -1529,17 +1083,17 @@ Whether you need a Hail Mary for hard times, or just a sanctuary in the dark rea
                 maxWidth: '600px',
               }}>
               <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-                Devote a Green Candle
+                Add a Green Candle to Her Timeline
               </span>
-              
+              <img src="/timeline2.png" alt="Candle Icon" style={{ width: isMobile ? '50%' : '50%', height: 'auto', marginBottom: '-3rem', marginTop: '-3rem' }} />
               <p style={{ marginBottom: '2rem' }}>
-Share your wish, dedication or confession.
-Your message will be immortalized on the blockchain and her socials while reducing supply.
+Share your wish, dedication or confession on a virtual votive candle.
+
           
  </p>
               
               <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
-                Create a custom votive candle and burn any amount of RL80 to light, publish, and share it.
+                Design a custom votive candle for the Patron Saint of Day Traders and stake or burn any amount of RL80 to light, publish, and share it. Your act of devotion will strengthen RL80's tokenomics and earn a place on her watchlist.
               </p>
 
           </div>

@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -18,6 +18,7 @@ const CoinStream = ({
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const triggerStartTime = useRef(null);
   const lastTrigger = useRef(0);
+  const audioRef = useRef(null);
   
   // Create coin data with random offsets and phases
   const coins = useMemo(() => {
@@ -41,6 +42,23 @@ const CoinStream = ({
     }));
   }, [coinCount, streamWidth, initialVelocity]);
 
+  // Initialize audio
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('/sounds/coins.mp3');
+      audioRef.current.volume = 0.3; // Set volume to 30%
+      audioRef.current.preload = 'auto';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
   useFrame((state) => {
     if (!meshRef.current) return;
     
@@ -48,12 +66,24 @@ const CoinStream = ({
     if (trigger !== lastTrigger.current) {
       triggerStartTime.current = state.clock.elapsedTime;
       lastTrigger.current = trigger;
+      
+      // Play coins sound effect
+      if (audioRef.current) {
+        try {
+          audioRef.current.currentTime = 0; // Reset to beginning
+          audioRef.current.play().catch(error => {
+            console.log('Audio play failed (user interaction required):', error);
+          });
+        } catch (error) {
+          console.error('Error playing coins sound:', error);
+        }
+      }
     }
     
     // Only animate if we have an active trigger
     if (triggerStartTime.current === null) {
       // Hide all coins when not triggered
-      coins.forEach((coin, i) => {
+      coins.forEach((_, i) => {
         dummy.position.set(0, -1000, 0);
         dummy.updateMatrix();
         meshRef.current.setMatrixAt(i, dummy.matrix);

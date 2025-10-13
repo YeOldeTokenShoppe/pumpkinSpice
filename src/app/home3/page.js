@@ -120,49 +120,49 @@ function DirectionalLightWithHelper() {
   );
 }
 
-function SpotlightWithHelper({ isMobile, scrollY }) {
-  const spotlightRef = useRef();
-  const targetRef = useRef();
+// function SpotlightWithHelper({ isMobile, scrollY }) {
+//   const spotlightRef = useRef();
+//   const targetRef = useRef();
 
-  useEffect(() => {
-    if (spotlightRef.current && targetRef.current) {
-      spotlightRef.current.target = targetRef.current;
-    }
-  }, []);
+//   useEffect(() => {
+//     if (spotlightRef.current && targetRef.current) {
+//       spotlightRef.current.target = targetRef.current;
+//     }
+//   }, []);
 
-  // Update target position to follow the model
-  useFrame(() => {
-    if (targetRef.current) {
-      // Match OurLadyRiderModel position logic
-      const baseY = isMobile ? -11 : -13;
-      targetRef.current.position.set(
-        isMobile ? -10 : -6,
-        baseY + scrollY * 0.015,
-        isMobile ? -10 : -18
-      );
-    }
-  });
+//   // Update target position to follow the model
+//   useFrame(() => {
+//     if (targetRef.current) {
+//       // Match OurLadyRiderModel position logic
+//       const baseY = isMobile ? -11 : -13;
+//       targetRef.current.position.set(
+//         isMobile ? -10 : -6,
+//         baseY + scrollY * 0.015,
+//         isMobile ? -10 : -18
+//       );
+//     }
+//   });
 
-  return (
-    <>
-      <spotLight
-        ref={spotlightRef}
-        position={[-5, 10, 5]}
-        intensity={25}
-        angle={Math.PI / 4}
-        penumbra={0.5}
-        distance={60}
-        color="#ffeedd"
-        castShadow
-        shadow-mapSize-width={512}
-        shadow-mapSize-height={512}
-      />
-      <mesh ref={targetRef} position={[0, -10, -20]} visible={false}>
-        <boxGeometry args={[0.1, 0.1, 0.1]} />
-      </mesh>
-    </>
-  );
-}
+//   return (
+//     <>
+//       <spotLight
+//         ref={spotlightRef}
+//         position={[-5, 10, 5]}
+//         intensity={25}
+//         angle={Math.PI / 4}
+//         penumbra={0.5}
+//         distance={60}
+//         color="#ffeedd"
+//         castShadow
+//         shadow-mapSize-width={512}
+//         shadow-mapSize-height={512}
+//       />
+//       <mesh ref={targetRef} position={[0, -10, -20]} visible={false}>
+//         <boxGeometry args={[0.1, 0.1, 0.1]} />
+//       </mesh>
+//     </>
+//   );
+// }
 
 // Memoize the model component to prevent re-renders
 const OurLadyRiderModel = React.memo(({ isMobile, scrollY, onLoad }) => {
@@ -304,48 +304,6 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
     }
   }, [scrollY, visible]);
 
-  // Orbit around center point and billboard effect with pop-in animation
-  useFrame((state, delta) => {
-    if (!modelRef.current) return;
-    
-    // Only animate when visible to save performance
-    if (!visible) {
-      modelRef.current.visible = false;
-      return;
-    }
-    modelRef.current.visible = true;
-    
-    // Smooth pop-in scale animation
-    if (popScale < 1) {
-      setPopScale(prev => Math.min(prev + delta * 3, 1)); // Animate over ~0.3 seconds
-    }
-    
-    const time = state.clock.elapsedTime;
-    
-    // Orbit parameters (adjusted for mobile)
-    const orbitRadius = isMobile ? 15 : 25; // Smaller radius on mobile
-    const orbitSpeed = 0.5; // Speed of orbit
-    const orbitHeight = isMobile ? -2 : 0; // Lower on mobile
-    const bobAmount = isMobile ? 1.5 : 3; // Less bobbing on mobile
-    const centerX = isMobile ? 0 : 5; // Center on mobile
-    const centerZ = isMobile ? -10 : -15; // Closer on mobile
-    
-    // Calculate orbital position
-    const angle = time * orbitSpeed;
-    modelRef.current.position.x = centerX + Math.cos(angle) * orbitRadius;
-    modelRef.current.position.z = centerZ + Math.sin(angle) * -orbitRadius;
-    
-    // Add pop-in effect to Y position (starts lower, pops up)
-    const popOffset = (1 - popScale) * -20; // Start 20 units lower for dramatic effect
-    modelRef.current.position.y = orbitHeight + Math.sin(time * 2) * bobAmount + scrollY * 0.015 + popOffset;
-    
-    // Apply pop-in scale with bounce effect
-    const bounceScale = popScale * (1 + Math.sin(popScale * Math.PI) * 0.2); // Bounce effect
-    modelRef.current.scale.setScalar((isMobile ? 0.7 : 1) * bounceScale);
-    
-    // Billboard - make model face the camera
-    modelRef.current.lookAt(state.camera.position);
-  });
 
   return (
     <primitive 
@@ -357,553 +315,7 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
   );
 }
 
-function DevilEmojiModel({ isMobile, scrollY, onLoad }) {
-  // Don't load on mobile to save memory
-  if (isMobile) {
-    // Call onLoad immediately for mobile since we're not loading the model
-    useEffect(() => {
-      if (onLoad) onLoad();
-    }, [onLoad]);
-    return null;
-  }
-  
-  const { scene, animations } = useGLTF('/models/devilEmoji.glb');
-  const { actions } = useAnimations(animations, scene);
-  const modelRef = useRef();
-  const [visible, setVisible] = useState(false);
-  const [popScale, setPopScale] = useState(0);
-  
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      scene.traverse((child) => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(mat => mat.dispose());
-          } else {
-            child.material.dispose();
-          }
-        }
-      });
-    };
-  }, [scene]);
 
-  useEffect(() => {
-    // Log available animation
-    // console.log('Devil Emoji Animations:', animations);
-    if (animations && animations.length > 0) {
-      animations.forEach((clip, index) => {
-        // console.log(`Animation ${index}: "${clip.name}"`);
-      });
-      
-      // Play the Armature|Idle animation
-      const idleAnimation = animations.find(clip => clip.name === 'Armature|Idle') || animations[0];
-      if (idleAnimation && actions[idleAnimation.name]) {
-        // console.log(`Playing animation: "${idleAnimation.name}"`);
-        actions[idleAnimation.name].play();
-      }
-    }
-
-    // Enable shadows on the model
-    if (scene) {
-      scene.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      // Notify that this model is loaded
-      if (onLoad) onLoad();
-    }
-  }, [animations, actions, scene, onLoad]);
-
-  // Check scroll threshold to trigger pop-in effect (slightly delayed from angel)
-  useEffect(() => {
-    // Pop in when scrolled down 100px (50px after angel)
-    const threshold = 100;
-    if (scrollY > threshold && !visible) {
-      setVisible(true);
-      console.log('Devil emoji popping in at scroll:', scrollY);
-    }
-  }, [scrollY, visible]);
-
-  // Orbit around center point (opposite side from angel) and billboard effect with pop-in animation
-  useFrame((state, delta) => {
-    if (!modelRef.current) return;
-    
-    // Only animate when visible to save performance
-    if (!visible) {
-      modelRef.current.visible = false;
-      return;
-    }
-    modelRef.current.visible = true;
-    
-    // Smooth pop-in scale animation
-    if (popScale < 1) {
-      setPopScale(prev => Math.min(prev + delta * 3, 1)); // Animate over ~0.3 seconds
-    }
-    
-    const time = state.clock.elapsedTime;
-    
-    // Orbit parameters (adjusted for mobile)
-    const orbitRadius = isMobile ? 15 : 25; // Smaller radius on mobile
-    const orbitSpeed = 0.5; // Speed of orbit
-    const orbitHeight = isMobile ? -2 : 0; // Lower on mobile
-    const bobAmount = isMobile ? 1.5 : 3; // Less bobbing on mobile
-    const centerX = isMobile ? 0 : 5; // Center on mobile
-    const centerZ = isMobile ? -10 : -15; // Closer on mobile
-    
-    // Calculate orbital position (start 180 degrees opposite from angel)
-    const angle = time * orbitSpeed + Math.PI;
-    modelRef.current.position.x = centerX + Math.cos(angle) * orbitRadius;
-    modelRef.current.position.z = centerZ + Math.sin(angle) * -orbitRadius;
-    
-    // Add pop-in effect to Y position (starts lower, pops up)
-    const popOffset = (1 - popScale) * -10; // Start 10 units lower
-    modelRef.current.position.y = orbitHeight + Math.sin(time * 2 + Math.PI) * bobAmount + scrollY * 0.015 + popOffset; // Opposite phase bobbing
-    
-    // Apply pop-in scale with bounce effect
-    const bounceScale = popScale * (1 + Math.sin(popScale * Math.PI) * 0.1); // Bounce effect
-    modelRef.current.scale.setScalar((isMobile ? 0.7 : 1) * bounceScale);
-    
-    // Billboard - make model face the camera
-    modelRef.current.lookAt(state.camera.position);
-  });
-
-  return (
-    <primitive 
-      ref={modelRef}
-      object={scene} 
-      position={[0, 0, 0]}  // Initial position (will be overridden by animation)
-      rotation={[0, 0, 0]}
-    />
-  );
-}
-
-// Animated pulsing text component
-function PulsingText({ children, ...props }) {
-  const textRef = useRef();
-  
-  useFrame(({ clock }) => {
-    if (textRef.current) {
-      const t = clock.getElapsedTime();
-      // Pulse the opacity
-      textRef.current.fillOpacity = 0.7 + Math.sin(t * 2) * 0.3;
-      // Add a subtle scale pulse
-      const scale = 1 + Math.sin(t * 2) * 0.05;
-      textRef.current.scale.setScalar(scale);
-    }
-  });
-  
-  return (
-    <Text ref={textRef} {...props}>
-      {children}
-    </Text>
-  );
-}
-
-// Portal Components
-
-function PortalFrame({ id, name, author, bg, width = 1.1, height = GOLDENRATIO * 1.1, children, ...props }) {
-  return (
-    <group {...props}>
-      <Text 
-        font="/fonts/UnifrakturCook-Bold.ttf"
-        color="#d4af37" 
-        fontSize={0.18} 
-        letterSpacing={-0.025} 
-        anchorY="top" 
-        anchorX="center" 
-        lineHeight={0.8} 
-        position={[0, 0.5, 0.01]}
-        maxWidth={width * 0.8}
-      >
-        {name}
-      </Text>
-      <Text 
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        color="#d4af37" 
-        fontSize={0.08} 
-        anchorX="right" 
-        position={[width * 0.4, -height * 0.42, 0.01]}
-      >
-        /{id}
-      </Text>
-      <Text 
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        color="#d4af37" 
-        fontSize={0.04} 
-        anchorX="center" 
-        position={[0, -height * 0.45, 0.01]}
-        maxWidth={width * 0.8}
-      >
-        {author}
-      </Text>
-      {/* Portal interaction hints - positioned inside the portal */}
-      <PulsingText
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        color="#d4af37"
-        fontSize={0.035}
-        anchorX="right"
-        anchorY="top"
-        position={[width * 0.42, height * 0.42, 0.02]}
-        fillOpacity={0.9}
-
-      >
-        Click to flip
-      </PulsingText>
-      <Text
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        color="#d4af37"
-        fontSize={0.03}
-        anchorX="right"
-        anchorY="top"
-        position={[width * 0.42, height * 0.39, 0.02]}
-        fillOpacity={0.7}
-      >
-        Double-click to enter
-      </Text>
-      <mesh name={id}>
-        <roundedPlaneGeometry args={[width, height, 0.1]} />
-        <MeshPortalMaterial>{children}</MeshPortalMaterial>
-      </mesh>
-      <mesh name={id} position={[0, 0, -0.001]}>
-        <roundedPlaneGeometry args={[width + 0.05, height + 0.05, 0.12]} />
-        <meshBasicMaterial color="#d4af37" />
-      </mesh>
-    </group>
-  );
-}
-
-// New enhanced portal frame component with interactive features
-function EnhancedPortalFrame({ id, name, author, bg, width = 1.8, height = GOLDENRATIO * 1.8, children, isFlipped, onFlip, onEnter, activePortal, ...props }) {
-  const portal = useRef();
-  const groupRef = useRef();
-  const [hovered, hover] = useState(false);
-  useCursor(hovered);
-  
-  useFrame((state, dt) => {
-    if (portal.current) {
-      // Blend to 1 when THIS portal is active (for immersion)
-      easing.damp(portal.current, 'blend', activePortal === id ? 1 : 0, 0.2, dt);
-    }
-    // Animate flip
-    if (groupRef.current) {
-      const targetRotation = isFlipped ? Math.PI : 0;
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(
-        groupRef.current.rotation.y,
-        targetRotation,
-        0.1
-      );
-    }
-  });
-  
-  return (
-    <group {...props}>
-      <group ref={groupRef}>
-      <Text 
-        font="/fonts/UnifrakturCook-Bold.ttf"
-        fontSize={0.25} 
-        anchorY="top" 
-        anchorX="center" 
-        lineHeight={0.8} 
-        position={[0, height * 0.42, 0.01]} 
-        material-toneMapped={false}
-        color="#d4af37"
-        maxWidth={width * 0.8}
-      >
-        {name}
-      </Text>
-      
-      {/* Interaction hints - only show on front side */}
-      {!isFlipped && (
-        <>
-          <PulsingText
-            font="/fonts/UnifrakturMaguntia-Regular.ttf"
-            color="#d4af37"
-            fontSize={0.06}
-            anchorX="right"
-            anchorY="top"
-            position={[width * 0.45, height * 0.45, 0.02]}
-            fillOpacity={0.9}
-          >
-            Click to flip
-          </PulsingText>
-          <Text
-            font="/fonts/UnifrakturMaguntia-Regular.ttf"
-            color="#d4af37"
-            fontSize={0.05}
-            anchorX="right"
-            anchorY="top"
-            position={[width * 0.45, height * 0.38, 0.02]}
-            fillOpacity={0.7}
-          >
-            Double-click to enter
-          </Text>
-        </>
-      )}
-      <Text 
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        fontSize={0.15} 
-        anchorX="right" 
-        position={[width * 0.42, -height * 0.42, 0.01]} 
-        material-toneMapped={false}
-        color="#d4af37"
-      >
-        /{id}
-      </Text>
-      <Text 
-        font="/fonts/UnifrakturMaguntia-Regular.ttf" 
-        fontSize={0.1} 
-        anchorX="center" 
-        position={[0, -height * 0.45, 0.01]} 
-        material-toneMapped={false}
-        color="#d4af37"
-        maxWidth={width * 0.8}
-      >
-        {author}
-      </Text>
-      <mesh 
-        name={id} 
-        onClick={(e) => {
-          e.stopPropagation();
-          console.log('Portal clicked:', id);
-          if (onFlip) onFlip(id);
-        }}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          console.log('Portal double-clicked:', id);
-          if (onEnter) onEnter(id);
-        }}
-        onPointerOver={(e) => {
-          e.stopPropagation();
-          hover(true);
-        }} 
-        onPointerOut={(e) => {
-          e.stopPropagation();
-          hover(false);
-        }}
-      >
-        <roundedPlaneGeometry args={[width, height, 0.1]} />
-        <MeshPortalMaterial ref={portal} events={activePortal === id} side={THREE.DoubleSide}>
-          <color attach="background" args={[bg]} />
-          {children}
-        </MeshPortalMaterial>
-      </mesh>
-      
-      {/* Back side of the card */}
-      <mesh position={[0, 0, -0.002]} rotation={[0, Math.PI, 0]}>
-        <roundedPlaneGeometry args={[width, height, 0.1]} />
-        <meshBasicMaterial color="#2a1f0a" side={THREE.FrontSide} />
-      </mesh>
-      
-      {/* Back side text */}
-      <Text
-        font="/fonts/UnifrakturCook-Bold.ttf"
-        fontSize={0.2}
-        color="#d4af37"
-        anchorX="center"
-        anchorY="middle"
-        position={[0, height * 0.3, -0.01]}
-        rotation={[0, Math.PI, 0]}
-        maxWidth={width * 0.8}
-      >
-        Sacred Wisdom
-      </Text>
-      
-      <Text
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        fontSize={0.12}
-        color="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-        position={[0, 0, -0.01]}
-        rotation={[0, Math.PI, 0]}
-        maxWidth={width * 0.8}
-        textAlign="center"
-      >
-        {`Double-click to enter\nthe sacred realm\nof ${name}`}
-      </Text>
-      
-      <Text
-        font="/fonts/UnifrakturMaguntia-Regular.ttf"
-        fontSize={0.08}
-        color="#d4af37"
-        anchorX="center"
-        anchorY="middle"
-        position={[0, -height * 0.35, -0.01]}
-        rotation={[0, Math.PI, 0]}
-      >
-        Click to flip back
-      </Text>
-      
-      {/* Gold border mesh behind the portal */}
-      <mesh name={`${id}-border`} position={[0, 0, -0.003]}>
-        <roundedPlaneGeometry args={[width + 0.1, height + 0.1, 0.12]} />
-        <meshBasicMaterial color="#d4af37" />
-      </mesh>
-      </group>
-    </group>
-  );
-}
-
-// Mouse-based rotation for portal
-function PortalMouseRotation({ children, isActive }) {
-  const groupRef = useRef();
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  
-  useFrame(() => {
-    if (groupRef.current && !isActive) {
-      // Smooth rotation based on mouse position
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(
-        groupRef.current.rotation.y,
-        mousePos.x * 0.3, // Horizontal mouse -> Y rotation
-        0.1
-      );
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(
-        groupRef.current.rotation.x,
-        -mousePos.y * 0.2, // Vertical mouse -> X rotation
-        0.1
-      );
-    } else if (groupRef.current && isActive) {
-      // Reset rotation when portal is active
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, 0, 0.1);
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, 0, 0.1);
-    }
-  });
-  
-  const handlePointerMove = (e) => {
-    if (!isActive) {
-      // Use Three.js pointer coordinates which are already normalized
-      const x = e.point ? e.point.x * 0.5 : 0;
-      const y = e.point ? e.point.y * 0.5 : 0;
-      setMousePos({ x, y });
-    }
-  };
-  
-  const handlePointerLeave = () => {
-    setMousePos({ x: 0, y: 0 });
-  };
-  
-  return (
-    <group 
-      ref={groupRef}
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-    >
-      {children}
-    </group>
-  );
-}
-
-// Camera rig for portal navigation
-function PortalRig({ activePortal }) {
-  const { controls, scene } = useThree();
-  const position = new THREE.Vector3(0, 0, 2);
-  const focus = new THREE.Vector3(0, 0, 0);
-  
-  useEffect(() => {
-    const active = scene.getObjectByName(activePortal);
-    if (active) {
-      active.parent.localToWorld(position.set(0, 0.5, 0.25));
-      active.parent.localToWorld(focus.set(0, 0, -2));
-    } else {
-      // Reset to default view when no portal is active
-      position.set(0, 0, 3);
-      focus.set(0, 0, 0);
-    }
-    controls?.setLookAt(...position.toArray(), ...focus.toArray(), true);
-  }, [activePortal, controls, scene]);
-  
-  // Force reset camera position on mount and when activePortal changes
-  useEffect(() => {
-    if (!activePortal && controls) {
-      // Force the camera to the correct distance
-      controls.dollyTo(3, true);
-    }
-  }, [activePortal, controls]);
-  
-  return (
-    <CameraControls 
-      makeDefault 
-      minPolarAngle={0} 
-      maxPolarAngle={Math.PI / 2}
-      enableZoom={!!activePortal}
-      enablePan={!!activePortal}
-      enableRotate={false}
-      dollySpeed={activePortal ? 1 : 0}
-      truckSpeed={activePortal ? 2 : 0}
-      minDistance={activePortal ? 0.1 : 3}   // Match the camera position
-      maxDistance={activePortal ? 100 : 3}   // Lock at exact distance when not in portal
-    />
-  );
-}
-
-// Scene component that responds to scroll
-function Scene({ isMobile, scrollY, onAssetsLoaded, isLowEndDevice }) {
-  const { camera } = useThree();
-  
-  useFrame(() => {
-    // Move camera down as user scrolls (creates ascending effect through clouds)
-    // Limit the camera movement to prevent going too far
-    const maxScroll = window.innerHeight * 2;
-    const scrollProgress = Math.min(scrollY / maxScroll, 1);
-    camera.position.y = (isMobile ? -2 : -2) - scrollProgress * 15;
-  });
-
-  return (
-    <>
-      {/* <ambientLight intensity={1.5} /> */}
-      {/* <DirectionalLightWithHelper />
-      <pointLight position={[-2, 2, -1]} intensity={1.5} /> */}
-      
-      {/* <SpotlightWithHelper isMobile={isMobile} scrollY={scrollY} /> */}
-      
-      <GradientSkySphere />
-      
-      {/* DarkClouds restored - skip on mobile for performance */}
-      {!isMobile && (
-        <Suspense fallback={null}>
-          <DarkClouds />
-        </Suspense>
-      )}
-      
-      <Suspense fallback={null}>
-        {/* Main model - loads on all devices */}
-        <OurLadyRiderModel 
-          isMobile={isMobile} 
-          scrollY={scrollY} 
-          onLoad={() => onAssetsLoaded?.('ourLadyModel')}
-        />
-        
-        {/* Emoji models - skip on mobile for performance */}
-        <AngelEmojiModel 
-          isMobile={isMobile} 
-          scrollY={scrollY} 
-          onLoad={() => onAssetsLoaded?.('angelModel')}
-        />
-        <DevilEmojiModel 
-          isMobile={isMobile} 
-          scrollY={scrollY} 
-          onLoad={() => onAssetsLoaded?.('devilModel')}
-        />
-      </Suspense>
-      <Suspense></Suspense>
-      {/* DISABLED POST PROCESSING FOR MEMORY TEST */}
-      {/* !isMobile && <PostProcessingEffects is80sMode={false} /> */}
-      {/* DISABLED ORBIT CONTROLS FOR MEMORY TEST */}
-      {/* <OrbitControls 
-        enablePan={false}
-        enableZoom={true}
-        enableRotate={true}
-        enableDamping={false}
-        enabled={false}
-        target={isMobile ? [-45, 1.5 - scrollY * 0.015, -100] : [-50, 1.5 - scrollY * 0.015, -100]}
-      /> */}
-    </>
-  );
-}
 
 // Preload critical 3D models to ensure they're ready before scene reveals
 useGLTF.preload('/models/ourlady_rider6.glb');
@@ -1039,41 +451,7 @@ export default function Home3() {
     });
   };
   
-  const handlePortalFlip = (portalId) => {
-    setPortalFlippedStates(prev => ({
-      ...prev,
-      [portalId]: !prev[portalId]
-    }));
-  };
-  
-  const handlePortalEnter = (portalId) => {
-    console.log('Portal entered:', portalId);
-    setActivePortal(portalId);
-    // Don't navigate away, just zoom into the portal
-    // Navigation can be handled separately if needed
-  };
-  
-  const handlePortalExit = () => {
-    setActivePortal(null);
-  };
-  
-  const handleNextPortalPage = () => {
-    setPortalTransition({ isTransitioning: true, isFadingOut: true });
-    setTimeout(() => {
-      setCurrentPortalPage((prev) => (prev + 1) % totalPortalPages);
-      setPortalTransition({ isTransitioning: true, isFadingOut: false });
-      setTimeout(() => setPortalTransition(null), 500);
-    }, 300);
-  };
-  
-  const handlePrevPortalPage = () => {
-    setPortalTransition({ isTransitioning: true, isFadingOut: true });
-    setTimeout(() => {
-      setCurrentPortalPage((prev) => (prev - 1 + totalPortalPages) % totalPortalPages);
-      setPortalTransition({ isTransitioning: true, isFadingOut: false });
-      setTimeout(() => setPortalTransition(null), 500);
-    }, 300);
-  };
+
   
   // Helper function to get responsive values
   const getResponsiveValue = (mobile, tablet, tabletLandscape, desktop) => {
@@ -1084,13 +462,13 @@ export default function Home3() {
   };
 
   // Handle asset loading
-  const handleAssetLoaded = (assetName) => {
-    console.log('Asset loaded:', assetName);
-    setAssetsLoaded(prev => ({
-      ...prev,
-      [assetName]: true
-    }));
-  };
+  // const handleAssetLoaded = (assetName) => {
+  //   console.log('Asset loaded:', assetName);
+  //   setAssetsLoaded(prev => ({
+  //     ...prev,
+  //     [assetName]: true
+  //   }));
+  // };
 
   // Check if all assets are loaded
   useEffect(() => {
@@ -1413,20 +791,20 @@ export default function Home3() {
           to { transform: rotate(360deg); }
         }
         
-        @keyframes pulse {
-          0% {
-            transform: translateX(-50%) scale(1);
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
-          }
-          50% {
-            transform: translateX(-50%) scale(1.05);
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
-          }
-          100% {
-            transform: translateX(-50%) scale(1);
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
-          }
-        }
+        // @keyframes pulse {
+        //   0% {
+        //     transform: translateX(-50%) scale(1);
+        //     box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+        //   }
+        //   50% {
+        //     transform: translateX(-50%) scale(1.05);
+        //     box-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
+        //   }
+        //   100% {
+        //     transform: translateX(-50%) scale(1);
+        //     box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+        //   }
+        // }
         
         @keyframes buyButtonPulse {
           0% {
@@ -1440,64 +818,64 @@ export default function Home3() {
           }
         }
         
-        @keyframes candleFlicker {
-          0%, 100% {
-            box-shadow: 0 10px 30px rgba(74, 140, 38, 0.5), 0 0 60px rgba(45, 80, 22, 0.3);
-          }
-          25% {
-            box-shadow: 0 12px 35px rgba(74, 140, 38, 0.6), 0 0 65px rgba(45, 80, 22, 0.4);
-          }
-          50% {
-            box-shadow: 0 8px 25px rgba(74, 140, 38, 0.4), 0 0 55px rgba(45, 80, 22, 0.35);
-          }
-          75% {
-            box-shadow: 0 14px 38px rgba(74, 140, 38, 0.65), 0 0 70px rgba(45, 80, 22, 0.45);
-          }
-        }
+        // @keyframes candleFlicker {
+        //   0%, 100% {
+        //     box-shadow: 0 10px 30px rgba(74, 140, 38, 0.5), 0 0 60px rgba(45, 80, 22, 0.3);
+        //   }
+        //   25% {
+        //     box-shadow: 0 12px 35px rgba(74, 140, 38, 0.6), 0 0 65px rgba(45, 80, 22, 0.4);
+        //   }
+        //   50% {
+        //     box-shadow: 0 8px 25px rgba(74, 140, 38, 0.4), 0 0 55px rgba(45, 80, 22, 0.35);
+        //   }
+        //   75% {
+        //     box-shadow: 0 14px 38px rgba(74, 140, 38, 0.65), 0 0 70px rgba(45, 80, 22, 0.45);
+        //   }
+        // }
         
-        .featured-banner {
-          position: absolute;
-          left: 50%;
-          display: block;
-          margin: 0 -110px;
-          width: 220px;
-          height: 40px;
-          border: 1px solid #8a6701;
-          font: bold 18px/40px 'Cyber', monospace;
-          text-align: center;
-          color: #2a1f0a;
-          background: linear-gradient(135deg, #c48901 0%, #d4af37 100%);
-          border-radius: 4px;
-          box-shadow: 0 0 30px rgba(0, 0, 0, 0.15) inset,
-                      0 6px 10px rgba(0, 0, 0, 0.3);
-          text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
-          letter-spacing: 0.1em;
-        }
+        // .featured-banner {
+        //   position: absolute;
+        //   left: 50%;
+        //   display: block;
+        //   margin: 0 -110px;
+        //   width: 220px;
+        //   height: 40px;
+        //   border: 1px solid #8a6701;
+        //   font: bold 18px/40px 'Cyber', monospace;
+        //   text-align: center;
+        //   color: #2a1f0a;
+        //   background: linear-gradient(135deg, #c48901 0%, #d4af37 100%);
+        //   border-radius: 4px;
+        //   box-shadow: 0 0 30px rgba(0, 0, 0, 0.15) inset,
+        //               0 6px 10px rgba(0, 0, 0, 0.3);
+        //   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+        //   letter-spacing: 0.1em;
+        // }
 
-        .featured-banner::before,
-        .featured-banner::after {
-          content: '';
-          position: absolute;
-          z-index: -1;
-          left: -40px;
-          top: 16px;
-          display: block;
-          width: 24px;
-          height: 0px;
-          border: 20px solid #c48901;
-          border-right: 12px solid #a57201;
-          border-bottom-color: #b57f01;
-          border-left-color: transparent;
-          transform: rotate(-5deg);
-        }
+        // .featured-banner::before,
+        // .featured-banner::after {
+        //   content: '';
+        //   position: absolute;
+        //   z-index: -1;
+        //   left: -40px;
+        //   top: 16px;
+        //   display: block;
+        //   width: 24px;
+        //   height: 0px;
+        //   border: 20px solid #c48901;
+        //   border-right: 12px solid #a57201;
+        //   border-bottom-color: #b57f01;
+        //   border-left-color: transparent;
+        //   transform: rotate(-5deg);
+        // }
 
-        .featured-banner::after {
-          left: auto;
-          right: -40px;
-          border-left: 12px solid #a57201;
-          border-right: 20px solid transparent;
-          transform: rotate(5deg);
-        }
+        // .featured-banner::after {
+        //   left: auto;
+        //   right: -40px;
+        //   border-left: 12px solid #a57201;
+        //   border-right: 20px solid transparent;
+        //   transform: rotate(5deg);
+        // }
         
         .spinning-record {
           animation: spin 3s linear infinite;
@@ -1559,506 +937,370 @@ export default function Home3() {
           }
         }
         
-        /* Cloud container animations */
-        @keyframes cloudFloat {
-          0%, 100% { 
-            transform: translateY(0px) scale(1);
-            opacity: 0.9;
-          }
-          25% { 
-            transform: translateY(-15px) scale(1.02);
-            opacity: 0.95;
-          }
-          50% { 
-            transform: translateY(-5px) scale(1.01);
-            opacity: 0.85;
-          }
-          75% { 
-            transform: translateY(-10px) scale(0.99);
-            opacity: 0.9;
-          }
-        }
-        
-        @keyframes cloudDrift {
-          0%, 100% { 
-            transform: translateX(0);
-          }
-          50% { 
-            transform: translateX(20px);
-          }
-        }
-        
-        @keyframes hintPulse {
-          0%, 100% {
-            opacity: 0.9;
-            text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
-          }
-          50% {
-            opacity: 1;
-            text-shadow: 0 0 20px rgba(212, 175, 55, 1), 0 0 30px rgba(212, 175, 55, 0.5);
-          }
-        }
-        
-        .cloud-container {
-          animation: cloudFloat 15s ease-in-out infinite;
-          position: relative;
-        }
-        
-        .cloud-container::before {
-          content: '';
-          position: absolute;
-          top: -20%;
-          left: -20%;
-          right: -20%;
-          bottom: -20%;
-          background: radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%);
-          filter: blur(40px);
-          animation: cloudDrift 20s ease-in-out infinite;
-          pointer-events: none;
-          z-index: -1;
-        }
-        /* Portal flip styles */
-        .portal-container {
-          width: 100%;
-          height: 100%;
-          position: relative;
-          transform-style: preserve-3d;
-          transition: transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95);
-          cursor: pointer;
-          box-sizing: border-box;
-          overflow: visible;
-        }
-        
-        .portal-container.flipped {
-          transform: rotateY(180deg);
-        }
-        
-        .portal-face {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          box-sizing: border-box;
-          overflow: visible;
-        }
-        
-        .portal-front {
-          z-index: 2;
-        }
-        
-        .portal-back {
-          transform: rotateY(180deg);
-          z-index: 1;
-        }
-        
-        /* Alternating cards styles with enhanced parallax depth */
-        .cards-wrapper {
-          display: flex;
-          flex-direction: column;
-          gap: 5rem;
-          align-items: center;
-          padding: 80px 20px;
-          max-width: 1200px;
-          margin: 0 auto;
-          position: relative;
-          z-index: 10;
-        }
 
-        .card-wrap {
-          width: 70%;
-          max-width: 450px;
-          position: relative;
-          perspective: 1000px;
-          cursor: pointer;
-          opacity: 0;
-          transform: translateY(50px);
-          margin-bottom: 0;
-          transition: transform 0.8s ease-out, opacity 0.8s ease-out;
-        }
         
-        .card-container {
-          width: 100%;
-          aspect-ratio: ${1 / GOLDENRATIO};
-          position: relative;
-          transform-style: preserve-3d;
-          transition: transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95);
-        }
-        
-        .card-container.flipped {
-          transform: rotateY(180deg);
-        }
-        
-        .card-face {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-        }
-        
-        .card-face .card {
-          height: 100%;
-        }
-        
-        .card-front {
-          z-index: 2;
-        }
-        
-        .card-back {
-          transform: rotateY(180deg);
-          z-index: 1;
-        }
-        
-        .card-back .card {
-          background: linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%);
-          border: 6px solid #d4af37;
-          border-radius: 20px;
-        }
-        
-        .card-back-content {
-          padding: 30px;
-          color: #fff;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-start;
-          overflow-y: auto;
-          box-sizing: border-box;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(212, 175, 55, 0.3) transparent;
-        }
-        
-        .card-back-content::-webkit-scrollbar {
-          width: 6px;
-        }
-        
-        .card-back-content::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        
-        .card-back-content::-webkit-scrollbar-thumb {
-          background-color: rgba(212, 175, 55, 0.3);
-          border-radius: 3px;
-        }
-        
-        .card-back-content h3 {
-          color: #d4af37;
-          font-family: 'UnifrakturCook', serif;
-          font-size: 1.8em;
-          margin-bottom: 15px;
-          margin-top: 0;
-        }
-        
-        .card-back-content p {
-          font-size: 0.95em;
-          line-height: 1.6;
-          margin-bottom: 12px;
-          opacity: 0.95;
-        }
-        
-        .card-back-content ul {
-          list-style: none;
-          padding: 0;
-          margin: 15px 0;
-        }
-        
-        .card-back-content li {
-          padding: 6px 0;
-          border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-          font-size: 0.9em;
-          line-height: 1.4;
-        }
-        
-        .card-back-content li:before {
-          content: "✨";
-          margin-right: 10px;
-        }
-        
-        .flip-hint {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          background: rgba(212, 175, 55, 0.2);
-          padding: 5px 10px;
-          border-radius: 5px;
-          font-size: 0.8em;
-          color: #d4af37;
-          opacity: 0.8;
-          transition: opacity 0.3s;
-        }
-        
-        .card-wrap:hover .flip-hint {
-          opacity: 1;
-        }
 
-        .card-wrap:nth-child(odd) {
-          align-self: flex-start;
-          margin-left: 5%;
-        }
 
-        .card-wrap:nth-child(even) {
-          align-self: flex-end;
-          margin-right: 5%;
-        }
-
-        .card-wrap.visible {
-          opacity: 1;
-          transform: translateY(0);
-          transition: all 0.8s ease-out;
-        }
-
-        .card-wrap.visible:nth-child(1) {
-          transition-delay: 0.1s;
-        }
-
-        .card-wrap.visible:nth-child(2) {
-          transition-delay: 0.2s;
-        }
-
-        .card-wrap.visible:nth-child(3) {
-          transition-delay: 0.3s;
-        }
-
-        .card-wrap.visible:nth-child(4) {
-          transition-delay: 0.4s;
-        }
-
-        .card-wrap:hover .card {
-          transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1),
-                      box-shadow 2s cubic-bezier(0.23, 1, 0.32, 1);
-          box-shadow: 
-            0 0 0 5px #d4af37,
-            0 0 0 6px #d4af37,
-            rgba(212, 175, 55, 0.4) 0 0 50px 10px;
-        }
-
-        .card-wrap:hover .card-bg {
-          transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1),
-                      opacity 5s cubic-bezier(0.23, 1, 0.32, 1);
-          opacity: 0.95;
-          filter: brightness(1.3) contrast(1.15) saturate(1.2);
-        }
-
-        .card-wrap:hover .card-info {
-          transform: translateY(0);
-          transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        .card-wrap:hover .card-info p {
-          opacity: 1;
-          transform: translateY(0);
-          transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        .card-wrap:hover .card-info::after {
-          transition: 5s cubic-bezier(0.23, 1, 0.32, 1);
-          opacity: 1;
-          transform: translateY(0);
-        }
         
-        /* Disable overlay for portal gallery to prevent button blocking */
-        .portal-gallery-wrap .card-info::after {
-          display: none !important;
-          pointer-events: none !important;
-        }
-        
-        .portal-gallery-wrap:hover .card-info {
-          transform: translateY(20%) !important;
-          pointer-events: none;
-        }
-        
-        .portal-gallery-wrap:hover .card-info * {
-          pointer-events: none;
-        }
-        
-        .portal-gallery-wrap:hover .card-info div {
-          pointer-events: auto !important;
-        }
-        
-        .portal-gallery-wrap:hover .card-info button {
-          pointer-events: auto !important;
-        }
+        // /* Alternating cards styles with enhanced parallax depth */
+        // .cards-wrapper {
+        //   display: flex;
+        //   flex-direction: column;
+        //   gap: 5rem;
+        //   align-items: center;
+        //   padding: 80px 20px;
+        //   max-width: 1200px;
+        //   margin: 0 auto;
+        //   position: relative;
+        //   z-index: 10;
+        // }
 
-        /* Override hover effects for portal to prevent vertical movement */
-        .portal-wrap.card-wrap:hover {
-          /* Prevent any inherited hover effects */
-        }
+        // .card-wrap {
+        //   width: 70%;
+        //   max-width: 450px;
+        //   position: relative;
+        //   perspective: 1000px;
+        //   cursor: pointer;
+        //   opacity: 0;
+        //   transform: translateY(50px);
+        //   margin-bottom: 0;
+        //   transition: transform 0.8s ease-out, opacity 0.8s ease-out;
+        // }
         
-        .portal-wrap.card-wrap:hover .card {
-          box-shadow: none !important;
-        }
+        // .card-container {
+        //   width: 100%;
+        //   aspect-ratio: ${1 / GOLDENRATIO};
+        //   position: relative;
+        //   transform-style: preserve-3d;
+        //   transition: transform 0.8s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+        // }
         
-        .portal-wrap:hover .card-info {
-          transform: translateY(40%) !important;
-        }
+        // .card-container.flipped {
+        //   transform: rotateY(180deg);
+        // }
         
-        .portal-wrap:hover .portal-hover-container {
-          transform: inherit;
-        }
+        // .card-face {
+        //   position: absolute;
+        //   width: 100%;
+        //   height: 100%;
+        //   backface-visibility: hidden;
+        //   -webkit-backface-visibility: hidden;
+        // }
         
-        /* Ensure portal container doesn't shift on hover */
-        .portal-wrap .portal-container,
-        .portal-wrap:hover .portal-container {
-          position: relative;
-          top: 0;
-          transform-origin: center center;
-        }
+        // .card-face .card {
+        //   height: 100%;
+        // }
+        
+        // .card-front {
+        //   z-index: 2;
+        // }
+        
+        // .card-back {
+        //   transform: rotateY(180deg);
+        //   z-index: 1;
+        // }
+        
+        // .card-back .card {
+        //   background: linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%);
+        //   border: 6px solid #d4af37;
+        //   border-radius: 20px;
+        // }
+        
+        // .card-back-content {
+        //   padding: 30px;
+        //   color: #fff;
+        //   height: 100%;
+        //   display: flex;
+        //   flex-direction: column;
+        //   justify-content: flex-start;
+        //   overflow-y: auto;
+        //   box-sizing: border-box;
+        //   scrollbar-width: thin;
+        //   scrollbar-color: rgba(212, 175, 55, 0.3) transparent;
+        // }
+        
+        // .card-back-content::-webkit-scrollbar {
+        //   width: 6px;
+        // }
+        
+        // .card-back-content::-webkit-scrollbar-track {
+        //   background: transparent;
+        // }
+        
+        // .card-back-content::-webkit-scrollbar-thumb {
+        //   background-color: rgba(212, 175, 55, 0.3);
+        //   border-radius: 3px;
+        // }
+        
+        // .card-back-content h3 {
+        //   color: #d4af37;
+        //   font-family: 'UnifrakturCook', serif;
+        //   font-size: 1.8em;
+        //   margin-bottom: 15px;
+        //   margin-top: 0;
+        // }
+        
+        // .card-back-content p {
+        //   font-size: 0.95em;
+        //   line-height: 1.6;
+        //   margin-bottom: 12px;
+        //   opacity: 0.95;
+        // }
+        
+        // .card-back-content ul {
+        //   list-style: none;
+        //   padding: 0;
+        //   margin: 15px 0;
+        // }
+        
+        // .card-back-content li {
+        //   padding: 6px 0;
+        //   border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        //   font-size: 0.9em;
+        //   line-height: 1.4;
+        // }
+        
+        // .card-back-content li:before {
+        //   content: "✨";
+        //   margin-right: 10px;
+        // }
+        
+        // .flip-hint {
+        //   position: absolute;
+        //   top: 10px;
+        //   right: 10px;
+        //   background: rgba(212, 175, 55, 0.2);
+        //   padding: 5px 10px;
+        //   border-radius: 5px;
+        //   font-size: 0.8em;
+        //   color: #d4af37;
+        //   opacity: 0.8;
+        //   transition: opacity 0.3s;
+        // }
+        
+        // .card-wrap:hover .flip-hint {
+        //   opacity: 1;
+        // }
 
-        .card {
-          width: 100%;
-          height: 100%;
-          aspect-ratio: ${1 / GOLDENRATIO};
-          position: relative;
-          border-radius: 20px;
-          background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
-          overflow: hidden;
-          border: 6px solid #d4af37;
-          transition: 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
-          pointer-events: auto;
-          box-sizing: border-box;
-        }
+        // .card-wrap:nth-child(odd) {
+        //   align-self: flex-start;
+        //   margin-left: 5%;
+        // }
 
-        .card-bg {
-          opacity: 0.75;
-          position: absolute;
-          top: -60px;
-          left: -60px;
-          width: calc(100% + 120px);
-          height: calc(100% + 120px);
-          background-repeat: no-repeat;
-          background-position: center center;
-          background-size: cover;
-          transition: 1s cubic-bezier(0.445, 0.05, 0.55, 0.95),
-                      opacity 5s 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
-          pointer-events: none;
-          z-index: 0;
-          filter: brightness(1.2) contrast(1.1);
-        }
+        // .card-wrap:nth-child(even) {
+        //   align-self: flex-end;
+        //   margin-right: 5%;
+        // }
+
+        // .card-wrap.visible {
+        //   opacity: 1;
+        //   transform: translateY(0);
+        //   transition: all 0.8s ease-out;
+        // }
+
+        // .card-wrap.visible:nth-child(1) {
+        //   transition-delay: 0.1s;
+        // }
+
+        // .card-wrap.visible:nth-child(2) {
+        //   transition-delay: 0.2s;
+        // }
+
+        // .card-wrap.visible:nth-child(3) {
+        //   transition-delay: 0.3s;
+        // }
+
+        // .card-wrap.visible:nth-child(4) {
+        //   transition-delay: 0.4s;
+        // }
+
+        // .card-wrap:hover .card {
+        //   transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+        //               box-shadow 2s cubic-bezier(0.23, 1, 0.32, 1);
+        //   box-shadow: 
+        //     0 0 0 5px #d4af37,
+        //     0 0 0 6px #d4af37,
+        //     rgba(212, 175, 55, 0.4) 0 0 50px 10px;
+        // }
+
+        // .card-wrap:hover .card-bg {
+        //   transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+        //               opacity 5s cubic-bezier(0.23, 1, 0.32, 1);
+        //   opacity: 0.95;
+        //   filter: brightness(1.3) contrast(1.15) saturate(1.2);
+        // }
+
+        // .card-wrap:hover .card-info {
+        //   transform: translateY(0);
+        //   transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        // }
+
+        // .card-wrap:hover .card-info p {
+        //   opacity: 1;
+        //   transform: translateY(0);
+        //   transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        // }
+
+        // .card-wrap:hover .card-info::after {
+        //   transition: 5s cubic-bezier(0.23, 1, 0.32, 1);
+        //   opacity: 1;
+        //   transform: translateY(0);
+        // }
         
-        /* Alternative background sizing options - can be applied inline */
-        .card-bg.contain {
-          background-size: contain;
-        }
+
+
+        // .card {
+        //   width: 100%;
+        //   height: 100%;
+        //   aspect-ratio: ${1 / GOLDENRATIO};
+        //   position: relative;
+        //   border-radius: 20px;
+        //   background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
+        //   overflow: hidden;
+        //   border: 6px solid #d4af37;
+        //   transition: 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+        //   pointer-events: auto;
+        //   box-sizing: border-box;
+        // }
+
+        // .card-bg {
+        //   opacity: 0.75;
+        //   position: absolute;
+        //   top: -60px;
+        //   left: -60px;
+        //   width: calc(100% + 120px);
+        //   height: calc(100% + 120px);
+        //   background-repeat: no-repeat;
+        //   background-position: center center;
+        //   background-size: cover;
+        //   transition: 1s cubic-bezier(0.445, 0.05, 0.55, 0.95),
+        //               opacity 5s 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+        //   pointer-events: none;
+        //   z-index: 0;
+        //   filter: brightness(1.2) contrast(1.1);
+        // }
         
-        .card-bg.fit-width {
-          background-size: 100% auto;
-        }
+        // /* Alternative background sizing options - can be applied inline */
+        // .card-bg.contain {
+        //   background-size: contain;
+        // }
         
-        .card-bg.fit-height {
-          background-size: auto 100%;
-        }
+        // .card-bg.fit-width {
+        //   background-size: 100% auto;
+        // }
         
-        .card-bg.position-top {
-          background-position: center top;
-        }
+        // .card-bg.fit-height {
+        //   background-size: auto 100%;
+        // }
         
-        .card-bg.position-bottom {
-          background-position: center bottom;
-        }
+        // .card-bg.position-top {
+        //   background-position: center top;
+        // }
+        
+        // .card-bg.position-bottom {
+        //   background-position: center bottom;
+        // }
 
-        .card-info {
-          padding: 30px;
-          position: absolute;
-          bottom: 0;
-          width: 100%;
-          color: #fff;
-          transform: translateY(40%);
-          transition: 0.6s 1.6s cubic-bezier(0.215, 0.61, 0.355, 1);
-          z-index: 2;
-          pointer-events: auto;
-        }
+        // .card-info {
+        //   padding: 30px;
+        //   position: absolute;
+        //   bottom: 0;
+        //   width: 100%;
+        //   color: #fff;
+        //   transform: translateY(40%);
+        //   transition: 0.6s 1.6s cubic-bezier(0.215, 0.61, 0.355, 1);
+        //   z-index: 2;
+        //   pointer-events: auto;
+        // }
 
-        .card-info::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          z-index: 0;
-          width: 100%;
-          height: 100%;
-          background-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
-          background-blend-mode: overlay;
-          opacity: 0;
-          transform: translateY(100%);
-          transition: 5s 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
-        }
+        // .card-info::after {
+        //   content: '';
+        //   position: absolute;
+        //   top: 0;
+        //   left: 0;
+        //   z-index: 0;
+        //   width: 100%;
+        //   height: 100%;
+        //   background-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
+        //   background-blend-mode: overlay;
+        //   opacity: 0;
+        //   transform: translateY(100%);
+        //   transition: 5s 1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+        // }
 
-        .card-info h2 {
-          font-size: 2.5em;
-          margin-bottom: 15px;
-          text-shadow: rgba(0, 0, 0, 0.5) 0 10px 10px;
-          font-family: 'UnifrakturCook', serif;
-          color: #d4af37;
-          position: relative;
-          z-index: 1;
-        }
+        // .card-info h2 {
+        //   font-size: 2.5em;
+        //   margin-bottom: 15px;
+        //   text-shadow: rgba(0, 0, 0, 0.5) 0 10px 10px;
+        //   font-family: 'UnifrakturCook', serif;
+        //   color: #d4af37;
+        //   position: relative;
+        //   z-index: 1;
+        // }
 
-        .card-info p {
-          font-size: 1.1em;
-          line-height: 1.6;
-          opacity: 0;
-          text-shadow: rgba(0, 0, 0, 1) 0 2px 3px;
-          font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-          transform: translateY(20px);
-          transition: 0.6s 1.6s cubic-bezier(0.215, 0.61, 0.355, 1);
-          position: relative;
-          z-index: 1;
-        }
+        // .card-info p {
+        //   font-size: 1.1em;
+        //   line-height: 1.6;
+        //   opacity: 0;
+        //   text-shadow: rgba(0, 0, 0, 1) 0 2px 3px;
+        //   font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+        //   transform: translateY(20px);
+        //   transition: 0.6s 1.6s cubic-bezier(0.215, 0.61, 0.355, 1);
+        //   position: relative;
+        //   z-index: 1;
+        // }
 
-        /* Mobile responsive cards */
-        @media (max-width: 768px) {
-          .cards-wrapper {
-            gap: 3rem;
-            padding: 60px 15px;
-          }
+        // /* Mobile responsive cards */
+        // @media (max-width: 768px) {
+        //   .cards-wrapper {
+        //     gap: 3rem;
+        //     padding: 60px 15px;
+        //   }
 
-          .card-wrap {
-            width: 85%;
-            max-width: 400px;
-            margin-bottom: 0;
-          }
+        //   .card-wrap {
+        //     width: 85%;
+        //     max-width: 400px;
+        //     margin-bottom: 0;
+        //   }
           
-          .card-wrap:nth-child(odd),
-          .card-wrap:nth-child(even) {
-            align-self: center;
-            margin: 0;
-          }
+        //   .card-wrap:nth-child(odd),
+        //   .card-wrap:nth-child(even) {
+        //     align-self: center;
+        //     margin: 0;
+        //   }
           
-          .card {
-            aspect-ratio: ${1 / GOLDENRATIO};
-          }
+        //   .card {
+        //     aspect-ratio: ${1 / GOLDENRATIO};
+        //   }
 
-          .card-bg {
-            opacity: 0.6;
-          }
+        //   .card-bg {
+        //     opacity: 0.6;
+        //   }
 
-          .card-info {
-            padding: 20px;
-            transform: translateY(20%);
-          }
+        //   .card-info {
+        //     padding: 20px;
+        //     transform: translateY(20%);
+        //   }
 
-          .card-info h2 {
-            font-size: 1.8em;
-          }
+        //   .card-info h2 {
+        //     font-size: 1.8em;
+        //   }
 
-          .card-info p {
-            font-size: 0.95em;
-            opacity: 0.9;
-            transform: translateY(0);
-          }
+        //   .card-info p {
+        //     font-size: 0.95em;
+        //     opacity: 0.9;
+        //     transform: translateY(0);
+        //   }
 
-          /* Simplify hover effects on mobile */
-          .card-wrap:hover .card-info {
-            transform: translateY(0);
-          }
+        //   /* Simplify hover effects on mobile */
+        //   .card-wrap:hover .card-info {
+        //     transform: translateY(0);
+        //   }
 
-          .card-wrap:hover .card-bg {
-            opacity: 0.7;
-            transform: scale(1.05);
-          }
+        //   .card-wrap:hover .card-bg {
+        //     opacity: 0.7;
+        //     transform: scale(1.05);
+        //   }
         }
       `}</style>
       
@@ -2161,95 +1403,6 @@ export default function Home3() {
 
        
 
- {/* Introductory Text Section */}
-        {/* <div style={{
-          position: 'relative',
-          zIndex: 10,
-          padding: isMobile ? '2rem 1.5rem' : '3rem 2rem',
-          maxWidth: '900px',
-          margin: '0 auto',
-          marginTop: '-2rem', // Slight overlap with clouds
-          marginBottom: '3rem'
-        }}>
-          <div style={{
-            background: 'rgba(26, 0, 51, 0.45)', // Semi-transparent dark purple matching your theme
-            backdropFilter: 'blur(12px)',
-            borderRadius: '25px',
-            padding: isMobile ? '2rem 1.5rem' : '3rem 2.5rem',
-            border: '2px solid rgba(212, 175, 55, 0.4)',
-            boxShadow: '0 20px 60px rgba(212, 175, 55, 0.15), inset 0 0 30px rgba(135, 206, 235, 0.1)',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
- 
-            <div style={{
-              position: 'absolute',
-              top: '-50%',
-              left: '-50%',
-              width: '200%',
-              height: '200%',
-              background: 'radial-gradient(circle at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%)',
-              pointerEvents: 'none'
-            }} />
-            
-            <h2 style={{
-              fontFamily: "'Bowlby One SC', cursive",
-              fontSize: isMobile ? '1.8rem' : '2.5rem',
-              color: '#d4af37',
-              textAlign: 'center',
-              marginBottom: '1.5rem',
-              textShadow: '0 0 20px rgba(212, 175, 55, 0.5)',
-              letterSpacing: '2px',
-              position: 'relative'
-            }}>BEHOLD! OUR LADY
-            </h2>
-            
-            
-            <p style={{
-              fontFamily: "'Fjalla One', sans-serif",
-              fontSize: isMobile ? '1rem' : '1.2rem',
-              color: '#ffffff',
-              textAlign: 'center',
-              lineHeight: '1.8',
-              opacity: 0.95,
-              marginBottom: '1rem',
-              position: 'relative'
-            }}>
-Descending from the Cloud, Behold! the mother of memes, an aider to traders, and a fren to degens: Our Lady of Perpetual Profit is the patron saint of day traders and your divine guide through the dark realm of crypto DeFi.
-
-Whether you need a Hail Mary for hard times, or just sanctuary in the digital economy RL80 is a token to believe in.            </p>
-            
-
-          </div>
-        </div> */}
-     
-  {/* <div style={{
-            position: "relative",
-            maxWidth: "1400px",
-            margin: "0 auto 4rem auto",
-            padding: '3rem 2rem'
-          }}
-          className="desktop-rotating-text">
-            <div
-              style={{
-                // position: "absolute",
-                // top: 0,
-                // left: 0,
-                // right: 0,
-                // bottom: 0,
-                // backgroundImage: "url(/sacred.png)",
-                // backgroundPosition: "90% 20%",
-                // backgroundRepeat: "no-repeat",
-                // backgroundSize: "100%",
-                // opacity: 0.3,
-                zIndex: 1,
-              }}
-            />
-            <div style={{ position: "relative", zIndex: 2 }}>
-              <RotatingText isDesktop={true} />
-            </div>
-          </div> */}
-   
         
         {/* Invisible spacer to push cards down and reveal background scene */}
         <div style={{ 
@@ -2292,22 +1445,7 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the digital ec
                         </div>
                       </div>
         
-{/*             
-           <div style={{
-            flex: 1,
-           width: '100%',
-            display: 'flex',
-           alignItems: 'center',
-           justifyContent: 'center',
-       
-           transformOrigin: 'center',
-          }}>
-            <Numerology isMobile={true} />
-           </div> */}
-            {/* <ScratchCard 
-    onComplete={(number) => console.log('Scratched! Number:', number)}
-    onNumberRevealed={(number) => console.log('Generated number:', number)}
-  /> */}
+
 
      
 
@@ -2616,5 +1754,3 @@ Whether you need a Hail Mary for hard times, or just sanctuary in the digital ec
   );
 }
 
-// Preloading disabled for memory optimization
-// Models load on demand instead

@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useState, useRef, memo, useMemo } from 'react';
-import { Cloud, Clouds, useGLTF, useAnimations, useHelper, OrbitControls, Text } from '@react-three/drei';
+import { useGLTF, useAnimations, useHelper, OrbitControls, Text } from '@react-three/drei';
 
 // Preload the models immediately when module loads
 useGLTF.preload('/models/ourlady_rider7.glb');
@@ -117,6 +117,15 @@ const TickerCurve = ({ scrollY, scale = 1, position = [0, 0, -40] }) => {
     return geometry;
   }, [curve]);
   
+  // Cleanup geometry on unmount
+  useEffect(() => {
+    return () => {
+      if (ribbonGeometry) {
+        ribbonGeometry.dispose();
+      }
+    };
+  }, [ribbonGeometry]);
+  
   // Create a small differential between text and mesh based on scroll
   // Text moves slightly less than mesh to maintain alignment
   const textOffsetY = scrollY * -0.00015; // Small negative offset to compensate for drift
@@ -173,26 +182,25 @@ const TickerCurve = ({ scrollY, scale = 1, position = [0, 0, -40] }) => {
 };
 
 // Optimized Our Lady Model
-const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
+const OurLadyModel = memo(({ isMobile, scrollY, modelRef }) => {
   const { scene } = useGLTF('/models/ourlady_rider7.glb');
   const groupRef = useRef();
-  const hasCalledOnLoad = useRef(false);
   
   // Use useFrame to detect when model is actually rendered
-  useFrame(() => {
-    if (scene && onLoad && !hasCalledOnLoad.current && groupRef.current) {
-      // Check if the model is actually visible in the scene
-      const box = new THREE.Box3().setFromObject(groupRef.current);
-      const size = box.getSize(new THREE.Vector3());
+  // useFrame(() => {
+  //   if (scene && onLoad && !hasCalledOnLoad.current && groupRef.current) {
+  //     // Check if the model is actually visible in the scene
+  //     const box = new THREE.Box3().setFromObject(groupRef.current);
+  //     const size = box.getSize(new THREE.Vector3());
       
-      // If the model has size, it's loaded and ready
-      if (size.x > 0 && size.y > 0 && size.z > 0) {
-        // console.log('[OurLadyModel] Model fully loaded and rendered');
-        hasCalledOnLoad.current = true;
-        onLoad();
-      }
-    }
-  });
+  //     // If the model has size, it's loaded and ready
+  //     if (size.x > 0 && size.y > 0 && size.z > 0) {
+  //       // console.log('[OurLadyModel] Model fully loaded and rendered');
+  //       hasCalledOnLoad.current = true;
+  //       onLoad();
+  //     }
+  //   }
+  // });
   
   useEffect(() => {
     if (scene) {
@@ -221,6 +229,22 @@ const OurLadyModel = memo(({ isMobile, scrollY, modelRef, onLoad }) => {
         }
       });
     }
+    
+    // Cleanup function
+    return () => {
+      if (scene) {
+        scene.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(mat => mat.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+      }
+    };
   }, [scene, modelRef]);
   
   // Animate based on scroll
@@ -297,6 +321,27 @@ const AngelModel = memo(({ isMobile, scrollY, onLoad }) => {
         actions['Scene'].play();
       }
     }
+    
+    // Cleanup function
+    return () => {
+      if (scene) {
+        scene.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(mat => mat.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+      }
+      if (actions) {
+        Object.values(actions).forEach(action => {
+          action.stop();
+        });
+      }
+    };
   }, [scene, actions]);
   
   // Animate with scroll and billboard
@@ -364,6 +409,27 @@ const DevilModel = memo(({ isMobile, scrollY, onLoad }) => {
       const firstAction = Object.values(actions)[0];
       firstAction.play();
     }
+    
+    // Cleanup function
+    return () => {
+      if (scene) {
+        scene.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(mat => mat.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+      }
+      if (actions) {
+        Object.values(actions).forEach(action => {
+          action.stop();
+        });
+      }
+    };
   }, [scene, actions]);
   
   // Animate with scroll and billboard
@@ -479,19 +545,18 @@ const DirectionalLightWithHelper = ({ showHelper = false, isMobile, scrollY }) =
 function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
   const cloudGroupRef = useRef();
   const modelRef = useRef();
-  const [modelLoaded, setModelLoaded] = useState(false);
   const [angelLoaded, setAngelLoaded] = useState(false);
   const [devilLoaded, setDevilLoaded] = useState(false);
   const [cloudsLoaded, setCloudsLoaded] = useState(false);
   
   // Notify when all models and clouds are loaded
   useEffect(() => {
-    const allLoaded = modelLoaded && angelLoaded && devilLoaded && cloudsLoaded;
+    const allLoaded = angelLoaded && devilLoaded && cloudsLoaded;
     if (allLoaded && onAssetsLoaded) {
-      // console.log('[SimpleScene] All 3 models + clouds loaded, notifying parent');
+      // console.log('[SimpleScene] All models + clouds loaded, notifying parent');
       onAssetsLoaded();
     }
-  }, [modelLoaded, angelLoaded, devilLoaded, cloudsLoaded, onAssetsLoaded]);
+  }, [angelLoaded, devilLoaded, cloudsLoaded, onAssetsLoaded]);
   
   // Animate clouds with scroll
   useFrame(() => {
@@ -504,26 +569,10 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
   return (
     <>
       <ambientLight intensity={1.7} />
-      <DirectionalLightWithHelper showHelper={false} isMobile={isMobile} scrollY={scrollY} />
+      {/* <DirectionalLightWithHelper showHelper={false} isMobile={isMobile} scrollY={scrollY} /> */}
       
       {/* Spotlight with target that follows Our Lady */}
-      <SpotlightWithTarget 
-        isMobile={isMobile} 
-        scrollY={scrollY} 
-        showHelper={true} // Set to true to see the spotlight cone
-      />
-      
-      {/* Additional lights for better illumination */}
-      <pointLight 
-        position={[0, 5, 15]} 
-        intensity={1.5} 
-        color="#ffeedd" 
-      />
-      <pointLight 
-        position={isMobile ? [-10, 0, 0] : [-6, 0, 0]} 
-        intensity={1} 
-        color="#ffffff" 
-      />
+    
       
       {/* Add some heavenly clouds that move with scroll */}
       <group ref={cloudGroupRef}>
@@ -541,7 +590,6 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
           isMobile={isMobile} 
           scrollY={scrollY} 
           modelRef={modelRef}
-          onLoad={() => setModelLoaded(true)}
         />
       </Suspense>
       
@@ -582,18 +630,18 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
               isMobile={isMobile}
             />
             
-            {/* <SwoopingDevilEmojiSimple 
+            <SwoopingDevilEmojiSimple 
               id="swoop-devil-behind-1"
               scrollThreshold={9000}
               swoopFrom="right"
               finalPosition={[15, -5, 5]}
               isMobile={isMobile}
-            /> */}
+            />
           </group>
         </Suspense>
       )}
       
-      {/* Add bloom effect if enabled */}
+      {/* Bloom effect restored - testing without emojis */}
       {enableBloom && (
         <EffectComposer>
           <Bloom 

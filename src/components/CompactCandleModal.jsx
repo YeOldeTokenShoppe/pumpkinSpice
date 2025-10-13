@@ -1322,6 +1322,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     }
   }, [isOpen, user]);
 
+  // Helper function to get byte length of a string
+  const getByteLength = (str) => {
+    return new TextEncoder().encode(str).length;
+  };
+
+
+  
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -1852,7 +1860,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     
     // Validate and sanitize fields
     const trimmedUsername = formData.username.trim();
-    const trimmedMessage = formData.message.trim();
+    let trimmedMessage = formData.message.trim();
+    
+    // Ensure message doesn't exceed 500 bytes (fallback safety check)
+    if (getByteLength(trimmedMessage) > 500) {
+      trimmedMessage = truncateToBytes(trimmedMessage, 500);
+      // Update form data to reflect truncation
+      setFormData(prev => ({ ...prev, message: trimmedMessage }));
+    }
     
     if (!trimmedUsername) {
       setError('Please enter a dedication name');
@@ -1870,8 +1885,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       return;
     }
     
-    if (trimmedMessage.length > 500) {
-      setError('Message must be less than 500 characters');
+    if (getByteLength(trimmedMessage) > 500) {
+      setError('Message must be less than 500 bytes');
       return;
     }
     
@@ -2789,14 +2804,33 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   name="message"
                   value={formData.message}
                     onChange={(e) => {
-                      handleInputChange(e);
+                      let newValue = e.target.value;
+                      
+                      // Enforce 500-byte limit
+                      if (getByteLength(newValue) > 500) {
+                        newValue = truncateToBytes(newValue, 500);
+                        // Update the textarea value to show truncated text
+                        e.target.value = newValue;
+                      }
+                      
+                      // Create modified event with truncated value
+                      const modifiedEvent = {
+                        ...e,
+                        target: {
+                          ...e.target,
+                          value: newValue,
+                          name: 'message'
+                        }
+                      };
+                      
+                      handleInputChange(modifiedEvent);
                       // If user edits a pre-made prayer, mark as custom
                       const currentPrayers = PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
-                      if (selectedPrayer && currentPrayers.find(p => p.id === selectedPrayer)?.text !== e.target.value) {
+                      if (selectedPrayer && currentPrayers.find(p => p.id === selectedPrayer)?.text !== newValue) {
                         setSelectedPrayer(null);
                       }
                     }}
-                  placeholder={selectedPrayer ? "Edit the selected prayer or write your own..." : "Write your message, prayer, wish, or dedication (max 500 chars)"}
+                  placeholder={selectedPrayer ? "Edit the selected prayer or write your own..." : "Write your message, prayer, wish, or dedication (max 500 bytes)"}
                   rows={3}
                   maxLength={500}
                   required
@@ -2833,7 +2867,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   fontSize: '11px',
                   color: 'rgba(255, 215, 0, 0.5)',
                   pointerEvents: 'none'
-                }}>{formData.message.length}/500</span>
+                }}>{getByteLength(formData.message)}/500 bytes</span>
               </div>
 
               {/* Row 4: Image Upload and Template Selection */}

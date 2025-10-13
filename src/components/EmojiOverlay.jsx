@@ -31,17 +31,8 @@ export default function EmojiOverlay({ scrollY }) {
     // console.log('[EmojiOverlay] showChasingAngel changed to:', showChasingAngel);
   }, [showChasingAngel]);
   
-  // Reset chase scene when scrolling back up (only after sequence completes)
-  useEffect(() => {
-    // Reset only if scrolling far up AND sequence has completed
-    if (scrollY < 5000 && sequenceComplete) {
-      // console.log('[EmojiOverlay] Scrolled far back up after sequence complete, resetting');
-      setShowChasingAngel(false);
-      setTriggerDevilExit(false);
-      setSequenceComplete(false);
-    }
-    // Don't reset if the chase sequence is in progress - let it complete
-  }, [scrollY, sequenceComplete]);
+  // ONE-TIME ANIMATION: No resetting - once sequence completes, keep it completed for memory optimization
+  // This prevents re-triggering animations when scrolling up/down
   
   // Trigger devil exit after angel has been chasing for 2 seconds
   useEffect(() => {

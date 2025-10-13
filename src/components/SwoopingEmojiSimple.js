@@ -33,6 +33,7 @@ export function SwoopingAngelEmojiSimple({
   const exitTime = useRef(0);
   const floatingTime = useRef(0); // Track time spent floating for chase delay
   const hoverCallbackFired = useRef(false); // Not used in angel, but referenced in shared code
+  const hasTriggered = useRef(false); // Track if animation has been triggered once
   
   // useEffect(() => {
   //   console.log(`[${id}] Component mounted, scene loaded:`, !!scene);
@@ -108,21 +109,13 @@ export function SwoopingAngelEmojiSimple({
     const checkScroll = () => {
       const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       
-      // Debug for overlay angel specifically when near threshold
-      if (id === 'overlay-angel-weave' && scrollY > 900 && scrollY < 1100) {
-        // console.log(`[${id}] Near threshold - scrollY: ${scrollY}, phase: ${phase}, threshold: ${scrollThreshold}`);
-      }
-      
-      // Enter animation
-      if (scrollY > scrollThreshold || (id === 'overlay-angel-chase' && scrollThreshold === 0)) {
+      // Enter animation - only trigger once per component instance
+      if ((scrollY > scrollThreshold || (id === 'overlay-angel-chase' && scrollThreshold === 0)) && !hasTriggered.current) {
         if (phase === 'hidden') {
-          // console.log(`[${id}] Activating swoop at scroll ${scrollY} (threshold: ${scrollThreshold})`);
+          // console.log(`[${id}] Activating swoop at scroll ${scrollY} (threshold: ${scrollThreshold}) - ONE TIME ONLY`);
           setPhase('swooping');
           animationTime.current = 0; // Reset animation
-        } else if (id === 'overlay-angel-weave' && scrollY > 900 && scrollY < 1100) {
-          // console.log(`[${id}] NOT activating at ${scrollY} - phase is "${phase}" not 'hidden'`);
-        } else if (id === 'overlay-angel-chase' && phase === 'hidden') {
-          // console.log(`[${id}] Chase angel should be activating immediately (threshold: ${scrollThreshold})`);
+          hasTriggered.current = true; // Mark as triggered, never trigger again
         }
       }
       
@@ -153,15 +146,7 @@ export function SwoopingAngelEmojiSimple({
         }
       }
       
-      // Re-enter if scrolling back below threshold
-      if (scrollY < scrollThreshold - 100 && (phase === 'disposed' || phase === 'exiting')) {
-        // console.log(`[${id}] Reset to hidden - scroll below threshold at ${scrollY}`);
-        setPhase('hidden');
-        animationTime.current = 0; // Reset animation timer
-        exitTime.current = 0; // Reset exit timer
-        floatingTime.current = 0; // Reset floating timer
-        hoverCallbackFired.current = false; // Reset callback flag so it can fire again
-      }
+      // ONE-TIME ANIMATION: No re-entering - once disposed, stay disposed for memory optimization
     };
 
     // Check immediately on mount, but with a small delay to ensure proper initialization
@@ -227,8 +212,15 @@ export function SwoopingAngelEmojiSimple({
         floatingTime.current = 0; // Reset floating timer when entering floating phase
       }
     } else if (phase === 'floating') {
-      // Track floating time for chase trigger
+      // Track floating time for chase trigger or auto-disposal
       floatingTime.current += delta;
+      
+      // Auto-dispose after 3 seconds of floating for memory optimization
+      if (floatingTime.current >= 3.0) {
+        // console.log(`[${id}] Auto-disposing after 3 seconds of floating for memory optimization`);
+        setPhase('disposed');
+        return; // Exit early
+      }
       
       // Check if we should start chasing (for chase angel)
       if (chaseDelay !== null && floatingTime.current >= chaseDelay) {
@@ -351,6 +343,7 @@ export function SwoopingDevilEmojiSimple({
   const exitTime = useRef(0);
   const floatingTime = useRef(0); // Track time spent floating for hover duration
   const hoverCallbackFired = useRef(false); // Ensure callback only fires once
+  const hasTriggered = useRef(false); // Track if animation has been triggered once
   
   // useEffect(() => {
   //   console.log(`[${id}] Component mounted, scene loaded:`, !!scene);
@@ -430,16 +423,13 @@ export function SwoopingDevilEmojiSimple({
         console.log(`[${id}] Near threshold - scrollY: ${scrollY}, phase: ${phase}, threshold: ${scrollThreshold}`);
       }
       
-      // Enter animation
-      if (scrollY > scrollThreshold || (id === 'overlay-angel-chase' && scrollThreshold === 0)) {
+      // Enter animation - only trigger once per component instance
+      if ((scrollY > scrollThreshold || (id === 'overlay-angel-chase' && scrollThreshold === 0)) && !hasTriggered.current) {
         if (phase === 'hidden') {
-          // console.log(`[${id}] Activating swoop at scroll ${scrollY} (threshold: ${scrollThreshold})`);
+          // console.log(`[${id}] Activating swoop at scroll ${scrollY} (threshold: ${scrollThreshold}) - ONE TIME ONLY`);
           setPhase('swooping');
           animationTime.current = 0; // Reset animation
-        } else if (id === 'overlay-angel-weave' && scrollY > 900 && scrollY < 1100) {
-          // console.log(`[${id}] NOT activating at ${scrollY} - phase is "${phase}" not 'hidden'`);
-        } else if (id === 'overlay-angel-chase' && phase === 'hidden') {
-          // console.log(`[${id}] Chase angel should be activating immediately (threshold: ${scrollThreshold})`);
+          hasTriggered.current = true; // Mark as triggered, never trigger again
         }
       }
       
@@ -470,15 +460,7 @@ export function SwoopingDevilEmojiSimple({
         }
       }
       
-      // Re-enter if scrolling back below threshold
-      if (scrollY < scrollThreshold - 100 && (phase === 'disposed' || phase === 'exiting')) {
-        // console.log(`[${id}] Reset to hidden - scroll below threshold at ${scrollY}`);
-        setPhase('hidden');
-        animationTime.current = 0; // Reset animation timer
-        exitTime.current = 0; // Reset exit timer
-        floatingTime.current = 0; // Reset floating timer
-        hoverCallbackFired.current = false; // Reset callback flag so it can fire again
-      }
+      // ONE-TIME ANIMATION: No re-entering - once disposed, stay disposed for memory optimization
     };
 
     // Check immediately on mount, but with a small delay to ensure proper initialization
@@ -542,8 +524,15 @@ export function SwoopingDevilEmojiSimple({
         hoverCallbackFired.current = false; // Reset callback flag
       }
     } else if (phase === 'floating') {
-      // Track floating time for hover duration
+      // Track floating time for hover duration or auto-disposal
       floatingTime.current += delta;
+      
+      // Auto-dispose after 3 seconds of floating for memory optimization
+      if (floatingTime.current >= 3.0) {
+        // console.log(`[${id}] Auto-disposing after 3 seconds of floating for memory optimization`);
+        setPhase('disposed');
+        return; // Exit early
+      }
       
       // Debug logging for devil hover
       if (id === 'overlay-devil-end' && Math.floor(floatingTime.current) !== Math.floor(floatingTime.current - delta)) {
