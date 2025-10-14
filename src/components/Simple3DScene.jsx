@@ -620,7 +620,7 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
             <pointLight position={[0, 5, 10]} intensity={3} />
             <pointLight position={[-10, 0, 10]} intensity={2} />
             
-            <SwoopingAngelEmojiSimple 
+            {/* <SwoopingAngelEmojiSimple 
               id="swoop-angel-behind-1"
               scrollThreshold={2290}
               exitThreshold={400}  // Exit if scrolling back up
@@ -628,15 +628,15 @@ function SimpleScene({ isMobile, scrollY, enableBloom, onAssetsLoaded }) {
               swoopFrom="left"
               finalPosition={[-8, -8, 4]}  // Desktop only positioning
               isMobile={isMobile}
-            />
+            /> */}
             
-            <SwoopingDevilEmojiSimple 
+            {/* <SwoopingDevilEmojiSimple 
               id="swoop-devil-behind-1"
               scrollThreshold={9000}
               swoopFrom="right"
               finalPosition={[15, -5, 5]}
               isMobile={isMobile}
-            />
+            /> */}
           </group>
         </Suspense>
       )}

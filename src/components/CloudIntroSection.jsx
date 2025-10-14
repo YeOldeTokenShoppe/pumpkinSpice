@@ -555,82 +555,30 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                       position: "relative",
                       height: isMobile ? "auto" : "35rem",
                       minHeight: isMobile ? "30rem" : "auto",
-                      overflow: "visible",
+                      overflow: "hidden",
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'center',
+                      justifyContent: 'flex-end',
                       alignItems: 'center',
                       zIndex: 100,
                       pointerEvents: 'auto',
                       order: isMobile ? 1 : 1, // Keep card at top on mobile
-                      paddingBottom: isMobile ? '2rem' : '0'
+                      padding: isMobile ? '2rem 1rem' : '2rem',
+                      borderRadius: '25px',
+                      backgroundImage: 'url(/images/lowrider.jpg)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
                     }}>
-                      <div style={{ position: 'relative', zIndex: 101, marginBottom: '2rem' }}>
-                        <img 
-                          src="/images/lowrider.jpg" 
-                          alt="Lowrider" 
-                          style={{
-                            width: isMobile ? '280px' : '350px',
-                            height: 'auto',
-                            borderRadius: '15px',
-                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-                            border: '3px solid rgba(212, 175, 55, 0.4)'
-                          }}
-                        />
-                      </div>
-                      {/* BUY Button */}
-                      <button
-                        onClick={() => {
-                          // Check if card is flipped by looking for the flipped class
-                          const playingCard = document.querySelector('.playing-card');
-                          if (playingCard && playingCard.classList.contains('flipped')) {
-                            // Card is flipped, click the back button to flip it back
-                            const flipBackBtn = document.querySelector('.flip-back-btn');
-                            if (flipBackBtn) {
-                              flipBackBtn.click();
-                              setIsCardFlipped(false);
-                            }
-                          } else {
-                            // Card is not flipped, click the front to flip it
-                            const cardFront = document.querySelector('.card-front');
-                            if (cardFront) {
-                              cardFront.click();
-                              setIsCardFlipped(true);
-                            }
-                          }
-                        }}
-                        style={{
-                          marginTop: isMobile ? '1.5rem' : '2rem',
-                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
-                          fontSize: isMobile ? '1.2rem' : '1.4rem',
-                          fontWeight: 'bold',
-                          fontFamily: "'Fjalla One', sans-serif",
-                          textTransform: 'uppercase',
-                          letterSpacing: '2px',
-                          color: '#000000',
-                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
-                          border: '3px solid #d4af37',
-                          borderRadius: '12px',
-                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          zIndex: 102,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
-                        }}
-                      >
-                        {isCardFlipped ? 'COMPLETE PURCHASE ABOVE' : 'BUY $RL80'}
-                      </button>
+                      <div style={{ 
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        zIndex: 1
+                      }}></div>
                     </section>
                     {/* Right Column - Text Content */}
                    <div style={{
@@ -692,9 +640,10 @@ export default function CloudIntroSection({ scrollY = 0, isMobile = false, onOpe
                 </cite>
               </blockquote>
               <p style={{ marginBottom: '1rem' }}>
-Whether you need a Hail Mary for hard times, or just sanctuary from the dark realm of DeFi, let Our Lady of Perpetual Profit light the way.                 <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
+Whether you need a Hail Mary for hard times, or just sanctuary from the dark realm of DeFi, let Our Lady of Perpetual Profit light the way.                 
+{/* <span style={{ display: 'block', marginTop: '0.5rem', fontSize: isMobile ? '0.9rem' : '1rem', opacity: 0.8, fontWeight: '500' }}>
                   Liquidity Burned | 4% Tax (Buy/Sell) | 80 Billion Capped Supply
-                </span>
+                </span> */}
               </p>
 {/* <p>RL80 includes a trust-optional layer of these sacred principles: <i><b>prosperity for all humanity</b></i> and <i><b>liquidity in perpetuity</b></i>.              </p>
               
@@ -718,7 +667,7 @@ Whether you need a Hail Mary for hard times, or just sanctuary from the dark rea
                   padding: isMobile ? '0 1rem' : '0',
                 }}>
           
-                         <div style={{
+                         {/* <div style={{
                   display: 'flex',
                   alignItems: 'baseline',
                   justifyContent: 'center',
@@ -737,7 +686,7 @@ Whether you need a Hail Mary for hard times, or just sanctuary from the dark rea
                     border: '1px solid rgba(196, 137, 1, 0.4)',
              
                   }}>TICKER: $RL80</span>
-           </div>
+           </div> */}
                  
                   
                   <div style={{
@@ -748,6 +697,7 @@ Whether you need a Hail Mary for hard times, or just sanctuary from the dark rea
                     padding: '0.75rem',
                     borderRadius: '8px',
                     border: '1px solid rgba(196, 137, 1, 0.2)',
+           
                   }}>
                     <code style={{
                       color: '#ffffff',
@@ -814,6 +764,61 @@ Whether you need a Hail Mary for hard times, or just sanctuary from the dark rea
                     🔗 Contract Address (BASE Chain)
                   </h3>
                 </div>
+                
+                {/* BUY Button */}
+                <button
+                  onClick={() => {
+                    // Check if card is flipped by looking for the flipped class
+                    const playingCard = document.querySelector('.playing-card');
+                    if (playingCard && playingCard.classList.contains('flipped')) {
+                      // Card is flipped, click the back button to flip it back
+                      const flipBackBtn = document.querySelector('.flip-back-btn');
+                      if (flipBackBtn) {
+                        flipBackBtn.click();
+                        setIsCardFlipped(false);
+                      }
+                    } else {
+                      // Card is not flipped, click the front to flip it
+                      const cardFront = document.querySelector('.card-front');
+                      if (cardFront) {
+                        cardFront.click();
+                        setIsCardFlipped(true);
+                      }
+                    }
+                  }}
+                  style={{
+                    marginTop: isMobile ? '1.5rem' : '2rem',
+                             marginBottom: '1rem',
+                    padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
+                    fontSize: isMobile ? '1.2rem' : '1.4rem',
+                    fontWeight: 'bold',
+                    fontFamily: "'Fjalla One', sans-serif",
+                    textTransform: 'uppercase',
+                    letterSpacing: '2px',
+                    color: '#000000',
+                    background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                    border: '3px solid #d4af37',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    zIndex: 102,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                  }}
+                >
+                  {isCardFlipped ? 'COMPLETE PURCHASE ABOVE' : 'BUY $RL80'}
+                </button>
                 
                     </div>
                     
@@ -904,88 +909,91 @@ Get some righteous returns by staking your $RL80 and earn a share of the 4% tax 
                 </span>
               </p>
 </div>
+
+{/* STAKE Button */}
+<button
+  onClick={() => {
+    // Check if card is flipped by looking for the flipped class
+    const playingCard = document.querySelector('.playing-card');
+    if (playingCard && playingCard.classList.contains('flipped')) {
+      // Card is flipped, click the back button to flip it back
+      const flipBackBtn = document.querySelector('.flip-back-btn');
+      if (flipBackBtn) {
+        flipBackBtn.click();
+        setIsCardFlipped(false);
+      }
+    } else {
+      // Card is not flipped, click the front to flip it
+      const cardFront = document.querySelector('.card-front');
+      if (cardFront) {
+        cardFront.click();
+        setIsCardFlipped(true);
+      }
+    }
+  }}
+  style={{
+    marginTop: isMobile ? '1.5rem' : '2rem',
+    padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
+    fontSize: isMobile ? '1.2rem' : '1.4rem',
+    fontWeight: 'bold',
+    fontFamily: "'Fjalla One', sans-serif",
+    textTransform: 'uppercase',
+    letterSpacing: '2px',
+    color: '#000000',
+    background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+    border: '3px solid #d4af37',
+    borderRadius: '12px',
+    boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    position: 'relative',
+    overflow: 'hidden',
+    zIndex: 102,
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+    e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
+    e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+    e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
+    e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+  }}
+>
+  {isCardFlipped ? 'COMPLETE PURCHASE ABOVE' : 'STAKE $RL80'}
+</button>
+
                     </div>
                     {/* Right Column - Playing Card */}
                     <section className="card-section" style={{ 
                       position: "relative",
                       height: isMobile ? "auto" : "35rem",
                       minHeight: isMobile ? "30rem" : "auto",
-                      overflow: "visible",
+                      overflow: "hidden",
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'center',
+                      justifyContent: 'flex-end',
                       alignItems: 'center',
                       zIndex: 100,
                       pointerEvents: 'auto',
                       order: isMobile ? 1 : 2, // Keep card at top on mobile, right on desktop
-                      paddingBottom: isMobile ? '2rem' : '0'
+                      padding: isMobile ? '2rem 1rem' : '2rem',
+                      borderRadius: '25px',
+                      backgroundImage: 'url(/images/mosaic.jpg)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
                     }}>
-                      <div style={{ position: 'relative', zIndex: 101, marginBottom: '2rem' }}>
-                        <img 
-                          src="/images/mosaic.jpg" 
-                          alt="Mosaic" 
-                          style={{
-                            width: isMobile ? '280px' : '350px',
-                            height: 'auto',
-                            borderRadius: '15px',
-                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-                            border: '3px solid rgba(212, 175, 55, 0.4)'
-                          }}
-                        />
-                      </div>
-                      {/* STAKE Button */}
-                      <button
-                        onClick={() => {
-                          // Check if card is flipped by looking for the flipped class
-                          const playingCard = document.querySelector('.playing-card');
-                          if (playingCard && playingCard.classList.contains('flipped')) {
-                            // Card is flipped, click the back button to flip it back
-                            const flipBackBtn = document.querySelector('.flip-back-btn');
-                            if (flipBackBtn) {
-                              flipBackBtn.click();
-                              setIsCardFlipped(false);
-                            }
-                          } else {
-                            // Card is not flipped, click the front to flip it
-                            const cardFront = document.querySelector('.card-front');
-                            if (cardFront) {
-                              cardFront.click();
-                              setIsCardFlipped(true);
-                            }
-                          }
-                        }}
-                        style={{
-                          marginTop: isMobile ? '1.5rem' : '2rem',
-                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
-                          fontSize: isMobile ? '1.2rem' : '1.4rem',
-                          fontWeight: 'bold',
-                          fontFamily: "'Fjalla One', sans-serif",
-                          textTransform: 'uppercase',
-                          letterSpacing: '2px',
-                          color: '#000000',
-                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
-                          border: '3px solid #d4af37',
-                          borderRadius: '12px',
-                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          zIndex: 102,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
-                        }}
-                      >
-                        {isCardFlipped ? 'COMPLETE PURCHASE ABOVE' : 'STAKE $RL80'}
-                      </button>
+                      <div style={{ 
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        zIndex: 1
+                      }}></div>
                     </section>
                     
                   </div>

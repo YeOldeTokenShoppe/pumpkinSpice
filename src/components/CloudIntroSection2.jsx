@@ -239,27 +239,27 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
     return null;
   }
   
-  // const { scene, animations } = useGLTF('/models/angelEmoji.glb');
-  // const { actions } = useAnimations(animations, scene);
-  // const modelRef = useRef();
-  // const [visible, setVisible] = useState(false);
-  // const [popScale, setPopScale] = useState(0);
+  const { scene, animations } = useGLTF('/models/angelEmoji.glb');
+  const { actions } = useAnimations(animations, scene);
+  const modelRef = useRef();
+  const [visible, setVisible] = useState(false);
+  const [popScale, setPopScale] = useState(0);
   
-  // // Clean up on unmount
-  // useEffect(() => {
-  //   return () => {
-  //     scene.traverse((child) => {
-  //       if (child.geometry) child.geometry.dispose();
-  //       if (child.material) {
-  //         if (Array.isArray(child.material)) {
-  //           child.material.forEach(mat => mat.dispose());
-  //         } else {
-  //           child.material.dispose();
-  //         }
-  //       }
-  //     });
-  //   };
-  // }, [scene]);
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      scene.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(mat => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+    };
+  }, [scene]);
 
   useEffect(() => {
     // Log all available animations
@@ -319,28 +319,26 @@ function AngelEmojiModel({ isMobile, scrollY, onLoad }) {
 
 // Preload critical 3D models to ensure they're ready before scene reveals
 useGLTF.preload('/models/ourlady_rider6.glb');
-// useGLTF.preload('/models/angelEmoji.glb');
+useGLTF.preload('/models/angelEmoji.glb');
 // Don't preload devilEmoji on mobile - it's conditionally loaded
 
 export default function Home3() {
   const router = useRouter();
   const [fontsLoaded, setFontsLoaded] = useState(false);
   // Initialize with false to avoid hydration mismatch
-
+  const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [isTabletLandscape, setIsTabletLandscape] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
-
   const [isClient, setIsClient] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [flippedCards, setFlippedCards] = useState(new Set());
   const [portalFlipped, setPortalFlipped] = useState(false);
   const [isSceneLoading, setIsSceneLoading] = useState(true);
+  const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   const [emoji, setEmoji] = useState("😇");
   const [isDefinitelyPhone, setIsDefinitelyPhone] = useState(true); // Always treat as mobile
   const [isLowEndDevice, setIsLowEndDevice] = useState(false);
@@ -1316,23 +1314,7 @@ export default function Home3() {
         zIndex: 0,
         pointerEvents: 'none',
       }}>
-        <Suspense fallback={null}>
-          <Simple3DScene 
-            enabled={true} 
-            isMobile={isMobile} 
-            scrollY={scrollY} 
-            onLoadComplete={() => {
-              // console.log('[Home3] Simple3DScene onLoadComplete called');
-              // Track individual model loadings from Simple3DScene
-              setAssetsLoaded(prev => ({ 
-                ...prev, 
-                ourLadyModel: true,
-                angelModel: isMobile ? true : true, // Mobile doesn't load angel/devil models
-                devilModel: isMobile ? true : true   // So mark as loaded on mobile
-              }));
-            }}
-          />
-        </Suspense>
+
       </div>
       
       {/* Emoji Overlay - appears OVER HTML content */}
@@ -1353,48 +1335,10 @@ export default function Home3() {
           opacity: isSceneLoading ? 0 : 1,
           transition: 'opacity 0.5s ease-in-out',
         }}>
-        <div style={{
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-          paddingTop: '3rem',
-          minHeight: '100vh',
-        }}>
-
-          
-          {/* Animated Title */}
-          <h1 
-              id="main-title"
-              style={{ 
-              position: "relative",
-              left: isMobile ? "5%" : "10%",
-              color: "#d4af37",
-              fontFamily: 'UnifrakturCook, UnifrakturMaguntia, serif',
-              textShadow: "3px 3px 5px #000, -1px -1px 5px pink",
-              fontSize: getResponsiveValue("4rem", "5rem", "6rem", "7rem"),
-              fontWeight: 900,
-              lineHeight: 0.8,
-              transform: isMobile ? "rotate(-5deg)" : "rotate(-8deg) skew(-15deg)",
-              zIndex: 1000,
-              whiteSpace: isMobile ? 'normal' : 'nowrap',
-              cursor: 'pointer',
-              marginTop: isMobile ? '1rem' : '3rem',
-              pointerEvents: 'auto',
-            }}>
-              <span className="title-line" style={{ display: 'block', position: 'relative' }}>Our Lady</span>
-              <span className="title-line" style={{ display: 'block', position: 'relative' }}>
-                <span style={{ fontSize: isMobile ? "1.2rem" : "3rem" }}>of </span>
-                Perpetual
-              </span>
-              <span className="title-line" style={{ display: 'block', marginLeft: isMobile ? "2rem" : "6rem", position: 'relative' }}>Profit</span>
-            </h1>
-        </div>
-        
        
      
         {/* Cloud Introduction Section - New Addition */}
-        <CloudIntroSection scrollY={scrollY} isMobile={isMobile} onOpenModal={() => setIsModalOpen(true)} />
+        {/* <CloudIntroSection scrollY={scrollY} isMobile={isMobile} onOpenModal={() => setIsModalOpen(true)} /> */}
 
 
    

@@ -25,6 +25,8 @@ import InfinityLoader from '@/components/InfinityLoader';
 import Illumin80Bouncer from '@/components/Illumin80Bouncer';
 import Manuscript from '@/components/Manuscript';
 import TokenInfoGrid from '@/components/TokenInfoGrid';
+import CompactCandleModal from '@/components/CompactCandleModal';
+import SocialBar from '@/components/SocialBar';
 
 
 
@@ -774,6 +776,10 @@ export default function HomePage() {
   const [isMobileDevice, setIsMobileDevice] = useState(
     typeof window !== 'undefined' ? window.innerWidth <= 768 : false
   );
+    // const [isMobileView, setIsMobileView] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    // const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  
   const [isClient, setIsClient] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -789,6 +795,10 @@ export default function HomePage() {
   const [isLoadingCandle, setIsLoadingCandle] = useState(false);
   const [emoji, setEmoji] = useState("😇");
   const [showRotateTooltip, setShowRotateTooltip] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [isSceneLoading, setIsSceneLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+  
   
   // Hide tooltip on first canvas interaction
   const handleCanvasInteraction = useCallback(() => {
@@ -834,6 +844,19 @@ export default function HomePage() {
       setIsLoadingCandle(false);
     }
   };
+    useEffect(() => {
+      if (!mounted) return;
+      
+      const { ourLadyModel, angelModel, devilModel, handsModel } = assetsLoaded;
+      const allModelsLoaded = ourLadyModel && angelModel && devilModel && handsModel;
+      
+      console.log('Asset loading status:', { ourLadyModel, angelModel, devilModel, handsModel, mounted, allModelsLoaded });
+      
+      if (allModelsLoaded) {
+        console.log('All assets loaded, hiding loader NOW');
+        setIsSceneLoading(false);
+      }
+    }, [ mounted]);
   
   // Fetch initial random candle on mount
   useEffect(() => {
@@ -1552,548 +1575,9 @@ export default function HomePage() {
       {/* Mobile Text Box - only shown on mobile */}
    
 
-      {/* TokenInfoGrid for Mobile */}
-      {isClient && isMobileView && (
-        <div style={{
-          marginTop: '1rem',
-          width: '100%',
-        }}>
-          <div style={{
-          // marginTop: '1rem',
-          // marginLeft: '0',
-          // marginRight: '0',
-          // padding: '1.5rem',
-          background: 'rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(10px)',
-          // borderRadius: '12px',
-          // border: '1px solid rgba(212, 175, 55, 0.3)',
-          // color: '#ffffff',
-          fontSize: '1rem',
-          
-          lineHeight: 1.6,
-          textAlign: 'center'
-        }}>
-          {/* <h2 style={{
-            color: '#d4af37',
-            marginBottom: '1rem',
-            fontSize: '1.8rem'
-          }}>Welcome to Our Sacred Digital Temple</h2> */}
-  
-        </div>
-          <TokenInfoGrid />
-        </div>
-      )}
-      
-      {/* Mobile Image Links Section */}
-      {isClient && isMobileView && (
-        <div style={{
-          marginTop: '1.5rem',
-          marginBottom: '1.5rem',
-          padding: '0 1rem'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-around',
-            border: '1px solid rgba(212, 175, 55, 0.3)',
-            alignItems: 'center',
-            width: '100%',
-            maxWidth: '400px',
-            margin: '0 auto',
-            padding: '0.75rem',
-            flexWrap: 'wrap',
-            position: 'relative',
-            gap: '1rem'
-          }}>
-            {/* Green checkbox emoji in top left corner */}
-            <span style={{
-              position: 'absolute',
-              top: '-10px',
-              left: '-0.5rem',
-              fontSize: '32px',
-              backgroundColor: '#1a1a1a',
-              padding: '0 4px',
-            }}>📜</span>
-            <span style={{
-              position: 'absolute',
-              top: '-8px',
-              left: '12px',
-              fontSize: '14px',
-              backgroundColor: '#1a1a1a',
-              padding: '0 4px',
-            }}>✅</span>
-            
-            {/* DEXScreener Link */}
-            <a 
-              href="#" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{
-                display: 'block',
-                transition: 'all 0.3s ease',
-                opacity: 0.8,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.1)';
-                e.currentTarget.style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.opacity = '0.8';
-              }}
-            >
-              <img 
-                src="/dexscreener.png" 
-                alt="DEXScreener" 
-                style={{
-                  height: '60px',
-                  width: 'auto',
-                  filter: 'brightness(0.9)',
-                }}
-              />
-            </a>
-            
-            {/* Honeypot Link */}
-            <a 
-              href="#" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{
-                display: 'block',
-                transition: 'all 0.3s ease',
-                opacity: 0.8,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.1)';
-                e.currentTarget.style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.opacity = '0.8';
-              }}
-            >
-              <img 
-                src="/honeypot.png" 
-                alt="Honeypot" 
-                style={{
-                  height: '20px',
-                  width: 'auto',
-                  filter: 'brightness(0.9)',
-                }}
-              />
-            </a>
-            
-            {/* Token Sniffer Link */}
-            <a 
-              href="#" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{
-                display: 'block',
-                transition: 'all 0.3s ease',
-                opacity: 0.8,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.1)';
-                e.currentTarget.style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.opacity = '0.8';
-              }}
-            >
-              <img 
-                src="/tokensniffer.png" 
-                alt="Token Sniffer" 
-                style={{
-                  height: '40px',
-                  width: 'auto',
-                  filter: 'brightness(0.9)',
-                }}
-              />
-            </a>
-          </div>
-        </div>
-      )}
+    
 
-      {/* Mobile Text Box continued - if needed */}
-      {isClient && isMobileView && (
-        <div style={{
-          display: 'none', // Hidden for now since TokenInfoGrid replaced the token info
-        }}>
-          {/* RL80 Token Information */}
-          {/* <div style={{
-            marginTop: '1.5rem',
-            padding: '1rem',
-            background: 'rgba(212, 175, 55, 0.1)',
-            borderRadius: '8px',
-            border: '1px solid rgba(212, 175, 55, 0.3)'
-          }}>
-            <h3 style={{
-              color: '#d4af37',
-              fontSize: '1.4rem',
-              marginBottom: '0.8rem',
-              fontFamily: 'Cyber, monospace'
-            }}>RL80 Token - Contract Summary</h3>
-            <h4 style={{
-              color: '#00ff00',
-              fontSize: '1.2rem',
-              marginBottom: '0.6rem',
-              fontFamily: 'Cyber, monospace'
-            }}>Core Tokenomics</h4>
-            <ul style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0,
-              fontSize: '0.95rem',
-              lineHeight: 1.8
-            }}>
-              <li><strong style={{ color: '#d4af37' }}>Total Supply:</strong> 80 billion RL80 tokens</li>
-              <li><strong style={{ color: '#d4af37' }}>Distribution:</strong> 80% liquidity, 10% treasury, 10% marketing</li>
-              <li><strong style={{ color: '#d4af37' }}>Network:</strong> Base (Ethereum L2)</li>
-              <li><strong style={{ color: '#d4af37' }}>No mint function</strong> - Supply is fixed forever</li>
-            </ul>
-            
-            <h4 style={{
-              color: '#00ff00',
-              fontSize: '1.2rem',
-              marginTop: '1rem',
-              marginBottom: '0.6rem',
-              fontFamily: 'Cyber, monospace'
-            }}>Tax Structure</h4>
-            <p style={{
-              fontSize: '0.9rem',
-              marginBottom: '0.5rem'
-            }}>Progressive reduction:</p>
-            <ul style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0,
-              fontSize: '0.9rem',
-              lineHeight: 1.6
-            }}>
-              <li>• <strong style={{ color: '#d4af37' }}>Start:</strong> 5% buy/sell tax</li>
-              <li>• <strong style={{ color: '#d4af37' }}>After 250 buys:</strong> 3% tax</li>
-              <li>• <strong style={{ color: '#d4af37' }}>After 500 buys:</strong> 1% tax</li>
-              <li>• <strong style={{ color: '#d4af37' }}>After 1000 buys:</strong> 1% maintained (can be reduced to 0% manually)</li>
-              <li>• Only buys ≥100K tokens count toward milestones (prevents gaming)</li>
-              <li>• ✅ Maximum 5% tax hardcoded</li>
-            </ul>
-            
-            <h4 style={{
-              color: '#00ff00',
-              fontSize: '1.2rem',
-              marginTop: '1rem',
-              marginBottom: '0.6rem',
-              fontFamily: 'Cyber, monospace'
-            }}>Ownership Status</h4>
-            <p style={{
-              fontSize: '0.9rem',
-              lineHeight: 1.6
-            }}>
-              <strong style={{ color: '#d4af37' }}>Not renounced.</strong> This allows for:
-            </p>
-            <ul style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: '0.5rem 0',
-              fontSize: '0.9rem',
-              lineHeight: 1.6
-            }}>
-              <li>(1) Adding CEX wallets for exchange listings</li>
-              <li>(2) Adjusting limits as liquidity grows</li>
-              <li>(3) Reducing tax to 0%</li>
-              <li>(4) Emergency response to exploits</li>
-            </ul>
-            <p style={{
-              fontSize: '0.9rem',
-              lineHeight: 1.6
-            }}>
-              <strong style={{ color: '#ff6b6b' }}>Cannot:</strong> mint tokens, increase tax above 5%, or access liquidity.
-            </p>
-          </div> */}
-
-        </div>
-      )}
       
-      {/* Mobile Candle Section with Encryption - only shown on mobile */}
-      {isClient && isMobileView && (
-        <div style={{
-          marginTop: '2rem',
-          marginBottom: '2rem',
-          padding: '1.5rem',
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '12px',
-          border: '1px solid rgba(212, 175, 55, 0.3)',
-          color: '#ffffff',
-        }}>
-          {/* Section Heading */}
-          <h1 style={{
-            fontSize: '3rem',
-            marginBottom: '3rem',
-            textAlign: 'center',
-            color: 'rgb(142, 102, 43)',
-            fontFamily: 'UnifrakturCook, serif',
-            textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
-          }}>
-            Get Lit With RL80
-          </h1>
-          
-          <p style={{
-            fontSize: '1rem',
-            lineHeight: 1.4,
-            marginBottom: '1.5rem',
-            textAlign: 'center',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-            opacity: 0.9,
-            padding: '0 0.5rem'
-          }}>
-            Prime your portfolio for pumps and devote a green candle to{' '}
-            <span style={{
-              fontFamily: 'UnifrakturCook, serif',
-              fontWeight: 'bold',
-              fontSize: '1.1em',
-              color: '#d4af37',
-              textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-            }}>Our Lady of Perpetual Profit</span>.
-          </p>
-          
-          {/* Candle Model Container */}
-          <div style={{
-            position: "relative",
-            height: "300px",
-            overflow: "visible",
-            marginBottom: '1rem'
-          }}>
-            <Canvas
-              camera={{ position: [0, 2, 8], fov: 45 }}
-              style={{ width: '100%', height: '100%' }}
-              gl={{ alpha: true, antialias: true }}
-              onPointerDown={handleCanvasInteraction}
-              onWheel={handleCanvasInteraction}
-            >
-              <ambientLight intensity={1.5} />
-              <OrbitControls 
-                target={[0, 0, 0]}
-                enablePan={false}
-                enableZoom={true}
-                maxDistance={8}
-                minDistance={2}
-                enableDamping={true}
-                dampingFactor={0.05}
-                maxPolarAngle={Math.PI * 0.65}
-                minPolarAngle={Math.PI * 0.35}
-                autoRotate={false}
-                rotateSpeed={0.5}
-              />
-              <Suspense fallback={null}>
-                <SingleCandleModel candleData={featuredCandle} />
-              </Suspense>
-            </Canvas>
-            
-            {/* Refresh Button for Random Candle */}
-            <button
-              onClick={fetchRandomCandle}
-              disabled={isLoadingCandle}
-              style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(212, 175, 55, 0.1)',
-                border: '2px solid #d4af37',
-                color: '#d4af37',
-                cursor: isLoadingCandle ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '20px',
-                transition: 'all 0.3s ease',
-                opacity: isLoadingCandle ? 0.5 : 1,
-                zIndex: 10
-              }}
-              title="Load new random candle"
-            >
-              {isLoadingCandle ? '⌛' : '🔄'}
-            </button>
-            
-            {/* Shadow effect underneath the candle */}
-            <div style={{
-              position: 'absolute',
-              bottom: '15%',
-              left: '50%',
-              // transform: 'translateX(-50%)',
-              width: '50%',
-              height: '20px',
-              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, transparent 70%)',
-              filter: 'blur(8px)',
-              zIndex: -1
-            }} />
-          </div>
-          
-          {/* Featured Candle Caption - Below Candle */}
-          <div style={{
-            position: 'relative',
-            height: 'auto',
-            marginTop: '0.5rem',
-            marginBottom: '1.5rem',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              display: 'inline-block',
-              padding: '0.5rem 1rem',
-              background: 'rgba(212, 175, 55, 0.1)',
-              border: '1px solid rgba(212, 175, 55, 0.3)',
-              borderRadius: '20px',
-              color: '#d4af37',
-              fontSize: '0.9rem',
-              fontFamily: 'Cyber, monospace'
-            }}>
-              ✨ {featuredCandle?.username ? `Candle by ${truncateUsername(featuredCandle.username, 15)}` : 'Featured Candle'} ✨
-            </div>
-          </div>
-          
-          {/* Encryption Section */}
-          <div style={{
-            textAlign: 'center',
-            padding: '0 0.5rem',
-            marginTop: '1rem',
-          }}>
-            {/* <h5 style={{
-              fontSize: '2rem',
-              marginBottom: '0.5rem',
-              fontFamily: 'Cyber, monospace',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              // gap: '0.3rem'
-            }}>
-              <span style={{ 
-                minWidth: 'fit-content',
-                display: 'flex',
-                gap: '0.3rem',
-                alignItems: 'baseline'
-              }}>
-                <span className="action-text-mobile" style={{ 
-                  color: '#00ff00',
-                  textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00',
-                  minWidth: '120px',
-                  textAlign: 'right'
-                }} data-words='["Encrypt", "Declare"]'>Encrypt</span>
-                <span style={{ 
-                  color: '#00ff00',
-                  textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
-                }}>Your</span>
-              </span>
-              <span className="scramble-text-mobile" style={{ 
-                minWidth: '250px', 
-                textAlign: 'center',
-                color: '#00ff00',
-                textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00'
-              }} data-words='["Prayer", "Wish", "Dedication", "Confession", "Gratitude"]'>Message</span>
-            </h5> */}
-            
-            <p style={{
-              fontSize: '0.65rem',
-              lineHeight: 1,
-              // marginBottom: '3rem',
-              marginTop: '1rem',
-              color: '#ffffff',
-              opacity: 0.9,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              fontWeight: 400,
-              letterSpacing: '0.02em',
-              padding: '0 1rem',
-              display: 'block',
-              width: '100%',
-              whiteSpace: 'normal',
-              wordWrap: 'break-word'
-            }}></p>
-            
-            {/* Call to Action - Mobile */}
-            <div style={{
-              marginTop: '-1rem',
-              paddingTop: '1.5rem',
-              borderTop: '1px solid rgba(212, 175, 55, 0.2)'
-            }}>
-              {/* <p style={{
-                fontSize: '1rem',
-                marginBottom: '1rem',
-                color: '#d4af37',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                letterSpacing: '0.02em'
-              }}>
-                Ready to light your own green candle?
-              </p> */}
-              <Link
-                href="/gallery"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.8rem 2rem',
-                  backgroundColor: 'rgba(212, 175, 55, 0.1)',
-                  border: '2px solid #d4af37',
-                  borderRadius: '25px',
-                  color: '#d4af37',
-                  fontSize: '1.1rem',
-                  fontFamily: 'Cyber, monospace',
-                  fontWeight: 'bold',
-                  textDecoration: 'none',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 0 15px rgba(212, 175, 55, 0.3)',
-                  textShadow: '0 0 5px rgba(212, 175, 55, 0.5)'
-                }}
-              >
-              <span style={{
-          display: 'inline-block',
-          position: 'relative',
-          width: '20px',
-          height: '40px',
-          marginLeft: '15px',
-          marginRight: '15px',
-          verticalAlign: 'middle'
-        }}>
-          {/* Top wick */}
-          <span style={{
-            position: 'absolute',
-            left: '50%',
-            top: '0',
-            width: '2px',
-            height: '10px',
-            backgroundColor: '#00ff00',
-            transform: 'translateX(-50%)'
-          }}></span>
-          {/* Candle body */}
-          <span style={{
-            position: 'absolute',
-            left: '50%',
-            top: '10px',
-            width: '12px',
-            height: '20px',
-            backgroundColor: '#00ff00',
-            transform: 'translateX(-50%)'
-          }}></span>
-          {/* Bottom wick */}
-          <span style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: '0',
-            width: '2px',
-            height: '10px',
-            backgroundColor: '#00ff00',
-            transform: 'translateX(-50%)'
-          }}></span>
-        </span>
-                <span>Burn An Offering</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
       
       {/* Mobile Text Marquee - shown after candle section */}
       {isClient && isMobileView && (
@@ -2278,28 +1762,6 @@ export default function HomePage() {
                   <Coin />
                 </Link>
                 
-                {/* Click to Buy callout */}
-                {/* <div style={{
-                  position: 'absolute',
-                  bottom: '2rem',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  backgroundColor: '#d4af37',
-                  color: '#000',
-                  padding: '0.5rem 1.2rem',
-                  borderRadius: '25px',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  fontFamily: 'Cyber, monospace',
-                  boxShadow: '0 0 20px rgba(212, 175, 55, 0.6)',
-                  whiteSpace: 'nowrap',
-                  zIndex: 15,
-                  animation: 'pulse 2s infinite',
-                  cursor: 'pointer',
-                  pointerEvents: 'none'
-                }}>
-                  ↑ Click to Buy! ↑
-                </div> */}
               </div>
             </div>
           </div>
@@ -2361,128 +1823,9 @@ export default function HomePage() {
           </p> */}
         </div>
 
-            <TokenInfoGrid />
+            {/* <TokenInfoGrid /> */}
             
-            {/* Linked Images Strip */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-around',
-              border: '1px solid rgba(212, 175, 55, 0.3)',
-              alignItems: 'center',
-              width: '100%',
-              maxWidth: '800px',
-              margin: '3rem auto 2rem auto',
-              padding: '1rem',
-              flexWrap: 'wrap',
-              position: 'relative',
-            }}>
-              {/* Green checkbox emoji in top left corner */}
-              <span style={{
-                position: 'absolute',
-                top: '-12px',
-                left: '-1rem',
-                fontSize: '48px',
-                backgroundColor: '#1a1a1a',
-                padding: '0 4px',
-              }}>📜</span>
-                       <span style={{
-                position: 'absolute',
-                top: '-12px',
-                left: '16px',
-                fontSize: '18px',
-                backgroundColor: '#1a1a1a',
-                padding: '0 4px',
-              }}>✅</span>
-              {/* DEXScreener Link */}
-              <a 
-                href="#" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  transition: 'all 0.3s ease',
-                  opacity: 0.8,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                  e.currentTarget.style.opacity = '1';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.opacity = '0.8';
-                }}
-              >
-                <img 
-                  src="/dexscreener.png" 
-                  alt="DEXScreener" 
-                  style={{
-                    height: '60px',
-                    width: 'auto',
-                    filter: 'brightness(0.9)',
-                  }}
-                />
-              </a>
-              
-              {/* Honeypot Link */}
-              <a 
-                href="#" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  transition: 'all 0.3s ease',
-                  opacity: 0.8,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                  e.currentTarget.style.opacity = '1';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.opacity = '0.8';
-                }}
-              >
-                <img 
-                  src="/honeypot.png" 
-                  alt="Honeypot" 
-                  style={{
-                    height: '60px',
-                    width: 'auto',
-                    filter: 'brightness(0.9)',
-                  }}
-                />
-              </a>
-              
-              {/* Token Sniffer Link */}
-              <a 
-                href="#" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  transition: 'all 0.3s ease',
-                  opacity: 0.8,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                  e.currentTarget.style.opacity = '1';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.opacity = '0.8';
-                }}
-              >
-                <img 
-                  src="/tokensniffer.png" 
-                  alt="Token Sniffer" 
-                  style={{
-                    height: '60px',
-                    width: 'auto',
-                    filter: 'brightness(0.9)',
-                  }}
-                />
-              </a>
-            </div>
+           
           </div>
           {/* Two Column Section with Scroll */}
 
@@ -2509,294 +1852,6 @@ export default function HomePage() {
             {/* Two column grid */}
            
  
-        {/* Two Column Section with Candle and Text */}
-          <div style={{
-            position: "relative",
-            margin: "0 auto 4rem auto",
-            maxWidth: "1400px",
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 0.4fr) minmax(0, 0.6fr)", // 40% candle, 60% text
-            gap: "3rem",
-            alignItems: "center",
-            padding: '3rem 2rem',
-            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: '20px',
-            border: '2px solid rgba(212, 175, 55, 0.4)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
-            color: '#ffffff',
-          }}>
-            {/* Left Column - Candle Model */}
-            <div style={{
-              position: "relative",
-              height: "35rem",
-              overflow: "visible",
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <Canvas
-                camera={{ position: [0, 2, 8], fov: 45 }}  // Raised camera Y position and increased FOV
-                style={{ width: '100%', height: '100%' }}
-                gl={{ alpha: true, antialias: true }}
-                onPointerDown={handleCanvasInteraction}
-                onWheel={handleCanvasInteraction}
-              >
-                <ambientLight intensity={1.5} />
-                {/* <pointLight position={[10, 10, 10]} intensity={1} />
-                <pointLight position={[0, -1, 0]} intensity={1.5} color="#ff6b00" /> */}
-                <OrbitControls 
-                  target={[0, 0, 0]}      // Focus on the center of the scene
-                  enablePan={false}      // No panning
-                  enableZoom={true}     // No zooming
-                  maxDistance={8}    // Limit zoom out
-                  minDistance={2}
-                  enableDamping={true}   // Smooth rotation
-                  dampingFactor={0.05}   // Smoothness factor
-                  maxPolarAngle={Math.PI * 0.65}  // Limit looking down
-                  minPolarAngle={Math.PI * 0.35}  // Limit looking up
-                  autoRotate={false}     // We handle rotation manually
-                  rotateSpeed={0.5}      // Slower rotation for better control
-                />
-                <Suspense fallback={null}>
-                  <SingleCandleModel candleData={featuredCandle} />
-                </Suspense>
-              </Canvas>
-              
-              {/* Rotate Tooltip */}
-              {showRotateTooltip && (
-                <>
-                  <div 
-                    onClick={() => setShowRotateTooltip(false)}
-                    className="rotate-tooltip"
-                    style={{
-                      position: 'absolute',
-                      bottom: '40%',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '15px 20px',
-                      // backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                      // border: '1px solid rgba(212, 175, 55, 0.5)',
-                      // borderRadius: '12px',
-                      // color: '#d4af37',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      zIndex: 100000,
-                      // backdropFilter: 'blur(10px)',
-                      // boxShadow: '0 4px 20px rgba(212, 175, 55, 0.2)'
-                    }}
-                  >
-                    <div className="rotate-hand" style={{
-                      fontSize: '3rem',
-                      transformOrigin: 'center bottom'
-                    }}>
-                      👆
-                    </div>
-                    {/* <span style={{
-                      textAlign: 'center',
-                      lineHeight: '1.4'
-                    }}>
-                      Drag to rotate
-                    </span> */}
-                  </div>
-                </>
-              )}
-              
-              {/* Refresh Button for Random Candle */}
-              <button
-                onClick={fetchRandomCandle}
-                disabled={isLoadingCandle}
-                style={{
-                  position: 'absolute',
-                  top: '15px',
-                  right: '15px',
-                  width: '45px',
-                  height: '45px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(212, 175, 55, 0.1)',
-                  border: '2px solid #d4af37',
-                  color: '#d4af37',
-                  cursor: isLoadingCandle ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '24px',
-                  transition: 'all 0.3s ease',
-                  opacity: isLoadingCandle ? 0.5 : 1,
-                  zIndex: 10,
-                  boxShadow: '0 0 10px rgba(212, 175, 55, 0.3)'
-                }}
-                title="Load new random candle"
-                onMouseEnter={(e) => {
-                  if (!isLoadingCandle) {
-                    e.currentTarget.style.transform = 'scale(1.1)';
-                    e.currentTarget.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.5)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 0 10px rgba(212, 175, 55, 0.3)';
-                }}
-              >
-                {isLoadingCandle ? '⌛' : '🔄'}
-              </button>
-              
-              {/* Shadow effect underneath the candle */}
-              <div style={{
-                position: 'absolute',
-                bottom: '15%',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '60%',
-                height: '20px',
-                background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, transparent 70%)',
-                filter: 'blur(8px)',
-                zIndex: -1
-              }} />
-              
-              {/* Featured Candle Caption - Below Candle */}
-              <div className="featured-banner" style={{
-                bottom: '30px'
-                // transform: 'translateX(-50%)'
-              }}>
-                <span style={{
-                  whiteSpace: 'nowrap',
-                  display: 'inline-block'
-                }}>
-                  ✨ {featuredCandle?.username ? `Candle by ${truncateUsername(featuredCandle.username, 15)}` : 'Featured Candle'} ✨
-                </span>
-              </div>
-            </div>
-            
-            {/* Right Column - Encryption Demo */}
-            <div style={{
-              padding: '0 1rem',
-              color: '#ffffff',
-              minHeight: '500px', // Match the candle container height
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center', // Center all children horizontally
-              width: '100%', // Ensure full width of grid column
-              boxSizing: 'border-box', // Include padding in width calculation
-              overflow: 'hidden', // Prevent content overflow
-              position: 'relative',
-              marginTop: '-3rem'
-            }}>
-             
-     
-              <br/>
-     
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isLandscape && viewportHeight < 800 ? '2.5rem' : '4rem', marginBottom: '0rem', textAlign: 'center', color: 'rgb(142, 102, 43)'}}>Get Lit With RL80</h1>
-              <p style={{
-                lineHeight: 1.2,
-                opacity: 0.9,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                fontWeight: 400,
-                letterSpacing: '0.02em',
-                fontSize: isLandscape && viewportHeight < 800 ? '1.5rem' : '1.5rem',
-                textAlign: 'center',
-                marginBottom: '3.5rem',
-                width: '80%',
-                maxWidth: '600px', // Add max width for better readability
-              }}>
-                Prime your portfolio for pumps and devote a green candle to <span style={{
-                  fontFamily: 'UnifrakturCook, serif',
-                  fontWeight: 'bold',
-                  fontSize: '1.1em',
-                  color: '#d4af37',
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-                }}>Our Lady of Perpetual Profit.</span> Candles are displayed for 24 hours. Top 80 token burns remain visible.
-       
-              </p>
-              
-              
-              {/* Call to Action - Create Candle */}
-              <div style={{
-                marginTop: '-2rem',
-                paddingTop: '2rem',
-                textAlign: 'center'
-              }}>
-  
-                <Link
-                  href="/gallery"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.8rem',
-                    padding: '1rem 2.5rem',
-                    backgroundColor: 'rgba(212, 175, 55, 0.1)',
-                    border: '2px solid #d4af37',
-                    borderRadius: '30px',
-                    color: '#d4af37',
-                    fontSize: '1.3rem',
-                    fontFamily: 'Cyber, monospace',
-                    fontWeight: 'bold',
-                    textDecoration: 'none',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 0 15px rgba(212, 175, 55, 0.3)',
-                    textShadow: '0 0 5px rgba(212, 175, 55, 0.5)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.2)';
-                    e.currentTarget.style.boxShadow = '0 0 25px rgba(212, 175, 55, 0.5), 0 0 40px rgba(212, 175, 55, 0.3)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
-                    e.currentTarget.style.boxShadow = '0 0 15px rgba(212, 175, 55, 0.3)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <span style={{
-          display: 'inline-block',
-          position: 'relative',
-          width: '20px',
-          height: '40px',
-          marginLeft: '15px',
-          marginRight: '15px',
-          verticalAlign: 'middle'
-        }}>
-          {/* Top wick */}
-          <span style={{
-            position: 'absolute',
-            left: '50%',
-            top: '0',
-            width: '2px',
-            height: '10px',
-            backgroundColor: '#00ff00',
-            transform: 'translateX(-50%)'
-          }}></span>
-          {/* Candle body */}
-          <span style={{
-            position: 'absolute',
-            left: '50%',
-            top: '10px',
-            width: '12px',
-            height: '20px',
-            backgroundColor: '#00ff00',
-            transform: 'translateX(-50%)'
-          }}></span>
-          {/* Bottom wick */}
-          <span style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: '0',
-            width: '2px',
-            height: '10px',
-            backgroundColor: '#00ff00',
-            transform: 'translateX(-50%)'
-          }}></span>
-        </span>
-                  <span>Burn An Offering</span>
-                </Link>
-              </div>
-            </div>
-          </div>
           
           {/* Text Marquee Component */}
           <div style={{
@@ -2853,7 +1908,7 @@ export default function HomePage() {
                 textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
                 alignContent: 'center',
           
-              }}>Join the Illumin80 Soci80</h2>
+              }}>Join the Illumin80</h2>
               
               <p style={{
                 fontSize: '1.5rem',
@@ -3220,52 +2275,23 @@ export default function HomePage() {
       </footer>
       </div>
       
-      {/* CyberNav Menu - Outside main container */}
-      <CyberNav is80sMode={is80sMode} />
-      
-      {/* Music and User Controls Container - Outside main container */}
-      <div style={{
-        position: "fixed",
-        top: isMobileDevice ? "70px" : "20px",
-        right: isMobileDevice ? "20px" : "72px",
-        display: "flex",
-        flexDirection: isMobileDevice ? "column" : "row",
-        gap: "10px",
-        alignItems: isMobileDevice ? "flex-end" : "center",
-        zIndex: 9999999
-      }}>
-        {/* User Account Icon with Illumin80 Laurel */}
-        <div>
-          {isSignedIn ? (
-            <Illumin80ClerkButton afterSignOutUrl="/" />
-          ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/home3">
-              <button
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "8px",
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  border: "2px solid rgba(255, 255, 255, 0.2)",
-                  color: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  backdropFilter: "blur(10px)",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-                }}
-                title="Sign In"
-              >
-                <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
-              </button>
-            </SignInButton>
-          )}
-        </div>
-        
-        {/* Music Controls */}
-        <div>
+   {mounted && !isSceneLoading && (
+      <div
+        style={{
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? "10px" : "15px",
+          alignItems: isMobile ? "flex-end" : "center",
+          zIndex: 9999,
+          opacity: isSceneLoading ? 0 : 1,
+          transition: "opacity 0.5s ease-in-out"
+        }}
+      >
+        {/* Music Controls - First on desktop, Third on mobile */}
+        <div style={{ order: isMobileDevice ? 2 : 0 }}>
           {!showMusicControls ? (
             <button
               onClick={() => {
@@ -3275,9 +2301,9 @@ export default function HomePage() {
                 }
               }}
               style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "8px",
+                width: isMobile ? "2.5rem" : "3.75rem",
+                height: isMobile ? "2.5rem" : "3.75rem",
+                borderRadius: "0.5rem",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
                 color: "#ffffff",
@@ -3287,13 +2313,13 @@ export default function HomePage() {
                 cursor: "pointer",
                 transition: "all 0.3s ease",
                 backdropFilter: "blur(10px)",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
               }}
               title="Toggle Music"
             >
               <svg
-                width="20"
-                height="20"
+                width={isMobile ? "20" : "30"}
+                height={isMobile ? "20" : "30"}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -3312,15 +2338,15 @@ export default function HomePage() {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
+                gap: "0.5rem",
               }}
             >
               {/* Spinning Album Art */}
               <div
                 className={contextIsPlaying ? "spinning-record" : ""}
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  width: isMobile ? "2.5rem" : "3.75rem",
+                  height: isMobile ? "2.5rem" : "3.75rem",
                   borderRadius: "50%",
                   backgroundImage: "url('/virginRecords.jpg')",
                   backgroundSize: "cover",
@@ -3338,21 +2364,23 @@ export default function HomePage() {
                   }
                 }}
                 style={{
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "4px",
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  border: "none",
+                  width: isMobile ? "2rem" : "3rem",
+                  height: isMobile ? "2rem" : "3rem",
+                  borderRadius: "0.375rem",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
                   color: "white",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
                   transition: "all 0.3s ease",
+                  backdropFilter: "blur(10px)",
+                  boxShadow: "0 0.125rem 0.375rem rgba(0, 0, 0, 0.3)",
                 }}
                 title="Next Track"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width={isMobile ? "16" : "24"} height={isMobile ? "16" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="5 4 15 12 5 20 5 4"/>
                   <line x1="19" y1="5" x2="19" y2="19"/>
                 </svg>
@@ -3369,21 +2397,23 @@ export default function HomePage() {
                   }
                 }}
                 style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "4px",
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  width: isMobile ? "1.75rem" : "2.625rem",
+                  height: isMobile ? "1.75rem" : "2.625rem",
+                  borderRadius: "0.375rem",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
                   color: "white",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
                   transition: "all 0.3s ease",
+                  backdropFilter: "blur(10px)",
+                  boxShadow: "0 0.125rem 0.375rem rgba(0, 0, 0, 0.3)",
                 }}
                 title="Close Music"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width={isMobile ? "14" : "21"} height={isMobile ? "14" : "21"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/>
                   <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -3391,8 +2421,65 @@ export default function HomePage() {
             </div>
           )}
         </div>
+        
+        {/* User Account - Second on desktop, Second on mobile */}
+        <div style={{ order: isMobileDevice ? 1 : 1 }}>
+          {isSignedIn ? (
+            <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
+          ) : (
+            <SignInButton mode="modal" forceRedirectUrl="/home3">
+              <button
+                style={{
+                  width: isMobileDevice ? "2.5rem" : "3.75rem",
+                  height: isMobileDevice ? "2.5rem" : "3.75rem",
+                  borderRadius: "0.5rem",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  border: "2px solid rgba(255, 255, 255, 0.2)",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  backdropFilter: "blur(10px)",
+                  boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
+                }}
+                title="Sign In"
+              >
+                <span style={{ fontSize: "2.2rem" }}>{emoji}</span>
+              </button>
+            </SignInButton>
+          )}
+        </div>
+        
+        {/* CyberNav Menu - Last on desktop, First on mobile */}
+        <div style={{ order: isMobileDevice ? 0 : 2 }}>
+          <CyberNav is80sMode={is80sMode} position="relative" />
+        </div>
+        
+        {/* Social Bar - Last position */}
+        <div style={{ order: isMobileDevice ? 4 : 3 }}>
+          <SocialBar is80sMode={is80sMode} />
+        </div>
       </div>
+      )
+    }
       
+      {/* Hidden sign in button */}
+      {!isSignedIn && (
+        <SignInButton mode="modal" forceRedirectUrl="/home3">
+          <button id="hidden-sign-in-home3" style={{ display: 'none' }}>Sign In</button>
+        </SignInButton>
+      )}
+      
+      {/* Candle Modal */}
+      <CompactCandleModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCandleCreated={() => {
+          console.log('Candle created successfully');
+        }}
+      />
     </div>
+  
   );
 }
