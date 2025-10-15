@@ -13,7 +13,7 @@ import { collection, query, getDocs, limit, orderBy, onSnapshot } from 'firebase
 import { m } from 'framer-motion'
 
 
-function HandsModel({ mousePosition, scrollY, onLoad }) {
+function HandsModel({ mousePosition, scrollY, onLoad, hasReachedSection }) {
   const gltf = useGLTF('/models/hands2.glb')
   const hasReportedLoad = useRef(false)
   const rightHandRef = useRef()
@@ -33,83 +33,118 @@ function HandsModel({ mousePosition, scrollY, onLoad }) {
   const [randomUserImages, setRandomUserImages] = useState([])
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [rotationProgress, setRotationProgress] = useState(0)
-  const [hasReachedSection, setHasReachedSection] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [clickFeedback, setClickFeedback] = useState(false)
   const [imageTransition, setImageTransition] = useState(false)
   const animationStartTime = useRef(null)
   const lastMousePosition = useRef({ x: 0, y: 0 })
   const mouseVelocity = useRef({ x: 0, y: 0 })
+  const randomUserImagesRef = useRef([])
+  const currentImageIndexRef = useRef(0)
+  const texturePoolRef = useRef([]) // Pool of textures to reuse
+  const canvasPoolRef = useRef([]) // Pool of canvas elements to reuse
+  const materialPoolRef = useRef([]) // Pool of materials to reuse
   const { camera } = useThree()
 
-  // Function to advance to next image when clicking candle or label
-  const handleImageAdvance = useCallback(() => {
-    if (randomUserImages.length > 1) {
-      // Trigger visual feedback
-      setClickFeedback(true)
-      setImageTransition(true)
+  // COMMENTED OUT: Image advance functionality for memory testing
+  // const handleImageAdvance = useCallback(() => {
+  //   try {
+  //     console.log('handleImageAdvance called. Images available:', randomUserImagesRef.current.length)
       
-      // Advance image
-      setCurrentImageIndex((prevIndex) => 
-        (prevIndex + 1) % randomUserImages.length
-      )
-      // console.log('Image advanced by click interaction')
+  //     // Add safety checks
+  //     if (!randomUserImagesRef.current || randomUserImagesRef.current.length === 0) {
+  //       console.warn('No images available for advancing')
+  //       return
+  //     }
       
-      // Reset feedback after animation
-      setTimeout(() => setClickFeedback(false), 300)
-      setTimeout(() => setImageTransition(false), 600)
-    }
-  }, [randomUserImages.length])
-  
-
-
-  
-  // Fetch user images from Firestore with real-time updates
-  useEffect(() => {
-    try {
-      // Query with createdAt ordering (newest first) and limit
-      const q = query(
-        collection(db, 'results'), 
-        orderBy('createdAt', 'desc'),
-        limit(50)
-      )
-      
-      // Set up real-time listener
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const images = []
-        snapshot.forEach((doc) => {
-          const data = doc.data()
-          if (data.image && data.image !== '/defaultAvatar.png' && data.image !== '') {
-            images.push({
-              id: doc.id,
-              image: data.image,
-              username: data.username || 'Anonymous',
-              message: data.message || '',
-              createdAt: data.createdAt
-            })
-          }
-        })
+  //     if (randomUserImagesRef.current.length > 1 && !imageTransition) {
+  //       // console.log('Current image index before:', currentImageIndexRef.current)
         
-        console.log('Images updated from Firestore:', images.length, 'total images')
-        if (images.length > 0) {
-          setRandomUserImages(images)
-          // Start with the newest image (index 0) when data updates
-          setCurrentImageIndex(0)
-        }
-      }, (error) => {
-        console.error('Error fetching user images:', error)
-        // Fallback to one-time fetch if real-time fails
-        fetchImagesFallback()
-      })
-      
-      // Cleanup listener on unmount
-      return () => unsubscribe()
-    } catch (error) {
-      console.error('Error setting up real-time listener:', error)
-      // Fallback to one-time fetch
-      fetchImagesFallback()
-    }
+  //       // Trigger visual feedback
+  //       setClickFeedback(true)
+  //       setImageTransition(true)
+        
+  //       // Advance image with bounds checking
+  //       setCurrentImageIndex((prevIndex) => {
+  //         const newIndex = (prevIndex + 1) % randomUserImagesRef.current.length
+  //         // console.log('Advancing from index', prevIndex, 'to', newIndex)
+  //         currentImageIndexRef.current = newIndex
+  //         return newIndex
+  //       })
+        
+  //       // Reset feedback after animation (cleanup optimization)
+  //       setTimeout(() => {
+  //         setClickFeedback(false)
+  //         setImageTransition(false)
+  //       }, 600)
+  //     }
+  //   } catch (error) {
+  //     console.error('Error in handleImageAdvance:', error)
+  //   }
+  // }, [imageTransition])
+  
+
+
+  
+  // MINIMAL: Fetch one image only
+  useEffect(() => {
+    fetchImagesFallback()
   }, [])
+
+  // COMMENTED OUT: Real-time Firestore listener for memory testing
+  // useEffect(() => {
+  //   let unsubscribe = null
+  //   
+  //   try {
+  //     const q = query(
+  //       collection(db, 'results'), 
+  //       orderBy('createdAt', 'desc'),
+  //       limit(1)
+  //     )
+  //     
+  //     unsubscribe = onSnapshot(q, (snapshot) => {
+  //       const images = []
+  //       snapshot.forEach((doc) => {
+  //         const data = doc.data()
+  //         if (!data) {
+  //           console.warn('Document has null data:', doc.id)
+  //           return
+  //         }
+  //         if (data.image && data.image !== '/defaultAvatar.png' && data.image !== '') {
+  //           images.push({
+  //             id: doc.id,
+  //             image: data.image,
+  //             username: data.username || 'Anonymous',
+  //             message: data.message || '',
+  //             createdAt: data.createdAt
+  //           })
+  //         }
+  //       })
+  //       
+  //       if (images.length > 0) {
+  //         setRandomUserImages(images)
+  //         randomUserImagesRef.current = images
+  //         setCurrentImageIndex(0)
+  //         currentImageIndexRef.current = 0
+  //       } else {
+  //         console.log('No valid images found in Firestore')
+  //       }
+  //     }, (error) => {
+  //       console.error('Error fetching user images:', error)
+  //       fetchImagesFallback()
+  //     })
+  //     
+  //   } catch (error) {
+  //     console.error('Error setting up real-time listener:', error)
+  //     fetchImagesFallback()
+  //   }
+  //   
+  //   return () => {
+  //     if (unsubscribe) {
+  //       unsubscribe()
+  //     }
+  //   }
+  // }, [])
 
   // Fallback function for one-time fetch
   const fetchImagesFallback = async () => {
@@ -117,13 +152,18 @@ function HandsModel({ mousePosition, scrollY, onLoad }) {
       const q = query(
         collection(db, 'results'), 
         orderBy('createdAt', 'desc'),
-        limit(50)
+        limit(1) // Fallback also uses only 1 result
       )
       const snapshot = await getDocs(q)
       
       const images = []
       snapshot.forEach((doc) => {
         const data = doc.data()
+        // Add null check for data in fallback too
+        if (!data) {
+          console.warn('Fallback: Document has null data:', doc.id)
+          return
+        }
         if (data.image && data.image !== '/defaultAvatar.png' && data.image !== '') {
           images.push({
             id: doc.id,
@@ -137,32 +177,23 @@ function HandsModel({ mousePosition, scrollY, onLoad }) {
       
       if (images.length > 0) {
         setRandomUserImages(images)
+        randomUserImagesRef.current = images
         setCurrentImageIndex(0) // Start with newest
+        currentImageIndexRef.current = 0
       }
     } catch (error) {
       console.error('Error in fallback fetch:', error)
     }
   }
   
-  // Rotate through images periodically
-  useEffect(() => {
-    if (randomUserImages.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentImageIndex((prevIndex) => 
-          (prevIndex + 1) % randomUserImages.length
-        )
-      }, 5000) // Change image every 5 seconds
-      
-      return () => clearInterval(interval)
-    }
-  }, [randomUserImages])
+  // Remove automatic image rotation - only advance on candle clicks
 
   // Log what we loaded and report when loaded
   useEffect(() => {
     // console.log('GLTF loaded:', gltf)
     if (gltf.scene && !hasReportedLoad.current && onLoad) {
       hasReportedLoad.current = true;
-      console.log('[HandsModel] Model loaded, reporting to parent');
+      // console.log('[HandsModel] Model loaded, reporting to parent');
       onLoad();
     }
     
@@ -176,20 +207,20 @@ function HandsModel({ mousePosition, scrollY, onLoad }) {
         
         // Look for VCANDLE001 and its Label2 child
         if (child.name === 'VCANDLE001' || child.name === 'VCandle001' || child.name === 'vcandle001') {
-          console.log('Found VCANDLE001 candle object!')
+          // console.log('Found VCANDLE001 candle object!')
           
-          // Add click handler to the candle object
-          child.userData.onClick = handleImageAdvance
-          child.cursor = 'pointer'
+          // COMMENTED OUT: Click handlers for memory testing
+          // child.userData.onClick = handleImageAdvance
+          // child.userData.clickable = true
           
           child.traverse((subChild) => {
             if (subChild.name === 'Label2' || subChild.name === 'label2') {
               // console.log('Found Label2 under VCANDLE001!')
               candleLabel2Ref.current = subChild
               
-              // Add click handler to Label2 as well
-              subChild.userData.onClick = handleImageAdvance
-              subChild.cursor = 'pointer'
+              // COMMENTED OUT: Click handler for memory testing
+              // subChild.userData.onClick = handleImageAdvance
+              // subChild.userData.clickable = true
             }
           })
         }
@@ -200,9 +231,9 @@ function HandsModel({ mousePosition, scrollY, onLoad }) {
           if (!candleLabel2Ref.current) {
             candleLabel2Ref.current = child
             
-            // Add click handler to directly found Label2
-            child.userData.onClick = handleImageAdvance
-            child.cursor = 'pointer'
+            // COMMENTED OUT: Click handler for memory testing
+            // child.userData.onClick = handleImageAdvance
+            // child.userData.clickable = true
           }
         }
         
@@ -283,7 +314,7 @@ function HandsModel({ mousePosition, scrollY, onLoad }) {
         // Fix Backdrop transparency issue with bloom
         if (child.name === 'Backdrop' || child.name === 'backdrop' || child.name.toLowerCase().includes('backdrop')) {
           if (child.isMesh && child.material) {
-            console.log('Found Backdrop mesh, fixing transparency for bloom')
+            // console.log('Found Backdrop mesh, fixing transparency for bloom')
             // Set the material to not be affected by post-processing
             child.material.toneMapped = false
             // Ensure proper transparency handling
@@ -303,16 +334,132 @@ function HandsModel({ mousePosition, scrollY, onLoad }) {
   }, [gltf])
 
   
-  // Apply random user image to candle Label2 with transition effect
+  // Safe texture management utility
+  const disposeTexture = useCallback((texture) => {
+    if (texture && texture.dispose && !texture.disposed) {
+      try {
+        texture.dispose()
+        // Don't set properties to null on disposed textures
+      } catch (error) {
+        console.warn('Error disposing texture:', error)
+      }
+    }
+  }, [])
+
+  const disposeMaterial = useCallback((material) => {
+    if (material) {
+      if (material.map) disposeTexture(material.map)
+      if (material.emissiveMap) disposeTexture(material.emissiveMap)
+      if (material.normalMap) disposeTexture(material.normalMap)
+      if (material.roughnessMap) disposeTexture(material.roughnessMap)
+      material.dispose()
+    }
+  }, [disposeTexture])
+
+  // SIMPLIFIED: Basic texture application (no complex disposal)
   useEffect(() => {
-    if (!candleLabel2Ref.current || randomUserImages.length === 0) return
+    if (!candleLabel2Ref.current || randomUserImages.length === 0) {
+      return
+    }
     
-    const imageData = randomUserImages[currentImageIndex]
-    console.log('Applying image to candle Label2:', imageData)
+    const imageData = randomUserImages[0] // Only use first image
+    if (!imageData?.image) return
     
+    // Simple texture loading without complex memory management
     const canvas = document.createElement('canvas')
-    canvas.width = 512
-    canvas.height = 512
+    canvas.width = 128
+    canvas.height = 128
+    const ctx = canvas.getContext('2d')
+    
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      // Draw image rotated to fix orientation
+      ctx.save()
+      ctx.translate(64, 64) // Move to center
+  
+      ctx.drawImage(img, -64, -64, 128, 128) // Draw centered and rotated
+      ctx.restore()
+      
+      // Add username overlay AFTER image rotation (so text stays normal)
+      if (imageData.username) {
+        // Add semi-transparent background for text at bottom
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+        ctx.fillRect(0, 128 - 25, 128, 25)
+        
+        // Draw username normally (not rotated)
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 12px Arial'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        
+        // Add text shadow for better readability
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+        ctx.shadowBlur = 2
+        ctx.shadowOffsetX = 1
+        ctx.shadowOffsetY = 1
+        
+        ctx.fillText(imageData.username, 64, 128 - 12)
+      }
+      
+      const texture = new THREE.CanvasTexture(canvas)
+      texture.needsUpdate = true
+      texture.generateMipmaps = false
+      texture.flipY = false // No additional flipping needed
+      texture.wrapS = THREE.ClampToEdgeWrapping
+      texture.wrapT = THREE.ClampToEdgeWrapping
+      
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide
+      })
+      
+      candleLabel2Ref.current.material = material
+    }
+    img.src = imageData.image
+  }, [randomUserImages])
+
+  // COMMENTED OUT: Complex texture management
+  /*
+    const imageData = randomUserImages[currentImageIndex]
+    
+    // Add comprehensive null checking
+    if (!imageData) {
+      console.error('Image data is null at index:', currentImageIndex)
+      return
+    }
+    
+    if (!imageData.image) {
+      console.error('Image data has no image property:', imageData)
+      return
+    }
+    
+    // console.log('Applying image to candle Label2:', imageData)
+    
+    // Store reference to previous material (don't dispose immediately)
+    const previousMaterial = candleLabel2Ref.current.material
+    
+    // AGGRESSIVE: Clear pools if too large
+    if (texturePoolRef.current.length > 5) {
+      texturePoolRef.current.forEach(disposeTexture)
+      texturePoolRef.current = []
+    }
+    if (canvasPoolRef.current.length > 3) {
+      canvasPoolRef.current.forEach(canvas => {
+        canvas.width = 1
+        canvas.height = 1
+      })
+      canvasPoolRef.current = []
+    }
+    if (materialPoolRef.current.length > 3) {
+      materialPoolRef.current.forEach(disposeMaterial)
+      materialPoolRef.current = []
+    }
+    
+    // Use even smaller canvas to reduce memory usage
+    const canvas = document.createElement('canvas')
+    canvas.width = 128 // Further reduced
+    canvas.height = 128 // Further reduced
     const ctx = canvas.getContext('2d')
     
     if (imageData && imageData.image) {
@@ -320,84 +467,112 @@ function HandsModel({ mousePosition, scrollY, onLoad }) {
       img.crossOrigin = 'anonymous'
       
       img.onload = () => {
-        // Draw image with 180 degree rotation and horizontal flip
-        ctx.save()
-        ctx.translate(canvas.width / 2, canvas.height / 2)
-        ctx.rotate(Math.PI) // Rotate 180 degrees
-        ctx.scale(-1, 1) // Flip horizontally (mirror on Y-axis)
-        ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height)
-        ctx.restore()
+        // Draw image normally (no rotation/flip)
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
         
-        // Add username overlay if available (rotated and flipped)
+        // Add username overlay if available
         if (imageData.username) {
-          ctx.save()
-          ctx.translate(canvas.width / 2, canvas.height / 2)
-          ctx.rotate(Math.PI) // Rotate 180 degrees
-          ctx.scale(-1, 1) // Flip horizontally to mirror the text
-          
-          // Add semi-transparent background for text at bottom (which is now top due to rotation)
+          // Add semi-transparent background for text at bottom
           ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-          ctx.fillRect(-canvas.width / 2, canvas.height / 2 - 80, canvas.width, 80)
+          ctx.fillRect(0, canvas.height - 25, canvas.width, 25)
           
-          // Draw username
+          // Draw username with smaller font for 128px canvas
           ctx.fillStyle = '#ffffff'
-          ctx.font = 'bold 36px Arial'
+          ctx.font = 'bold 12px Arial' // Much smaller for 128px canvas
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
           
           // Add text shadow for better readability
           ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
-          ctx.shadowBlur = 4
-          ctx.shadowOffsetX = 2
-          ctx.shadowOffsetY = 2
+          ctx.shadowBlur = 2
+          ctx.shadowOffsetX = 1
+          ctx.shadowOffsetY = 1
           
-          ctx.fillText(imageData.username, 0, canvas.height / 2 - 40)
-          ctx.restore()
+          ctx.fillText(imageData.username, canvas.width / 2, canvas.height - 12)
         }
         
-        // Create texture and apply to mesh
+        // AGGRESSIVE: Create minimal texture
         const texture = new THREE.CanvasTexture(canvas)
         texture.needsUpdate = true
+        texture.generateMipmaps = false
+        texture.minFilter = THREE.NearestFilter // Even less memory
+        texture.magFilter = THREE.NearestFilter
+        texture.wrapS = THREE.ClampToEdgeWrapping
+        texture.wrapT = THREE.ClampToEdgeWrapping
+        texture.flipY = false // Reduce processing
         
-        // Create or update material with transition effect
-        const newMaterial = new THREE.MeshStandardMaterial({
+        // Add to texture pool for tracking
+        texturePoolRef.current.push(texture)
+        
+        // AGGRESSIVE: Use basic material to reduce memory
+        const newMaterial = new THREE.MeshBasicMaterial({
           map: texture,
           side: THREE.DoubleSide,
-          emissive: new THREE.Color(0xffffff),
-          emissiveIntensity: imageTransition ? 0.2 : 0.05, // Brighten during transition
-          emissiveMap: texture,
-          metalness: 0.1,
-          roughness: 0.7,
           transparent: true,
-          opacity: imageTransition ? 0.8 : 1.0 // Slight fade during transition
+          opacity: imageTransition ? 0.8 : 1.0
         })
         
         candleLabel2Ref.current.material = newMaterial
         candleLabel2Ref.current.material.needsUpdate = true
+        
+        // SAFER: Queue disposal instead of immediate disposal
+        if (previousMaterial && previousMaterial !== newMaterial) {
+          // Add to disposal queue with longer delay
+          setTimeout(() => {
+            try {
+              if (previousMaterial && previousMaterial !== candleLabel2Ref.current?.material) {
+                disposeMaterial(previousMaterial)
+              }
+            } catch (error) {
+              console.warn('Error in delayed disposal:', error)
+            }
+          }, 1000) // Longer delay to ensure rendering is complete
+        }
+        
+        // FORCE WebGL cleanup
+        setTimeout(() => {
+          canvas.width = 1
+          canvas.height = 1
+          ctx.clearRect(0, 0, 1, 1)
+        }, 100)
         
         // console.log('Texture applied to candle Label2')
       }
       
       img.onerror = () => {
         console.error('Failed to load image for Label2:', imageData.image)
+        // Clean up canvas even on error
+        canvas.width = 1
+        canvas.height = 1
+        ctx.clearRect(0, 0, 1, 1)
       }
       
       img.src = imageData.image
     }
-  }, [currentImageIndex, randomUserImages, imageTransition])
-
-  // Track when user reaches the target scroll position
-  useEffect(() => {
-    const targetScroll = 4700 // Trigger slightly before 4950 to account for viewport
     
-    if (scrollY >= targetScroll && !hasReachedSection) {
-      setHasReachedSection(true)
+    // Aggressive cleanup function
+    return () => {
+      if (canvas) {
+        canvas.width = 1
+        canvas.height = 1
+        ctx.clearRect(0, 0, 1, 1)
+      }
+      // Force garbage collection hint
+      if (window.gc) window.gc()
+    }
+  */
+  // }, [currentImageIndex, randomUserImages, imageTransition]) - DISABLED
+
+  // Trigger rotation animation when component comes into view
+  useEffect(() => {
+    if (hasReachedSection && !animationStartTime.current) {
+      console.log('🔄 Starting rotation animation now!')
       // Start animation after 2 second delay
       setTimeout(() => {
         animationStartTime.current = Date.now()
-      }, 2000)
+      }, 1000)
     }
-  }, [scrollY, hasReachedSection])
+  }, [hasReachedSection])
 
   // Memoized rotation calculation
   const calculateRotation = useMemo(() => {
@@ -414,281 +589,20 @@ function HandsModel({ mousePosition, scrollY, onLoad }) {
     return rotation
   }, [rotationProgress])
 
-   // Update the useFrame in HandsModel to properly handle updates
-useFrame((state) => {
-  // Animate rotation progress
-  if (animationStartTime.current) {
-    const elapsed = Date.now() - animationStartTime.current
-    const duration = 2000 // 2 seconds for rotation animation
-    const progress = Math.min(elapsed / duration, 1)
-    
-    // Use easing function for smooth animation
-    const easedProgress = 1 - Math.pow(1 - progress, 3) // Cubic ease-out
-    setRotationProgress(easedProgress)
-  }
-  
-  // Add floating animation to emojis
-  const time = state.clock.getElapsedTime()
-  
-  // Store initial positions for emojis
-  if (emoji1Ref.current && !emoji1Ref.current.userData.initialY) {
-    emoji1Ref.current.userData.initialY = emoji1Ref.current.position.y
-  }
-  if (emoji2Ref.current && !emoji2Ref.current.userData.initialY) {
-    emoji2Ref.current.userData.initialY = emoji2Ref.current.position.y
-  }
-  if (emoji3Ref.current && !emoji3Ref.current.userData.initialY) {
-    emoji3Ref.current.userData.initialY = emoji3Ref.current.position.y
-  }
-  if (emoji4Ref.current && !emoji4Ref.current.userData.initialY) {
-    emoji4Ref.current.userData.initialY = emoji4Ref.current.position.y
-  }
-    if (emoji5Ref.current && !emoji5Ref.current.userData.initialY) {
-    emoji5Ref.current.userData.initialY = emoji5Ref.current.position.y
-  }
-  
-  // Store initial positions for icons
-  if (iconLikeRef.current && !iconLikeRef.current.userData.initialY) {
-    iconLikeRef.current.userData.initialY = iconLikeRef.current.position.y
-  }
-  if (iconLoveRef.current && !iconLoveRef.current.userData.initialY) {
-    iconLoveRef.current.userData.initialY = iconLoveRef.current.position.y
-  }
-  if (iconText1Ref.current && !iconText1Ref.current.userData.initialY) {
-    iconText1Ref.current.userData.initialY = iconText1Ref.current.position.y
-  }
-  if (iconText2Ref.current && !iconText2Ref.current.userData.initialY) {
-    iconText2Ref.current.userData.initialY = iconText2Ref.current.position.y
-  }
-  if (iconPlayRef.current && !iconPlayRef.current.userData.initialY) {
-    iconPlayRef.current.userData.initialY = iconPlayRef.current.position.y
-  }
-  if (iconStarRef.current && !iconStarRef.current.userData.initialY) {
-    iconStarRef.current.userData.initialY = iconStarRef.current.position.y
-  }
-  
-  // Apply floating animation with much more dramatic movement
-  if (emoji1Ref.current) {
-    // Store initial positions for all axes
-    if (!emoji1Ref.current.userData.initialX) {
-      emoji1Ref.current.userData.initialX = emoji1Ref.current.position.x
-      emoji1Ref.current.userData.initialZ = emoji1Ref.current.position.z
-    }
-    
-    // Much larger amplitude and multiple axes movement
-    emoji1Ref.current.position.y = emoji1Ref.current.userData.initialY + Math.sin(time * 2) * 2.0
-    emoji1Ref.current.position.x = emoji1Ref.current.userData.initialX + Math.cos(time * 1.5) * 1.0
-    emoji1Ref.current.position.z = emoji1Ref.current.userData.initialZ + Math.sin(time * 1.2) * 0.8
-    emoji1Ref.current.rotation.z = Math.sin(time * 1.5) * 0.3
-    emoji1Ref.current.rotation.y = Math.cos(time * 1.8) * 0.2
-  }
-  
-  if (emoji2Ref.current) {
-    if (!emoji2Ref.current.userData.initialX) {
-      emoji2Ref.current.userData.initialX = emoji2Ref.current.position.x
-      emoji2Ref.current.userData.initialZ = emoji2Ref.current.position.z
-    }
-    
-    emoji2Ref.current.position.y = emoji2Ref.current.userData.initialY + Math.sin(time * 2.5 + 1) * 1.8
-    emoji2Ref.current.position.x = emoji2Ref.current.userData.initialX + Math.cos(time * 1.8 + 1) * 0.8
-    emoji2Ref.current.position.z = emoji2Ref.current.userData.initialZ + Math.sin(time * 1.4 + 1) * 1.2
-    emoji2Ref.current.rotation.z = Math.sin(time * 1.8 + 1) * 0.25
-    emoji2Ref.current.rotation.x = Math.cos(time * 2.1 + 1) * 0.15
-  }
-  
-  if (emoji3Ref.current) {
-    if (!emoji3Ref.current.userData.initialX) {
-      emoji3Ref.current.userData.initialX = emoji3Ref.current.position.x
-      emoji3Ref.current.userData.initialZ = emoji3Ref.current.position.z
-    }
-    
-    emoji3Ref.current.position.y = emoji3Ref.current.userData.initialY + Math.sin(time * 1.8 + 2) * 2.2
-    emoji3Ref.current.position.x = emoji3Ref.current.userData.initialX + Math.cos(time * 1.6 + 2) * 1.2
-    emoji3Ref.current.position.z = emoji3Ref.current.userData.initialZ + Math.sin(time * 1.1 + 2) * 0.9
-    emoji3Ref.current.rotation.z = Math.sin(time * 2.2 + 2) * 0.4
-    emoji3Ref.current.rotation.y = Math.cos(time * 1.7 + 2) * 0.25
-  }
-  
-  if (emoji4Ref.current) {
-    if (!emoji4Ref.current.userData.initialX) {
-      emoji4Ref.current.userData.initialX = emoji4Ref.current.position.x
-      emoji4Ref.current.userData.initialZ = emoji4Ref.current.position.z
-    }
-    
-    emoji4Ref.current.position.y = emoji4Ref.current.userData.initialY + Math.sin(time * 2.3 + 3) * 1.9
-    emoji4Ref.current.position.x = emoji4Ref.current.userData.initialX + Math.cos(time * 1.7 + 3) * 0.9
-    emoji4Ref.current.position.z = emoji4Ref.current.userData.initialZ + Math.sin(time * 1.3 + 3) * 1.1
-    emoji4Ref.current.rotation.z = Math.sin(time * 2.0 + 3) * 0.35
-    emoji4Ref.current.rotation.x = Math.cos(time * 1.9 + 3) * 0.18
-  }
-
-  if (emoji5Ref.current) {
-    if (!emoji5Ref.current.userData.initialX) {
-      emoji5Ref.current.userData.initialX = emoji5Ref.current.position.x
-      emoji5Ref.current.userData.initialZ = emoji5Ref.current.position.z
-    }
-    
-    emoji5Ref.current.position.y = emoji5Ref.current.userData.initialY + Math.sin(time * 2.3 + 3) * 1.9
-    emoji5Ref.current.position.x = emoji5Ref.current.userData.initialX + Math.cos(time * 1.7 + 3) * 0.9
-    emoji5Ref.current.position.z = emoji5Ref.current.userData.initialZ + Math.sin(time * 1.3 + 3) * 1.1
-    emoji5Ref.current.rotation.z = Math.sin(time * 2.0 + 3) * 0.35
-    emoji5Ref.current.rotation.x = Math.cos(time * 1.9 + 3) * 0.18
-  }
-  
-  // Icon animations with unique patterns
-  if (iconLikeRef.current) {
-    if (!iconLikeRef.current.userData.initialX) {
-      iconLikeRef.current.userData.initialX = iconLikeRef.current.position.x
-      iconLikeRef.current.userData.initialZ = iconLikeRef.current.position.z
-    }
-    
-    iconLikeRef.current.position.y = iconLikeRef.current.userData.initialY + Math.sin(time * 3.0 + 4) * 1.5
-    iconLikeRef.current.position.x = iconLikeRef.current.userData.initialX + Math.cos(time * 2.2 + 4) * 0.7
-    iconLikeRef.current.position.z = iconLikeRef.current.userData.initialZ + Math.sin(time * 2.8 + 4) * 1.0
-    iconLikeRef.current.rotation.z = Math.sin(time * 2.5 + 4) * 0.3
-    iconLikeRef.current.rotation.y = Math.cos(time * 2.0 + 4) * 0.2
-  }
-  
-  if (iconLoveRef.current) {
-    if (!iconLoveRef.current.userData.initialX) {
-      iconLoveRef.current.userData.initialX = iconLoveRef.current.position.x
-      iconLoveRef.current.userData.initialZ = iconLoveRef.current.position.z
-    }
-    
-    iconLoveRef.current.position.y = iconLoveRef.current.userData.initialY + Math.sin(time * 2.7 + 5) * 1.6
-    iconLoveRef.current.position.x = iconLoveRef.current.userData.initialX + Math.cos(time * 1.9 + 5) * 0.8
-    iconLoveRef.current.position.z = iconLoveRef.current.userData.initialZ + Math.sin(time * 2.4 + 5) * 0.9
-    iconLoveRef.current.rotation.z = Math.sin(time * 2.1 + 5) * 0.25
-    iconLoveRef.current.rotation.x = Math.cos(time * 2.6 + 5) * 0.15
-  }
-  
-  if (iconText1Ref.current) {
-    if (!iconText1Ref.current.userData.initialX) {
-      iconText1Ref.current.userData.initialX = iconText1Ref.current.position.x
-      iconText1Ref.current.userData.initialZ = iconText1Ref.current.position.z
-    }
-    
-    iconText1Ref.current.position.y = iconText1Ref.current.userData.initialY + Math.sin(time * 2.4 + 6) * 1.7
-    iconText1Ref.current.position.x = iconText1Ref.current.userData.initialX + Math.cos(time * 2.1 + 6) * 1.1
-    iconText1Ref.current.position.z = iconText1Ref.current.userData.initialZ + Math.sin(time * 1.8 + 6) * 0.8
-    iconText1Ref.current.rotation.z = Math.sin(time * 1.9 + 6) * 0.4
-    iconText1Ref.current.rotation.y = Math.cos(time * 2.3 + 6) * 0.3
-  }
-  
-  if (iconText2Ref.current) {
-    if (!iconText2Ref.current.userData.initialX) {
-      iconText2Ref.current.userData.initialX = iconText2Ref.current.position.x
-      iconText2Ref.current.userData.initialZ = iconText2Ref.current.position.z
-    }
-    
-    iconText2Ref.current.position.y = iconText2Ref.current.userData.initialY + Math.sin(time * 2.9 + 7) * 1.4
-    iconText2Ref.current.position.x = iconText2Ref.current.userData.initialX + Math.cos(time * 2.5 + 7) * 0.9
-    iconText2Ref.current.position.z = iconText2Ref.current.userData.initialZ + Math.sin(time * 2.0 + 7) * 1.2
-    iconText2Ref.current.rotation.z = Math.sin(time * 2.8 + 7) * 0.35
-    iconText2Ref.current.rotation.x = Math.cos(time * 1.8 + 7) * 0.2
-  }
-  
-  if (iconPlayRef.current) {
-    if (!iconPlayRef.current.userData.initialX) {
-      iconPlayRef.current.userData.initialX = iconPlayRef.current.position.x
-      iconPlayRef.current.userData.initialZ = iconPlayRef.current.position.z
-    }
-    
-    iconPlayRef.current.position.y = iconPlayRef.current.userData.initialY + Math.sin(time * 3.2 + 8) * 1.3
-    iconPlayRef.current.position.x = iconPlayRef.current.userData.initialX + Math.cos(time * 2.6 + 8) * 1.0
-    iconPlayRef.current.position.z = iconPlayRef.current.userData.initialZ + Math.sin(time * 2.1 + 8) * 0.7
-    iconPlayRef.current.rotation.z = Math.sin(time * 2.4 + 8) * 0.28
-    iconPlayRef.current.rotation.y = Math.cos(time * 2.7 + 8) * 0.22
-  }
-  
-  if (iconStarRef.current) {
-    if (!iconStarRef.current.userData.initialX) {
-      iconStarRef.current.userData.initialX = iconStarRef.current.position.x
-      iconStarRef.current.userData.initialZ = iconStarRef.current.position.z
-    }
-    
-    iconStarRef.current.position.y = iconStarRef.current.userData.initialY + Math.sin(time * 2.6 + 9) * 1.8
-    iconStarRef.current.position.x = iconStarRef.current.userData.initialX + Math.cos(time * 2.3 + 9) * 0.8
-    iconStarRef.current.position.z = iconStarRef.current.userData.initialZ + Math.sin(time * 1.9 + 9) * 1.3
-    iconStarRef.current.rotation.z = Math.sin(time * 3.1 + 9) * 0.45
-    iconStarRef.current.rotation.x = Math.cos(time * 2.2 + 9) * 0.25
-  }
-  
-  // Add pulse effect to candle when clicked
-  if (candleLabel2Ref.current && clickFeedback) {
-    const pulseScale = 1.0 + Math.sin(time * 20) * 0.1
-    candleLabel2Ref.current.scale.setScalar(pulseScale)
-  } else if (candleLabel2Ref.current) {
-    candleLabel2Ref.current.scale.setScalar(1.0)
-  }
-  
-  // Optimized mouse movement with smoothing and velocity
-  if (rightHandRef.current && mousePosition) {
-    // Store the original center position only once
-    if (!rightHandRef.current.userData.originalPosition) {
-      rightHandRef.current.userData.originalPosition = {
-        x: rightHandRef.current.position.x,
-        y: rightHandRef.current.position.y,
-        z: rightHandRef.current.position.z
-      }
-    }
-    
-    const original = rightHandRef.current.userData.originalPosition
-    
-    // Calculate velocity for smoother movement
-    mouseVelocity.current.x = mousePosition.x - lastMousePosition.current.x
-    mouseVelocity.current.y = mousePosition.y - lastMousePosition.current.y
-    lastMousePosition.current = { ...mousePosition }
-    
-    // Optimized movement calculation
-    const distanceFromCamera = camera.position.z - rightHandRef.current.position.z
-    const movementScale = distanceFromCamera * 0.5
-    
-    // Use lerp for smoother movement
-    const lerpFactor = 0.15 // Adjust for responsiveness vs smoothness
-    const targetX = original.x + (mousePosition.x * movementScale * 50)
-    const targetY = original.y + (mousePosition.y * movementScale * 80)
-    const targetZ = original.z + (Math.abs(mousePosition.x) * 15)
-    
-    // Smooth interpolation
-    rightHandRef.current.position.x += (targetX - rightHandRef.current.position.x) * lerpFactor
-    rightHandRef.current.position.y += (targetY - rightHandRef.current.position.y) * lerpFactor
-    rightHandRef.current.position.z += (targetZ - rightHandRef.current.position.z) * lerpFactor
-    
-    // Smoother rotation
-    rightHandRef.current.rotation.z += (-mousePosition.x * 0.3 - rightHandRef.current.rotation.z) * lerpFactor
-    rightHandRef.current.rotation.x += (mousePosition.y * 0.2 - rightHandRef.current.rotation.x) * lerpFactor
-    rightHandRef.current.rotation.y += (mousePosition.x * 0.1 - rightHandRef.current.rotation.y) * lerpFactor
-  }
-  
-})
-
-
-// Track when user reaches the target scroll position
-useEffect(() => {
-  const targetScroll = 4700 // Trigger slightly before 4950 to account for viewport
-  
-  if (scrollY >= targetScroll && !hasReachedSection) {
-    setHasReachedSection(true)
-    // Start animation after 2 second delay
-    setTimeout(() => {
-      animationStartTime.current = Date.now()
-    }, 2000)
-  }
-}, [scrollY, hasReachedSection])
-
-// Animate rotation progress
+// MINIMAL: Only rotation animation useFrame
 useFrame(() => {
+  // Only animate rotation progress when triggered
   if (animationStartTime.current) {
     const elapsed = Date.now() - animationStartTime.current
-    const duration = 2000 // 2 seconds for rotation animation
+    const duration = 2000
     const progress = Math.min(elapsed / duration, 1)
-    
-    // Use easing function for smooth animation
-    const easedProgress = 1 - Math.pow(1 - progress, 3) // Cubic ease-out
+    const easedProgress = 1 - Math.pow(1 - progress, 3)
     setRotationProgress(easedProgress)
   }
 })
+
+
+// Removed duplicate useFrame and useEffect - functionality merged into main useFrame above
 
 // Memoized click handler to reduce re-renders
 const handleClick = useCallback((event) => {
@@ -697,6 +611,7 @@ const handleClick = useCallback((event) => {
   
   // Get the clicked object
   const clickedObject = event.object
+  // console.log('Click detected on object:', clickedObject.name, 'Type:', clickedObject.type)
   
   // Check if the clicked object or any of its parents has a click handler
   let current = clickedObject
@@ -715,8 +630,9 @@ const handlePointerOver = useCallback((event) => {
   const hoveredObject = event.object
   let current = hoveredObject
   while (current) {
-    if (current.userData.onClick) {
+    if (current.userData.onClick || current.userData.clickable) {
       setHovered(true)
+      document.body.style.cursor = 'pointer'
       break
     }
     current = current.parent
@@ -725,10 +641,42 @@ const handlePointerOver = useCallback((event) => {
 
 const handlePointerOut = useCallback(() => {
   setHovered(false)
+  document.body.style.cursor = 'default'
 }, [])
 
 // Use cursor hook for pointer changes
 useCursor(hovered)
+
+// AGGRESSIVE cleanup on component unmount
+useEffect(() => {
+  return () => {
+    // console.log('HandsGLTFScene unmounting - aggressive cleanup starting')
+    
+    // Dispose all textures in pool
+    texturePoolRef.current.forEach(disposeTexture)
+    texturePoolRef.current = []
+    
+    // Dispose candle material
+    if (candleLabel2Ref.current && candleLabel2Ref.current.material) {
+      disposeMaterial(candleLabel2Ref.current.material)
+    }
+    
+    // Force browser garbage collection if available
+    if (window.gc) {
+      window.gc()
+      // console.log('Forced garbage collection')
+    }
+    
+    // Clear all object refs
+    if (rightHandRef.current) rightHandRef.current = null
+    if (leftHandRef.current) leftHandRef.current = null
+    if (candleLabel2Ref.current) candleLabel2Ref.current = null
+    randomUserImagesRef.current = []
+    texturePoolRef.current = []
+    
+    // console.log('HandsGLTFScene cleanup complete')
+  }
+}, [disposeTexture, disposeMaterial])
 
 // Replace this part in your return statement
 return (
@@ -771,6 +719,50 @@ export default function HandsGLTFScene({ onLoadComplete }) {
   const [isMobile, setIsMobile] = useState(false)
   const [showClickIndicator, setShowClickIndicator] = useState(false)
   const [modelLoaded, setModelLoaded] = useState(false)
+  const containerRef = useRef(null)
+  const [hasReachedSection, setHasReachedSection] = useState(false)
+  
+  // Track when component comes into view using Intersection Observer
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        console.log('Intersection Observer triggered:', {
+          isIntersecting: entry.isIntersecting,
+          intersectionRatio: entry.intersectionRatio,
+          hasReachedSection
+        })
+        
+        if (entry.isIntersecting && !hasReachedSection) {
+          console.log('🎯 HandsGLTFScene entered viewport! Starting 2-second delay...')
+          setHasReachedSection(true)
+        }
+      },
+      {
+        threshold: 0.1, // Trigger when 10% of component is visible
+        rootMargin: '0px 0px 0px 0px'
+      }
+    )
+
+    observer.observe(containerRef.current)
+    console.log('Intersection Observer set up for container')
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [hasReachedSection])
+  
+  // COMMENTED OUT: Memory monitoring to reduce overhead
+  // useEffect(() => {
+  //   const logMemory = () => {
+  //     if (performance.memory) {
+  //       console.log('JS Memory:', Math.round(performance.memory.usedJSHeapSize / 1048576) + 'MB')
+  //     }
+  //   }
+  //   const interval = setInterval(logMemory, 5000)
+  //   return () => clearInterval(interval)
+  // }, [])
   
   // Mobile detection
   useEffect(() => {
@@ -795,14 +787,16 @@ export default function HandsGLTFScene({ onLoadComplete }) {
   }, [])
   
   return (
-    <div style={{ 
-      width: '100%', 
-      height: '100%', 
-      position: 'relative',
-      overflow: 'hidden',
-      pointerEvents: 'auto',
-      isolation: 'isolate'
-    }}>
+    <div 
+      ref={containerRef}
+      style={{ 
+        width: '100%', 
+        height: '100%', 
+        position: 'relative',
+        overflow: 'hidden',
+        pointerEvents: 'auto',
+        isolation: 'isolate'
+      }}>
       
       
       {/* 3D Canvas */}
@@ -816,7 +810,14 @@ export default function HandsGLTFScene({ onLoadComplete }) {
           left: 0,
           pointerEvents: 'auto'
         }}
-        gl={{ alpha: true, antialias: true }}
+        gl={{ 
+          alpha: true, 
+          antialias: false, // Reduced for memory optimization
+          powerPreference: "high-performance",
+          stencil: false,
+          depth: true
+        }}
+        // dpr={Math.min(window.devicePixelRatio, 2)} // Limit DPR for memory
       >
         <ambientLight intensity={1} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
@@ -826,6 +827,7 @@ export default function HandsGLTFScene({ onLoadComplete }) {
           <HandsModel 
             mousePosition={mousePosition} 
             scrollY={scrollY}
+            hasReachedSection={hasReachedSection}
             onLoad={() => {
               setModelLoaded(true);
               if (onLoadComplete) onLoadComplete();
@@ -833,7 +835,8 @@ export default function HandsGLTFScene({ onLoadComplete }) {
           />
         </Suspense>
         
-        <MouseTracker setMousePosition={setMousePosition} />
+        {/* DISABLED: MouseTracker for memory leak testing */}
+        {/* <MouseTracker setMousePosition={setMousePosition} /> */}
         
         <OrbitControls 
           enableZoom={false}

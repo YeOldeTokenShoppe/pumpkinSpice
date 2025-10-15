@@ -33,10 +33,10 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Bitcount+Single+Ink&display=swap" rel="stylesheet" />
         <style dangerouslySetInnerHTML={{__html: `
           /* Critical: Hide custom font text until loaded */
-          [style*="UnifrakturCook"],
-          [style*="UnifrakturMaguntia"] {
-            visibility: hidden !important;
-          }
+          // [style*="UnifrakturCook"],
+          // [style*="UnifrakturMaguntia"] {
+          //   visibility: hidden !important;
+          // }
           .fonts-loaded [style*="UnifrakturCook"],
           .fonts-loaded [style*="UnifrakturMaguntia"] {
             visibility: visible !important;

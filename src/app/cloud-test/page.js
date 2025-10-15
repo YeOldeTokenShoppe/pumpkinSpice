@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, extend } from "@react-three/fiber";
 import { Suspense, useRef, useMemo, useEffect, useState } from "react";
-import { useGLTF, Text, shaderMaterial } from "@react-three/drei";
+import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper } from "@react-three/drei";
 import * as THREE from "three";
 import DarkClouds from "../../components/Clouds";
 import PostProcessingEffects from "../../components/PostProcessingEffects";
@@ -19,6 +19,10 @@ import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
 import RotatingText from '@/components/RotatingText';
 import '@/components/RotatingText.css';
+import HandsGLTFScene from "@/components/HandsGLTFScene";
+import CompactCandleModal from '@/components/CompactCandleModal';
+import FAQSection from '@/components/FAQSection';
+
 
 
 // Animated counter component
@@ -26,6 +30,7 @@ const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2 }) => 
   const [count, setCount] = useState(0);
   const countRef = useRef(null);
   const isInView = useInView(countRef, { once: true });
+  
   
   useEffect(() => {
     if (!isInView) return;
@@ -67,18 +72,17 @@ function Model({ scrollY, isMobile }) {
   });
   
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} position={isMobile ? [2, -8, -10] : [2, 8, -11]}>
       <primitive 
         object={scene} 
-        scale={[10, 10, 10]} 
-        position={[2, 8, -11]} 
-        rotation={[0.1, -3.2, 0]}
+        scale={isMobile ? [10, 10, 10] : [12, 12, 12]} 
+        rotation={isMobile ? [0, -3.3, 0] : [0.1, -3.2, 0]}
       />
       {/* TickerCurve positioned relative to model (from Simple3DScene) */}
       <TickerCurve 
         scrollY={scrollY}
         scale={3}
-        position={[0, 2, 5]} // Position relative to model - moved up
+        position={[0, 2, 8]} // Position relative to model - moved up
       />
     </group>
   );
@@ -145,7 +149,25 @@ const GradientSkyMaterial = shaderMaterial(
 
 extend({ GradientSkyMaterial });
 
-// GradientSkySphere from home3/page
+// Spotlight Component
+function SpotlightComponent() {
+  const spotlightRef = useRef();
+  
+  return (
+    <spotLight 
+      ref={spotlightRef}
+      position={[27.4, -48, 19.9]} 
+      color="#ff0000" 
+      angle={0.15} 
+      decay={0.97} 
+      distance={300} 
+      penumbra={-0.3} 
+      intensity={400}
+    />
+  );
+}
+
+// Apply bloom effect to Halo mesh
 function GradientSkySphere() {
   return (
     <mesh scale={[100, 100, 100]}>
@@ -182,212 +204,118 @@ function ScrollTriggeredTitle({ isMobile }) {
   );
 }
 
-// StatsSection with spinning coin
+// Modern StatsSection with cards layout
 function StatsSection({ isMobile }) {
   const statsRef = useRef(null);
-  const coinRef = useRef(null);
   const isInView = useInView(statsRef, { threshold: 0.3 });
+
+  const metrics = [
+    { value: 4.8, suffix: 'K', prefix: '$', label: 'Market Cap', icon: '💰', gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' },
+    { value: 12, suffix: '+', prefix: '', label: 'Holders', icon: '👥', gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)' },
+    { value: 2.4, suffix: 'M', prefix: '$', label: 'Total Value Locked', icon: '🔒', gradient: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' },
+    { value: 7, suffix: '', prefix: '', label: 'Stakers', icon: '⭐', gradient: 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)' },
+    { value: 80, suffix: 'K', prefix: '$', label: 'Total Rewards', icon: '🏆', gradient: 'linear-gradient(135deg, #fbbf24 0%, #f97316 100%)' },
+    { value: 24.5, suffix: '%', prefix: '', label: 'APY (7D)', icon: '📈', gradient: 'linear-gradient(135deg, #84cc16 0%, #10b981 100%)' },
+    { value: 2.8, suffix: '%', prefix: '', label: 'Burned', icon: '🔥', gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' },
+    { value: 3.2, suffix: 'K', prefix: '$', label: 'Liquidity', icon: '💧', gradient: 'linear-gradient(135deg, #6366f1 0%, #3b82f6 100%)' }
+  ];
 
   return (
     <motion.div
       ref={statsRef}
       initial={{ opacity: 0 }}
       animate={isInView ? { opacity: 1 } : {}}
-      transition={{ duration: 1, delay: 1 }}
+      transition={{ duration: 0.8, delay: 0.4 }}
       style={{
-        position: 'relative',
-        padding: isMobile ? '3rem 1.5rem' : '4rem',
+        padding: isMobile ? '3rem 1.5rem' : '4rem 2rem',
         maxWidth: '1200px',
         margin: '3rem auto',
-        background: 'radial-gradient(ellipse, rgba(212,175,55,0.05) 0%, transparent 70%)',
       }}
     >
-      {/* Centered Coin Container */}
-      <div
-        ref={coinRef}
-        style={{ 
-          position: "absolute",
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: isMobile ? "8rem" : "12rem",
-          height: isMobile ? "8rem" : "12rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 100,
-        }}
-      >
-        <Link href="#" className="coin-link" style={{ 
-          display: "block",
-          width: isMobile ? "7rem" : "10rem",
-          height: isMobile ? "7rem" : "10rem"
-        }}>
-          <Coin />
-        </Link>
-      </div>
-
-      {/* Stats Grid - 2x2 layout */}
+      {/* Modern Cards Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(2, max-content)',
-        gridTemplateRows: 'repeat(2, max-content)',
-        gap: isMobile ? '1.5rem' : '2rem',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: isMobile ? '300px' : '400px',
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+        gridTemplateRows: isMobile ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
+        gap: isMobile ? '15px' : '20px',
+        width: '100%',
+        alignItems: 'stretch',
+        justifyItems: 'stretch',
       }}>
-        {/* Top Left - Holders */}
-        <div style={{ 
-          textAlign: 'center',
-          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
-          backdropFilter: 'blur(12px)',
-          borderRadius: '12px',
-          border: '2px solid rgba(212, 175, 55, 0.4)',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.1)',
-          padding: isMobile ? '1.5rem 2rem' : '2rem 2.5rem',
-          minWidth: isMobile ? '140px' : '180px',
-          aspectRatio: '1.2',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-          <div style={{
-            fontSize: isMobile ? '2rem' : '2.5rem',
-            fontWeight: 'bold',
-            color: '#d4af37',
-            textShadow: '0 0 20px rgba(212,175,55,0.5)',
-            fontFamily: "'Fjalla One', sans-serif",
-          }}>
-            <AnimatedCounter target={8} suffix="+" />
-          </div>
-          <div style={{
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.9)',
-            marginTop: '0.5rem',
-            fontFamily: "'Fjalla One', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-          }}>
-            Holders
-          </div>
-        </div>
-        
-        {/* Top Right - Market Cap */}
-        <div style={{ 
-          textAlign: 'center',
-          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
-          backdropFilter: 'blur(12px)',
-          borderRadius: '12px',
-          border: '2px solid rgba(212, 175, 55, 0.4)',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.1)',
-          padding: isMobile ? '1.5rem 2rem' : '2rem 2.5rem',
-          minWidth: isMobile ? '140px' : '180px',
-          aspectRatio: '1.2',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-          <div style={{
-            fontSize: isMobile ? '2rem' : '2.5rem',
-            fontWeight: 'bold',
-            color: '#d4af37',
-            textShadow: '0 0 20px rgba(212,175,55,0.5)',
-            fontFamily: "'Fjalla One', sans-serif",
-          }}>
-            <AnimatedCounter target={4.8} suffix="K" prefix="$" />
-          </div>
-          <div style={{
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.9)',
-            marginTop: '0.5rem',
-            fontFamily: "'Fjalla One', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-          }}>
-            Market Cap
-          </div>
-        </div>
+        {metrics.map((metric, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            transition={{ duration: 0.8, delay: 0.05 * index }}
+            style={{
+              background: 'rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              borderRadius: '20px',
+              padding: isMobile ? '20px' : '30px',
+              transition: 'background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
+              cursor: 'pointer',
+              height: isMobile ? '160px' : '200px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              width: '100%',
+              boxSizing: 'border-box',
+              position: 'relative',
+            }}
+            whileHover={{
+              background: 'rgba(0, 0, 0, 0.6)',
+              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.4)',
+              borderColor: 'rgba(212, 175, 55, 0.6)',
+            }}
+          >
+            {/* Icon */}
+            <div
+              style={{
+                width: isMobile ? '40px' : '50px',
+                height: isMobile ? '40px' : '50px',
+                borderRadius: '12px',
+                background: metric.gradient,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: isMobile ? '15px' : '20px',
+                fontSize: isMobile ? '20px' : '24px',
+                flexShrink: 0,
+              }}
+            >
+              {metric.icon}
+            </div>
 
-        {/* Bottom Left - Tokens Burned */}
-        <div style={{ 
-          textAlign: 'center',
-          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
-          backdropFilter: 'blur(12px)',
-          borderRadius: '12px',
-          border: '2px solid rgba(212, 175, 55, 0.4)',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.1)',
-          padding: isMobile ? '1.5rem 2rem' : '2rem 2.5rem',
-          minWidth: isMobile ? '140px' : '180px',
-          aspectRatio: '1.2',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-          <div style={{
-            fontSize: isMobile ? '2rem' : '2.5rem',
-            fontWeight: 'bold',
-            color: '#d4af37',
-            textShadow: '0 0 20px rgba(212,175,55,0.5)',
-            fontFamily: "'Fjalla One', sans-serif",
-          }}>
-            <AnimatedCounter target={0} suffix="%" />
-          </div>
-          <div style={{
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.9)',
-            marginTop: '0.5rem',
-            fontFamily: "'Fjalla One', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-          }}>
-            Tokens Burned
-          </div>
-        </div>
-        
-        {/* Bottom Right - Total Rewards */}
-        <div style={{ 
-          textAlign: 'center',
-          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
-          backdropFilter: 'blur(12px)',
-          borderRadius: '12px',
-          border: '2px solid rgba(212, 175, 55, 0.4)',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.1)',
-          padding: isMobile ? '1.5rem 2rem' : '2rem 2.5rem',
-          minWidth: isMobile ? '140px' : '180px',
-          aspectRatio: '1.2',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-          <div style={{
-            fontSize: isMobile ? '2rem' : '2.5rem',
-            fontWeight: 'bold',
-            color: '#d4af37',
-            textShadow: '0 0 20px rgba(212,175,55,0.5)',
-            fontFamily: "'Fjalla One', sans-serif",
-          }}>
-            <AnimatedCounter target={80} suffix="K" prefix="$" />
-          </div>
-          <div style={{
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.9)',
-            marginTop: '0.5rem',
-            fontFamily: "'Fjalla One', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-          }}>
-            Total Rewards
-          </div>
-        </div>
+            {/* Value */}
+            <div style={{
+              fontSize: isMobile ? '28px' : '36px',
+              fontWeight: '800',
+              color: 'white',
+              marginBottom: '8px',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              <AnimatedCounter 
+                target={metric.value} 
+                suffix={metric.suffix} 
+                prefix={metric.prefix} 
+              />
+            </div>
+
+            {/* Label */}
+            <div style={{
+              fontSize: isMobile ? '11px' : '13px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              fontWeight: '600',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              {metric.label}
+            </div>
+          </motion.div>
+        ))}
       </div>
     </motion.div>
   );
@@ -395,7 +323,13 @@ function StatsSection({ isMobile }) {
 
 // LayeredClouds - individual cloud sprites with parallax
 function LayeredClouds({ scrollY }) {
-  const cloudTexture = new THREE.TextureLoader().load('/PinkCloudA.png');
+  const cloudTexture = useMemo(() => {
+    const texture = new THREE.TextureLoader().load('/PinkCloudA.png');
+    texture.generateMipmaps = false;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    return texture;
+  }, []);
   
   const cloudRefs = useRef([]);
   
@@ -434,10 +368,11 @@ function LayeredClouds({ scrollY }) {
           <spriteMaterial 
             map={cloudTexture}
             transparent={true}
-            opacity={cloud.opacity}
-            alphaTest={0.01}
+            opacity={cloud.opacity * 0.6}
+            alphaTest={0.1}
             depthTest={true}
             depthWrite={false}
+            blending={THREE.AdditiveBlending}
           />
         </sprite>
       ))}
@@ -451,7 +386,6 @@ const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
   const curveRef = useRef();
   const groupRef = useRef();
   
-  // Fetch live data from Firestore
   const firestoreResults = useFirestoreResults();
   
   // Create the curve path
@@ -493,8 +427,8 @@ const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
         
         // Set position directly without creating new vectors
         mesh.position.x = point.x;
-        mesh.position.y = point.y + 0.1;  // Slightly below the curve (was +0.1)
-        mesh.position.z = point.z + 0.2;  // Closer to ribbon surface (was +0.5)
+        mesh.position.y = point.y;  // Slightly below the curve (was +0.1)
+        mesh.position.z = point.z + 0.1;  // Closer to ribbon surface (was +0.5)
         
         // Calculate proper orientation for text to follow curve smoothly
         const up = new THREE.Vector3(0, 1, 0);
@@ -611,6 +545,9 @@ const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
 };
 
 export default function CloudTestPage() {
+  // Firestore data
+  const topBurners = useFirestoreResults("burnedAmount");
+  
   // State for overlay buttons (from home3/page)
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -619,9 +556,28 @@ export default function CloudTestPage() {
   const [showMusicControls, setShowMusicControls] = useState(false);
   const [emoji, setEmoji] = useState("😇");
   const [scrollY, setScrollY] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [secondTitleInView, setSecondTitleInView] = useState(false);
+
+  // Refs
+  const secondTitleRef = useRef(null);
+  const ctasRef = useRef(null);
+  
+  // useInView hooks
+  const ctasInView = useInView(ctasRef, { threshold: 0.3, once: true });
 
   // Auth state
   const { isSignedIn } = useUser();
+
+    const handleOpenModal = () => {
+    if (!isSignedIn) {
+      const btn = document.getElementById('hidden-sign-in-home3');
+      btn?.click();
+    } else {
+      setIsModalOpen(true);
+    }
+  };
+  
   
   // Get music context functions
   const {
@@ -679,6 +635,39 @@ export default function CloudTestPage() {
     }
   }, [contextIsPlaying, showMusicControls]);
 
+  // Intersection Observer for second title animation
+  useEffect(() => {
+    if (!secondTitleRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        console.log('Second title intersection:', {
+          isIntersecting: entry.isIntersecting,
+          intersectionRatio: entry.intersectionRatio
+        });
+        
+        if (entry.isIntersecting) {
+          console.log('🎯 Second title entered viewport!');
+          setSecondTitleInView(true);
+        } else {
+          console.log('🎯 Second title left viewport!');
+          setSecondTitleInView(false);
+        }
+      },
+      {
+        threshold: 0.3, // Trigger when 30% of title is visible
+        rootMargin: '0px 0px -10% 0px' // Start slightly before fully in view
+      }
+    );
+
+    observer.observe(secondTitleRef.current);
+    console.log('Intersection Observer set up for second title');
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []); // Remove dependency to avoid re-creating observer
+
   return (
     <>
       <div style={{ 
@@ -697,33 +686,67 @@ export default function CloudTestPage() {
         width: '100vw',
         height: '100vh',
         zIndex: 0,
-        pointerEvents: 'none',
+        pointerEvents: 'auto',
       }}>
         <Canvas
-          camera={{ position: [0, 0, 35], fov: 50, near: 0.1, far: 1000 }}
+          camera={{ position: [0, -10, 40], fov: 40, near: 0.1, far: 300 }}
           gl={{
             antialias: false,
             powerPreference: 'high-performance',
-            preserveDrawingBuffer: false,
+            preserveDrawingBuffer: true,
+            alpha: true,
+            premultipliedAlpha: false,
           }}
+          frameloop="always"
+          dpr={1}
           style={{
             width: '100%',
             height: '100%',
             display: 'block',
           }}
         >
-          <hemisphereLight skyColor="#87CEEB" groundColor="#362d1a" intensity={0.5} />
+             <color attach="background" args={['#87CEEB']} />
+                     <SpotlightComponent />
+
+          {/* <ambientLight intensity={0.5} /> */}
+          {/* Sunset glow lighting */}
+          <hemisphereLight skyColor="#660ebfc7" groundColor="#ff00ccff" intensity={1.2} />
+          <directionalLight 
+            position={[-20, 10, -10]} 
+            color="#ff50eec7" 
+            intensity={1.5}
+            castShadow={false}
+          />
+          {/* <pointLight position={[0, -20, -30]} color="#ff50eec7" intensity={2} distance={100} />
+          <pointLight position={[-40, 0, -20]} color="#ff50eec7" intensity={1.5} distance={80} />
+          <pointLight position={[40, -10, -25]} color="#ff50eec7" intensity={1.8} distance={90} /> */}
+          
+          {/* Orbit Controls for debugging */}
+          {/* <OrbitControls 
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            makeDefault
+          /> */}
+          
           <Suspense fallback={null}>
             <GradientSkySphere />
-            <LayeredClouds scrollY={scrollY} />
-                  <EnhancedVolumetricLight 
-        position={[0, 50 + scrollY * 0.015, 0]} 
-        target={[3, -30 + scrollY * 0.015, -5]}
-        color="#ffffee"
-        intensity={2.0}
-      />
+            {/* <LayeredClouds scrollY={scrollY} /> */}
+            <EnhancedVolumetricLight 
+              position={[0, 50 + scrollY * 0.015, 0]} 
+              target={[3, -50 + scrollY * 0.015, -5]}
+              color="#ffffee"
+              intensity={0.5}
+            />
             <Model scrollY={scrollY} isMobile={isMobile} />
             <ScrollClouds scrollY={scrollY} />
+            {/* Additional point lights for desktop only */}
+            {!isMobile && (
+              <>
+                <pointLight position={[0, 5, 10]} intensity={3} />
+                <pointLight position={[-10, 0, 10]} intensity={2} />
+              </>
+            )}
             <PostProcessingEffects />
           </Suspense>
         </Canvas>
@@ -973,7 +996,7 @@ export default function CloudTestPage() {
           left: 0,
           right: 0,
           minHeight: "100vh",
-          background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.8), rgba(0,0,0,0.9))",
+          // background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.8), rgba(0,0,0,0.9))",
           zIndex: 1,
         }}
         className="welcome-banner"
@@ -993,67 +1016,394 @@ export default function CloudTestPage() {
           <ScrollTriggeredTitle isMobile={isMobile} />
         </div>
 
-        {/* Stats Section with Spinning Coin */}
+        {/* Split Hero CTAs */}
+        <motion.div
+          ref={ctasRef}
+          initial={{ opacity: 0, y: 30 }}
+          animate={ctasInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: isMobile ? '20px' : '30px',
+            margin: isMobile ? '40px auto' : '60px auto',
+            maxWidth: '1200px',
+            padding: isMobile ? '0 1.5rem' : '0 2rem',
+          }}
+        >
+          {/* Buy RL80 Card */}
+          <motion.div
+            style={{
+              background: 'rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(20px)',
+              border: '2px solid rgba(16, 185, 129, 0.4)',
+              borderRadius: '20px',
+              padding: isMobile ? '40px 30px' : '50px 40px',
+              textAlign: 'center',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer',
+            }}
+            whileHover={{
+              scale: 1.03,
+              background: 'rgba(0, 0, 0, 0.6)',
+              borderColor: '#10b981',
+              boxShadow: '0 0 30px rgba(16, 185, 129, 0.3)',
+            }}
+            onClick={() => window.open('https://app.uniswap.org/swap', '_blank')}
+          >
+            <div style={{ fontSize: isMobile ? '50px' : '60px', marginBottom: '20px' }}>🚀</div>
+            <h3 style={{
+              color: 'white',
+              fontSize: isMobile ? '28px' : '32px',
+              marginBottom: '15px',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              Buy RL80
+            </h3>
+            <span style={{
+              fontSize: isMobile ? '40px' : '48px',
+              fontWeight: '900',
+              display: 'block',
+              margin: '20px 0',
+              color: '#10b981',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              $0.0048
+            </span>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '16px',
+              lineHeight: '1.6',
+              fontFamily: "'Inter', sans-serif",
+            }}>
+              Available on Uniswap, PancakeSwap & Major DEXs
+            </p>
+          </motion.div>
+
+          {/* Stake & Earn Card */}
+          <motion.div
+            style={{
+              background: 'rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(20px)',
+              border: '2px solid rgba(245, 158, 11, 0.4)',
+              borderRadius: '20px',
+              padding: isMobile ? '40px 30px' : '50px 40px',
+              textAlign: 'center',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer',
+            }}
+            whileHover={{
+              scale: 1.03,
+              background: 'rgba(0, 0, 0, 0.6)',
+              borderColor: '#f59e0b',
+              boxShadow: '0 0 30px rgba(245, 158, 11, 0.3)',
+            }}
+            onClick={() => window.open('/stake', '_blank')}
+          >
+            <div style={{ fontSize: isMobile ? '50px' : '60px', marginBottom: '20px' }}>💰</div>
+            <h3 style={{
+              color: 'white',
+              fontSize: isMobile ? '28px' : '32px',
+              marginBottom: '15px',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              Stake & Earn
+            </h3>
+            <span style={{
+              fontSize: isMobile ? '40px' : '48px',
+              fontWeight: '900',
+              display: 'block',
+              margin: '20px 0',
+              color: '#f59e0b',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              24.5% APY
+            </span>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '16px',
+              lineHeight: '1.6',
+              fontFamily: "'Inter', sans-serif",
+            }}>
+              Lock your tokens and earn passive rewards daily
+            </p>
+          </motion.div>
+        </motion.div>
+
+        {/* Stats Section */}
         <StatsSection isMobile={isMobile} />
 
         {/* Additional content sections */}
-        <div style={{ 
-          padding: "2rem",
-          color: "white",
-          textAlign: "center",
-          maxWidth: "800px",
-          margin: "0 auto"
-        }}>
-          <p style={{ 
-            fontSize: "1.2rem", 
-            lineHeight: "1.8", 
-            marginBottom: "3rem",
-            color: "#f4e4c1",
-            fontWeight: "300"
-          }}>
-            Experience the divine convergence of faith and fortune in our revolutionary spiritual ecosystem.
-          </p>
-          
-          {/* Navigation Links */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
-            gap: "2rem",
-            marginTop: "4rem"
-          }}>
-            <div style={{
-              padding: "2rem",
-              border: "1px solid #d4af37",
-              borderRadius: "8px",
-              background: "rgba(212, 175, 55, 0.1)",
-              cursor: "pointer",
-              transition: "all 0.3s ease"
+
+         <div style={{
+                                position: "relative",
+                                margin: "2rem auto 5rem auto",
+                                width: isMobile ? "90%" : "80%",
+                                maxWidth: "1400px",
+                                display: "grid",
+                                gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.6fr) minmax(0, 0.4fr)", // Stack on mobile, 60% hands scene, 40% text on desktop
+                                gap: isMobile ? "2rem" : "3rem",
+                                alignItems: "center",
+                                padding: isMobile ? '2rem 1.5rem' : '3rem 2rem',
+                                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
+                                backdropFilter: 'blur(12px)',
+                                borderRadius: '25px',
+                                border: '2px solid rgba(212, 175, 55, 0.4)',
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
+                                color: '#ffffff',
+                                gridColumn: '1 / -1'
+                              }}>
+                               
+                              <div style={{
+                          height: isMobile ? '50vh' : '70vh',
+                          minHeight: '400px',
+                        }}>
+                          <HandsGLTFScene />
+                        </div>
+                               {/* Right Column - Text Content */}
+                   <div style={{
+              padding: isMobile ? '0 0.5rem' : '0 1rem',
+              color: '#ffffff',
+              minHeight: isMobile ? '300px' : '500px', // Match the candle container height
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center', // Center all children horizontally
+              width: '100%', // Ensure full width of grid column
+              boxSizing: 'border-box', // Include padding in width calculation
+              overflow: 'hidden', // Prevent content overflow
+              position: 'relative',
+              marginTop: isMobile ? '0' : '-3rem'
             }}>
-              <h3 style={{ color: "#d4af37", marginBottom: "1rem" }}>Divine Features</h3>
-              <p style={{ fontSize: "0.9rem", opacity: 0.8 }}>Explore our sacred offerings</p>
-            </div>
-            
-            <div style={{
-              padding: "2rem",
-              border: "1px solid #d4af37",
-              borderRadius: "8px",
-              background: "rgba(212, 175, 55, 0.1)",
-              cursor: "pointer",
-              transition: "all 0.3s ease"
-            }}>
-              <h3 style={{ color: "#d4af37", marginBottom: "1rem" }}>Sacred Knowledge</h3>
-              <p style={{ fontSize: "0.9rem", opacity: 0.8 }}>Learn the divine mysteries</p>
-            </div>
-            
+             
+     
+              <br/>
+     
+              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginTop: '2rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get On Her Watchlist</h1>
+       
+              <div style={{
+                lineHeight: 1.5,
+                opacity: 0.9,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                fontWeight: 400,
+                letterSpacing: '0.02em',
+                fontSize: isMobile ? '1.2rem' : '1.4rem',
+                textAlign: 'center',
+                width: '100%',
+                maxWidth: '600px',
+              }}>
+              {/* <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
+                Add a Green Candle to Her Timeline
+              </span> */}
+              {/* <p style={{ 
+                marginBottom: '2rem',
+                fontFamily: "'Pirata One', cursive",
+                fontSize: isMobile ? '1.5rem' : '1.8rem',
+                fontWeight: '400',
+                textAlign: 'center',
+                color: '#ffffff',
+                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)'
+              }}>
+                Join The Leaderboard of Luminaries
+              </p> */}
+                   {/* <img src="/timeline2.png" alt="Candle Icon" style={{ width: isMobile ? '50%' : '50%', height: 'auto', marginBottom: '-1rem', marginTop: '-2rem' }} /> */}
+         
+              <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
+Add a green candle to her timeline and watch miracles happen. Every candle boosts the token, fortifies the faithful, and pleases the Patron Saint of Day Traders. The top 80 stakers and burners ascend to the Illumin80 — a guild that unlocks even more glorious gains.
+              </p>
+
+              {/* Top Burners Leaderboard */}
+              <div style={{
+                margin: '2rem 0',
+                padding: '1.5rem',
+                background: 'rgba(212, 175, 55, 0.1)',
+                border: '2px solid rgba(212, 175, 55, 0.3)',
+                borderRadius: '15px',
+                color: '#ffffff',
+                fontFamily: "'Inter', sans-serif",
+              }}>
+                <h3 style={{
+                  fontSize: isMobile ? '1.2rem' : '1.4rem',
+                  color: '#d4af37',
+                  textAlign: 'center',
+                  marginBottom: '1rem',
+                  fontFamily: "'Fjalla One', sans-serif",
+                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+                }}>
+                  🔥 Top Burners
+                </h3>
+                <div 
+                  className="leaderboard-scroll"
+                  style={{
+                    maxHeight: '220px',
+                    overflowY: 'auto',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(212, 175, 55, 0.5) transparent',
+                    paddingRight: '5px',
+                  }}
+                >
+                  {topBurners.slice(0, 10).map((burner, index) => (
+                    <div 
+                      key={burner.id || index} 
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.5rem 0.5rem',
+                        borderBottom: index < 9 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                        borderRadius: '8px',
+                        transition: 'background 0.2s ease',
+                        position: 'relative',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(212, 175, 55, 0.08)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                      }}>
+                        <span style={{
+                          fontSize: isMobile ? '0.9rem' : '1rem',
+                          fontWeight: 'bold',
+                          color: index === 0 ? '#ffd700' : index === 1 ? '#c0c0c0' : index === 2 ? '#cd7f32' : '#d4af37',
+                          minWidth: '2rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                        }}>
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
+                        </span>
+                        {burner.image && (
+                          <div style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            border: '1px solid rgba(212, 175, 55, 0.5)',
+                            flexShrink: 0,
+                          }}>
+                            <img 
+                              src={burner.image} 
+                              alt={burner.userName || 'User'} 
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <span style={{
+                          fontSize: isMobile ? '0.9rem' : '1rem',
+                          color: '#ffffff',
+                        }}>
+                          {burner.userName || 'Anonymous'}
+                        </span>
+                      </div>
+                      <span style={{
+                        fontSize: isMobile ? '0.8rem' : '0.9rem',
+                        color: '#ffd700',
+                        fontWeight: 'bold',
+                        textShadow: '0 0 5px rgba(255, 215, 0, 0.3)',
+                      }}>
+                        {(burner.burnedAmount || 0).toLocaleString()} RL80
+                      </span>
+                    </div>
+                  ))}
+                  {topBurners.length === 0 && (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontStyle: 'italic',
+                    }}>
+                      Loading top burners...
+                    </div>
+                  )}
+                </div>
+              </div>
+
           </div>
-          
+       <button
+                        onClick={handleOpenModal}
+                         style={{
+                          marginTop: isMobile ? '1.5rem' : '2rem',
+                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
+                          fontSize: isMobile ? '1.2rem' : '1.4rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Fjalla One', sans-serif",
+                          textTransform: 'uppercase',
+                          letterSpacing: '2px',
+                          color: '#000000',
+                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                          border: '3px solid #d4af37',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          zIndex: 102,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                        }}
+                      >
+                        Get Lit
+                      </button>
+               
+           
+                    </div>
+                        </div>
+                        <div style={{position: 'relative', zIndex: 1, marginTop: '2rem', marginBottom: '7rem'}}>
+                         <div ref={secondTitleRef} style={{
+                                  textAlign: 'center',
+                                  padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
+                                  maxWidth: '900px',
+                                  margin: '0 auto',
+                                }}>
+                                  {/* Animated Drop-In Title */}
+                                  <DropInTitle
+                                    lines={["PROSPER80", "FOR ALL", "HUMAN80!"]}
+                                    colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+                                    fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
+                                    isMobile={isMobile}
+                                    triggerAnimation={secondTitleInView}
+                                  />
+                        </div>
+                                 </div>
+
+        <div style={{
+          position: 'relative',
+          zIndex: 50,
+          margin: '0 auto 4rem auto',
+          width: isMobile ? '90%' : '80%',
+          maxWidth: '1400px',
+          pointerEvents: 'auto'
+        }}>
+          <FAQSection />
         </div>
+
          <div style={{
                         position: "relative",
                         maxWidth: "1400px",
-                        margin: "0 auto 4rem auto",
-                        // marginTop: '8rem',
-                        // padding: '6rem 1.5rem',
+                        margin: "16rem auto",
+                 
                       }}
                       className="desktop-rotating-text">
                         <div
@@ -1071,7 +1421,22 @@ export default function CloudTestPage() {
                             zIndex: 1,
                           }}
                         />
-                        <div style={{ position: "relative", zIndex: 2, marginTop: '3rem' }}>
+                        <div style={{ 
+                          position: "relative", 
+                          marginTop: "6rem",
+                          top: "50%", 
+                          left: "50%", 
+                          transform: "translate(-50%, -50%)",
+                          zIndex: 2,
+                          width: "80%",
+                          maxWidth: "600px",
+                          height: "200px", // Fixed height to prevent layout shifts
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          overflow: "hidden", // Contain any overflow
+                          pointerEvents: "none" // Don't interfere with interactions
+                        }}>
                           <RotatingText isDesktop={true} />
                         </div>
                       </div>
@@ -1083,9 +1448,9 @@ export default function CloudTestPage() {
         
         {/* Footer - at the bottom of all content */}
        <footer style={{
-        marginTop: '4rem',
+        marginTop: '8rem',
         padding: '3rem 2rem 2rem',
-        background: 'linear-gradient(to bottom, rgba(234, 124, 14, 0.0), rgba(14, 84, 234, 0.12))',
+        background: 'linear-gradient(to bottom, rgba(234, 124, 14, 0.0), rgba(14, 84, 234, 0.2))',
         // borderTop: '1px solid rgba(212, 175, 55, 0.3)',
         color: '#ffffff',
         textAlign: 'center'
@@ -1158,7 +1523,7 @@ export default function CloudTestPage() {
             opacity: 0.6,
             fontFamily: 'Cyber, monospace'
           }}>
-            © 2024 Church of Perpetual Profit | Blessed by the Blockchain
+            © 2025 All rights reserved.
           </p>
           
           {/* Decorative Elements */}
@@ -1371,11 +1736,35 @@ export default function CloudTestPage() {
         
         .custom-title span {
           visibility: visible !important;
- 
           opacity: 1 !important;
         }
+        
+        /* Custom scrollbar for leaderboard */
+        .leaderboard-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .leaderboard-scroll::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 3px;
+        }
+        
+        .leaderboard-scroll::-webkit-scrollbar-thumb {
+          background: rgba(212, 175, 55, 0.5);
+          border-radius: 3px;
+        }
+        
+        .leaderboard-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(212, 175, 55, 0.7);
+        }
       `}</style>
-      
+       <CompactCandleModal 
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onCandleCreated={() => {
+                console.log('Candle created successfully');
+              }}
+            />
     </div>
     </>
   );
