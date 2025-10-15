@@ -21,7 +21,6 @@ export default function DropInTitle({
     return `dropin-${contentHash}`;
   }, [instanceId, lines]);
   const containerRef = useRef(null);
-  const buttonRef = useRef(null);
   
   const playAnimation = () => {
     if (!containerRef.current) return;
@@ -29,9 +28,6 @@ export default function DropInTitle({
     const tl = gsap.timeline({
       onComplete: onAnimationComplete
     });
-    
-    // Hide button initially
-    tl.set(buttonRef.current, { visibility: 'hidden', opacity: 0 });
     
     // Animate each letter span - use containerRef to scope the animation
     tl.fromTo(containerRef.current.querySelectorAll('.title-letter'), 
@@ -47,13 +43,6 @@ export default function DropInTitle({
         stagger: 0.05
       }
     );
-    
-    // Show button after animation
-    tl.to(buttonRef.current, { 
-      visibility: 'visible', 
-      opacity: 1, 
-      duration: 0.2 
-    });
   };
   
   useEffect(() => {

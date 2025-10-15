@@ -18,9 +18,9 @@ const lightningContext = createContext();
 function HemisphereLightComponent() {
   return (
     <hemisphereLight 
-      skyColor="#3222e1ff" 
-      groundColor="#e12db7ff" 
-      intensity={1} 
+      skyColor="#f5f5f5" 
+      groundColor="#e12db7" 
+      intensity={1.3} 
       position={[0, -20, -5]}
     />
   );
@@ -32,8 +32,8 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
   const [cloudTexture, setCloudTexture] = useState(null);
   
   // Hardcode pink color for all clouds
-  const whiteCloudColor = "#9719b3ff";
-  const pinkCloudColor = "#e61c9cff";
+  const whiteCloudColor = "#fbf6fc";
+  const pinkCloudColor = "#e61c9c";
 
   useEffect(() => {
     // Only load texture on client side
