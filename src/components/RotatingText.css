@@ -1,43 +1,48 @@
 .rotating-text-body {
   font-family: "Bowlby One SC", "Bowlby One", sans-serif;
   font-size: 2rem;
-
   padding: 0.1rem 0 0 0;
   display: flex;
   align-items: stretch;
-
   flex-direction: column;
   font-weight: 700;
   color: #d4af37;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
   text-align: center;
-
-  /* background: #1b1724; */
-  /* background-image: radial-gradient(#e85e3c, #7c1717); */
   background-repeat: no-repeat;
-  /* height: 30vh; */
   width: 100%;
   transform-origin: center center;
+  
+  /* Fixed container dimensions to prevent layout shifts */
+  height: 300px;
+  max-width: 800px;
+  position: relative;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {
   .rotating-text-body {
-    transform: scale(0.7);
-    margin: 0 auto;
+    font-size: 1.5rem;
+    height: 200px;
+    max-width: 90vw;
+    /* Remove transform scaling that causes layout issues */
   }
 }
 
 @media (max-width: 480px) {
   .rotating-text-body {
-    transform: scale(0.6);
-    margin: 0 auto;
+    font-size: 1.2rem;
+    height: 150px;
+    max-width: 95vw;
   }
 }
 
 @media (max-width: 360px) {
   .rotating-text-body {
-    transform: scale(0.5);
-    margin: 0 auto;
+    font-size: 1rem;
+    height: 120px;
+    max-width: 98vw;
   }
 }
 

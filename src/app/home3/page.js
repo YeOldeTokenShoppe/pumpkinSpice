@@ -24,6 +24,7 @@ import HandsGLTFScene from "@/components/HandsGLTFScene";
 import CompactCandleModal from '@/components/CompactCandleModal';
 import FAQSection from '@/components/FAQSection';
 import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
+import FloatingBar from '@/components/FloatingBar';
 
 
 
@@ -1966,6 +1967,9 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
                 console.log('Candle created successfully');
               }}
             />
+            
+            {/* Floating Action Bar */}
+            <FloatingBar isMobile={isMobile} />
     </div>
     </>
   );

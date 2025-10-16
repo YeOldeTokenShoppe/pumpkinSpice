@@ -26,7 +26,7 @@ const RotatingText = ({ isDesktop = false }) => {
     const n3xt = (text, element) => {
       if (!element) return;
       if (element.dataset.animating === "true") return;
-      const sampleH = isDesktop ? 70 : 35;
+      const sampleH = isDesktop ? 70 : window.innerWidth <= 768 ? 50 : window.innerWidth <= 480 ? 40 : window.innerWidth <= 360 ? 30 : 35;
       const sampleT = element.textContent;
       const sampleNT = text;
       element.dataset.animating = "true";
