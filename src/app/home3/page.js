@@ -4,6 +4,7 @@ import { Canvas, useFrame, extend } from "@react-three/fiber";
 import { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper } from "@react-three/drei";
 import * as THREE from "three";
+// import { useControls } from "leva"; // Uncomment for GUI controls
 import DarkClouds from "../../components/Clouds";
 import PostProcessingEffects from "../../components/PostProcessingEffects";
 import { useFirestoreResults } from '../../utilities/useFirestoreResults';
@@ -157,20 +158,104 @@ const GradientSkyMaterial = shaderMaterial(
 
 extend({ GradientSkyMaterial });
 
+// Hemisphere Light Component
+function HemisphereLightComponent() {
+  // GUI Controls (commented out - uncomment to adjust lighting)
+  // const hemisphereLightControls = useControls('Hemisphere Light', {
+  //   skyColor: {
+  //     value: "#11c3f4c7",
+  //   },
+  //   groundColor: {
+  //     value: "#ff00cc",
+  //   },
+  //   intensity: {
+  //     value: 1.2,
+  //     min: 0,
+  //     max: 5,
+  //     step: 0.1,
+  //   },
+  // });
+  
+  // Hard-coded values
+  const lightingValues = {
+    skyColor: "#11c3f4c7",
+    groundColor: "#ff00cc",
+    intensity: 1.2,
+  };
+  
+  return (
+    <hemisphereLight 
+      skyColor={lightingValues.skyColor} 
+      groundColor={lightingValues.groundColor} 
+      intensity={lightingValues.intensity} 
+    />
+  );
+}
+
 // Spotlight Component
 function SpotlightComponent() {
   const spotlightRef = useRef();
   
+  // GUI Controls (commented out - uncomment to adjust lighting)
+  // const spotlightControls = useControls('Spotlight', {
+  //   position: {
+  //     value: [7.4, 28, 19.9],
+  //     step: 0.1,
+  //   },
+  //   color: "#ffac00",
+  //   angle: {
+  //     value: 0.02,
+  //     min: 0,
+  //     max: Math.PI / 2,
+  //     step: 0.01,
+  //   },
+  //   decay: {
+  //     value: 0.97,
+  //     min: 0,
+  //     max: 2,
+  //     step: 0.01,
+  //   },
+  //   distance: {
+  //     value: 300,
+  //     min: 0,
+  //     max: 1000,
+  //     step: 1,
+  //   },
+  //   penumbra: {
+  //     value: -0.3,
+  //     min: -1,
+  //     max: 1,
+  //     step: 0.01,
+  //   },
+  //   intensity: {
+  //     value: 77,
+  //     min: 0,
+  //     max: 1000,
+  //     step: 1,
+  //   },
+  // });
+  
+  // Hard-coded values
+  const lightingValues = {
+    position: [7.4, 28, 19.9],
+    color: "#ffac00",
+    angle: 0.02,
+    decay: 0.97,
+    distance: 300,
+    penumbra: -0.3,
+    intensity: 77,
+  };
+  
   return (
     <spotLight 
       ref={spotlightRef}
-      position={[27.4, -48, 19.9]} 
-      color="#ff0000" 
-      angle={0.15} 
-      decay={0.97} 
-      distance={300} 
-      penumbra={-0.3} 
-      intensity={400}
+      position={lightingValues.position} 
+      color={new THREE.Color(lightingValues.color)} 
+      angle={lightingValues.angle} 
+      decay={lightingValues.decay} 
+      distance={lightingValues.distance} 
+      penumbra={lightingValues.penumbra} 
+      intensity={lightingValues.intensity}
     />
   );
 }
@@ -666,6 +751,51 @@ export default function CloudTestPage() {
     return () => clearInterval(emojiInterval);
   }, []);
 
+  // Keyboard shortcut for copying lighting values (commented out - uncomment if using GUI controls)
+  // useEffect(() => {
+  //   const handleKeyDown = (event) => {
+  //     if ((event.ctrlKey || event.metaKey) && event.key === 'l') {
+  //       event.preventDefault();
+  //       copyAllLightingValues();
+  //     }
+  //   };
+
+  //   document.addEventListener('keydown', handleKeyDown);
+  //   return () => document.removeEventListener('keydown', handleKeyDown);
+  // }, []);
+
+  // Function to copy all lighting values (commented out - uncomment if using GUI controls)
+  // const copyAllLightingValues = () => {
+  //   const allValues = {
+  //     timestamp: new Date().toISOString(),
+  //     note: "Copy these values back into your React components",
+  //     lighting: {
+  //       spotlight: {
+  //         position: "[7.4, 28, 19.9]",
+  //         color: "#ffac00",
+  //         angle: 0.02,
+  //         decay: 0.97,
+  //         distance: 300,
+  //         penumbra: -0.3,
+  //         intensity: 77
+  //       },
+  //       hemisphereLight: {
+  //         skyColor: "#11c3f4c7",
+  //         groundColor: "#ff00cc", 
+  //         intensity: 1.2
+  //       },
+  //       cloudHemisphereLight: {
+  //         skyColor: "#f5f5f5",
+  //         groundColor: "#f2950b",
+  //         intensity: 1.5,
+  //         position: "[0, -20, -5]"
+  //       }
+  //     }
+  //   };
+  //   navigator.clipboard.writeText(JSON.stringify(allValues, null, 2));
+  //   console.log('All lighting values copied to clipboard');
+  // };
+
   // Sync showMusicControls with playing state
   useEffect(() => {
     if (contextIsPlaying && !showMusicControls) {
@@ -729,7 +859,7 @@ export default function CloudTestPage() {
         width: '100vw',
         height: '100vh',
         zIndex: 0,
-        pointerEvents: 'auto',
+        pointerEvents: 'none',
       }}>
         <Canvas
           camera={{ position: [0, -10, 40], fov: 40, near: 0.1, far: 300 }}
@@ -753,7 +883,7 @@ export default function CloudTestPage() {
 
           <ambientLight intensity={0.5} />
           {/* Sunset glow lighting */}
-          <hemisphereLight skyColor="#11c3f4c7" groundColor="#ff00ccff" intensity={1.2} />
+          <HemisphereLightComponent />
           <directionalLight 
             position={[-20, 10, -10]} 
             color="#ff50eec7" 
@@ -779,7 +909,7 @@ export default function CloudTestPage() {
               position={[0, 50 + scrollY * 0.015, 0]} 
               target={[3, -50 + scrollY * 0.015, -5]}
               color="#ffffee"
-              intensity={0.5}
+              intensity={1.5}
             />
             <Model scrollY={scrollY} isMobile={isMobile} onLoad={() => setModelLoaded(true)} />
             <ScrollClouds scrollY={scrollY} />
@@ -1028,6 +1158,39 @@ export default function CloudTestPage() {
         <div style={{ order: isMobileDevice ? 4 : 3 }}>
           <SocialBar is80sMode={is80sMode} />
         </div>
+        
+        {/* Global Copy Lighting Values Button (commented out - uncomment if using GUI controls) */}
+        {/* <div style={{ order: isMobileDevice ? 5 : 4 }}>
+          <button
+            onClick={copyAllLightingValues}
+            style={{
+              width: isMobileDevice ? "2.5rem" : "3.75rem",
+              height: isMobileDevice ? "2.5rem" : "3.75rem",
+              borderRadius: "0.5rem",
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              border: "2px solid rgba(255, 215, 0, 0.4)",
+              color: "#ffd700",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              backdropFilter: "blur(10px)",
+              boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
+            }}
+            title="Copy All Lighting Values (Ctrl/Cmd + L)"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255, 215, 0, 0.8)";
+              e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255, 215, 0, 0.4)";
+              e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+            }}
+          >
+            📋
+          </button>
+        </div> */}
       </div>
       )}
 
@@ -1446,32 +1609,16 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
                         position: "relative",
                         maxWidth: "1400px",
                         margin: "16rem auto",
-                 
+                        height: "300px", // Fixed container height
                       }}
                       className="desktop-rotating-text">
-                        <div
-                          style={{
-                            // position: "absolute",
-                            // top: 0,
-                            // left: 0,
-                            // right: 0,
-                            // bottom: 0,
-                            // backgroundImage: "url(/sacred.png)",
-                            // backgroundPosition: "90% 20%",
-                            // backgroundRepeat: "no-repeat",
-                            // backgroundSize: "100%",
-                            // opacity: 0.3,
-                            zIndex: 1,
-                          }}
-                        />
                         <div style={{ 
-                          position: "relative", 
-                          marginTop: "6rem",
+                          position: "absolute", 
                           top: "50%", 
                           left: "50%", 
                           transform: "translate(-50%, -50%)",
-                          zIndex: 2,
-                          width: isMobile ? "95%" : "80%",
+                          zIndex: 1,
+                          width: isMobile ? "95vw" : "80vw",
                           maxWidth: isMobile ? "none" : "600px",
                           height: "200px", // Fixed height to prevent layout shifts
                           display: "flex",
@@ -1799,6 +1946,17 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
         
         .leaderboard-scroll::-webkit-scrollbar-thumb:hover {
           background: rgba(212, 175, 55, 0.7);
+        }
+        
+        /* Simple Leva positioning fix */
+        [data-leva-root] {
+          top: 3rem !important;
+          z-index: 10000 !important;
+        }
+        
+        /* Make sure canvas doesn't interfere with GUI interactions */
+        canvas {
+          pointer-events: none !important;
         }
       `}</style>
        <CompactCandleModal 

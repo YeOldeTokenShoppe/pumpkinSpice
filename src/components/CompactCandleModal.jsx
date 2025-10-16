@@ -12,6 +12,7 @@ import { generatePrayer, getRemainingPrayers, PRAYER_PROMPTS } from '@/utilities
 import { useUser } from '@clerk/nextjs';
 import BurningEffect from './BurningEffect';
 import './CompactCandleModal.css';
+import { useFirestoreResults } from '@/utilities/useFirestoreResults';
 
 // Register GSAP plugin
 if (typeof window !== 'undefined') {
@@ -1083,6 +1084,17 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
 }
 
 export default function CompactCandleModal({ isOpen, onClose, onCandleCreated }) {
+  // Get top burners for Illumin80 qualification
+  const topBurners = useFirestoreResults("burnedAmount");
+  
+  // Calculate minimum amount for Illumin80 (8th place)
+  const getIllumin80Threshold = () => {
+    if (topBurners.length >= 8) {
+      return topBurners[7].burnedAmount; // 8th place (0-indexed)
+    }
+    return null; // Not enough data yet
+  };
+
   // Template configurations
   const templates = [
     { 
@@ -2388,7 +2400,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   maxLength={50}
                   required
                   style={{
-                    flex: '1.5',
+                    flex: '1',
                     padding: '10px',
                     borderRadius: '8px',
                     backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -2400,7 +2412,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 
                 {/* Amount - Right */}
                 <div style={{
-                  flex: '1',
+                  flex: '1.5',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
@@ -2416,6 +2428,58 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   }}>
                     RL80:
                   </span>
+                  
+                  {/* Illumin80 Info - Always visible */}
+                  <div style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    marginLeft: '5px'
+                  }}>
+                    <span 
+                      style={{
+                        fontSize: '12px',
+                        cursor: 'help',
+                        color: '#9ca3af',
+                        fontWeight: 'bold'
+                      }}
+                      title={`Illumin80: Exclusive status for top 8 burners${getIllumin80Threshold() ? ` (currently ${getIllumin80Threshold().toLocaleString()}+ RL80)` : '. Leaderboard loading...'}`}
+                    >
+                      ℹ️
+                    </span>
+                  </div>
+                  
+                  {/* Qualification Status - Only show crown when qualified */}
+                  {(() => {
+                    const threshold = getIllumin80Threshold();
+                    const currentAmount = parseInt(formData.burnedAmount) || 0;
+                    
+                    if (!threshold || !currentAmount || currentAmount === 0) return null;
+                    
+                    const wouldQualify = currentAmount >= threshold;
+                    
+                    // Only show icon if they qualify
+                    if (!wouldQualify) return null;
+                    
+                    return (
+                      <div style={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        marginLeft: '5px'
+                      }}>
+                        <span 
+                          style={{
+                            fontSize: '12px',
+                            cursor: 'help',
+                            color: '#10b981',
+                            fontWeight: 'bold'
+                          }}
+                          title={`✅ Qualifies for Illumin80! Your ${currentAmount.toLocaleString()} RL80 meets the top 8 threshold of ${threshold.toLocaleString()}`}
+                        >
+                          👑
+                        </span>
+                      </div>
+                    );
+                  })()}
                   <input
                     type="text"
                     name="burnedAmount"
@@ -2499,6 +2563,46 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 </div>
               </div>
 
+              {/* Illumin80 Explanation */}
+              {(() => {
+                const threshold = getIllumin80Threshold();
+                const currentAmount = parseInt(formData.burnedAmount) || 0;
+                
+                return (
+                  <div style={{
+                    margin: '12px 0',
+                    padding: '10px 12px',
+                    backgroundColor: 'rgba(212, 175, 55, 0.05)',
+                    border: '1px solid rgba(212, 175, 55, 0.2)',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    lineHeight: '1.4'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                      <span style={{ color: '#d4af37', fontSize: '14px' }}>✨</span>
+                      <strong style={{ color: '#d4af37' }}>Illumin80 Status</strong>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '11px' }}>
+                      The top 8 burners earn exclusive Illumin80 status with special privileges and recognition. 
+                      {threshold ? (
+                        <>
+                          <br />
+                          <span style={{ color: '#fbbf24' }}>Current threshold: {threshold.toLocaleString()} RL80</span>
+                          {currentAmount > 0 && currentAmount >= threshold && (
+                            <span style={{ color: '#10b981', fontWeight: 'bold' }}> - You qualify! 👑</span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <br />
+                          <span style={{ color: '#9ca3af' }}>Loading current threshold...</span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* AI Generation Panel */}
               {showAIPanel && (
@@ -3318,6 +3422,80 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       <p><strong>Name:</strong> {formData.username}</p>
                       <p><strong>Amount:</strong> {formData.burnedAmount ? formatNumberWithCommas(formData.burnedAmount) : '0'}</p>
                       <p><strong>Message:</strong> {formData.message.substring(0, 50)}{formData.message.length > 50 ? '...' : ''}</p>
+                      
+                      {/* Illumin80 Qualification Status */}
+                      {(() => {
+                        const threshold = getIllumin80Threshold();
+                        const currentAmount = parseInt(formData.burnedAmount) || 0;
+                        
+                        if (!threshold || currentAmount === 0) return null;
+                        
+                        const wouldQualify = currentAmount >= threshold;
+                        const needsMore = threshold - currentAmount;
+                        
+                        if (wouldQualify) {
+                          return (
+                            <div style={{
+                              marginTop: '15px',
+                              padding: '12px',
+                              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              borderRadius: '8px',
+                              color: '#10b981'
+                            }}>
+                              <p style={{ margin: 0, fontWeight: 'bold', fontSize: '14px' }}>
+                                👑 <strong>Illumin80 Qualified!</strong>
+                              </p>
+                              <p style={{ margin: '5px 0 0 0', fontSize: '12px', opacity: 0.9 }}>
+                                Your burn qualifies you for exclusive Illumin80 status - the top 8 burners with special privileges and recognition in our community!
+                              </p>
+                            </div>
+                          );
+                        } else if (needsMore > 0 && needsMore <= currentAmount * 2) {
+                          // Only show suggestion if they're reasonably close (within 2x their current amount)
+                          return (
+                            <div style={{
+                              marginTop: '15px',
+                              padding: '12px',
+                              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                              border: '1px solid rgba(245, 158, 11, 0.3)',
+                              borderRadius: '8px',
+                              color: '#f59e0b'
+                            }}>
+                              <p style={{ margin: 0, fontWeight: 'bold', fontSize: '14px' }}>
+                                💡 <strong>Almost Illumin80!</strong>
+                              </p>
+                              <p style={{ margin: '5px 0', fontSize: '12px', opacity: 0.9 }}>
+                                Burn {needsMore.toLocaleString()} more RL80 to join the exclusive Illumin80 - the top 8 burners with special privileges and community recognition.
+                              </p>
+                              <button
+                                onClick={() => {
+                                  setFormData(prev => ({ ...prev, burnedAmount: threshold }));
+                                  setCurrentStep('form'); // Go back to form to see the updated amount
+                                }}
+                                style={{
+                                  background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+                                  color: '#000',
+                                  border: 'none',
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  marginTop: '8px',
+                                  transition: 'transform 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                              >
+                                Update to {threshold.toLocaleString()} RL80
+                              </button>
+                            </div>
+                          );
+                        }
+                        
+                        return null;
+                      })()}
                     </div>
                     
                     {/* Removed social sharing - will show after successful save */}

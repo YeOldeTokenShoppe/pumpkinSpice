@@ -10,18 +10,47 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { random } from "maath";
 import dynamic from "next/dynamic";
+// import { useControls } from "leva"; // Uncomment for GUI controls
 
 // Create context for sharing lightning effects
 const lightningContext = createContext();
 
 // Hemisphere Light without Helper
 function HemisphereLightComponent() {
+  // GUI Controls (commented out - uncomment to adjust lighting)
+  // const cloudHemisphereLightControls = useControls('Cloud Hemisphere Light', {
+  //   skyColor: {
+  //     value: "#f5f5f5",
+  //   },
+  //   groundColor: {
+  //     value: "#f2950b",
+  //   },
+  //   intensity: {
+  //     value: 1.5,
+  //     min: 0,
+  //     max: 5,
+  //     step: 0.1,
+  //   },
+  //   position: {
+  //     value: [0, -20, -5],
+  //     step: 0.1,
+  //   },
+  // });
+  
+  // Hard-coded values
+  const lightingValues = {
+    skyColor: "#f5f5f5",
+    groundColor: "#f2950b",
+    intensity: 1.5,
+    position: [0, -20, -5],
+  };
+  
   return (
     <hemisphereLight 
-      skyColor="#f5f5f5" 
-      groundColor="#e12db7" 
-      intensity={1.3} 
-      position={[0, -20, -5]}
+      skyColor={lightingValues.skyColor} 
+      groundColor={lightingValues.groundColor} 
+      intensity={lightingValues.intensity} 
+      position={lightingValues.position}
     />
   );
 }
