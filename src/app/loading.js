@@ -1,6 +1,6 @@
 "use client";
 
-import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
+import CoinLoader from '@/components/CoinLoader';
 import { useEffect } from 'react';
 
 export default function Loading() {
@@ -21,7 +21,7 @@ export default function Loading() {
       alignItems: 'center',
       justifyContent: 'center'
     }}>
-      <SimpleInfinityLoader />
+      <CoinLoader loading={true} />
     </div>
   );
 }

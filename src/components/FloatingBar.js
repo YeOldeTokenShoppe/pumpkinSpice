@@ -60,6 +60,13 @@ const FloatingBar = ({ isMobile = false }) => {
         }}>$0.0048</span></div>
       </div>
       
+      {/* Button container for mobile side-by-side layout */}
+      <div style={{
+        display: 'flex',
+        gap: isMobile ? '15px' : '20px',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
       <button
         onClick={handleBuyClick}
         style={{
@@ -111,6 +118,7 @@ const FloatingBar = ({ isMobile = false }) => {
       >
         STAKE
       </button>
+      </div>
 
       <style jsx>{`
         @keyframes slideUp {

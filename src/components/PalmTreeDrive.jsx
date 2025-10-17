@@ -21,50 +21,36 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Define text blocks for transitions
 const textBlocks = [
-  [
-    "cruising through neon dreams",
-    "where palm trees meet",
-    "electric skies",
-    "and memories blur",
-    "into synthetic sunsets",
-    "forever driving",
-    // "through digital paradise"
+[
+    "join the ride",
+    "stake your tokens",
+    "rewards on autopilot",
+    "tokenomics in motion"
   ],
   [
-    "beneath the static",
-    "voices from another time",
-    "echo through circuits",
-    "searching for meaning",
-    "in silicon valleys",
-    "where futures past",
-    // "never sleep"
+    "cruising toward 500k",
+    "liquidity in the tank",
+    "foundation for the journey",
+    "we accelerate"
   ],
   [
-    "chrome reflections dance",
-    "on midnight highways",
-    "leading nowhere",
-    "and everywhere at once",
-    "chasing ghosts",
-    "in rearview mirrors",
-    // "of tomorrow"
+    "goals in the rearview",
+    "buybacks engage",
+    "smoothing the ride",
+    "through every dip and climb"
   ],
   [
-    "she watches over",
-    "this endless road",
-    "guardian of lost souls",
-    "in electric twilight",
-    "where faith meets code",
-    "and prayers become",
-    // "digital whispers"
+    "CEX listing ahead",
+    "taxes drop to zero",
+    "frictionless trading",
+    "across digital highways"
   ],
   [
-    "here at the end",
-    "or the beginning",
-    "time dissolves",
-    "into pixels and light",
-    "a sacred moment",
-    "forever preserved",
-    // "in synthetic amber"
+    "the road ahead:",
+    "one thousand holders",
+    "five thousand, ten..",
+    "you're not alone",
+    "on this dream ride"
   ]
 ];
 

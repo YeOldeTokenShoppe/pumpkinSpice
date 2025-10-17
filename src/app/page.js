@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
+import CoinLoader from '@/components/CoinLoader';
 import PalmTreeDrive from '@/components/PalmTreeDrive';
 import { useMusic } from '@/components/MusicContext';
 import Link from 'next/link';
@@ -111,7 +111,7 @@ export default function Home() {
           backgroundColor: '#000',
           zIndex: 9999
         }}>
-          <SimpleInfinityLoader />
+          <CoinLoader loading={isSceneLoading} />
         </div>
       )}
       

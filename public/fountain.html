@@ -1784,7 +1784,19 @@
 					uniforms: {
 						color: { value: new THREE.Color(0xffffff) },
 						opacity: { value: 0.3 },
-						pointTexture: { value: new THREE.TextureLoader().load('/cloud.png') }
+						pointTexture: { value: new THREE.TextureLoader().load('/cloud.png', 
+							() => {
+								assetsToLoad.cloudTexture = true;
+								console.log('[Fountain] Cloud texture loaded');
+								checkAllAssetsLoaded();
+							},
+							undefined,
+							(error) => {
+								console.error('[Fountain] Error loading cloud texture:', error);
+								assetsToLoad.cloudTexture = true; // Mark as loaded anyway to not block
+								checkAllAssetsLoaded();
+							}
+						) }
 					},
 					vertexShader: `
 						attribute float size;
@@ -1914,6 +1926,28 @@
 			let isLoading = true;
 			let loadingProgress = 0;
 			let fountainModelLoaded = false;
+			
+			// Asset loading tracker
+			const assetsToLoad = {
+				fountainModel: false,
+				cloudTexture: false,
+				alphaMask: false,
+				envMap: false
+			};
+			
+			function checkAllAssetsLoaded() {
+				const loadedAssets = Object.entries(assetsToLoad).filter(([key, value]) => value === true);
+				const totalAssets = Object.keys(assetsToLoad).length;
+				console.log(`[Fountain] Assets loaded: ${loadedAssets.length}/${totalAssets}`, assetsToLoad);
+				
+				const allLoaded = Object.values(assetsToLoad).every(loaded => loaded === true);
+				if (allLoaded && !hasCheckedModelLoading) {
+					console.log('[Fountain] ✅ All assets loaded successfully, hiding loader and sending ready signal');
+					hideLoader();
+					hasCheckedModelLoading = true;
+				}
+				return allLoaded;
+			}
 
 			// Function to update loading progress
 			function updateLoadingProgress(progress) {
@@ -2393,7 +2427,20 @@
                 }
                 // --- END NEW ---
 
-				const env = await rgbeLoader.loadAsync( 'blouberg_sunrise_2_1k.hdr' );
+				const env = await rgbeLoader.loadAsync( 'blouberg_sunrise_2_1k.hdr' ).then(
+					(texture) => {
+						console.log('[Fountain] Environment map loaded');
+						assetsToLoad.envMap = true;
+						checkAllAssetsLoaded();
+						return texture;
+					},
+					(error) => {
+						console.error('[Fountain] Error loading environment map:', error);
+						assetsToLoad.envMap = true; // Mark as loaded anyway to not block
+						checkAllAssetsLoaded();
+						throw error;
+					}
+				);
 				env.mapping = THREE.EquirectangularReflectionMapping;
 				scene.environment = env; // Keep HDR for reflections
 				scene.environmentIntensity = 1.15; // Slightly reduced for better balance with new background
@@ -2562,8 +2609,10 @@
 						scene.add( fountainModel );
 						console.log("Fountain model loaded and added.");
 						
-						// Mark model as loaded but don't hide loader yet
+						// Mark model as loaded
 						fountainModelLoaded = true;
+						assetsToLoad.fountainModel = true;
+						checkAllAssetsLoaded();
 
 					},
 					// Called while loading is progressing
@@ -2641,17 +2690,24 @@
 				updateLoadingProgress(100);
 				isLoading = false;
 				
-				// Don't hide loader immediately - wait for model to be fully rendered
-				console.log('[Fountain] Checking if fountain model is loaded:', fountainModelLoaded);
+				// Check if all assets are already loaded (in case they loaded synchronously or very quickly)
+				console.log('[Fountain] Initial asset check:', assetsToLoad);
+				checkAllAssetsLoaded();
 				
-				// Fallback timer to ensure loader doesn't stay forever
+				// Keep a reasonable fallback timer just in case
 				setTimeout(() => {
 					if (!hasCheckedModelLoading) {
-						console.log('[Fountain] Fallback timer triggered - forcing loader to hide');
-						hideLoader();
-						hasCheckedModelLoading = true;
+						console.log('[Fountain] Fallback timer - checking assets:', assetsToLoad);
+						// Force all assets as loaded if still waiting
+						Object.keys(assetsToLoad).forEach(key => {
+							if (!assetsToLoad[key]) {
+								console.warn(`[Fountain] Asset ${key} not loaded, forcing as complete`);
+								assetsToLoad[key] = true;
+							}
+						});
+						checkAllAssetsLoaded();
 					}
-				}, 8000); // 8 seconds fallback to match other components
+				}, 10000); // 10 seconds fallback
 
 				// Enable 80s mode if it was set via URL parameter
 				if (is80sMode) {
@@ -2671,13 +2727,18 @@
 				const alphaMaskTexture = textureLoader.load('/octagon.png',
 					(texture) => {
 						console.log("Alpha mask loaded successfully.");
+						assetsToLoad.alphaMask = true;
+						checkAllAssetsLoaded();
 						// Optional: Configure texture wrapping/filtering if needed
 						// texture.wrapS = THREE.ClampToEdgeWrapping;
 						// texture.wrapT = THREE.ClampToEdgeWrapping;
 					},
 					undefined, // onProgress callback (optional)
 					(err) => {
-						console.error("Error loading alpha mask texture:", err);					}
+						console.error("Error loading alpha mask texture:", err);
+						assetsToLoad.alphaMask = true; // Mark as loaded anyway to not block
+						checkAllAssetsLoaded();
+					}
 				);
 				// --- END NEW ---
 
@@ -3569,19 +3630,7 @@
 				const deltaTime = Math.min((currentTime - lastTime) * 0.001, 0.1); // Convert to seconds, cap at 0.1s
 				lastTime = currentTime;
 				
-				// Check if fountain model is actually rendered - only once
-				if (fountainModelLoaded && !hasCheckedModelLoading && isLoading === false) {
-					// Check if model is visible in the scene by looking for its bounding box
-					const fountainInScene = scene.children.find(child => 
-						child.type === 'Group' && child.children.length > 0
-					);
-					
-					if (fountainInScene) {
-						console.log('[Fountain] Model fully loaded and rendered, hiding loader');
-						hideLoader();
-						hasCheckedModelLoading = true;
-					}
-				}
+				// No need to check in animation loop anymore - assets are tracked properly
 				
 				fallingWaterUniforms.iTime.value = performance.now() / 1000.0; // Pass time in seconds
                 // --- END NEW ---

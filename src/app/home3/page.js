@@ -23,7 +23,7 @@ import '@/components/RotatingText.css';
 import HandsGLTFScene from "@/components/HandsGLTFScene";
 import CompactCandleModal from '@/components/CompactCandleModal';
 import FAQSection from '@/components/FAQSection';
-import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
+import CoinLoader from '@/components/CoinLoader';
 import FloatingBar from '@/components/FloatingBar';
 
 
@@ -840,7 +840,7 @@ export default function CloudTestPage() {
   return (
     <>
       {/* Loading Screen */}
-      <SimpleInfinityLoader loading={isSceneLoading} />
+      <CoinLoader loading={isSceneLoading} />
       
       <div style={{ 
         width: '100vw', 

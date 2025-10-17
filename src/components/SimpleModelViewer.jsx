@@ -13,10 +13,9 @@ import {
 import { BlendFunction, GlitchMode } from "postprocessing";
 import * as THREE from 'three';
 import Chart from 'chart.js/auto';
-import SimpleInfinityLoader from '@/components/SimpleInfinityLoader';
 import PostProcessingEffects from './PostProcessingEffects';
 import '../app/globals.css';
-
+import CoinLoader from '@/components/CoinLoader';
 function createChartTexture(data, chartType = 'line', label = '') {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
@@ -494,7 +493,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
   
   useEffect(() => {
     // Play multiple animations simultaneously
-    const animationsToPlay = ['Experiment', 'HaloRotation', 'writing', 'Animation'];
+    const animationsToPlay = ['Experiment', 'HaloRotation', 'escrire', 'Animation'];
     
     if (actions && Object.keys(actions).length > 0) {
       // Play each animation if it exists
@@ -518,11 +517,11 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
       // Play writing animation on Armature.001 if it exists
       if (scene) {
         const armature001 = scene.getObjectByName('Armature.001');
-        if (armature001 && actions['writing']) {
+        if (armature001 && actions['escrire']) {
           console.log('Found Armature.001, playing writing animation');
-          actions['writing'].play();
-          actions['writing'].setLoop(THREE.LoopRepeat);
-          actions['writing'].timeScale = 1;
+          actions['escrire'].play();
+          actions['escrire'].setLoop(THREE.LoopRepeat);
+          actions['escrire'].timeScale = 1;
         }
         
         // Play Animation on Flame object if it exists
@@ -921,7 +920,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           zIndex: 9999,
           background: '#000000'
         }}>
-          <SimpleInfinityLoader />
+          <CoinLoader />
         </div>
       )}
       
@@ -989,14 +988,16 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 }}>
                   <p style={{
                     color: '#d4af37',
-                    fontFamily: 'Georgia, serif',
-                    fontSize: '1rem',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                fontWeight: 400,
+                letterSpacing: '0.02em',
+
                     lineHeight: 1.6,
                     margin: 0,
                     textAlign: 'center',
                     textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
                   }}>
-                  Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
+                  Here you can find the works of devout RL80 devotee, Saint GR80, the anachronistic android, mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
       
                   </p>
                 </div>
