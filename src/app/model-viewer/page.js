@@ -93,7 +93,7 @@ export default function ModelViewerPage() {
       />
       
       {/* Top Controls Container - All buttons together */}
-      {false && !isPageLoading && (
+      {!isPageLoading && (
       <div
         style={{
           position: "fixed",
