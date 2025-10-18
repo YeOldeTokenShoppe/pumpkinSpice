@@ -25,6 +25,8 @@ import CompactCandleModal from '@/components/CompactCandleModal';
 import FAQSection from '@/components/FAQSection';
 import CoinLoader from '@/components/CoinLoader';
 import FloatingBar from '@/components/FloatingBar';
+import TokenomicsSection from '@/components/TokenomicsSection';
+import Illumin80Bouncer from '@/components/Illumin80Bouncer';
 
 
 
@@ -33,6 +35,7 @@ const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2 }) => 
   const [count, setCount] = useState(0);
   const countRef = useRef(null);
   const isInView = useInView(countRef, { once: true });
+  
   
   
   useEffect(() => {
@@ -315,17 +318,7 @@ function StatsSection({ isMobile }) {
   ];
 
   return (
-    <motion.div
-      ref={statsRef}
-      initial={{ opacity: 0 }}
-      animate={isInView ? { opacity: 1 } : {}}
-      transition={{ duration: 0.8, delay: 0.4 }}
-      style={{
-        padding: isMobile ? '3rem 1.5rem' : '4rem 2rem',
-        maxWidth: '1200px',
-        margin: '3rem auto',
-      }}
-    >
+    <div ref={statsRef}>
       {/* Modern Cards Grid */}
       <div style={{
         display: 'grid',
@@ -411,7 +404,7 @@ function StatsSection({ isMobile }) {
           </motion.div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -719,6 +712,16 @@ export default function CloudTestPage() {
     }
   }, [fontLoaded, modelLoaded]);
 
+  // Load Pirata One font
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Pirata+One&display=swap';
+    link.rel = 'stylesheet';
+    if (!document.querySelector('link[href*="Pirata+One"]')) {
+      document.head.appendChild(link);
+    }
+  }, []);
+
   // Initialize state
   useEffect(() => {
     setMounted(true);
@@ -841,7 +844,8 @@ export default function CloudTestPage() {
     <>
       {/* Loading Screen */}
       <CoinLoader loading={isSceneLoading} />
-      
+
+          
       <div style={{ 
         width: '100vw', 
         background: 'transparent', 
@@ -1337,29 +1341,435 @@ export default function CloudTestPage() {
           </motion.div>
         </motion.div>
 
-        {/* Stats Section */}
-        <StatsSection isMobile={isMobile} />
+        {/* Combined Token Information Section */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          style={{
+            position: 'relative',
+            margin: '4rem auto',
+            width: isMobile ? '95%' : '90%',
+            maxWidth: '1200px',
+            zIndex: 1,
+            pointerEvents: 'auto'
+          }}
+        >
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.3)',
+            border: '1px solid rgba(255, 215, 0, 0.2)',
+            borderRadius: '30px',
+            padding: isMobile ? '30px 20px' : '40px',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            
+            {/* Glow effect */}
+            <div style={{
+              content: '',
+              position: 'absolute',
+              top: '-50%',
+              left: '-50%',
+              width: '200%',
+              height: '200%',
+              background: 'radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%)',
+              animation: 'statsRotate 30s linear infinite',
+              zIndex: 0
+            }} />
+
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              {/* Section Header */}
+              <div style={{
+                textAlign: 'center',
+                marginBottom: '40px'
+              }}>
+                <h1 style={{
+                  fontFamily: "'UnifrakturCook', serif",
+                  fontSize: isMobile ? '2rem' : '3.5rem',
+                  fontWeight: '800',
+                  background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  marginBottom: '8px'
+                }}>
+                  To<span style={{fontFamily: "'Pirata One', serif"}}>k</span>enomics 
+                </h1>
+                
+                <p style={{
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  fontSize: '1em'
+                }}>
+                  𝓞𝖚𝖗 𝕷𝖆𝖉𝖞 𝔬𝔣 𝕻𝖊𝖗𝖕𝖊𝖙𝖚𝖆𝖑 𝕻𝖗𝖔𝖋𝖎𝖙 (RL80)
+                </p>
+              </div>
+
+              {/* Stats Cards */}
+              <div style={{ marginBottom: '50px' }}>
+                <StatsSection isMobile={isMobile} />
+              </div>
+
+              {/* Tokenomics Content */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '350px 1fr',
+                gap: isMobile ? '30px' : '40px',
+                alignItems: 'start'
+              }}>
+                {/* Left Side - Pie Chart */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center'
+                }}>
+                  <div style={{
+                    position: 'relative',
+                    marginBottom: '30px'
+                  }}>
+                    <div style={{
+                      position: 'relative',
+                      width: isMobile ? '240px' : '280px',
+                      height: isMobile ? '240px' : '280px',
+                      margin: '0 auto'
+                    }}>
+                      {/* Pie Chart */}
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        background: `conic-gradient(
+                          from 0deg,
+                          #FFD700 0deg 306deg,
+                          #4CAF50 306deg 342deg,
+                          #2196F3 342deg 360deg
+                        )`,
+                        position: 'relative',
+                        filter: 'drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5))'
+                      }}>
+                        {/* Center circle with text */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: isMobile ? '120px' : '140px',
+                          height: isMobile ? '120px' : '140px',
+                          borderRadius: '50%',
+                          background: '#0a0a0a',
+                          border: '2px solid rgba(255,215,0,0.3)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <div style={{
+                            fontSize: isMobile ? '2em' : '2.5em',
+                            fontWeight: '800',
+                            color: '#FFD700',
+                            lineHeight: '1'
+                          }}>
+                            80B
+                          </div>
+                          <div style={{
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            fontSize: isMobile ? '0.7em' : '0.8em',
+                            textTransform: 'uppercase',
+                            letterSpacing: '1px'
+                          }}>
+                            Total Supply
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* External labels */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '5%',
+                        right: '-25px',
+                        padding: '8px 12px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        borderRadius: '8px',
+                        border: '1px solid #FFD700',
+                        backdropFilter: 'blur(10px)'
+                      }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: '#FFD700',
+                          marginBottom: '2px'
+                        }}>
+                          85%
+                        </div>
+                        <div style={{
+                          fontSize: '11px',
+                          color: 'rgba(255,255,255,0.9)',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Liquidity Pool
+                        </div>
+                      </div>
+                      
+                      <div style={{
+                        position: 'absolute',
+                        top: '5%',
+                        left: '-15px',
+                        padding: '8px 12px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        borderRadius: '8px',
+                        border: '1px solid #4CAF50',
+                        backdropFilter: 'blur(10px)'
+                      }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: '#4CAF50',
+                          marginBottom: '2px'
+                        }}>
+                          10%
+                        </div>
+                        <div style={{
+                          fontSize: '11px',
+                          color: 'rgba(255,255,255,0.9)',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Treasury
+                        </div>
+                      </div>
+                      
+                      <div style={{
+                        position: 'absolute',
+                        top: '-20%',
+                        left: '35%',
+                        padding: '8px 12px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        borderRadius: '8px',
+                        border: '1px solid #2196F3',
+                        backdropFilter: 'blur(10px)'
+                      }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: '#2196F3',
+                          marginBottom: '2px'
+                        }}>
+                          5%
+                        </div>
+                        <div style={{
+                          fontSize: '11px',
+                          color: 'rgba(255,255,255,0.9)',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Marketing / CEX
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Distribution Label */}
+                    <div style={{
+                      textAlign: 'center',
+                      marginTop: '20px'
+                    }}>
+                      <div style={{
+                        fontSize: '1.1em',
+                        fontWeight: '600',
+                        color: '#FFD700',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px'
+                      }}>
+                        Distribution
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Right Side - Tax Structure */}
+                <div style={{
+                  display: 'grid',
+                  gap: '25px'
+                }}>
+                  {/* Tax Structure Box */}
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 215, 0, 0.2)',
+                    borderRadius: '20px',
+                    padding: '25px'
+                  }}>
+                    <h2 style={{
+                      fontSize: '1.3em',
+                      fontWeight: '700',
+                      marginBottom: '20px',
+                      color: '#FFD700',
+                      textAlign: 'center',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px'
+                    }}>
+                      Tax Structure
+                    </h2>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-around',
+                      marginBottom: '25px'
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{
+                          fontSize: '3em',
+                          fontWeight: '800',
+                          background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          lineHeight: '1'
+                        }}>
+                          4%
+                        </div>
+                        <div style={{
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          fontSize: '0.9em',
+                          marginTop: '5px'
+                        }}>
+                          Buy / Sell Tax
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+                      gap: '15px'
+                    }}>
+                      <div style={{
+                        background: 'rgba(255, 215, 0, 0.05)',
+                        border: '1px solid rgba(255, 215, 0, 0.2)',
+                        borderRadius: '12px',
+                        padding: '15px',
+                        textAlign: 'center',
+                        transition: 'all 0.3s ease'
+                      }}>
+                        <div style={{ fontSize: '2em', marginBottom: '8px' }}>🕯️</div>
+                        <div style={{
+                          fontSize: '1.5em',
+                          fontWeight: '700',
+                          color: '#FFD700',
+                          marginBottom: '5px'
+                        }}>
+                          2%
+                        </div>
+                        <div style={{
+                          fontSize: '0.8em',
+                          color: 'rgba(255, 255, 255, 0.7)'
+                        }}>
+                          Staking Rewards
+                        </div>
+                      </div>
+                      
+                      <div style={{
+                        background: 'rgba(255, 215, 0, 0.05)',
+                        border: '1px solid rgba(255, 215, 0, 0.2)',
+                        borderRadius: '12px',
+                        padding: '15px',
+                        textAlign: 'center',
+                        transition: 'all 0.3s ease'
+                      }}>
+                        <div style={{ fontSize: '2em', marginBottom: '8px' }}>💧</div>
+                        <div style={{
+                          fontSize: '1.5em',
+                          fontWeight: '700',
+                          color: '#FFD700',
+                          marginBottom: '5px'
+                        }}>
+                          1.5%
+                        </div>
+                        <div style={{
+                          fontSize: '0.8em',
+                          color: 'rgba(255, 255, 255, 0.7)'
+                        }}>
+                          Auto-Liquidity
+                        </div>
+                      </div>
+                      
+                      <div style={{
+                        background: 'rgba(255, 215, 0, 0.05)',
+                        border: '1px solid rgba(255, 215, 0, 0.2)',
+                        borderRadius: '12px',
+                        padding: '15px',
+                        textAlign: 'center',
+                        transition: 'all 0.3s ease'
+                      }}>
+                        <div style={{ fontSize: '2em', marginBottom: '8px' }}>📢</div>
+                        <div style={{
+                          fontSize: '1.5em',
+                          fontWeight: '700',
+                          color: '#FFD700',
+                          marginBottom: '5px'
+                        }}>
+                          0.5%
+                        </div>
+                        <div style={{
+                          fontSize: '0.8em',
+                          color: 'rgba(255, 255, 255, 0.7)'
+                        }}>
+                          Marketing
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Additional content sections */}
 
-         <div style={{
-                                position: "relative",
-                                margin: "2rem auto 5rem auto",
-                                width: isMobile ? "90%" : "80%",
-                                maxWidth: "1400px",
-                                display: "grid",
-                                gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.6fr) minmax(0, 0.4fr)", // Stack on mobile, 60% hands scene, 40% text on desktop
-                                gap: isMobile ? "2rem" : "3rem",
-                                alignItems: "center",
-                                padding: isMobile ? '2rem 1.5rem' : '3rem 2rem',
-                                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(212, 175, 55, 0.05) 100%)',
-                                backdropFilter: 'blur(12px)',
-                                borderRadius: '25px',
-                                border: '2px solid rgba(212, 175, 55, 0.4)',
-                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1)',
-                                color: '#ffffff',
-                                gridColumn: '1 / -1'
-                              }}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          style={{
+            position: 'relative',
+            margin: '4rem auto',
+            width: isMobile ? '95%' : '90%',
+            maxWidth: '1200px',
+            zIndex: 1,
+            pointerEvents: 'auto'
+          }}
+        >
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.3)',
+            border: '1px solid rgba(255, 215, 0, 0.2)',
+            borderRadius: '30px',
+            padding: isMobile ? '30px 20px' : '40px',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            
+            {/* Glow effect */}
+            <div style={{
+              content: '',
+              position: 'absolute',
+              top: '-50%',
+              left: '-50%',
+              width: '200%',
+              height: '200%',
+              background: 'radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%)',
+              animation: 'handsRotate 30s linear infinite',
+              zIndex: 0
+            }} />
+
+            <div style={{
+              position: "relative",
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.6fr) minmax(0, 0.4fr)",
+              gap: isMobile ? "2rem" : "3rem",
+              alignItems: "center",
+              color: '#ffffff',
+              zIndex: 1
+            }}>
                                
                               <div style={{
                           height: isMobile ? '50vh' : '70vh',
@@ -1423,11 +1833,13 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
               <div style={{
                 margin: '2rem 0',
                 padding: '1.5rem',
-                background: 'rgba(212, 175, 55, 0.1)',
-                border: '2px solid rgba(212, 175, 55, 0.3)',
+                background: 'rgba(0, 0, 0, 0.4)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
                 borderRadius: '15px',
                 color: '#ffffff',
                 fontFamily: "'Inter', sans-serif",
+                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
               }}>
                 <h3 style={{
                   fontSize: isMobile ? '1.2rem' : '1.4rem',
@@ -1576,7 +1988,127 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
                
            
                     </div>
-                        </div>
+            </div>
+          </div>
+
+        </motion.div>
+
+        {/* Illumin80 Bouncer Section - 2 Column Layout */}
+        <div style={{
+          position: 'relative',
+          margin: '4rem auto 4rem auto',
+          width: isMobile ? '95%' : '90%',
+          maxWidth: '1200px',
+          zIndex: 1,
+          pointerEvents: 'auto'
+        }}>
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.3)',
+            border: '1px solid rgba(255, 215, 0, 0.2)',
+            borderRadius: '30px',
+            padding: isMobile ? '30px 20px' : '40px',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            position: 'relative'
+          }}>
+            <div style={{
+              position: "relative",
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+              gap: isMobile ? "2rem" : "3rem",
+              alignItems: "center",
+              color: '#ffffff',
+              zIndex: 1
+            }}>
+              {/* Left Column - Bouncer */}
+              <div style={{
+                display: "flex",
+                alignItems: "flex-end",
+                justifyContent: "center",
+                position: "relative",
+                minHeight: "500px"
+              }}>
+                <Illumin80Bouncer />
+              </div>
+              
+              {/* Right Column - Illumin80 Perks */}
+              <div style={{
+                padding: '0 1rem',
+                color: '#ffffff',
+                textAlign: 'center'
+              }}>
+                   <h1 style={{
+              fontSize: '3.5rem',
+              marginBottom: '1rem',
+              color: '#d4af37',
+              fontFamily: 'UnifrakturCook, serif',
+              textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
+            }}>Join the Illumin80</h1>
+                
+                <p style={{
+                                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+
+                  fontSize: '1.2rem',
+                  marginBottom: '1.5rem',
+                  lineHeight: 1.6,
+                  color: '#ffffff',
+                  opacity: 0.9
+                }}>
+                  Burn RL80 tokens to join the top 80 holders and unlock exclusive benefits.
+                </p>
+                
+                <ul style={{
+                  fontSize: '1.1rem',
+                  lineHeight: 1.8,
+                  color: '#ffffff',
+                  listStyle: 'none',
+                  paddingLeft: '0'
+                }}>
+                  <li style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
+                    Access to the Moon Room
+                  </li>
+                  <li style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
+                    Staking rewards of 2.5% of all taxes
+                  </li>
+                  {/* <li style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🌙</span>
+                    Divine blessings
+                  </li> */}
+                </ul>
+
+                <button 
+                  onClick={() => setIsModalOpen(true)}
+                  style={{
+                    marginTop: '1.5rem',
+                    padding: '12px 24px',
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    color: '#000',
+                    background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
+                  }}
+                >
+                  Light a Candle
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
                         <div style={{position: 'relative', zIndex: 1, marginTop: '2rem', marginBottom: '7rem'}}>
                          <div ref={secondTitleRef} style={{
                                   textAlign: 'center',
@@ -1595,16 +2127,9 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
                         </div>
                                  </div>
 
-        <div style={{
-          position: 'relative',
-          zIndex: 50,
-          margin: '0 auto 4rem auto',
-          width: isMobile ? '90%' : '80%',
-          maxWidth: '1400px',
-          pointerEvents: 'auto'
-        }}>
-          <FAQSection />
-        </div>
+
+
+        <FAQSection isMobile={isMobile} />
 
          <div style={{
                         position: "relative",
@@ -1730,7 +2255,6 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
       </footer>
 
       </motion.div>
-      
 
       {/* Add spinning record CSS and fonts */}
       <style jsx global>{`
@@ -1793,6 +2317,16 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+
+        @keyframes handsRotate {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        @keyframes statsRotate {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
         
         .spinning-record {

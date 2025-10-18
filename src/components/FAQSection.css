@@ -59,10 +59,13 @@
 
 .faq-drawer__content {
   padding: 25px 40px 35px 20px;
-  background: linear-gradient(180deg, rgba(212, 175, 55, 0.05) 0%, transparent 100%);
-  border-left: 3px solid rgba(212, 175, 55, 0.3);
-  margin-left: -20px;
+  background: rgba(0, 0, 0, 0.4);
+  backdropFilter: blur(15px);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  borderRadius: 12px;
+  margin: 10px 0;
   position: relative;
+  boxShadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .faq-drawer__content p {

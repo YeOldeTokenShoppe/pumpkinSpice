@@ -1,8 +1,12 @@
 'use client';
 import './FAQSection.css';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 
-export default function FAQSection() {
+export default function FAQSection({ isMobile = false }) {
+  const sectionRef = useRef(null);
+  const isInView = useInView(sectionRef, { threshold: 0.3 });
+
   useEffect(() => {
     // Load custom fonts if not already loaded
     const link = document.createElement('link');
@@ -14,7 +18,55 @@ export default function FAQSection() {
   }, []);
 
   return (
-    <div className="faq-container">
+    <motion.div
+      ref={sectionRef}
+      initial={{ opacity: 0 }}
+      animate={isInView ? { opacity: 1 } : {}}
+      transition={{ duration: 0.8 }}
+      style={{
+        position: 'relative',
+        margin: '4rem auto',
+        width: isMobile ? '95%' : '90%',
+        maxWidth: '1200px',
+        zIndex: 1,
+        pointerEvents: 'auto'
+      }}
+    >
+      <div style={{
+        background: 'rgba(0, 0, 0, 0.3)',
+        border: '1px solid rgba(255, 215, 0, 0.2)',
+        borderRadius: '30px',
+        padding: isMobile ? '30px 20px' : '40px',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        
+        {/* Glow effect */}
+        <div style={{
+          content: '',
+          position: 'absolute',
+          top: '-50%',
+          left: '-50%',
+          width: '200%',
+          height: '200%',
+          background: 'radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%)',
+          animation: 'faqRotate 30s linear infinite',
+          zIndex: 0
+        }} />
+
+        <div className="faq-container" style={{
+          padding: 0,
+          margin: 0,
+          background: 'transparent',
+          border: 'none',
+          borderRadius: 0,
+          boxShadow: 'none',
+          backdropFilter: 'none',
+          position: 'relative',
+          zIndex: 1
+        }}>
       <h1>FAQ</h1>
       
       <div className="faq-drawer">
@@ -78,6 +130,15 @@ export default function FAQSection() {
         </div>
       </div>
       
-    </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes faqRotate {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+    </motion.div>
   );
 }

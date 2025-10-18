@@ -16,6 +16,8 @@ import Chart from 'chart.js/auto';
 import PostProcessingEffects from './PostProcessingEffects';
 import '../app/globals.css';
 import CoinLoader from '@/components/CoinLoader';
+import Numerology from '@/components/Numerology';
+import ScrollTransition from '@/components/ScrollTransition';
 function createChartTexture(data, chartType = 'line', label = '') {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
@@ -383,7 +385,7 @@ function FloatingChart({ position, chartData, chartType = 'line', chartLabel = '
   );
 }
 
-function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
+function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
   const group = useRef();
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, group);
@@ -392,6 +394,8 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
   const [centerOffset, setCenterOffset] = useState(new THREE.Vector3(0, 0, 0));
   const scrollMaterialsRef = useRef([]);
   const scrollMeshesRef = useRef({});
+  const ballMaterialRef = useRef(null);
+  const ballMeshRef = useRef(null);
   
   useEffect(() => {
     const handleResize = () => {
@@ -491,6 +495,62 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
     }
   }, [scene, onScrollClick]);
   
+  // Add glow effects to ball object and make it clickable
+  useEffect(() => {
+    if (scene) {
+      const ballMesh = scene.getObjectByName('ball');
+      if (ballMesh) {
+        console.log('Found ball object, applying glow effect and click handler');
+        
+        // Store mesh reference for click handling
+        ballMeshRef.current = ballMesh;
+        
+        // Add click handler
+        const handleBallClick = (event) => {
+          event.stopPropagation();
+          console.log('Ball clicked!');
+          if (onBallClick) {
+            onBallClick();
+          }
+        };
+        
+        // Make the ball clickable
+        ballMesh.traverse((child) => {
+          if (child.isMesh) {
+            child.userData.clickable = true;
+            child.userData.ballObject = true;
+            child.userData.onClick = handleBallClick;
+            
+            if (child.material) {
+              // Clone the material to avoid affecting other objects
+              const originalMaterial = child.material;
+              const glowMaterial = originalMaterial.clone();
+              
+              // Add emissive glow
+              glowMaterial.emissive = new THREE.Color(0x4a90e2); // Blue glow for the ball
+              glowMaterial.emissiveIntensity = 0.2;
+              
+              // Make it slightly transparent for a magical effect
+              if (!glowMaterial.transparent) {
+                glowMaterial.transparent = true;
+                glowMaterial.opacity = 0.9;
+              }
+              
+              child.material = glowMaterial;
+              
+              // Store reference for pulsing animation
+              ballMaterialRef.current = glowMaterial;
+              
+              console.log('Applied glow material to ball');
+            }
+          }
+        });
+      } else {
+        console.log('Ball object not found in the model');
+      }
+    }
+  }, [scene, onBallClick]);
+  
   useEffect(() => {
     // Play multiple animations simultaneously
     const animationsToPlay = ['Experiment', 'HaloRotation', 'escrire', 'Animation'];
@@ -551,7 +611,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
     ? [0, -Math.PI/6, 0] // Tablet portrait: slight angle for centered view
     : isTablet 
     ? [0, -Math.PI/2.5, 0] // Tablet landscape: 30° angle
-    : [0, -Math.PI/14, 0]; // Mobile: slight angle for better view
+    : [0, -Math.PI/12, 0]; // Mobile: 45° angle for better front-facing view
   
   const position = isDesktop 
     ? [centerOffset.x + 1, centerOffset.y - 2, centerOffset.z + 3] // Desktop: offset to right side
@@ -563,7 +623,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
   
   const scale = isDesktop ? 2 : isTablet ? 1.8 : 1.5; // Tablet: between desktop and mobile
   
-  // Pulsing animation for scroll objects
+  // Pulsing animation for scroll objects and ball
   useFrame(({ clock }) => {
     if (scrollMaterialsRef.current.length > 0) {
       const time = clock.getElapsedTime();
@@ -573,9 +633,16 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick }) {
         material.emissiveIntensity = pulseIntensity;
       });
     }
+    
+    // Ball pulsing animation
+    if (ballMaterialRef.current) {
+      const time = clock.getElapsedTime();
+      const ballPulseIntensity = 0.2 + Math.sin(time * 1.5) * 0.1; // Different pulse rhythm for ball
+      ballMaterialRef.current.emissiveIntensity = ballPulseIntensity;
+    }
   });
   
-  // Handle clicks on scroll objects
+  // Handle clicks on scroll objects and ball
   const handleClick = (event) => {
     const intersects = event.intersections;
     if (intersects.length > 0) {
@@ -838,16 +905,34 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
   const [selectedChart, setSelectedChart] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 768);
   const [modelLoaded, setModelLoaded] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [currentScrollSrc, setCurrentScrollSrc] = useState('/scroll.html'); // Default scroll
+  const [showNumerology, setShowNumerology] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [nextScrollSrc, setNextScrollSrc] = useState(null);
+  const scrollIframeRef = useRef(null);
+  const mobileScrollIframeRef = useRef(null);
   
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      setWindowHeight(window.innerHeight);
+    };
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, []);
+  
+  // Check device type for overlay logic
+  const isDesktop = windowWidth > 1024;
+  const isTablet = windowWidth > 768 && windowWidth <= 1024;
+  const isTabletPortrait = isTablet && windowHeight > windowWidth;
   
   // Load Google Fonts
   useEffect(() => {
@@ -877,10 +962,6 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
       document.head.removeChild(link);
     };
   }, []);
-  
-  // Check device type for overlay logic
-  const isDesktop = windowWidth > 1024;
-  const isTablet = windowWidth > 768 && windowWidth <= 1024;
   
   // Hide loader only when everything is loaded
   useEffect(() => {
@@ -1009,13 +1090,14 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
               position: 'absolute',
               left: '0',
               bottom: isTablet ? '4rem' : '2rem',
-              width: '50%',
+              width: isTabletPortrait ? '50%' : isTablet ? '30%' : '50%',
               height: isTablet ? '40%' : '50%',
               padding: '2rem',
               zIndex: 1000,
               pointerEvents: 'none'
             }}>
               <iframe
+                ref={scrollIframeRef}
                 src={currentScrollSrc}
                 onLoad={() => setIframeLoaded(true)}
                 style={{
@@ -1025,7 +1107,8 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                   pointerEvents: 'auto',
                   background: 'transparent',
                   opacity: 0.9,
-                  mixBlendMode: 'screen'
+                  mixBlendMode: 'screen',
+                  transition: 'opacity 0.5s'
                 }}
                 title="Scroll Overlay"
               />
@@ -1081,13 +1164,28 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
             modelPath={modelPath} 
             onLoaded={() => setModelLoaded(true)} 
             is80sMode={is80sMode} 
-            onScrollClick={setCurrentScrollSrc}
+            onScrollClick={(scrollPath) => {
+              // Don't transition if already transitioning
+              if (isTransitioning) return;
+              
+              // Store next scroll and start transition
+              setNextScrollSrc(scrollPath);
+              setIsTransitioning(true);
+              
+              // Hide iframe during transition
+              const iframe = isDesktop || isTablet ? scrollIframeRef.current : mobileScrollIframeRef.current;
+              if (iframe) {
+                iframe.style.opacity = '0';
+                iframe.style.transition = 'opacity 0.3s';
+              }
+            }}
+            onBallClick={() => setShowNumerology(true)}
           />
           <Environment preset="night" />
           {/* <FlatCharts onChartClick={setSelectedChart} /> */}
         </Suspense>
-        <OrbitControls enablePan={true} enableZoom={false} enableRotate={true} autoRotate={false} autoRotateSpeed={0.3}     maxPolarAngle = {Math.PI * 0.5} // Initial limit - will be dynamic
-    minPolarAngle = {0} />
+        {/* <OrbitControls enablePan={true} enableZoom={false} enableRotate={true} autoRotate={false} autoRotateSpeed={0.3}     maxPolarAngle = {Math.PI * 0.5} // Initial limit - will be dynamic
+    minPolarAngle = {0} /> */}
         {is80sMode ? (
           <EffectComposer>
             <Bloom
@@ -1178,6 +1276,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
             
             {/* Scroll overlay for mobile - repositioned and resized */}
             <iframe
+              ref={mobileScrollIframeRef}
               src={currentScrollSrc}
               style={{
                 position: 'absolute',
@@ -1192,7 +1291,8 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 zIndex: 5,
                 opacity: 0.85,
                 mixBlendMode: 'screen',
-                borderRadius: '8px'
+                borderRadius: '8px',
+                transition: 'opacity 0.5s'
               }}
               title="Scroll Overlay"
             />
@@ -1200,6 +1300,115 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         )}
       </div>
       </div>
+      
+      {/* Scroll Transition Effect */}
+      <ScrollTransition 
+        isTransitioning={isTransitioning}
+        scrollBounds={(() => {
+          const iframe = isDesktop || isTablet ? scrollIframeRef.current : mobileScrollIframeRef.current;
+          if (iframe) {
+            const rect = iframe.getBoundingClientRect();
+            return {
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height
+            };
+          }
+          return null;
+        })()}
+        onComplete={() => {
+          // Change to new scroll
+          if (nextScrollSrc) {
+            setCurrentScrollSrc(nextScrollSrc);
+            setNextScrollSrc(null);
+            
+            // Give iframe time to load new content
+            setTimeout(() => {
+              const iframe = isDesktop || isTablet ? scrollIframeRef.current : mobileScrollIframeRef.current;
+              if (iframe) {
+                iframe.style.transition = 'opacity 0.5s';
+                iframe.style.opacity = '0.9';
+              }
+              setIsTransitioning(false);
+            }, 200);
+          }
+        }}
+      />
+      
+      {/* Numerology Modal Overlay */}
+      {showNumerology && (
+        <div 
+          onClick={() => setShowNumerology(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10000,
+            backdropFilter: 'blur(5px)'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              background: 'rgba(20, 20, 20, 0.95)',
+              borderRadius: '1rem',
+              border: '2px solid #8e662b',
+              padding: '2rem',
+              maxWidth: '90vw',
+              maxHeight: '90vh'
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowNumerology(false);
+              }}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                color: '#d4af37',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                padding: '0.5rem',
+                borderRadius: '50%',
+                width: '3rem',
+                height: '3rem',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                transition: 'all 0.3s ease',
+                zIndex: 10001
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(212, 175, 55, 0.2)';
+                e.target.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'none';
+                e.target.style.transform = 'scale(1)';
+              }}
+            >
+              ×
+            </button>
+            
+            {/* Numerology component */}
+            <Numerology isMobile={windowWidth <= 768} />
+          </div>
+        </div>
+      )}
       
       {/* 80s Mode Full-Page Effects */}
       {is80sMode && (

@@ -99,10 +99,32 @@ div {
   height: auto; /* Keeps the aspect ratio of the image */
 }
 
+/* Desktop media query */
+@media (min-width: 1025px) {
+  #container {
+    width: 28rem !important;
+    height: 60% !important;
+    max-height: 50rem !important;
+    font-size: 1.1em !important;
+    transform: translate(-50%, -50%) rotateY(20deg) !important;
+  }
+}
+
+/* Tablet landscape media query */
+@media (min-width: 769px) and (max-width: 1024px) and (max-height: 768px) {
+  #container {
+    width: 16rem !important;
+    height: 60vh;
+    max-height: 35rem;
+    font-size: 0.9em !important;
+    transform: translate(-50%, -50%) rotateY(20deg);
+  }
+}
+
 /* Mobile media query - apply scroll2.css styling for better scroll shape */
 @media (max-width: 768px) {
   #container {
-    width: 70vw !important;
+    /* width: 70vw !important; */
     height: 60vh;
     max-height: none;
     font-size: 1em !important;
