@@ -36,14 +36,14 @@ const textBlocks = [
   [
     "goals in the rearview",
     "buybacks engage",
-    "smoothing the ride",
+    "smoothing the way",
     "through every dip and climb"
   ],
   [
-    "CEX listing ahead",
+    "Major listings on the horizon",
     "taxes drop to zero",
     "frictionless trading",
-    "across digital highways"
+    "bridges to new ecosystems"
   ],
   [
     "the road ahead:",
