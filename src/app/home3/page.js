@@ -29,6 +29,7 @@ import TokenomicsSection from '@/components/TokenomicsSection';
 import Illumin80Bouncer from '@/components/Illumin80Bouncer';
 import Numerology1 from '@/components/Numerology1';
 import TubesCursor from '@/components/TubesCursor';
+import CarouselWrapper from '@/components/CarouselWrapper';
 
 
 
@@ -305,7 +306,7 @@ function ScrollTriggeredTitle({ isMobile }) {
         maxWidth: '800px',
         margin: '5rem auto 0 auto',
         padding: isMobile ? '30px 20px' : '40px 30px',
-        background: 'linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%)',
+            background: 'rgba(0, 0, 0, 0.3)',
         borderRadius: '16px',
         border: '1px solid rgba(255,255,255,0.1)',
         backdropFilter: 'blur(10px)',
@@ -326,7 +327,7 @@ function ScrollTriggeredTitle({ isMobile }) {
           maxWidth: '600px',
           margin: '0 auto'
         }}>
-         She is the mother of memes, aider to traders, fren to degens, patron saint of day traders, and your guide up and to the right.
+        She's the mother of memes, aider to traders, fren to degens, patron saint of day traders, and your guide up and to the right.
          <br /><br />
          Whether you need a Hail Mary for hard times, or just sanctuary in the dark realm of DeFi,
          let <b>Our Lady of Perpetual Profit</b> light the way.
@@ -1309,7 +1310,7 @@ export default function CloudTestPage() {
             }}
             onClick={() => window.open('https://app.uniswap.org/swap', '_blank')}
           >
-            <div style={{ fontSize: isMobile ? '50px' : '60px', marginBottom: '20px' }}>🚀</div>
+            <div style={{ fontSize: isMobile ? '4rem' : '5rem', marginBottom: '20px' }}>🚀</div>
  <button
                         onClick={handleOpenModal}
                          style={{
@@ -1360,7 +1361,7 @@ export default function CloudTestPage() {
               lineHeight: '1.6',
               fontFamily: "'Inter', sans-serif",
             }}>
-              Available on Uniswap, PancakeSwap & Major DEXs
+              Available on Uniswap
             </p>
           </motion.div>
 
@@ -1384,7 +1385,7 @@ export default function CloudTestPage() {
             }}
             onClick={() => window.open('/stake', '_blank')}
           >
-            <div style={{ fontSize: isMobile ? '50px' : '60px', marginBottom: '20px' }}>💰</div>
+            <div style={{ fontSize: isMobile ? '4rem' : '5rem', marginBottom: '20px' }}>💰</div>
   <button
                         onClick={handleOpenModal}
                          style={{
@@ -1545,6 +1546,7 @@ export default function CloudTestPage() {
                           #2196F3 342deg 360deg
                         )`,
                         position: 'relative',
+                        top: '2rem',
                         filter: 'drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5))'
                       }}>
                         {/* Center circle with text */}
@@ -1639,7 +1641,7 @@ export default function CloudTestPage() {
                       
                       <div style={{
                         position: 'absolute',
-                        top: '-20%',
+                        top: '-10px',
                         left: '35%',
                         padding: '8px 12px',
                         background: 'rgba(0, 0, 0, 0.3)',
@@ -1668,7 +1670,7 @@ export default function CloudTestPage() {
                     {/* Distribution Label */}
                     <div style={{
                       textAlign: 'center',
-                      marginTop: '20px'
+                      marginTop: '40px'
                     }}>
                       <div style={{
                         fontSize: '1.1em',
@@ -1926,7 +1928,7 @@ export default function CloudTestPage() {
                    {/* <img src="/timeline2.png" alt="Candle Icon" style={{ width: isMobile ? '50%' : '50%', height: 'auto', marginBottom: '-1rem', marginTop: '-2rem' }} /> */}
                     <span style={{               fontFamily: "'Fjalla One', sans-serif",
 fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-                Light Up Her DMs
+                DM Our Lady
               </span>         
               <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
 Burn or stake RL80 to add a green candle to her timeline and watch miracles happen.  
@@ -2099,7 +2101,7 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
         {/* Illumin80 Bouncer Section - 2 Column Layout */}
         <div style={{
           position: 'relative',
-          top: "5rem",
+          // top: "5rem",
           margin: '4rem auto 4rem auto',
           width: isMobile ? '95%' : '90%',
           maxWidth: '1200px',
@@ -2127,13 +2129,26 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
               {/* Left Column - Bouncer */}
               <div style={{
                 display: "flex",
-                alignItems: "flex-end",
+                flexDirection: "column",
+                alignItems: "center",
                 justifyContent: "center",
                 position: "relative",
                 minHeight: "500px"
               }}>
                 {/* <Illumin80Bouncer /> */}
                <Numerology1/>
+               <p style={{
+                 color: '#ffffff',
+                 textAlign: 'center',
+                 marginTop: isMobile ? '-1rem' : '-3rem',
+         
+                 fontSize: '1rem',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+
+               }}>
+                 [ Click to shake ]
+               </p>
+       
               </div>
               
               {/* Right Column - Illumin80 Perks */}
@@ -2162,7 +2177,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                   color: '#ffffff',
                   opacity: 0.9
                 }}>
-                  Part mystery cult, part philosophy club, The Illumin80 are the most luminous level of RL80 token holders. The top 80 stakers and burners ascend to the Illumin80 — a guild that unlocks even more glorious gains.
+                  Part mystery cult, part secret society, The Illumin80 represent the top 8% of stakers and burners — a guild that unlocks even more glorious gains.
                 </p>
                 
                 <ul style={{
@@ -2192,7 +2207,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                 </ul>
 
              <button
-                        onClick={handleOpenModal}
+                             onClick={() => window.open('/gallery3', '_blank')}
                          style={{
                           marginTop: isMobile ? '1.5rem' : '2rem',
                           padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
@@ -2230,7 +2245,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
           </div>
         </div>
 
-                        <div style={{position: 'relative', zIndex: 1, marginTop: '2rem', marginBottom: '7rem'}}>
+                        <div style={{position: 'relative', zIndex: 1, marginTop: '2rem', marginBottom: '1rem'}}>
                          <div ref={secondTitleRef} style={{
                                   textAlign: 'center',
                                   padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
@@ -2247,11 +2262,15 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                                   />
                         </div>
                                  </div>
+                                        <FAQSection isMobile={isMobile} />
 
+      {/* Carousel Section */}
+        <CarouselWrapper />
 
-
-        <FAQSection isMobile={isMobile} />
-
+ 
+        
+  
+{/* 
          <div style={{
                         position: "relative",
                         maxWidth: "1400px",
@@ -2276,7 +2295,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                         }}>
                           <RotatingText isDesktop={true} />
                         </div>
-                      </div>
+                      </div> */}
         
 
 
@@ -2286,8 +2305,8 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
         {/* Footer - at the bottom of all content */}
        <footer style={{
         marginTop: '8rem',
-        padding: '3rem 2rem 2rem',
-        background: 'linear-gradient(to bottom, rgba(234, 124, 14, 0.0), rgba(14, 84, 234, 0.2))',
+        padding: '8rem 2rem 2rem',
+        background: 'linear-gradient(to bottom, rgba(234, 124, 14, 0.0), rgba(14, 84, 234, 0.6))',
         // borderTop: '1px solid rgba(212, 175, 55, 0.3)',
         color: '#ffffff',
         textAlign: 'center'
@@ -2615,16 +2634,17 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
           pointer-events: none !important;
         }
       `}</style>
-       <CompactCandleModal 
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onCandleCreated={() => {
-                console.log('Candle created successfully');
-              }}
-            />
-            
-            {/* Floating Action Bar */}
-            <FloatingBar isMobile={isMobile} />
+      
+      <CompactCandleModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCandleCreated={() => {
+          console.log('Candle created successfully');
+        }}
+      />
+      
+      {/* Floating Action Bar */}
+      <FloatingBar isMobile={isMobile} />
     </div>
     </>
   );

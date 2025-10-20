@@ -27,6 +27,7 @@
     "daisyui": "^5.1.27",
     "dat.gui": "^0.7.9",
     "dom-to-image": "^2.6.0",
+    "emoji-picker-react": "^4.14.2",
     "ethers": "^5.8.0",
     "firebase": "^12.1.0",
     "framer-motion": "^12.23.22",

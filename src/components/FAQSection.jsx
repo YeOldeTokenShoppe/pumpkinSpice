@@ -69,6 +69,18 @@ export default function FAQSection({ isMobile = false }) {
         }}>
       <h1>FAQ</h1>
       
+      <div className="faq-content-wrapper">
+        <div className="faq-image-container">
+          <img 
+            // src="/IMG_0632.png" 
+            src="/queenOfHearts.png"
+            alt="Queen of Hearts" 
+            className="faq-queen-image"
+          />
+        </div>
+        
+        <div className="faq-accordion-container">
+      
       <div className="faq-drawer">
         <input className="faq-drawer__trigger" id="faq-drawer-1" type="checkbox" />
         <label className="faq-drawer__title" htmlFor="faq-drawer-1">
@@ -130,6 +142,55 @@ export default function FAQSection({ isMobile = false }) {
         </div>
       </div>
       
+      <div className="faq-drawer">
+        <input className="faq-drawer__trigger" id="faq-drawer-4" type="checkbox" />
+        <label className="faq-drawer__title" htmlFor="faq-drawer-4">
+          Payment Options
+        </label>
+        <div className="faq-drawer__content-wrapper">
+          <div className="faq-drawer__content">
+            <p>
+              We accept all major credit cards, PayPal, Apple Pay, and Google Pay.
+              All transactions are secured with industry-standard encryption.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="faq-drawer">
+        <input className="faq-drawer__trigger" id="faq-drawer-5" type="checkbox" />
+        <label className="faq-drawer__title" htmlFor="faq-drawer-5">
+          Warranty Information
+        </label>
+        <div className="faq-drawer__content-wrapper">
+          <div className="faq-drawer__content">
+            <p>
+              All products come with a 1-year manufacturer warranty covering
+              defects in materials and workmanship. Extended warranty options
+              are available at checkout.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="faq-drawer">
+        <input className="faq-drawer__trigger" id="faq-drawer-6" type="checkbox" />
+        <label className="faq-drawer__title" htmlFor="faq-drawer-6">
+          Customer Support
+        </label>
+        <div className="faq-drawer__content-wrapper">
+          <div className="faq-drawer__content">
+            <p>
+              Our customer support team is available 24/7 via email, phone, and
+              live chat. We typically respond to inquiries within 2 hours during
+              business hours.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+        </div> {/* Close faq-accordion-container */}
+      </div> {/* Close faq-content-wrapper */}
         </div>
       </div>
 

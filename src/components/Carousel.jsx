@@ -27,12 +27,12 @@ import {
   SignInButton,
   useClerk,
 } from "@clerk/nextjs"; // Use Clerk's useUser for user management
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+
+// import { Input } from "./ui/input";
 import Image from "next/image";
-import { useRouter } from "next/router";
+// import { useRouter } from "next/router"; // Removed - not needed
 // import { useActiveAccount } from "thirdweb/react";
-import StyledPopup from "./StyledPopup";
+// import StyledPopup from "./StyledPopup";
 import { signInWithCustomToken } from "firebase/auth";
 import axios from "axios";
 import { useAuth } from "@clerk/nextjs"; // Add this line if it's missing
@@ -60,57 +60,74 @@ const Carousel = ({ images, setCarouselLoaded }) => {
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [rideActive, setRideActive] = useState(true);
   const [popupMessage, setPopupMessage] = useState("");
-  const router = useRouter();
+  // const router = useRouter(); // Removed - using window.location instead
   const [currentPath, setCurrentPath] = useState("/");
   const MAX_MESSAGE_LENGTH = 80;
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleImageLoad = (src) => {
     setLoadedImages((prev) => {
       const newSet = new Set(prev);
       newSet.add(src);
-
-      // Check if all images are loaded
-      if (newSet.size === images.length) {
-        console.log("✅ All images loaded successfully");
-        setInitialLoadComplete(true);
-
-        // Add a small delay to ensure images are actually visible
-        setTimeout(() => {
-          setVisibleImagesLoaded(true);
-          if (setCarouselLoaded) {
-            setCarouselLoaded(true);
-          }
-        }, 500);
-      }
-
       return newSet;
     });
   };
+
+  // Handle when all images are loaded
+  useEffect(() => {
+    if (loadedImages.size === images.length && images.length > 0 && !initialLoadComplete) {
+      console.log("✅ All images loaded successfully");
+      setInitialLoadComplete(true);
+      
+      // Add a small delay to ensure images are actually visible
+      setTimeout(() => {
+        setVisibleImagesLoaded(true);
+        if (setCarouselLoaded) {
+          setCarouselLoaded(true);
+        }
+      }, 500);
+    }
+  }, [loadedImages.size, images.length, setCarouselLoaded, initialLoadComplete]);
 
   const handleImageError = (src) => {
     console.error(`❌ Failed to load image: ${src}`);
     handleImageLoad(src); // Count failed loads to prevent loader from hanging
   };
 
+  // Preload images only once
   useEffect(() => {
+    if (initialLoadComplete) return; // Skip if already loaded
+    
     const controller = new AbortController();
 
     const preloadImages = async () => {
       try {
         console.log(`🔄 Preloading ${images.length} carousel images...`);
         const imageLoadPromises = images.map((image) => {
-          return new Promise((resolve, reject) => {
-            const img = new window.Image(); // Use window.Image explicitly
+          return new Promise((resolve) => {
+            const img = new window.Image();
             img.onload = () => {
               handleImageLoad(image.src);
               resolve();
             };
             img.onerror = () => {
               handleImageError(image.src);
-              resolve(); // Resolve anyway to prevent hanging
+              resolve();
             };
             img.src = image.src;
           });
@@ -132,9 +149,8 @@ const Carousel = ({ images, setCarouselLoaded }) => {
 
     return () => {
       controller.abort();
-      setCarouselLoaded(false);
     };
-  }, [images]);
+  }, []); // Remove dependencies to run only once
 
   const handleEmojiClick = (emojiObject) => {
     setNewMessage((prevMessage) => {
@@ -166,11 +182,10 @@ const Carousel = ({ images, setCarouselLoaded }) => {
   // Trigger setCarouselLoaded when all images are loaded
 
   useEffect(() => {
-    const path = router.asPath;
-    if (path) {
-      setCurrentPath(path);
+    if (typeof window !== 'undefined') {
+      setCurrentPath(window.location.pathname);
     }
-  }, [router.asPath]);
+  }, []);
 
   const signIntoFirebase = async () => {
     try {
@@ -278,7 +293,7 @@ const Carousel = ({ images, setCarouselLoaded }) => {
   };
   const handleRideBeastClick = async (image, beastId) => {
     if (!isSignedIn) {
-      openSignIn({ forceRedirectUrl: currentPath });
+      openSignIn({ forceRedirectUrl: currentPath || '/' });
       return;
     }
 
@@ -1214,7 +1229,7 @@ const Carousel = ({ images, setCarouselLoaded }) => {
                     justifyContent: "center",
                   }}
                 >
-                  <Button
+                  <button
                     onClick={confirmRide}
                     style={{
                       padding: "5px 10px",
@@ -1223,8 +1238,8 @@ const Carousel = ({ images, setCarouselLoaded }) => {
                     }}
                   >
                     Yes
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={() => setIsRideConfirmationOpen(false)}
                     style={{
                       padding: "5px 10px",
@@ -1233,7 +1248,7 @@ const Carousel = ({ images, setCarouselLoaded }) => {
                     }}
                   >
                     No
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1252,8 +1267,8 @@ const Carousel = ({ images, setCarouselLoaded }) => {
               fontSize: "12px",
               width: "300px",
               left: "50%",
-              transform: "translateX(-50%)",
-              top: "20rem",
+              transform: `translateX(-50%) ${isMobile ? "scale(1.2)" : ""}`,
+              top: isMobile ? "28rem" : "40rem",
               borderRadius: "10px",
             }}
           >
@@ -1272,9 +1287,9 @@ const Carousel = ({ images, setCarouselLoaded }) => {
               ×
             </button>
 
-            <h1 className="text-2xl font-bold mt-1 mb-1 leading-tight text-[#e1b67e] z-[1]">
-              Chat Box
-            </h1>
+            <h3 className="text-2xl font-bold mt-1 mb-1 leading-tight text-[#e1b67e] z-[1]">
+              Chat
+            </h3>
             <div
               style={{ marginTop: "5px", fontSize: "12px", color: "#e1b67e" }}
             >
@@ -1305,7 +1320,7 @@ const Carousel = ({ images, setCarouselLoaded }) => {
               >
                 😊
               </button>
-              <Input
+              <input
                 value={newMessage}
                 onChange={(e) => {
                   const message = e.target.value;
@@ -1325,9 +1340,10 @@ const Carousel = ({ images, setCarouselLoaded }) => {
                   width: "100%",
                   marginRight: "10px",
                   color: "black",
+                  height: "2rem"
                 }}
               />
-              <Button
+              <button
                 onClick={() => handleSendMessage(activeBeastId)}
                 disabled={!rideActive || newMessage.trim() === ""}
                 style={{
@@ -1362,7 +1378,7 @@ const Carousel = ({ images, setCarouselLoaded }) => {
                     <path d="M6.832 10.179a.5.5 0 0 1 .683.183L12 16a.5.5 0 0 1-.853.354L6.832 10.18z" />
                   </svg>
                 </div>
-              </Button>
+              </button>
             </div>
 
             {showEmojiPicker && (
@@ -1383,7 +1399,7 @@ const Carousel = ({ images, setCarouselLoaded }) => {
         )}
 
         {popupMessage && (
-          <StyledPopup
+          <div
             message={popupMessage.message} // Access the message property
             onClose={handleClosePopup}
             onConfirm={popupMessage.onConfirm} // Pass the confirm function if applicable
@@ -1392,12 +1408,14 @@ const Carousel = ({ images, setCarouselLoaded }) => {
       </div>
       {/* Ride or Die content box */}
       <div style={{ 
-          backgroundColor: "#1b1724", 
           width: "80%", 
-          borderRadius: "8px",
-          padding: "20px",
-          boxShadow: "0 0 10px rgba(225, 182, 126, 0.2)",
-          marginTop: "20rem",
+          borderRadius: "30px",
+          padding: "40px",
+          background: 'rgba(0, 0, 0, 0.3)',
+          border: '1px solid rgba(255, 215, 0, 0.2)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+          marginTop: isMobile ? "0" : "10rem",
           visibility: isRiding ? "hidden" : "visible",
           height: isRiding ? "0" : "auto",
           overflow: "hidden",
@@ -1407,13 +1425,34 @@ const Carousel = ({ images, setCarouselLoaded }) => {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          textAlign: "center"
+          textAlign: "center",
+          position: 'relative'
         }}>
-        <h2 className="text-4xl font-bold font-['Oleo_Script'] leading-none text-[#c48901] mb-4 text-center w-full">
-          Ride the 
-        </h2>
+        
+        {/* Glow effect */}
+        <div style={{
+          content: '',
+          position: 'absolute',
+          top: '-50%',
+          left: '-50%',
+          width: '200%',
+          height: '200%',
+          background: 'radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%)',
+          animation: 'rotate 30s linear infinite',
+          zIndex: 0
+        }} />
 
-        <p className="text-xl font-['Roboto'] leading-tight text-white text-center w-full">
+        <p style={{
+          position: 'relative',
+          zIndex: 1,
+          color: 'rgba(255, 255, 255, 0.85)',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontSize: '1.1em',
+          lineHeight: '1.6em',
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+          letterSpacing: '0.3px',
+          margin: 0
+        }}>
           They say fortune favors the bold. Careen carefree with the ups and
           downs of the crypto market. Must be at least 36&quot; tall and hold
           RL80 or NFIN80 reward tokens. 10 minutes per ride. Your username and

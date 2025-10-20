@@ -12,43 +12,27 @@ body {
 .carousel-container {
   font-family: "Poppins", sans-serif;
   color: #333;
-  height: 100vh;
+  min-height: 600px;
   width: 100%;
   transform: scale(1);
-  /* background: radial-gradient(
-      circle at 60% 50%,
-      #ff4a4a 0 4vmin,
-      #fff0 50vmin 100%
-    ),
-    repeating-conic-gradient(
-      from 0deg at 60% 50%,
-      #ff4a4a 0 6deg,
-      #e6282a 0 12deg
-    ); */
   display: flex;
   justify-content: center;
   position: relative;
   align-items: center;
   overflow: visible;
-  margin-top: 20rem;
-  z-index: 1;
+  padding-top: 4rem;
+  z-index: 10;
 }
 
 #carousel {
   width: 150px;
   height: 250px;
-  transform: perspective(1000px);
+  transform: perspective(1000px) scale(0.5);
   margin-top: 0px;
   transform-style: preserve-3d;
   animation: var(--rotation-time) carousel linear reverse infinite;
   rotate: x 0deg;
   transition: margin-top 1s ease-in-out;
-  transform: scale(0.5);
-}
-
-#carousel:hover {
-  /* margin-top: -150px; */
-  /* rotate: x -15deg; */
 }
 
 #carousel::after,
@@ -360,7 +344,7 @@ body {
     transform: scale(0.7);
   }
   .chat-box-container {
-    margin-top: 5rem;
+    margin-top: 15rem;
   }
 }
 
@@ -456,10 +440,11 @@ body {
 }
 
 .element2::before {
+  content: ""; /* Required for pseudo-element to display */
   background-image: url("/arrows.png"); /* Set the background image */
   background-size: cover; /* Ensures the image covers the container */
   background-position: center; /* Centers the image */
-  background-repeat: repeat; /* Prevent repeating */
+  background-repeat: no-repeat; /* Prevent repeating */
   background-color: #1b1724;
   left: 150px;
   width: 82px;
@@ -561,23 +546,32 @@ body {
 }
 
 .chat-box-container {
-  background-color: #8e662b;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: #e1b67e;
-  border: 1px solid #e1b67e;
-  padding: 10px;
-  /* margin-top: 20px; */
+  border: 3px solid #d4af37;
+  border-radius: 12px;
+  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.3);
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centers content horizontally */
-  justify-content: center; /* Centers content vertically */
+  align-items: center;
+  justify-content: center;
   position: fixed;
-  top: 10rem;
+  top: 28rem;
   right: 0;
   z-index: 9999 !important;
   transform: translateX(-50%);
   min-width: 25rem;
   max-width: 30rem;
   font-size: 10px;
+  transition: all 0.3s ease;
+}
+
+.chat-box-container:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(212, 175, 55, 0.2);
 }
 .overlay {
   position: fixed;

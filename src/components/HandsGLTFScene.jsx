@@ -570,7 +570,7 @@ function HandsModel({ mousePosition, scrollY, onLoad, hasReachedSection }) {
       // Start animation after 2 second delay
       setTimeout(() => {
         animationStartTime.current = Date.now()
-      }, 1000)
+      }, 3500)
     }
   }, [hasReachedSection])
 
