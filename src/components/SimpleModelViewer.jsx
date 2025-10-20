@@ -396,6 +396,9 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
   const scrollMeshesRef = useRef({});
   const ballMaterialRef = useRef(null);
   const ballMeshRef = useRef(null);
+  const [userRotation, setUserRotation] = useState(0); // User-controlled rotation offset
+  const [isDragging, setIsDragging] = useState(false);
+  const [lastMouseX, setLastMouseX] = useState(0);
   
   useEffect(() => {
     const handleResize = () => {
@@ -523,25 +526,25 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
             
             if (child.material) {
               // Clone the material to avoid affecting other objects
-              const originalMaterial = child.material;
-              const glowMaterial = originalMaterial.clone();
+              // const originalMaterial = child.material;
+              // const glowMaterial = originalMaterial.clone();
               
               // Add emissive glow
-              glowMaterial.emissive = new THREE.Color(0x4a90e2); // Blue glow for the ball
-              glowMaterial.emissiveIntensity = 0.2;
+              // glowMaterial.emissive = new THREE.Color(0x4a90e2); // Blue glow for the ball
+              // glowMaterial.emissiveIntensity = 0.2;
               
               // Make it slightly transparent for a magical effect
-              if (!glowMaterial.transparent) {
-                glowMaterial.transparent = true;
-                glowMaterial.opacity = 0.9;
-              }
+              // if (!glowMaterial.transparent) {
+              //   glowMaterial.transparent = true;
+              //   glowMaterial.opacity = 0.9;
+              // }
               
-              child.material = glowMaterial;
+              // child.material = glowMaterial;
               
               // Store reference for pulsing animation
-              ballMaterialRef.current = glowMaterial;
+              // ballMaterialRef.current = glowMaterial;
               
-              console.log('Applied glow material to ball');
+              // console.log('Applied glow material to ball');
             }
           }
         });
@@ -604,19 +607,21 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
   // Check if tablet is in portrait mode (height > width)
   const isTabletPortrait = isTablet && windowHeight > windowWidth;
   
-  // Different settings for desktop vs tablet vs mobile
-  const rotation = isDesktop 
-    ? [0, -Math.PI/2, 0] 
+  // Different settings for desktop vs tablet vs mobile with user rotation
+  const baseRotationY = isDesktop 
+    ? -Math.PI/2
     : isTabletPortrait
-    ? [0, -Math.PI/6, 0] // Tablet portrait: slight angle for centered view
+    ? -Math.PI/6 // Tablet portrait: slight angle for centered view
     : isTablet 
-    ? [0, -Math.PI/2.5, 0] // Tablet landscape: 30° angle
-    : [0, -Math.PI/12, 0]; // Mobile: 45° angle for better front-facing view
+    ? -Math.PI/2.5 // Tablet landscape: 30° angle
+    : -Math.PI/12; // Mobile: 45° angle for better front-facing view
+  
+  const rotation = [0, baseRotationY + userRotation, 0];
   
   const position = isDesktop 
     ? [centerOffset.x + 1, centerOffset.y - 2, centerOffset.z + 3] // Desktop: offset to right side
     : isTabletPortrait
-    ? [centerOffset.x, centerOffset.y - 1, centerOffset.z + 2] // Tablet portrait: centered
+    ? [centerOffset.x -1, centerOffset.y - 1, centerOffset.z + 2] // Tablet portrait: centered
     : isTablet
     ? [centerOffset.x + 1.5, centerOffset.y - 1.5, centerOffset.z + 1] // Tablet landscape: slightly offset
     : [centerOffset.x, centerOffset.y - 1, centerOffset.z - 1]; // Mobile: centered
@@ -627,7 +632,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
   useFrame(({ clock }) => {
     if (scrollMaterialsRef.current.length > 0) {
       const time = clock.getElapsedTime();
-      const pulseIntensity = 0.2 + Math.sin(time * 2) * 0.05; // Gentle pulse between 0.05 and 0.15
+      const pulseIntensity = 0.2 + Math.sin(time * 2) * 0.1; // Gentle pulse between 0.05 and 0.15
       
       scrollMaterialsRef.current.forEach(material => {
         material.emissiveIntensity = pulseIntensity;
@@ -652,7 +657,48 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
       }
     }
   };
+
+  // Handle mouse events for rotation
+  const handlePointerDown = (event) => {
+    setIsDragging(true);
+    setLastMouseX(event.clientX);
+  };
+
+  const handlePointerMove = (event) => {
+    if (!isDragging) return;
+    
+    const deltaX = event.clientX - lastMouseX;
+    const rotationSpeed = 0.005; // Adjust sensitivity
+    const newRotation = userRotation + deltaX * rotationSpeed;
+    
+    // Clamp rotation to ±10 degrees (Math.PI/18 radians)
+    const maxRotation = Math.PI / 18;
+    const clampedRotation = Math.max(-maxRotation, Math.min(maxRotation, newRotation));
+    
+    setUserRotation(clampedRotation);
+    setLastMouseX(event.clientX);
+  };
+
+  const handlePointerUp = () => {
+    setIsDragging(false);
+  };
   
+  // Add global event listeners for mouse/touch events
+  useEffect(() => {
+    const handleGlobalPointerMove = (event) => handlePointerMove(event);
+    const handleGlobalPointerUp = () => handlePointerUp();
+
+    if (isDragging) {
+      document.addEventListener('pointermove', handleGlobalPointerMove);
+      document.addEventListener('pointerup', handleGlobalPointerUp);
+    }
+
+    return () => {
+      document.removeEventListener('pointermove', handleGlobalPointerMove);
+      document.removeEventListener('pointerup', handleGlobalPointerUp);
+    };
+  }, [isDragging, lastMouseX, userRotation]);
+
   return (
     <group ref={group}>
       <primitive 
@@ -661,6 +707,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
         object={scene} 
         scale={scale}
         onClick={handleClick}
+        onPointerDown={handlePointerDown}
       />
     </group>
   );
@@ -913,6 +960,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
   const [showNumerology, setShowNumerology] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [nextScrollSrc, setNextScrollSrc] = useState(null);
+  const [showMagnifiedScroll, setShowMagnifiedScroll] = useState(false);
   const scrollIframeRef = useRef(null);
   const mobileScrollIframeRef = useRef(null);
   
@@ -1096,22 +1144,48 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
               zIndex: 1000,
               pointerEvents: 'none'
             }}>
-              <iframe
-                ref={scrollIframeRef}
-                src={currentScrollSrc}
-                onLoad={() => setIframeLoaded(true)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  pointerEvents: 'auto',
-                  background: 'transparent',
-                  opacity: 0.9,
-                  mixBlendMode: 'screen',
-                  transition: 'opacity 0.5s'
-                }}
-                title="Scroll Overlay"
-              />
+              <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                {/* Double-click magnify button */}
+                <button
+                  onClick={() => setShowMagnifiedScroll(true)}
+                  style={{
+                    position: 'absolute',
+                    top: '60%',
+                    left: '80%',
+                    background: 'rgba(212, 175, 55, 0.3)',
+                    border: '1px solid rgba(212, 175, 55, 0.6)',
+                    color: '#d4af37',
+                    padding: '0.25rem',
+                    borderRadius: '0.25rem',
+                    cursor: 'pointer',
+                    fontSize: '3.8rem',
+                    zIndex: 10,
+                    pointerEvents: 'auto'
+                  }}
+                  title="Magnify scroll"
+                >
+                  🔍
+                </button>
+                
+                <iframe
+                  ref={scrollIframeRef}
+                  src={currentScrollSrc}
+                  onLoad={() => {
+                    setIframeLoaded(true);
+                  }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    pointerEvents: 'auto', // Allow iframe interaction
+                    background: 'transparent',
+                    opacity: 0.9,
+                    mixBlendMode: 'screen',
+                    transition: 'opacity 0.5s'
+                  }}
+                  title="Scroll Overlay"
+                />
+              </div>
             </div>
           </>
         )}
@@ -1184,8 +1258,6 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           <Environment preset="night" />
           {/* <FlatCharts onChartClick={setSelectedChart} /> */}
         </Suspense>
-        {/* <OrbitControls enablePan={true} enableZoom={false} enableRotate={true} autoRotate={false} autoRotateSpeed={0.3}     maxPolarAngle = {Math.PI * 0.5} // Initial limit - will be dynamic
-    minPolarAngle = {0} /> */}
         {is80sMode ? (
           <EffectComposer>
             <Bloom
@@ -1275,9 +1347,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
             </div>
             
             {/* Scroll overlay for mobile - repositioned and resized */}
-            <iframe
-              ref={mobileScrollIframeRef}
-              src={currentScrollSrc}
+            <div
               style={{
                 position: 'absolute',
                 bottom: '1rem',
@@ -1285,17 +1355,49 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 right: '1rem',
                 width: 'calc(100% - 2rem)',
                 height: windowWidth <= 480 ? '35%' : '40%',
-                border: 'none',
-                pointerEvents: 'auto',
-                background: 'transparent',
                 zIndex: 5,
-                opacity: 0.85,
-                mixBlendMode: 'screen',
-                borderRadius: '8px',
-                transition: 'opacity 0.5s'
+                borderRadius: '8px'
               }}
-              title="Scroll Overlay"
-            />
+            >
+              {/* Mobile magnify button */}
+              <button
+                onClick={() => setShowMagnifiedScroll(true)}
+                style={{
+                  position: 'absolute',
+                  top: '40%',
+                  left: '110%',
+                  background: 'rgba(212, 175, 55, 0.3)',
+                  border: '1px solid rgba(212, 175, 55, 0.6)',
+                  color: '#d4af37',
+                  padding: '0.25rem',
+                  borderRadius: '0.25rem',
+                  cursor: 'pointer',
+                  fontSize: '3.8rem',
+                  zIndex: 10,
+                  pointerEvents: 'auto'
+                }}
+                title="Magnify scroll"
+              >
+                🔍
+              </button>
+              
+              <iframe
+                ref={mobileScrollIframeRef}
+                src={currentScrollSrc}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  pointerEvents: 'auto', // Allow iframe interaction
+                  background: 'transparent',
+                  opacity: 0.85,
+                  mixBlendMode: 'screen',
+                  borderRadius: '8px',
+                  transition: 'opacity 0.5s'
+                }}
+                title="Scroll Overlay"
+              />
+            </div>
           </>
         )}
       </div>
@@ -1406,6 +1508,170 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
             
             {/* Numerology component */}
             <Numerology isMobile={windowWidth <= 768} />
+          </div>
+        </div>
+      )}
+      
+      {/* Magnified Scroll Modal Overlay */}
+      {showMagnifiedScroll && (
+        <div 
+          onClick={() => setShowMagnifiedScroll(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.9)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10000,
+            backdropFilter: 'blur(5px)'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              width: '95vw',
+              height: '95vh',
+              background: 'rgba(20, 20, 20, 0.95)',
+              borderRadius: '1rem',
+              border: '2px solid #8e662b',
+              padding: '1rem',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMagnifiedScroll(false);
+              }}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                color: '#d4af37',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                padding: '0.5rem',
+                borderRadius: '50%',
+                width: '3rem',
+                height: '3rem',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                transition: 'all 0.3s ease',
+                zIndex: 10001
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(212, 175, 55, 0.2)';
+                e.target.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'none';
+                e.target.style.transform = 'scale(1)';
+              }}
+            >
+              ×
+            </button>
+            
+            {/* Title */}
+            <div style={{
+              color: '#d4af37',
+              fontSize: '1.2rem',
+              fontWeight: 'bold',
+              marginBottom: '1rem',
+              textAlign: 'center',
+              fontFamily: '"UnifrakturCook", serif'
+            }}>
+              {currentScrollSrc.replace('.html', '').replace('/', '')} - Magnified View
+            </div>
+            
+            {/* Magnified iframe with zoom controls */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: '0.5rem',
+              gap: '1rem'
+            }}>
+              <button
+                onClick={() => {
+                  const iframe = document.querySelector('#magnified-iframe');
+                  if (iframe && iframe.contentDocument) {
+                    const body = iframe.contentDocument.body;
+                    const currentZoom = body.style.zoom || '1';
+                    const newZoom = Math.max(0.5, parseFloat(currentZoom) - 0.25);
+                    body.style.zoom = newZoom;
+                  }
+                }}
+                style={{
+                  background: 'rgba(212, 175, 55, 0.2)',
+                  border: '1px solid #d4af37',
+                  color: '#d4af37',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.25rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Zoom Out
+              </button>
+              <button
+                onClick={() => {
+                  const iframe = document.querySelector('#magnified-iframe');
+                  if (iframe && iframe.contentDocument) {
+                    const body = iframe.contentDocument.body;
+                    const currentZoom = body.style.zoom || '1';
+                    const newZoom = Math.min(3, parseFloat(currentZoom) + 0.25);
+                    body.style.zoom = newZoom;
+                  }
+                }}
+                style={{
+                  background: 'rgba(212, 175, 55, 0.2)',
+                  border: '1px solid #d4af37',
+                  color: '#d4af37',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.25rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Zoom In
+              </button>
+            </div>
+            
+            {/* Magnified iframe */}
+            <iframe
+              id="magnified-iframe"
+              src={currentScrollSrc}
+              onLoad={(e) => {
+                // Set initial zoom to make text larger
+                setTimeout(() => {
+                  try {
+                    if (e.target.contentDocument) {
+                      e.target.contentDocument.body.style.zoom = '1.5';
+                      e.target.contentDocument.body.style.fontSize = '1.2em';
+                      e.target.contentDocument.body.style.lineHeight = '1.6';
+                    }
+                  } catch (err) {
+                    console.log('Could not access iframe content for zoom');
+                  }
+                }, 100);
+              }}
+              style={{
+                width: '100%',
+                height: 'calc(100% - 6rem)',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: '0.5rem',
+                overflow: 'auto'
+              }}
+              title="Magnified Scroll"
+            />
           </div>
         </div>
       )}

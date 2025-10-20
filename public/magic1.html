@@ -19,6 +19,7 @@
         background: transparent !important;
         font-size: 0.8rem;
         height: 100vh;
+        width: 100vw;
         text-align: center;
         letter-spacing: 1px;
         margin: 0;
@@ -201,6 +202,23 @@
         text-decoration: underline;
       }
 
+      .answer-image {
+        position: relative;
+        top: 18%;
+        max-width: 110%;
+        max-height: 115%;
+        object-fit: contain;
+        filter: brightness(1.2) contrast(1.1);
+        transform: rotate(180deg); /* Make image right-side up since it's naturally upside down */
+      }
+
+      .answer-container.image-answer {
+        padding: 2%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
       /* Make sure the container allows pointer events */
       [type="radio"]:checked + .answer-container {
         opacity: 1;
@@ -267,6 +285,23 @@
         align-items: flex-start;
         padding-top: 5%;
         top: 60%;
+      }
+
+      /* Special handling for image answers to fit both orientations */
+      .answer-container.image-answer:nth-of-type(even) {
+        align-items: center;
+        padding-bottom: 0%;
+        transform: translate(-50%, -50%) scale(0.8);
+      }
+
+      .answer-container.image-answer:nth-of-type(odd) {
+        align-items: center;
+        padding-top: 0%;
+        transform: translate(-50%, -50%) scale(0.8);
+      }
+
+      .answer-container.image-answer .answer-image {
+        transform: rotate(0deg); /* Always orient image upward */
       }
 
       [type="radio"]:checked + .answer-container {
@@ -400,43 +435,39 @@
         </div>
       </form>
     </div>
-      <div class="mode-selector">
-        <button class="mode-btn active" data-mode="general">General</button>
-        <button class="mode-btn" data-mode="contract">Contract</button>
-      </div>
     </div>
     <script>
       const possibilities = [
-        "It is<br> decidedly<br> so",
-        "Without<br> a<br> doubt",
-        "Yes<br> definitely",
-        "You may<br> rely<br> on it",
-        "As I<br> see it,<br> yes",
-        "Most<br> likely",
-        "Outlook<br> good",
-        "Yes",
-        "Signs<br> point to<br> yes",
-        "Reply<br> hazy, try<br> again",
-        "Ask<br> again<br> later",
-        "Better not<br> tell you<br> now",
-        "Cannot<br> predict<br> now",
-        "Concentrate<br> and ask<br> again",
-        "Don't<br> count<br> on it",
-        "My reply<br> is<br> no",
-        "My<br> sources<br> say no",
-        "Outlook<br> not so<br> good",
-        "Very<br> doubtful",
+        { type: 'image', content: "/illuminati.jpg" },
+        { type: 'text', content: "It is<br> decidedly<br> so" },
+        { type: 'text', content: "Without<br> a<br> doubt" },
+        { type: 'text', content: "Yes<br> definitely" },
+        { type: 'text', content: "You may<br> rely<br> on it" },
+        { type: 'text', content: "As I<br> see it,<br> yes" },
+        { type: 'text', content: "Most<br> likely" },
+        { type: 'text', content: "Outlook<br> good" },
+        { type: 'text', content: "Yes" },
+        { type: 'text', content: "Signs<br> point to<br> yes" },
+        { type: 'text', content: "Ask<br> again<br> later" },
+        { type: 'text', content: "Better not<br> tell you<br> now" },
+        { type: 'text', content: "Cannot<br> predict<br> now" },
+        { type: 'text', content: "Concentrate<br> and ask<br> again" },
+        { type: 'text', content: "Don't<br> count<br> on it" },
+        { type: 'text', content: "My reply<br> is<br> no" },
+        { type: 'text', content: "My<br> sources<br> say no" },
+        { type: 'text', content: "Outlook<br> not so<br> good" },
+        { type: 'text', content: "Very<br> doubtful" },
       ];
 
       const contractInfo = [
-        "Launched <br/>on Base <br/>Chain",
-        "Total <br/>Supply:<br/> 80 Billion",
-        "Buy/Sell<br/> Tax:<br/> 5% --> 0%",
-        "Deflationary",
-        "Unique<br/>Candle<br/> Utility",
-        "80% to<br/>Liquidity",
-        "5% to<br/>Marketing",
-        "15% to<br/>Treasury<br/> & Commun80",
+        { type: 'text', content: "Launched <br/>on Base <br/>Chain" },
+        { type: 'text', content: "Total <br/>Supply:<br/> 80 Billion" },
+        { type: 'text', content: "Buy/Sell<br/> Tax:<br/> 5% --> 0%" },
+        { type: 'text', content: "Deflationary" },
+        { type: 'text', content: "Unique<br/>Candle<br/> Utility" },
+        { type: 'text', content: "80% to<br/>Liquidity" },
+        { type: 'text', content: "5% to<br/>Marketing" },
+        { type: 'text', content: "15% to<br/>Treasury<br/> & Commun80" },
       ];
 
       // State management
@@ -457,22 +488,47 @@
         // Create new elements
         // Insert in reverse order so they appear in correct order in DOM
         for (let i = answers.length - 1; i >= 0; i--) {
-          const text = answers[i];
+          const answer = answers[i];
           const radio = document.createElement("input");
           radio.type = "radio";
           radio.name = "answer";
           radio.id = `answer${i + 1}`;
-          radio.value = text;
+          radio.value = typeof answer === 'string' ? answer : answer.content;
           radio.checked = false;
           // Store the original array index as a data attribute
           radio.dataset.arrayIndex = i;
 
           const container = document.createElement("div");
           container.className = "answer-container";
-          container.innerHTML = text;
+          
+          // Handle different answer types
+          if (typeof answer === 'string') {
+            // Legacy string format
+            container.innerHTML = answer;
+          } else if (answer.type === 'image') {
+            // Image answer - force to even position for upward-pointing triangle
+            container.classList.add('image-answer');
+            // Force even positioning by adding a class that targets even nth-child
+            if ((answers.length - i) % 2 !== 0) {
+              container.style.clipPath = 'polygon(0 100%, 50% 20%, 100% 100%)';
+              container.style.alignItems = 'flex-end';
+              container.style.paddingBottom = '5%';
+              container.style.top = '40%';
+            }
+            const img = document.createElement('img');
+            img.src = answer.content;
+            img.className = 'answer-image';
+            img.alt = 'Magic 8-ball answer';
+            container.appendChild(img);
+            console.log('Created image container for index:', i, 'with src:', answer.content);
+          } else {
+            // Text answer
+            container.innerHTML = answer.content;
+          }
 
+          // Insert radio and container as a pair - container immediately after radio
           form.insertBefore(container, form.firstChild);
-          form.insertBefore(radio, form.firstChild);
+          form.insertBefore(radio, container);
         }
       }
 
@@ -489,6 +545,7 @@
           // Update current mode
           currentMode = this.dataset.mode;
           contractIndex = 0; // Reset contract index when switching modes
+          hasShownImage = false; // Reset image flag when switching modes
 
           // Update answers based on mode
           if (currentMode === 'general') {
@@ -502,11 +559,13 @@
           
           // Reset the form
           document.querySelector('form').reset();
+          hasShownImage = false; // Reset image flag when form resets
         });
       });
 
       // Add a flag to prevent immediate animation
       let isFirstClick = true;
+      let hasShownImage = false;
 
       // Modify your form click handler:
       document.querySelector("form").addEventListener("click", function (e) {
@@ -525,15 +584,22 @@
           return;
         }
 
-        isFirstClick = false;
-
         if (e.target.tagName !== "INPUT") {
           const radios = Array.from(this.querySelectorAll('[type="radio"]'));
           
           let selectedRadio;
           if (currentMode === 'general') {
-            // Random selection for general mode
-            selectedRadio = radios[Math.floor(Math.random() * radios.length)];
+            // Show image first if not shown yet
+            if (isFirstClick) {
+              // Find the radio that specifically corresponds to the image (array index 0)
+              console.log('Looking for image radio with arrayIndex 0');
+              selectedRadio = radios.find(radio => parseInt(radio.dataset.arrayIndex) === 0);
+              console.log('Found radio:', selectedRadio, 'with value:', selectedRadio?.value);
+              hasShownImage = true;
+            } else {
+              // Random selection for subsequent clicks
+              selectedRadio = radios[Math.floor(Math.random() * radios.length)];
+            }
           } else {
             // Sequential selection for contract mode
             // Find the radio with the matching array index
@@ -542,9 +608,40 @@
           }
           
           if (selectedRadio) {
+            console.log('Selecting radio:', selectedRadio.id, 'with value:', selectedRadio.value);
             selectedRadio.checked = true;
+            console.log('Radio checked:', selectedRadio.checked);
+            
+            // Find and directly show the corresponding container
+            const allContainers = document.querySelectorAll('.answer-container');
+            const allRadios = document.querySelectorAll('[type="radio"]');
+            
+            // Find the index of the selected radio
+            const radioIndex = Array.from(allRadios).indexOf(selectedRadio);
+            console.log('Radio index in DOM:', radioIndex);
+            
+            // Show the corresponding container
+            if (allContainers[radioIndex]) {
+              // Hide all containers first
+              allContainers.forEach(container => {
+                container.style.opacity = '0';
+                container.style.transition = 'none';
+              });
+              
+              // Show the correct container
+              setTimeout(() => {
+                allContainers[radioIndex].style.opacity = '1';
+                allContainers[radioIndex].style.transition = 'opacity 1s 1.7s';
+                console.log('Showing container:', allContainers[radioIndex]);
+                console.log('Container content:', allContainers[radioIndex].innerHTML);
+              }, 100);
+            }
+          } else {
+            console.log('No radio selected!');
           }
         }
+
+        isFirstClick = false;
       });
     </script>
   </body>

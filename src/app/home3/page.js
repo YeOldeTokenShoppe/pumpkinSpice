@@ -27,6 +27,8 @@ import CoinLoader from '@/components/CoinLoader';
 import FloatingBar from '@/components/FloatingBar';
 import TokenomicsSection from '@/components/TokenomicsSection';
 import Illumin80Bouncer from '@/components/Illumin80Bouncer';
+import Numerology1 from '@/components/Numerology1';
+import TubesCursor from '@/components/TubesCursor';
 
 
 
@@ -297,6 +299,50 @@ function ScrollTriggeredTitle({ isMobile }) {
         triggerAnimation={titleInView}
         instanceId="welcome-title"
       />
+      
+      {/* Introduction Section */}
+      <div style={{
+        maxWidth: '800px',
+        margin: '5rem auto 0 auto',
+        padding: isMobile ? '30px 20px' : '40px 30px',
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%)',
+        borderRadius: '16px',
+        border: '1px solid rgba(255,255,255,0.1)',
+        backdropFilter: 'blur(10px)',
+        textAlign: 'center',
+        opacity: titleInView ? 1 : 0,
+        transform: titleInView ? 'translateY(0)' : 'translateY(20px)',
+        transition: 'all 1s ease-out 2s',
+        position: 'relative',
+        zIndex: 10
+      }}>
+        <h2 style={{
+          fontSize: isMobile ? '1.6rem' : '1.8rem',
+          color: '#ffffff',
+          fontFamily: "'Fjalla One', sans-serif",
+          marginBottom: '0',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
+          lineHeight: '1.5',
+          maxWidth: '600px',
+          margin: '0 auto'
+        }}>
+         She is the mother of memes, aider to traders, fren to degens, patron saint of day traders, and your guide up and to the right.
+         <br /><br />
+         Whether you need a Hail Mary for hard times, or just sanctuary in the dark realm of DeFi,
+         let <b>Our Lady of Perpetual Profit</b> light the way.
+        </h2>
+        {/* <p style={{
+          fontSize: isMobile ? '0.95rem' : '1.1rem',
+          color: 'rgba(255, 255, 255, 0.9)',
+          lineHeight: '1.6',
+          fontFamily: '"Inter", sans-serif',
+          textShadow: '1px 1px 3px rgba(0,0,0,0.5)'
+        }}>
+          Our Lady of Perpetual Profit rides eternal through the digital realm, 
+          blessing holders with divine gains. Join the faithful as we ascend 
+          to financial enlightenment together.
+        </p> */}
+      </div>
     </div>
   );
 }
@@ -647,6 +693,7 @@ export default function CloudTestPage() {
   const [scrollY, setScrollY] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [secondTitleInView, setSecondTitleInView] = useState(false);
+  const [showNumerology, setShowNumerology] = useState(false);
 
   // Refs
   const secondTitleRef = useRef(null);
@@ -921,8 +968,8 @@ export default function CloudTestPage() {
             {/* Additional point lights for desktop only */}
             {!isMobile && (
               <>
-                <pointLight position={[0, 5, 10]} intensity={3} />
-                <pointLight position={[-10, 0, 10]} intensity={2} />
+                {/* <pointLight position={[0, 5, 10]} intensity={3} />
+                <pointLight position={[-10, 0, 10]} intensity={2} /> */}
               </>
             )}
             <PostProcessingEffects />
@@ -1263,14 +1310,40 @@ export default function CloudTestPage() {
             onClick={() => window.open('https://app.uniswap.org/swap', '_blank')}
           >
             <div style={{ fontSize: isMobile ? '50px' : '60px', marginBottom: '20px' }}>🚀</div>
-            <h3 style={{
-              color: 'white',
-              fontSize: isMobile ? '28px' : '32px',
-              marginBottom: '15px',
-              fontFamily: "'Fjalla One', sans-serif",
-            }}>
-              Buy RL80
-            </h3>
+ <button
+                        onClick={handleOpenModal}
+                         style={{
+                          marginTop: isMobile ? '1.5rem' : '2rem',
+                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
+                          fontSize: isMobile ? '1.2rem' : '1.4rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Fjalla One', sans-serif",
+                          textTransform: 'uppercase',
+                          letterSpacing: '2px',
+                          color: '#000000',
+                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                          border: '3px solid #d4af37',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          zIndex: 102,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                        }}
+                      >
+                        Buy RL80
+                      </button>
             <span style={{
               fontSize: isMobile ? '40px' : '48px',
               fontWeight: '900',
@@ -1312,14 +1385,40 @@ export default function CloudTestPage() {
             onClick={() => window.open('/stake', '_blank')}
           >
             <div style={{ fontSize: isMobile ? '50px' : '60px', marginBottom: '20px' }}>💰</div>
-            <h3 style={{
-              color: 'white',
-              fontSize: isMobile ? '28px' : '32px',
-              marginBottom: '15px',
-              fontFamily: "'Fjalla One', sans-serif",
-            }}>
-              Stake & Earn
-            </h3>
+  <button
+                        onClick={handleOpenModal}
+                         style={{
+                          marginTop: isMobile ? '1.5rem' : '2rem',
+                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
+                          fontSize: isMobile ? '1.2rem' : '1.4rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Fjalla One', sans-serif",
+                          textTransform: 'uppercase',
+                          letterSpacing: '2px',
+                          color: '#000000',
+                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                          border: '3px solid #d4af37',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          zIndex: 102,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                        }}
+                      >
+                        Stake RL80
+                      </button>
             <span style={{
               fontSize: isMobile ? '40px' : '48px',
               fontWeight: '900',
@@ -1597,6 +1696,7 @@ export default function CloudTestPage() {
                     padding: '25px'
                   }}>
                     <h2 style={{
+                      fontFamily: "'Fjalla One', sans-serif",
                       fontSize: '1.3em',
                       fontWeight: '700',
                       marginBottom: '20px',
@@ -1824,9 +1924,12 @@ export default function CloudTestPage() {
                 Join The Leaderboard of Luminaries
               </p> */}
                    {/* <img src="/timeline2.png" alt="Candle Icon" style={{ width: isMobile ? '50%' : '50%', height: 'auto', marginBottom: '-1rem', marginTop: '-2rem' }} /> */}
-         
+                    <span style={{               fontFamily: "'Fjalla One', sans-serif",
+fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
+                Light Up Her DMs
+              </span>         
               <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
-Add a green candle to her timeline and watch miracles happen. Every candle boosts the token, fortifies the faithful, and pleases the Patron Saint of Day Traders. The top 80 stakers and burners ascend to the Illumin80 — a guild that unlocks even more glorious gains.
+Burn or stake RL80 to add a green candle to her timeline and watch miracles happen.  
               </p>
 
               {/* Top Burners Leaderboard */}
@@ -1996,6 +2099,7 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
         {/* Illumin80 Bouncer Section - 2 Column Layout */}
         <div style={{
           position: 'relative',
+          top: "5rem",
           margin: '4rem auto 4rem auto',
           width: isMobile ? '95%' : '90%',
           maxWidth: '1200px',
@@ -2028,7 +2132,8 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
                 position: "relative",
                 minHeight: "500px"
               }}>
-                <Illumin80Bouncer />
+                {/* <Illumin80Bouncer /> */}
+               <Numerology1/>
               </div>
               
               {/* Right Column - Illumin80 Perks */}
@@ -2043,8 +2148,11 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
               color: '#d4af37',
               fontFamily: 'UnifrakturCook, serif',
               textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
-            }}>Join the Illumin80</h1>
-                
+            }}>The Illumin80</h1>
+                    <span style={{               fontFamily: "'Fjalla One', sans-serif",
+fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
+                Join the Most Exclusive Cult in Crypto
+              </span>
                 <p style={{
                                   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 
@@ -2054,7 +2162,7 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
                   color: '#ffffff',
                   opacity: 0.9
                 }}>
-                  Burn RL80 tokens to join the top 80 holders and unlock exclusive benefits.
+                  Part mystery cult, part philosophy club, The Illumin80 are the most luminous level of RL80 token holders. The top 80 stakers and burners ascend to the Illumin80 — a guild that unlocks even more glorious gains.
                 </p>
                 
                 <ul style={{
@@ -2064,13 +2172,18 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
                   listStyle: 'none',
                   paddingLeft: '0'
                 }}>
+                      <li style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
+                    Staking rewards of 2.5% of all taxes
+                  </li>
                   <li style={{ marginBottom: '0.5rem' }}>
                     <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
                     Access to the Moon Room
                   </li>
-                  <li style={{ marginBottom: '0.5rem' }}>
+        
+                   <li style={{ marginBottom: '0.5rem' }}>
                     <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
-                    Staking rewards of 2.5% of all taxes
+                    Air drops of upcoming Nativ80 token events
                   </li>
                   {/* <li style={{ marginBottom: '0.5rem' }}>
                     <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🌙</span>
@@ -2078,32 +2191,40 @@ Add a green candle to her timeline and watch miracles happen. Every candle boost
                   </li> */}
                 </ul>
 
-                <button 
-                  onClick={() => setIsModalOpen(true)}
-                  style={{
-                    marginTop: '1.5rem',
-                    padding: '12px 24px',
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    color: '#000',
-                    background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 100%)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
-                  }}
-                >
-                  Light a Candle
-                </button>
+             <button
+                        onClick={handleOpenModal}
+                         style={{
+                          marginTop: isMobile ? '1.5rem' : '2rem',
+                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
+                          fontSize: isMobile ? '1.2rem' : '1.4rem',
+                          fontWeight: 'bold',
+                          fontFamily: "'Fjalla One', sans-serif",
+                          textTransform: 'uppercase',
+                          letterSpacing: '2px',
+                          color: '#000000',
+                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
+                          border: '3px solid #d4af37',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          zIndex: 102,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
+                        }}
+                      >
+                        Get Enlightened
+                      </button>
               </div>
             </div>
           </div>

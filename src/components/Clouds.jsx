@@ -341,14 +341,14 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
           decay={1.8}
           position={[40, 3, 8]}
         /> */}
-         <pointLight position={[0, 0, 0.5]} color="blue" />
+         {/* <pointLight position={[0, 0, 0.5]} color="blue" /> */}
 
         {/* {cloudTexture ? ( */}
           <group ref={cloudsGroupRef} frustumCulled={false}>
             {/* Hemisphere Light with Helper for Clouds */}
   <HemisphereLightComponent />
 
-            <Clouds material={THREE.MeshStandardMaterial} limit={400}>
+            <Clouds material={THREE.MeshStandardMaterial} limit={400} frustumCulled={false}>
               {/* Main large white cloud  that is DIRECTLY under the bull */}
               <Cloud 
                 ref={cloud0}
@@ -574,6 +574,91 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 // texture={cloudTexture}
                 frustumCulled={false}
               />
+              
+              {/* New lower clouds for extended page content */}
+              <Cloud 
+                seed={15}
+                segments={10}
+                volume={22}
+                opacity={0.75}
+                fade={1}
+                growth={5}
+                speed={0.02}
+                bounds={[16, 8, 6]}
+                position={[-15, -75, 5]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              {/* <Cloud 
+                seed={16}
+                segments={8}
+                volume={18}
+                opacity={0.7}
+                fade={1}
+                growth={4}
+                speed={0.025}
+                bounds={[14, 7, 5]}
+                position={[35, -150, -5]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              /> */}
+              
+              {/* <Cloud 
+                seed={17}
+                segments={12}
+                volume={20}
+                opacity={0.65}
+                fade={1}
+                growth={6}
+                speed={0.015}
+                bounds={[18, 10, 6]}
+                position={[10, -160, 10]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              /> */}
+              
+              {/* <Cloud 
+                seed={18}
+                segments={9}
+                volume={16}
+                opacity={0.8}
+                fade={1}
+                growth={5}
+                speed={0.03}
+                bounds={[12, 6, 5]}
+                position={[-20, -170, 0]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              /> */}
+              
+              {/* <Cloud 
+                seed={19}
+                segments={11}
+                volume={24}
+                opacity={0.7}
+                fade={1}
+                growth={6}
+                speed={0.02}
+                bounds={[20, 12, 7]}
+                position={[50, -180, -10]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              /> */}
+              
+              {/* <Cloud 
+                seed={20}
+                segments={10}
+                volume={19}
+                opacity={0.75}
+                fade={1}
+                growth={5}
+                speed={0.025}
+                bounds={[15, 9, 6]}
+                position={[-35, -190, 8]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              /> */}
               
               {/* Hidden light sources for glow effects */}
               {/* <pointLight
