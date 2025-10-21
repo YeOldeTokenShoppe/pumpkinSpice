@@ -1,62 +1,89 @@
-import React, { useRef, useState } from 'react';
-import { Cloud } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import React, { useMemo } from 'react';
 import * as THREE from 'three';
 
 const BreathSmoke = ({ 
-  position = [0, 0, 0], 
-  direction = [0, 0, 1],
-  rotation = [0, 0, 0], // Add rotation prop [x, y, z] in radians
-  breathRate = 2,
-  color = "#e8e8e8",
-  debug = false // Add debug prop
+  position = [3.1, 10.4, 25.1], 
+  direction = [-0.1, -0.3, 2],
+  rotation = [-2.2, 2.7, -0.2],
+  debug = false
 }) => {
-  const groupRef = useRef();
-  const timeRef = useRef(0);
-  const [currentOpacity, setCurrentOpacity] = useState(debug ? 1 : 0.15);
-  
-  useFrame((state, delta) => {
-    if (!groupRef.current) return;
+
+  // Use props directly without Leva controls
+  const posX = position[0];
+  const posY = position[1];
+  const posZ = position[2];
+  const dirX = direction[0];
+  const dirY = direction[1];
+  const dirZ = direction[2];
+  const rotX = rotation[0];
+  const rotY = rotation[1];
+  const rotZ = rotation[2];
+  const cloudBounds = [1, 5, 2];
+  const baseOpacity = 0.4;
+  const segments = 20;
+
+  // Static cone shape - no animation needed
+  const staticOpacity = debug ? 1 : baseOpacity;
+
+  // Create breath particles with fire gradient colors
+  const breathParticles = useMemo(() => {
+    const particles = [];
+    const particleCount = segments;
     
-    timeRef.current += delta;
+    // Fire gradient colors from hot (white/yellow) to cool (red/orange)
+    const fireColors = [
+      
+   
+     
+
+
+
+      '#994422',  // Dark red
+            '#cc4400', // Red-orange
+                  '#ff6b00', // Deep orange
+                     '#e5e0d9ff', // Orange
+                     '#ffffff', // Hot white
+    ];
     
-    // Continuous flowing breath with pulsing intensity
-    const breathPulse = (Math.sin(timeRef.current * breathRate) + 1) * 0.5; // 0 to 1 smooth
-    const flowTime = timeRef.current * 2; // Continuous flow
-    
-    // Fluid-like motion: constant forward flow with varying intensity
-    const flowSpeed = 0.8 + breathPulse * 0.4; // Varies between 0.8 and 1.2
-    const forwardFlow = flowTime * flowSpeed;
-    
-    // Add turbulence for fluid-like movement
-    const turbulenceX = Math.sin(flowTime * 3) * 0.15;
-    const turbulenceY = Math.cos(flowTime * 2.5) * 0.1;
-    
-    // Position flows continuously forward with some waviness
-    groupRef.current.position.x = position[0] + direction[0] * (forwardFlow % 4) + turbulenceX;
-    groupRef.current.position.y = position[1] + direction[1] * (forwardFlow % 4) + turbulenceY + breathPulse * 0.2;
-    groupRef.current.position.z = position[2] + direction[2] * (forwardFlow % 4);
-    
-    // Scale pulses with breath but maintains stream
-    const scaleX = 0.4 + breathPulse * 0.3 + Math.sin(flowTime * 4) * 0.1;
-    const scaleY = 0.4 + breathPulse * 0.2 + Math.cos(flowTime * 3.5) * 0.1;
-    const scaleZ = 1.0 + breathPulse * 0.5; // Maintains length
-    
-    groupRef.current.scale.set(scaleX, scaleY, scaleZ);
-    groupRef.current.visible = true;
-    
-    // Update opacity - cycles for continuous flow
-    if (!debug) {
-      const flowCycle = (forwardFlow % 4) / 4; // 0 to 1 as it flows forward
-      const fadedOpacity = flowCycle < 0.7 
-        ? 0.15 + breathPulse * 0.1 // Visible during flow
-        : 0.15 * (1 - (flowCycle - 0.7) / 0.3); // Fade at end
-      setCurrentOpacity(Math.max(0.05, fadedOpacity));
+    for (let i = 0; i < particleCount; i++) {
+      // Create cone-shaped distribution
+      const progress = i / particleCount;
+      const radius = cloudBounds[0] * progress; // Expand outward
+      const height = cloudBounds[1] * progress; // Rise upward
+      const depth = cloudBounds[2] * progress; // Move forward
+      
+      // Use seeded random for consistent positioning
+      const seededRandom = (seed) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      };
+      
+      const angle = seededRandom(i * 13.7) * Math.PI * 2;
+      const radiusVariation = seededRandom(i * 17.3) * radius;
+      
+      // Color gradient based on progress (distance from source)
+      const colorIndex = Math.min(Math.floor(progress * fireColors.length), fireColors.length - 1);
+      const particleColor = fireColors[colorIndex];
+      
+      particles.push({
+        position: [
+          Math.cos(angle) * radiusVariation,
+          height + (seededRandom(i * 23.1) - 0.5) * cloudBounds[1] * 0.2,
+          depth + (seededRandom(i * 29.7) - 0.5) * cloudBounds[2] * 0.3
+        ],
+        scale: 0.1 + seededRandom(i * 31.9) * 0.3,
+        opacity: (1 - progress) * 0.8 + 0.2,
+        color: particleColor,
+        rotationX: seededRandom(i * 37.1) * Math.PI,
+        rotationY: seededRandom(i * 41.3) * Math.PI,
+        rotationZ: seededRandom(i * 43.7) * Math.PI
+      });
     }
-  });
+    return particles;
+  }, []); // Empty dependency array - generate once and never change
 
   return (
-    <group ref={groupRef} position={position} rotation={rotation}>
+    <group position={[posX, posY, posZ]} rotation={[rotX, rotY, rotZ]}>
       {/* Debug sphere to show exact position */}
       {debug && (
         <>
@@ -66,21 +93,77 @@ const BreathSmoke = ({
           </mesh>
           <pointLight color="yellow" intensity={5} distance={10} />
           {/* Debug arrow to show direction */}
-          <arrowHelper args={[new THREE.Vector3(...direction).normalize(), new THREE.Vector3(0, 0, 0), 3, 0xff0000]} />
+          <arrowHelper args={[new THREE.Vector3(dirX, dirY, dirZ).normalize(), new THREE.Vector3(0, 0, 0), 3, 0xff0000]} />
         </>
       )}
-      <Cloud
-        seed={10}
-        segments={debug ? 30 : 8}
-        volume={debug ? 50 : 5}
-        opacity={debug ? 1 : currentOpacity}
-        fade={debug ? 20 : 8}
-        growth={debug ? 10 : 3}
-        speed={0.15}
-        bounds={debug ? [10, 5, 5] : [0.8, 0.4, 10]} // Narrow width/height, long depth for cone
-        color={debug ? "#00ff00" : color}
-        concentrate="random" // Helps create more natural distribution
-      />
+      {/* Breath particles arranged in cone shape with fire gradient */}
+      {breathParticles.map((particle, i) => (
+        <mesh 
+          key={i}
+          position={particle.position}
+          scale={[
+            particle.scale * (0.8 + Math.random() * 0.4), 
+            particle.scale * (0.8 + Math.random() * 0.4), 
+            particle.scale * (1.2 + Math.random() * 0.6)
+          ]}
+          rotation={[particle.rotationX, particle.rotationY, particle.rotationZ]}
+        >
+          <boxGeometry args={[1, 1, 1]} />
+          <meshBasicMaterial 
+            color={debug ? "#00ff00" : particle.color}
+            transparent
+            opacity={staticOpacity * particle.opacity * 0.7}
+            alphaTest={0.1}
+          />
+        </mesh>
+      ))}
+      
+      {/* Additional wispy shapes for more volume with fire gradient */}
+      {[...Array(Math.floor(segments / 6))].map((_, i) => {
+        const progress = i / Math.floor(segments / 6);
+        const radius = cloudBounds[0] * progress * 0.5;
+        const angle = (i / Math.floor(segments / 6)) * Math.PI * 2;
+        
+        // Seeded random for consistent larger shape rotations
+        const seededRandom = (seed) => {
+          const x = Math.sin(seed) * 10000;
+          return x - Math.floor(x);
+        };
+        
+        // Fire gradient for larger shapes
+        const fireColors = ['#ffffff', '#fff3a0', '#ffed4e', '#ff9500', '#ff6b00', '#cc4400', '#994422'];
+        const colorIndex = Math.min(Math.floor(progress * fireColors.length), fireColors.length - 1);
+        const shapeColor = fireColors[colorIndex];
+        
+        return (
+          <mesh 
+            key={`large-${i}`}
+            position={[
+              Math.cos(angle) * radius,
+              cloudBounds[1] * progress * 0.6,
+              cloudBounds[2] * progress * 0.8
+            ]}
+            scale={[
+              0.15 + progress * 0.2,
+              0.1 + progress * 0.15,
+              0.3 + progress * 0.4
+            ]}
+            rotation={[
+              seededRandom(i * 47.1 + 1000) * Math.PI,
+              seededRandom(i * 53.3 + 1000) * Math.PI,
+              seededRandom(i * 59.7 + 1000) * Math.PI
+            ]}
+          >
+            <boxGeometry args={[1, 1, 1]} />
+            <meshBasicMaterial 
+              color={debug ? "#00ff00" : shapeColor}
+              transparent
+              opacity={staticOpacity * (1 - progress) * 0.4}
+              alphaTest={0.1}
+            />
+          </mesh>
+        );
+      })}
     </group>
   );
 };

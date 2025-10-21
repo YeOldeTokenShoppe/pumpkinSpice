@@ -39,6 +39,19 @@ const levitateStyle = `
       transform: translateY(5px) rotateZ(-1deg);
     }
   }
+
+  .magic-ball-glow::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(138, 43, 226, 0.8) 0%, rgba(75, 0, 130, 0.5) 40%, transparent 65%);
+    border-radius: 50%;
+    z-index: -1;
+    transform: scale(0.8);
+  }
 `;
 
 const FluidBackground = styled.div`
@@ -171,12 +184,12 @@ const Numerology1 = ({ isMobile = false }) => {
                           zIndex: "2",
                           background: "transparent",
                           borderRadius: "50%",
-                          filter: "drop-shadow(0 0 20px rgba(138, 43, 226, 1)) drop-shadow(0 0 40px rgba(75, 0, 130, 0.8)) drop-shadow(0 0 60px rgba(138, 43, 226, 0.6))",
                           animation: "levitate 4s ease-in-out infinite",
                           transition: "transform 0.3s ease",
                           transform: isHovering ? "scale(1.05)" : "scale(1)",
                           cursor: "pointer",
                         }}
+                        className="magic-ball-glow"
                         onMouseEnter={() => setIsHovering(true)}
                         onMouseLeave={() => setIsHovering(false)}
                       >

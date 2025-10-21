@@ -4,7 +4,7 @@ import { Canvas, useFrame, extend } from "@react-three/fiber";
 import { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper } from "@react-three/drei";
 import * as THREE from "three";
-// import { useControls } from "leva"; // Uncomment for GUI controls
+import { Leva } from "leva";
 import DarkClouds from "../../components/Clouds";
 import PostProcessingEffects from "../../components/PostProcessingEffects";
 import { useFirestoreResults } from '../../utilities/useFirestoreResults';
@@ -30,6 +30,7 @@ import Illumin80Bouncer from '@/components/Illumin80Bouncer';
 import Numerology1 from '@/components/Numerology1';
 import TubesCursor from '@/components/TubesCursor';
 import CarouselWrapper from '@/components/CarouselWrapper';
+import BreathSmoke from "@/components/BreathSmoke";
 
 
 
@@ -71,6 +72,7 @@ const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2 }) => 
 function Model({ scrollY, isMobile, onLoad }) {
   const { scene } = useGLTF('/models/ourlady_rider7.glb');
   const groupRef = useRef();
+  const staticBreathRef = useRef();
 
   // Call onLoad when model is ready
   useEffect(() => {
@@ -99,6 +101,37 @@ function Model({ scrollY, isMobile, onLoad }) {
         scrollY={scrollY}
         scale={3}
         position={[0, 2, 8]} // Position relative to model - moved up
+      />
+      
+    </group>
+  );
+}
+
+// Breath component that follows the same scroll animation as the Model
+function ScrollingBreath({ scrollY, isMobile }) {
+  const breathGroupRef = useRef();
+  
+  // Match the exact same animation as the Model component
+  useFrame(() => {
+    if (breathGroupRef.current) {
+      const baseY = isMobile ? -15 : -15;
+      breathGroupRef.current.position.y = baseY + scrollY * 0.015;
+    }
+  });
+  
+  return (
+    <group ref={breathGroupRef} position={isMobile ? [2, -8, -10] : [2, 8, -11]}>
+      <BreathSmoke 
+        name="Left Nostril"
+        position={[2.8, 10.6, 25.1]}
+        direction={[0.1, -0.3, 2]}
+        rotation={[2.6, 2.4, -0.3]}
+      />
+      <BreathSmoke 
+        name="Right Nostril"
+        position={[3.8, 10.2, 25.3]}
+        direction={[-0.1, -0.3, 2]}
+        rotation={[2.1, 2.3, 0.7]}
       />
     </group>
   );
@@ -331,9 +364,9 @@ function ScrollTriggeredTitle({ isMobile }) {
                    width: '90%',
           margin: '0 auto'
         }}>
-        She's the mother of memes, aider to traders, fren to degens, patron saint of day traders, and your guide up and to the right.
-         <br /><br />
-         Whether you need a Hail Mary for hard times, or just sanctuary in the dark realm of DeFi,
+        She's the mother of memes, aider to traders, fren to degens, and your guide up and to the right.
+    
+          Whether you need a Hail Mary for hard times, or just sanctuary in the dark realm of DeFi,
          let <b>Our Lady of Perpetual Profit</b> light the way.
         </h2>
         {/* <p style={{
@@ -969,6 +1002,10 @@ export default function CloudTestPage() {
               intensity={1.5}
             />
             <Model scrollY={scrollY} isMobile={isMobile} onLoad={() => setModelLoaded(true)} />
+            
+            {/* Breath that follows the same scroll animation as the bull */}
+            <ScrollingBreath scrollY={scrollY} isMobile={isMobile} />
+            
             <ScrollClouds scrollY={scrollY} />
             {/* Additional point lights for desktop only */}
             {!isMobile && (
@@ -981,6 +1018,41 @@ export default function CloudTestPage() {
           </Suspense>
         </Canvas>
       </div>
+
+      {/* Leva Controls Panel - positioned middle right */}
+      {/* <Leva
+        fill={false}
+        flat={false}
+        oneLineLabels={false}
+        hideCopyButton={false}
+        titleBar={true}
+        collapsed={false}
+        theme={{
+          colors: {
+            elevation1: 'rgba(40, 40, 40, 0.9)',
+            elevation2: 'rgba(60, 60, 60, 0.9)',
+            elevation3: 'rgba(80, 80, 80, 0.9)',
+            accent1: '#ff8c00',
+            accent2: '#ffa500',
+            accent3: '#ffb84d',
+            highlight1: 'rgba(255, 140, 0, 0.2)',
+            highlight2: 'rgba(255, 165, 0, 0.4)',
+            highlight3: 'rgba(255, 184, 77, 0.6)',
+          }
+        }}
+        style={{
+          position: 'fixed',
+          top: 'calc(50% + 400px)',
+          right: '20px',
+          transform: 'translateY(-50%)',
+          zIndex: 1000,
+          maxHeight: '80vh',
+          overflowY: 'auto',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 140, 0, 0.3)'
+        }}
+      /> */}
 
       {/* Scrollable Overlay Content - Exact structure from home3/page */}
       <div style={{
@@ -1096,7 +1168,7 @@ export default function CloudTestPage() {
                 gap: "0.5rem",
               }}
             >
-              {/* Spinning Album Art */}
+
               <div
                 className={contextIsPlaying ? "spinning-record" : ""}
                 style={{
@@ -1109,7 +1181,7 @@ export default function CloudTestPage() {
                 }}
               />
               
-              {/* Skip Button */}
+
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -1141,7 +1213,7 @@ export default function CloudTestPage() {
                 </svg>
               </button>
               
-              {/* Close Button */}
+      
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -1944,7 +2016,7 @@ textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1p
                    {/* <img src="/timeline2.png" alt="Candle Icon" style={{ width: isMobile ? '50%' : '50%', height: 'auto', marginBottom: '-1rem', marginTop: '-2rem' }} /> */}
                     <span style={{               fontFamily: "'Fjalla One', sans-serif",
 fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem', lineHeight: '1.3' }}>
-                Dedicate a Green Candle
+                Light a Green Candle for Luck
               </span>         
               <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
 Burn or stake RL80 to add a green candle to her timeline and watch miracles happen.  
@@ -2184,7 +2256,7 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
             }}>The Illumin80</h1>
                     <span style={{               fontFamily: "'Fjalla One', sans-serif",
 fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-                You're invited to Join
+               (Keep this part on the down-low)
               </span>
                 <p style={{
                                   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -2256,7 +2328,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                           e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
                         }}
                       >
-                        Get Enlightened
+                        JOIN NOW
                       </button>
               </div>
             </div>
@@ -2286,34 +2358,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
         <CarouselWrapper />
 
  
-        
-  
-{/* 
-         <div style={{
-                        position: "relative",
-                        maxWidth: "1400px",
-                        margin: "16rem auto",
-                        height: "300px", // Fixed container height
-                      }}
-                      className="desktop-rotating-text">
-                        <div style={{ 
-                          position: "absolute", 
-                          top: "50%", 
-                          left: "50%", 
-                          transform: "translate(-50%, -50%)",
-                          zIndex: 1,
-                          width: isMobile ? "95vw" : "80vw",
-                          maxWidth: isMobile ? "none" : "600px",
-                          height: "200px", // Fixed height to prevent layout shifts
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          overflow: "visible", // Allow text to extend if needed
-                          pointerEvents: "none" // Don't interfere with interactions
-                        }}>
-                          <RotatingText isDesktop={true} />
-                        </div>
-                      </div> */}
+
         
 
 
@@ -2428,10 +2473,12 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
           margin: 0;
           padding: 0;
           overflow-x: hidden;
+          box-sizing: border-box;
         }
         
         body {
-          margin: 8px;
+          margin: 0;
+          padding: 0;
         }
         
         canvas {

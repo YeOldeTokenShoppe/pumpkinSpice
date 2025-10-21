@@ -940,6 +940,7 @@ const Carousel = ({ images, setCarouselLoaded }) => {
   const [waitTimes, setWaitTimes] = useState([]);
   const [btcPrice, setBtcPrice] = useState(null);
   const [ethPrice, setEthPrice] = useState(null);
+  const [pepePrice, setPepePrice] = useState(null);
 
   // Fetch crypto prices
   useEffect(() => {
@@ -954,10 +955,12 @@ const Carousel = ({ images, setCarouselLoaded }) => {
         
         setBtcPrice(data.btc);
         setEthPrice(data.eth);
+        setPepePrice(data.pepe);
       } catch (error) {
         console.error('Failed to fetch crypto prices:', error);
         setBtcPrice('Loading...');
         setEthPrice('Loading...');
+        setPepePrice('Loading...');
       }
     };
 
@@ -1152,15 +1155,21 @@ const Carousel = ({ images, setCarouselLoaded }) => {
               const beastId = `beast${index + 1}`;
               const rider = riders[beastId];
               const beastMessages = messages[beastId] || [];
-              const isEven = index % 2 === 1;
+              const elementNumber = index + 1;
+              
+              // Determine which price to show based on element number
+              const getBtcPrice = () => [1, 4, 7, 10].includes(elementNumber) ? `BTC: ${btcPrice || 'Loading...'}` : '';
+              const getEthPrice = () => [2, 5, 8, 11].includes(elementNumber) ? `ETH: ${ethPrice || 'Loading...'}` : '';
+              const getPepePrice = () => [3, 6, 9, 12].includes(elementNumber) ? `PEPE: ${pepePrice || 'Loading...'}` : '';
 
               return (
                 <div
                   key={beastId}
                   className="element"
-                  data-item={isEven ? "logo" : ""}
-                  data-btc-price={!isEven ? `BTC: ${btcPrice || 'Loading...'}` : ''}
-                  data-eth-price={isEven ? `ETH: ${ethPrice || 'Loading...'}` : ''}
+                  data-item=""
+                  data-btc-price={getBtcPrice()}
+                  data-eth-price={getEthPrice()}
+                  data-pepe-price={getPepePrice()}
                   style={{ position: "absolute", "--item": index + 1 }}
                 >
                   <div className="element2">

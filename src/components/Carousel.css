@@ -41,8 +41,8 @@ body {
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: 900px;
-  height: 900px;
+  width: 55rem; /* Same width as the bottom */
+  height: 55rem; /* Same height as the bottom */
   border-radius: 50%;
   transform: translate(-50%, 50%) rotateX(90deg);
   background: radial-gradient(
@@ -71,17 +71,17 @@ body {
   left: 50%;
   top: 0; /* Position it at the top */
   transform: translate(-50%, -50%) rotateX(90deg);
-  width: 900px; /* Same width as the bottom */
-  height: 900px; /* Same height as the bottom */
+  width: 55rem; /* Same width as the bottom */
+  height: 55rem; /* Same height as the bottom */
   border-radius: 50%; /* Keep it circular */
   z-index: -1; /* Send it behind the carousel */
 
   background: radial-gradient(
       circle at center,
       transparent 40 350px,
-      /* Adjust as needed */ #d00 350px,
-      #900 400px,
-      #d00 450px
+      #d00 20.5rem,
+      #900 23.5rem,
+      #d00 26.5rem
     ),
     conic-gradient(
       from 180deg,
@@ -123,33 +123,37 @@ body {
   transform: translateZ(35px);
 }
 /* For odd elements: Apply circusStars.jpg background */
-/* Odd elements get the circusStars background */
-.element:nth-child(odd)::after {
+/* BTC price elements: 1, 4, 7, 10 */
+.element:nth-child(1)::after,
+.element:nth-child(4)::after,
+.element:nth-child(7)::after,
+.element:nth-child(10)::after {
   content: attr(data-btc-price);
   display: flex;
   align-items: center;
   justify-content: center;
   background-image: url("/marquee2.jpg");
-  background-color: #1b1724;
-  background-size: contain;
-  background-repeat: repeat;
+  background-size: stretch;
+  background-repeat: no-repeat;
   background-position: center;
+  width: 100%;
+  background-color: #f7931a; /* Bitcoin orange */
+  border: 2px solid #8e662b;
+  position: absolute;
+  top: -52px;
+  left: 0;
+  z-index: 1;
   color: #ffffff;
   font-weight: bold;
   font-size: 0.8rem;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-
-  width: 100%;
-  height: 50px;
-  top: -52px;
-  position: absolute;
-
-  left: 0;
-  z-index: 1; /* Adjust the z-index if needed */
 }
 
-/* Even elements get specific logo backgrounds */
-.element:nth-child(2)::after {
+/* ETH price elements: 2, 5, 8, 11 */
+.element:nth-child(2)::after,
+.element:nth-child(5)::after,
+.element:nth-child(8)::after,
+.element:nth-child(11)::after {
   content: attr(data-eth-price);
   display: flex;
   align-items: center;
@@ -159,7 +163,7 @@ body {
   background-repeat: no-repeat;
   background-position: center;
   width: 100%;
-  background-color: black;
+  background-color: #627eea; /* Ethereum blue */
   border: 2px solid #8e662b;
   position: absolute;
   top: -52px;
@@ -171,96 +175,21 @@ body {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.element:nth-child(4)::after {
-  content: attr(data-eth-price);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-image: url("/marquee2.jpg");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-color: #1b1724;
-  border: 2px solid #8e662b;
-  position: absolute;
-  top: -52px;
-  left: 0;
-  z-index: 1;
-  color: #ffffff;
-  font-weight: bold;
-  font-size: 0.8rem;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-.element:nth-child(6)::after {
-  content: attr(data-eth-price);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-image: url("/marquee2.jpg");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-color: black;
-  border: 2px solid #8e662b;
-  position: absolute;
-  top: -52px;
-  left: 0;
-  z-index: 1;
-  color: #ffffff;
-  font-weight: bold;
-  font-size: 0.8rem;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-.element:nth-child(8)::after {
-  content: attr(data-eth-price);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-image: url("/marquee2.jpg");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-color: #8e662b;
-  border: 2px solid #8e662b;
-  position: absolute;
-  top: -52px;
-  left: 0;
-  z-index: 1;
-  color: #ffffff;
-  font-weight: bold;
-  font-size: 0.8rem;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-.element:nth-child(10)::after {
-  content: attr(data-eth-price);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-image: url("/marquee2.jpg");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-color: #8e662b;
-  border: 2px solid #8e662b;
-  position: absolute;
-  top: -52px;
-  left: 0;
-  z-index: 1;
-  color: #ffffff;
-  font-weight: bold;
-  font-size: 0.8rem;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
+/* PEPE price elements: 3, 6, 9, 12 */
+.element:nth-child(3)::after,
+.element:nth-child(6)::after,
+.element:nth-child(9)::after,
 .element:nth-child(12)::after {
-  content: attr(data-eth-price);
+  content: attr(data-pepe-price);
   display: flex;
   align-items: center;
   justify-content: center;
   background-image: url("/marquee2.jpg");
-  background-size: cover;
+  background-size: stretch;
   background-repeat: no-repeat;
   background-position: center;
-  /* background-color: #8e662b; */
+  width: 100%;
+  background-color: #6fbf4d; /* Pepe green */
   border: 2px solid #8e662b;
   position: absolute;
   top: -52px;
@@ -337,14 +266,14 @@ body {
 /* Media Queries for Different Screen Sizes */
 @media (min-width: 1200px) {
   .carousel-container {
-    height: 5rem;
+    /* height: 5rem; */
     transform: scale(1.2); /* Full size */
   }
 }
 
 @media (min-width: 768px) and (max-width: 1199px) and (orientation: portrait) {
   .carousel-container {
-    height: 5rem; /* Adjust height */
+    /* height: 5rem; */
     transform: scale(0.8); /* Scaled down */
   }
   .chat-box-container {
@@ -354,7 +283,7 @@ body {
 
 @media (min-width: 768px) and (max-width: 1199px) and (orientation: landscape) {
   .carousel-container {
-    height: 5rem; /* Adjust height */
+    /* height: 5rem; */
     transform: scale(0.8); /* Scaled down */
   }
   .chat-box-container {
@@ -364,14 +293,14 @@ body {
 
 @media (min-width: 576px) and (max-width: 767px) {
   .carousel-container {
-    height: 25rem; /* Adjust height */
+    /* height: 25rem; */
     transform: scale(0.7); /* Scaled down further */
   }
 }
 
 @media (max-width: 575px) {
   .carousel-container {
-    height: 10rem; /* Adjust height */
+    /* height: 10rem;  */
     transform: scale(0.7); /* Smallest scale */
   }
 }
@@ -382,7 +311,7 @@ body {
 }
 @media (max-width: 400px) {
   .carousel-container {
-    height: 7rem;
+    /* height: 7rem; */
     transform: scale(0.7);
   }
   .chat-box-container {

@@ -8,8 +8,8 @@ export async function GET() {
       return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
     }
 
-    // CoinMarketCap Bitcoin and Ethereum price endpoint
-    const response = await fetch('https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC,ETH', {
+    // CoinMarketCap Bitcoin, Ethereum, and PEPE price endpoint
+    const response = await fetch('https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC,ETH,PEPE', {
       method: 'GET',
       headers: {
         'X-CMC_PRO_API_KEY': apiKey,
@@ -24,19 +24,23 @@ export async function GET() {
 
     const data = await response.json();
     
-    // Extract BTC and ETH prices
+    // Extract BTC, ETH, and PEPE prices
     const btcData = data.data.BTC;
     const ethData = data.data.ETH;
+    const pepeData = data.data.PEPE;
     
     const btcPrice = btcData.quote.USD.price;
     const ethPrice = ethData.quote.USD.price;
+    const pepePrice = pepeData.quote.USD.price;
     
     const formattedBtcPrice = `$${Math.round(btcPrice).toLocaleString()}`;
     const formattedEthPrice = `$${Math.round(ethPrice).toLocaleString()}`;
+    const formattedPepePrice = `$${pepePrice.toFixed(8)}`; // PEPE price is very small, so show more decimals
     
     return NextResponse.json({ 
       btc: formattedBtcPrice,
-      eth: formattedEthPrice
+      eth: formattedEthPrice,
+      pepe: formattedPepePrice
     });
   } catch (error) {
     console.error('Error fetching BTC price:', error);
