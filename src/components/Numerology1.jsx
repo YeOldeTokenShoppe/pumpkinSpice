@@ -26,6 +26,21 @@ const gAnimation = keyframes`
   to { --g: 100% }
 `;
 
+// Levitation animation for the magic 8-ball - using CSS instead of styled-components
+const levitateStyle = `
+  @keyframes levitate {
+    0%, 100% {
+      transform: translateY(0) rotateZ(0deg);
+    }
+    25% {
+      transform: translateY(-15px) rotateZ(1deg);
+    }
+    75% {
+      transform: translateY(5px) rotateZ(-1deg);
+    }
+  }
+`;
+
 const FluidBackground = styled.div`
   position: absolute;
   top: 0;
@@ -76,6 +91,7 @@ const FluidBackground = styled.div`
 const Numerology1 = ({ isMobile = false }) => {
   const [clientSideReady, setClientSideReady] = useState(false);
   const [internalIsMobile, setInternalIsMobile] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const isBrowser = typeof window !== "undefined";
   
   // Use prop if provided, otherwise detect internally
@@ -105,6 +121,7 @@ const Numerology1 = ({ isMobile = false }) => {
   return (
     <>
       <GlobalStyles />
+      <style>{levitateStyle}</style>
       {/* The fluid background and magic 80 ball combination */}
       <svg width="0" height="0" aria-hidden="true" style={{ position: 'fixed' }}>
                       <filter id="smoke" colorInterpolationFilters="sRGB">
@@ -146,7 +163,6 @@ const Numerology1 = ({ isMobile = false }) => {
                       <div
                         style={{
                           position: "relative",
-                        //   top: '-20%',
                           width: "100%",
                           height: "100%",
                           display: "flex",
@@ -155,8 +171,14 @@ const Numerology1 = ({ isMobile = false }) => {
                           zIndex: "2",
                           background: "transparent",
                           borderRadius: "50%",
-
+                          filter: "drop-shadow(0 0 20px rgba(138, 43, 226, 1)) drop-shadow(0 0 40px rgba(75, 0, 130, 0.8)) drop-shadow(0 0 60px rgba(138, 43, 226, 0.6))",
+                          animation: "levitate 4s ease-in-out infinite",
+                          transition: "transform 0.3s ease",
+                          transform: isHovering ? "scale(1.05)" : "scale(1)",
+                          cursor: "pointer",
                         }}
+                        onMouseEnter={() => setIsHovering(true)}
+                        onMouseLeave={() => setIsHovering(false)}
                       >
                         {clientSideReady && (
                           <iframe

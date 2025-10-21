@@ -303,19 +303,22 @@ function ScrollTriggeredTitle({ isMobile }) {
       
       {/* Introduction Section */}
       <div style={{
-        maxWidth: '800px',
+    maxWidth: '1200px',
         margin: '5rem auto 0 auto',
         padding: isMobile ? '30px 20px' : '40px 30px',
-            background: 'rgba(0, 0, 0, 0.3)',
+            background: 'rgba(0, 0, 0, 0.2)',
         borderRadius: '16px',
         border: '1px solid rgba(255,255,255,0.1)',
         backdropFilter: 'blur(10px)',
         textAlign: 'center',
         opacity: titleInView ? 1 : 0,
         transform: titleInView ? 'translateY(0)' : 'translateY(20px)',
-        transition: 'all 1s ease-out 2s',
+        transition: 'all 0.5s ease-out 1s',
         position: 'relative',
-        zIndex: 10
+    width: '90%',
+
+        zIndex: 10,
+   
       }}>
         <h2 style={{
           fontSize: isMobile ? '1.6rem' : '1.8rem',
@@ -324,7 +327,8 @@ function ScrollTriggeredTitle({ isMobile }) {
           marginBottom: '0',
           textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
           lineHeight: '1.5',
-          maxWidth: '600px',
+
+                   width: '90%',
           margin: '0 auto'
         }}>
         She's the mother of memes, aider to traders, fren to degens, patron saint of day traders, and your guide up and to the right.
@@ -1267,7 +1271,7 @@ export default function CloudTestPage() {
           style={{
             textAlign: 'center',
             padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
-            maxWidth: '900px',
+            // maxWidth: '900px',
             margin: '0 auto',
           }}
         >
@@ -1310,7 +1314,7 @@ export default function CloudTestPage() {
             }}
             onClick={() => window.open('https://app.uniswap.org/swap', '_blank')}
           >
-            <div style={{ fontSize: isMobile ? '4rem' : '5rem', marginBottom: '20px' }}>🚀</div>
+            <div style={{ fontSize: isMobile ? '4rem' : '5rem'}}>🚀</div>
  <button
                         onClick={handleOpenModal}
                          style={{
@@ -1385,7 +1389,7 @@ export default function CloudTestPage() {
             }}
             onClick={() => window.open('/stake', '_blank')}
           >
-            <div style={{ fontSize: isMobile ? '4rem' : '5rem', marginBottom: '20px' }}>💰</div>
+            <div style={{ fontSize: isMobile ? '4rem' : '5rem' }}>💰</div>
   <button
                         onClick={handleOpenModal}
                          style={{
@@ -1489,13 +1493,16 @@ export default function CloudTestPage() {
                   fontFamily: "'UnifrakturCook', serif",
                   fontSize: isMobile ? '2rem' : '3.5rem',
                   fontWeight: '800',
-                  background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  marginBottom: '8px'
+                  color: '#d4af37',
+                  // WebkitBackgroundClip: 'text',
+                  // WebkitTextFillColor: 'transparent',
+                  // backgroundClip: 'text',
+                  marginBottom: '8px',
+                  textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
+  textAlign: 'center',
                 }}>
-                  To<span style={{fontFamily: "'Pirata One', serif"}}>k</span>enomics 
+                  To<span style={{fontFamily: "'Pirata One', serif", textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
+  textAlign: 'center',}}>k</span>enomics 
                 </h1>
                 
                 <p style={{
@@ -1866,7 +1873,7 @@ export default function CloudTestPage() {
             <div style={{
               position: "relative",
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.6fr) minmax(0, 0.4fr)",
+              gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.55fr) minmax(0, 0.45fr)",
               gap: isMobile ? "2rem" : "3rem",
               alignItems: "center",
               color: '#ffffff',
@@ -1892,14 +1899,23 @@ export default function CloudTestPage() {
               boxSizing: 'border-box', // Include padding in width calculation
               overflow: 'hidden', // Prevent content overflow
               position: 'relative',
-              marginTop: isMobile ? '0' : '-3rem'
+              marginTop: isMobile ? '0' : '0'
             }}>
              
      
               <br/>
      
-              <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginTop: '2rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get On Her Watchlist</h1>
-       
+              {/* <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginTop: '2rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get On Her Watchlist</h1> */}
+                  <h1 style={{
+              fontSize: '3rem',
+              marginBottom: '1rem',
+              lineHeight: '2.5rem',
+              color: '#d4af37',
+              fontFamily: 'UnifrakturCook, serif',
+              // textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
+textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
+  textAlign: 'center',
+            }}>Get On Her Watchlist</h1>
               <div style={{
                 lineHeight: 1.5,
                 opacity: 0.9,
@@ -1927,8 +1943,8 @@ export default function CloudTestPage() {
               </p> */}
                    {/* <img src="/timeline2.png" alt="Candle Icon" style={{ width: isMobile ? '50%' : '50%', height: 'auto', marginBottom: '-1rem', marginTop: '-2rem' }} /> */}
                     <span style={{               fontFamily: "'Fjalla One', sans-serif",
-fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-                DM Our Lady
+fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem', lineHeight: '1.3' }}>
+                Dedicate a Green Candle
               </span>         
               <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
 Burn or stake RL80 to add a green candle to her timeline and watch miracles happen.  
@@ -2059,7 +2075,7 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
        <button
                         onClick={handleOpenModal}
                          style={{
-                          marginTop: isMobile ? '1.5rem' : '2rem',
+                          // marginTop: isMobile ? '1.5rem' : '2rem',
                           padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
                           fontSize: isMobile ? '1.2rem' : '1.4rem',
                           fontWeight: 'bold',
@@ -2140,7 +2156,7 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
                <p style={{
                  color: '#ffffff',
                  textAlign: 'center',
-                 marginTop: isMobile ? '-1rem' : '-3rem',
+                 marginTop: isMobile ? '1rem' : '-2rem',
          
                  fontSize: '1rem',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -2160,13 +2176,15 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
                    <h1 style={{
               fontSize: '3.5rem',
               marginBottom: '1rem',
+              lineHeight: '2.5rem',
               color: '#d4af37',
               fontFamily: 'UnifrakturCook, serif',
-              textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
+              textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
+  textAlign: 'center',
             }}>The Illumin80</h1>
                     <span style={{               fontFamily: "'Fjalla One', sans-serif",
 fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-                Join the Most Exclusive Cult in Crypto
+                You're invited to Join
               </span>
                 <p style={{
                                   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',

@@ -38,6 +38,13 @@
         width: 280px;
         height: 280px;
         background: transparent !important;
+        filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.6)) drop-shadow(0 0 60px rgba(75, 0, 130, 0.4));
+        transition: transform 0.3s ease;
+        animation: levitate 4s ease-in-out infinite;
+      }
+      
+      .eight-ball-wrapper:hover {
+        transform: scale(1.05);
       }
 
       form {
@@ -356,6 +363,19 @@
         }
         75% {
           transform: translate(-10px, -5px);
+        }
+      }
+      
+      /* Levitation animation for purple glow effect */
+      @keyframes levitate {
+        0%, 100% {
+          transform: translateY(0) rotateZ(0deg);
+        }
+        25% {
+          transform: translateY(-15px) rotateZ(1deg);
+        }
+        75% {
+          transform: translateY(5px) rotateZ(-1deg);
         }
       }
     </style>

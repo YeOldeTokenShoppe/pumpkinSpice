@@ -20,6 +20,34 @@ const CarouselWrapper = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Handle scroll to carousel after sign-in redirect
+  useEffect(() => {
+    const handleScrollToCarousel = () => {
+      if (window.location.hash === '#carousel-section') {
+        // Small delay to ensure the component is mounted and rendered
+        setTimeout(() => {
+          const carouselElement = document.getElementById('carousel-section');
+          if (carouselElement) {
+            carouselElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+            // Clean up the hash from URL after scrolling
+            history.replaceState(null, null, window.location.pathname);
+          }
+        }, 500);
+      }
+    };
+
+    // Check on mount
+    handleScrollToCarousel();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleScrollToCarousel);
+    
+    return () => window.removeEventListener('hashchange', handleScrollToCarousel);
+  }, []);
+
   // List of critical images that need to be preloaded
   const criticalImages = useMemo(
     () => [
@@ -81,6 +109,7 @@ const CarouselWrapper = () => {
 
   return (
     <div
+      id="carousel-section"
       style={{
         position: "relative",
         // marginBottom: "16rem",
@@ -160,7 +189,7 @@ const CarouselWrapper = () => {
       <div
         style={{
           position: "absolute",
-          top: isMobile ? "0" : "-6rem",
+          top: isMobile ? "-4.5rem" : "-15rem",
           left: "50%",
           transform: `translateX(-50%) scale(${isMobile ? "0.3" : "0.5"})`,
           width: "auto",

@@ -293,7 +293,9 @@ const Carousel = ({ images, setCarouselLoaded }) => {
   };
   const handleRideBeastClick = async (image, beastId) => {
     if (!isSignedIn) {
-      openSignIn({ forceRedirectUrl: currentPath || '/' });
+      // Create a redirect URL that includes the carousel section anchor
+      const redirectUrl = `${currentPath || '/home3'}#carousel-section`;
+      openSignIn({ forceRedirectUrl: redirectUrl });
       return;
     }
 
@@ -936,6 +938,35 @@ const Carousel = ({ images, setCarouselLoaded }) => {
     return () => unsubscribe();
   }, []);
   const [waitTimes, setWaitTimes] = useState([]);
+  const [btcPrice, setBtcPrice] = useState(null);
+  const [ethPrice, setEthPrice] = useState(null);
+
+  // Fetch crypto prices
+  useEffect(() => {
+    const fetchCryptoPrices = async () => {
+      try {
+        const response = await fetch('/api/btc-price');
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        setBtcPrice(data.btc);
+        setEthPrice(data.eth);
+      } catch (error) {
+        console.error('Failed to fetch crypto prices:', error);
+        setBtcPrice('Loading...');
+        setEthPrice('Loading...');
+      }
+    };
+
+    fetchCryptoPrices();
+    // Update prices every 60 seconds (CoinMarketCap has rate limits)
+    const interval = setInterval(fetchCryptoPrices, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const intervalId = setInterval(async () => {
@@ -1128,6 +1159,8 @@ const Carousel = ({ images, setCarouselLoaded }) => {
                   key={beastId}
                   className="element"
                   data-item={isEven ? "logo" : ""}
+                  data-btc-price={!isEven ? `BTC: ${btcPrice || 'Loading...'}` : ''}
+                  data-eth-price={isEven ? `ETH: ${ethPrice || 'Loading...'}` : ''}
                   style={{ position: "absolute", "--item": index + 1 }}
                 >
                   <div className="element2">
@@ -1410,7 +1443,7 @@ const Carousel = ({ images, setCarouselLoaded }) => {
       <div style={{ 
           width: "80%", 
           borderRadius: "30px",
-          padding: "40px",
+          padding: "20px",
           background: 'rgba(0, 0, 0, 0.3)',
           border: '1px solid rgba(255, 215, 0, 0.2)',
           backdropFilter: 'blur(10px)',
@@ -1441,6 +1474,8 @@ const Carousel = ({ images, setCarouselLoaded }) => {
           animation: 'rotate 30s linear infinite',
           zIndex: 0
         }} />
+                      <h3 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2rem' : '2.5rem', marginTop: '2rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37',           textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
+}}>Charter a Ride on the Charts</h3>
 
         <p style={{
           position: 'relative',
@@ -1454,9 +1489,9 @@ const Carousel = ({ images, setCarouselLoaded }) => {
           margin: 0
         }}>
           They say fortune favors the bold. Careen carefree with the ups and
-          downs of the crypto market. Must be at least 36&quot; tall and hold
-          RL80 or NFIN80 reward tokens. 10 minutes per ride. Your username and
-          avatar will be displayed live! Messages are not saved. Click on any available beast to ride.
+          downs of the crypto market. Must hold
+          RL80 tokens. 10 minutes per ride. Your username and
+          avatar will be displayed live! Messages are not saved. Click on any available ride.
         </p>
       </div>
     </div>

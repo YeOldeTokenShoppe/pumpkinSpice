@@ -26,6 +26,7 @@ export default function FAQSection({ isMobile = false }) {
       style={{
         position: 'relative',
         margin: '4rem auto',
+        marginBottom: isMobile ? '4rem' : '12rem',
         width: isMobile ? '95%' : '90%',
         maxWidth: '1200px',
         zIndex: 1,
@@ -65,9 +66,11 @@ export default function FAQSection({ isMobile = false }) {
           boxShadow: 'none',
           backdropFilter: 'none',
           position: 'relative',
+
           zIndex: 1
         }}>
-      <h1>FAQ</h1>
+      <h1 style={{          textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
+}}>FAQ</h1>
       
       <div className="faq-content-wrapper">
         <div className="faq-image-container">

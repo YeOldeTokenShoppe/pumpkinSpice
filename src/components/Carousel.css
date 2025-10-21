@@ -125,13 +125,19 @@ body {
 /* For odd elements: Apply circusStars.jpg background */
 /* Odd elements get the circusStars background */
 .element:nth-child(odd)::after {
-  content: "";
-  display: block;
+  content: attr(data-btc-price);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-image: url("/marquee2.jpg");
   background-color: #1b1724;
   background-size: contain;
   background-repeat: repeat;
   background-position: center;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 
   width: 100%;
   height: 50px;
@@ -144,8 +150,10 @@ body {
 
 /* Even elements get specific logo backgrounds */
 .element:nth-child(2)::after {
-  content: "";
-  display: block;
+  content: attr(data-eth-price);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-image: url("/marquee2.jpg");
   background-size: stretch;
   background-repeat: no-repeat;
@@ -157,11 +165,17 @@ body {
   top: -52px;
   left: 0;
   z-index: 1;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .element:nth-child(4)::after {
-  content: "";
-  display: block;
+  content: attr(data-eth-price);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-image: url("/marquee2.jpg");
   background-size: contain;
   background-repeat: no-repeat;
@@ -172,10 +186,16 @@ body {
   top: -52px;
   left: 0;
   z-index: 1;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 .element:nth-child(6)::after {
-  content: "";
-  display: block;
+  content: attr(data-eth-price);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-image: url("/marquee2.jpg");
   background-size: contain;
   background-repeat: no-repeat;
@@ -186,10 +206,16 @@ body {
   top: -52px;
   left: 0;
   z-index: 1;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 .element:nth-child(8)::after {
-  content: "";
-  display: block;
+  content: attr(data-eth-price);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-image: url("/marquee2.jpg");
   background-size: contain;
   background-repeat: no-repeat;
@@ -200,10 +226,16 @@ body {
   top: -52px;
   left: 0;
   z-index: 1;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 .element:nth-child(10)::after {
-  content: "";
-  display: block;
+  content: attr(data-eth-price);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-image: url("/marquee2.jpg");
   background-size: contain;
   background-repeat: no-repeat;
@@ -214,10 +246,16 @@ body {
   top: -52px;
   left: 0;
   z-index: 1;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 .element:nth-child(12)::after {
-  content: "";
-  display: block;
+  content: attr(data-eth-price);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-image: url("/marquee2.jpg");
   background-size: cover;
   background-repeat: no-repeat;
@@ -228,6 +266,10 @@ body {
   top: -52px;
   left: 0;
   z-index: 1;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 /* Make the logo elements clickable */
 .element:nth-child(even) {
@@ -376,14 +418,21 @@ body {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  border: 2px solid #fff;
+  border: 2px solid goldenrod;
 }
 
 .rider-name {
   margin-bottom: 5px;
   font-size: 1rem;
   font-weight: bold;
-  color: #8e662b;
+  color: goldenrod;
+  /* -webkit-text-stroke: 1px #ffffff;
+  text-stroke: 1px #ffffff; */
+  text-shadow: 
+    -1px -1px 0 #000000,
+    1px -1px 0 #000000,
+    -1px 1px 0 #000000,
+    1px 1px 0 #000000;
 }
 
 .rider-beast-group {
@@ -742,6 +791,11 @@ body {
   font-size: 0.5em; /* Adjust text size */
   min-width: 50px;
   max-width: 150px;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .speech-container .speech:before {
@@ -768,6 +822,15 @@ body {
   position: absolute;
   transform: skew(-15deg);
   width: 0;
+}
+
+.speech-container .speech p {
+  margin: 0;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 /* Add this new rule */

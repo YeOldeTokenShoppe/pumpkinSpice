@@ -26,6 +26,7 @@ const gAnimation = keyframes`
   to { --g: 100% }
 `;
 
+
 const FluidBackground = styled.div`
   position: absolute;
   top: 0;
@@ -136,7 +137,6 @@ const Numerology = ({ isMobile = false }) => {
                           zIndex: "2",
                           background: "transparent",
                           borderRadius: "50%",
-
                         }}
                       >
                         {clientSideReady && (
@@ -148,7 +148,6 @@ const Numerology = ({ isMobile = false }) => {
                               border: "none",
                               background: "transparent",
                               borderRadius: "50%",
-                     
                             }}
                             title="Magic 80 Ball"
                             frameBorder="0"
