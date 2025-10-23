@@ -33,7 +33,7 @@ const MemoryMonitor = ({ show = false }) => {
   return (
     <div style={{
       position: 'fixed',
-      top: '10px',
+      top: '100px',
       right: '10px',
       background: 'rgba(0, 0, 0, 0.8)',
       color: '#00ff00',

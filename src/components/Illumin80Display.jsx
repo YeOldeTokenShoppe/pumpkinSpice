@@ -1,5 +1,6 @@
 'use client';
-import { useUser, UserButton, SignInButton } from '@clerk/nextjs';
+import { useUser, SignInButton } from '@clerk/nextjs';
+import { EnhancedUserButton } from '@/components/EnhancedUserButton';
 import { useState, useEffect } from 'react';
 import { checkUserIllumin80Status } from '@/utils/firestore-illumin80';
 
@@ -142,7 +143,7 @@ export function Illumin80Banner() {
                 fontSize: '14px',
                 fontStyle: 'italic'
               }}>
-                {status.title} • Rank #{status.rank}
+                {status.title} • Rank #{status.rank} • Top {status.percentile}%
               </p>
             </div>
           </div>
@@ -262,7 +263,7 @@ export function Illumin80Gate({ children, fallback }) {
           Illumin80 Members Only
         </h3>
         <p style={{ color: '#00FFFF', marginTop: '10px' }}>
-          This sacred content is reserved for the top 80 token burners.
+          This sacred content is reserved for the top 8% of token burners.
         </p>
         <p style={{ color: '#888', fontSize: '14px', marginTop: '20px' }}>
           Burn more tokens to join the Order and unlock this content.
@@ -432,8 +433,8 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
         </>
       )}
       
-      {/* The actual Clerk UserButton */}
-      <UserButton 
+      {/* The actual Enhanced Clerk UserButton */}
+      <EnhancedUserButton 
         afterSignOutUrl={afterSignOutUrl}
         appearance={{
           elements: {
@@ -441,42 +442,15 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
               width: isMobile ? "40px" : "60px",
               height: isMobile ? "40px" : "60px",
               borderRadius: "8px",
-              border: isIllumin80 ? "2px solid #FFD700" : "2px solid rgba(255, 255, 255, 0.2)",
               backgroundColor: "rgba(0, 0, 0, 0.7)",
-              backdropFilter: "blur(10px)",
-              boxShadow: isIllumin80 
-                ? "0 2px 12px rgba(255, 215, 0, 0.4)" 
-                : "0 2px 8px rgba(0, 0, 0, 0.3)"
+              backdropFilter: "blur(10px)"
             }
           }
         }}
+        illumin80Status={status}
+        showTooltip={false}
       />
       
-      {/* Hover tooltip */}
-      {isIllumin80 && (
-        <div style={{
-          position: 'absolute',
-          bottom: '-30px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: 'rgba(26, 26, 46, 0.95)',
-          color: '#FFD700',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          fontSize: '11px',
-          fontFamily: 'UnifrakturCook, serif',
-          whiteSpace: 'nowrap',
-          opacity: 0,
-          pointerEvents: 'none',
-          transition: 'opacity 0.3s ease',
-          border: '1px solid #FFD700',
-          zIndex: 1000
-        }}
-        className="illumin80-tooltip"
-        >
-          Illumin80 #{status?.rank}
-        </div>
-      )}
       
       <style jsx>{`
         @keyframes subtleGlow {
@@ -499,10 +473,6 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
             opacity: 0.5;
             box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
           }
-        }
-        
-        div:hover .illumin80-tooltip {
-          opacity: 1 !important;
         }
       `}</style>
     </div>

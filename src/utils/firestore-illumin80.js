@@ -1,27 +1,54 @@
 import { db } from '@/utilities/firebaseServer';
 import { collection, query, orderBy, limit, getDocs, doc, updateDoc } from 'firebase/firestore';
 
-// Get the top 80 token burners from Firestore
+// Get the top 8% of token burners from Firestore
 export async function getIllumin80Members() {
   try {
-    // Query the results collection, ordered by burnedAmount descending
-    // For testing with few entries, we'll take all and then limit
+    // Query ALL results to calculate top 8%
     const resultsRef = collection(db, 'results');
     const q = query(
       resultsRef, 
       orderBy('burnedAmount', 'desc')
-      // Remove limit for testing - we'll take top entries up to 80
     );
     
     const querySnapshot = await getDocs(q);
-    const illumin80Members = [];
+    const allMembers = [];
     
-    // Process members directly from Firestore order (already sorted by burnedAmount desc)
-    querySnapshot.forEach((doc, index) => {
+    // First, collect all members with burned amounts > 0
+    querySnapshot.forEach((doc) => {
       const data = doc.data();
+      if (data.burnedAmount && data.burnedAmount > 0) {
+        allMembers.push({
+          id: doc.id,
+          data: data
+        });
+      }
+    });
+    
+    // Calculate the top 8% threshold with minimum thresholds for small user bases
+    const totalUsers = allMembers.length;
+    let top8PercentCount;
+    
+    // For small user bases, use more generous thresholds
+    if (totalUsers <= 10) {
+      top8PercentCount = Math.min(3, totalUsers); // Top 3 or all users if less than 3
+    } else if (totalUsers <= 50) {
+      top8PercentCount = Math.max(5, Math.ceil(totalUsers * 0.15)); // Top 15% with min of 5
+    } else if (totalUsers <= 100) {
+      top8PercentCount = Math.max(8, Math.ceil(totalUsers * 0.10)); // Top 10% with min of 8
+    } else {
+      top8PercentCount = Math.ceil(totalUsers * 0.08); // Top 8% for larger user bases
+    }
+    
+    console.log(`Illumin80: ${top8PercentCount} users qualify (top ${Math.round(top8PercentCount/totalUsers*100)}% of ${totalUsers} total users)`);
+    
+    // Take only the top 8% of users
+    const illumin80Members = [];
+    allMembers.slice(0, top8PercentCount).forEach((memberData, index) => {
+      const data = memberData.data;
       const rank = index + 1;
       const member = {
-        id: doc.id,
+        id: memberData.id,
         clerkUserId: data.clerkUserId,  // Secure Clerk user ID (if linked)
         userId: data.userId,           // Legacy field
         walletAddress: data.walletAddress,
@@ -29,11 +56,10 @@ export async function getIllumin80Members() {
         username: data.username || data.userName,  // Check both username and userName
         email: data.email || data.clerkEmail,  // Email if stored
         rank: rank,
-        title: getIllumin80Title(rank)
+        title: getIllumin80Title(rank, top8PercentCount),
+        totalQualifying: top8PercentCount,  // Total number in Illumin80
+        percentile: ((totalUsers - rank + 1) / totalUsers * 100).toFixed(1) // User's percentile
       };
-      
-      // Log each member with their rank
-      // console.log(`Rank #${member.rank}: ${member.username} - ${member.burnedAmount} burned (type: ${typeof data.burnedAmount})`);
       
       illumin80Members.push(member);
     });
@@ -62,7 +88,9 @@ export async function checkUserIllumin80Status(userIdentifier, isClerkUserId = f
         isIllumin80: !!member,
         rank: member?.rank || null,
         title: member?.title || null,
-        burnedAmount: member?.burnedAmount || 0
+        burnedAmount: member?.burnedAmount || 0,
+        percentile: member?.percentile || null,
+        totalQualifying: member?.totalQualifying || null
       };
     }
     
@@ -71,12 +99,24 @@ export async function checkUserIllumin80Status(userIdentifier, isClerkUserId = f
     const normalizedId = userIdentifier?.toLowerCase?.()?.trim() || userIdentifier;
     
     const member = illumin80.find(m => {
+      // More flexible email matching
+      const emailMatch = normalizedId && normalizedId.includes('@') && (
+        m.email?.toLowerCase() === normalizedId ||
+        m.clerkEmail?.toLowerCase() === normalizedId ||
+        // Check if any stored field contains the email
+        Object.values(m).some(value => 
+          typeof value === 'string' && 
+          value.toLowerCase() === normalizedId
+        )
+      );
+      
       return (
         m.userId === userIdentifier ||
+        m.clerkUserId === userIdentifier ||
         m.walletAddress === userIdentifier ||
         m.username?.toLowerCase() === normalizedId ||
-        m.email?.toLowerCase() === normalizedId ||
-        (m.email && normalizedId && normalizedId.includes('@') && m.email.toLowerCase() === normalizedId) ||
+        m.userName?.toLowerCase() === normalizedId ||
+        emailMatch ||
         (m.username && userIdentifier && typeof userIdentifier === 'string' && userIdentifier.includes('@') && 
          m.username.toLowerCase() === userIdentifier.split('@')[0].toLowerCase())
       );
@@ -90,18 +130,25 @@ export async function checkUserIllumin80Status(userIdentifier, isClerkUserId = f
         title: member.title
       });
     } else {
-      console.log('❌ No match found for identifier:', userIdentifier);
+      console.log('❌ No match found for identifier:', userIdentifier, '\nIllumin80 members:', illumin80.map(m => ({
+        username: m.username || m.userName,
+        email: m.email || m.clerkEmail,
+        userId: m.userId,
+        clerkUserId: m.clerkUserId
+      })));
     }
     
     return {
       isIllumin80: !!member,
       rank: member?.rank || null,
       title: member?.title || null,
-      burnedAmount: member?.burnedAmount || 0
+      burnedAmount: member?.burnedAmount || 0,
+      percentile: member?.percentile || null,
+      totalQualifying: member?.totalQualifying || null
     };
   } catch (error) {
     console.error('Error checking Illumin80 status:', error);
-    return { isIllumin80: false, rank: null, title: null, burnedAmount: 0 };
+    return { isIllumin80: false, rank: null, title: null, burnedAmount: 0, percentile: null, totalQualifying: null };
   }
 }
 
@@ -155,13 +202,15 @@ export async function syncIllumin80WithClerk() {
   }
 }
 
-// Medieval titles based on rank
-function getIllumin80Title(rank) {
+// Medieval titles based on rank and percentile
+function getIllumin80Title(rank, totalQualifying) {
+  // Dynamic title assignment based on percentages within the Illumin80
+  const percentWithinGroup = (rank / totalQualifying) * 100;
+  
   if (rank === 1) return "Grand Master of the Eternal Flame";
-  if (rank <= 5) return "Keeper of the Sacred Pyre";
-  if (rank <= 10) return "Knight of the Golden Ember";
-  if (rank <= 20) return "Guardian of the Inner Circle";
-  if (rank <= 40) return "Torch Bearer of the Order";
-  if (rank <= 80) return "Initiate of the Illumin80";
-  return null;
+  if (percentWithinGroup <= 5) return "Keeper of the Sacred Pyre";       // Top 5% of Illumin80
+  if (percentWithinGroup <= 15) return "Knight of the Golden Ember";     // Top 15% of Illumin80
+  if (percentWithinGroup <= 30) return "Guardian of the Inner Circle";   // Top 30% of Illumin80
+  if (percentWithinGroup <= 60) return "Torch Bearer of the Order";      // Top 60% of Illumin80
+  return "Initiate of the Illumin80";                                    // Everyone else in Illumin80
 }

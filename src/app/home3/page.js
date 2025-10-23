@@ -2355,7 +2355,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                                         <FAQSection isMobile={isMobile} />
 
       {/* Carousel Section */}
-        <CarouselWrapper />
+        {/* <CarouselWrapper /> */}
 
  
 

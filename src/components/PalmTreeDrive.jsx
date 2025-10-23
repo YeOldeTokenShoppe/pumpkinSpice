@@ -2866,7 +2866,7 @@ const PalmsScene = ({ onLoadingChange }) => {
           <div style={{
             marginTop: '1rem',
             fontSize: '12px',
-            color: 'white',
+            color: '#01ff00',
             opacity: currentCameraStage === 4 ? 0 : 0.5,
             textAlign: 'center',
             fontFamily: 'monospace',
