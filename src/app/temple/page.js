@@ -44,26 +44,39 @@ export default function CyborgTemple() {
   // Check if mobile on mount
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobileView(window.innerWidth <= 768);
+      if (typeof window !== 'undefined') {
+        setIsMobileView(window.innerWidth <= 768);
+      }
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', checkMobile);
+    }
     setMounted(true);
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', checkMobile);
+      }
+    };
   }, []);
 
   // Check if font is loaded
   useEffect(() => {
     const checkFont = async () => {
-      try {
-        await document.fonts.load("1em 'UnifrakturMaguntia'");
-        console.log('Font loaded successfully');
-        setFontLoaded(true);
-      } catch (e) {
-        console.log('Font load failed, using fallback');
-        setTimeout(() => {
+      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+        try {
+          await document.fonts.load("1em 'UnifrakturMaguntia'");
+          console.log('Font loaded successfully');
           setFontLoaded(true);
-        }, 100);
+        } catch (e) {
+          console.log('Font load failed, using fallback');
+          setTimeout(() => {
+            setFontLoaded(true);
+          }, 100);
+        }
+      } else {
+        // Server-side fallback
+        setFontLoaded(true);
       }
     };
     checkFont();
@@ -110,6 +123,11 @@ export default function CyborgTemple() {
 
     return () => clearTimeout(fallbackTimer);
   }, [isSceneLoading]);
+
+  // Don't render on server-side
+  if (!mounted) {
+    return <CoinLoader loading={true} />;
+  }
 
   return (
     <>
@@ -229,7 +247,10 @@ export default function CyborgTemple() {
             stencil: false,
             depth: true
           }}
-          dpr={isMobileView ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio}
+          dpr={isMobileView ? 
+            (typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1) : 
+            (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1)
+          }
           performance={{ min: 0.5 }}
           style={{ 
             background: 'transparent', 
