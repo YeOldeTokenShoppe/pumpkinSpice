@@ -1,15 +1,18 @@
 'use client';
-import { UserButton, useUser } from '@clerk/nextjs';
+import { UserButton, useUser, useClerk } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
 import { checkUserIllumin80Status } from '@/utils/firestore-illumin80';
+import { UserModal } from './UserModal';
 
 export function EnhancedUserButton({ 
   appearance,
   illumin80Status: providedStatus = null
 }) {
-  const { user, isSignedIn } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
+  const { openSignIn } = useClerk();
   const [illumin80Status, setIllumin80Status] = useState(providedStatus);
   const [streak, setStreak] = useState(0);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     // If status is provided as prop, use it
@@ -69,8 +72,21 @@ export function EnhancedUserButton({
     checkStreak();
   }, [user]);
 
-  if (!isSignedIn) {
-    return null;
+  // If Clerk isn't loaded yet, show nothing or a placeholder
+  if (!isLoaded) {
+    return (
+      <div style={{
+        width: '48px',
+        height: '48px',
+        borderRadius: '12px',
+        background: 'rgba(255, 255, 255, 0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div className="animate-pulse w-10 h-10 bg-white/20 rounded-lg" />
+      </div>
+    );
   }
 
   // Merge provided appearance with enhancements
@@ -96,24 +112,125 @@ export function EnhancedUserButton({
     }
   };
 
+  // If not signed in, show a custom sign-in button
+  if (!isSignedIn) {
+    return (
+      <button
+        onClick={() => openSignIn()}
+        style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          padding: 0,
+          border: '2px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+          background: 'rgba(0, 0, 0, 0.5)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+        aria-label="Sign in"
+      >
+        <svg 
+          width="24" 
+          height="24" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+          style={{ color: 'white' }}
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </button>
+    );
+  }
+
+  // If signed in but no user data yet, show loading state
+  if (!user) {
+    return (
+      <div style={{
+        width: '48px',
+        height: '48px',
+        borderRadius: '12px',
+        background: 'rgba(255, 255, 255, 0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div className="animate-pulse w-10 h-10 bg-white/20 rounded-lg" />
+      </div>
+    );
+  }
+
   return (
     <>
-      <UserButton 
-        appearance={enhancedAppearance}
-        userProfileMode="modal"
-        userProfileProps={{
-          additionalOAuthScopes: {},
-          appearance: enhancedAppearance
+      <button
+        onClick={() => setShowModal(true)}
+        className="relative transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          padding: 0,
+          border: illumin80Status?.isIllumin80 
+            ? "2px solid #FFD700" 
+            : "2px solid rgba(255, 255, 255, 0.2)",
+          boxShadow: illumin80Status?.isIllumin80 
+            ? "0 0 15px rgba(255, 215, 0, 0.4)" 
+            : "0 2px 8px rgba(0, 0, 0, 0.3)",
+          background: 'rgba(0, 0, 0, 0.5)',
+          cursor: 'pointer'
         }}
+        aria-label="Open user menu"
       >
-        <UserButton.UserProfilePage 
-          label="Achievements"
-          labelIcon={<span>🏆</span>}
-          url="achievements"
+        <img
+          src={user?.imageUrl || '/default-avatar.png'}
+          alt={user?.fullName || 'User'}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+          onError={(e) => {
+            e.target.src = '/default-avatar.png';
+          }}
+        />
+      </button>
+      
+      {showModal && (
+        <UserModal 
+          isOpen={showModal} 
+          onClose={() => setShowModal(false)}
+          illumin80Status={illumin80Status}
+        />
+      )}
+      
+      {/* Keep the original UserButton hidden but functional for auth */}
+      <div style={{ display: 'none' }}>
+        <UserButton 
+          appearance={enhancedAppearance}
+          userProfileMode="modal"
+          userProfileProps={{
+            additionalOAuthScopes: {},
+            appearance: enhancedAppearance
+          }}
         >
-          <AchievementsPage user={user} illumin80Status={illumin80Status} streak={streak} />
-        </UserButton.UserProfilePage>
-      </UserButton>
+          <UserButton.UserProfilePage 
+            label="Achievements"
+            labelIcon={<span>🏆</span>}
+            url="achievements"
+          >
+            <AchievementsPage user={user} illumin80Status={illumin80Status} streak={streak} />
+          </UserButton.UserProfilePage>
+        </UserButton>
+      </div>
       
       {/* Inject custom content into the Clerk dropdown */}
       <style jsx global>{`

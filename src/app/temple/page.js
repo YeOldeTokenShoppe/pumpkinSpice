@@ -16,6 +16,7 @@ import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
 import CoinLoader from '@/components/CoinLoader';
 import MemoryMonitor from '@/components/MemoryMonitor';
+import TradingOverlay from '@/components/TradingOverlay';
 
 
 export default function CyborgTemple() {
@@ -27,6 +28,7 @@ export default function CyborgTemple() {
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [sceneReady, setSceneReady] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [showTrading, setShowTrading] = useState(true);
 
   // Get music context functions
   const {
@@ -234,7 +236,8 @@ export default function CyborgTemple() {
             })}
           </div>
         </div>
-     <MemoryMonitor show={true} />
+     {/* <MemoryMonitor show={true} /> */}
+        <TradingOverlay show={showTrading} />
         {/* Main Canvas */}
         <Canvas
           key="temple-canvas"

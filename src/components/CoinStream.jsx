@@ -12,13 +12,17 @@ const CoinStream = ({
   coinMesh = null,
   gravity = -9.8,
   initialVelocity = [3, 2, 2],
-  trigger = 0  // New prop: incremented to trigger a single event
+  trigger = 0,  // New prop: incremented to trigger a single event
+  coinValue = 100, // Value of coins to award (total, not per coin)
+  onCoinsDispensed = null // Callback when coins are triggered
 }) => {
   const meshRef = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const triggerStartTime = useRef(null);
   const lastTrigger = useRef(0);
   const audioRef = useRef(null);
+  const coinsAwarded = useRef(0);
+  const lastAwardTime = useRef(0);
   
   // Create coin data with random offsets and phases
   const coins = useMemo(() => {
@@ -66,6 +70,8 @@ const CoinStream = ({
     if (trigger !== lastTrigger.current) {
       triggerStartTime.current = state.clock.elapsedTime;
       lastTrigger.current = trigger;
+      coinsAwarded.current = 0; // Reset coins awarded counter
+      lastAwardTime.current = 0; // Reset last award time
       
       // Play coins sound effect
       if (audioRef.current) {
@@ -94,6 +100,27 @@ const CoinStream = ({
     
     const timeSinceTrigger = state.clock.elapsedTime - triggerStartTime.current;
     const animationDuration = 6; // Total animation duration (increased for longer effect)
+    
+    // Progressive coin awarding - award coins over the first 2 seconds to sync with wallet delay
+    if (onCoinsDispensed && coinValue > 0 && timeSinceTrigger <= 1.0) {
+      // Award coins in increments based on time progression
+      const awardDuration = 1.0; // Award over 2 seconds to match wallet delay
+      const awardInterval = 0.08; // Award coins every 80ms for smoother distribution
+      const totalAwards = Math.floor(awardDuration / awardInterval); // Total number of award events
+      const coinsPerAward = coinValue / totalAwards;
+      
+      // Check if it's time to award more coins
+      if (timeSinceTrigger - lastAwardTime.current >= awardInterval) {
+        const remainingCoins = coinValue - coinsAwarded.current;
+        if (remainingCoins > 0) {
+          const coinsToAward = Math.min(coinsPerAward, remainingCoins);
+          onCoinsDispensed(coinsToAward);
+          coinsAwarded.current += coinsToAward;
+          lastAwardTime.current = timeSinceTrigger;
+          console.log(`CoinStream: Awarded ${coinsToAward.toFixed(0)} coins (${coinsAwarded.current.toFixed(0)}/${coinValue} total)`);
+        }
+      }
+    }
     
     // Reset trigger after animation completes
     if (timeSinceTrigger > animationDuration) {

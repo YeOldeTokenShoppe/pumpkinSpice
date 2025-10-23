@@ -391,29 +391,43 @@ function StatsSection({ isMobile }) {
   const isInView = useInView(statsRef, { threshold: 0.3 });
 
   const metrics = [
-    { value: 4.8, suffix: 'K', prefix: '$', label: 'Market Cap', icon: '💰', gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' },
-    { value: 12, suffix: '+', prefix: '', label: 'Holders', icon: '👥', gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)' },
-    { value: 2.4, suffix: 'M', prefix: '$', label: 'Total Value Locked', icon: '🔒', gradient: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' },
+    // Staking-related metrics
     { value: 7, suffix: '', prefix: '', label: 'Stakers', icon: '⭐', gradient: 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)' },
+    { value: 2.4, suffix: 'M', prefix: '$', label: 'Total Value Locked', icon: '🔒', gradient: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' },
     { value: 80, suffix: 'K', prefix: '$', label: 'Total Rewards', icon: '🏆', gradient: 'linear-gradient(135deg, #fbbf24 0%, #f97316 100%)' },
     { value: 24.5, suffix: '%', prefix: '', label: 'APY (7D)', icon: '📈', gradient: 'linear-gradient(135deg, #84cc16 0%, #10b981 100%)' },
+    // Market-related metrics
+    { value: 4.8, suffix: 'K', prefix: '$', label: 'Market Cap', icon: '💰', gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' },
+    { value: 12, suffix: '+', prefix: '', label: 'Holders', icon: '👥', gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)' },
     { value: 2.8, suffix: '%', prefix: '', label: 'Burned', icon: '🔥', gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' },
     { value: 3.2, suffix: 'K', prefix: '$', label: 'Liquidity', icon: '💧', gradient: 'linear-gradient(135deg, #6366f1 0%, #3b82f6 100%)' }
   ];
 
   return (
-    <div ref={statsRef}>
-      {/* Modern Cards Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-        gridTemplateRows: isMobile ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
-        gap: isMobile ? '15px' : '20px',
-        width: '100%',
-        alignItems: 'stretch',
-        justifyItems: 'stretch',
-      }}>
-        {metrics.map((metric, index) => (
+    <div ref={statsRef} style={{ width: '100%' }}>
+      {/* Staking Metrics Section */}
+      <div style={{ marginBottom: '40px' }}>
+        <h3 style={{
+          fontSize: isMobile ? '18px' : '24px',
+          fontWeight: '700',
+          color: '#d4af37',
+          marginBottom: '20px',
+          fontFamily: "'Fjalla One', sans-serif",
+          textTransform: 'uppercase',
+          letterSpacing: '2px',
+          textAlign: 'center',
+        }}>
+          Staking Metrics
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: isMobile ? '15px' : '20px',
+          width: '100%',
+          alignItems: 'stretch',
+          justifyItems: 'stretch',
+        }}>
+          {metrics.slice(0, 4).map((metric, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0 }}
@@ -486,7 +500,107 @@ function StatsSection({ isMobile }) {
               {metric.label}
             </div>
           </motion.div>
-        ))}
+          ))}
+        </div>
+      </div>
+
+      {/* Market Metrics Section */}
+      <div>
+        <h3 style={{
+          fontSize: isMobile ? '18px' : '24px',
+          fontWeight: '700',
+          color: '#d4af37',
+          marginBottom: '20px',
+          fontFamily: "'Fjalla One', sans-serif",
+          textTransform: 'uppercase',
+          letterSpacing: '2px',
+          textAlign: 'center',
+        }}>
+          Market Metrics
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: isMobile ? '15px' : '20px',
+          width: '100%',
+          alignItems: 'stretch',
+          justifyItems: 'stretch',
+        }}>
+          {metrics.slice(4).map((metric, index) => (
+          <motion.div
+            key={index + 4}
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            transition={{ duration: 0.8, delay: 0.05 * (index + 4) }}
+            style={{
+              background: 'rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              borderRadius: '20px',
+              padding: isMobile ? '20px' : '30px',
+              transition: 'background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
+              cursor: 'pointer',
+              height: isMobile ? '160px' : '200px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              width: '100%',
+              boxSizing: 'border-box',
+              position: 'relative',
+            }}
+            whileHover={{
+              background: 'rgba(0, 0, 0, 0.6)',
+              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.4)',
+              borderColor: 'rgba(212, 175, 55, 0.6)',
+            }}
+          >
+            {/* Icon */}
+            <div
+              style={{
+                width: isMobile ? '40px' : '50px',
+                height: isMobile ? '40px' : '50px',
+                borderRadius: '12px',
+                background: metric.gradient,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: isMobile ? '15px' : '20px',
+                fontSize: isMobile ? '20px' : '24px',
+                flexShrink: 0,
+              }}
+            >
+              {metric.icon}
+            </div>
+
+            {/* Value */}
+            <div style={{
+              fontSize: isMobile ? '28px' : '36px',
+              fontWeight: '800',
+              color: 'white',
+              marginBottom: '8px',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              <AnimatedCounter 
+                target={metric.value} 
+                suffix={metric.suffix} 
+                prefix={metric.prefix} 
+              />
+            </div>
+
+            {/* Label */}
+            <div style={{
+              fontSize: isMobile ? '11px' : '13px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              fontWeight: '600',
+              fontFamily: "'Fjalla One', sans-serif",
+            }}>
+              {metric.label}
+            </div>
+          </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );

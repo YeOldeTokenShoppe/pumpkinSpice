@@ -631,7 +631,7 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
 }
 
 // Main component following Simple3DScene pattern
-export default function Gallery3Scene({ enabled = false, isMobileView = true, is80sMode = false, onSceneReady, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy }) {
+export default function Gallery3Scene({ enabled = false, isMobileView = true, is80sMode = false, onSceneReady, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCoinsWon }) {
   const [mounted, setMounted] = useState(false);
   const [showFloatingViewer, setShowFloatingViewer] = useState(false);
   const [selectedCandleData, setSelectedCandleData] = useState(null);
@@ -643,7 +643,15 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   // Click sequence tracking for coin stream trigger
   const [clickSequence, setClickSequence] = useState([]);
   const [coinTrigger, setCoinTrigger] = useState(0);
-  const requiredSequence = ['wheel_section008', 'wheel_section012', 'wheel_section013'];
+  const [currentCoinReward, setCurrentCoinReward] = useState(0);
+  
+  // Define multiple sequences with different rewards
+  const puzzleSequences = [
+    { sequence: ['wheel_section008', 'wheel_section012', 'wheel_section013'], reward: 500, name: 'Trinity' },
+    { sequence: ['wheel_section001', 'wheel_section007', 'wheel_section013'], reward: 1000, name: 'Lucky Seven' },
+    { sequence: ['wheel_section003', 'wheel_section006', 'wheel_section009', 'wheel_section012'], reward: 10000, name: 'Divine Quarters' },
+    { sequence: ['wheel_section013', 'wheel_section013', 'wheel_section013'], reward: 777, name: 'Triple Blessing' }
+  ];
   
   // Initialize choir wheel hook at the top level
   const choirWheel = useChoirWheel({
@@ -684,26 +692,42 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
     setClickSequence(prevSequence => {
       const newSequence = [...prevSequence, wheelSectionName];
       
-      // Keep only the last 3 clicks
-      if (newSequence.length > 3) {
-        newSequence.shift();
+      // Check all possible sequences
+      for (const puzzle of puzzleSequences) {
+        const requiredLength = puzzle.sequence.length;
+        
+        // Keep only the last N clicks where N is the sequence length
+        let checkSequence = newSequence.slice(-requiredLength);
+        
+        // Check if this matches any puzzle sequence
+        if (checkSequence.length === requiredLength &&
+            checkSequence.every((click, index) => click === puzzle.sequence[index])) {
+          
+          console.log(`✨ ${puzzle.name} sequence detected! Awarding ${puzzle.reward} coins!`);
+          
+          // Set the reward amount for the CoinStream components
+          setCurrentCoinReward(puzzle.reward);
+          
+          // Trigger the coin streams
+          setCoinTrigger(prev => prev + 1);
+          
+          // Note: The actual coin awarding is now handled by the CoinStream components
+          // via their onCoinsDispensed callbacks
+          
+          // Reset sequence after triggering
+          return [];
+        }
       }
       
-      // Check if the sequence matches the required pattern
-      if (newSequence.length === 3 && 
-          newSequence[0] === requiredSequence[0] &&
-          newSequence[1] === requiredSequence[1] &&
-          newSequence[2] === requiredSequence[2]) {
-        console.log('Correct sequence detected! Triggering coin streams...');
-        setCoinTrigger(prev => prev + 1);
-        
-        // Reset sequence after triggering
-        return [];
+      // Limit sequence length to the longest puzzle sequence
+      const maxLength = Math.max(...puzzleSequences.map(p => p.sequence.length));
+      if (newSequence.length > maxLength) {
+        return newSequence.slice(-maxLength);
       }
       
       return newSequence;
     });
-  }, [requiredSequence]);
+  }, [puzzleSequences]);
   
   useEffect(() => {
     // Delay mounting to avoid conflicts (from Simple3DScene)
@@ -802,6 +826,8 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
         gravity={-8}
         initialVelocity={[-4, 2, 7]}
         trigger={coinTrigger}
+        coinValue={currentCoinReward / 2}  // Split reward between two hands
+        onCoinsDispensed={onCoinsWon}
         // coinMesh={coinTemplate}
       />
        /* Left Hand */
@@ -815,6 +841,8 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
         gravity={-8}
         initialVelocity={[4, 3, 6]}
         trigger={coinTrigger}
+        coinValue={currentCoinReward / 2}  // Split reward between two hands
+        onCoinsDispensed={onCoinsWon}
         // coinMesh={coinTemplate}
       />
     </Canvas>

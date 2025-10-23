@@ -13,6 +13,7 @@ import TokensBurned from "@/components/TokensBurned";
 import BuyTokenFAB from "@/components/BuyTokenFAB";
 import CompactCandleModal from "@/components/CompactCandleModal";
 import { useFirestoreResults } from "@/utilities/useFirestoreResults";
+import { CoinWallet } from "@/components/CoinWallet";
 
 // Dynamically import 3D scene
 const Gallery3Scene = dynamic(() => import("@/components/Gallery3Scene"), {
@@ -35,6 +36,7 @@ export default function Gallery3Page() {
   const [paginationState, setPaginationState] = useState(null); // Store pagination control
   const [sortBy, setSortBy] = useState('burnedAmount'); // 'burnedAmount', 'mostLiked', 'newest', or 'smallest'
   const [minimumLoadTime, setMinimumLoadTime] = useState(false); // Track minimum load time
+  const [coinBalance, setCoinBalance] = useState(1000); // Starting coin balance
   
   // Get candle data from Firestore
   const results = useFirestoreResults(sortBy);
@@ -98,6 +100,11 @@ export default function Gallery3Page() {
   const toggle80sMode = useCallback(() => {
     setContext80sMode(!is80sMode);
   }, [is80sMode, setContext80sMode]);
+  
+  // Handle winning coins (you can call this when puzzles are solved or wheel spins)
+  const handleWinCoins = useCallback((amount) => {
+    setCoinBalance(prev => prev + amount);
+  }, []);
   
   // Handle scene ready callback
   const handleSceneReady = useCallback((ready) => {
@@ -709,9 +716,13 @@ export default function Gallery3Page() {
             onPaginationChange={handlePaginationChange}
             candleData={results}
             sortBy={sortBy}
+            onCoinsWon={handleWinCoins}
           />
         )}
       </div>
+      
+      {/* Coin Wallet - Bottom Left */}
+      <CoinWallet balance={coinBalance} />
     </div>
   );
 }
