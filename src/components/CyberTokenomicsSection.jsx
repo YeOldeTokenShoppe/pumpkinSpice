@@ -99,10 +99,10 @@ export default function CyberTokenomicsSection({ isMobile }) {
               width: '10px',
               height: '10px',
               borderRadius: '50%',
-              backgroundColor: '#f00',
+              backgroundColor: 'rgba(85, 244, 255, 1)',
               animation: 'pulse 1.5s infinite',
             }} />
-            <span style={{ color: '#f55', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+            <span style={{ color: 'rgba(85, 244, 255, 1)', fontFamily: 'monospace', fontSize: '0.9rem' }}>
               IMMUTABLE CONTRACTS
             </span>
           </div>

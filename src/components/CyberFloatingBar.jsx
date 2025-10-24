@@ -84,7 +84,7 @@ const CyberFloatingBar = ({ isMobile = false }) => {
         zIndex: 10000,
         animation: 'slideUp 0.4s ease-out',
         flexDirection: isMobile ? 'column' : 'row',
-        paddingBottom: isMobile ? 'max(12px, env(safe-area-inset-bottom))' : '15px',
+        paddingBottom: isMobile ? '15px' : '15px',
         overflow: 'hidden',
       }}
     >
@@ -182,7 +182,9 @@ const CyberFloatingBar = ({ isMobile = false }) => {
           padding: '5px 15px',
           background: 'rgba(0, 0, 0, 0.7)',
           border: '1px solid #00ff00',
-          clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 100%, 8px 100%)',
+          transform: 'skewX(-5deg)',
+        
+          // clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 100%, 8px 100%)',
         }}>
           <span style={{
             fontSize: isMobile ? '18px' : '20px',
@@ -191,12 +193,13 @@ const CyberFloatingBar = ({ isMobile = false }) => {
             fontFamily: 'monospace',
             textShadow: '0 0 10px rgba(0, 255, 0, 0.8)',
             transition: 'color 0.3s ease',
+        
           }}>
             $0.0048
           </span>
           
           {/* Price change indicator */}
-          <span style={{
+          {/* <span style={{
             position: 'absolute',
             top: '2px',
             right: '2px',
@@ -205,7 +208,7 @@ const CyberFloatingBar = ({ isMobile = false }) => {
             fontFamily: 'monospace',
           }}>
             ▲ +12%
-          </span>
+          </span> */}
         </div>
       </div>
       
@@ -222,6 +225,8 @@ const CyberFloatingBar = ({ isMobile = false }) => {
           style={{
             padding: isMobile ? '10px 20px' : '10px 25px',
             fontSize: isMobile ? '12px' : '14px',
+            minWidth: '7rem',
+            maxWidth: '7rem',
             fontWeight: 'bold',
             fontFamily: 'monospace',
             textTransform: 'uppercase',
@@ -256,6 +261,8 @@ const CyberFloatingBar = ({ isMobile = false }) => {
           style={{
             padding: isMobile ? '10px 20px' : '10px 25px',
             fontSize: isMobile ? '12px' : '14px',
+            minWidth: '7rem',
+            maxWidth: '7rem',
             fontWeight: 'bold',
             fontFamily: 'monospace',
             textTransform: 'uppercase',
@@ -267,18 +274,18 @@ const CyberFloatingBar = ({ isMobile = false }) => {
             cursor: 'pointer',
             transition: 'all 0.3s ease',
             position: 'relative',
-            transform: 'skewX(5deg)',
+            transform: 'skewX(-5deg)',
             boxShadow: '0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.2)',
             textShadow: '0 0 5px rgba(255, 215, 0, 0.8)',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'skewX(5deg) translateY(-2px) scale(1.05)';
+            e.currentTarget.style.transform = 'skewX(-5deg) translateY(-2px) scale(1.05)';
             e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.4)';
             e.currentTarget.style.background = 'linear-gradient(135deg, #00ff00, #ffd700)';
             e.currentTarget.style.border = '2px solid #00ff00';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'skewX(5deg)';
+            e.currentTarget.style.transform = 'skewX(-5deg)';
             e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.2)';
             e.currentTarget.style.background = 'linear-gradient(135deg, #ffd700, #00ff00)';
             e.currentTarget.style.border = '2px solid #ffd700';

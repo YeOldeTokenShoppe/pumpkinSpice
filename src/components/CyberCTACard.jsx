@@ -14,6 +14,7 @@ export default function CyberCTACard({
   buttonText,
 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [buttonHovered, setButtonHovered] = useState(false);
   const [scanlinePosition, setScanlinePosition] = useState(0);
 
   useEffect(() => {
@@ -168,22 +169,93 @@ export default function CyberCTACard({
       </div>
 
       {/* Button/Title */}
-      <div style={{
-        background: `linear-gradient(135deg, ${styles.gradientStart}, ${styles.gradientEnd})`,
-        padding: isMobile ? '10px 25px' : '12px 30px',
-        marginBottom: '20px',
-        fontSize: isMobile ? '18px' : '20px',
-        fontWeight: 'bold',
-        fontFamily: 'monospace',
-        textTransform: 'uppercase',
-        letterSpacing: '3px',
-        color: '#000',
-        position: 'relative',
-        clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 100%, 10px 100%)',
-        textAlign: 'center',
-        boxShadow: `inset 0 0 20px rgba(0, 0, 0, 0.3)`,
-      }}>
-        {buttonText}
+      <div 
+        style={{
+          padding: isMobile ? '10px 25px' : '12px 30px',
+          marginBottom: '20px',
+          fontSize: isMobile ? '18px' : '20px',
+          fontWeight: 'bold',
+          fontFamily: 'monospace',
+          textTransform: 'uppercase',
+          letterSpacing: '3px',
+          color: '#000',
+          position: 'relative',
+          textAlign: 'center',
+          transition: 'all 0.3s ease',
+          filter: buttonHovered ? `drop-shadow(0 0 20px rgba(${styles.glowColor}, 0.8))` : 'none',
+          isolation: 'isolate',
+        }}
+        onMouseEnter={() => setButtonHovered(true)}
+        onMouseLeave={() => setButtonHovered(false)}
+      >
+        {/* Background layers */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: styles.borderColor,
+          transform: 'translate(4px, 4px)',
+          clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 30%, 100% 100%, 10px 100%, 0 70%)',
+          zIndex: -2,
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: buttonHovered 
+            ? `linear-gradient(135deg, ${styles.gradientEnd}, ${styles.gradientStart})`
+            : `linear-gradient(135deg, ${styles.gradientStart}, ${styles.gradientEnd})`,
+          clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 30%, 100% 100%, 10px 100%, 0 70%)',
+          boxShadow: buttonHovered
+            ? `0 0 40px rgba(${styles.glowColor}, 0.8), inset 0 0 30px rgba(${styles.glowColor}, 0.4)`
+            : `inset 0 0 20px rgba(0, 0, 0, 0.3)`,
+          zIndex: -1,
+        }} />
+        
+        {/* Button text */}
+        <span style={{ position: 'relative', zIndex: 2 }}>
+          {buttonText}
+        </span>
+        
+        {/* Glitch overlay */}
+        {buttonHovered && (
+          <div style={{
+            position: 'absolute',
+            top: -4,
+            left: -4,
+            right: -4,
+            bottom: -4,
+            background: styles.borderColor,
+            color: styles.gradientStart,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 30%, 100% 100%, 10px 100%, 0 70%)',
+            animation: 'cyberGlitch 2s infinite',
+            zIndex: 1,
+            mixBlendMode: 'multiply',
+          }}>
+            <span style={{
+              textShadow: `2px 2px ${styles.borderColor}, -2px -2px ${styles.gradientEnd}`,
+            }}>
+              {buttonText}
+            </span>
+            <div style={{
+              position: 'absolute',
+              top: 4,
+              left: 4,
+              right: 4,
+              bottom: 4,
+              background: `linear-gradient(135deg, ${styles.gradientEnd}, ${styles.gradientStart})`,
+              clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 30%, 100% 100%, 10px 100%, 0 70%)',
+              zIndex: -1,
+            }} />
+          </div>
+        )}
       </div>
 
       {/* Value display */}
@@ -252,6 +324,67 @@ export default function CyberCTACard({
           50% {
             opacity: 0.5;
             box-shadow: 0 0 20px currentColor;
+          }
+        }
+        
+        @keyframes cyberGlitch {
+          0% {
+            clip-path: polygon(0 2%, 100% 2%, 100% 95%, 95% 95%, 95% 90%, 85% 90%, 85% 95%, 8% 95%, 0 70%);
+          }
+          2%, 8% {
+            clip-path: polygon(0 78%, 100% 78%, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 78%);
+            transform: translate(-5px, 0);
+          }
+          6% {
+            clip-path: polygon(0 78%, 100% 78%, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 78%);
+            transform: translate(5px, 0);
+          }
+          9% {
+            clip-path: polygon(0 78%, 100% 78%, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 78%);
+            transform: translate(0, 0);
+          }
+          10% {
+            clip-path: polygon(0 44%, 100% 44%, 100% 54%, 95% 54%, 95% 54%, 85% 54%, 85% 54%, 8% 54%, 0 54%);
+            transform: translate(5px, 0);
+          }
+          13% {
+            clip-path: polygon(0 44%, 100% 44%, 100% 54%, 95% 54%, 95% 54%, 85% 54%, 85% 54%, 8% 54%, 0 54%);
+            transform: translate(0, 0);
+          }
+          14%, 21% {
+            clip-path: polygon(0 0, 100% 0, 100% 0, 95% 0, 95% 0, 85% 0, 85% 0, 8% 0, 0 0);
+            transform: translate(5px, 0);
+          }
+          25% {
+            clip-path: polygon(0 0, 100% 0, 100% 0, 95% 0, 95% 0, 85% 0, 85% 0, 8% 0, 0 0);
+            transform: translate(5px, 0);
+          }
+          30% {
+            clip-path: polygon(0 0, 100% 0, 100% 0, 95% 0, 95% 0, 85% 0, 85% 0, 8% 0, 0 0);
+            transform: translate(-5px, 0);
+          }
+          35%, 45% {
+            clip-path: polygon(0 40%, 100% 40%, 100% 85%, 95% 85%, 95% 85%, 85% 85%, 85% 85%, 8% 85%, 0 70%);
+            transform: translate(-5px, 0);
+          }
+          40% {
+            clip-path: polygon(0 40%, 100% 40%, 100% 85%, 95% 85%, 95% 85%, 85% 85%, 85% 85%, 8% 85%, 0 70%);
+            transform: translate(5px, 0);
+          }
+          50% {
+            clip-path: polygon(0 40%, 100% 40%, 100% 85%, 95% 85%, 95% 85%, 85% 85%, 85% 85%, 8% 85%, 0 70%);
+            transform: translate(0, 0);
+          }
+          55% {
+            clip-path: polygon(0 63%, 100% 63%, 100% 80%, 95% 80%, 95% 80%, 85% 80%, 85% 80%, 8% 80%, 0 70%);
+            transform: translate(5px, 0);
+          }
+          60% {
+            clip-path: polygon(0 63%, 100% 63%, 100% 80%, 95% 80%, 95% 80%, 85% 80%, 85% 80%, 8% 80%, 0 70%);
+            transform: translate(0, 0);
+          }
+          31%, 61%, 100% {
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 30%, 100% 100%, 10px 100%, 0 70%);
           }
         }
       `}</style>

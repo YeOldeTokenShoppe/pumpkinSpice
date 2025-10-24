@@ -18,9 +18,9 @@ const BreathSmoke = ({
   const rotX = rotation[0];
   const rotY = rotation[1];
   const rotZ = rotation[2];
-  const cloudBounds = [1, 5, 2];
+  const cloudBounds = [1.5, 6, 2.5];
   const baseOpacity = 0.4;
-  const segments = 20;
+  const segments = 35;
 
   // Static cone shape - no animation needed
   const staticOpacity = debug ? 1 : baseOpacity;
@@ -40,7 +40,7 @@ const BreathSmoke = ({
 
       '#994422',  // Dark red
             '#cc4400', // Red-orange
-                  '#ff6b00', // Deep orange
+                  // '#ff6b00', // Deep orange
                      '#e5e0d9ff', // Orange
                      '#ffffff', // Hot white
     ];
@@ -119,10 +119,10 @@ const BreathSmoke = ({
       ))}
       
       {/* Additional wispy shapes for more volume with fire gradient */}
-      {[...Array(Math.floor(segments / 6))].map((_, i) => {
-        const progress = i / Math.floor(segments / 6);
-        const radius = cloudBounds[0] * progress * 0.5;
-        const angle = (i / Math.floor(segments / 6)) * Math.PI * 2;
+      {[...Array(Math.floor(segments / 4))].map((_, i) => {
+        const progress = i / Math.floor(segments / 4);
+        const radius = cloudBounds[0] * progress * 0.6;
+        const angle = (i / Math.floor(segments / 4)) * Math.PI * 2;
         
         // Seeded random for consistent larger shape rotations
         const seededRandom = (seed) => {
@@ -159,6 +159,55 @@ const BreathSmoke = ({
               color={debug ? "#00ff00" : shapeColor}
               transparent
               opacity={staticOpacity * (1 - progress) * 0.4}
+              alphaTest={0.1}
+            />
+          </mesh>
+        );
+      })}
+
+      {/* Extra fine particles for more density */}
+      {[...Array(Math.floor(segments / 3))].map((_, i) => {
+        const progress = i / Math.floor(segments / 3);
+        const radius = cloudBounds[0] * progress * 0.3;
+        const height = cloudBounds[1] * progress * 0.4;
+        const depth = cloudBounds[2] * progress * 0.5;
+        
+        const seededRandom = (seed) => {
+          const x = Math.sin(seed) * 10000;
+          return x - Math.floor(x);
+        };
+        
+        const angle = seededRandom(i * 71.3) * Math.PI * 2;
+        const radiusVariation = seededRandom(i * 73.7) * radius;
+        
+        const fireColors = ['#ffffff', '#fff3a0', '#ffed4e', '#ff9500', '#ff6b00', '#cc4400', '#994422'];
+        const colorIndex = Math.min(Math.floor(progress * fireColors.length), fireColors.length - 1);
+        const particleColor = fireColors[colorIndex];
+        
+        return (
+          <mesh 
+            key={`fine-${i}`}
+            position={[
+              Math.cos(angle) * radiusVariation,
+              height + (seededRandom(i * 79.1) - 0.5) * cloudBounds[1] * 0.15,
+              depth + (seededRandom(i * 83.3) - 0.5) * cloudBounds[2] * 0.2
+            ]}
+            scale={[
+              0.05 + seededRandom(i * 89.7) * 0.1,
+              0.05 + seededRandom(i * 97.1) * 0.1,
+              0.08 + seededRandom(i * 101.3) * 0.15
+            ]}
+            rotation={[
+              seededRandom(i * 103.7) * Math.PI,
+              seededRandom(i * 107.1) * Math.PI,
+              seededRandom(i * 109.3) * Math.PI
+            ]}
+          >
+            <boxGeometry args={[1, 1, 1]} />
+            <meshBasicMaterial 
+              color={debug ? "#00ff00" : particleColor}
+              transparent
+              opacity={staticOpacity * (1 - progress) * 0.6}
               alphaTest={0.1}
             />
           </mesh>

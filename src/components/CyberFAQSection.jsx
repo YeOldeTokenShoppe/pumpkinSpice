@@ -22,7 +22,7 @@ Our flagship protocol combines cutting-edge DeFi technology with divine inspirat
 
 Key features include:
 • Automated yield optimization
-• Sacred tokenomics blessed by Our Lady
+// • Sacred tokenomics blessed by Our Lady
 • Intuitive interface for both degens and normies`,
       status: '[DATA.RETRIEVED]'
     },
@@ -538,7 +538,7 @@ Response time: < 2 hours during US market hours`,
             fontFamily: 'monospace',
             opacity: 0.5
           }}>
-            BLESSED.BY.OUR.LADY
+            VERIFIED.BY.OUR.LADY
           </div>
         </div>
       </div>

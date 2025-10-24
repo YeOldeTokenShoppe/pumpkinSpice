@@ -32,33 +32,21 @@ export default function SkewedHeading({
           transform: skew(-10deg);
           display: block;
           float: left;
+        text-shadow: rgba(83, 61, 74, 0.8) 1px 1px,
+                       rgba(83, 61, 74, 0.8) 2px 2px,
+                       rgba(83, 61, 74, 0.8) 3px 3px,
+                       rgba(83, 61, 74, 0.8) 4px 4px,
+                       rgba(83, 61, 74, 0.8) 5px 5px,
+                       rgba(83, 61, 74, 0.8) 6px 6px;
           min-width: 10px;
           min-height: 10px;
           position: relative;
-          margin-left: 2px;
-        }
-        
-        .title-letter-${stableId}::before {
-          content: attr(data-char);
-          position: absolute;
-          top: 0;
-          left: 0;
-          transform: skew(-10deg);
-          z-index: -1;
-          color: rgba(83, 61, 74, 0.9);
-          text-shadow: rgba(83, 61, 74, 0.9) 1px 1px,
-                       rgba(83, 61, 74, 0.9) 2px 2px,
-                       rgba(83, 61, 74, 0.8) 3px 3px,
-                       rgba(83, 61, 74, 0.8) 4px 4px,
-                       rgba(83, 61, 74, 0.7) 5px 5px,
-                       rgba(83, 61, 74, 0.7) 6px 6px,
-                       rgba(83, 61, 74, 0.6) 7px 7px,
-                       rgba(83, 61, 74, 0.6) 8px 8px,
-                       rgba(0, 0, 0, 0.5) 10px 10px 15px;
+          margin-left: 2px; /* Add small margin to prevent overlap */
+          filter: drop-shadow(0 0 2px rgba(0, 255, 0, 0.4)); /* Add subtle glow for gradient text */
         }
         
         .title-letter-${stableId}:first-child {
-          margin-left: 10px;
+          margin-left: 10px; /* Extra margin for first letter to show shadow */
         }
       `}</style>
       <h1 style={{
@@ -86,23 +74,15 @@ export default function SkewedHeading({
               <span 
                 key={`${lineIndex}-${charIndex}`}
                 className={`title-letter title-letter-${stableId}`}
-                style={{
-                  ...(useGradient ? {
-                    background: `linear-gradient(135deg, ${gradientColors[0]} 0%, ${gradientColors[1]} 100%)`,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  } : { 
-                    color: colors[lineIndex % colors.length],
-                  }),
+                style={useGradient ? {
+                  background: `linear-gradient(135deg, ${gradientColors[0]} 0%, ${gradientColors[1]} 100%)`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                   position: 'relative',
-                  display: 'block',
-                  float: 'left',
-                  transform: 'skew(-10deg)',
-                  minWidth: '10px',
-                  minHeight: '10px',
-                  marginLeft: charIndex === 0 ? '10px' : '2px',
-                  filter: 'drop-shadow(1px 1px 0 rgba(83, 61, 74, 0.9)) drop-shadow(2px 2px 0 rgba(83, 61, 74, 0.8)) drop-shadow(3px 3px 0 rgba(83, 61, 74, 0.7)) drop-shadow(4px 4px 0 rgba(83, 61, 74, 0.6)) drop-shadow(5px 5px 0 rgba(83, 61, 74, 0.5)) drop-shadow(6px 6px 8px rgba(0, 0, 0, 0.5))',
+                } : { 
+                  color: colors[lineIndex % colors.length],
+                  position: 'relative',
                 }}
                 data-char={char === ' ' ? '\u00A0' : char}
               >

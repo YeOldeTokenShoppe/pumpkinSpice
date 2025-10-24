@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import styled, { keyframes, createGlobalStyle } from "styled-components";
+import Coin from "./Coin";
 
 // Global styles for CSS custom properties
 const GlobalStyles = createGlobalStyle`
@@ -26,7 +27,7 @@ const gAnimation = keyframes`
   to { --g: 100% }
 `;
 
-// Levitation animation for the magic 8-ball - using CSS instead of styled-components
+// Levitation animation for the magic 8-ball and candle styles - using CSS instead of styled-components
 const levitateStyle = `
   @keyframes levitate {
     0%, 100% {
@@ -51,6 +52,136 @@ const levitateStyle = `
     border-radius: 50%;
     z-index: -1;
     transform: scale(0.8);
+  }
+
+  /* Candle styles */
+  .candle-holder {
+    position: absolute;
+    width: 200px;
+    height: 400px;
+    z-index: 3;
+  }
+
+  .candle-holder *, .candle-holder *:before, .candle-holder *:after {
+    position: absolute;
+    content: "";
+  }
+
+  .candle {
+    bottom: 0;
+    width: 200px;
+    height: 300px;
+    border-radius: 150px / 40px;
+    box-shadow: inset 20px -30px 50px 0 rgba(0, 0, 0, 0.4), inset -20px 0 50px 0 rgba(0, 0, 0, 0.4);
+    background: #021902;
+    background: linear-gradient(#25e425, #0ee70e, #038303, #034c1a 50%, #001c00);
+  }
+
+  .candle:before {
+    width: 100%;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #01d401;
+    background: #09b809;
+    background: radial-gradient(#21ea21, #018e01 45%, #09b809 80%);
+  }
+
+  .candle:after {
+    width: 34px;
+    height: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    top: 14px;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.5);
+    background: radial-gradient(rgba(0, 0, 0, 0.6), transparent 45%);
+  }
+
+  .thread {  
+    width: 6px;
+    height: 36px;
+    top: -17px;
+    left: 50%;
+    z-index: 1;
+    border-radius: 40% 40% 0 0;
+    transform: translateX(-50%);
+    background: #121212;
+    background: linear-gradient(#d6994a, #4b232c, #121212, black, #e8bb31 90%);
+  }
+
+  .flame {
+    width: 24px;
+    height: 120px;
+    left: 50%;
+    transform-origin: 50% 100%;
+    transform: translateX(-50%);
+    bottom: 100%;
+    border-radius: 50% 50% 20% 20%;
+    background: rgba(255, 255, 255, 1);
+    background: linear-gradient(white 80%, transparent);
+    animation: moveFlame 6s linear infinite, enlargeFlame 5s linear infinite;
+  }
+
+  .flame:before {
+    width: 100%;
+    height: 100%;
+    border-radius: 50% 50% 20% 20%;
+    box-shadow: 0 0 15px 0 rgba(247, 93, 0, .4), 0 -6px 4px 0 rgba(247, 128, 0, .7);
+  }
+
+  @keyframes moveFlame {
+    0%, 100% {
+      transform: translateX(-50%) rotate(-2deg);
+    }
+    50% {
+      transform: translateX(-50%) rotate(2deg);
+    }
+  }
+
+  @keyframes enlargeFlame {
+    0%, 100% {
+      height: 120px;
+    }
+    50% {
+      height: 140px;
+    }
+  }
+
+  .glow {
+    width: 26px;
+    height: 60px;
+    border-radius: 50% 50% 35% 35%;
+    left: 50%;
+    top: -48px;
+    transform: translateX(-50%);
+    background: rgba(0, 133, 255, .7);
+    box-shadow: 0 -40px 30px 0 #dc8a0c, 0 40px 50px 0 #dc8a0c, inset 3px 0 2px 0 rgba(0, 133, 255, .6), inset -3px 0 2px 0 rgba(0, 133, 255, .6);
+  }
+
+  .glow:before {
+    width: 70%;
+    height: 60%;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .blinking-glow {
+    width: 100px;
+    height: 180px;
+    left: 50%;
+    top: -55%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #ff6000;
+    filter: blur(60px);
+    animation: blinkIt .1s infinite;
+  }
+
+  @keyframes blinkIt {
+    50% { opacity: .8;}
   }
 `;
 
@@ -105,6 +236,8 @@ const Numerology1 = ({ isMobile = false }) => {
   const [clientSideReady, setClientSideReady] = useState(false);
   const [internalIsMobile, setInternalIsMobile] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
   const isBrowser = typeof window !== "undefined";
   
   // Use prop if provided, otherwise detect internally
@@ -113,7 +246,7 @@ const Numerology1 = ({ isMobile = false }) => {
 
 
 
-  // Set client-side ready flag and detect mobile when component mounts
+  // Matrix rain effect using Canvas
   useEffect(() => {
     setClientSideReady(true);
     
@@ -126,10 +259,104 @@ const Numerology1 = ({ isMobile = false }) => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
+    // Initialize Matrix rain on canvas
+    const canvas = canvasRef.current;
+    if (canvas && clientSideReady) {
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      
+      // Matrix rain configuration
+      const fontSize = effectiveIsMobile ? 14 : 20;
+      const columnWidth = fontSize;
+      const lineHeight = fontSize * 0.8; // Tighter vertical spacing
+      const columns = Math.floor(canvas.width / columnWidth);
+      const drops = Array(columns).fill(0);
+      const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
+      
+      // Track the stream of characters for each column
+      const streams = Array(columns).fill(null).map(() => []);
+      const streamLength = 25; // Length of each character stream
+      
+      function draw() {
+        // Clear canvas completely for transparent background
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Green text with glow
+        ctx.shadowColor = '#0f0';
+        ctx.shadowBlur = 5;
+        ctx.font = `${fontSize}px monospace`;
+        
+        // Draw characters
+        for (let i = 0; i < columns; i++) {
+          // Add new character to stream at regular intervals
+          if (streams[i].length === 0 && Math.random() > 0.98) {
+            // Start a new stream
+            drops[i] = -streamLength * lineHeight;
+          }
+          
+          // Add characters to active stream
+          if (drops[i] !== null && streams[i].length < streamLength) {
+            const newChar = chars[Math.floor(Math.random() * chars.length)];
+            streams[i].push({
+              char: newChar,
+              y: drops[i] + (streams[i].length * lineHeight)
+            });
+          }
+          
+          // Draw and update stream
+          for (let j = 0; j < streams[i].length; j++) {
+            const item = streams[i][j];
+            
+            // Calculate opacity based on position in stream
+            const streamPosition = j / streams[i].length;
+            const leadChar = j === streams[i].length - 1;
+            const streamOpacity = leadChar ? 1 : streamPosition * 0.7;
+            const fadeOpacity = Math.max(0, 1 - Math.max(0, item.y / canvas.height));
+            const opacity = streamOpacity * fadeOpacity;
+            
+            // Brighter color for lead character
+            if (leadChar) {
+              ctx.fillStyle = `rgba(150, 255, 150, ${opacity})`;
+            } else {
+              ctx.fillStyle = `rgba(0, 255, 0, ${opacity})`;
+            }
+            
+            ctx.fillText(item.char, i * columnWidth, item.y);
+            
+            // Move character down
+            item.y += lineHeight * 0.5; // Slower movement
+          }
+          
+          // Remove characters that have gone off screen
+          streams[i] = streams[i].filter(item => item.y < canvas.height + lineHeight * 2);
+          
+          // Update drop position
+          if (drops[i] !== null) {
+            drops[i] += lineHeight * 0.5;
+          }
+        }
+      }
+      
+      // Start animation with fixed frame rate
+      const animate = () => {
+        draw();
+        animationRef.current = setTimeout(() => {
+          animationRef.current = requestAnimationFrame(animate);
+        }, 50); // Fixed 20fps for consistent speed
+      };
+      
+      animate();
+    }
+    
     return () => {
       window.removeEventListener('resize', checkMobile);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        clearTimeout(animationRef.current);
+      }
     };
-  }, []);
+  }, [clientSideReady, effectiveIsMobile]);
 
   return (
     <>
@@ -157,27 +384,74 @@ const Numerology1 = ({ isMobile = false }) => {
                         position: "relative",
                         display: 'flex',
                         justifyContent: 'center',
-                        alignItems: 'center',
+                        alignItems: 'flex-end',
                         margin: '0 auto',
                         // border: 'solid 0.5em #c48901',
                         width: '100%',
                         // maxWidth: effectiveIsMobile ? '350px' : '450px',
-                        aspectRatio: '1',
+                        height: effectiveIsMobile ? '450px' : '500px',
                         borderRadius: '1em',
-                        transform: effectiveIsMobile ? 'scale(1.1)' : 'scale(1.3)',
+                        transform: effectiveIsMobile ? 'scale(0.9)' : 'scale(1)',
                         transformOrigin: 'center center',
                       }}
                     >
                       
+                      {/* Matrix rain background effect using Canvas */}
+                      <canvas 
+                        ref={canvasRef}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          zIndex: 0,
+                          opacity: 0.25,
+                          pointerEvents: 'none',
+                        }}
+                      />
+                      
                       {/* Fluid background as the base layer */}
                       {/* <FluidBackground /> */}
 
-                      {/* Magic 8 ball as an iframe */}
+                      {/* Coin on the left */}
+                      {/* <div style={{
+                        position: 'absolute',
+                        left: effectiveIsMobile ? '40px' : '100px',
+                        top: '70%',
+                        transform: 'translateY(-50%) scale(0.75)',
+                        transformOrigin: 'center center',
+                        width: '100px',
+                        height: '100px',
+                        zIndex: 4,
+                      }}>
+                        <Coin />
+                      </div> */}
+
+                      {/* Candle on the left */}
+                      {/* <div 
+                        className="candle-holder"
+                        style={{
+                          left: effectiveIsMobile ? '-20px' : '-80px',
+                          bottom: '0',
+                          transform: effectiveIsMobile ? 'scale(0.6)' : 'scale(0.8)',
+                          transformOrigin: 'bottom center',
+                        }}
+                      >
+                        <div className="candle">
+                          <div className="blinking-glow"></div>
+                          <div className="thread"></div>
+                          <div className="glow"></div>
+                          <div className="flame"></div>
+                        </div>
+                      </div> */}
+
+                      {/* Magic 8 ball in the center */}
                       <div
                         style={{
                           position: "relative",
-                          width: "100%",
-                          height: "100%",
+                          width: effectiveIsMobile ? "300px" : "350px",
+                          height: effectiveIsMobile ? "300px" : "350px",
                           display: "flex",
                           justifyContent: "center",
                           alignItems: "center",
@@ -188,6 +462,7 @@ const Numerology1 = ({ isMobile = false }) => {
                           transition: "transform 0.3s ease",
                           transform: isHovering ? "scale(1.05)" : "scale(1)",
                           cursor: "pointer",
+                          marginBottom: '50px',
                         }}
                         className="magic-ball-glow"
                         onMouseEnter={() => setIsHovering(true)}
@@ -210,6 +485,24 @@ const Numerology1 = ({ isMobile = false }) => {
                             allowtransparency="true"
                           />
                         )}
+                      </div>
+
+                      {/* Candle on the right */}
+                      <div 
+                        className="candle-holder"
+                        style={{
+                          left: effectiveIsMobile ? '120px' : '300px',
+                          bottom: '0',
+                          transform: effectiveIsMobile ? 'scale(0.6)' : 'scale(0.5)',
+                          transformOrigin: 'bottom center',
+                        }}
+                      >
+                        <div className="candle">
+                          <div className="blinking-glow"></div>
+                          <div className="thread"></div>
+                          <div className="glow"></div>
+                          <div className="flame"></div>
+                        </div>
                       </div>
                     </div>
                     </>

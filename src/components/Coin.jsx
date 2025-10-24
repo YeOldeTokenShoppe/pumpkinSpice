@@ -2,7 +2,7 @@ import React from "react";
 
 const Coin = ({ onClick }) => {
   return (
-    <div className="purse">
+    // <div className="purse">
       <div className="coin">
         <div className="front"></div>
         <div className="back"></div>
@@ -12,7 +12,7 @@ const Coin = ({ onClick }) => {
           ))}
         </div>
       </div>
-    </div>
+    // </div>
   );
 };
 

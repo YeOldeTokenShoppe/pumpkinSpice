@@ -332,7 +332,7 @@ function ScrollTriggeredTitle({ isMobile }) {
     <div ref={titleRef}>
       <DropInTitle
         lines={["BEHOLD!", "OUR LADY!", "HOLD RL80!"]}
-        colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+        colors={["#d4af37", "#f4e4c1", "#00ff00"]}
         fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
         isMobile={isMobile}
         triggerAnimation={titleInView}
@@ -2388,7 +2388,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                   color: '#ffffff',
                   opacity: 0.9
                 }}>
-                  Part mystery cult, part secret society, The Illumin80 represent the top 8% of stakers and burners — a guild that unlocks even more glorious gains.
+                  Part mystery cult, part secret trading guild, The Illumin80 represent the top 8% of stakers and burners — a level that unlocks even more glorious gains. Powerful but not evil.
                 </p>
                 
                 <ul style={{
@@ -2400,7 +2400,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                 }}>
                       <li style={{ marginBottom: '0.5rem' }}>
                     <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
-                    Staking rewards of 2.5% of all taxes
+                    Staking rewards of 63% of all taxes
                   </li>
                   <li style={{ marginBottom: '0.5rem' }}>
                     <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
@@ -2409,7 +2409,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
         
                    <li style={{ marginBottom: '0.5rem' }}>
                     <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
-                    Air drops of upcoming Nativ80 token events
+                    Air drops of upcoming token events
                   </li>
                   {/* <li style={{ marginBottom: '0.5rem' }}>
                     <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🌙</span>
@@ -2444,7 +2444,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                                   {/* Animated Drop-In Title */}
                                   <DropInTitle
                                     lines={["PROSPER80", "FOR ALL", "HUMAN80!"]}
-                                    colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+                                    colors={["#00ff00", "#f4e4c1", "#ffd700"]}
                                     fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
                                     isMobile={isMobile}
                                     triggerAnimation={secondTitleInView}
@@ -2477,8 +2477,15 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
           maxWidth: '1200px',
           margin: '0 auto'
         }}>
-          {/* Footer Title */}
-  <h1 className='custom-title'
+          {/* Footer Title with Coin */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: isMobile ? '1rem' : '2rem',
+            marginTop: isMobile ? '1rem' : '3rem',
+          }}>
+            <h1 className='custom-title'
               id="main-title"
               style={{ 
               position: "relative",
@@ -2506,17 +2513,36 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
               zIndex: 1000,
               whiteSpace: isMobile ? 'normal' : 'nowrap',
               cursor: 'pointer',
-              marginTop: isMobile ? '1rem' : '3rem',
+              margin: 0,
               pointerEvents: 'auto',
             }}>
               <span className="title-line" style={{ display: 'block', position: 'relative' }}>Our Lady</span>
               <span className="title-line" style={{ display: 'block', position: 'relative' }}>
-                <span style={{ fontSize: isMobile ? "1.2rem" : "3rem" }}>of    </span>
+                <span style={{ fontSize: isMobile ? "1.2rem" : "1.5rem" }}>of    </span>
                 Perpetual
               </span>
-              <span className="title-line" style={{ display: 'block', marginLeft: isMobile ? "2rem" : "6rem", position: 'relative' }}>Profit</span>
+              <span className="title-line" style={{ display: 'block', marginLeft: isMobile ? "0rem" : "0rem", position: 'relative' }}>Profit</span>
             </h1>
-          
+            
+            {/* Coin component */}
+            <div style={{ 
+              position: "relative",
+              marginLeft: '-2rem',
+              width: isMobile ? "80px" : "100px",
+              height: isMobile ? "80px" : "100px",
+              flexShrink: 0,
+            }}>
+              <Link href="#" className="coin-link" style={{ 
+                display: "block",
+                width: "100%",
+                height: "100%",
+                transform: 'scale(0.6)',
+                transformOrigin: 'center center',
+              }}>
+                <Coin />
+              </Link>
+            </div>
+          </div>
           {/* Divider */}
           <div style={{
             width: '100px',
