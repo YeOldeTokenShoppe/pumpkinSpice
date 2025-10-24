@@ -2,6 +2,7 @@
 import './FAQSection.css';
 import { useEffect, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
+import SkewedHeading from './SkewedHeading';
 
 export default function FAQSection({ isMobile = false }) {
   const sectionRef = useRef(null);
@@ -69,16 +70,61 @@ export default function FAQSection({ isMobile = false }) {
 
           zIndex: 1
         }}>
-      <h1 style={{          textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
-}}>FAQ</h1>
+ <SkewedHeading 
+    lines={["FAQ"]}
+    colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+    isMobile={isMobile}
+  />
       
       <div className="faq-content-wrapper">
-        <div className="faq-image-container">
+        <div className="faq-image-container" style={{ position: 'relative' }}>
           <img 
-            // src="/IMG_0632.png" 
-            src="/queenOfHearts.png"
+            src="/queenOfHearts1.jpg"
             alt="Queen of Hearts" 
-            className="faq-queen-image"
+            className="faq-queen-image glitch-image"
+            style={{
+              position: 'relative',
+              animation: 'subtle-glitch 12s infinite'
+            }}
+          />
+          {/* Glitch effect layers */}
+          <img 
+            src="/queenOfHearts1.jpg"
+            alt="" 
+            className="glitch-layer"
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              opacity: 0.3,
+              mixBlendMode: 'screen',
+              animation: 'subtle-glitch-1 8s infinite',
+              filter: 'hue-rotate(10deg)',
+              pointerEvents: 'none',
+              borderRadius: '20px'
+            }}
+          />
+          <img 
+            src="/queenOfHearts2.jpg"
+            alt="" 
+            className="glitch-layer"
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              opacity: 0.2,
+              mixBlendMode: 'hard-light',
+              animation: 'subtle-glitch-2 10s infinite',
+              filter: 'hue-rotate(-10deg) saturate(1.2)',
+              pointerEvents: 'none'
+            }}
           />
         </div>
         
@@ -201,6 +247,75 @@ export default function FAQSection({ isMobile = false }) {
         @keyframes faqRotate {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+
+        @keyframes subtle-glitch {
+          0%, 100% {
+            filter: none;
+            transform: translate(0);
+          }
+          95% {
+            filter: none;
+            transform: translate(0);
+          }
+          96% {
+            filter: brightness(1.1) saturate(1.2);
+            transform: translateX(1px);
+          }
+          97% {
+            filter: brightness(0.95) hue-rotate(5deg);
+            transform: translateX(-1px);
+          }
+          98% {
+            filter: brightness(1.05) saturate(1.1);
+            transform: translate(0);
+          }
+        }
+
+        @keyframes subtle-glitch-1 {
+          0%, 94%, 100% {
+            opacity: 0;
+            transform: translateX(0);
+          }
+          95% {
+            opacity: 0.3;
+            transform: translateX(1px);
+            clip-path: polygon(0 20%, 100% 20%, 100% 22%, 0 22%);
+          }
+          96% {
+            opacity: 0;
+          }
+          97% {
+            opacity: 0.2;
+            transform: translateX(-1px);
+            clip-path: polygon(0 78%, 100% 78%, 100% 80%, 0 80%);
+          }
+          98% {
+            opacity: 0;
+          }
+        }
+
+        @keyframes subtle-glitch-2 {
+          0%, 93%, 100% {
+            opacity: 0;
+            transform: translateX(0);
+          }
+          94% {
+            opacity: 0.2;
+            transform: translateX(-0.5px);
+            clip-path: polygon(0 50%, 100% 50%, 100% 51%, 0 51%);
+          }
+          95% {
+            opacity: 0;
+          }
+          96.5% {
+            opacity: 0.15;
+            transform: translateX(0.5px);
+            clip-path: polygon(0 10%, 100% 10%, 100% 11%, 0 11%);
+          }
+          97% {
+            opacity: 0;
+          }
         }
       `}</style>
     </motion.div>

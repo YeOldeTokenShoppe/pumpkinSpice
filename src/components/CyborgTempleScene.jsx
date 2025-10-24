@@ -19,6 +19,7 @@ function CyborgTempleScene({
   const mixerRef = useRef();
   const actionsRef = useRef({});
   const danceTimeoutRef = useRef(null);
+  const slowdownIntervalRef = useRef(null);
 
   useEffect(() => {
     if (hasLoadedRef.current) return;
@@ -29,10 +30,10 @@ function CyborgTempleScene({
     dracoLoader.setDecoderPath("/draco/");
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    console.log('Loading MaryTraderScene.glb...');
+    console.log('Loading MaryTraderScene_extraClothes.glb...');
     
-    gltfLoader.load("/models/MaryTraderScene.glb", (gltf) => {
-      console.log('✓ MaryTraderScene.glb loaded successfully');
+    gltfLoader.load("/models/MaryTraderScene_extraClothes.glb", (gltf) => {
+      console.log('✓ MaryTraderScene_extraClothes.glb loaded successfully');
       
       const templeScene = gltf.scene;
       
@@ -117,7 +118,7 @@ function CyborgTempleScene({
       console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
     },
     (error) => {
-      console.error('Error loading MaryTraderScene.glb:', error);
+      console.error('Error loading MaryTraderScene_extraClothes.glb:', error);
       // Still call onLoad even if there's an error, so the page doesn't hang
       if (onLoad) {
         setTimeout(() => {
@@ -168,9 +169,14 @@ function CyborgTempleScene({
     if (isPlaying) {
       console.log('[CyborgTempleScene] Music started, characters will start dancing in 2 seconds...');
       
-      // Clear any existing timeout
+      // Clear any existing timeouts/intervals
       if (danceTimeoutRef.current) {
         clearTimeout(danceTimeoutRef.current);
+        danceTimeoutRef.current = null;
+      }
+      if (slowdownIntervalRef.current) {
+        clearInterval(slowdownIntervalRef.current);
+        slowdownIntervalRef.current = null;
       }
       
       // Keep TYPE animation running for the first character
@@ -189,10 +195,11 @@ function CyborgTempleScene({
           }
         });
         
-        // Play dance animations with time offsets
+        // Play dance animations with time offsets at normal speed
         ['Dance.001', 'Dance.002', 'Dance.003'].forEach((danceAnim) => {
           if (actions[danceAnim]) {
             actions[danceAnim].reset();
+            actions[danceAnim].timeScale = 1.0; // Reset to normal speed
             
             // Set different starting times based on animation name
             if (danceAnim === 'Dance.001') {
@@ -210,40 +217,69 @@ function CyborgTempleScene({
       }, 2000); // 2 second delay
       
     } else {
-      // Switch back to idle animations
-      console.log('[CyborgTempleScene] Switching back to idle animations');
+      // Gradually slow down and stop dance animations
+      console.log('[CyborgTempleScene] Music stopped, characters will gradually slow down dancing...');
       
-      // Clear any pending dance timeout
+      // Clear any pending timeouts/intervals
       if (danceTimeoutRef.current) {
         clearTimeout(danceTimeoutRef.current);
         danceTimeoutRef.current = null;
       }
+      if (slowdownIntervalRef.current) {
+        clearInterval(slowdownIntervalRef.current);
+        slowdownIntervalRef.current = null;
+      }
       
-      // Stop dance animations
-      ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
-        if (actions[danceAnim]) {
-          actions[danceAnim].stop();
-        }
-      });
+      // Start the gradual slowdown process
+      let currentSpeed = 1.0;
+      const slowdownDuration = 2000; // 2 seconds to slow down
+      const intervalTime = 50; // Update every 50ms for smooth transition
+      const speedDecrement = 1.0 / (slowdownDuration / intervalTime); // Calculate how much to decrease each interval
       
-      // Restart idle animations with different time offsets
-      ['Idle.001', 'Idle.002', 'Idle.003'].forEach((idleAnim) => {
-        if (actions[idleAnim]) {
-          actions[idleAnim].reset();
+      slowdownIntervalRef.current = setInterval(() => {
+        currentSpeed -= speedDecrement;
+        
+        if (currentSpeed <= 0) {
+          // Stop the slowdown and switch to idle
+          clearInterval(slowdownIntervalRef.current);
+          slowdownIntervalRef.current = null;
           
-          // Set different starting times based on animation name
-          if (idleAnim === 'Idle.001') {
-            actions[idleAnim].time = Math.random() * actions[idleAnim].getClip().duration; // Random offset
-          } else if (idleAnim === 'Idle.002') {
-            actions[idleAnim].time = actions[idleAnim].getClip().duration * 0.33; // Start 1/3 through
-          } else if (idleAnim === 'Idle.003') {
-            actions[idleAnim].time = actions[idleAnim].getClip().duration * 0.66; // Start 2/3 through
-          }
+          console.log('[CyborgTempleScene] Dance animations fully stopped, switching to idle...');
           
-          actions[idleAnim].play();
-          console.log(`✅ Restarting idle animation: ${idleAnim} with offset ${actions[idleAnim].time}`);
+          // Stop dance animations
+          ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
+            if (actions[danceAnim]) {
+              actions[danceAnim].stop();
+            }
+          });
+          
+          // Restart idle animations with different time offsets
+          ['Idle.001', 'Idle.002', 'Idle.003'].forEach((idleAnim) => {
+            if (actions[idleAnim]) {
+              actions[idleAnim].reset();
+              
+              // Set different starting times based on animation name
+              if (idleAnim === 'Idle.001') {
+                actions[idleAnim].time = Math.random() * actions[idleAnim].getClip().duration; // Random offset
+              } else if (idleAnim === 'Idle.002') {
+                actions[idleAnim].time = actions[idleAnim].getClip().duration * 0.33; // Start 1/3 through
+              } else if (idleAnim === 'Idle.003') {
+                actions[idleAnim].time = actions[idleAnim].getClip().duration * 0.66; // Start 2/3 through
+              }
+              
+              actions[idleAnim].play();
+              console.log(`✅ Restarting idle animation: ${idleAnim} with offset ${actions[idleAnim].time}`);
+            }
+          });
+        } else {
+          // Gradually slow down dance animations
+          ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
+            if (actions[danceAnim] && actions[danceAnim].isRunning()) {
+              actions[danceAnim].timeScale = Math.max(0.1, currentSpeed); // Don't go below 0.1 to avoid stopping mid-slowdown
+            }
+          });
         }
-      });
+      }, intervalTime);
     }
   }, [isPlaying]);
 

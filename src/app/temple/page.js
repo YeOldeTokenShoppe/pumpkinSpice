@@ -17,6 +17,8 @@ import SocialBar from '@/components/SocialBar';
 import CoinLoader from '@/components/CoinLoader';
 import MemoryMonitor from '@/components/MemoryMonitor';
 import TradingOverlay from '@/components/TradingOverlay';
+import { useTradingBot } from '@/hooks/useTradingBot';
+import PolaroidSnapshot from '@/components/PolaroidSnapshot';
 
 
 export default function CyborgTemple() {
@@ -29,6 +31,10 @@ export default function CyborgTemple() {
   const [sceneReady, setSceneReady] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
   const [showTrading, setShowTrading] = useState(true);
+  const [triggerSnapshot, setTriggerSnapshot] = useState(false);
+  
+  // Connect to trading bot for real data
+  const { isConnected, tradingMode, tradingData, changeTradingMode } = useTradingBot();
 
   // Get music context functions
   const {
@@ -237,7 +243,13 @@ export default function CyborgTemple() {
           </div>
         </div>
      {/* <MemoryMonitor show={true} /> */}
-        <TradingOverlay show={showTrading} />
+        <TradingOverlay 
+          show={showTrading} 
+          data={tradingData} 
+          isConnected={isConnected}
+          tradingMode={tradingMode}
+          onModeChange={changeTradingMode}
+        />
         {/* Main Canvas */}
         <Canvas
           key="temple-canvas"
@@ -305,7 +317,7 @@ export default function CyborgTemple() {
               zoomSpeed={0.2}
               enableDamping={true}
               dampingFactor={0.1}
-              minDistance={0.1}
+              minDistance={1}
               maxDistance={20}
               minPolarAngle={0}
               maxPolarAngle={Math.PI / 1.9}
@@ -508,6 +520,61 @@ export default function CyborgTemple() {
             </div>
           </div>
         )}
+
+        {/* Snapshot Button */}
+        <button
+          onClick={() => setTriggerSnapshot(true)}
+          style={{
+            position: "fixed",
+            bottom: "2rem",
+            right: "2rem",
+            width: "60px",
+            height: "60px",
+            borderRadius: "50%",
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(10px)",
+            border: "2px solid rgba(255, 255, 255, 0.3)",
+            color: "#ffffff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            transition: "all 0.3s ease",
+            boxShadow: "0 4px 15px rgba(0, 0, 0, 0.3)",
+            zIndex: 999,
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+            e.target.style.transform = "scale(1.1)";
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+            e.target.style.transform = "scale(1)";
+          }}
+          title="Take Snapshot"
+        >
+          <svg
+            width="30"
+            height="30"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </button>
+
+        {/* Polaroid Snapshot Component */}
+        <PolaroidSnapshot 
+          trigger={triggerSnapshot}
+          onComplete={() => setTriggerSnapshot(false)}
+          captureElementId="temple-canvas"
+          label="Temple Captured!"
+        />
       </div>
     </div>
     </>

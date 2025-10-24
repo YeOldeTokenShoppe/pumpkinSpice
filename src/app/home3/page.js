@@ -22,15 +22,20 @@ import RotatingText from '@/components/RotatingText';
 import '@/components/RotatingText.css';
 import HandsGLTFScene from "@/components/HandsGLTFScene";
 import CompactCandleModal from '@/components/CompactCandleModal';
-import FAQSection from '@/components/FAQSection';
+import CyberFAQSection from '@/components/CyberFAQSection';
 import CoinLoader from '@/components/CoinLoader';
-import FloatingBar from '@/components/FloatingBar';
+import CyberFloatingBar from '@/components/CyberFloatingBar';
 import TokenomicsSection from '@/components/TokenomicsSection';
+import CyberStatsSection from '@/components/CyberStatsSection';
+import CyberTokenomicsSection from '@/components/CyberTokenomicsSection';
+import CyberButton from '@/components/CyberButton';
+import CyberCTACard from '@/components/CyberCTACard';
 import Illumin80Bouncer from '@/components/Illumin80Bouncer';
 import Numerology1 from '@/components/Numerology1';
 import TubesCursor from '@/components/TubesCursor';
 import CarouselWrapper from '@/components/CarouselWrapper';
 import BreathSmoke from "@/components/BreathSmoke";
+import SkewedHeading from "@/components/SkewedHeading";
 
 
 
@@ -385,22 +390,65 @@ function ScrollTriggeredTitle({ isMobile }) {
   );
 }
 
-// Modern StatsSection with cards layout
+// Modern StatsSection with terminal/trading style (replaced by CyberStatsSection)
 function StatsSection({ isMobile }) {
   const statsRef = useRef(null);
   const isInView = useInView(statsRef, { threshold: 0.3 });
 
   const metrics = [
     // Staking-related metrics
-    { value: 7, suffix: '', prefix: '', label: 'Stakers', icon: '⭐', gradient: 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)' },
-    { value: 2.4, suffix: 'M', prefix: '$', label: 'Total Value Locked', icon: '🔒', gradient: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' },
-    { value: 80, suffix: 'K', prefix: '$', label: 'Total Rewards', icon: '🏆', gradient: 'linear-gradient(135deg, #fbbf24 0%, #f97316 100%)' },
-    { value: 24.5, suffix: '%', prefix: '', label: 'APY (7D)', icon: '📈', gradient: 'linear-gradient(135deg, #84cc16 0%, #10b981 100%)' },
+    { value: 1337, suffix: '', prefix: '', label: 'STAKERS', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    ), gradient: 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)' },
+    { value: 888.8, suffix: 'K', prefix: '$', label: 'TVL', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    ), gradient: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' },
+    { value: 42.86, suffix: '%', prefix: '+', label: 'TOTAL P&L', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" x2="12" y1="20" y2="10"/>
+        <line x1="18" x2="18" y1="20" y2="4"/>
+        <line x1="6" x2="6" y1="20" y2="16"/>
+      </svg>
+    ), gradient: 'linear-gradient(135deg, #fbbf24 0%, #f97316 100%)' },
+    { value: 69.42, suffix: '%', prefix: '', label: 'APY', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>
+      </svg>
+    ), gradient: 'linear-gradient(135deg, #84cc16 0%, #10b981 100%)' },
     // Market-related metrics
-    { value: 4.8, suffix: 'K', prefix: '$', label: 'Market Cap', icon: '💰', gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' },
-    { value: 12, suffix: '+', prefix: '', label: 'Holders', icon: '👥', gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)' },
-    { value: 2.8, suffix: '%', prefix: '', label: 'Burned', icon: '🔥', gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' },
-    { value: 3.2, suffix: 'K', prefix: '$', label: 'Liquidity', icon: '💧', gradient: 'linear-gradient(135deg, #6366f1 0%, #3b82f6 100%)' }
+    { value: 144.7, suffix: 'K', prefix: '$', label: 'MARKET CAP', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+        <path d="M12 18V6"/>
+      </svg>
+    ), gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' },
+    { value: 134, suffix: '', prefix: '', label: 'HOLDERS', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ), gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)' },
+    { value: 2.8, suffix: '%', prefix: '', label: 'BURNED', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 12c0-2-1-3.5-2.5-5s-1-4.5-1-4.5c-.5 2.5-2 4.9-4.5 6.5 0 0 1.5 1 1.5 3.5C5.5 15 7 17 9 18c1 .5 1.5 1 2 1.5V12Z"/>
+        <path d="M16 9.5c0-.5-.5-2-1.5-3.5S13.5 3 13.5 3s-.5 1.5-1 2.5c0 0 .5.5.5 1.5 0 1 .5 2 1 2.5.5.5.5 1 1 1.5v-2Z"/>
+        <path d="M20.5 13.5s-.5 1.5-1.5 2.5-1.5 1.5-1.5 1.5"/>
+      </svg>
+    ), gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' },
+    { value: 42.0, suffix: 'K', prefix: '$', label: 'LIQUIDITY', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
+        <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>
+      </svg>
+    ), gradient: 'linear-gradient(135deg, #6366f1 0%, #3b82f6 100%)' }
   ];
 
   return (
@@ -408,16 +456,17 @@ function StatsSection({ isMobile }) {
       {/* Staking Metrics Section */}
       <div style={{ marginBottom: '40px' }}>
         <h3 style={{
-          fontSize: isMobile ? '18px' : '24px',
-          fontWeight: '700',
-          color: '#d4af37',
+          fontSize: isMobile ? '14px' : '18px',
+          fontWeight: 'bold',
+          color: '#00ff00',
           marginBottom: '20px',
-          fontFamily: "'Fjalla One', sans-serif",
+          fontFamily: 'monospace',
           textTransform: 'uppercase',
           letterSpacing: '2px',
           textAlign: 'center',
+          textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
         }}>
-          Staking Metrics
+          STAKING METRICS
         </h3>
         <div style={{
           display: 'grid',
@@ -434,52 +483,62 @@ function StatsSection({ isMobile }) {
             animate={isInView ? { opacity: 1 } : {}}
             transition={{ duration: 0.8, delay: 0.05 * index }}
             style={{
-              background: 'rgba(0, 0, 0, 0.4)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(212, 175, 55, 0.3)',
-              borderRadius: '20px',
-              padding: isMobile ? '20px' : '30px',
-              transition: 'background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
+              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(0, 255, 0, 0.3)',
+              borderRadius: '8px',
+              padding: isMobile ? '15px' : '20px',
+              transition: 'all 0.3s ease',
               cursor: 'pointer',
-              height: isMobile ? '160px' : '200px',
+              height: isMobile ? '140px' : '160px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'flex-start',
               width: '100%',
               boxSizing: 'border-box',
               position: 'relative',
+              boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
             }}
             whileHover={{
-              background: 'rgba(0, 0, 0, 0.6)',
-              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.4)',
-              borderColor: 'rgba(212, 175, 55, 0.6)',
+              borderColor: 'rgba(0, 255, 0, 0.6)',
+              boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
             }}
           >
             {/* Icon */}
             <div
               style={{
-                width: isMobile ? '40px' : '50px',
-                height: isMobile ? '40px' : '50px',
-                borderRadius: '12px',
-                background: metric.gradient,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: isMobile ? '15px' : '20px',
-                fontSize: isMobile ? '20px' : '24px',
-                flexShrink: 0,
+                gap: '8px',
+                marginBottom: isMobile ? '10px' : '15px',
               }}
             >
-              {metric.icon}
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#00ff00',
+                animation: 'pulse 2s infinite',
+                boxShadow: '0 0 10px #00ff00'
+              }} />
+              <div style={{ 
+                color: '#00ff00',
+                display: 'flex',
+                alignItems: 'center',
+                filter: 'drop-shadow(0 0 8px rgba(0, 255, 0, 0.5))'
+              }}>
+                {metric.icon}
+              </div>
             </div>
 
             {/* Value */}
             <div style={{
-              fontSize: isMobile ? '28px' : '36px',
-              fontWeight: '800',
-              color: 'white',
+              fontSize: isMobile ? '24px' : '32px',
+              fontWeight: 'bold',
+              color: '#00ff00',
               marginBottom: '8px',
-              fontFamily: "'Fjalla One', sans-serif",
+              fontFamily: 'monospace',
+              textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
             }}>
               <AnimatedCounter 
                 target={metric.value} 
@@ -490,12 +549,12 @@ function StatsSection({ isMobile }) {
 
             {/* Label */}
             <div style={{
-              fontSize: isMobile ? '11px' : '13px',
-              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: isMobile ? '10px' : '11px',
+              color: '#888',
               textTransform: 'uppercase',
               letterSpacing: '1px',
               fontWeight: '600',
-              fontFamily: "'Fjalla One', sans-serif",
+              fontFamily: 'monospace',
             }}>
               {metric.label}
             </div>
@@ -507,16 +566,17 @@ function StatsSection({ isMobile }) {
       {/* Market Metrics Section */}
       <div>
         <h3 style={{
-          fontSize: isMobile ? '18px' : '24px',
-          fontWeight: '700',
-          color: '#d4af37',
+          fontSize: isMobile ? '14px' : '18px',
+          fontWeight: 'bold',
+          color: '#00ff00',
           marginBottom: '20px',
-          fontFamily: "'Fjalla One', sans-serif",
+          fontFamily: 'monospace',
           textTransform: 'uppercase',
           letterSpacing: '2px',
           textAlign: 'center',
+          textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
         }}>
-          Market Metrics
+          MARKET METRICS
         </h3>
         <div style={{
           display: 'grid',
@@ -533,52 +593,62 @@ function StatsSection({ isMobile }) {
             animate={isInView ? { opacity: 1 } : {}}
             transition={{ duration: 0.8, delay: 0.05 * (index + 4) }}
             style={{
-              background: 'rgba(0, 0, 0, 0.4)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(212, 175, 55, 0.3)',
-              borderRadius: '20px',
-              padding: isMobile ? '20px' : '30px',
-              transition: 'background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
+              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(0, 255, 0, 0.3)',
+              borderRadius: '8px',
+              padding: isMobile ? '15px' : '20px',
+              transition: 'all 0.3s ease',
               cursor: 'pointer',
-              height: isMobile ? '160px' : '200px',
+              height: isMobile ? '140px' : '160px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'flex-start',
               width: '100%',
               boxSizing: 'border-box',
               position: 'relative',
+              boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
             }}
             whileHover={{
-              background: 'rgba(0, 0, 0, 0.6)',
-              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.4)',
-              borderColor: 'rgba(212, 175, 55, 0.6)',
+              borderColor: 'rgba(0, 255, 0, 0.6)',
+              boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
             }}
           >
             {/* Icon */}
             <div
               style={{
-                width: isMobile ? '40px' : '50px',
-                height: isMobile ? '40px' : '50px',
-                borderRadius: '12px',
-                background: metric.gradient,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: isMobile ? '15px' : '20px',
-                fontSize: isMobile ? '20px' : '24px',
-                flexShrink: 0,
+                gap: '8px',
+                marginBottom: isMobile ? '10px' : '15px',
               }}
             >
-              {metric.icon}
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#00ff00',
+                animation: 'pulse 2s infinite',
+                boxShadow: '0 0 10px #00ff00'
+              }} />
+              <div style={{ 
+                color: '#00ff00',
+                display: 'flex',
+                alignItems: 'center',
+                filter: 'drop-shadow(0 0 8px rgba(0, 255, 0, 0.5))'
+              }}>
+                {metric.icon}
+              </div>
             </div>
 
             {/* Value */}
             <div style={{
-              fontSize: isMobile ? '28px' : '36px',
-              fontWeight: '800',
-              color: 'white',
+              fontSize: isMobile ? '24px' : '32px',
+              fontWeight: 'bold',
+              color: '#00ff00',
               marginBottom: '8px',
-              fontFamily: "'Fjalla One', sans-serif",
+              fontFamily: 'monospace',
+              textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
             }}>
               <AnimatedCounter 
                 target={metric.value} 
@@ -589,12 +659,12 @@ function StatsSection({ isMobile }) {
 
             {/* Label */}
             <div style={{
-              fontSize: isMobile ? '11px' : '13px',
-              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: isMobile ? '10px' : '11px',
+              color: '#888',
               textTransform: 'uppercase',
               letterSpacing: '1px',
               fontWeight: '600',
-              fontFamily: "'Fjalla One', sans-serif",
+              fontFamily: 'monospace',
             }}>
               {metric.label}
             </div>
@@ -1193,8 +1263,21 @@ export default function CloudTestPage() {
               position: "relative",
               left: isMobile ? "5%" : "10%",
               color: "#d4af37",
+                // color: "#00ff00",
+                  // colors={["#00ff00"]}
               fontFamily: 'UnifrakturCook, serif',
-              textShadow: "3px 3px 5px #000, -1px -1px 5px pink",
+              textShadow: `
+                rgba(83, 61, 74, 0.9) 1px 1px,
+                rgba(83, 61, 74, 0.9) 2px 2px,
+                rgba(83, 61, 74, 0.8) 3px 3px,
+                rgba(83, 61, 74, 0.8) 4px 4px,
+                rgba(83, 61, 74, 0.7) 5px 5px,
+                rgba(83, 61, 74, 0.7) 6px 6px,
+                rgba(83, 61, 74, 0.6) 7px 7px,
+                rgba(83, 61, 74, 0.6) 8px 8px,
+                rgba(255, 192, 203, 0.4) -1px -1px 5px,
+                rgba(0, 0, 0, 0.8) 10px 10px 15px
+              `,
               fontSize: getResponsiveValue("4rem", "5rem", "6rem", "7rem"),
               fontWeight: 900,
               lineHeight: 0.8,
@@ -1481,154 +1564,26 @@ export default function CloudTestPage() {
           }}
         >
           {/* Buy RL80 Card */}
-          <motion.div
-            style={{
-              background: 'rgba(0, 0, 0, 0.4)',
-              backdropFilter: 'blur(20px)',
-              border: '2px solid rgba(16, 185, 129, 0.4)',
-              borderRadius: '20px',
-              padding: isMobile ? '40px 30px' : '50px 40px',
-              textAlign: 'center',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-            }}
-            whileHover={{
-              scale: 1.03,
-              background: 'rgba(0, 0, 0, 0.6)',
-              borderColor: '#10b981',
-              boxShadow: '0 0 30px rgba(16, 185, 129, 0.3)',
-            }}
+          <CyberCTACard
+            variant="buy"
+            buttonText="BUY RL80"
+            value="$0.0048"
+            description="Available on Uniswap"
+            icon="💰"
             onClick={() => window.open('https://app.uniswap.org/swap', '_blank')}
-          >
-            <div style={{ fontSize: isMobile ? '4rem' : '5rem'}}>🚀</div>
- <button
-                        onClick={handleOpenModal}
-                         style={{
-                          marginTop: isMobile ? '1.5rem' : '2rem',
-                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
-                          fontSize: isMobile ? '1.2rem' : '1.4rem',
-                          fontWeight: 'bold',
-                          fontFamily: "'Fjalla One', sans-serif",
-                          textTransform: 'uppercase',
-                          letterSpacing: '2px',
-                          color: '#000000',
-                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
-                          border: '3px solid #d4af37',
-                          borderRadius: '12px',
-                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          zIndex: 102,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
-                        }}
-                      >
-                        Buy RL80
-                      </button>
-            <span style={{
-              fontSize: isMobile ? '40px' : '48px',
-              fontWeight: '900',
-              display: 'block',
-              margin: '20px 0',
-              color: '#10b981',
-              fontFamily: "'Fjalla One', sans-serif",
-            }}>
-              $0.0048
-            </span>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '16px',
-              lineHeight: '1.6',
-              fontFamily: "'Inter', sans-serif",
-            }}>
-              Available on Uniswap
-            </p>
-          </motion.div>
+            isMobile={isMobile}
+          />
 
           {/* Stake & Earn Card */}
-          <motion.div
-            style={{
-              background: 'rgba(0, 0, 0, 0.4)',
-              backdropFilter: 'blur(20px)',
-              border: '2px solid rgba(245, 158, 11, 0.4)',
-              borderRadius: '20px',
-              padding: isMobile ? '40px 30px' : '50px 40px',
-              textAlign: 'center',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-            }}
-            whileHover={{
-              scale: 1.03,
-              background: 'rgba(0, 0, 0, 0.6)',
-              borderColor: '#f59e0b',
-              boxShadow: '0 0 30px rgba(245, 158, 11, 0.3)',
-            }}
+          <CyberCTACard
+            variant="stake"
+            buttonText="STAKE RL80"
+            value="24.5% APY"
+            description="Lock your tokens and earn passive rewards daily"
+            icon="🔒"
             onClick={() => window.open('/stake', '_blank')}
-          >
-            <div style={{ fontSize: isMobile ? '4rem' : '5rem' }}>💰</div>
-  <button
-                        onClick={handleOpenModal}
-                         style={{
-                          marginTop: isMobile ? '1.5rem' : '2rem',
-                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
-                          fontSize: isMobile ? '1.2rem' : '1.4rem',
-                          fontWeight: 'bold',
-                          fontFamily: "'Fjalla One', sans-serif",
-                          textTransform: 'uppercase',
-                          letterSpacing: '2px',
-                          color: '#000000',
-                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
-                          border: '3px solid #d4af37',
-                          borderRadius: '12px',
-                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          zIndex: 102,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
-                        }}
-                      >
-                        Stake RL80
-                      </button>
-            <span style={{
-              fontSize: isMobile ? '40px' : '48px',
-              fontWeight: '900',
-              display: 'block',
-              margin: '20px 0',
-              color: '#f59e0b',
-              fontFamily: "'Fjalla One', sans-serif",
-            }}>
-              24.5% APY
-            </span>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '16px',
-              lineHeight: '1.6',
-              fontFamily: "'Inter', sans-serif",
-            }}>
-              Lock your tokens and earn passive rewards daily
-            </p>
-          </motion.div>
+            isMobile={isMobile}
+          />
         </motion.div>
 
         {/* Combined Token Information Section */}
@@ -1651,7 +1606,7 @@ export default function CloudTestPage() {
             borderRadius: '30px',
             padding: isMobile ? '30px 20px' : '40px',
             backdropFilter: 'blur(10px)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
             position: 'relative',
             overflow: 'hidden'
           }}>
@@ -1664,53 +1619,87 @@ export default function CloudTestPage() {
               left: '-50%',
               width: '200%',
               height: '200%',
-              background: 'radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(0, 255, 0, 0.05) 0%, transparent 70%)',
               animation: 'statsRotate 30s linear infinite',
               zIndex: 0
             }} />
 
             <div style={{ position: 'relative', zIndex: 1 }}>
-              {/* Section Header */}
+              {/* Section Header - Cyber-Gothic Fusion */}
               <div style={{
                 textAlign: 'center',
-                marginBottom: '40px'
+                marginBottom: '40px',
+                position: 'relative'
               }}>
-                <h1 style={{
-                  fontFamily: "'UnifrakturCook', serif",
-                  fontSize: isMobile ? '2rem' : '3.5rem',
-                  fontWeight: '800',
-                  color: '#d4af37',
-                  // WebkitBackgroundClip: 'text',
-                  // WebkitTextFillColor: 'transparent',
-                  // backgroundClip: 'text',
-                  marginBottom: '8px',
-                  textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
-  textAlign: 'center',
+                {/* Terminal frame top */}
+                <div style={{
+                  fontFamily: 'monospace',
+                  fontSize: isMobile ? '11px' : '13px',
+                  color: '#00ff00',
+                  textAlign: 'center',
+                  marginBottom: '15px',
+                  opacity: 0.6,
+                  letterSpacing: '2px'
                 }}>
-                  To<span style={{fontFamily: "'Pirata One', serif", textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
-  textAlign: 'center',}}>k</span>enomics 
-                </h1>
+                  {'< '} SYSTEM://PROTOCOL/ECONOMICS {' >'}
+                </div>
                 
-                <p style={{
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  fontSize: '1em'
+                {/* Gothic heading with cyber gradient */}
+        {/* <SkewedHeading 
+    lines={["TOKENOMICS"]}
+    colors={["#00ff00"]} 
+    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+    isMobile={isMobile}
+    useGradient={true}
+    gradientColors={['#ffd700', '#00ff00']} // Gold to green gradient
+  /> */}
+                <SkewedHeading 
+    lines={["TOKENOMICS"]}
+    // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+        colors={["#00ff00"]}
+    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+    isMobile={isMobile}
+  />
+
+                
+                {/* ASCII decorative elements */}
+                <div style={{
+                  fontFamily: 'monospace',
+                  fontSize: '11px',
+                  color: '#00ff00',
+                  textAlign: 'center',
+                  opacity: 0.4,
+                  marginTop: '10px',
+                  marginBottom: '15px',
+                  letterSpacing: '1px'
                 }}>
-                  𝓞𝖚𝖗 𝕷𝖆𝖉𝖞 𝔬𝔣 𝕻𝖊𝖗𝖕𝖊𝖙𝖚𝖆𝖑 𝕻𝖗𝖔𝖋𝖎𝖙 (RL80)
+                  ═══════════╬═══════════
+                </div>
+                
+                {/* Subtitle with terminal brackets */}
+                <p style={{
+                  color: '#888',
+                  fontSize: isMobile ? '0.8em' : '0.9em',
+                  fontFamily: 'monospace',
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase'
+                }}>
+                  [[ OUR LADY OF PERPETUAL PROFIT :: RL80 ]]
                 </p>
               </div>
 
-              {/* Stats Cards */}
+              {/* Stats Cards - Cyber Style */}
               <div style={{ marginBottom: '50px' }}>
-                <StatsSection isMobile={isMobile} />
+                <CyberStatsSection isMobile={isMobile} />
               </div>
 
-              {/* Tokenomics Content */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : '350px 1fr',
-                gap: isMobile ? '30px' : '40px',
-                alignItems: 'start'
-              }}>
+              {/* Tokenomics Content - Cyber Style */}
+              <div style={{ marginBottom: '50px' }}>
+                <CyberTokenomicsSection isMobile={isMobile} />
+              </div>
+              
+              {/* Old tokenomics section - keeping for reference, can be removed later */}
+              <div style={{ display: 'none' }}>
                 {/* Left Side - Pie Chart */}
                 <div style={{
                   display: 'flex',
@@ -1734,9 +1723,9 @@ export default function CloudTestPage() {
                         borderRadius: '50%',
                         background: `conic-gradient(
                           from 0deg,
-                          #FFD700 0deg 306deg,
-                          #4CAF50 306deg 342deg,
-                          #2196F3 342deg 360deg
+                          #00ff00 0deg 306deg,
+                          #ffd700 306deg 342deg,
+                          #d946ef 342deg 360deg
                         )`,
                         position: 'relative',
                         top: '2rem',
@@ -1751,8 +1740,8 @@ export default function CloudTestPage() {
                           width: isMobile ? '120px' : '140px',
                           height: isMobile ? '120px' : '140px',
                           borderRadius: '50%',
-                          background: '#0a0a0a',
-                          border: '2px solid rgba(255,215,0,0.3)',
+                          background: 'rgba(0, 0, 0, 0.9)',
+                          border: '2px solid rgba(0,255,0,0.3)',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
@@ -1783,15 +1772,15 @@ export default function CloudTestPage() {
                         top: '5%',
                         right: '-25px',
                         padding: '8px 12px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        borderRadius: '8px',
-                        border: '1px solid #FFD700',
+                        background: 'rgba(0, 0, 0, 0.8)',
+                        borderRadius: '4px',
+                        border: '1px solid #00ff00',
                         backdropFilter: 'blur(10px)'
                       }}>
                         <div style={{
                           fontSize: '14px',
                           fontWeight: 'bold',
-                          color: '#FFD700',
+                          color: '#00ff00',
                           marginBottom: '2px'
                         }}>
                           85%
@@ -1810,15 +1799,15 @@ export default function CloudTestPage() {
                         top: '5%',
                         left: '-15px',
                         padding: '8px 12px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        borderRadius: '8px',
-                        border: '1px solid #4CAF50',
+                        background: 'rgba(0, 0, 0, 0.8)',
+                        borderRadius: '4px',
+                        border: '1px solid #ffd700',
                         backdropFilter: 'blur(10px)'
                       }}>
                         <div style={{
                           fontSize: '14px',
                           fontWeight: 'bold',
-                          color: '#4CAF50',
+                          color: '#ffd700',
                           marginBottom: '2px'
                         }}>
                           10%
@@ -1837,15 +1826,15 @@ export default function CloudTestPage() {
                         top: '-10px',
                         left: '35%',
                         padding: '8px 12px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        borderRadius: '8px',
-                        border: '1px solid #2196F3',
+                        background: 'rgba(0, 0, 0, 0.8)',
+                        borderRadius: '4px',
+                        border: '1px solid #d946ef',
                         backdropFilter: 'blur(10px)'
                       }}>
                         <div style={{
                           fontSize: '14px',
                           fontWeight: 'bold',
-                          color: '#2196F3',
+                          color: '#d946ef',
                           marginBottom: '2px'
                         }}>
                           5%
@@ -1891,16 +1880,17 @@ export default function CloudTestPage() {
                     padding: '25px'
                   }}>
                     <h2 style={{
-                      fontFamily: "'Fjalla One', sans-serif",
-                      fontSize: '1.3em',
-                      fontWeight: '700',
+                      fontFamily: 'monospace',
+                      fontSize: '1.2em',
+                      fontWeight: 'bold',
                       marginBottom: '20px',
-                      color: '#FFD700',
+                      color: '#00ff00',
                       textAlign: 'center',
                       textTransform: 'uppercase',
-                      letterSpacing: '1px'
+                      letterSpacing: '2px',
+                      textShadow: '0 0 10px rgba(0, 255, 0, 0.5)'
                     }}>
-                      Tax Structure
+                      TAX STRUCTURE
                     </h2>
                     
                     <div style={{
@@ -1912,10 +1902,8 @@ export default function CloudTestPage() {
                         <div style={{
                           fontSize: '3em',
                           fontWeight: '800',
-                          background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
+                          color: '#00ff00',
+                          textShadow: '0 0 15px rgba(0, 255, 0, 0.5)',
                           lineHeight: '1'
                         }}>
                           4%
@@ -1943,11 +1931,25 @@ export default function CloudTestPage() {
                         textAlign: 'center',
                         transition: 'all 0.3s ease'
                       }}>
-                        <div style={{ fontSize: '2em', marginBottom: '8px' }}>🕯️</div>
+                        <div style={{ 
+                          marginBottom: '8px',
+                          color: '#00ff00',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          filter: 'drop-shadow(0 0 8px rgba(0, 255, 0, 0.5))'
+                        }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
+                            <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
+                            <path d="m2 16 6 6"/>
+                            <circle cx="16" cy="9" r="2.9"/>
+                            <circle cx="6" cy="5" r="3"/>
+                          </svg>
+                        </div>
                         <div style={{
                           fontSize: '1.5em',
                           fontWeight: '700',
-                          color: '#FFD700',
+                          color: '#00ff00',
                           marginBottom: '5px'
                         }}>
                           2%
@@ -1968,11 +1970,22 @@ export default function CloudTestPage() {
                         textAlign: 'center',
                         transition: 'all 0.3s ease'
                       }}>
-                        <div style={{ fontSize: '2em', marginBottom: '8px' }}>💧</div>
+                        <div style={{ 
+                          marginBottom: '8px',
+                          color: '#00ff00',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          filter: 'drop-shadow(0 0 8px rgba(0, 255, 0, 0.5))'
+                        }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
+                            <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>
+                          </svg>
+                        </div>
                         <div style={{
                           fontSize: '1.5em',
                           fontWeight: '700',
-                          color: '#FFD700',
+                          color: '#00ff00',
                           marginBottom: '5px'
                         }}>
                           1.5%
@@ -1993,11 +2006,22 @@ export default function CloudTestPage() {
                         textAlign: 'center',
                         transition: 'all 0.3s ease'
                       }}>
-                        <div style={{ fontSize: '2em', marginBottom: '8px' }}>📢</div>
+                        <div style={{ 
+                          marginBottom: '8px',
+                          color: '#00ff00',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          filter: 'drop-shadow(0 0 8px rgba(0, 255, 0, 0.5))'
+                        }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m3 11 18-5v12L3 14v-3z"/>
+                            <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
+                          </svg>
+                        </div>
                         <div style={{
                           fontSize: '1.5em',
                           fontWeight: '700',
-                          color: '#FFD700',
+                          color: '#00ff00',
                           marginBottom: '5px'
                         }}>
                           0.5%
@@ -2015,6 +2039,7 @@ export default function CloudTestPage() {
               </div>
             </div>
           </div>
+          {/* End of hidden old tokenomics section */}
         </motion.div>
 
         {/* Additional content sections */}
@@ -2038,7 +2063,7 @@ export default function CloudTestPage() {
             borderRadius: '30px',
             padding: isMobile ? '30px 20px' : '40px',
             backdropFilter: 'blur(10px)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
             position: 'relative',
             overflow: 'hidden'
           }}>
@@ -2051,7 +2076,7 @@ export default function CloudTestPage() {
               left: '-50%',
               width: '200%',
               height: '200%',
-              background: 'radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(0, 255, 0, 0.05) 0%, transparent 70%)',
               animation: 'handsRotate 30s linear infinite',
               zIndex: 0
             }} />
@@ -2092,7 +2117,7 @@ export default function CloudTestPage() {
               <br/>
      
               {/* <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginTop: '2rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get On Her Watchlist</h1> */}
-                  <h1 style={{
+                  {/* <h1 style={{
               fontSize: '3rem',
               marginBottom: '1rem',
               lineHeight: '2.5rem',
@@ -2101,7 +2126,14 @@ export default function CloudTestPage() {
               // textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
 textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
   textAlign: 'center',
-            }}>Get On Her Watchlist</h1>
+            }}>Get On Her Watchlist</h1> */}
+              <SkewedHeading 
+    lines={["GET ON HER", "WATCHLIST"]}
+    // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+        colors={["#00ff00"]}
+    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+    isMobile={isMobile}
+  />
               <div style={{
                 lineHeight: 1.5,
                 opacity: 0.9,
@@ -2258,40 +2290,17 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
               </div>
 
           </div>
-       <button
+       <CyberButton
                         onClick={handleOpenModal}
-                         style={{
-                          // marginTop: isMobile ? '1.5rem' : '2rem',
-                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
-                          fontSize: isMobile ? '1.2rem' : '1.4rem',
-                          fontWeight: 'bold',
-                          fontFamily: "'Fjalla One', sans-serif",
-                          textTransform: 'uppercase',
-                          letterSpacing: '2px',
-                          color: '#000000',
-                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
-                          border: '3px solid #d4af37',
-                          borderRadius: '12px',
-                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          position: 'relative',
-                          overflow: 'hidden',
+                        size={isMobile ? 'medium' : 'large'}
+                        variant="primary"
+                        style={{
+                          marginTop: '1rem',
                           zIndex: 102,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
                         }}
                       >
                         Get Lit
-                      </button>
+                      </CyberButton>
                
            
                     </div>
@@ -2316,7 +2325,7 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
             borderRadius: '30px',
             padding: isMobile ? '30px 20px' : '40px',
             backdropFilter: 'blur(10px)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
             position: 'relative'
           }}>
             <div style={{
@@ -2359,15 +2368,13 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
                 color: '#ffffff',
                 textAlign: 'center'
               }}>
-                   <h1 style={{
-              fontSize: '3.5rem',
-              marginBottom: '1rem',
-              lineHeight: '2.5rem',
-              color: '#d4af37',
-              fontFamily: 'UnifrakturCook, serif',
-              textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
-  textAlign: 'center',
-            }}>The Illumin80</h1>
+ <SkewedHeading 
+    lines={["THE ILLUMIN80"]}
+    // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+        colors={["#00ff00"]}
+    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+    isMobile={isMobile}
+  />
                     <span style={{               fontFamily: "'Fjalla One', sans-serif",
 fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
                (Keep this part on the down-low)
@@ -2410,40 +2417,18 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                   </li> */}
                 </ul>
 
-             <button
-                             onClick={() => window.open('/gallery3', '_blank')}
-                         style={{
-                          marginTop: isMobile ? '1.5rem' : '2rem',
-                          padding: isMobile ? '0.8rem 2rem' : '1rem 3rem',
-                          fontSize: isMobile ? '1.2rem' : '1.4rem',
-                          fontWeight: 'bold',
-                          fontFamily: "'Fjalla One', sans-serif",
-                          textTransform: 'uppercase',
-                          letterSpacing: '2px',
-                          color: '#000000',
-                          background: 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)',
-                          border: '3px solid #d4af37',
-                          borderRadius: '12px',
-                          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          position: 'relative',
-                          overflow: 'hidden',
+      
+                             <CyberButton
+                       onClick={() => window.open('/gallery3', '_blank')}
+                        size={isMobile ? 'medium' : 'large'}
+                        variant="primary"
+                        style={{
+                          marginTop: '1rem',
                           zIndex: 102,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                          e.currentTarget.style.boxShadow = '0 12px 30px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.5)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #f4e4c1 0%, #ffd700 50%, #f4e4c1 100%)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%)';
                         }}
                       >
                         JOIN NOW
-                      </button>
+                      </CyberButton>
               </div>
             </div>
           </div>
@@ -2466,7 +2451,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                                   />
                         </div>
                                  </div>
-                                        <FAQSection isMobile={isMobile} />
+                                        <CyberFAQSection isMobile={isMobile} />
 
       {/* Carousel Section */}
         {/* <CarouselWrapper /> */}
@@ -2493,15 +2478,44 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
           margin: '0 auto'
         }}>
           {/* Footer Title */}
-          <h3 style={{
-            fontFamily: 'UnifrakturCook, serif',
-            fontSize: '2.5rem',
-            color: '#d4af37',
-            marginBottom: '1rem',
-            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)'
-          }}>
-            Our Lady of Perpetual Profit
-          </h3>
+  <h1 className='custom-title'
+              id="main-title"
+              style={{ 
+              position: "relative",
+              // left: isMobile ? "5%" : "10%",
+              color: "#d4af37",
+                // color: "#00ff00",
+                  // colors={["#00ff00"]}
+              fontFamily: 'UnifrakturCook, serif',
+              textShadow: `
+                rgba(83, 61, 74, 0.9) 1px 1px,
+                rgba(83, 61, 74, 0.9) 2px 2px,
+                rgba(83, 61, 74, 0.8) 3px 3px,
+                rgba(83, 61, 74, 0.8) 4px 4px,
+                rgba(83, 61, 74, 0.7) 5px 5px,
+                rgba(83, 61, 74, 0.7) 6px 6px,
+                rgba(83, 61, 74, 0.6) 7px 7px,
+                rgba(83, 61, 74, 0.6) 8px 8px,
+                rgba(255, 192, 203, 0.4) -1px -1px 5px,
+                rgba(0, 0, 0, 0.8) 10px 10px 15px
+              `,
+              fontSize: getResponsiveValue("3rem", "3rem", "3rem", "3rem"),
+              fontWeight: 900,
+              lineHeight: 0.8,
+              transform: isMobile ? "rotate(-5deg)" : "rotate(-8deg) skew(-15deg)",
+              zIndex: 1000,
+              whiteSpace: isMobile ? 'normal' : 'nowrap',
+              cursor: 'pointer',
+              marginTop: isMobile ? '1rem' : '3rem',
+              pointerEvents: 'auto',
+            }}>
+              <span className="title-line" style={{ display: 'block', position: 'relative' }}>Our Lady</span>
+              <span className="title-line" style={{ display: 'block', position: 'relative' }}>
+                <span style={{ fontSize: isMobile ? "1.2rem" : "3rem" }}>of    </span>
+                Perpetual
+              </span>
+              <span className="title-line" style={{ display: 'block', marginLeft: isMobile ? "2rem" : "6rem", position: 'relative' }}>Profit</span>
+            </h1>
           
           {/* Divider */}
           <div style={{
@@ -2636,6 +2650,11 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+
+        @keyframes glow {
+          0% { filter: drop-shadow(0 0 25px rgba(0, 255, 0, 0.4)) drop-shadow(0 0 50px rgba(255, 215, 0, 0.2)); }
+          100% { filter: drop-shadow(0 0 35px rgba(0, 255, 0, 0.6)) drop-shadow(0 0 60px rgba(255, 215, 0, 0.3)); }
         }
 
         @keyframes handsRotate {
@@ -2823,7 +2842,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
       />
       
       {/* Floating Action Bar */}
-      <FloatingBar isMobile={isMobile} />
+      <CyberFloatingBar isMobile={isMobile} />
     </div>
     </>
   );

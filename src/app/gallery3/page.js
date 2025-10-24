@@ -14,6 +14,7 @@ import BuyTokenFAB from "@/components/BuyTokenFAB";
 import CompactCandleModal from "@/components/CompactCandleModal";
 import { useFirestoreResults } from "@/utilities/useFirestoreResults";
 import { CoinWallet } from "@/components/CoinWallet";
+import PolaroidSnapshot from '@/components/PolaroidSnapshot';
 
 // Dynamically import 3D scene
 const Gallery3Scene = dynamic(() => import("@/components/Gallery3Scene"), {
@@ -37,6 +38,7 @@ export default function Gallery3Page() {
   const [sortBy, setSortBy] = useState('burnedAmount'); // 'burnedAmount', 'mostLiked', 'newest', or 'smallest'
   const [minimumLoadTime, setMinimumLoadTime] = useState(false); // Track minimum load time
   const [coinBalance, setCoinBalance] = useState(1000); // Starting coin balance
+  const [triggerSnapshot, setTriggerSnapshot] = useState(false);
   
   // Get candle data from Firestore
   const results = useFirestoreResults(sortBy);
@@ -723,6 +725,77 @@ export default function Gallery3Page() {
       
       {/* Coin Wallet - Bottom Left */}
       <CoinWallet balance={coinBalance} />
+      
+      {/* Snapshot Button */}
+      <button
+        onClick={() => {
+          // Force a re-render before capturing
+          const canvas = document.querySelector('canvas');
+          if (canvas) {
+            // Try to get the Three.js renderer
+            const gl = canvas.getContext('webgl') || canvas.getContext('webgl2') || canvas.getContext('experimental-webgl');
+            if (gl) {
+              gl.finish(); // Ensure all WebGL commands are complete
+            }
+          }
+          setTriggerSnapshot(true);
+        }}
+        style={{
+          position: "fixed",
+          bottom: "2rem",
+          right: "2rem",
+          width: "60px",
+          height: "60px",
+          borderRadius: "50%",
+          backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(255, 255, 255, 0.1)",
+          backdropFilter: "blur(10px)",
+          border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.3)",
+          color: is80sMode ? "#67e8f9" : "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+          boxShadow: is80sMode 
+            ? "0 0 20px rgba(217, 70, 239, 0.5), 0 4px 15px rgba(0, 0, 0, 0.3)" 
+            : "0 4px 15px rgba(0, 0, 0, 0.3)",
+          zIndex: 999,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = is80sMode 
+            ? "rgba(217, 70, 239, 0.4)" 
+            : "rgba(255, 255, 255, 0.2)";
+          e.currentTarget.style.transform = "scale(1.1)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = is80sMode 
+            ? "rgba(217, 70, 239, 0.2)" 
+            : "rgba(255, 255, 255, 0.1)";
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+        title="Take Snapshot"
+      >
+        <svg
+          width="30"
+          height="30"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </button>
+
+      {/* Polaroid Snapshot Component */}
+      <PolaroidSnapshot 
+        trigger={triggerSnapshot}
+        onComplete={() => setTriggerSnapshot(false)}
+        label={is80sMode ? "Radical Capture!" : "Gallery Moment"}
+      />
     </div>
   );
 }

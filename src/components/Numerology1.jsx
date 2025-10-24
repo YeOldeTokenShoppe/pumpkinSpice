@@ -47,7 +47,7 @@ const levitateStyle = `
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle, rgba(138, 43, 226, 0.8) 0%, rgba(75, 0, 130, 0.5) 40%, transparent 65%);
+    background: radial-gradient(circle, rgba(49, 226, 43, 0.8) 0%, rgba(0, 130, 80, 0.5) 40%, transparent 65%);
     border-radius: 50%;
     z-index: -1;
     transform: scale(0.8);

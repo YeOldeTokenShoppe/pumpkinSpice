@@ -65,15 +65,25 @@ export default function DropInTitle({
           transform: skew(-10deg);
           display: block;
           float: left;
-          text-shadow: rgba(83, 61, 74, 0.8) 1px 1px,
+          text-shadow: 
+                       /* Green cyber glow - subtle */
+                       0 0 20px rgba(0, 255, 0, 0.3),
+                       0 0 40px rgba(0, 255, 0, 0.15),
+                       /* 3D layered shadows */
+                       rgba(83, 61, 74, 0.8) 1px 1px,
                        rgba(83, 61, 74, 0.8) 2px 2px,
                        rgba(83, 61, 74, 0.8) 3px 3px,
                        rgba(83, 61, 74, 0.8) 4px 4px,
                        rgba(83, 61, 74, 0.8) 5px 5px,
-                       rgba(83, 61, 74, 0.8) 6px 6px;
+                       rgba(83, 61, 74, 0.8) 6px 6px,
+                       /* Deep black shadow for depth */
+                       rgba(0, 0, 0, 0.8) 8px 8px 12px,
+                       /* Gold highlight accent */
+                       -1px -1px 3px rgba(255, 215, 0, 0.4);
           min-width: 10px;
           min-height: 10px;
           position: relative;
+          filter: brightness(1.1);
         }
       `}</style>
       <h1 style={{
