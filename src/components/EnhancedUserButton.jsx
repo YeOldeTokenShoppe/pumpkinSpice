@@ -76,8 +76,8 @@ export function EnhancedUserButton({
   if (!isLoaded) {
     return (
       <div style={{
-        width: '48px',
-        height: '48px',
+        width: '60px',
+        height: '60px',
         borderRadius: '12px',
         background: 'rgba(255, 255, 255, 0.1)',
         display: 'flex',
@@ -118,8 +118,8 @@ export function EnhancedUserButton({
       <button
         onClick={() => openSignIn()}
         style={{
-          width: '48px',
-          height: '48px',
+          width: '60px',
+          height: '60px',
           borderRadius: '12px',
           overflow: 'hidden',
           padding: 0,
@@ -155,8 +155,8 @@ export function EnhancedUserButton({
   if (!user) {
     return (
       <div style={{
-        width: '48px',
-        height: '48px',
+        width: '60px',
+        height: '60px',
         borderRadius: '12px',
         background: 'rgba(255, 255, 255, 0.1)',
         display: 'flex',
@@ -174,8 +174,8 @@ export function EnhancedUserButton({
         onClick={() => setShowModal(true)}
         className="relative transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500"
         style={{
-          width: '48px',
-          height: '48px',
+          width: '60px',
+          height: '60px',
           borderRadius: '12px',
           overflow: 'hidden',
           padding: 0,

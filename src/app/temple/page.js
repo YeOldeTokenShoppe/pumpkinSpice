@@ -339,7 +339,7 @@ export default function CyborgTemple() {
               display: "flex",
               flexDirection: isMobileView ? "column" : "row",
               gap: "1rem",
-              zIndex: 1000,
+              zIndex: 10001,
             }}
           >
             {/* Music Controls */}

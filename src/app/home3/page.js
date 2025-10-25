@@ -905,8 +905,8 @@ export default function CloudTestPage() {
   
   // State for overlay buttons (from home3/page)
   const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : true);
+  const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : true);
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -996,9 +996,10 @@ export default function CloudTestPage() {
     setMounted(true);
     const checkDevice = () => {
       const width = window.innerWidth;
-      const mobile = width <= 768;
+      const mobile = width <= 1024; // Increased breakpoint to catch more devices
       setIsMobile(mobile);
       setIsMobileDevice(mobile);
+      console.log('Mobile detection:', { width, mobile }); // Debug log
     };
     
     // Handle scroll events
@@ -2357,7 +2358,7 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 
                }}>
-                 [ Click to shake ]
+                 {/* [ Click to shake ] */}
                </p>
        
               </div>

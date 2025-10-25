@@ -377,8 +377,10 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
           <div style={{
             position: 'absolute',
             // left: isMobile ? '-1.2rem' : '-1.8rem',
-            left: '30%',
-            top: '0%',
+                    width: isMobileDevice ? "40px" : "60px",
+              height: isMobileDevice ? "40px" : "60px",
+            left: '70%',
+            top: '100%',
             transform: 'translateY(-50%) scaleX(1)',
             fontSize: isMobile ? '1rem' : '1.5rem',
             color: '#FFD700',
@@ -423,7 +425,7 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
           {/* Subtle golden ring */}
           <div style={{
             position: 'absolute',
-            inset: '-3px',
+            // inset: '-3px',
             borderRadius: '10px',
             border: '1px solid rgba(255, 215, 0, 0.3)',
             boxShadow: '0 0 8px rgba(255, 215, 0, 0.2)',

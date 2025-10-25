@@ -1,6 +1,13 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Coins } from 'lucide-react';
+
+// Handbag icon component
+const HandbagIcon = ({ size = 24 }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2.048 18.566A2 2 0 0 0 4 21h16a2 2 0 0 0 1.952-2.434l-2-9A2 2 0 0 0 18 8H6a2 2 0 0 0-1.952 1.566z"/>
+    <path d="M8 11V6a4 4 0 0 1 8 0v5"/>
+  </svg>
+);
 
 export function CoinWallet({ balance = 0, showAnimation = false }) {
   const [displayBalance, setDisplayBalance] = useState(balance);
@@ -60,100 +67,88 @@ export function CoinWallet({ balance = 0, showAnimation = false }) {
         
         .coin-wallet {
           position: fixed;
-          bottom: 30px;
-          left: 30px;
-          z-index: 100;
+          bottom: 2rem;
+          left: 2rem;
+          z-index: 999;
         }
         
-        .wallet-container {
-          position: relative;
-          background: linear-gradient(135deg, 
-            rgba(255, 215, 0, 0.15) 0%, 
-            rgba(184, 134, 11, 0.15) 50%, 
-            rgba(255, 215, 0, 0.15) 100%);
+        .wallet-button {
+          width: 4rem;
+          height: 4rem;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.1);
           backdrop-filter: blur(10px);
           border: 2px solid rgba(255, 215, 0, 0.3);
-          border-radius: 20px;
-          padding: 15px 25px;
-          min-width: 200px;
-          transition: all 0.3s ease;
-          overflow: visible;
+          color: #FFD700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+          position: relative;
+          overflow: hidden;
+          padding: 0;
         }
         
-        .wallet-container:hover {
-          transform: translateY(-2px);
-          border-color: rgba(255, 215, 0, 0.5);
-          box-shadow: 0 10px 40px rgba(255, 215, 0, 0.3);
-        }
-        
-        .wallet-container.animating {
-          animation: pulse 0.5s ease;
+        .wallet-button:hover {
+          width: 140px;
+          border-radius: 30px;
+          background: rgba(255, 215, 0, 0.2);
           border-color: rgba(255, 215, 0, 0.6);
+          box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+          padding: 0 18px 0 18px;
+          justify-content: space-between;
         }
         
-        .wallet-content {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+        .wallet-button.animating {
+          animation: pulse 0.5s ease;
         }
         
-        .coin-icon-wrapper {
-          position: relative;
-          width: 45px;
-          height: 45px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .coin-icon-bg {
+        .wallet-icon {
+          flex-shrink: 0;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           position: absolute;
-          inset: 0;
-          background: radial-gradient(circle, 
-            rgba(255, 215, 0, 0.3) 0%, 
-            rgba(255, 215, 0, 0.1) 40%, 
-            transparent 70%);
-          border-radius: 50%;
-          animation: pulse 2s infinite;
+          left: 50%;
+          transform: translateX(-50%);
         }
         
-        .coin-icon {
-          position: relative;
-          width: 35px;
-          height: 35px;
-          background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-          border-radius: 50%;
+        .wallet-button:hover .wallet-icon {
+          position: static;
+          transform: none;
+        }
+        
+        .balance-content {
           display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 
-            0 2px 10px rgba(255, 215, 0, 0.5),
-            inset 0 1px 2px rgba(255, 255, 255, 0.5);
+          flex-direction: column;
+          align-items: flex-start;
+          opacity: 0;
+          transform: translateX(20px);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          margin-left: 12px;
+          white-space: nowrap;
         }
         
-        .coin-icon.animating {
-          animation: pulse 0.3s ease;
-        }
-        
-        .balance-wrapper {
-          flex: 1;
+        .wallet-button:hover .balance-content {
+          opacity: 1;
+          transform: translateX(0);
         }
         
         .balance-label {
-          font-size: 11px;
+          font-size: 10px;
           text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: 0.5px;
           color: rgba(255, 215, 0, 0.7);
-          margin-bottom: 2px;
+          margin-bottom: 1px;
         }
         
         .balance-amount {
-          font-size: 24px;
+          font-size: 16px;
           font-weight: bold;
           color: #FFD700;
           text-shadow: 
-            0 0 10px rgba(255, 215, 0, 0.5),
-            0 0 20px rgba(255, 215, 0, 0.3);
+            0 0 8px rgba(255, 215, 0, 0.5),
+            0 0 16px rgba(255, 215, 0, 0.3);
           font-family: 'Orbitron', monospace;
           background: linear-gradient(90deg, 
             #FFD700 0%, 
@@ -168,40 +163,18 @@ export function CoinWallet({ balance = 0, showAnimation = false }) {
         .balance-amount.animating {
           animation: shimmer 1s linear infinite;
         }
-        
-        .mystical-glow {
-          position: absolute;
-          inset: -20px;
-          background: radial-gradient(circle at center, 
-            rgba(255, 215, 0, 0.1) 0%, 
-            transparent 70%);
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
-        
-        .wallet-container.animating .mystical-glow {
-          opacity: 1;
-        }
       `}</style>
       
       <div className="coin-wallet">
-        <div className={`wallet-container ${isAnimating ? 'animating' : ''}`}>
-          <div className="mystical-glow" />
+        <div className={`wallet-button ${isAnimating ? 'animating' : ''}`}>
+          <div className="wallet-icon">
+            <HandbagIcon size={32} />
+          </div>
           
-          <div className="wallet-content">
-            <div className="coin-icon-wrapper">
-              <div className="coin-icon-bg" />
-              <div className={`coin-icon ${isAnimating ? 'animating' : ''}`}>
-                <Coins size={20} color="#FFF" />
-              </div>
-            </div>
-            
-            <div className="balance-wrapper">
-              <div className="balance-label">Coins</div>
-              <div className={`balance-amount ${isAnimating ? 'animating' : ''}`}>
-                {displayBalance.toLocaleString()}
-              </div>
+          <div className="balance-content">
+            <div className="balance-label">Coins</div>
+            <div className={`balance-amount ${isAnimating ? 'animating' : ''}`}>
+              {displayBalance.toLocaleString()}
             </div>
           </div>
         </div>

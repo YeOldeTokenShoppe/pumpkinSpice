@@ -145,9 +145,9 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
     <div
       style={{
         position: "fixed",
-        bottom: isMobile ? "2rem" : "4rem",
+        bottom: isMobile ? "6rem" : "8rem",
         left: isMobile ? "50%" : "auto",
-        right: isMobile ? "auto" : "4rem",
+        right: isMobile ? "auto" : "2rem",
         transform: isMobile ? "translateX(-50%)" : "none",
         zIndex: 1200
       }}

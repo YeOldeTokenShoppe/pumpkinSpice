@@ -10,9 +10,10 @@ import { ScrambleTextPlugin } from 'gsap/dist/ScrambleTextPlugin';
 import { encryptMessage, generateScrambledDisplay } from '@/utilities/encryption';
 import { generatePrayer, getRemainingPrayers, PRAYER_PROMPTS } from '@/utilities/aiPrayers';
 import { useUser } from '@clerk/nextjs';
-import BurningEffect from './BurningEffect';
+// Removed BurningEffect import - no longer needed
 import './CompactCandleModal.css';
 import { useFirestoreResults } from '@/utilities/useFirestoreResults';
+import CandleSnapshotRenderer from './CandleSnapshotRenderer';
 
 // Register GSAP plugin
 if (typeof window !== 'undefined') {
@@ -294,10 +295,11 @@ function loadHandsImage(callback) {
 
 // 3D Candle Component
 function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'en', template = null, templatePosition = { x: 50, y: 50 }, templateScale = 100, templateRotation = 0, skinToneAdjustment = 0, userImagePosition = { x: 50, y: 50 }, userImageScale = 100, userImageRotation = 0 }) {
-  const { scene } = useGLTF('/models/singleCandleAnimatedFlame.glb');
+  const { scene, animations } = useGLTF('/models/singleCandleAnimatedFlame.glb');
   const candleRef = useRef();
   const clonedSceneRef = useRef(null);
   const defaultTexture = useTexture('/defaultAvatar.png');
+  const mixerRef = useRef(null);
   const [userTexture, setUserTexture] = useState(null);
   const [textTexture, setTextTexture] = useState(null);
   
@@ -401,8 +403,23 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
   useEffect(() => {
     if (scene) {
       clonedSceneRef.current = scene.clone();
+      
+      // Set up animation mixer for the flame
+      if (animations && animations.length > 0) {
+        mixerRef.current = new THREE.AnimationMixer(clonedSceneRef.current);
+        animations.forEach((clip) => {
+          const action = mixerRef.current.clipAction(clip);
+          action.play();
+        });
+      }
     }
-  }, [scene]);
+    
+    return () => {
+      if (mixerRef.current) {
+        mixerRef.current.stopAllAction();
+      }
+    };
+  }, [scene, animations]);
   
   // Find Label meshes in the cloned scene
   useEffect(() => {
@@ -1069,19 +1086,38 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
     };
   }, [userTexture, defaultTexture, username, template, templatePosition, templateScale, templateRotation, skinToneAdjustment, userImagePosition, userImageScale, userImageRotation, imageUrl]); // Added imageUrl to trigger update
   
-  // Removed auto-rotation - user can control with OrbitControls
+  // Animation frame update for flame
+  useFrame((state, delta) => {
+    if (mixerRef.current) {
+      mixerRef.current.update(delta);
+    }
+  });
   
+  // Also add OrbitControls to the scene
   return (
-    clonedSceneRef.current ? (
-      <primitive 
-        ref={candleRef}
-        object={clonedSceneRef.current} 
-        scale={[2, 2, 2]}
-        position={[0, -2, 0]}
+    <>
+      {clonedSceneRef.current && (
+        <primitive 
+          ref={candleRef}
+          object={clonedSceneRef.current} 
+          scale={[2, 2, 2]}
+          position={[0, -2, 0]}
+        />
+      )}
+      <OrbitControls 
+        enablePan={false}
+        enableZoom={false}
+        minPolarAngle={Math.PI / 3}
+        maxPolarAngle={Math.PI / 2}
+        autoRotate={true}
+        autoRotateSpeed={0.5}
       />
-    ) : null
+    </>
   );
 }
+
+// Preload the candle model
+useGLTF.preload('/models/singleCandleAnimatedFlame.glb');
 
 export default function CompactCandleModal({ isOpen, onClose, onCandleCreated }) {
   // Get top burners for Illumin80 qualification
@@ -1205,14 +1241,30 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [scrambledDisplay, setScrambledDisplay] = useState('');
   const [canvasKey, setCanvasKey] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [isBurning, setIsBurning] = useState(false);
+  // Removed isBurning state - no longer using burning effect
   const [showRotateTooltip, setShowRotateTooltip] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [candleWasCreated, setCandleWasCreated] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [showCandleSnapshot, setShowCandleSnapshot] = useState(false);
+  const [savedCandleData, setSavedCandleData] = useState(null);
+  const [preloadCandleData, setPreloadCandleData] = useState(null);
+  const [readyToCapture, setReadyToCapture] = useState(false);
   const modalContentRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  
+  // Preload candle data whenever form changes (for instant snapshot)
+  React.useEffect(() => {
+    if (formData.username || imagePreview) {
+      setPreloadCandleData({
+        username: formData.username || 'Anonymous',
+        imageUrl: imagePreview || '/defaultAvatar.png',
+        message: formData.message,
+        burnedAmount: formData.burnedAmount
+      });
+    }
+  }, [formData, imagePreview]);
   
   // Hide tooltip on canvas interaction
   const handleCanvasInteraction = useCallback(() => {
@@ -1922,11 +1974,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     const trimmedUsername = formData.username.trim();
     const trimmedMessage = formData.message.trim();
     
-    // Trigger burning effect
-    setIsBurning(true);
-    
-    // Wait a moment for the burning effect to start
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // No burning effect - proceed directly to saving
 
     setIsSubmitting(true);
     setError('');
@@ -1972,13 +2020,30 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       // Mark that candle was successfully created
       setCandleWasCreated(true);
       
-      // Capture the candle image for sharing
-      captureCandle();
+      // Save candle data for snapshot BEFORE clearing form
+      setSavedCandleData({
+        username: formData.username || 'Anonymous',
+        imageUrl: imageUrl,
+        message: formData.message,
+        burnedAmount: docData.burnedAmount
+      });
       
-      // Show success toast with sharing options
-      setShowSuccessToast(true);
-      // Don't auto-hide if we have sharing options
-      // setTimeout(() => setShowSuccessToast(false), 5000); // Hide after 5 seconds
+      // Clear the form immediately after saving data
+      setFormData({
+        username: '',
+        message: '',
+        burnedAmount: 1000,
+        allowLikes: false,
+      });
+      setImageFile(null);
+      setImagePreview(null);
+      setSelectedTemplate(null);
+      
+      // Show the candle snapshot
+      setShowCandleSnapshot(true);
+      
+      // Close the modal so the polaroid is visible
+      onClose();
 
       if (onCandleCreated) {
         onCandleCreated({
@@ -1988,12 +2053,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         });
       }
 
-      // Don't wait here - the burning effect will handle the timing
-      // The onComplete callback will be triggered when burning is done
+      // Candle successfully created and snapshot will be shown
     } catch (err) {
       console.error('Error creating candle:', err);
       setError('Failed to create candle. Please try again.');
-      setIsBurning(false);
       setCandleWasCreated(false);
     } finally {
       setIsSubmitting(false);
@@ -2002,6 +2065,34 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
 
   return (
     <>
+      {/* Preload Candle Renderer - Hidden, always rendering */}
+      {preloadCandleData && !showCandleSnapshot && (
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <CandleSnapshotRenderer 
+            isVisible={true}
+            userData={preloadCandleData}
+            preloadOnly={true}
+            onReady={() => setReadyToCapture(true)}
+          />
+        </div>
+      )}
+      
+      {/* Candle Snapshot Renderer - Shows polaroid of created candle */}
+      {showCandleSnapshot && savedCandleData && (
+        <div style={{ position: 'relative', zIndex: 100000 }}>
+          <CandleSnapshotRenderer 
+            isVisible={true}
+            userData={savedCandleData}
+            instantCapture={readyToCapture}
+            onComplete={(imageData) => {
+              // Keep the snapshot visible, let user close manually
+              console.log('Snapshot captured successfully, image length:', imageData?.length);
+              setReadyToCapture(false);
+            }}
+          />
+        </div>
+      )}
+      
       {/* Success Toast with Sharing Options - Outside modal so it stays visible */}
       {showSuccessToast && (
         <div style={{
@@ -2157,23 +2248,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         }
       `}</style>
       
-      <BurningEffect 
-        elementRef={modalContentRef}
-        onComplete={() => {
-          setIsBurning(false);
-          // Reset form and close modal after burning completes
-          setFormData({
-            username: '',
-            message: '',
-            burnedAmount: 1000,
-            allowLikes: false,
-          });
-          setImageFile(null);
-          setImagePreview(null);
-          onClose();
-        }}
-        isActive={isBurning}
-      />
       <div className="compact-modal-overlay" 
       onClick={(e) => {
         // Only close if clicking directly on the overlay (not on modal content)
@@ -2200,12 +2274,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           
           // Check if candle was already created or if there's unsaved data
           if (candleWasCreated) {
-            // Candle was created, show fire effect before closing
-            setIsBurning(true);
-            setTimeout(() => {
-              setIsBurning(false);
-              onClose();
-            }, 2000);
+            // Candle was created, just close
+            onClose();
           } else {
             // Check if user has entered any data
             const hasUnsavedData = formData.username.trim() || formData.message.trim() || imageFile;
@@ -2223,13 +2293,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       }}>
       <div className="compact-modal-content" ref={modalContentRef} onClick={e => e.stopPropagation()}>
         <button className="compact-modal-close" onClick={() => {
-          // Only trigger burning effect if candle was actually created
+          // Check if candle was created
           if (candleWasCreated) {
-            setIsBurning(true);
-            setTimeout(() => {
-              setIsBurning(false);
-              onClose();
-            }, 2000);
+            onClose();
           } else {
             // Check if user has entered any data
             const hasUnsavedData = formData.username.trim() || formData.message.trim() || imageFile;
@@ -3391,7 +3457,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                           fontWeight: (imageFile || imagePreview) ? 'normal' : 'bold'
                         }}>
                           <strong>Image:</strong> 
-                          <span style={{ fontWeight: 'normal' }}>
+                          <span style={{ 
+                            fontWeight: 'normal',
+                            visibility: (imageFile || imagePreview) ? 'hidden' : 'visible'
+                          }}>
                             {imageFile ? '✓ Custom image' : 
                              (imagePreview && !imageFile) ? '✓ Profile picture' :
                              '⚠️ Using default'}
@@ -3404,8 +3473,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                           overflow: 'hidden',
                           border: '2px solid rgba(255, 255, 255, 0.2)',
                           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                          flexShrink: 0,
-                          marginLeft: '-5rem'
+                          flexShrink: 0
                         }}>
                           <img 
                             src={imagePreview || '/defaultAvatar.png'}

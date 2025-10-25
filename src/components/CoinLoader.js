@@ -151,7 +151,8 @@ const CoinLoader = ({ loading = true, onComplete }) => {
         }
 
         .pl__coin-layer {
-          background-color: #f4e4c1;
+          // background-color: #f4e4c1;
+                    background-color: #b8941f;
           backface-visibility: hidden;
           border-radius: 50%;
           top: 0;

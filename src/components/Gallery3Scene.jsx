@@ -773,7 +773,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
         antialias: !isMobileView, // Enable antialiasing on desktop
         alpha: false,
         powerPreference: 'high-performance',
-        preserveDrawingBuffer: false,
+        preserveDrawingBuffer: true, // Enable for screenshot capability
         failIfMajorPerformanceCaveat: false,
         stencil: false, // Disable stencil buffer if not needed
         depth: true, // Ensure depth buffer is enabled
@@ -817,14 +817,14 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
 />
          /* Right Hand */
       <CoinStream 
-        startPosition={[-4, 3, 2.5]}  // Left hand position (adjusted for model scale/position)
-        endPosition={[0, -20, 0]}
+        startPosition={[-4, 2.5, 2.5]}  // Left hand position (adjusted for model scale/position)
+        endPosition={[1, -20, 1]}
         coinCount={20}
         coinSize={1}
         streamWidth={1.5}
         speed={0.8}
-        gravity={-8}
-        initialVelocity={[-4, 2, 7]}
+        gravity={-9}
+        initialVelocity={[-2, 1, 6]}
         trigger={coinTrigger}
         coinValue={currentCoinReward / 2}  // Split reward between two hands
         onCoinsDispensed={onCoinsWon}
@@ -832,14 +832,14 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
       />
        /* Left Hand */
       <CoinStream 
-        startPosition={[3, 3, 2.5]}   // Right hand position (adjusted for model scale/position)
-        endPosition={[0, -20, 0]}
+        startPosition={[3, 2.5, 2.5]}   // Right hand position (adjusted for model scale/position)
+        endPosition={[0, -20, 1]}
         coinCount={20}
         coinSize={1}
         streamWidth={1.5}
         speed={0.8}
-        gravity={-8}
-        initialVelocity={[4, 3, 6]}
+        gravity={-9}
+        initialVelocity={[2, 2, 6]}
         trigger={coinTrigger}
         coinValue={currentCoinReward / 2}  // Split reward between two hands
         onCoinsDispensed={onCoinsWon}

@@ -188,18 +188,14 @@ function CyborgTempleScene({
       danceTimeoutRef.current = setTimeout(() => {
         console.log('[CyborgTempleScene] Starting dance animations after delay...');
         
-        // Only stop idle animations for characters that will dance
-        ['Idle.001', 'Idle.002', 'Idle.003'].forEach(idleAnim => {
-          if (actions[idleAnim]) {
-            actions[idleAnim].stop();
-          }
-        });
+        console.log('[CyborgTempleScene] Starting blend transition from idle to dance...');
         
-        // Play dance animations with time offsets at normal speed
+        // Start dance animations with zero weight and blend them in
         ['Dance.001', 'Dance.002', 'Dance.003'].forEach((danceAnim) => {
           if (actions[danceAnim]) {
             actions[danceAnim].reset();
             actions[danceAnim].timeScale = 1.0; // Reset to normal speed
+            actions[danceAnim].setEffectiveWeight(0); // Start with zero weight
             
             // Set different starting times based on animation name
             if (danceAnim === 'Dance.001') {
@@ -211,7 +207,17 @@ function CyborgTempleScene({
             }
             
             actions[danceAnim].play();
-            console.log(`✅ Playing dance animation: ${danceAnim} with offset ${actions[danceAnim].time}`);
+            console.log(`✅ Starting dance animation: ${danceAnim} with zero weight`);
+          }
+        });
+        
+        // Crossfade from idle to dance over 1 second
+        const crossfadeDuration = 1.0; // 1 second crossfade
+        ['Idle.001', 'Idle.002', 'Idle.003'].forEach((idleAnim, index) => {
+          const danceAnim = ['Dance.001', 'Dance.002', 'Dance.003'][index];
+          if (actions[idleAnim] && actions[danceAnim]) {
+            actions[idleAnim].crossFadeTo(actions[danceAnim], crossfadeDuration, true);
+            console.log(`✅ Crossfading from ${idleAnim} to ${danceAnim} over ${crossfadeDuration}s`);
           }
         });
       }, 2000); // 2 second delay
@@ -240,23 +246,17 @@ function CyborgTempleScene({
         currentSpeed -= speedDecrement;
         
         if (currentSpeed <= 0) {
-          // Stop the slowdown and switch to idle
+          // Stop the slowdown and blend to idle animations
           clearInterval(slowdownIntervalRef.current);
           slowdownIntervalRef.current = null;
           
-          console.log('[CyborgTempleScene] Dance animations fully stopped, switching to idle...');
+          console.log('[CyborgTempleScene] Starting blend transition from dance to idle...');
           
-          // Stop dance animations
-          ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
-            if (actions[danceAnim]) {
-              actions[danceAnim].stop();
-            }
-          });
-          
-          // Restart idle animations with different time offsets
+          // Start idle animations and blend them in
           ['Idle.001', 'Idle.002', 'Idle.003'].forEach((idleAnim) => {
             if (actions[idleAnim]) {
               actions[idleAnim].reset();
+              actions[idleAnim].setEffectiveWeight(0); // Start with zero weight
               
               // Set different starting times based on animation name
               if (idleAnim === 'Idle.001') {
@@ -268,7 +268,17 @@ function CyborgTempleScene({
               }
               
               actions[idleAnim].play();
-              console.log(`✅ Restarting idle animation: ${idleAnim} with offset ${actions[idleAnim].time}`);
+              console.log(`✅ Starting idle animation: ${idleAnim} with zero weight`);
+            }
+          });
+          
+          // Crossfade from dance to idle over 1 second
+          const crossfadeDuration = 1.0; // 1 second crossfade
+          ['Dance.001', 'Dance.002', 'Dance.003'].forEach((danceAnim, index) => {
+            const idleAnim = ['Idle.001', 'Idle.002', 'Idle.003'][index];
+            if (actions[danceAnim] && actions[idleAnim]) {
+              actions[danceAnim].crossFadeTo(actions[idleAnim], crossfadeDuration, true);
+              console.log(`✅ Crossfading from ${danceAnim} to ${idleAnim} over ${crossfadeDuration}s`);
             }
           });
         } else {

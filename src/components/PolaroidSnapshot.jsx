@@ -21,25 +21,79 @@ const PolaroidSnapshot = ({
   }, [trigger]);
 
   const captureSnapshot = () => {
-    // Capture immediately on next frame
+    // Double requestAnimationFrame to ensure render is complete
     requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const canvas = document.querySelector('canvas');
+        
+        if (canvas) {
+          try {
+            // Create a new canvas that matches viewport aspect ratio
+            const tempCanvas = document.createElement('canvas');
+            const viewportRatio = window.innerHeight / window.innerWidth;
+            
+            // Use the canvas dimensions but adjust for viewport
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d', { 
+              preserveDrawingBuffer: true,
+              willReadFrequently: true 
+            });
+            
+            // Draw the entire WebGL canvas
+            tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to data URL with high quality
+            const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
+            
+            // Always show the polaroid, even if capture isn't perfect
+            if (dataUrl) {
+              console.log('Setting polaroid image, length:', dataUrl.length);
+              setImageUrl(dataUrl);
+              setIsVisible(true);
+              
+              setTimeout(() => {
+                setIsBlurred(false);
+              }, 300);
+
+              if (onComplete) {
+                setTimeout(() => {
+                  onComplete(dataUrl);
+                }, 2000);
+              }
+            } else {
+              // Try alternate capture method
+              console.warn('Canvas capture was empty, trying alternate method');
+              captureWithDelay();
+            }
+          } catch (error) {
+            console.error('Direct canvas capture failed:', error);
+            captureWithDelay();
+          }
+        } else {
+          captureWithDelay();
+        }
+      });
+    });
+  };
+
+  // Backup capture with a small delay to let scene render
+  const captureWithDelay = () => {
+    setTimeout(() => {
       const canvas = document.querySelector('canvas');
-      
       if (canvas) {
-        try {
-          // Create a new canvas to preserve the current frame
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = canvas.width;
-          tempCanvas.height = canvas.height;
-          const tempCtx = tempCanvas.getContext('2d');
-          
-          // Draw the WebGL canvas to the 2D canvas immediately
-          tempCtx.drawImage(canvas, 0, 0);
-          
-          // Convert to data URL
-          const dataUrl = tempCanvas.toDataURL('image/png');
-          
-          if (dataUrl && dataUrl.length > 1000) { // Basic check for valid image
+        // Force a render by scrolling 0 pixels (triggers reflow)
+        window.scrollTo(window.scrollX, window.scrollY);
+        
+        requestAnimationFrame(() => {
+          try {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0);
+            
+            const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
             setImageUrl(dataUrl);
             setIsVisible(true);
             
@@ -52,20 +106,15 @@ const PolaroidSnapshot = ({
                 onComplete(dataUrl);
               }, 2000);
             }
-          } else {
-            // Fallback to html2canvas if direct capture fails
+          } catch (e) {
+            // Last resort: use html2canvas
             captureFromDOM(document.body);
           }
-        } catch (error) {
-          console.error('Direct canvas capture failed:', error);
-          // Fallback to html2canvas
-          captureFromDOM(document.body);
-        }
+        });
       } else {
-        // No canvas found, capture whole body
         captureFromDOM(document.body);
       }
-    });
+    }, 100);
   };
 
   const captureFromCanvas = (canvas) => {
@@ -111,21 +160,26 @@ const PolaroidSnapshot = ({
 
   const captureFromDOM = (element) => {
     import('html2canvas').then(({ default: html2canvas }) => {
-      // Find the viewport bounds to capture just the visible area
-      const rect = element.getBoundingClientRect();
+      // Capture the full viewport for better framing
+      const captureElement = document.body; // Always capture full body for consistent framing
       
-      html2canvas(element, {
+      html2canvas(captureElement, {
         backgroundColor: '#000000', // Match the scene background
-        scale: window.devicePixelRatio || 1, // Use device pixel ratio for clarity
+        scale: Math.min(window.devicePixelRatio || 1, 2), // Limit scale for performance
         logging: false,
         useCORS: true, // Allow cross-origin images
         allowTaint: false,
-        width: rect.width,
-        height: rect.height,
-        x: window.scrollX,
-        y: window.scrollY,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        x: 0,
+        y: 0,
         windowWidth: window.innerWidth,
         windowHeight: window.innerHeight,
+        ignoreElements: (element) => {
+          // Ignore the polaroid itself if it's already visible
+          return element.classList?.contains(styles.overlay) ||
+                 element.classList?.contains('action-button');
+        },
         onclone: (clonedDoc) => {
           // Ensure WebGL canvas is captured
           const clonedCanvas = clonedDoc.querySelector('canvas');
@@ -316,8 +370,13 @@ const PolaroidSnapshot = ({
     }, 3000);
   };
 
-  if (!isVisible || !imageUrl) return null;
+  if (!isVisible || !imageUrl) {
+    console.log('PolaroidSnapshot not showing:', { isVisible, hasImageUrl: !!imageUrl });
+    return null;
+  }
 
+  console.log('PolaroidSnapshot rendering with image');
+  
   return (
     <div 
       className={`${styles.overlay} ${isVisible ? styles.visible : ''}`}

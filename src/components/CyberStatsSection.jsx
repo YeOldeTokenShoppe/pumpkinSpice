@@ -266,18 +266,26 @@ export default function CyberStatsSection({ isMobile }) {
       }} className="terminal-header">
         <div style={{
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          justifyContent: isMobile ? 'flex-start' : 'space-between',
+          alignItems: 'center',
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          gap: isMobile ? '8px' : '0'
         }}>
           <div style={{
-            fontSize: '1.2rem',
+            fontSize: isMobile ? '0.9rem' : '1.2rem',
             letterSpacing: '1px',
             color: '#0fa',
             fontFamily: 'monospace',
           }} className="terminal-title">
             SYSTEM://METRICS_DASHBOARD
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            marginLeft: isMobile ? '0' : 'auto',
+            flexShrink: 0
+          }}>
             <span style={{
               display: 'inline-block',
               width: '10px',
@@ -286,7 +294,7 @@ export default function CyberStatsSection({ isMobile }) {
               backgroundColor: '#0f0',
               animation: 'pulse 1.5s infinite',
             }} className="status-dot" />
-            <span style={{ color: '#0f0', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+            <span style={{ color: '#0f0', fontFamily: 'monospace', fontSize: isMobile ? '0.7rem' : '0.9rem' }}>
               LIVE DATA
             </span>
           </div>

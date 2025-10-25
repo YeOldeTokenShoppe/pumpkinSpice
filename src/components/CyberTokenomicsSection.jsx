@@ -82,18 +82,26 @@ export default function CyberTokenomicsSection({ isMobile }) {
       }}>
         <div style={{
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          justifyContent: isMobile ? 'flex-start' : 'space-between',
+          alignItems: 'center',
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          gap: isMobile ? '8px' : '0'
         }}>
           <div style={{
-            fontSize: '1.2rem',
+            fontSize: isMobile ? '0.9rem' : '1.2rem',
             letterSpacing: '1px',
             color: '#0fa',
             fontFamily: 'monospace',
           }}>
             SYSTEM://TOKENOMICS_PROTOCOL
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            marginLeft: isMobile ? '0' : 'auto',
+            flexShrink: 0
+          }}>
             <span style={{
               display: 'inline-block',
               width: '10px',
@@ -102,7 +110,7 @@ export default function CyberTokenomicsSection({ isMobile }) {
               backgroundColor: 'rgba(85, 244, 255, 1)',
               animation: 'pulse 1.5s infinite',
             }} />
-            <span style={{ color: 'rgba(85, 244, 255, 1)', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+            <span style={{ color: '#00ff00', fontFamily: 'monospace', fontSize: isMobile ? '0.7rem' : '0.9rem' }}>
               IMMUTABLE CONTRACTS
             </span>
           </div>

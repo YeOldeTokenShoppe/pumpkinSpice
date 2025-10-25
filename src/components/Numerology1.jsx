@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import styled, { keyframes, createGlobalStyle } from "styled-components";
 import Coin from "./Coin";
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
+import * as THREE from 'three';
 
 // Global styles for CSS custom properties
 const GlobalStyles = createGlobalStyle`
@@ -57,8 +60,8 @@ const levitateStyle = `
   /* Candle styles */
   .candle-holder {
     position: absolute;
-    width: 200px;
-    height: 400px;
+    width: clamp(150px, 15vw, 200px);
+    height: clamp(300px, 30vh, 400px);
     z-index: 3;
   }
 
@@ -69,9 +72,9 @@ const levitateStyle = `
 
   .candle {
     bottom: 0;
-    width: 200px;
-    height: 300px;
-    border-radius: 150px / 40px;
+    width: 100%;
+    height: 75%;
+    border-radius: 50% / 15%;
     box-shadow: inset 20px -30px 50px 0 rgba(0, 0, 0, 0.4), inset -20px 0 50px 0 rgba(0, 0, 0, 0.4);
     background: #021902;
     background: linear-gradient(#25e425, #0ee70e, #038303, #034c1a 50%, #001c00);
@@ -232,6 +235,29 @@ const FluidBackground = styled.div`
 
 
 
+// 3D Model Component
+function Model({ url, scale = 1, position = [0, 0, 0], rotation = [0, 0, 0] }) {
+  const { scene } = useGLTF(url);
+  const meshRef = useRef();
+  
+  // Auto-rotate the model
+  useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += 0.01;
+    }
+  });
+  
+  return (
+    <primitive 
+      ref={meshRef}
+      object={scene} 
+      scale={scale}
+      position={position}
+      rotation={rotation}
+    />
+  );
+}
+
 const Numerology1 = ({ isMobile = false }) => {
   const [clientSideReady, setClientSideReady] = useState(false);
   const [internalIsMobile, setInternalIsMobile] = useState(false);
@@ -385,19 +411,19 @@ const Numerology1 = ({ isMobile = false }) => {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'flex-end',
-                        margin: '0 auto',
-                        // border: 'solid 0.5em #c48901',
+                        // margin: '0 auto',
                         width: '100%',
-                        // maxWidth: effectiveIsMobile ? '350px' : '450px',
-                        height: effectiveIsMobile ? '450px' : '500px',
+                        maxWidth: '600px',
+                        height: effectiveIsMobile ? '60vh' : '70vh',
+                        minHeight: effectiveIsMobile ? '400px' : '500px',
                         borderRadius: '1em',
-                        transform: effectiveIsMobile ? 'scale(0.9)' : 'scale(1)',
+                        transform: 'scale(1)',
                         transformOrigin: 'center center',
                       }}
                     >
                       
                       {/* Matrix rain background effect using Canvas */}
-                      <canvas 
+                      {/* <canvas 
                         ref={canvasRef}
                         style={{
                           position: 'absolute',
@@ -406,10 +432,10 @@ const Numerology1 = ({ isMobile = false }) => {
                           width: '100%',
                           height: '100%',
                           zIndex: 0,
-                          opacity: 0.25,
+                          opacity: 0.65,
                           pointerEvents: 'none',
                         }}
-                      />
+                      /> */}
                       
                       {/* Fluid background as the base layer */}
                       {/* <FluidBackground /> */}
@@ -446,44 +472,49 @@ const Numerology1 = ({ isMobile = false }) => {
                         </div>
                       </div> */}
 
-                      {/* Magic 8 ball in the center */}
+                      {/* Holy Grail 3D Model */}
                       <div
                         style={{
                           position: "relative",
-                          width: effectiveIsMobile ? "300px" : "350px",
-                          height: effectiveIsMobile ? "300px" : "350px",
+                          width: effectiveIsMobile ? "80%" : "60%",
+                          maxWidth: effectiveIsMobile ? "380px" : "350px",
+                          height: effectiveIsMobile ? "90%" : "80%",
+                          maxHeight: effectiveIsMobile ? "550px" : "450px",
                           display: "flex",
                           justifyContent: "center",
                           alignItems: "center",
                           zIndex: "2",
-                          background: "transparent",
-                          borderRadius: "50%",
-                          animation: "levitate 4s ease-in-out infinite",
-                          transition: "transform 0.3s ease",
-                          transform: isHovering ? "scale(1.05)" : "scale(1)",
-                          cursor: "pointer",
-                          marginBottom: '50px',
+                          marginBottom: effectiveIsMobile ? '20px' : '40px',
                         }}
-                        className="magic-ball-glow"
-                        onMouseEnter={() => setIsHovering(true)}
-                        onMouseLeave={() => setIsHovering(false)}
                       >
                         {clientSideReady && (
-                          <iframe
-                            src="/magic1.html"
+                          <Canvas
+                            camera={{ position: [0, 0, 5], fov: effectiveIsMobile ? 60 : 50 }}
                             style={{
-                              width: "90%",
-                              height: "90%",
-                              border: "none",
-                              background: "transparent",
-                              borderRadius: "50%",
-                     
+                              width: '100%',
+                              height: '100%',
                             }}
-                            title="Magic 80 Ball"
-                            frameBorder="0"
-                            scrolling="no"
-                            allowtransparency="true"
-                          />
+                          >
+                            <Suspense fallback={null}>
+                              <ambientLight intensity={0.5} />
+                              <spotLight position={[1, 5, 1]} angle={0.05} penumbra={1} intensity={3}/>
+                              <pointLight position={[-1, 1, -1]} color="#00ff00" intensity={1} />
+                              <pointLight position={[1, 0, 1]} color="#ffd700" intensity={0.6} />
+                              <Model 
+                                url="/models/holyGrail.glb"
+                                scale={effectiveIsMobile ? 0.45 : 0.4}
+                                position={[0, effectiveIsMobile ? -1.8 : -1.5, 0]}
+                              />
+                              {/* <OrbitControls 
+                                enablePan={false}
+                                enableZoom={false}
+                                enableRotate={false}
+                                // autoRotate={false}
+                                // autoRotateSpeed={1}
+                              /> */}
+                              <Environment preset="night" />
+                            </Suspense>
+                          </Canvas>
                         )}
                       </div>
 
@@ -491,9 +522,9 @@ const Numerology1 = ({ isMobile = false }) => {
                       <div 
                         className="candle-holder"
                         style={{
-                          left: effectiveIsMobile ? '120px' : '300px',
-                          bottom: '0',
-                          transform: effectiveIsMobile ? 'scale(0.6)' : 'scale(0.5)',
+                          right: effectiveIsMobile ? '5%' : '10%',
+                          bottom: effectiveIsMobile ? '10px' : '30px',
+                          transform: effectiveIsMobile ? 'scale(0.45)' : 'scale(0.5)',
                           transformOrigin: 'bottom center',
                         }}
                       >
