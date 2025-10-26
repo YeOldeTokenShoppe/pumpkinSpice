@@ -4,12 +4,30 @@ import { useState, useEffect } from 'react';
 import { checkUserIllumin80Status } from '@/utils/firestore-illumin80';
 import { UserModal } from './UserModal';
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
 export function EnhancedUserButton({ 
   appearance,
   illumin80Status: providedStatus = null
 }) {
   const { user, isSignedIn, isLoaded } = useUser();
   const { openSignIn } = useClerk();
+  const isMobile = useIsMobile();
+  const buttonSize = isMobile ? '40px' : '60px';
   const [illumin80Status, setIllumin80Status] = useState(providedStatus);
   const [streak, setStreak] = useState(0);
   const [showModal, setShowModal] = useState(false);
@@ -76,8 +94,8 @@ export function EnhancedUserButton({
   if (!isLoaded) {
     return (
       <div style={{
-        width: '60px',
-        height: '60px',
+        width: buttonSize,
+        height: buttonSize,
         borderRadius: '12px',
         background: 'rgba(255, 255, 255, 0.1)',
         display: 'flex',
@@ -118,8 +136,8 @@ export function EnhancedUserButton({
       <button
         onClick={() => openSignIn()}
         style={{
-          width: '60px',
-          height: '60px',
+          width: buttonSize,
+          height: buttonSize,
           borderRadius: '12px',
           overflow: 'hidden',
           padding: 0,
@@ -155,8 +173,8 @@ export function EnhancedUserButton({
   if (!user) {
     return (
       <div style={{
-        width: '60px',
-        height: '60px',
+        width: buttonSize,
+        height: buttonSize,
         borderRadius: '12px',
         background: 'rgba(255, 255, 255, 0.1)',
         display: 'flex',
@@ -174,8 +192,8 @@ export function EnhancedUserButton({
         onClick={() => setShowModal(true)}
         className="relative transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500"
         style={{
-          width: '60px',
-          height: '60px',
+          width: buttonSize,
+          height: buttonSize,
           borderRadius: '12px',
           overflow: 'hidden',
           padding: 0,

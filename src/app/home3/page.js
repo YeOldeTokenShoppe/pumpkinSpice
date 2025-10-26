@@ -52,19 +52,27 @@ const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2 }) => 
     if (!isInView) return;
     
     let startTime;
+    let animationId;
+    
     const animate = (timestamp) => {
       if (!startTime) startTime = timestamp;
       const progress = (timestamp - startTime) / (duration * 1000);
       
       if (progress < 1) {
         setCount(Math.floor(target * progress));
-        requestAnimationFrame(animate);
+        animationId = requestAnimationFrame(animate);
       } else {
         setCount(target);
       }
     };
     
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
   }, [isInView, target, duration]);
 
   return (

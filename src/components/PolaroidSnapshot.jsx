@@ -48,7 +48,7 @@ const PolaroidSnapshot = ({
             
             // Always show the polaroid, even if capture isn't perfect
             if (dataUrl) {
-              console.log('Setting polaroid image, length:', dataUrl.length);
+              // console.log('Setting polaroid image, length:', dataUrl.length);
               setImageUrl(dataUrl);
               setIsVisible(true);
               
@@ -371,11 +371,11 @@ const PolaroidSnapshot = ({
   };
 
   if (!isVisible || !imageUrl) {
-    console.log('PolaroidSnapshot not showing:', { isVisible, hasImageUrl: !!imageUrl });
+    // console.log('PolaroidSnapshot not showing:', { isVisible, hasImageUrl: !!imageUrl });
     return null;
   }
 
-  console.log('PolaroidSnapshot rendering with image');
+  // console.log('PolaroidSnapshot rendering with image');
   
   return (
     <div 

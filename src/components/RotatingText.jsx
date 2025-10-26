@@ -54,6 +54,8 @@ const RotatingText = ({ isDesktop = false }) => {
       });
     };
 
+    let timeoutId;
+    
     const changetext = () => {
       if (wordIndex > 2) {
         wordIndex = 0;
@@ -68,14 +70,20 @@ const RotatingText = ({ isDesktop = false }) => {
       n3xt(term, elementRef.current);
 
       if (wordIndex === 2) {
-        setTimeout(changetext, 2000);
+        timeoutId = setTimeout(changetext, 2000);
       } else {
-        setTimeout(changetext, 150);
+        timeoutId = setTimeout(changetext, 150);
       }
       wordIndex++;
     };
 
-    setTimeout(changetext, 200);
+    timeoutId = setTimeout(changetext, 200);
+    
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [isDesktop]);
 
   return (

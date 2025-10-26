@@ -631,7 +631,7 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
 }
 
 // Main component following Simple3DScene pattern
-export default function Gallery3Scene({ enabled = false, isMobileView = true, is80sMode = false, onSceneReady, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCoinsWon }) {
+export default function Gallery3Scene({ enabled = false, isMobileView = true, is80sMode = false, onSceneReady, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCoinsWon, puzzleSequence }) {
   const [mounted, setMounted] = useState(false);
   const [showFloatingViewer, setShowFloatingViewer] = useState(false);
   const [selectedCandleData, setSelectedCandleData] = useState(null);
@@ -686,48 +686,103 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   }, [onSceneReady]);
   
   // Handle wheel clicks for sequence tracking
-  const handleWheelClick = useCallback((wheelSectionName) => {
+  const handleWheelClick = useCallback(async (wheelSectionName) => {
     console.log('Wheel section clicked:', wheelSectionName);
     
-    setClickSequence(prevSequence => {
-      const newSequence = [...prevSequence, wheelSectionName];
-      
-      // Check all possible sequences
-      for (const puzzle of puzzleSequences) {
-        const requiredLength = puzzle.sequence.length;
+    // Check if there's a puzzle sequence to validate
+    if (puzzleSequence && puzzleSequence.length > 0) {
+      setClickSequence(prevSequence => {
+        const newSequence = [...prevSequence, wheelSectionName];
         
-        // Keep only the last N clicks where N is the sequence length
+        // Check if the sequence matches the puzzle sequence
+        const requiredLength = puzzleSequence.length;
         let checkSequence = newSequence.slice(-requiredLength);
         
-        // Check if this matches any puzzle sequence
         if (checkSequence.length === requiredLength &&
-            checkSequence.every((click, index) => click === puzzle.sequence[index])) {
+            checkSequence.every((click, index) => click === puzzleSequence[index])) {
           
-          console.log(`✨ ${puzzle.name} sequence detected! Awarding ${puzzle.reward} coins!`);
+          console.log(`✨ Puzzle sequence completed! Validating with server...`);
           
-          // Set the reward amount for the CoinStream components
-          setCurrentCoinReward(puzzle.reward);
-          
-          // Trigger the coin streams
-          setCoinTrigger(prev => prev + 1);
-          
-          // Note: The actual coin awarding is now handled by the CoinStream components
-          // via their onCoinsDispensed callbacks
+          // Validate with the server to prevent cheating
+          fetch('/api/validate-puzzle', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sequence: checkSequence }),
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.valid) {
+              console.log('✅ Server validation successful! Awarding', data.reward, 'coins!');
+              
+              // Set the reward amount from server
+              setCurrentCoinReward(data.reward || 5000);
+              
+              // Trigger the coin streams
+              setCoinTrigger(prev => prev + 1);
+            } else {
+              console.log('❌ Server validation failed:', data.message);
+              // Could show an error message to the user
+            }
+          })
+          .catch(err => {
+            console.error('Error validating puzzle:', err);
+            // Fallback to client-side validation if server fails
+            setCurrentCoinReward(5000);
+            setCoinTrigger(prev => prev + 1);
+          });
           
           // Reset sequence after triggering
           return [];
         }
-      }
-      
-      // Limit sequence length to the longest puzzle sequence
-      const maxLength = Math.max(...puzzleSequences.map(p => p.sequence.length));
-      if (newSequence.length > maxLength) {
-        return newSequence.slice(-maxLength);
-      }
-      
-      return newSequence;
-    });
-  }, [puzzleSequences]);
+        
+        // Limit sequence length
+        if (newSequence.length > requiredLength) {
+          return newSequence.slice(-requiredLength);
+        }
+        
+        return newSequence;
+      });
+    } else {
+      // Original logic for predefined sequences when no puzzle is active
+      setClickSequence(prevSequence => {
+        const newSequence = [...prevSequence, wheelSectionName];
+        
+        // Check all possible sequences
+        for (const puzzle of puzzleSequences) {
+          const requiredLength = puzzle.sequence.length;
+          
+          // Keep only the last N clicks where N is the sequence length
+          let checkSequence = newSequence.slice(-requiredLength);
+          
+          // Check if this matches any puzzle sequence
+          if (checkSequence.length === requiredLength &&
+              checkSequence.every((click, index) => click === puzzle.sequence[index])) {
+            
+            console.log(`✨ ${puzzle.name} sequence detected! Awarding ${puzzle.reward} coins!`);
+            
+            // Set the reward amount for the CoinStream components
+            setCurrentCoinReward(puzzle.reward);
+            
+            // Trigger the coin streams
+            setCoinTrigger(prev => prev + 1);
+            
+            // Reset sequence after triggering
+            return [];
+          }
+        }
+        
+        // Limit sequence length to the longest puzzle sequence
+        const maxLength = Math.max(...puzzleSequences.map(p => p.sequence.length));
+        if (newSequence.length > maxLength) {
+          return newSequence.slice(-maxLength);
+        }
+        
+        return newSequence;
+      });
+    }
+  }, [puzzleSequences, puzzleSequence]);
   
   useEffect(() => {
     // Delay mounting to avoid conflicts (from Simple3DScene)

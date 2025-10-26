@@ -15,6 +15,7 @@ import CompactCandleModal from "@/components/CompactCandleModal";
 import { useFirestoreResults } from "@/utilities/useFirestoreResults";
 import { CoinWallet } from "@/components/CoinWallet";
 import PolaroidSnapshot from '@/components/PolaroidSnapshot';
+import PuzzleSystem from '@/components/PuzzleSystem';
 
 // Dynamically import 3D scene
 const Gallery3Scene = dynamic(() => import("@/components/Gallery3Scene"), {
@@ -39,6 +40,8 @@ export default function Gallery3Page() {
   const [minimumLoadTime, setMinimumLoadTime] = useState(false); // Track minimum load time
   const [coinBalance, setCoinBalance] = useState(1000); // Starting coin balance
   const [triggerSnapshot, setTriggerSnapshot] = useState(false);
+  const [puzzleSequence, setPuzzleSequence] = useState(null); // Store the puzzle-generated sequence
+  const [showPuzzles, setShowPuzzles] = useState(true); // Control puzzle visibility
   
   // Get candle data from Firestore
   const results = useFirestoreResults(sortBy);
@@ -106,6 +109,16 @@ export default function Gallery3Page() {
   // Handle winning coins (you can call this when puzzles are solved or wheel spins)
   const handleWinCoins = useCallback((amount) => {
     setCoinBalance(prev => prev + amount);
+    // Hide puzzles after winning coins from the wheel sequence
+    setShowPuzzles(false);
+  }, []);
+  
+  // Handle puzzle sequence completion
+  const handlePuzzleSequenceComplete = useCallback((sequence) => {
+    setPuzzleSequence(sequence);
+    // The sequence will be used by Gallery3Scene to trigger CoinStream
+    // when the user clicks the symbols in the correct order
+    // This is now a user-specific daily sequence that can't be shared
   }, []);
   
   // Handle scene ready callback
@@ -719,12 +732,20 @@ export default function Gallery3Page() {
             candleData={results}
             sortBy={sortBy}
             onCoinsWon={handleWinCoins}
+            puzzleSequence={puzzleSequence}
           />
         )}
       </div>
       
       {/* Coin Wallet - Bottom Left */}
       <CoinWallet balance={coinBalance} />
+      
+      {/* Puzzle System */}
+      <PuzzleSystem 
+        is80sMode={is80sMode}
+        onSequenceComplete={handlePuzzleSequenceComplete}
+        isVisible={showPuzzles}
+      />
       
       {/* Snapshot Button */}
       <button

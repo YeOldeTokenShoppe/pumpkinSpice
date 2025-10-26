@@ -137,24 +137,19 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
               const isHovered = hoveredItemPath === item.path;
               
               return (
-                <div 
+                <Link 
                   key={`${item.id}-${pathname}`} 
+                  href={item.path}
                   style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
                   onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
                     console.log('Navigating to:', item.path);
                     setIsMenuOpen(false);
                     
-                    // Small delay to ensure menu closes before navigation
-                    setTimeout(() => {
-                      // Force a hard navigation if on the same page to reset state
-                      if (pathname === item.path) {
-                        window.location.href = item.path;
-                      } else {
-                        router.push(item.path);
-                      }
-                    }, 100);
+                    // Force a hard navigation if on the same page to reset state
+                    if (pathname === item.path) {
+                      e.preventDefault();
+                      window.location.href = item.path;
+                    }
                   }}
                 >
                   <div
@@ -216,7 +211,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
