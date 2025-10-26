@@ -164,7 +164,7 @@ const PolaroidSnapshot = ({
       const captureElement = document.body; // Always capture full body for consistent framing
       
       html2canvas(captureElement, {
-        backgroundColor: '#000000', // Match the scene background
+        backgroundColor: '#87CEEB', // Match the scene background
         scale: Math.min(window.devicePixelRatio || 1, 2), // Limit scale for performance
         logging: false,
         useCORS: true, // Allow cross-origin images

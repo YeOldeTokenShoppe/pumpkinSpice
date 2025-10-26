@@ -250,7 +250,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
                     boxShadow: '0 0 10px #00ff00'
                   }} />
                   <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '12px' }}>
-                    ⚡ CYBORG TRADING FUND
+                    ⚡ RL80 TRADING FUND
                   </div>
                 </div>
                 <div style={{ 
@@ -867,7 +867,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
               boxShadow: '0 0 10px #00ff00'
             }} />
             <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '14px' }}>
-              ⚡ CYBORG TRADING FUND ⚡
+              ⚡ RL80 TRADING FUND ⚡
             </div>
           </div>
           <div style={{ 

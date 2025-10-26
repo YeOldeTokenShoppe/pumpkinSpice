@@ -133,7 +133,7 @@ export default function FAQSection({ isMobile = false }) {
       <div className="faq-drawer">
         <input className="faq-drawer__trigger" id="faq-drawer-1" type="checkbox" />
         <label className="faq-drawer__title" htmlFor="faq-drawer-1">
-          Product Information
+          Why Burn Green Candles?
         </label>
         <div className="faq-drawer__content-wrapper">
           <div className="faq-drawer__content">

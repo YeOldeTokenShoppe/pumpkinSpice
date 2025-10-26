@@ -1,9 +1,22 @@
 'use client';
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, useInView } from 'framer-motion';
+import { Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function CyberTokenomicsSection({ isMobile }) {
   const [activeCard, setActiveCard] = useState(null);
+  const chartRef = useRef(null);
+  const isInView = useInView(chartRef, { once: true, threshold: 0.3 });
+  const [chartData, setChartData] = useState(null);
 
   const tokenomicsData = [
     {
@@ -70,6 +83,56 @@ export default function CyberTokenomicsSection({ isMobile }) {
     }
   ];
 
+  // Set up Chart.js data when component mounts or comes into view
+  useEffect(() => {
+    if (isInView && !chartData) {
+      setChartData({
+        labels: tokenomicsData.map(item => item.title),
+        datasets: [
+          {
+            data: tokenomicsData.map(item => item.percentage),
+            backgroundColor: tokenomicsData.map(item => item.color),
+            borderColor: tokenomicsData.map(item => item.color),
+            borderWidth: 2,
+            hoverBorderWidth: 4,
+            // No cutout for full pie chart
+          },
+        ],
+      });
+    }
+  }, [isInView, chartData]);
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false, // We'll use custom labels
+      },
+      tooltip: {
+        enabled: false, // Using custom hover cards instead
+      },
+    },
+    animation: {
+      animateRotate: true,
+      animateScale: false, // Disable scale animation to prevent snake effect
+      duration: 1500,
+      easing: 'easeOutQuart',
+      delay: (context) => {
+        return context.dataIndex * 300; // Stagger each segment by 300ms
+      },
+    },
+    elements: {
+      arc: {
+        borderWidth: 2,
+        hoverBorderWidth: 4,
+      },
+    },
+    interaction: {
+      intersect: false,
+    },
+  };
+
   return (
     <div style={{ width: '100%', position: 'relative' }}>
       <div style={{
@@ -107,7 +170,7 @@ export default function CyberTokenomicsSection({ isMobile }) {
               width: '10px',
               height: '10px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(85, 244, 255, 1)',
+              backgroundColor: '#00ff00',
               animation: 'pulse 1.5s infinite',
             }} />
             <span style={{ color: '#00ff00', fontFamily: 'monospace', fontSize: isMobile ? '0.7rem' : '0.9rem' }}>
@@ -147,64 +210,82 @@ export default function CyberTokenomicsSection({ isMobile }) {
           </h3>
 
           <div style={{ position: 'relative', marginBottom: '30px' }}>
-            <div style={{
-              position: 'relative',
-              width: isMobile ? '280px' : '320px',
-              height: isMobile ? '280px' : '320px',
-              margin: '0 auto'
-            }}>
-              {/* Pie Chart using conic gradient */}
+            <div 
+              ref={chartRef}
+              style={{
+                position: 'relative',
+                width: isMobile ? '280px' : '320px',
+                height: isMobile ? '280px' : '320px',
+                margin: '0 auto'
+              }}
+            >
+              {/* Chart.js Animated Donut Chart */}
               <div style={{
+                position: 'relative',
                 width: '100%',
                 height: '100%',
-                borderRadius: '50%',
-                background: `conic-gradient(
-                  from 0deg,
-                  #00ff00 0deg 306deg,
-                  #ffd700 306deg 342deg,
-                  #d946ef 342deg 360deg
-                )`,
-                position: 'relative',
                 filter: 'drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5))',
-                border: '2px solid rgba(0, 255, 170, 0.3)',
+                borderRadius: '50%',
               }}>
-                {/* Center circle with text */}
+                {chartData && (
+                  <Pie 
+                    data={chartData} 
+                    options={chartOptions}
+                    style={{
+                      filter: 'drop-shadow(0 0 20px rgba(0, 255, 170, 0.3))',
+                    }}
+                  />
+                )}
+                
+                {/* Center text overlay with background */}
                 <div style={{
                   position: 'absolute',
                   top: '50%',
                   left: '50%',
                   transform: 'translate(-50%, -50%)',
-                  width: isMobile ? '140px' : '160px',
-                  height: isMobile ? '140px' : '160px',
-                  borderRadius: '50%',
-                  background: 'rgba(0, 0, 0, 0.95)',
-                  border: '2px solid rgba(0, 255, 170, 0.3)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  pointerEvents: 'none',
+                  background: 'rgba(0, 0, 0, 0.8)',
+                  borderRadius: '50%',
+                  width: isMobile ? '100px' : '120px',
+                  height: isMobile ? '100px' : '120px',
+                  border: '2px solid rgba(0, 255, 170, 0.3)',
                   backdropFilter: 'blur(10px)',
                 }}>
-                  <div style={{
-                    fontSize: isMobile ? '2.5em' : '3em',
-                    fontWeight: '800',
-                    color: '#FFD700',
-                    lineHeight: '1',
-                    textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
-                    fontFamily: 'monospace',
-                  }}>
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                    transition={{ delay: 2.5, duration: 0.8 }}
+                    style={{
+                      fontSize: isMobile ? '1.8em' : '2.2em',
+                      fontWeight: '800',
+                      color: '#FFD700',
+                      lineHeight: '1',
+                      textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
+                      fontFamily: 'monospace',
+                    }}
+                  >
                     80B
-                  </div>
-                  <div style={{
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontSize: isMobile ? '0.8em' : '0.9em',
-                    textTransform: 'uppercase',
-                    letterSpacing: '2px',
-                    fontFamily: 'monospace',
-                    marginTop: '5px',
-                  }}>
-                    TOTAL SUPPLY
-                  </div>
+                  </motion.div>
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ delay: 2.7, duration: 0.6 }}
+                    style={{
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: isMobile ? '0.6em' : '0.7em',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px',
+                      fontFamily: 'monospace',
+                      marginTop: '2px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    TOTAL
+                  </motion.div>
                 </div>
               </div>
 

@@ -36,6 +36,7 @@ import TubesCursor from '@/components/TubesCursor';
 import CarouselWrapper from '@/components/CarouselWrapper';
 import BreathSmoke from "@/components/BreathSmoke";
 import SkewedHeading from "@/components/SkewedHeading";
+import AngelOfCurrencies from "@/components/AngelOfCurrencies";
 
 
 
@@ -358,6 +359,19 @@ function ScrollTriggeredTitle({ isMobile }) {
         zIndex: 10,
    
       }}>
+               {/* The Annunciation Heading */}
+        <h1 style={{
+          fontSize: isMobile ? '2rem' : '2.5rem',
+          color: '#d4af37',
+          fontFamily: "'Fjalla One', sans-serif",
+          textAlign: 'center',
+          margin: '0 0 1.5rem 0',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
+          letterSpacing: '2px',
+          textTransform: 'uppercase'
+        }}>
+          The Annunciation
+        </h1>
         <h2 style={{
           fontSize: isMobile ? '1.6rem' : '1.8rem',
           color: '#ffffff',
@@ -366,9 +380,16 @@ function ScrollTriggeredTitle({ isMobile }) {
           textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
           lineHeight: '1.5',
 
-                   width: '90%',
+          width: isMobile ? '90%' : '80%',
           margin: '0 auto'
         }}>
+ 
+        
+        {/* Angel of Currencies presenting the introduction */}
+        <AngelOfCurrencies 
+          isMobile={isMobile}
+          onLoad={() => console.log('Angel of Currencies loaded for intro')}
+        />
         She's the mother of memes, aider to traders, fren to degens, and your guide up and to the right.
     
           Whether you need a Hail Mary for hard times, or just sanctuary in the dark realm of DeFi,

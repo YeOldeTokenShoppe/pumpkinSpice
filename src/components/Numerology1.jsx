@@ -5,6 +5,7 @@ import styled, { keyframes, createGlobalStyle } from "styled-components";
 import Coin from "./Coin";
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
+import { EffectComposer, DepthOfField, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
 // Global styles for CSS custom properties
@@ -240,12 +241,6 @@ function Model({ url, scale = 1, position = [0, 0, 0], rotation = [0, 0, 0] }) {
   const { scene } = useGLTF(url);
   const meshRef = useRef();
   
-  // Auto-rotate the model
-  useEffect(() => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += 0.01;
-    }
-  });
   
   return (
     <primitive 
@@ -476,10 +471,10 @@ const Numerology1 = ({ isMobile = false }) => {
                       <div
                         style={{
                           position: "relative",
-                          width: effectiveIsMobile ? "80%" : "60%",
-                          maxWidth: effectiveIsMobile ? "380px" : "350px",
-                          height: effectiveIsMobile ? "90%" : "80%",
-                          maxHeight: effectiveIsMobile ? "550px" : "450px",
+                          width: effectiveIsMobile ? "100%" : "100%",
+                          maxWidth: effectiveIsMobile ? "380px" : "750px",
+                          height: effectiveIsMobile ? "100%" : "100%",
+                          // maxHeight: effectiveIsMobile ? "550px" : "450px",
                           display: "flex",
                           justifyContent: "center",
                           alignItems: "center",
@@ -489,7 +484,7 @@ const Numerology1 = ({ isMobile = false }) => {
                       >
                         {clientSideReady && (
                           <Canvas
-                            camera={{ position: [0, 0, 5], fov: effectiveIsMobile ? 60 : 50 }}
+                            camera={{ position: [0, 1.5, 6], fov: effectiveIsMobile ? 60 : 50 }}
                             style={{
                               width: '100%',
                               height: '100%',
@@ -497,12 +492,12 @@ const Numerology1 = ({ isMobile = false }) => {
                           >
                             <Suspense fallback={null}>
                               <ambientLight intensity={0.5} />
-                              <spotLight position={[1, 5, 1]} angle={0.05} penumbra={1} intensity={3}/>
-                              <pointLight position={[-1, 1, -1]} color="#00ff00" intensity={1} />
-                              <pointLight position={[1, 0, 1]} color="#ffd700" intensity={0.6} />
+                              <spotLight position={[1, 4, 1]} angle={0.8} penumbra={1} intensity={12}/>
+                              <pointLight position={[-1, 0, 2]} color="#ffd700" intensity={1} />
+                              <pointLight position={[1, 0, 2]} color="#ffd700" intensity={0.6} /> 
                               <Model 
                                 url="/models/holyGrail.glb"
-                                scale={effectiveIsMobile ? 0.45 : 0.4}
+                                scale={effectiveIsMobile ? 0.45 : .45}
                                 position={[0, effectiveIsMobile ? -1.8 : -1.5, 0]}
                               />
                               {/* <OrbitControls 
@@ -512,14 +507,27 @@ const Numerology1 = ({ isMobile = false }) => {
                                 // autoRotate={false}
                                 // autoRotateSpeed={1}
                               /> */}
-                              <Environment preset="night" />
+                              {/* <Environment preset="night" /> */}
                             </Suspense>
+                            <EffectComposer>
+                              <DepthOfField
+                                focusDistance={0.01}
+                                focalLength={0.025}
+                                bokehScale={3}
+                                height={480}
+                              />
+                              <Bloom 
+                                intensity={0.3}
+                                luminanceThreshold={0.4}
+                                luminanceSmoothing={0.9}
+                              />
+                            </EffectComposer>
                           </Canvas>
                         )}
                       </div>
 
                       {/* Candle on the right */}
-                      <div 
+                      {/* <div 
                         className="candle-holder"
                         style={{
                           right: effectiveIsMobile ? '5%' : '10%',
@@ -534,7 +542,7 @@ const Numerology1 = ({ isMobile = false }) => {
                           <div className="glow"></div>
                           <div className="flame"></div>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                     </>
   ); 
