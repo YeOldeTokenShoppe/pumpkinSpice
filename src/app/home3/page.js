@@ -1144,13 +1144,23 @@ export default function CloudTestPage() {
       {/* Loading Screen */}
       <CoinLoader loading={isSceneLoading} />
 
+      {/* Mobile-specific style override */}
+      {isMobile && (
+        <style jsx global>{`
+          html, body {
+            height: auto !important;
+            overflow: visible !important;
+          }
+        `}</style>
+      )}
           
       <div style={{ 
         width: '100vw', 
         background: 'transparent', 
         minHeight: '100vh',
         overflowX: 'hidden',
-        overflowY: 'auto',
+        overflowY: isMobile ? 'visible' : 'auto',
+        height: isMobile ? 'auto' : undefined,
         WebkitOverflowScrolling: 'touch', // Enable smooth scrolling on iOS
         opacity: isSceneLoading ? 0 : 1,
         transition: 'opacity 0.5s ease-in-out',
@@ -1553,8 +1563,9 @@ export default function CloudTestPage() {
       {/* Welcome Section with DropInTitle */}
       <motion.div
         style={{
-          position: "absolute",
-          top: "100vh",
+          position: isMobile ? "relative" : "absolute",
+          top: isMobile ? 0 : "100vh",
+          marginTop: isMobile ? "100vh" : 0,
           left: 0,
           right: 0,
           minHeight: "100vh",
