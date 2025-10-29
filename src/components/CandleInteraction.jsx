@@ -271,9 +271,13 @@
               
               // Draw the username
               ctx.fillStyle = '#ffffff';
-              ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+              ctx.font = 'bold 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
+              
+              // Stretch text horizontally to prevent compression
+              ctx.save();
+              ctx.scale(1.1, 1); // Stretch horizontally by 20%
               
               const textY = imageHeight + (targetHeight - imageHeight) / 2;
               
@@ -283,7 +287,8 @@
               ctx.shadowOffsetX = 2;
               ctx.shadowOffsetY = 2;
               
-              ctx.fillText(username, targetWidth / 2, textY);
+              ctx.fillText(username, (targetWidth / 2) / 1.2, textY);
+              ctx.restore();
               
               // Reset shadow
               ctx.shadowColor = 'transparent';

@@ -5,7 +5,7 @@ import { validateUserSequence, recordPuzzleAttempt } from '@/utilities/dailyPuzz
 export async function POST(request) {
   try {
     // Verify user is authenticated
-    const { userId } = auth();
+    const { userId } = await auth();
     
     if (!userId) {
       return NextResponse.json(
@@ -76,7 +76,7 @@ export async function POST(request) {
 // Optional: GET endpoint to check if user has completed today's puzzle
 export async function GET() {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     
     if (!userId) {
       return NextResponse.json(

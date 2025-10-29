@@ -115,6 +115,7 @@ export default function Gallery3Page() {
   
   // Handle puzzle sequence completion
   const handlePuzzleSequenceComplete = useCallback((sequence) => {
+    console.log('Puzzle sequence completed, setting:', sequence);
     setPuzzleSequence(sequence);
     // The sequence will be used by Gallery3Scene to trigger CoinStream
     // when the user clicks the symbols in the correct order
@@ -249,7 +250,7 @@ export default function Gallery3Page() {
           color: "#ffffff",
           cursor: "pointer"
         }}>
-          <Link href="/home" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link href="/home3" style={{ textDecoration: 'none', color: 'inherit' }}>
             RL80
           </Link>
           {/* Shadow copies */}
@@ -693,7 +694,7 @@ export default function Gallery3Page() {
           setShowCandleModal(true);
         }
       }}>
-        <BuyTokenFAB is80sMode={is80sMode} />
+        {/* <BuyTokenFAB is80sMode={is80sMode} /> */}
       </div>
       
       {/* Hidden sign in button */}

@@ -18,7 +18,7 @@ import CoinLoader from '@/components/CoinLoader';
 import MemoryMonitor from '@/components/MemoryMonitor';
 import TradingOverlay from '@/components/TradingOverlay';
 import { useTradingBot } from '@/hooks/useTradingBot';
-import PolaroidSnapshot from '@/components/PolaroidSnapshot';
+// import PolaroidSnapshot from '@/components/PolaroidSnapshot';
 
 
 export default function CyborgTemple() {
@@ -522,7 +522,7 @@ export default function CyborgTemple() {
         )}
 
         {/* Snapshot Button */}
-        <button
+        {/* <button
           onClick={() => setTriggerSnapshot(true)}
           style={{
             position: "fixed",
@@ -566,15 +566,15 @@ export default function CyborgTemple() {
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
             <circle cx="12" cy="13" r="4"/>
           </svg>
-        </button>
+        </button> */}
 
         {/* Polaroid Snapshot Component */}
-        <PolaroidSnapshot 
+        {/* <PolaroidSnapshot 
           trigger={triggerSnapshot}
           onComplete={() => setTriggerSnapshot(false)}
           captureElementId="temple-canvas"
           label="Temple Captured!"
-        />
+        /> */}
       </div>
     </div>
     </>

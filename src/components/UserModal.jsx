@@ -25,14 +25,13 @@ export function UserModal({ isOpen, onClose, illumin80Status: providedStatus = n
           to { transform: rotate(360deg); }
         }
         @keyframes pulse {
-          0% {
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+          0%, 100% {
+            opacity: 1;
+            box-shadow: 0 0 10px currentColor;
           }
           50% {
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6), 0 0 30px rgba(102, 126, 234, 0.3);
-          }
-          100% {
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            opacity: 0.5;
+            box-shadow: 0 0 20px currentColor;
           }
         }
       `;
@@ -201,136 +200,276 @@ export function UserModal({ isOpen, onClose, illumin80Status: providedStatus = n
       
       <div style={{
         position: 'relative',
-        width: '90%',
-        maxWidth: '1024px',
-        height: '85vh',
-        background: 'linear-gradient(to bottom, #111827, #000000)',
-        borderRadius: '16px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+        width: '95%',
+        maxWidth: '900px',
+        height: '90vh',
+        maxHeight: '700px',
+        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
+        border: '2px solid #00ff00',
+        borderRadius: '0',
+        boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
+        backdropFilter: 'blur(10px)',
         overflow: 'hidden'
       }}>
+        {/* Grid pattern overlay */}
         <div style={{
           position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(to bottom right, rgba(147, 51, 234, 0.1), rgba(59, 130, 246, 0.1))',
-          pointerEvents: 'none'
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `
+            repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(0, 255, 0, 0.02) 2px,
+              rgba(0, 255, 0, 0.02) 4px
+            ),
+            repeating-linear-gradient(
+              90deg,
+              transparent,
+              transparent 2px,
+              rgba(0, 255, 0, 0.02) 2px,
+              rgba(0, 255, 0, 0.02) 4px
+            )
+          `,
+          pointerEvents: 'none',
         }} />
         
         {/* Header */}
         <div style={{
           position: 'relative',
-          padding: '24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+          padding: '16px 24px 24px 24px',
+          borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
+          zIndex: 1
         }}>
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: '16px',
-              padding: '8px',
-              borderRadius: '50%',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-          >
-            <X style={{ width: '20px', height: '20px', color: 'rgba(255, 255, 255, 0.7)' }} />
-          </button>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <img
-              src={user?.imageUrl}
-              alt={user?.fullName || 'User'}
-              style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                border: '2px solid rgba(147, 51, 234, 0.5)'
-              }}
-            />
-            <div>
-              <h2 style={{
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: 'white',
-                margin: 0
+          {/* Top bar with terminal status and buttons */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px',
+            minHeight: '32px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flex: 1
+            }}>
+              <div style={{
+                fontSize: '10px',
+                color: '#00ff00',
+                fontFamily: 'monospace',
+                opacity: 0.7,
+                letterSpacing: '1px'
               }}>
-                {user?.fullName || user?.username || 'User'}
+                [USER.TERMINAL.v3.0]
+              </div>
+              <div style={{
+                display: 'flex',
+                gap: '6px',
+                alignItems: 'center'
+              }}>
+                <span style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#00ff00',
+                  boxShadow: '0 0 8px #00ff00',
+                  animation: 'pulse 2s infinite'
+                }} />
+                <span style={{
+                  fontSize: '9px',
+                  color: '#00ff00',
+                  fontFamily: 'monospace',
+                  opacity: 0.7
+                }}>
+                  CONN
+                </span>
+              </div>
+            </div>
+            
+            {/* Button group */}
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              alignItems: 'center'
+            }}>
+              <button
+                onClick={() => signOut()}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '0',
+                  backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                  border: '1px solid #ff0000',
+                  color: '#ff0000',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '9px',
+                  fontWeight: '500',
+                  fontFamily: 'monospace',
+                  letterSpacing: '1px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
+                  e.currentTarget.style.boxShadow = '0 0 8px rgba(255, 0, 0, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <LogOut style={{ width: '12px', height: '12px' }} />
+                OUT
+              </button>
+              
+              <button
+                onClick={onClose}
+                style={{
+                  padding: '6px',
+                  borderRadius: '0',
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  border: '1px solid #00ff00',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+                  e.target.style.boxShadow = '0 0 8px rgba(0, 255, 0, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              >
+                <X style={{ width: '16px', height: '16px', color: '#00ff00' }} />
+              </button>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative' }}>
+              <img
+                src={user?.imageUrl}
+                alt={user?.fullName || 'User'}
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '0',
+                  border: '2px solid #00ff00',
+                  filter: 'brightness(1.1) contrast(1.2)',
+                  boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)'
+                }}
+              />
+              {/* Corner brackets */}
+              <div style={{
+                position: 'absolute',
+                top: '-2px',
+                left: '-2px',
+                width: '15px',
+                height: '15px',
+                borderTop: '2px solid #ffd700',
+                borderLeft: '2px solid #ffd700',
+              }} />
+              <div style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                width: '15px',
+                height: '15px',
+                borderTop: '2px solid #ffd700',
+                borderRight: '2px solid #ffd700',
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: '-2px',
+                left: '-2px',
+                width: '15px',
+                height: '15px',
+                borderBottom: '2px solid #ffd700',
+                borderLeft: '2px solid #ffd700',
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: '-2px',
+                right: '-2px',
+                width: '15px',
+                height: '15px',
+                borderBottom: '2px solid #ffd700',
+                borderRight: '2px solid #ffd700',
+              }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: '#00ff00',
+                margin: 0,
+                fontFamily: 'monospace',
+                letterSpacing: '1px',
+                textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
+                wordBreak: 'break-word',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                &gt; {user?.fullName || user?.username || 'User'}
               </h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                 {illumin80Status?.isIllumin80 && (
                   <span style={{
-                    fontSize: '12px',
-                    padding: '4px 8px',
-                    background: 'linear-gradient(to right, #f59e0b, #ea580c)',
-                    borderRadius: '9999px',
-                    color: 'white',
-                    fontWeight: '600'
+                    fontSize: '10px',
+                    padding: '3px 6px',
+                    background: 'rgba(255, 215, 0, 0.2)',
+                    border: '1px solid #ffd700',
+                    borderRadius: '0',
+                    color: '#ffd700',
+                    fontWeight: '600',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.5px',
+                    boxShadow: '0 0 8px rgba(255, 215, 0, 0.3)',
+                    whiteSpace: 'nowrap'
                   }}>
-                    Illumin80 Member
+                    [ILLUMIN80]
                   </span>
                 )}
                 {streak > 0 && (
                   <span style={{
-                    fontSize: '12px',
-                    padding: '4px 8px',
-                    background: 'linear-gradient(to right, #3b82f6, #9333ea)',
-                    borderRadius: '9999px',
-                    color: 'white',
+                    fontSize: '10px',
+                    padding: '3px 6px',
+                    background: 'rgba(0, 255, 0, 0.2)',
+                    border: '1px solid #00ff00',
+                    borderRadius: '0',
+                    color: '#00ff00',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '3px',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.5px',
+                    boxShadow: '0 0 8px rgba(0, 255, 0, 0.3)',
+                    whiteSpace: 'nowrap'
                   }}>
-                    <Zap style={{ width: '12px', height: '12px' }} />
-                    {streak} Day Streak
+                    <Zap style={{ width: '10px', height: '10px' }} />
+                    [{streak}D]
                   </span>
                 )}
               </div>
             </div>
           </div>
-          
-          {/* Sign Out Button */}
-          <button
-            onClick={() => signOut()}
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: '60px',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid rgba(239, 68, 68, 0.5)',
-              color: '#ef4444',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
-              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.7)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
-            }}
-          >
-            <LogOut style={{ width: '16px', height: '16px' }} />
-            Sign Out
-          </button>
         </div>
 
         {/* Tabs */}
         <div style={{
           display: 'flex',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+          borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
+          background: 'rgba(0, 0, 0, 0.4)',
+          position: 'relative',
+          zIndex: 1
         }}>
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -345,27 +484,32 @@ export function UserModal({ isOpen, onClose, illumin80Status: providedStatus = n
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  backgroundColor: activeTab === tab.id ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                  backgroundColor: activeTab === tab.id ? 'rgba(0, 255, 0, 0.1)' : 'transparent',
                   borderTop: 'none',
                   borderLeft: 'none',
                   borderRight: 'none',
-                  borderBottom: activeTab === tab.id ? '2px solid #9333ea' : 'none',
-                  color: activeTab === tab.id ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                  borderBottom: activeTab === tab.id ? '2px solid #00ff00' : 'none',
+                  color: activeTab === tab.id ? '#00ff00' : 'rgba(0, 255, 0, 0.6)',
                   transition: 'all 0.2s',
                   cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  fontFamily: 'monospace',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase'
                 }}
                 onMouseEnter={(e) => {
                   if (activeTab !== tab.id) {
-                    e.target.style.color = 'white';
-                    e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                    e.target.style.color = '#00ff00';
+                    e.target.style.backgroundColor = 'rgba(0, 255, 0, 0.05)';
+                    e.target.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.2)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (activeTab !== tab.id) {
-                    e.target.style.color = 'rgba(255, 255, 255, 0.6)';
+                    e.target.style.color = 'rgba(0, 255, 0, 0.6)';
                     e.target.style.backgroundColor = 'transparent';
+                    e.target.style.boxShadow = 'none';
                   }
                 }}
               >
@@ -378,14 +522,45 @@ export function UserModal({ isOpen, onClose, illumin80Status: providedStatus = n
 
         {/* Content */}
         <div style={{
-          height: 'calc(100% - 160px)',
+          height: 'calc(100% - 200px)',
           overflowY: 'auto',
-          padding: '24px'
+          padding: '16px 24px',
+          position: 'relative',
+          zIndex: 1
         }}>
           {activeTab === 'profile' && <ProfileSection />}
           {activeTab === 'wallet' && <WalletSection balances={walletBalances} loading={loading} />}
           {activeTab === 'achievements' && <AchievementsSection achievements={achievements} loading={loading} illumin80Status={illumin80Status} />}
           {activeTab === 'settings' && <SettingsSection />}
+        </div>
+        
+        {/* Terminal footer */}
+        <div style={{
+          padding: '16px 24px',
+          borderTop: '1px solid rgba(0, 255, 0, 0.3)',
+          background: 'rgba(0, 0, 0, 0.4)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <div style={{
+            fontSize: '10px',
+            color: '#00ff00',
+            fontFamily: 'monospace',
+            opacity: 0.5
+          }}>
+            TERMINAL.SESSION.ID: {Math.random().toString(36).substring(2, 8).toUpperCase()}
+          </div>
+          <div style={{
+            fontSize: '10px',
+            color: '#ffd700',
+            fontFamily: 'monospace',
+            opacity: 0.5
+          }}>
+            AUTHENTICATED.USER.SESSION
+          </div>
         </div>
       </div>
     </div>
@@ -400,10 +575,25 @@ function ProfileSection() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Custom Profile Editor */}
       <div style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '12px',
-        padding: '24px'
+        background: 'rgba(0, 0, 0, 0.6)',
+        border: '2px solid #00ff00',
+        borderRadius: '0',
+        padding: '24px',
+        boxShadow: '0 0 20px rgba(0, 255, 0, 0.2)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
+        {/* Terminal header */}
+        <div style={{
+          fontSize: '12px',
+          color: '#00ff00',
+          fontFamily: 'monospace',
+          marginBottom: '20px',
+          opacity: 0.7,
+          letterSpacing: '2px'
+        }}>
+          [PROFILE.DATA.ACCESS]
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '32px' }}>
           <div style={{ position: 'relative' }}>
             <img
@@ -412,9 +602,11 @@ function ProfileSection() {
               style={{
                 width: '100px',
                 height: '100px',
-                borderRadius: '50%',
-                border: '3px solid rgba(147, 51, 234, 0.5)',
-                cursor: 'pointer'
+                borderRadius: '0',
+                border: '3px solid #00ff00',
+                cursor: 'pointer',
+                filter: 'brightness(1.1) contrast(1.2)',
+                boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)'
               }}
               onClick={() => openUserProfile()}
               title="Click to update profile image"
@@ -427,28 +619,44 @@ function ProfileSection() {
                 right: '0',
                 width: '32px',
                 height: '32px',
-                borderRadius: '50%',
-                backgroundColor: '#9333ea',
-                border: '2px solid #000',
-                color: 'white',
+                borderRadius: '0',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                border: '2px solid #00ff00',
+                color: '#00ff00',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                fontSize: '16px'
+                fontSize: '16px',
+                boxShadow: '0 0 10px rgba(0, 255, 0, 0.5)'
               }}
             >
               ✏️
             </button>
           </div>
           <div style={{ flex: 1 }}>
-            <h3 style={{ color: 'white', fontSize: '24px', marginBottom: '8px' }}>
-              {user?.fullName || user?.username || 'User'}
+            <h3 style={{ 
+              color: '#00ff00', 
+              fontSize: '24px', 
+              marginBottom: '8px',
+              fontFamily: 'monospace',
+              letterSpacing: '1px'
+            }}>
+              &gt; {user?.fullName || user?.username || 'User'}
             </h3>
-            <p style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
+            <p style={{ 
+              color: 'rgba(0, 255, 0, 0.7)', 
+              marginBottom: '8px',
+              fontFamily: 'monospace',
+              fontSize: '14px'
+            }}>
               @{user?.username || 'username'}
             </p>
-            <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+            <p style={{ 
+              color: 'rgba(0, 255, 0, 0.7)',
+              fontFamily: 'monospace',
+              fontSize: '14px'
+            }}>
               {user?.primaryEmailAddress?.emailAddress}
             </p>
           </div>
@@ -456,44 +664,74 @@ function ProfileSection() {
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Username</label>
+            <label style={{ 
+              color: '#00ff00', 
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              letterSpacing: '1px',
+              textTransform: 'uppercase'
+            }}>
+              [USERNAME]
+            </label>
             <div style={{
               marginTop: '4px',
               padding: '12px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px',
-              color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              background: 'rgba(0, 0, 0, 0.4)',
+              borderRadius: '0',
+              color: '#00ff00',
+              border: '1px solid rgba(0, 255, 0, 0.3)',
+              fontFamily: 'monospace',
+              letterSpacing: '1px'
             }}>
-              {user?.username || 'Not set'}
+              &gt; {user?.username || 'Not set'}
             </div>
           </div>
           
           <div>
-            <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Full Name</label>
+            <label style={{ 
+              color: '#00ff00', 
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              letterSpacing: '1px',
+              textTransform: 'uppercase'
+            }}>
+              [FULL.NAME]
+            </label>
             <div style={{
               marginTop: '4px',
               padding: '12px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px',
-              color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              background: 'rgba(0, 0, 0, 0.4)',
+              borderRadius: '0',
+              color: '#00ff00',
+              border: '1px solid rgba(0, 255, 0, 0.3)',
+              fontFamily: 'monospace',
+              letterSpacing: '1px'
             }}>
-              {user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Not set'}
+              &gt; {user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Not set'}
             </div>
           </div>
           
           <div>
-            <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Member Since</label>
+            <label style={{ 
+              color: '#00ff00', 
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              letterSpacing: '1px',
+              textTransform: 'uppercase'
+            }}>
+              [MEMBER.SINCE]
+            </label>
             <div style={{
               marginTop: '4px',
               padding: '12px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px',
-              color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              background: 'rgba(0, 0, 0, 0.4)',
+              borderRadius: '0',
+              color: '#00ff00',
+              border: '1px solid rgba(0, 255, 0, 0.3)',
+              fontFamily: 'monospace',
+              letterSpacing: '1px'
             }}>
-              {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
+              &gt; {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
             </div>
           </div>
         </div>
@@ -504,16 +742,29 @@ function ProfileSection() {
             marginTop: '24px',
             width: '100%',
             padding: '12px',
-            backgroundColor: '#9333ea',
-            color: 'white',
-            borderRadius: '8px',
-            border: 'none',
+            background: 'rgba(0, 0, 0, 0.6)',
+            color: '#00ff00',
+            borderRadius: '0',
+            border: '2px solid #00ff00',
             cursor: 'pointer',
             fontWeight: '600',
-            fontSize: '16px'
+            fontSize: '14px',
+            fontFamily: 'monospace',
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+            transition: 'all 0.2s',
+            boxShadow: '0 0 10px rgba(0, 255, 0, 0.3)'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(0, 255, 0, 0.1)';
+            e.target.style.boxShadow = '0 0 20px rgba(0, 255, 0, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(0, 0, 0, 0.6)';
+            e.target.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.3)';
           }}
         >
-          Edit Profile Details
+          [EDIT.PROFILE.DETAILS]
         </button>
       </div>
     </div>

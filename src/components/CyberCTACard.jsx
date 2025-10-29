@@ -32,7 +32,7 @@ export default function CyberCTACard({
       gradientEnd: '#00ff88',
       statusText: '[LIVE_MARKET]',
       statusColor: '#00ff00',
-      bgGradient: 'rgba(0, 0, 0, 0.9), rgba(0, 20, 0, 0.8)',
+      bgGradient: 'rgba(0, 0, 0, 0.6), rgba(0, 20, 0, 0.5)',
     },
     stake: {
       borderColor: '#ffd700',
@@ -41,7 +41,7 @@ export default function CyberCTACard({
       gradientEnd: '#00ff00',
       statusText: '[VAULT_SECURED]',
       statusColor: '#ffd700',
-      bgGradient: 'rgba(20, 15, 0, 0.9), rgba(0, 20, 0, 0.8)',
+      bgGradient: 'rgba(0, 0, 0, 0.6), rgba(0, 20, 0, 0.5)',
     }
   };
 
@@ -171,7 +171,7 @@ export default function CyberCTACard({
       {/* Button/Title */}
       <div 
         style={{
-          padding: isMobile ? '10px 25px' : '12px 30px',
+          padding: isMobile ? '10px 15px' : '12px 20px',
           marginBottom: '20px',
           fontSize: isMobile ? '18px' : '20px',
           fontWeight: 'bold',

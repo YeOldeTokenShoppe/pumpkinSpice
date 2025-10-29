@@ -840,6 +840,8 @@ export default function HandsGLTFScene({ onLoadComplete }) {
         
         <OrbitControls 
           enableZoom={false}
+          // autoRotate
+          // autoRotateSpeed={0.8}
           enablePan={false}
           maxPolarAngle={0}
           minPolarAngle={Math.PI / 2}

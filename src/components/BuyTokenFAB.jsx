@@ -147,7 +147,7 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
         position: "fixed",
         bottom: isMobile ? "6rem" : "8rem",
         left: isMobile ? "50%" : "auto",
-        right: isMobile ? "auto" : "2rem",
+        right: isMobile ? "auto" : "rem",
         transform: isMobile ? "translateX(-50%)" : "none",
         zIndex: 1200
       }}
@@ -216,7 +216,7 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
         </div>
 
       {/* Pulse animation for attention */}
-      {!isHovered && (
+      {/* {!isHovered && (
         <div
           style={{
             position: "absolute",
@@ -233,7 +233,7 @@ const BuyTokenFAB = ({ is80sMode = false }) => {
             pointerEvents: "none"
           }}
         />
-      )}
+      )} */}
 
       {/* Sparkle container */}
       <div 

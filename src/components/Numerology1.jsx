@@ -406,11 +406,13 @@ const Numerology1 = ({ isMobile = false }) => {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'flex-end',
-                        // margin: '0 auto',
+                        margin: '0 auto',
+                        // paddingTop: '30px',
+
                         width: '100%',
                         maxWidth: '600px',
-                        height: effectiveIsMobile ? '60vh' : '70vh',
-                        minHeight: effectiveIsMobile ? '400px' : '500px',
+                        height: effectiveIsMobile ? '60vh' : '60vh',
+                        // minHeight: effectiveIsMobile ? '500px' : '500px',
                         borderRadius: '1em',
                         transform: 'scale(1)',
                         transformOrigin: 'center center',
@@ -479,7 +481,7 @@ const Numerology1 = ({ isMobile = false }) => {
                           justifyContent: "center",
                           alignItems: "center",
                           zIndex: "2",
-                          marginBottom: effectiveIsMobile ? '20px' : '40px',
+                          marginBottom: effectiveIsMobile ? '0px' : '0px',
                         }}
                       >
                         {clientSideReady && (
@@ -491,10 +493,10 @@ const Numerology1 = ({ isMobile = false }) => {
                             }}
                           >
                             <Suspense fallback={null}>
-                              <ambientLight intensity={0.5} />
-                              <spotLight position={[1, 4, 1]} angle={0.8} penumbra={1} intensity={12}/>
-                              <pointLight position={[-1, 0, 2]} color="#ffd700" intensity={1} />
-                              <pointLight position={[1, 0, 2]} color="#ffd700" intensity={0.6} /> 
+                              <ambientLight intensity={0.4} />
+                              <spotLight position={[1, 4, 1]} angle={0.8} penumbra={0.1} intensity={18}/>
+                              <pointLight position={[-1, 0, 2]} color="#ffd700" intensity={1.2} />
+                              <pointLight position={[1, 0, 2]} color="#ffd700" intensity={1.2} /> 
                               <Model 
                                 url="/models/holyGrail.glb"
                                 scale={effectiveIsMobile ? 0.45 : .45}

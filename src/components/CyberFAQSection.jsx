@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
+import SkewedHeading from '@/components/SkewedHeading';
 
 export default function CyberFAQSection({ isMobile = false }) {
   const sectionRef = useRef(null);
@@ -16,7 +17,7 @@ export default function CyberFAQSection({ isMobile = false }) {
       id: 'QUERY_001',
       command: '> QUERY: Product.Information',
       title: 'Product Information',
-      response: `ACCESSING DATABASE... 
+      response: ` ACCESSING DATABASE... 
       
 Our flagship protocol combines cutting-edge DeFi technology with divine inspiration. Built on immutable smart contracts, it offers unparalleled staking rewards and community governance.
 
@@ -30,7 +31,7 @@ Key features include:
       id: 'QUERY_002', 
       command: '> QUERY: Shipping.Details',
       title: 'Shipping Details',
-      response: `LOADING LOGISTICS MODULE...
+      response: ` LOADING LOGISTICS MODULE...
 
 Digital assets are delivered instantly to your wallet address. No physical shipping required. 
 
@@ -45,7 +46,7 @@ Transaction details:
       id: 'QUERY_003',
       command: '> QUERY: Return.Policy',
       title: 'Return Policy',
-      response: `ACCESSING TERMS OF SERVICE...
+      response: ` ACCESSING TERMS OF SERVICE...
 
 All transactions are final and immutable on the blockchain. However, our Lady provides spiritual returns that are infinite.
 
@@ -59,7 +60,7 @@ Policy highlights:
       id: 'QUERY_004',
       command: '> QUERY: Payment.Options',
       title: 'Payment Options',
-      response: `INITIALIZING PAYMENT GATEWAY...
+      response: ` INITIALIZING PAYMENT GATEWAY...
 
 Accepted currencies:
 • ETH (Ethereum)
@@ -72,7 +73,7 @@ Accepted currencies:
       id: 'QUERY_005',
       command: '> QUERY: Warranty.Information',
       title: 'Warranty Information',
-      response: `LOADING WARRANTY PROTOCOL...
+      response: ` LOADING WARRANTY PROTOCOL...
 
 Smart contracts are audited and verified. Your investment is protected by:
 • Multi-sig treasury
@@ -85,7 +86,7 @@ Smart contracts are audited and verified. Your investment is protected by:
       id: 'QUERY_006',
       command: '> QUERY: Customer.Support',
       title: 'Customer Support',
-      response: `CONNECTING TO SUPPORT NETWORK...
+      response: ` CONNECTING TO SUPPORT NETWORK...
 
 Available channels:
 • Discord: 24/7 community support
@@ -114,13 +115,13 @@ Response time: < 2 hours during US market hours`,
     
     const typeInterval = setInterval(() => {
       if (charIndex < text.length) {
-        setTypedText(prev => prev + text[charIndex]);
+        setTypedText(text.substring(0, charIndex + 1));
         charIndex++;
       } else {
         clearInterval(typeInterval);
         setIsTyping(false);
       }
-    }, 10); // Fast typing speed for cyber effect
+    }, 20); // Slightly slower for better reliability
 
     return () => clearInterval(typeInterval);
   };
@@ -152,7 +153,7 @@ Response time: < 2 hours during US market hours`,
       }}
     >
       <div style={{
-        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(0, 20, 0, 0.9))',
+        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
         border: '2px solid #00ff00',
         borderRadius: '0',
         padding: isMobile ? '20px 15px' : '30px',
@@ -236,22 +237,13 @@ Response time: < 2 hours during US market hours`,
             </div>
           </div>
           
-          <h1 style={{
-            fontSize: isMobile ? '2.5rem' : '3.5rem',
-            fontWeight: 'bold',
-            margin: 0,
-            textAlign: 'center',
-            fontFamily: 'monospace',
-            textTransform: 'uppercase',
-            letterSpacing: '4px',
-            background: 'linear-gradient(135deg, #ffd700, #00ff00)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            textShadow: '0 0 30px rgba(0, 255, 0, 0.5)',
-          }}>
-            FAQ::TERMINAL
-          </h1>
+   <SkewedHeading 
+      lines={["FAQ::TERMINAL"]}
+      // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+          colors={["#00ff00"]}
+      fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+      isMobile={isMobile}
+    />
           
           <div style={{
             textAlign: 'center',
@@ -283,7 +275,7 @@ Response time: < 2 hours during US market hours`,
             <div style={{
               position: 'relative',
               padding: '10px',
-              background: 'rgba(0, 0, 0, 0.8)',
+              background: 'rgba(0, 0, 0, 0.6)',
               border: '2px solid #00ff00',
               borderRadius: '10px',
               overflow: 'hidden'
@@ -326,18 +318,71 @@ Response time: < 2 hours during US market hours`,
                 borderRight: '2px solid #ffd700',
               }} />
               
-              <img 
-                src="/queenOfHearts1.jpg"
-                  // src="/images/face.png"
-                alt="Our Lady - Divine Oracle" 
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  borderRadius: '5px',
-                  filter: 'brightness(1.1) contrast(1.1)',
-                  boxShadow: '0 0 30px rgba(255, 215, 0, 0.3), 0 0 60px rgba(0, 255, 0, 0.2)',
-                }}
-              />
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                borderRadius: '5px',
+                overflow: 'hidden'
+              }}>
+                <img 
+                  src="/queenOfHearts1.jpg"
+                  alt="Our Lady - Divine Oracle" 
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    borderRadius: '5px',
+                    filter: 'brightness(1.2) contrast(1.3) saturate(1.2) drop-shadow(2px 0px 0px rgba(255, 0, 100, 0.5)) drop-shadow(-2px 0px 0px rgba(0, 255, 255, 0.5))',
+                    boxShadow: '0 0 30px rgba(255, 215, 0, 0.3), 0 0 60px rgba(0, 255, 0, 0.2)',
+                    animation: 'transmissionGlitch1 3.7s infinite linear, transmissionGlitch2 5.3s infinite linear, transmissionGlitch3 7.1s infinite linear'
+                  }}
+                />
+                
+                {/* Transmission interference lines */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: `
+                    repeating-linear-gradient(
+                      0deg,
+                      transparent 0px,
+                      transparent 2px,
+                      rgba(0, 255, 0, 0.02) 2px,
+                      rgba(0, 255, 0, 0.02) 4px
+                    )
+                  `,
+                  animation: 'scanlines 0.1s infinite linear',
+                  pointerEvents: 'none',
+                  zIndex: 2
+                }} />
+                
+                {/* Signal disruption bars */}
+                <div style={{
+                  position: 'absolute',
+                  top: '20%',
+                  left: 0,
+                  right: 0,
+                  height: '2px',
+                  background: 'rgba(255, 255, 255, 0.8)',
+                  animation: 'signalBar1 4.2s infinite linear, signalBarRandom1 6.8s infinite linear',
+                  pointerEvents: 'none',
+                  zIndex: 3
+                }} />
+                
+                <div style={{
+                  position: 'absolute',
+                  top: '60%',
+                  left: 0,
+                  right: 0,
+                  height: '1px',
+                  background: 'rgba(0, 255, 255, 0.6)',
+                  animation: 'signalBar2 7.4s infinite linear, signalBarRandom2 9.1s infinite linear',
+                  pointerEvents: 'none',
+                  zIndex: 3
+                }} />
+              </div>
               
               {/* Holographic overlay effect */}
               <div style={{
@@ -401,8 +446,8 @@ Response time: < 2 hours during US market hours`,
                   style={{
                     padding: '15px',
                     background: activeQuery === index 
-                      ? 'rgba(0, 255, 0, 0.1)' 
-                      : 'rgba(0, 0, 0, 0.6)',
+                      ? 'rgba(0, 255, 0, 0.15)' 
+                      : 'rgba(0, 0, 0, 0.4)',
                     border: activeQuery === index 
                       ? '2px solid #00ff00' 
                       : '1px solid rgba(0, 255, 0, 0.3)',
@@ -568,6 +613,69 @@ Response time: < 2 hours during US market hours`,
             transform: translateX(100%);
           }
         }
+        
+        @keyframes transmissionGlitch1 {
+          0%, 97%, 100% { opacity: 1; }
+          98% { opacity: 0.4; }
+          99% { opacity: 0.8; }
+        }
+        
+        @keyframes transmissionGlitch2 {
+          0%, 92%, 100% { 
+            filter: brightness(1.2) contrast(1.3) saturate(1.2) drop-shadow(2px 0px 0px rgba(255, 0, 100, 0.5)) drop-shadow(-2px 0px 0px rgba(0, 255, 255, 0.5));
+          }
+          93% { 
+            filter: brightness(1.8) contrast(2.0) saturate(2.0) drop-shadow(6px 0px 0px rgba(255, 0, 100, 1.0)) drop-shadow(-6px 0px 0px rgba(0, 255, 255, 1.0));
+          }
+          94% { 
+            filter: brightness(0.8) contrast(0.9) saturate(0.5) drop-shadow(1px 0px 0px rgba(255, 0, 100, 0.2)) drop-shadow(-1px 0px 0px rgba(0, 255, 255, 0.2));
+          }
+          95% { 
+            filter: brightness(1.6) contrast(1.8) saturate(1.8) drop-shadow(4px 0px 0px rgba(255, 0, 100, 0.8)) drop-shadow(-4px 0px 0px rgba(0, 255, 255, 0.8));
+          }
+        }
+        
+        @keyframes transmissionGlitch3 {
+          0%, 88%, 100% { transform: translateX(0px); }
+          // 89% { transform: translateX(2px); }
+          // 90% { transform: translateX(-1px); }
+          // 91% { transform: translateX(1px); }
+          // 92% { transform: translateX(0px); }
+        }
+        
+        @keyframes scanlines {
+          0% { transform: translateY(0px); }
+          100% { transform: translateY(4px); }
+        }
+        
+        @keyframes signalBar1 {
+          0%, 94%, 100% { opacity: 0; }
+          95% { opacity: 0.8; transform: translateX(20%); }
+          96% { opacity: 0.6; transform: translateX(-10%); }
+          97% { opacity: 0; }
+        }
+        
+        @keyframes signalBarRandom1 {
+          0%, 83%, 100% { opacity: 0; }
+          84% { opacity: 1; transform: translateX(-25%); }
+          85% { opacity: 0.5; transform: translateX(15%); }
+          86% { opacity: 0; }
+        }
+        
+        @keyframes signalBar2 {
+          0%, 91%, 100% { opacity: 0; }
+          92% { opacity: 0.7; transform: translateY(-2px); }
+          93% { opacity: 0.3; transform: translateY(1px); }
+          94% { opacity: 0; }
+        }
+        
+        @keyframes signalBarRandom2 {
+          0%, 79%, 100% { opacity: 0; }
+          80% { opacity: 0.9; transform: translateY(-4px); }
+          81% { opacity: 0.4; transform: translateY(2px); }
+          82% { opacity: 0; }
+        }
+        
       `}</style>
     </motion.div>
   );

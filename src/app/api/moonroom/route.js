@@ -72,12 +72,12 @@ export async function GET() {
           <!DOCTYPE html>
           <html>
           <head>
+            <meta charset="UTF-8">
             <title>Access Denied - Illumin80 Only</title>
             <style>
               body {
-                background: #1a1a2e;
-                color: #FFD700;
-                font-family: 'UnifrakturCook', serif;
+                background: radial-gradient(ellipse at center, #1a0033 0%, #000011 50%, #000000 100%);
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -85,52 +85,106 @@ export async function GET() {
                 height: 100vh;
                 margin: 0;
                 text-align: center;
+                position: relative;
+                overflow: hidden;
               }
+              
+              .bg-effects {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: radial-gradient(circle at 20% 80%, rgba(255, 0, 128, 0.2) 0%, transparent 50%),
+                           radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.2) 0%, transparent 50%),
+                           radial-gradient(circle at 40% 40%, rgba(139, 0, 255, 0.15) 0%, transparent 50%);
+                animation: pulse 8s ease-in-out infinite;
+                pointer-events: none;
+              }
+              
               h1 { 
-                font-size: 3rem; 
-                text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+                background: linear-gradient(135deg, #FF0080, #8B00FF);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                font-size: 3.5rem;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 4px;
                 margin-bottom: 1rem;
+                filter: drop-shadow(0 0 30px rgba(255, 0, 128, 0.6));
+                z-index: 1;
+                position: relative;
               }
+              
               p { 
                 color: #00FFFF; 
-                font-size: 1.2rem;
-                margin-bottom: 2rem;
+                font-size: 1.3rem;
+                margin-bottom: 1.5rem;
+                text-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+                letter-spacing: 1px;
+                z-index: 1;
+                position: relative;
               }
+              
               .icon {
                 font-size: 5rem;
-                animation: pulse 2s infinite;
+                animation: spin 3s linear infinite;
+                filter: drop-shadow(0 0 25px #8B00FF) drop-shadow(0 0 40px #00FFFF);
+                z-index: 1;
+                position: relative;
+                margin-bottom: 2rem;
               }
+              
               @keyframes pulse {
-                0%, 100% { transform: scale(1); opacity: 1; }
-                50% { transform: scale(1.1); opacity: 0.8; }
+                0%, 100% { opacity: 0.6; }
+                50% { opacity: 1; }
               }
+              
+              @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+              
               a {
-                color: #FFD700;
+                background: linear-gradient(135deg, #FF0080, #8B00FF);
+                color: #FFFFFF;
                 text-decoration: none;
                 font-size: 1.2rem;
-                border: 2px solid #FFD700;
-                padding: 10px 20px;
-                border-radius: 5px;
+                font-weight: bold;
+                padding: 15px 40px;
+                border-radius: 50px;
                 transition: all 0.3s;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                box-shadow: 0 0 30px rgba(255, 0, 128, 0.5), 0 0 50px rgba(139, 0, 255, 0.3);
+                z-index: 1;
+                position: relative;
+                display: inline-block;
+                margin-top: 2rem;
               }
+              
               a:hover {
-                background: #FFD700;
-                color: #1a1a2e;
+                transform: translateY(-3px) scale(1.05);
+                box-shadow: 0 0 40px rgba(255, 0, 128, 0.7), 0 0 60px rgba(139, 0, 255, 0.5);
               }
             </style>
           </head>
           <body>
-            <div class="icon">🔒</div>
+            <div class="bg-effects"></div>
+            <div class="icon">🌙</div>
             <h1>Access Denied</h1>
             <p>The Moon Room is reserved for Illumin80 members only.</p>
             <p>You must be one of the top 80 token burners to enter.</p>
-            <a href="/home">Return to Home</a>
+            <a href="/home3">Return to Sanctuary</a>
           </body>
           </html>
           `,
           { 
             status: 403,
-            headers: { 'Content-Type': 'text/html' }
+            headers: { 
+              'Content-Type': 'text/html; charset=utf-8'
+            }
           }
         );
     }

@@ -141,7 +141,7 @@ export const useDailyPuzzleSequence = () => {
     recordPuzzleComplete,
     refreshSequence: fetchSequence,
     getSequence,
-    isCompletedToday,
+    checkIsCompletedToday: isCompletedToday, // Renamed to avoid conflict
     
     // Utility
     isOffline: puzzleData?.isOffline || false // Indicates if using local-only sequence

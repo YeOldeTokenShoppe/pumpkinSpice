@@ -5,16 +5,18 @@ import PuzzleModal from './PuzzleModal';
 import SymbolReveal from './SymbolReveal';
 import { useDailyPuzzleSequence } from '@/hooks/useDailyPuzzleSequence';
 import { useUser } from '@clerk/nextjs';
+import { DEV_MODE, resetPuzzleForDev } from '@/utilities/dailyPuzzleSequence';
 
 const PuzzleSystem = ({ is80sMode, onSequenceComplete, isVisible = true }) => {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const { 
     sequence: dailySequence, 
     isCompletedToday, 
     attempts,
     loading: sequenceLoading,
     validateSequence,
-    recordPuzzleComplete
+    recordPuzzleComplete,
+    refreshSequence
   } = useDailyPuzzleSequence();
   
   const [puzzles, setPuzzles] = useState([
@@ -27,8 +29,9 @@ const PuzzleSystem = ({ is80sMode, onSequenceComplete, isVisible = true }) => {
   const [revealedSequence, setRevealedSequence] = useState([]);
   const [showSequence, setShowSequence] = useState(false);
   const [localPuzzlesSolved, setLocalPuzzlesSolved] = useState(0);
-  const [showInstructions, setShowInstructions] = useState(true);
-  const [showCompletionMessage, setShowCompletionMessage] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false); // Start hidden
+  const [showCompletionMessage, setShowCompletionMessage] = useState(false); // Start hidden
+  const [isExpanded, setIsExpanded] = useState(false); // Start collapsed
   
   const handlePuzzleClick = (puzzle) => {
     if (puzzle.unlocked && !puzzle.completed) {
@@ -72,8 +75,13 @@ const PuzzleSystem = ({ is80sMode, onSequenceComplete, isVisible = true }) => {
     setActivePuzzle(null);
   };
   
-  // Check if all puzzles are complete
+  // Check if all puzzles are complete (but only for new completions, not reloads)
   useEffect(() => {
+    // Don't show sequence if already completed today (prevents showing on page reload)
+    if (isCompletedToday) {
+      return;
+    }
+    
     const allComplete = puzzles.every(p => p.completed);
     if (allComplete && puzzles[0].symbol) {
       const sequence = puzzles.map(p => p.symbol.section);
@@ -85,27 +93,267 @@ const PuzzleSystem = ({ is80sMode, onSequenceComplete, isVisible = true }) => {
         onSequenceComplete(sequence);
       }
     }
-  }, [puzzles, onSequenceComplete]);
+  }, [puzzles, onSequenceComplete, isCompletedToday]);
   
   // Show already completed message if puzzle was completed today
   useEffect(() => {
-    if (isCompletedToday && !sequenceLoading) {
-      // Reset the UI if already completed
-      setShowSequence(false);
+    console.log('PuzzleSystem state:', {
+      isCompletedToday,
+      sequenceLoading,
+      hasDailySequence: !!dailySequence,
+      dailySequence
+    });
+    
+    if (isCompletedToday && !sequenceLoading && dailySequence) {
+      // Set puzzles to completed state but DON'T show sequence
       setPuzzles([
-        { id: 1, completed: true, symbol: dailySequence?.[0], unlocked: true },
-        { id: 2, completed: true, symbol: dailySequence?.[1], unlocked: true },
-        { id: 3, completed: true, symbol: dailySequence?.[2], unlocked: true }
+        { id: 1, completed: true, symbol: dailySequence[0], unlocked: true },
+        { id: 2, completed: true, symbol: dailySequence[1], unlocked: true },
+        { id: 3, completed: true, symbol: dailySequence[2], unlocked: true }
       ]);
+      // Make sure sequence is not shown when already completed
+      setShowSequence(false);
+      setIsExpanded(false);
+      setShowInstructions(false);
+      setShowCompletionMessage(false);
+    } else if (!isCompletedToday && !sequenceLoading) {
+      // Reset puzzles to initial state when not completed
+      console.log('Resetting puzzles to initial state');
+      setPuzzles([
+        { id: 1, completed: false, symbol: null, unlocked: true },
+        { id: 2, completed: false, symbol: null, unlocked: false },
+        { id: 3, completed: false, symbol: null, unlocked: false }
+      ]);
+      setShowSequence(false);
+      setIsExpanded(false);
+      setRevealedSequence([]);
     }
   }, [isCompletedToday, dailySequence, sequenceLoading]);
   
   if (!isVisible || sequenceLoading) return null;
   
-  // Show sign-in prompt if not signed in
-  if (!isSignedIn) {
+  // Dev Mode Indicator - shows at top of screen when active
+  const devModeIndicator = DEV_MODE && (
+    <div style={{
+      position: 'fixed',
+      top: '5px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '4px 12px',
+      backgroundColor: 'rgba(255, 0, 0, 0.2)',
+      border: '1px solid rgba(255, 0, 0, 0.5)',
+      borderRadius: '4px',
+      color: '#ff6b6b',
+      fontSize: '0.7rem',
+      fontFamily: 'monospace',
+      zIndex: 10001,
+      pointerEvents: 'none'
+    }}>
+      🛠️ DEV MODE
+    </div>
+  );
+  
+  // Handle symbol reveal separately - it's a full-screen modal
+  if (showSequence) {
     return (
       <>
+        {devModeIndicator}
+        <SymbolReveal
+          symbols={revealedSequence}
+          is80sMode={is80sMode}
+          onDismiss={() => {
+            setShowSequence(false);
+            setIsExpanded(false);
+          }}
+        />
+      </>
+    );
+  }
+  
+  // Show just the icon when collapsed
+  if (!isExpanded) {
+    return (
+      <>
+        {devModeIndicator}
+        <button
+        onClick={() => {
+          setIsExpanded(true);
+          // Show appropriate messages when expanding
+          if (isCompletedToday) {
+            setShowCompletionMessage(true);
+          } else {
+            setShowInstructions(true);
+          }
+        }}
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '20px',
+          transform: 'translateY(-50%)',
+          width: '60px',
+          height: '60px',
+          borderRadius: '50%',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          border: `2px solid ${is80sMode ? '#D946EF' : '#8e662b'}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          backdropFilter: 'blur(10px)',
+          transition: 'all 0.3s ease',
+          boxShadow: is80sMode 
+            ? '0 0 20px rgba(217, 70, 239, 0.3)' 
+            : '0 0 20px rgba(141, 102, 43, 0.3)',
+          zIndex: 1000
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+          e.currentTarget.style.boxShadow = is80sMode 
+            ? '0 0 30px rgba(217, 70, 239, 0.5)' 
+            : '0 0 30px rgba(141, 102, 43, 0.5)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+          e.currentTarget.style.boxShadow = is80sMode 
+            ? '0 0 20px rgba(217, 70, 239, 0.3)' 
+            : '0 0 20px rgba(141, 102, 43, 0.3)';
+        }}
+        title="Daily Puzzle Challenge"
+      >
+        <span style={{
+          fontSize: '28px',
+          color: is80sMode ? '#67e8f9' : '#FFD700',
+          textShadow: is80sMode 
+            ? '0 0 10px #67e8f9' 
+            : '0 0 10px #FFD700',
+          animation: 'pulse 2s ease-in-out infinite'
+        }}>
+          {isSignedIn ? '🎮' : '🔒'}
+        </span>
+        {/* New puzzle indicator */}
+        {isSignedIn && !isCompletedToday && (
+          <div style={{
+            position: 'absolute',
+            top: '-5px',
+            right: '-5px',
+            width: '16px',
+            height: '16px',
+            borderRadius: '50%',
+            backgroundColor: '#FF0000',
+            border: '2px solid #000',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        )}
+        </button>
+        
+        {/* Dev Reset Button (visible in collapsed state) */}
+        {DEV_MODE && isSignedIn && (
+          <button
+            onClick={async () => {
+              if (!user?.id) {
+                alert('No user ID available');
+                return;
+              }
+              
+              if (!confirm('Reset puzzle for development testing?')) {
+                return;
+              }
+              
+              try {
+                console.log('Attempting to reset puzzle for user:', user.id);
+                const result = await resetPuzzleForDev(user.id);
+                
+                if (result) {
+                  console.log('Puzzle reset successfully!');
+                  
+                  // Clear local storage
+                  localStorage.removeItem(`puzzle_${user.id}`);
+                  sessionStorage.clear();
+                  
+                  // Immediately refresh the sequence
+                  if (refreshSequence) {
+                    console.log('Refreshing sequence...');
+                    await refreshSequence();
+                  }
+                  
+                  alert('Puzzle reset! The page will refresh in 1 second.');
+                  
+                  // Shorter delay since we're refreshing the data first
+                  setTimeout(() => {
+                    // Force hard reload to bypass cache
+                    window.location.href = window.location.href + '?t=' + Date.now();
+                  }, 1000);
+                } else {
+                  alert('Failed to reset puzzle. Check console for details.');
+                }
+              } catch (error) {
+                console.error('Error resetting puzzle:', error);
+                alert('Error resetting puzzle: ' + error.message);
+              }
+            }}
+            style={{
+              position: 'fixed',
+              top: 'calc(50% + 40px)',
+              left: '20px',
+              transform: 'translateY(-50%)',
+              padding: '8px 12px',
+              backgroundColor: 'rgba(255, 0, 0, 0.2)',
+              border: '1px solid rgba(255, 0, 0, 0.5)',
+              borderRadius: '6px',
+              color: '#ff6b6b',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              zIndex: 1000
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
+            }}
+            title="Reset puzzle for development"
+          >
+            🔧 Reset
+          </button>
+        )}
+      </>
+    );
+  }
+  
+  // Show sign-in prompt if not signed in (but only when expanded)
+  if (!isSignedIn && isExpanded) {
+    return (
+      <>
+        {/* Collapse button */}
+        <button
+          onClick={() => {
+            setIsExpanded(false);
+            setShowInstructions(false);
+            setShowSequence(false);
+          }}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            left: '20px',
+            width: '30px',
+            height: '30px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '16px',
+            zIndex: 1001
+          }}
+          title="Minimize"
+        >
+          ←
+        </button>
+        
         {showInstructions && (
           <div style={{
             position: 'fixed',
@@ -165,10 +413,39 @@ const PuzzleSystem = ({ is80sMode, onSequenceComplete, isVisible = true }) => {
     );
   }
   
-  // Show completion message if already done today
-  if (isCompletedToday) {
+  // Show completion message if already done today (but only when expanded)
+  if (isCompletedToday && isExpanded) {
     return (
       <>
+        {/* Collapse button */}
+        <button
+          onClick={() => {
+            setIsExpanded(false);
+            setShowCompletionMessage(false);
+            setShowSequence(false);
+          }}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            left: '20px',
+            width: '30px',
+            height: '30px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '16px',
+            zIndex: 1001
+          }}
+          title="Minimize"
+        >
+          ←
+        </button>
+        
         {showCompletionMessage && (
           <div style={{
             position: 'fixed',
@@ -230,51 +507,125 @@ const PuzzleSystem = ({ is80sMode, onSequenceComplete, isVisible = true }) => {
             }}>
               Attempts today: {attempts}
             </p>
+            
+            {/* Dev Reset Button */}
+            {DEV_MODE && (
+              <button
+                onClick={async () => {
+                  if (!user?.id) {
+                    alert('No user ID available');
+                    return;
+                  }
+                  
+                  try {
+                    console.log('=== PUZZLE RESET START ===');
+                    console.log('User ID:', user.id);
+                    console.log('Current isCompletedToday:', isCompletedToday);
+                    console.log('Current attempts:', attempts);
+                    
+                    const success = await resetPuzzleForDev(user.id);
+                    console.log('Reset result:', success);
+                    
+                    if (success) {
+                      // Clear local storage in case there's caching
+                      localStorage.removeItem('puzzleState');
+                      sessionStorage.clear();
+                      
+                      // Immediately refresh the sequence
+                      if (refreshSequence) {
+                        console.log('Refreshing sequence...');
+                        await refreshSequence();
+                      }
+                      
+                      alert('Puzzle reset! The page will refresh in 1 second.');
+                      
+                      // Shorter delay since we're refreshing the data first
+                      setTimeout(() => {
+                        // Force hard reload to bypass cache
+                        window.location.href = window.location.href + '?t=' + Date.now();
+                      }, 1000);
+                    } else {
+                      alert('Failed to reset puzzle. Check console for details.');
+                    }
+                  } catch (error) {
+                    console.error('Error resetting puzzle:', error);
+                    alert('Error resetting puzzle: ' + error.message);
+                  }
+                }}
+                style={{
+                  marginTop: '15px',
+                  padding: '8px 16px',
+                  backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                  border: '1px solid rgba(255, 0, 0, 0.5)',
+                  borderRadius: '6px',
+                  color: '#ff6b6b',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
+                }}
+              >
+                🔧 Reset Puzzle (Dev)
+              </button>
+            )}
           </div>
         )}
       </>
     );
   }
   
+  // Main puzzle UI - only show when expanded
   return (
     <>
-      {/* Help Toggle Button - shows when instructions are hidden */}
-      {!showInstructions && !showSequence && (
-        <button
-          onClick={() => setShowInstructions(true)}
-          style={{
-            position: 'fixed',
-            top: '20px',
-            left: '20px',
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            border: `2px solid ${is80sMode ? 'rgba(217, 70, 239, 0.3)' : 'rgba(142, 102, 43, 0.3)'}`,
-            color: is80sMode ? '#67e8f9' : '#8e662b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.3s ease',
-            zIndex: 999
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-          title="Show Instructions"
-        >
-          ?
-        </button>
-      )}
+      {/* Collapse/Help Toggle Button */}
+      <button
+        onClick={() => {
+          if (showInstructions) {
+            setIsExpanded(false);
+            setShowInstructions(false);
+            setShowCompletionMessage(false);
+            setShowSequence(false);
+          } else {
+            setShowInstructions(true);
+          }
+        }}
+        style={{
+          position: 'fixed',
+          top: '20px',
+          left: '20px',
+          width: '30px',
+          height: '30px',
+          borderRadius: '50%',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          border: `1px solid ${is80sMode ? 'rgba(217, 70, 239, 0.3)' : 'rgba(142, 102, 43, 0.3)'}`,
+          color: is80sMode ? '#67e8f9' : '#8e662b',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          backdropFilter: 'blur(10px)',
+          transition: 'all 0.3s ease',
+          zIndex: 1001
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+          e.currentTarget.style.transform = 'scale(1.1)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+        title={showInstructions ? 'Minimize' : 'Show Instructions'}
+      >
+        {showInstructions ? '←' : '?'}
+      </button>
       
       {/* Puzzle Slots Container */}
       <div style={{
@@ -436,14 +787,19 @@ const PuzzleSystem = ({ is80sMode, onSequenceComplete, isVisible = true }) => {
         />
       )}
       
-      {/* Symbol Reveal */}
-      {showSequence && (
-        <SymbolReveal
-          symbols={revealedSequence}
-          is80sMode={is80sMode}
-          onDismiss={() => setShowSequence(false)}
-        />
-      )}
+      {/* CSS Animation for pulse effect */}
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(0.95);
+          }
+        }
+      `}</style>
     </>
   );
 };

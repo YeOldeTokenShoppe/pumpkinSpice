@@ -135,7 +135,8 @@ function ScrollingBreath({ scrollY, isMobile }) {
   
   return (
     <group ref={breathGroupRef} position={isMobile ? [2, -8, -10] : [2, 8, -11]}>
-      <BreathSmoke 
+      {/* Right nostril (from bull's perspective) */}
+           <BreathSmoke 
         name="Left Nostril"
         position={[2.8, 10.6, 25.1]}
         direction={[0.1, -0.3, 2]}
@@ -351,12 +352,13 @@ function ScrollTriggeredTitle({ isMobile }) {
       {/* Introduction Section */}
       <div style={{
     maxWidth: '1200px',
-        margin: '5rem auto 0 auto',
+        margin: '25rem auto 0 auto',
         padding: isMobile ? '30px 20px' : '40px 30px',
-            background: 'rgba(0, 0, 0, 0.2)',
-        borderRadius: '16px',
-        border: '1px solid rgba(255,255,255,0.1)',
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
+        borderRadius: '0',
+        border: '2px solid #00ff00',
         backdropFilter: 'blur(10px)',
+        boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
         textAlign: 'center',
         opacity: titleInView ? 1 : 0,
         transform: titleInView ? 'translateY(0)' : 'translateY(20px)',
@@ -367,19 +369,41 @@ function ScrollTriggeredTitle({ isMobile }) {
         zIndex: 10,
    
       }}>
+        
+        {/* Grid pattern overlay */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `
+            repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(0, 255, 0, 0.02) 2px,
+              rgba(0, 255, 0, 0.02) 4px
+            ),
+            repeating-linear-gradient(
+              90deg,
+              transparent,
+              transparent 2px,
+              rgba(0, 255, 0, 0.02) 2px,
+              rgba(0, 255, 0, 0.02) 4px
+            )
+          `,
+          pointerEvents: 'none',
+        }} />
+
                {/* The Annunciation Heading */}
-        <h1 style={{
-          fontSize: isMobile ? '2rem' : '2.5rem',
-          color: '#d4af37',
-          fontFamily: "'Fjalla One', sans-serif",
-          textAlign: 'center',
-          margin: '0 0 1.5rem 0',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
-          letterSpacing: '2px',
-          textTransform: 'uppercase'
-        }}>
-          The Annunciation
-        </h1>
+              <SkewedHeading 
+    lines={["THE ANNUNCIATION"]}
+    // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+        colors={["#00ff00"]}
+    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+    isMobile={isMobile}
+  />
         <h2 style={{
           fontSize: isMobile ? '1.6rem' : '1.8rem',
           color: '#ffffff',
@@ -397,11 +421,13 @@ function ScrollTriggeredTitle({ isMobile }) {
         <AngelOfCurrencies 
           isMobile={isMobile}
           onLoad={() => console.log('Angel of Currencies loaded for intro')}
-        />
+        />Descending from the Cloud servers comes the Virtual Virgin, the digital manifestation of the icon of intercession, sent to light the way through the dark realm of DeFi.
+           She is the singularity from antiquity - creating smart contracts with maternal wisdom and eternal vigilance - always on and always on your side. 
         She's the mother of memes, aider to traders, fren to degens, and your guide up and to the right.
-    
-          Whether you need a Hail Mary for hard times, or just sanctuary in the dark realm of DeFi,
-         let <b>Our Lady of Perpetual Profit</b> light the way.
+        
+
+          {/* Whether you need a Hail Mary for hard times, or just sanctuary from scams,
+         let <b>Our Lady of Perpetual Profit</b>  */}
         </h2>
         {/* <p style={{
           fontSize: isMobile ? '0.95rem' : '1.1rem',
@@ -533,6 +559,31 @@ function StatsSection({ isMobile }) {
               boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
             }}
           >
+            {/* Grid pattern overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                )
+              `,
+              pointerEvents: 'none',
+            }} />
             {/* Icon */}
             <div
               style={{
@@ -643,6 +694,31 @@ function StatsSection({ isMobile }) {
               boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
             }}
           >
+            {/* Grid pattern overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                )
+              `,
+              pointerEvents: 'none',
+            }} />
             {/* Icon */}
             <div
               style={{
@@ -934,7 +1010,7 @@ export default function CloudTestPage() {
   
   // State for overlay buttons (from home3/page)
   const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : true);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : true);
   const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : true);
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [fontLoaded, setFontLoaded] = useState(false);
@@ -943,7 +1019,6 @@ export default function CloudTestPage() {
   const [emoji, setEmoji] = useState("😇");
   const [scrollY, setScrollY] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [secondTitleInView, setSecondTitleInView] = useState(false);
   const [showNumerology, setShowNumerology] = useState(false);
 
   // Refs
@@ -952,6 +1027,10 @@ export default function CloudTestPage() {
   
   // useInView hooks
   const ctasInView = useInView(ctasRef, { threshold: 0.3, once: true });
+  const secondTitleInView = useInView(secondTitleRef, { 
+    threshold: 0.3, 
+    triggerOnce: false  // Allow re-triggering when scrolling up/down
+  });
 
   // Auth state
   const { isSignedIn } = useUser();
@@ -1026,9 +1105,10 @@ export default function CloudTestPage() {
     const checkDevice = () => {
       const width = window.innerWidth;
       const mobile = width <= 1024; // Increased breakpoint to catch more devices
-      setIsMobile(mobile);
+      const isMobileValue = width <= 768; // 768px breakpoint for isMobile
+      setIsMobile(isMobileValue);
       setIsMobileDevice(mobile);
-      console.log('Mobile detection:', { width, mobile }); // Debug log
+      console.log('Mobile detection:', { width, mobile, isMobileValue }); // Debug log
     };
     
     // Handle scroll events
@@ -1491,7 +1571,7 @@ export default function CloudTestPage() {
           {isSignedIn ? (
             <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
           ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/cloud-test">
+            <SignInButton mode="modal" forceRedirectUrl="/home3">
               <button
                 style={{
                   width: isMobileDevice ? "2.5rem" : "3.75rem",
@@ -1602,6 +1682,7 @@ export default function CloudTestPage() {
             margin: isMobile ? '40px auto' : '60px auto',
             maxWidth: '1200px',
             padding: isMobile ? '0 1.5rem' : '0 2rem',
+            minHeight: '30vh'
           }}
         >
           {/* Buy RL80 Card */}
@@ -1611,7 +1692,7 @@ export default function CloudTestPage() {
             value="$0.0048"
             description="Available on Uniswap"
             icon="💰"
-            onClick={() => window.open('https://app.uniswap.org/swap', '_blank')}
+            onClick={() => window.open('#', '_blank')}
             isMobile={isMobile}
           />
 
@@ -1622,7 +1703,7 @@ export default function CloudTestPage() {
             value="24.5% APY"
             description="Lock your tokens and earn passive rewards daily"
             icon="🔒"
-            onClick={() => window.open('/stake', '_blank')}
+            onClick={() => window.open('#', '_blank')}
             isMobile={isMobile}
           />
         </motion.div>
@@ -1642,16 +1723,42 @@ export default function CloudTestPage() {
           }}
         >
           <div style={{
-            background: 'rgba(0, 0, 0, 0.3)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '30px',
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
+            border: '2px solid #00ff00',
+            borderRadius: '0',
             padding: isMobile ? '30px 20px' : '40px',
             backdropFilter: 'blur(10px)',
-            boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
+            boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
             position: 'relative',
             overflow: 'hidden'
           }}>
             
+            {/* Grid pattern overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                )
+              `,
+              pointerEvents: 'none',
+            }} />
+
             {/* Glow effect */}
             <div style={{
               content: '',
@@ -2099,16 +2206,42 @@ export default function CloudTestPage() {
           }}
         >
           <div style={{
-            background: 'rgba(0, 0, 0, 0.3)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '30px',
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
+            border: '2px solid #00ff00',
+            borderRadius: '0',
             padding: isMobile ? '30px 20px' : '40px',
             backdropFilter: 'blur(10px)',
-            boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
+            boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
             position: 'relative',
             overflow: 'hidden'
           }}>
             
+            {/* Grid pattern overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                )
+              `,
+              pointerEvents: 'none',
+            }} />
+
             {/* Glow effect */}
             <div style={{
               content: '',
@@ -2361,14 +2494,41 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
           pointerEvents: 'auto'
         }}>
           <div style={{
-            background: 'rgba(0, 0, 0, 0.3)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '30px',
-            padding: isMobile ? '30px 20px' : '40px',
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
+            border: '2px solid #00ff00',
+            borderRadius: '0',
+            paddingBottom: isMobile ? '20px' : '0px',
             backdropFilter: 'blur(10px)',
-            boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
+            boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
             position: 'relative'
           }}>
+            
+            {/* Grid pattern overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                )
+              `,
+              pointerEvents: 'none',
+            }} />
+
             <div style={{
               position: "relative",
               display: "grid",
@@ -2407,7 +2567,8 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
               <div style={{
                 padding: '0 1rem',
                 color: '#ffffff',
-                textAlign: 'center'
+                textAlign: 'center',
+                padding: '40px 20px',
               }}>
  <SkewedHeading 
     lines={["THE ILLUMIN80"]}
@@ -2424,12 +2585,13 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                                   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 
                   fontSize: '1.2rem',
+           
                   marginBottom: '1.5rem',
                   lineHeight: 1.6,
                   color: '#ffffff',
                   opacity: 0.9
                 }}>
-                  Part mystery cult, part secret trading guild, The Illumin80 represent the top 8% of stakers and burners — a level that unlocks even more glorious gains. Powerful but not evil.
+                  Part mystery cult, part secret trading guild, The Illumin80 represent the 80th percentile and higher of token holders by amount staked or burned — a level that unlocks even more glorious gains. Powerful but not evil.
                 </p>
                 
                 <ul style={{

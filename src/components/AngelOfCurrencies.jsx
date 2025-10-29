@@ -212,7 +212,7 @@ function AngelOfCurrencies({
         <AngelModel
           position={isMobile ? [0, 0.7, 0] : [0, -1.5, 0]}
           rotation={[0, 0.3, 0]}
-          scale={isMobile ? [5, 5, 5] : [9, 9, 9]}
+          scale={isMobile ? [5, 5, 5] : [8.2, 8.2, 8.2]}
           onLoad={handleModelLoad}
         />
       </Canvas>

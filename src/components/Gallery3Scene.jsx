@@ -632,6 +632,7 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
 
 // Main component following Simple3DScene pattern
 export default function Gallery3Scene({ enabled = false, isMobileView = true, is80sMode = false, onSceneReady, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCoinsWon, puzzleSequence }) {
+  console.log('Gallery3Scene render, puzzleSequence:', puzzleSequence);
   const [mounted, setMounted] = useState(false);
   const [showFloatingViewer, setShowFloatingViewer] = useState(false);
   const [selectedCandleData, setSelectedCandleData] = useState(null);
@@ -643,6 +644,18 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   // Click sequence tracking for coin stream trigger
   const [clickSequence, setClickSequence] = useState([]);
   const [coinTrigger, setCoinTrigger] = useState(0);
+  
+  // Debug effect to track puzzleSequence changes
+  useEffect(() => {
+    console.log('puzzleSequence prop updated in useEffect:', puzzleSequence);
+  }, [puzzleSequence]);
+  
+  // Use a ref to always have the current puzzleSequence value
+  const puzzleSequenceRef = useRef(puzzleSequence);
+  useEffect(() => {
+    puzzleSequenceRef.current = puzzleSequence;
+  }, [puzzleSequence]);
+  
   const [currentCoinReward, setCurrentCoinReward] = useState(0);
   
   // Define multiple sequences with different rewards
@@ -687,21 +700,54 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
   
   // Handle wheel clicks for sequence tracking
   const handleWheelClick = useCallback(async (wheelSectionName) => {
+    console.log('=== WHEEL CLICK DEBUG ===');
     console.log('Wheel section clicked:', wheelSectionName);
     
-    // Check if there's a puzzle sequence to validate
-    if (puzzleSequence && puzzleSequence.length > 0) {
+    // Log which symbol this section represents
+    const symbolMap = {
+      'wheel_section': '🌹 Rose',
+      'wheel_section001': '🔒 Lock', 
+      'wheel_section002': '⏳ Hourglass',
+      'wheel_section003': '🦉 Owl',
+      'wheel_section004': '❤️‍🔥 Burning Heart',
+      'wheel_section005': '♾️ Infinity',
+      'wheel_section006': '👁️ Illuminati Eye',
+      'wheel_section007': '🔺 Sacred Geometry',
+      'wheel_section008': '🐱 Lucky Cat',
+      'wheel_section009': '♍ Virgo',
+      'wheel_section010': '🎱 8-Ball',
+      'wheel_section011': '📿 Rosary Beads',
+      'wheel_section012': '🚀 Rocket',
+      'wheel_section013': '🕸️ Spiderweb',
+      'wheel_section014': '🐂 Bull',
+      'wheel_section015': '🕯️ Candle'
+    };
+    console.log('You clicked:', symbolMap[wheelSectionName] || wheelSectionName);
+    console.log('Expected puzzle sequence (from ref):', puzzleSequenceRef.current);
+    
+    // Check if there's a puzzle sequence to validate - use ref for current value
+    const currentPuzzleSequence = puzzleSequenceRef.current;
+    if (currentPuzzleSequence && currentPuzzleSequence.length > 0) {
+      
       setClickSequence(prevSequence => {
         const newSequence = [...prevSequence, wheelSectionName];
+        console.log('Full click history:', newSequence);
         
         // Check if the sequence matches the puzzle sequence
-        const requiredLength = puzzleSequence.length;
+        const requiredLength = currentPuzzleSequence.length;
         let checkSequence = newSequence.slice(-requiredLength);
+        console.log('Last', requiredLength, 'clicks:', checkSequence);
+        console.log('Expected sequence:', currentPuzzleSequence);
+        console.log('Match check:', checkSequence.map((click, idx) => ({
+          clicked: click,
+          expected: currentPuzzleSequence[idx],
+          matches: click === currentPuzzleSequence[idx]
+        })));
         
         if (checkSequence.length === requiredLength &&
-            checkSequence.every((click, index) => click === puzzleSequence[index])) {
+            checkSequence.every((click, index) => click === currentPuzzleSequence[index])) {
           
-          console.log(`✨ Puzzle sequence completed! Validating with server...`);
+          console.log(`✨ Puzzle sequence MATCHED! Validating with server...`);
           
           // Validate with the server to prevent cheating
           fetch('/api/validate-puzzle', {
@@ -782,7 +828,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
         return newSequence;
       });
     }
-  }, [puzzleSequences, puzzleSequence]);
+  }, [puzzleSequences]);
   
   useEffect(() => {
     // Delay mounting to avoid conflicts (from Simple3DScene)

@@ -82,7 +82,7 @@ export default function MoonRoomPage() {
           background: `
             radial-gradient(circle at 20% 80%, rgba(255, 0, 128, 0.2) 0%, transparent 50%),
             radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.2) 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, rgba(255, 255, 0, 0.15) 0%, transparent 50%)
+            radial-gradient(circle at 40% 40%, rgba(139, 0, 255, 0.15) 0%, transparent 50%)
           `,
           animation: 'pulse 8s ease-in-out infinite',
           pointerEvents: 'none'
@@ -91,7 +91,7 @@ export default function MoonRoomPage() {
         <div style={{ 
           fontSize: '80px', 
           animation: 'spin 3s linear infinite',
-          filter: 'drop-shadow(0 0 30px #FFFF00) drop-shadow(0 0 60px #FF00FF)',
+          filter: 'drop-shadow(0 0 25px #8B00FF) drop-shadow(0 0 40px #00FFFF)',
           zIndex: 1
         }}>
           🌙
@@ -99,7 +99,7 @@ export default function MoonRoomPage() {
         
         <div style={{ 
           marginTop: '30px',
-          background: 'linear-gradient(90deg, #FF0080, #FFFF00, #00FFFF, #FF00FF)',
+          background: 'linear-gradient(135deg, #FF0080, #8B00FF)',
           backgroundClip: 'text',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -141,8 +141,8 @@ export default function MoonRoomPage() {
                 width: '15px',
                 height: '15px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #FF0080, #00FFFF)',
-                boxShadow: '0 0 20px rgba(255, 0, 128, 0.6)',
+                background: 'linear-gradient(135deg, #8B00FF, #00FFFF)',
+                boxShadow: '0 0 20px rgba(139, 0, 255, 0.5)',
                 animation: `bounce 1.4s ease-in-out ${i * 0.2}s infinite`
               }}
             />
@@ -307,7 +307,7 @@ export default function MoonRoomPage() {
               left: '-2px',
               right: '-2px',
               bottom: '-2px',
-              background: 'linear-gradient(45deg, #FF0080, #00FFFF, #FFFF00, #FF00FF, #FF0080)',
+              background: 'linear-gradient(45deg, #FF0080, #8B00FF, #00FFFF, #FF0080)',
               backgroundSize: '400% 400%',
               animation: 'gradient 10s ease infinite',
               borderRadius: '20px',
@@ -315,7 +315,7 @@ export default function MoonRoomPage() {
             }} />
             
             <h2 style={{
-              background: 'linear-gradient(90deg, #FF0080, #FFFF00, #00FFFF)',
+              background: 'linear-gradient(90deg, #FF0080, #00FFFF)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -333,7 +333,7 @@ export default function MoonRoomPage() {
             
             <div style={{
               background: 'linear-gradient(135deg, rgba(255, 0, 128, 0.1), rgba(0, 255, 255, 0.1))',
-              border: '1px solid rgba(255, 255, 0, 0.3)',
+              border: '1px solid rgba(139, 0, 255, 0.3)',
               borderRadius: '15px',
               padding: '1.5rem',
               marginBottom: '1.5rem',
@@ -341,7 +341,7 @@ export default function MoonRoomPage() {
               boxShadow: 'inset 0 0 30px rgba(255, 0, 255, 0.1)'
             }}>
               <h3 style={{ 
-                background: 'linear-gradient(90deg, #00FFFF, #FF00FF)',
+                background: 'linear-gradient(90deg, #00FFFF, #8B00FF)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -351,11 +351,11 @@ export default function MoonRoomPage() {
                 letterSpacing: '1px'
               }}>Instructions:</h3>
               <ul style={{ color: '#00FFFF', fontSize: '1rem', lineHeight: '2', textShadow: '0 0 10px rgba(0, 255, 255, 0.5)' }}>
-                <li><span style={{ color: '#FFFF00', filter: 'drop-shadow(0 0 10px #FFFF00)' }}>🎯</span> Click to shoot projectiles</li>
+                <li><span style={{ color: '#FF0080', filter: 'drop-shadow(0 0 10px #FF0080)' }}>🎯</span> Click to shoot projectiles</li>
                 <li><span style={{ color: '#FF00FF', filter: 'drop-shadow(0 0 10px #FF00FF)' }}>🔄</span> Hold mouse down to rotate the room</li>
                 <li><span style={{ color: '#00FFFF', filter: 'drop-shadow(0 0 10px #00FFFF)' }}>🌙</span> Hold Shift + mouse to grab and move moons</li>
                 <li><span style={{ color: '#FF0080', filter: 'drop-shadow(0 0 10px #FF0080)' }}>💬</span> Chat with fellow Illumin80 members in real-time</li>
-                <li><span style={{ color: '#FFFF00', filter: 'drop-shadow(0 0 10px #FFFF00)' }}>🎮</span> Press F for fullscreen mode</li>
+                <li><span style={{ color: '#8B00FF', filter: 'drop-shadow(0 0 10px #8B00FF)' }}>🎮</span> Press F for fullscreen mode</li>
               </ul>
             </div>
             
@@ -368,7 +368,7 @@ export default function MoonRoomPage() {
                 onClick={() => setShowModal(false)}
                 style={{
                   padding: '1rem 2.5rem',
-                  background: 'linear-gradient(135deg, #FF0080, #FFFF00, #00FFFF)',
+                  background: 'linear-gradient(135deg, #FF0080, #00FFFF)',
                   color: '#000000',
                   border: 'none',
                   borderRadius: '50px',
@@ -488,26 +488,26 @@ export default function MoonRoomPage() {
           onClick={() => setShowModal(true)}
           style={{
             padding: '0.75rem 1.25rem',
-            background: 'rgba(255, 255, 0, 0.05)',
-            color: '#FFFF00',
-            border: '1px solid rgba(255, 255, 0, 0.5)',
+            background: 'rgba(139, 0, 255, 0.05)',
+            color: '#8B00FF',
+            border: '1px solid rgba(139, 0, 255, 0.4)',
             borderRadius: '30px',
             cursor: 'pointer',
             fontSize: '0.95rem',
             transition: 'all 0.3s ease',
-            textShadow: '0 0 10px rgba(255, 255, 0, 0.5)',
-            boxShadow: 'inset 0 0 20px rgba(255, 255, 0, 0.1)'
+            textShadow: '0 0 10px rgba(139, 0, 255, 0.5)',
+            boxShadow: 'inset 0 0 20px rgba(139, 0, 255, 0.1)'
           }}
           onMouseEnter={(e) => {
-            e.target.style.backgroundColor = 'rgba(255, 255, 0, 0.2)';
-            e.target.style.borderColor = '#FFFF00';
-            e.target.style.boxShadow = '0 0 25px rgba(255, 255, 0, 0.6), inset 0 0 20px rgba(255, 255, 0, 0.2)';
+            e.target.style.backgroundColor = 'rgba(139, 0, 255, 0.2)';
+            e.target.style.borderColor = '#8B00FF';
+            e.target.style.boxShadow = '0 0 25px rgba(139, 0, 255, 0.6), inset 0 0 20px rgba(139, 0, 255, 0.2)';
             e.target.style.transform = 'scale(1.05)';
           }}
           onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'rgba(255, 255, 0, 0.05)';
-            e.target.style.borderColor = 'rgba(255, 255, 0, 0.5)';
-            e.target.style.boxShadow = 'inset 0 0 20px rgba(255, 255, 0, 0.1)';
+            e.target.style.backgroundColor = 'rgba(139, 0, 255, 0.05)';
+            e.target.style.borderColor = 'rgba(139, 0, 255, 0.4)';
+            e.target.style.boxShadow = 'inset 0 0 20px rgba(139, 0, 255, 0.1)';
             e.target.style.transform = 'scale(1)';
           }}
         >

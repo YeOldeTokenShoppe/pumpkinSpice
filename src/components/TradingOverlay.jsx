@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 const TradingOverlay = ({ show = false, data = null, isConnected = false, tradingMode = 'DEMO', onModeChange }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
-  const [activeTab, setActiveTab] = useState('stats'); // for mobile view
+  const [activeTab, setActiveTab] = useState(null); // for mobile view - start with no tab selected
+  const [desktopPositionsTab, setDesktopPositionsTab] = useState('positions'); // for desktop tabbed interface
+  const [showMobileMenu, setShowMobileMenu] = useState(false); // for mobile menu display
   const [showModeConfirm, setShowModeConfirm] = useState(false);
   const [pendingMode, setPendingMode] = useState(null);
   
@@ -169,65 +171,202 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
     setPendingMode(null);
   };
 
-  // Mobile and Tablet view - tabbed interface
+  // Mobile and Tablet view - side flyout interface
   if ((isMobile || isTablet) && show) {
     return (
       <>
-        {/* Mobile Tab Navigation */}
-        <div style={{
-          position: 'fixed',
-          top: '80px',
-          left: '10px',
-          right: '10px',
-          display: 'flex',
-          gap: '5px',
-          zIndex: 10000,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          padding: '5px',
-          borderRadius: '8px',
-          border: '1px solid rgba(0, 255, 0, 0.3)'
-        }}>
-          {['stats', 'macro', 'positions', 'trades'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+        {/* Floating Menu Button */}
+        {!showMobileMenu && !activeTab && (
+          <button
+            onClick={() => setShowMobileMenu(true)}
+            style={{
+              position: 'fixed',
+              left: '20px',
+              bottom: '20px',
+              width: '60px',
+              height: '60px',
+              background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.9) 0%, rgba(0, 150, 0, 0.7) 100%)',
+              border: '2px solid #00ff00',
+              borderRadius: '50%',
+              color: '#000',
+              fontSize: '24px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 0 25px rgba(0, 255, 0, 0.6)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'monospace'
+            }}
+          >
+            📊
+          </button>
+        )}
+
+        {/* Menu Selection Panel */}
+        {showMobileMenu && !activeTab && (
+          <>
+            {/* Background Overlay */}
+            <div
+              onClick={() => setShowMobileMenu(false)}
               style={{
-                flex: 1,
-                padding: '8px',
-                background: activeTab === tab ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
-                border: activeTab === tab ? '1px solid #00ff00' : '1px solid rgba(0, 255, 0, 0.2)',
-                color: activeTab === tab ? '#00ff00' : '#888',
-                borderRadius: '4px',
-                fontFamily: 'monospace',
-                fontSize: '11px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                background: 'rgba(0, 0, 0, 0.4)',
+                zIndex: 998,
                 transition: 'all 0.3s ease'
               }}
-            >
-              {tab.toUpperCase()}
-            </button>
-          ))}
-        </div>
+            />
+            
+            {/* Menu Panel */}
+            <div style={{
+              position: 'fixed',
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+              border: '2px solid #00ff00',
+              borderRadius: '15px',
+              padding: '20px',
+              backdropFilter: 'blur(15px)',
+              boxShadow: '0 0 40px rgba(0, 255, 0, 0.4)',
+              zIndex: 999,
+              minWidth: '250px'
+            }}
+            onClick={(e) => e.stopPropagation()}>
+              <div style={{
+                color: '#00ff00',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                marginBottom: '15px',
+                textAlign: 'center',
+                fontFamily: 'monospace'
+              }}>
+                📊 TRADING DATA
+              </div>
+              
+              {[
+                { key: 'stats', icon: '⚡', label: 'FUND STATS', color: '#00ff00' },
+                { key: 'macro', icon: '🌍', label: 'MACRO ANALYSIS', color: '#00ddff' },
+                { key: 'positions', icon: '📈', label: 'ACTIVE POSITIONS', color: '#ffdd00' },
+                { key: 'trades', icon: '📜', label: 'COMPLETED TRADES', color: '#ff8800' }
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => {
+                    setActiveTab(tab.key);
+                    setShowMobileMenu(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 15px',
+                    marginBottom: '8px',
+                    background: `linear-gradient(90deg, ${tab.color}15 0%, transparent 100%)`,
+                    border: `1px solid ${tab.color}80`,
+                    borderRadius: '8px',
+                    color: tab.color,
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    fontFamily: 'monospace',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = `linear-gradient(90deg, ${tab.color}25 0%, ${tab.color}10 100%)`;
+                    e.target.style.transform = 'scale(1.02)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = `linear-gradient(90deg, ${tab.color}15 0%, transparent 100%)`;
+                    e.target.style.transform = 'scale(1)';
+                  }}
+                >
+                  <div style={{ fontSize: '18px' }}>{tab.icon}</div>
+                  <div>{tab.label}</div>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
-        {/* Mobile Content Panel */}
-        <div style={{
-          position: 'fixed',
-          top: '130px',
-          left: '10px',
-          right: '10px',
-          maxHeight: '60vh',
-          overflowY: 'auto',
-          background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
-          border: '1px solid #00ff00',
-          borderRadius: '8px',
-          padding: '12px',
-          fontFamily: 'monospace',
-          fontSize: '11px',
-          zIndex: 9999,
-          boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)',
-          backdropFilter: 'blur(10px)'
-        }}>
+        {/* Content Panel */}
+        {activeTab && (
+          <>
+            {/* Background Overlay */}
+            <div
+              onClick={() => setActiveTab(null)}
+              style={{
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                background: 'rgba(0, 0, 0, 0.3)',
+                zIndex: 998,
+                transition: 'all 0.3s ease'
+              }}
+            />
+            
+            {/* Back Button */}
+            <button
+              onClick={() => {
+                setActiveTab(null);
+                setShowMobileMenu(true);
+              }}
+              style={{
+                position: 'fixed',
+                left: '20px',
+                top: '80px',
+                padding: '8px 12px',
+                background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 150, 0, 0.1) 100%)',
+                border: '1px solid rgba(0, 255, 0, 0.5)',
+                borderRadius: '8px',
+                color: '#00ff00',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                backdropFilter: 'blur(10px)',
+                zIndex: 1001,
+                fontFamily: 'monospace',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              ← MENU
+            </button>
+
+            {/* Content Panel */}
+            <div style={{
+              position: 'fixed',
+              left: '20px',
+              top: '120px',
+              right: '20px',
+              maxHeight: 'calc(100vh - 160px)',
+              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+              border: '1px solid rgba(0, 255, 0, 0.3)',
+              borderRadius: '12px',
+              padding: '15px',
+              backdropFilter: 'blur(15px)',
+              boxShadow: '0 0 30px rgba(0, 0, 0, 0.5)',
+              zIndex: 999,
+              overflowY: 'auto',
+              fontFamily: 'monospace',
+              fontSize: '11px',
+              width: 'calc(100vw - 40px)',
+              boxSizing: 'border-box'
+            }}
+            onClick={(e) => e.stopPropagation()}>
           {/* Stats Tab */}
           {activeTab === 'stats' && (
             <>
@@ -236,8 +375,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '12px',
-                paddingBottom: '8px',
+                marginBottom: '8px',
+                paddingBottom: '6px',
                 borderBottom: '1px solid rgba(0, 255, 0, 0.3)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -308,16 +447,16 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
               </div>
 
               {/* Fund Balance */}
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ color: '#00ff00', fontSize: '10px', opacity: 0.7, marginBottom: '3px' }}>
+              <div style={{ marginBottom: '8px' }}>
+                <div style={{ color: '#00ff00', fontSize: '10px', opacity: 0.7, marginBottom: '2px' }}>
                   FUND BALANCE
                 </div>
                 <div style={{ 
-                  fontSize: '20px', 
+                  fontSize: '18px', 
                   fontWeight: 'bold',
                   color: '#00ff00',
                   textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
-                  marginBottom: '5px'
+                  marginBottom: '3px'
                 }}>
                   ${formatNumber(tradingData.fundBalance)}
                 </div>
@@ -337,28 +476,28 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '8px',
-                marginBottom: '12px'
+                gap: '6px',
+                marginBottom: '8px'
               }}>
-                <div style={{ padding: '8px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
+                <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
                   <div style={{ color: '#888', fontSize: '9px' }}>STAKERS</div>
                   <div style={{ color: '#00ff00', fontSize: '13px', fontWeight: 'bold' }}>
                     {tradingData.stakersCount}
                   </div>
                 </div>
-                <div style={{ padding: '8px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
+                <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
                   <div style={{ color: '#888', fontSize: '9px' }}>TVL</div>
                   <div style={{ color: '#00ff00', fontSize: '13px', fontWeight: 'bold' }}>
                     ${formatNumber(tradingData.tvl)}
                   </div>
                 </div>
-                <div style={{ padding: '8px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
+                <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
                   <div style={{ color: '#888', fontSize: '9px' }}>APY</div>
                   <div style={{ color: '#00ff00', fontSize: '13px', fontWeight: 'bold' }}>
                     {tradingData.apy}%
                   </div>
                 </div>
-                <div style={{ padding: '8px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
+                <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
                   <div style={{ color: '#888', fontSize: '9px' }}>PERF. SCORE</div>
                   <div style={{ color: '#00ff00', fontSize: '13px', fontWeight: 'bold' }}>
                     {tradingData.performanceScore}/10
@@ -370,10 +509,10 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                padding: '8px',
+                padding: '6px',
                 background: 'rgba(0, 255, 0, 0.1)',
                 borderRadius: '5px',
-                marginBottom: '10px'
+                marginBottom: '8px'
               }}>
                 <div>
                   <div style={{ color: '#888', fontSize: '9px' }}>WIN STREAK</div>
@@ -392,7 +531,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
               {/* Next Analysis */}
               <div style={{
                 textAlign: 'center',
-                padding: '6px',
+                padding: '4px',
                 background: 'rgba(0, 255, 0, 0.1)',
                 borderRadius: '5px',
                 border: '1px solid rgba(0, 255, 0, 0.3)'
@@ -623,8 +762,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
           {activeTab === 'positions' && (
             <>
               <div style={{
-                marginBottom: '10px',
-                paddingBottom: '6px',
+                marginBottom: '8px',
+                paddingBottom: '4px',
                 borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
                 color: '#00ff00',
                 fontWeight: 'bold',
@@ -635,8 +774,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
               
               {tradingData.activePositions.map((pos, idx) => (
                 <div key={idx} style={{
-                  padding: '8px',
-                  marginBottom: '8px',
+                  padding: '6px',
+                  marginBottom: '6px',
                   background: pos.pnl > 0 ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
                   border: `1px solid ${pos.pnl > 0 ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'}`,
                   borderRadius: '5px'
@@ -688,8 +827,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
           {activeTab === 'trades' && (
             <>
               <div style={{
-                marginBottom: '10px',
-                paddingBottom: '6px',
+                marginBottom: '8px',
+                paddingBottom: '4px',
                 borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
                 color: '#00ff00',
                 fontWeight: 'bold',
@@ -700,8 +839,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
               
               {tradingData.recentTrades.map((trade, idx) => (
                 <div key={idx} style={{
-                  padding: '6px',
-                  marginBottom: '6px',
+                  padding: '4px',
+                  marginBottom: '4px',
                   background: trade.status === 'exceptional' ? 'rgba(255, 215, 0, 0.05)' : 
                             trade.status === 'profit' ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
                   borderLeft: `3px solid ${
@@ -738,7 +877,9 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
               ))}
             </>
           )}
-        </div>
+            </div>
+          </>
+        )}
       </>
     );
   }
@@ -1048,7 +1189,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
         </div>
       </div>
 
-      {/* Active Positions Panel - Bottom Left */}
+      {/* Combined Positions & Trades Panel - Bottom Left */}
       <div style={{
         position: 'fixed',
         bottom: '20px',
@@ -1060,144 +1201,153 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
         fontFamily: 'monospace',
         fontSize: '11px',
         zIndex: 9999,
-        width: 'min(320px, 25vw)',
-        minWidth: '260px',
-        maxWidth: '340px',
-        maxHeight: '240px',
+        width: 'min(380px, 30vw)',
+        minWidth: '320px',
+        maxWidth: '400px',
+        maxHeight: '280px',
         boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)',
         backdropFilter: 'blur(10px)'
       }}>
+        {/* Tab Navigation */}
         <div style={{
-          marginBottom: '10px',
-          paddingBottom: '8px',
-          borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
-          color: '#00ff00',
-          fontWeight: 'bold',
-          fontSize: '13px'
+          display: 'flex',
+          marginBottom: '12px',
+          borderBottom: '1px solid rgba(0, 255, 0, 0.3)'
         }}>
-          ⚡ ACTIVE POSITIONS ({tradingData.activePositions.length})
+          <button
+            onClick={() => setDesktopPositionsTab('positions')}
+            style={{
+              flex: 1,
+              padding: '8px 16px',
+              background: desktopPositionsTab === 'positions' ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
+              border: 'none',
+              borderBottom: desktopPositionsTab === 'positions' ? '2px solid #00ff00' : '2px solid transparent',
+              color: desktopPositionsTab === 'positions' ? '#00ff00' : '#888',
+              fontSize: '13px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontFamily: 'monospace'
+            }}
+          >
+            ⚡ ACTIVE POSITIONS ({tradingData.activePositions.length})
+          </button>
+          <button
+            onClick={() => setDesktopPositionsTab('trades')}
+            style={{
+              flex: 1,
+              padding: '8px 16px',
+              background: desktopPositionsTab === 'trades' ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
+              border: 'none',
+              borderBottom: desktopPositionsTab === 'trades' ? '2px solid #00ff00' : '2px solid transparent',
+              color: desktopPositionsTab === 'trades' ? '#00ff00' : '#888',
+              fontSize: '13px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontFamily: 'monospace'
+            }}
+          >
+            📜 COMPLETED TRADES
+          </button>
         </div>
         
-        <div style={{ overflowY: 'auto', maxHeight: '180px' }}>
-          {tradingData.activePositions.map((pos, idx) => (
-            <div key={idx} style={{
-              padding: '8px',
-              marginBottom: '8px',
-              background: pos.pnl > 0 ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
-              border: `1px solid ${pos.pnl > 0 ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'}`,
-              borderRadius: '5px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                <div style={{ color: '#00ff00', fontWeight: 'bold' }}>
-                  {pos.symbol}
-                </div>
-                <div style={{
-                  padding: '2px 6px',
-                  background: pos.side === 'LONG' ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)',
-                  color: pos.side === 'LONG' ? '#00ff00' : '#ff3333',
-                  borderRadius: '3px',
-                  fontSize: '10px',
-                  fontWeight: 'bold'
+        {/* Tab Content */}
+        <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+          {desktopPositionsTab === 'positions' && (
+            <div>
+              {tradingData.activePositions.map((pos, idx) => (
+                <div key={idx} style={{
+                  padding: '8px',
+                  marginBottom: '8px',
+                  background: pos.pnl > 0 ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
+                  border: `1px solid ${pos.pnl > 0 ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'}`,
+                  borderRadius: '5px'
                 }}>
-                  {pos.side}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <div style={{ color: '#00ff00', fontWeight: 'bold' }}>
+                      {pos.symbol}
+                    </div>
+                    <div style={{
+                      padding: '2px 6px',
+                      background: pos.side === 'LONG' ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)',
+                      color: pos.side === 'LONG' ? '#00ff00' : '#ff3333',
+                      borderRadius: '3px',
+                      fontSize: '10px',
+                      fontWeight: 'bold'
+                    }}>
+                      {pos.side}
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px' }}>
+                    <div>
+                      <span style={{ color: '#888' }}>Entry: </span>
+                      <span style={{ color: '#fff' }}>${pos.entry.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: '#888' }}>Current: </span>
+                      <span style={{ color: '#fff' }}>${pos.current.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: '#888' }}>Size: </span>
+                      <span style={{ color: '#fff' }}>{pos.size}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: '#888' }}>P&L: </span>
+                      <span style={{ 
+                        color: pos.pnl > 0 ? '#00ff00' : '#ff3333',
+                        fontWeight: 'bold'
+                      }}>
+                        {pos.pnl > 0 ? '+' : ''}${pos.pnl.toFixed(2)} ({pos.pnlPercent}%)
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '11px' }}>
-                <div>
-                  <span style={{ color: '#888' }}>Entry: </span>
-                  <span style={{ color: '#fff' }}>${pos.entry.toFixed(2)}</span>
-                </div>
-                <div>
-                  <span style={{ color: '#888' }}>Current: </span>
-                  <span style={{ color: '#fff' }}>${pos.current.toFixed(2)}</span>
-                </div>
-                <div>
-                  <span style={{ color: '#888' }}>Size: </span>
-                  <span style={{ color: '#fff' }}>{pos.size}</span>
-                </div>
-                <div>
-                  <span style={{ color: '#888' }}>P&L: </span>
-                  <span style={{ 
-                    color: pos.pnl > 0 ? '#00ff00' : '#ff3333',
-                    fontWeight: 'bold'
-                  }}>
-                    {pos.pnl > 0 ? '+' : ''}${pos.pnl.toFixed(2)} ({pos.pnlPercent}%)
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Trades Panel - Bottom Right */}
-      <div style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '10px',
-        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
-        border: '1px solid #00ff00',
-        borderRadius: '8px',
-        padding: '12px',
-        fontFamily: 'monospace',
-        fontSize: '11px',
-        zIndex: 9999,
-        width: 'min(280px, 22vw)',
-        minWidth: '240px',
-        maxWidth: '300px',
-        maxHeight: '240px',
-        boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)',
-        backdropFilter: 'blur(10px)'
-      }}>
-        <div style={{
-          marginBottom: '10px',
-          paddingBottom: '8px',
-          borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
-          color: '#00ff00',
-          fontWeight: 'bold',
-          fontSize: '13px'
-        }}>
-          📜 COMPLETED TRADES
-        </div>
-        
-        <div style={{ overflowY: 'auto', maxHeight: '180px' }}>
-          {tradingData.recentTrades.map((trade, idx) => (
-            <div key={idx} style={{
-              padding: '6px',
-              marginBottom: '6px',
-              background: trade.status === 'exceptional' ? 'rgba(255, 215, 0, 0.05)' : 
-                        trade.status === 'profit' ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
-              borderLeft: `3px solid ${
-                trade.status === 'exceptional' ? '#ffd700' : 
-                trade.status === 'profit' ? '#00ff00' : '#ff3333'
-              }`,
-              borderRadius: '3px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span style={{ color: '#888', fontSize: '10px' }}>{trade.time}</span>
-                  <span style={{ color: '#00ff00', fontWeight: 'bold' }}>{trade.symbol}</span>
-                  <span style={{
-                    color: trade.side === 'BUY' ? '#00ff00' : '#ff3333',
-                    fontSize: '10px',
-                    fontWeight: 'bold'
-                  }}>
-                    {trade.side}
-                  </span>
-                </div>
-                <span style={{ 
-                  color: trade.status === 'exceptional' ? '#ffd700' : 
-                        trade.status === 'profit' ? '#00ff00' : '#ff3333',
-                  fontWeight: 'bold'
+          )}
+          
+          {desktopPositionsTab === 'trades' && (
+            <div>
+              {tradingData.recentTrades.map((trade, idx) => (
+                <div key={idx} style={{
+                  padding: '8px',
+                  marginBottom: '6px',
+                  background: trade.status === 'exceptional' ? 'rgba(255, 215, 0, 0.05)' : 
+                            trade.status === 'profit' ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
+                  borderLeft: `3px solid ${
+                    trade.status === 'exceptional' ? '#ffd700' : 
+                    trade.status === 'profit' ? '#00ff00' : '#ff3333'
+                  }`,
+                  borderRadius: '3px'
                 }}>
-                  {trade.pnl} {trade.status === 'exceptional' ? '✨' : ''}
-                </span>
-              </div>
-              <div style={{ fontSize: '10px', color: '#888' }}>
-                {trade.amount} @ ${trade.price}
-              </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <span style={{ color: '#888', fontSize: '10px' }}>{trade.time}</span>
+                      <span style={{ color: '#00ff00', fontWeight: 'bold' }}>{trade.symbol}</span>
+                      <span style={{
+                        color: trade.side === 'BUY' ? '#00ff00' : '#ff3333',
+                        fontSize: '10px',
+                        fontWeight: 'bold'
+                      }}>
+                        {trade.side}
+                      </span>
+                    </div>
+                    <span style={{ 
+                      color: trade.status === 'exceptional' ? '#ffd700' : 
+                            trade.status === 'profit' ? '#00ff00' : '#ff3333',
+                      fontWeight: 'bold'
+                    }}>
+                      {trade.pnl} {trade.status === 'exceptional' ? '✨' : ''}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#888' }}>
+                    {trade.amount} @ ${trade.price}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
 
