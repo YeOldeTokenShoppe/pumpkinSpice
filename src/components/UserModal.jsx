@@ -1257,228 +1257,124 @@ function AchievementsSection({ achievements, loading, illumin80Status }) {
 function SettingsSection() {
   const { user } = useUser();
   const { openUserProfile } = useClerk();
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
   
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Account Settings */}
       <div style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '12px',
-        padding: '24px'
-      }}>
-        <h3 style={{ color: 'white', fontSize: '18px', marginBottom: '20px' }}>
-          Account Settings
-        </h3>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{
-            padding: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '8px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div>
-              <p style={{ color: 'white', fontWeight: '500' }}>Email Address</p>
-              <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
-                {user?.primaryEmailAddress?.emailAddress}
-              </p>
-            </div>
-            <button
-              onClick={() => openUserProfile()}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: 'transparent',
-                color: '#9333ea',
-                border: '1px solid #9333ea',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Change
-            </button>
-          </div>
-          
-          <div style={{
-            padding: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '8px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div>
-              <p style={{ color: 'white', fontWeight: '500' }}>Password</p>
-              <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
-                Last changed {user?.passwordEnabled ? '30 days ago' : 'Never'}
-              </p>
-            </div>
-            <button
-              onClick={() => openUserProfile()}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: 'transparent',
-                color: '#9333ea',
-                border: '1px solid #9333ea',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Update
-            </button>
-          </div>
-          
-          <div style={{
-            padding: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '8px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div>
-              <p style={{ color: 'white', fontWeight: '500' }}>Two-Factor Authentication</p>
-              <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
-                {user?.twoFactorEnabled ? 'Enabled' : 'Add an extra layer of security'}
-              </p>
-            </div>
-            <button
-              onClick={() => openUserProfile()}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: user?.twoFactorEnabled ? 'transparent' : '#9333ea',
-                color: user?.twoFactorEnabled ? '#4ade80' : 'white',
-                border: user?.twoFactorEnabled ? '1px solid #4ade80' : 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              {user?.twoFactorEnabled ? 'Enabled ✓' : 'Enable'}
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Preferences */}
-      <div style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '12px',
-        padding: '24px'
-      }}>
-        <h3 style={{ color: 'white', fontSize: '18px', marginBottom: '20px' }}>
-          Preferences
-        </h3>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '12px 0'
-          }}>
-            <div>
-              <p style={{ color: 'white', fontWeight: '500' }}>Email Notifications</p>
-              <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
-                Receive updates about your account
-              </p>
-            </div>
-            <button
-              onClick={() => setNotifications(!notifications)}
-              style={{
-                width: '48px',
-                height: '24px',
-                borderRadius: '12px',
-                backgroundColor: notifications ? '#9333ea' : 'rgba(255, 255, 255, 0.2)',
-                border: 'none',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'background-color 0.2s'
-              }}
-            >
-              <div style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                backgroundColor: 'white',
-                position: 'absolute',
-                top: '2px',
-                left: notifications ? '26px' : '2px',
-                transition: 'left 0.2s'
-              }} />
-            </button>
-          </div>
-          
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '12px 0'
-          }}>
-            <div>
-              <p style={{ color: 'white', fontWeight: '500' }}>Dark Mode</p>
-              <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
-                Use dark theme across the app
-              </p>
-            </div>
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              style={{
-                width: '48px',
-                height: '24px',
-                borderRadius: '12px',
-                backgroundColor: darkMode ? '#9333ea' : 'rgba(255, 255, 255, 0.2)',
-                border: 'none',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'background-color 0.2s'
-              }}
-            >
-              <div style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                backgroundColor: 'white',
-                position: 'absolute',
-                top: '2px',
-                left: darkMode ? '26px' : '2px',
-                transition: 'left 0.2s'
-              }} />
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Danger Zone */}
-      <div style={{
-        backgroundColor: 'rgba(239, 68, 68, 0.05)',
-        borderRadius: '12px',
+        background: 'rgba(0, 0, 0, 0.6)',
+        border: '2px solid #00ff00',
+        borderRadius: '0',
         padding: '24px',
-        border: '1px solid rgba(239, 68, 68, 0.2)'
+        boxShadow: '0 0 20px rgba(0, 255, 0, 0.2)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <h3 style={{ color: '#ef4444', fontSize: '18px', marginBottom: '12px' }}>
-          Danger Zone
+        {/* Terminal header */}
+        <div style={{
+          fontSize: '12px',
+          color: '#00ff00',
+          fontFamily: 'monospace',
+          marginBottom: '20px',
+          opacity: 0.7,
+          letterSpacing: '2px'
+        }}>
+          [ACCOUNT.SETTINGS.ACCESS]
+        </div>
+        <h3 style={{ 
+          color: '#00ff00', 
+          fontSize: '18px', 
+          marginBottom: '20px',
+          fontFamily: 'monospace',
+          letterSpacing: '1px'
+        }}>
+          &gt; Account Management
         </h3>
-        <p style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '16px', fontSize: '14px' }}>
-          Deleting your account is permanent and cannot be undone.
-        </p>
+        
+        {/* Account Information Display */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+          <div style={{
+            padding: '16px',
+            background: 'rgba(0, 0, 0, 0.4)',
+            borderRadius: '0',
+            border: '1px solid rgba(0, 255, 0, 0.3)'
+          }}>
+            <p style={{ 
+              color: '#00ff00', 
+              fontWeight: '500',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              letterSpacing: '1px',
+              marginBottom: '8px'
+            }}>
+              &gt; Email Address
+            </p>
+            <p style={{ 
+              color: 'rgba(0, 255, 0, 0.7)', 
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              margin: 0
+            }}>
+              {user?.primaryEmailAddress?.emailAddress}
+            </p>
+          </div>
+          
+          <div style={{
+            padding: '16px',
+            background: 'rgba(0, 0, 0, 0.4)',
+            borderRadius: '0',
+            border: '1px solid rgba(0, 255, 0, 0.3)'
+          }}>
+            <p style={{ 
+              color: '#00ff00', 
+              fontWeight: '500',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              letterSpacing: '1px',
+              marginBottom: '8px'
+            }}>
+              &gt; Security Status
+            </p>
+            <p style={{ 
+              color: 'rgba(0, 255, 0, 0.7)', 
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              margin: 0
+            }}>
+              Password: {user?.passwordEnabled ? 'CONFIGURED' : 'NOT SET'} | 2FA: {user?.twoFactorEnabled ? 'ENABLED' : 'DISABLED'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Single Action Button */}
         <button
+          onClick={() => openUserProfile()}
           style={{
-            padding: '8px 16px',
-            backgroundColor: 'transparent',
-            color: '#ef4444',
-            border: '1px solid #ef4444',
-            borderRadius: '6px',
+            width: '100%',
+            padding: '12px',
+            background: 'rgba(0, 0, 0, 0.6)',
+            color: '#00ff00',
+            borderRadius: '0',
+            border: '2px solid #00ff00',
             cursor: 'pointer',
-            fontSize: '14px'
+            fontWeight: '600',
+            fontSize: '14px',
+            fontFamily: 'monospace',
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+            transition: 'all 0.2s',
+            boxShadow: '0 0 10px rgba(0, 255, 0, 0.3)'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(0, 255, 0, 0.1)';
+            e.target.style.boxShadow = '0 0 20px rgba(0, 255, 0, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(0, 0, 0, 0.6)';
+            e.target.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.3)';
           }}
         >
-          Delete Account
+          [MANAGE.ACCOUNT.SETTINGS]
         </button>
       </div>
     </div>

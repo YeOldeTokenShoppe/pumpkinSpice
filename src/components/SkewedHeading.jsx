@@ -22,7 +22,7 @@ export default function SkewedHeading({
       display: 'inline-block',
       width: '100%',
       textAlign: 'center',
-      padding: '10px 20px', // Add padding to prevent shadow clipping
+      padding: '10px ', // Add padding to prevent shadow clipping
       overflow: 'visible', // Ensure shadows are visible
     }}>
       <style jsx>{`

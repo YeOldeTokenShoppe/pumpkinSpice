@@ -74,7 +74,7 @@ export default function CyberTokenomicsSection({ isMobile }) {
       id: 'TAX001',
       label: 'BUY / SELL TAX',
       value: '4%',
-      description: 'Unified tax protocol for all transactions',
+      description: 'Unified tax protocol for buy/sell transactions (wallet transfers exempt)',
       breakdown: [
         { label: 'Staking Rewards', value: '2%', color: '#00ff00' },
         { label: 'Auto-Liquidity', value: '1.5%', color: '#ffd700' },

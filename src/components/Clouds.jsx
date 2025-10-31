@@ -298,6 +298,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
   return (
     <lightningContext.Provider value={{ flash1, flash2, flash3, shake, sunRef }}>
       <group>
+        
         {/* Sun mesh for god rays - positioned high above */}
         {/* <mesh ref={sunRef} position={[0, 80, -30]}>
           <sphereGeometry args={[5, 32, 32]} />

@@ -171,6 +171,52 @@ function ScrollClouds({ scrollY }) {
   );
 }
 
+// ChromaticAberrationMaterial for TickerCurve
+const ChromaticAberrationMaterial = shaderMaterial(
+  {
+    color: new THREE.Color("#1a1a1a"),
+    opacity: 0.8,
+    aberrationOffset: new THREE.Vector2(0.01, 0.01)
+  },
+  // Vertex shader
+  `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  // Fragment shader
+  `
+    uniform vec3 color;
+    uniform float opacity;
+    uniform vec2 aberrationOffset;
+    varying vec2 vUv;
+    
+    void main() {
+      vec2 uv = vUv;
+      
+      // Sample RGB channels with different offsets for chromatic aberration
+      float r = color.r;
+      float g = color.g;
+      float b = color.b;
+      
+      // Apply chromatic aberration by offsetting UV coordinates
+      vec2 rOffset = uv + aberrationOffset;
+      vec2 gOffset = uv;
+      vec2 bOffset = uv - aberrationOffset;
+      
+      // Simple color variation based on position for aberration effect
+      float rFactor = 1.0 + sin(rOffset.x * 10.0) * 0.1;
+      float bFactor = 1.0 + sin(bOffset.x * 10.0) * 0.1;
+      
+      vec3 finalColor = vec3(r * rFactor, g, b * bFactor);
+      
+      gl_FragColor = vec4(finalColor, opacity);
+    }
+  `
+);
+
 // GradientSkyMaterial from home3/page
 const GradientSkyMaterial = shaderMaterial(
   {
@@ -400,12 +446,12 @@ function ScrollTriggeredTitle({ isMobile }) {
               <SkewedHeading 
     lines={["THE ANNUNCIATION"]}
     // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
-        colors={["#00ff00"]}
-    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+        colors={["rgba(0, 255, 0, 1)"]}
+    fontSize={{ mobile: "1.3rem", desktop: "3rem" }}
     isMobile={isMobile}
   />
         <h2 style={{
-          fontSize: isMobile ? '1.6rem' : '1.8rem',
+          fontSize: isMobile ? '1.3rem' : '1.8rem',
           color: '#ffffff',
           fontFamily: "'Fjalla One', sans-serif",
           marginBottom: '0',
@@ -1264,6 +1310,11 @@ export default function CloudTestPage() {
             alpha: true,
             premultipliedAlpha: false,
           }}
+          // onCreated={({ gl, scene }) => {
+          //   gl.toneMapping = THREE.ACESFilmicToneMapping;
+          //   gl.toneMappingExposure = 1.1;
+          //   scene.background = new THREE.Color(0x2b1a26);
+          // }}
           frameloop="always"
           dpr={1}
           style={{
@@ -2728,7 +2779,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
             </h1>
             
             {/* Coin component */}
-            <div style={{ 
+            {/* <div style={{ 
               position: "relative",
               marginLeft: '-2rem',
               width: isMobile ? "80px" : "100px",
@@ -2744,7 +2795,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
               }}>
                 <Coin />
               </Link>
-            </div>
+            </div> */}
           </div>
           {/* Divider */}
           <div style={{

@@ -1094,6 +1094,7 @@
 			import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 			import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 			import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+			import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 			
 			console.log('Fountain imports successful!');
 
@@ -1300,9 +1301,17 @@
 				
 				// Create instanced mesh with capacity for all static coins
 				const instanceCount = Math.min(staticCoinData.length, MAX_STATIC_COINS);
+				
+				// Create material for static coins with 80s mode support
+				const staticCoinMaterial = baseCoinMaterial.clone();
+				if (is80sMode) {
+					staticCoinMaterial.emissive = new THREE.Color('#FFEB38');
+					staticCoinMaterial.emissiveIntensity = 0.3;
+				}
+				
 				staticCoinInstancedMesh = new THREE.InstancedMesh(
 					coinGeometry,
-					baseCoinMaterial,
+					staticCoinMaterial,
 					instanceCount
 				);
 				
@@ -1520,6 +1529,7 @@
 			let container;
 			let camera, scene, renderer, controls;
 			let composer, bloomPass;
+			let chromaticAberrationPass, scanlinePass, noisePass, vignettePass;
 			let mousedown = false;
 			let hasAimed = false; // Track if user has clicked water to aim
 			let is80sMode = false; // Track 80s mode state
@@ -2343,16 +2353,18 @@
 				}
 
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
-				camera.position.set( 0, 0.5, 4 );
-				camera.lookAt( 0, 0, 0 );
+				camera.position.set( 0, 0, 4 );
+				camera.lookAt( 0, 6, 0 );
 
 				scene = new THREE.Scene();
 				
 				// Initialize Firebase after scene is created
 				initializeFirebase();
 
-				sun = new THREE.DirectionalLight( 0xddb56e, 3.0 );
-				sun.position.set( - 1, 2.6, -1.4 );
+				// Create Venice sunset directional light
+				sun = new THREE.DirectionalLight( 0xff8c42, 3.5 ); // Warm sunset orange color
+				sun.position.set( -8, 3, -1 ); // Low on horizon for sunset effect
+				sun.castShadow = true;
 				scene.add( sun );
 
 				renderer = new THREE.WebGLRenderer( { 
@@ -2369,22 +2381,11 @@
 				renderer.toneMappingExposure = 0.5;
 				container.appendChild( renderer.domElement );
 				
-				// Setup bloom post-processing (reduced on mobile)
-				composer = new EffectComposer( renderer );
-				composer.addPass( new RenderPass( scene, camera ) );
-				
-				if (!isMobileDevice) {
-					// Only add bloom on desktop for performance
-					bloomPass = new UnrealBloomPass(
-						new THREE.Vector2( window.innerWidth, window.innerHeight ),
-						0.5,  // strength
-						0.4,  // radius  
-						0.85  // threshold
-					);
-					composer.addPass( bloomPass );
-				}
+				// Post-processing will be setup after shaders are defined
 
 				controls = new OrbitControls( camera, container );
+				controls.minDistance = 0.1;
+				controls.maxDistance = 6;
 				controls.zoomToCursor = true;
 				controls.minPolarAngle = 0;
 				controls.maxPolarAngle = Math.PI / 2;
@@ -2427,23 +2428,35 @@
                 }
                 // --- END NEW ---
 
-				const env = await rgbeLoader.loadAsync( 'blouberg_sunrise_2_1k.hdr' ).then(
+				const env = await rgbeLoader.loadAsync( 'venice_sunset_1k.hdr' ).then(
 					(texture) => {
-						console.log('[Fountain] Environment map loaded');
+						console.log('[Fountain] Venice sunset environment map loaded');
 						assetsToLoad.envMap = true;
 						checkAllAssetsLoaded();
 						return texture;
 					},
 					(error) => {
-						console.error('[Fountain] Error loading environment map:', error);
-						assetsToLoad.envMap = true; // Mark as loaded anyway to not block
-						checkAllAssetsLoaded();
-						throw error;
+						console.warn('[Fountain] Venice sunset HDR not found, falling back to sunrise:', error);
+						// Fallback to the original sunrise HDR
+						return rgbeLoader.loadAsync( 'blouberg_sunrise_2_1k.hdr' ).then(
+							(texture) => {
+								console.log('[Fountain] Fallback environment map loaded');
+								assetsToLoad.envMap = true;
+								checkAllAssetsLoaded();
+								return texture;
+							},
+							(fallbackError) => {
+								console.error('[Fountain] Error loading fallback environment map:', fallbackError);
+								assetsToLoad.envMap = true; // Mark as loaded anyway to not block
+								checkAllAssetsLoaded();
+								throw fallbackError;
+							}
+						);
 					}
 				);
 				env.mapping = THREE.EquirectangularReflectionMapping;
 				scene.environment = env; // Keep HDR for reflections
-				scene.environmentIntensity = 1.15; // Slightly reduced for better balance with new background
+				// scene.environmentIntensity = 1.15; // Slightly reduced for better balance with new background
 
 				// Create sublime dawn gradient background - completely new implementation
 				// Create a simple gradient using a large mesh with gradient texture
@@ -2480,10 +2493,15 @@
 				originalSky = sky; // Store reference for 80s mode toggling
 				scene.add(sky);
 				
-				// Adjust sun for dawn atmosphere
-				sun.color.set(0xffeedd); // Warmer sunlight color
-				sun.position.set(-1.3, 2.2, -1.8); // Adjust sun position 
-				sun.intensity = 2.8; // Adjusted intensity
+				// Configure shadow mapping for sunset lighting
+				sun.shadow.mapSize.width = isMobileDevice ? 512 : 1024;
+				sun.shadow.mapSize.height = isMobileDevice ? 512 : 1024;
+				sun.shadow.camera.near = 0.5;
+				sun.shadow.camera.far = 50;
+				sun.shadow.camera.left = -10;
+				sun.shadow.camera.right = 10;
+				sun.shadow.camera.top = 10;
+				sun.shadow.camera.bottom = -10;
 
 				// --- NEW: Initialize Splash Particle System ---
 				initSplashParticleSystem();
@@ -2494,7 +2512,7 @@
 				
 				loader.load(
 					// Resource URL - REPLACE WITH YOUR FILE PATH
-					'/models/fountain.glb',
+					'/models/fountain2.glb',
 					// Called when the resource is loaded
 					function ( gltf ) {
 						const fountainModel = gltf.scene;
@@ -2508,7 +2526,10 @@
                 // console.log("Full model structure:", gltf.scene);
                 
                 fountainModel.traverse(function(node) {
-                    // console.log("Found node:", node.name, node.type);
+                    // Log all nodes to help identify object names
+                    if (node.name) {
+                        console.log("Found node:", node.name, node.type, node.material ? "has material" : "no material");
+                    }
                     
                     // Check for Neon objects
                     if (node.name && node.name.startsWith('Neon')) {
@@ -2516,6 +2537,26 @@
                         neonObjects.push(node);
                         // Set visibility based on current 80s mode state
                         node.visible = is80sMode;
+                    }
+                    
+                    // Hide Raybans by default (only show in 80s mode)
+                    if (node.name === 'Raybans') {
+                        console.log("Found Raybans object:", node.name);
+                        node.visible = is80sMode; // Only visible if already in 80s mode
+                    }
+                    
+                    // Force GoldCoin objects to match dynamic coin appearance in normal mode
+                    if (node.name && (node.name.includes('GoldCoin') || 
+                        node.name.startsWith('GoldCoin'))) {
+                        console.log(`Found gold object: ${node.name}`);
+                        if (node.material && !is80sMode) {
+                            node.material.color = new THREE.Color(0xcebb43);
+                            node.material.emissive = new THREE.Color(0x000000);
+                            node.material.emissiveIntensity = 0;
+                            node.material.metalness = 0.0;
+                            node.material.roughness = 1.0;
+                            node.material.ior = 1.5;
+                        }
                     }
                     
                     // Look for GoldCoin by name (case insensitive to be safe)
@@ -2708,6 +2749,22 @@
 						checkAllAssetsLoaded();
 					}
 				}, 10000); // 10 seconds fallback
+
+				// Add ground floor
+				const groundGeometry = new THREE.PlaneGeometry(90, 90);
+				const groundMaterial = new THREE.MeshStandardMaterial({
+					color: 0xa79d7e,
+					roughness: 0.8,
+					metalness: 0.0
+				});
+				const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
+				groundMesh.rotation.x = -Math.PI / 2; // Rotate to lie flat
+				groundMesh.position.y = -2; // Position below fountain
+				groundMesh.receiveShadow = true;
+				scene.add(groundMesh);
+
+				// Setup post-processing after shaders are defined
+				setupPostProcessing();
 
 				// Enable 80s mode if it was set via URL parameter
 				if (is80sMode) {
@@ -2904,7 +2961,7 @@
 			const ChromaticAberrationShader = {
 				uniforms: {
 					'tDiffuse': { value: null },
-					'amount': { value: 0.005 }
+					'amount': { value: 0.003 }
 				},
 				vertexShader: `
 					varying vec2 vUv;
@@ -2948,7 +3005,7 @@
 					varying vec2 vUv;
 					void main() {
 						vec4 color = texture2D(tDiffuse, vUv);
-						float scanline = sin(vUv.y * 800.0 + time * 10.0) * 0.04;
+						float scanline = sin(vUv.y * 1200.0 + time * 10.0) * 0.025;
 						color.rgb -= scanline * opacity;
 						gl_FragColor = color;
 					}
@@ -3067,27 +3124,27 @@
 				if (!composer) return;
 				
 				if (enabled) {
-					// 80s mode: stronger bloom, enable all effects
-					bloomPass.strength = 1.5;
-					bloomPass.radius = 0.6;
-					bloomPass.threshold = 0.3;
+					// 80s mode: moderate bloom, enable all effects
+					bloomPass.strength = 0.9;
+					bloomPass.radius = 0.4;
+					bloomPass.threshold = 0.85;
 					
 					chromaticAberrationPass.enabled = true;
-					chromaticAberrationPass.uniforms.amount.value = 0.01;
+					chromaticAberrationPass.uniforms.amount.value = 0.005;
 					
 					scanlinePass.enabled = true;
-					scanlinePass.uniforms.opacity.value = 0.8;
+					scanlinePass.uniforms.opacity.value = 0.15;
 					
 					noisePass.enabled = true;
-					noisePass.uniforms.amount.value = 0.15;
+					noisePass.uniforms.amount.value = 0.1;
 					
 					vignettePass.enabled = true;
 					vignettePass.uniforms.darkness.value = 0.5;
 				} else {
-					// Normal mode: subtle bloom, disable other effects
-					bloomPass.strength = 0.9;
+					// Normal mode: disable bloom entirely
+					bloomPass.strength = 0.0;
 					bloomPass.radius = 0.4;
-					bloomPass.threshold = 0.85;
+					bloomPass.threshold = 1.2;
 					
 					chromaticAberrationPass.enabled = false;
 					scanlinePass.enabled = false;
@@ -3109,29 +3166,56 @@
 			
 			function enable80sMode() {
 				// Hide original sky
-				if (originalSky) originalSky.visible = false;
+				// if (originalSky) originalSky.visible = false;
 				
 				// Create synthwave background
-				if (!synthwaveBackground) {
-					createSynthwaveBackground();
-				}
-				if (synthwaveBackground) synthwaveBackground.visible = true;
+				// if (!synthwaveBackground) {
+				// 	createSynthwaveBackground();
+				// }
+				// if (synthwaveBackground) synthwaveBackground.visible = true;
 				
 				// Create neon grid floor
-				if (!neonGrid) {
-					createNeonGrid();
-				}
-				if (neonGrid) neonGrid.visible = true;
+				// if (!neonGrid) {
+				// 	createNeonGrid();
+				// }
+				// if (neonGrid) neonGrid.visible = true;
 				
 				// Create retro sun
-				if (!retroSun) {
-					createRetroSun();
-				}
-				if (retroSun) retroSun.visible = true;
+				// if (!retroSun) {
+				// 	createRetroSun();
+				// }
+				// if (retroSun) retroSun.visible = true;
 				
 				// Show Neon objects from the model
 				neonObjects.forEach(obj => {
 					obj.visible = true;
+				});
+				
+				// Make gold coins glow and show Raybans
+				scene.traverse((child) => {
+					if (child.isMesh) {
+						// Gold coin emissive glow
+						if (child.name && (child.name.includes('GoldCoin') || 
+							child.name.startsWith('GoldCoin'))) {
+							// Store original material properties before modifying
+							if (!child.userData.originalEmissive) {
+								child.userData.originalEmissive = child.material.emissive.clone();
+								child.userData.originalEmissiveIntensity = child.material.emissiveIntensity;
+							}
+							child.material = child.material.clone();
+							// Match the base color of dynamic coins
+							child.material.color = new THREE.Color(0xcebb43);
+							child.material.emissive = new THREE.Color('#FFEB38');
+							child.material.emissiveIntensity = 1.0;
+							child.userData.original80sEmissive = true;
+						}
+						
+						// Show Raybans only in 80s mode
+						if (child.name === 'Raybans') {
+							child.visible = true;
+							child.userData.raybansin80s = true;
+						}
+					}
 				});
 				
 				// Modify water colors for neon effect
@@ -3140,18 +3224,32 @@
 				// Update button colors
 				updateButtonsFor80s(true);
 				
-				// Change scene fog for 80s atmosphere
-				scene.fog = new THREE.Fog(0x1a0033, 2, 20);
+				// Enable 80s post-processing effects
+				updatePostProcessingFor80s(true);
+				
+				// Update existing dynamic coins with emissive glow
+				coins.forEach(coin => {
+					if (coin.material) {
+						coin.material.emissive = new THREE.Color('#FFEB38');
+						coin.material.emissiveIntensity = 0.3;
+					}
+				});
+				
+				// Update static coins from Firebase
+				createStaticCoinInstances();
+				
+				// Keep original atmosphere (don't add fog)
+				// scene.fog = new THREE.Fog(0x1a0033, 2, 20);
 			}
 			
 			function disable80sMode() {
-				// Restore original sky
-				if (originalSky) originalSky.visible = true;
+				// Keep original sky (don't change sky when leaving 80s mode)
+				// if (originalSky) originalSky.visible = true;
 				
 				// Hide 80s elements
-				if (synthwaveBackground) synthwaveBackground.visible = false;
-				if (neonGrid) neonGrid.visible = false;
-				if (retroSun) retroSun.visible = false;
+				// if (synthwaveBackground) synthwaveBackground.visible = false;
+				// if (neonGrid) neonGrid.visible = false;
+				// if (retroSun) retroSun.visible = false;
 				
 				// Restore original water colors
 				updateWaterFor80s(false);
@@ -3159,8 +3257,47 @@
 				// Restore button colors
 				updateButtonsFor80s(false);
 				
+				// Disable 80s post-processing effects
+				updatePostProcessingFor80s(false);
+				
+				// Remove emissive glow from existing dynamic coins
+				coins.forEach(coin => {
+					if (coin.material) {
+						coin.material.emissive = new THREE.Color(0x000000);
+						coin.material.emissiveIntensity = 0;
+					}
+				});
+				
+				// Update static coins from Firebase (remove glow)
+				createStaticCoinInstances();
+				
 				// Clear fog - let the gradient sky show properly
 				scene.fog = null;
+				
+				// Restore gold coins and hide Raybans
+				scene.traverse((child) => {
+					if (child.isMesh) {
+						// Remove gold coin emissive glow and standardize base color
+						if (child.userData.original80sEmissive || 
+							(child.name && (child.name.includes('GoldCoin') || 
+							child.name.startsWith('GoldCoin')))) {
+							child.material.emissive = new THREE.Color(0x000000);
+							child.material.emissiveIntensity = 0;
+							// Match all properties of dynamic coins
+							child.material.color = new THREE.Color(0xcebb43);
+							child.material.metalness = 0.0;
+							child.material.roughness = 1.0;
+							child.material.ior = 1.5;
+							child.userData.original80sEmissive = false;
+						}
+						
+						// Hide Raybans in normal mode
+						if (child.userData.raybansin80s) {
+							child.visible = false;
+							child.userData.raybansin80s = false;
+						}
+					}
+				});
 				
 				// Hide Neon objects from the model
 				neonObjects.forEach(obj => {
@@ -3168,96 +3305,96 @@
 				});
 			}
 			
-			function createSynthwaveBackground() {
-				// Create a large sphere for full background coverage (like the original sky)
-				const bgGeometry = new THREE.SphereGeometry(380, 32, 32);
-				const bgMaterial = new THREE.ShaderMaterial({
-					uniforms: {
-						topColor: { value: new THREE.Color(0x0a0a2e) }, // Dark blue-purple
-						bottomColor: { value: new THREE.Color(0x00d4ff) }, // Cyan
-						offset: { value: 0.5 }
-					},
-					vertexShader: `
-						varying vec2 vUv;
-						void main() {
-							vUv = uv;
-							gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-						}
-					`,
-					fragmentShader: `
-						uniform vec3 topColor;
-						uniform vec3 bottomColor;
-						uniform float offset;
-						varying vec2 vUv;
-						void main() {
-							float mixValue = smoothstep(0.0, 1.0, vUv.y);
-							vec3 color = mix(bottomColor, topColor, mixValue);
-							// Add horizontal scanlines
-							float scanline = sin(vUv.y * 100.0) * 0.02;
-							color += vec3(scanline);
-							gl_FragColor = vec4(color, 1.0);
-						}
-					`,
-					side: THREE.BackSide,
-					depthWrite: false
-				});
+			// function createSynthwaveBackground() {
+			// 	// Create a large sphere for full background coverage (like the original sky)
+			// 	const bgGeometry = new THREE.SphereGeometry(380, 32, 32);
+			// 	const bgMaterial = new THREE.ShaderMaterial({
+			// 		uniforms: {
+			// 			topColor: { value: new THREE.Color(0x0a0a2e) }, // Dark blue-purple
+			// 			bottomColor: { value: new THREE.Color(0x00d4ff) }, // Cyan
+			// 			offset: { value: 0.5 }
+			// 		},
+			// 		vertexShader: `
+			// 			varying vec2 vUv;
+			// 			void main() {
+			// 				vUv = uv;
+			// 				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			// 			}
+			// 		`,
+			// 		fragmentShader: `
+			// 			uniform vec3 topColor;
+			// 			uniform vec3 bottomColor;
+			// 			uniform float offset;
+			// 			varying vec2 vUv;
+			// 			void main() {
+			// 				float mixValue = smoothstep(0.0, 1.0, vUv.y);
+			// 				vec3 color = mix(bottomColor, topColor, mixValue);
+			// 				// Add horizontal scanlines
+			// 				float scanline = sin(vUv.y * 100.0) * 0.02;
+			// 				color += vec3(scanline);
+			// 				gl_FragColor = vec4(color, 1.0);
+			// 			}
+			// 		`,
+			// 		side: THREE.BackSide,
+			// 		depthWrite: false
+			// 	});
 				
-				synthwaveBackground = new THREE.Mesh(bgGeometry, bgMaterial);
-				synthwaveBackground.position.set(0, 0, 0); // Center it like the original sky
-				scene.add(synthwaveBackground);
-			}
+			// 	synthwaveBackground = new THREE.Mesh(bgGeometry, bgMaterial);
+			// 	synthwaveBackground.position.set(0, 0, 0); // Center it like the original sky
+			// 	scene.add(synthwaveBackground);
+			// }
 			
-			function createNeonGrid() {
-				// Create wireframe grid floor
-				const gridSize = 20;
-				const divisions = 30;
-				const gridHelper = new THREE.GridHelper(gridSize, divisions, 0x00ffff, 0xff00ff);
-				gridHelper.position.y = -1;
-				gridHelper.material.opacity = 0.8;
-				gridHelper.material.transparent = true;
+			// function createNeonGrid() {
+			// 	// Create wireframe grid floor
+			// 	const gridSize = 20;
+			// 	const divisions = 30;
+			// 	const gridHelper = new THREE.GridHelper(gridSize, divisions, 0x00ffff, 0xff00ff);
+			// 	gridHelper.position.y = -1;
+			// 	gridHelper.material.opacity = 0.8;
+			// 	gridHelper.material.transparent = true;
 				
-				neonGrid = gridHelper;
-				scene.add(neonGrid);
-			}
+			// 	neonGrid = gridHelper;
+			// 	scene.add(neonGrid);
+			// }
 			
-			function createRetroSun() {
-				// Create retro sun with horizontal stripes
-				const sunGeometry = new THREE.CircleGeometry(2, 32);
-				const sunMaterial = new THREE.ShaderMaterial({
-					uniforms: {
-						time: { value: 0 }
-					},
-					vertexShader: `
-						varying vec2 vUv;
-						void main() {
-							vUv = uv;
-							gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-						}
-					`,
-					fragmentShader: `
-						varying vec2 vUv;
-						uniform float time;
-						void main() {
-							float stripe = step(0.5, fract(vUv.y * 10.0));
-							vec3 color1 = vec3(1.0, 0.4, 0.7); // Pink
-							vec3 color2 = vec3(1.0, 0.8, 0.0); // Yellow
-							vec3 finalColor = mix(color1, color2, stripe);
+			// function createRetroSun() {
+			// 	// Create retro sun with horizontal stripes
+			// 	const sunGeometry = new THREE.CircleGeometry(2, 32);
+			// 	const sunMaterial = new THREE.ShaderMaterial({
+			// 		uniforms: {
+			// 			time: { value: 0 }
+			// 		},
+			// 		vertexShader: `
+			// 			varying vec2 vUv;
+			// 			void main() {
+			// 				vUv = uv;
+			// 				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			// 			}
+			// 		`,
+			// 		fragmentShader: `
+			// 			varying vec2 vUv;
+			// 			uniform float time;
+			// 			void main() {
+			// 				float stripe = step(0.5, fract(vUv.y * 10.0));
+			// 				vec3 color1 = vec3(1.0, 0.4, 0.7); // Pink
+			// 				vec3 color2 = vec3(1.0, 0.8, 0.0); // Yellow
+			// 				vec3 finalColor = mix(color1, color2, stripe);
 							
-							// Add glow
-							float dist = distance(vUv, vec2(0.5));
-							float glow = 1.0 - smoothstep(0.0, 0.5, dist);
+			// 				// Add glow
+			// 				float dist = distance(vUv, vec2(0.5));
+			// 				float glow = 1.0 - smoothstep(0.0, 0.5, dist);
 							
-							gl_FragColor = vec4(finalColor * glow, glow);
-						}
-					`,
-					transparent: true,
-					depthWrite: false
-				});
+			// 				gl_FragColor = vec4(finalColor * glow, glow);
+			// 			}
+			// 		`,
+			// 		transparent: true,
+			// 		depthWrite: false
+			// 	});
 				
-				retroSun = new THREE.Mesh(sunGeometry, sunMaterial);
-				retroSun.position.set(0, 3, -10);
-				scene.add(retroSun);
-			}
+			// 	retroSun = new THREE.Mesh(sunGeometry, sunMaterial);
+			// 	retroSun.position.set(0, 3, -10);
+			// 	scene.add(retroSun);
+			// }
 			
 			function updateWaterFor80s(enabled) {
 				if (waterMesh && waterMesh.material) {
@@ -3525,6 +3662,13 @@
 
             function createCoin( startPosition, initialVelocity, isLocalCoin = false ) {
                 const coinMaterialInstance = baseCoinMaterial.clone();
+                
+                // Apply 80s mode emissive glow if in 80s mode
+                if (is80sMode) {
+                    coinMaterialInstance.emissive = new THREE.Color('#FFEB38');
+                    coinMaterialInstance.emissiveIntensity = 0.3;
+                }
+                
                 const coin = new THREE.Mesh( coinGeometry, coinMaterialInstance );
                 coin.position.copy( startPosition );
                 coin.userData.velocity = initialVelocity.clone();

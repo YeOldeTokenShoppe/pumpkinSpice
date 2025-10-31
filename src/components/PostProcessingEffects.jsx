@@ -7,6 +7,7 @@ import {
   Vignette,
   ChromaticAberration,
   Scanline,
+  DepthOfField,
   // GodRays,
   Glitch,
 } from "@react-three/postprocessing";
@@ -126,17 +127,17 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
     <>
       {/* Temporarily disable GodRays to prevent errors */}
       {/* {sunRef && (
-        <GodRays
-          sun={sunRef}
-          exposure={1.0}
-          decay={0.95}
-          density={0.96}
-          weight={1.0}
-          samples={100}
-          clampMax={1}
-          blur={true}
-          blendFunction={BlendFunction.SCREEN}
-        />
+        // <GodRays
+        //   sun={sunRef}
+        //   exposure={1.0}
+        //   decay={0.95}
+        //   density={0.96}
+        //   weight={1.0}
+        //   samples={100}
+        //   clampMax={1}
+        //   blur={true}
+        //   blendFunction={BlendFunction.SCREEN}
+        // />
       )} */}
       <Bloom
         intensity={bloomIntensity}           // Dynamically controlled intensity
@@ -145,7 +146,16 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
         height={400}              // Increased from 300 for more detail
         blendFunction={BlendFunction.SCREEN} // Use SCREEN blend mode for a more natural glow
       />
-      <Vignette eskil={false} offset={0.15} darkness={0.35} />
+      <DepthOfField
+        focusDistance={4.0}       // Focus distance (equivalent to focus parameter)
+        focalLength={0.0003}      // Focal length (equivalent to aperture parameter)
+        bokehScale={0.01}         // Bokeh scale (equivalent to maxblur parameter)
+      />
+      {/* <ChromaticAberration
+        offset={[0.001, 0.001]}   // Subtle chromatic aberration
+      /> */}
+      {/* <Noise opacity={0.3} />      Film grain effect */}
+      <Vignette eskil={false} offset={0.3} darkness={0.5} />
     </>
   );
 
@@ -191,7 +201,7 @@ const PostProcessingEffects = ({ is80sMode = false }) => {
         // strength={[0.00005, 0.00001]}     // Moderate strength
         mode={GlitchMode.SPORADIC} // Sporadic glitches for that 80s VHS feel
       />
-      <Noise opacity={0.15} />    {/* More visible noise */}
+      <Noise opacity={0.15} />    More visible noise
       <Vignette eskil={false} offset={0.05} darkness={0.5} /> {/* Stronger vignette */}
     </>
   );

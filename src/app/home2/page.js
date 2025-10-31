@@ -420,7 +420,7 @@ function PulsingText({ children, ...props }) {
 
 // Portal Components
 function FountainModel({ clip, ...props }) {
-  const { scene } = useGLTF('/models/fountain.glb');
+  const { scene } = useGLTF('/models/fountain2.glb');
   
   React.useEffect(() => {
     if (scene) {
