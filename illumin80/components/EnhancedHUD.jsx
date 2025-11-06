@@ -218,13 +218,13 @@ export const EnhancedHUD = () => {
   const characterHealth = gameState.characterHealth || 100;
   const level = gameState.level || 1;
   const candles = gameState.candles || 0;
-  const litCandles = gameState.litCandles || [];
+  const litCandles = gameState.litCandles || new Set();
   
   // Debug logging
   useEffect(() => {
     console.log("EnhancedHUD - Debug:", {
       litCandles,
-      litCandlesLength: litCandles?.length,
+      litCandlesLength: litCandles?.size,
       candles,
       gameState: {
         litCandles: gameState.litCandles,
@@ -343,7 +343,7 @@ export const EnhancedHUD = () => {
               
               <div className="resource-item">
                 <div className="resource-icon">🕯️</div>
-                <span className="resource-value">{litCandles?.length || 0}/{candles}</span>
+                <span className="resource-value">{gameState.litCandleCount || 0}/{candles}</span>
               </div>
             </div>
           </div>

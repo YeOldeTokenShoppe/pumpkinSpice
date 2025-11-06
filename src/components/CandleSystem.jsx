@@ -99,6 +99,11 @@ export const CandleSystem = () => {
 
       // Find nearest unlit candle
       candleFlames.current.forEach(candle => {
+        // Check if candle is already lit in GameState
+        if (GameState.litCandles.has(candle.name)) {
+          candle.lit = true;
+        }
+        
         if (!candle.lit && candle.object) {
           const distance = candle.worldPosition.distanceTo(GameState.characterPosition);
           console.log(`DEBUG: Candle ${candle.name} - Distance: ${distance.toFixed(2)}, Lighting distance: ${lightingDistance}`);
@@ -117,8 +122,10 @@ export const CandleSystem = () => {
         try {
           // Mark as lit immediately to prevent double-lighting
           nearestCandle.lit = true;
-          if (!GameState.litCandles.includes(nearestCandle.name)) {
-            GameState.litCandles.push(nearestCandle.name);
+          if (!GameState.litCandles.has(nearestCandle.name)) {
+            GameState.litCandles.add(nearestCandle.name);
+            // Update the reactive counter
+            GameState.litCandleCount = GameState.litCandles.size;
           }
           
           console.log(`Lighting candle: ${nearestCandle.name} at distance ${nearestDistance.toFixed(2)} (will appear in 400ms)`);

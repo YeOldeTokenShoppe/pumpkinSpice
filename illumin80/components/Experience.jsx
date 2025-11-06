@@ -18,7 +18,7 @@ export const maps = {
 
 };
 
-export const Experience = () => {
+export const Experience = ({ onTouchAction }) => {
   const shadowCameraRef = useRef();
   const directionalLightRef = useRef();
   const spotlightRef = useRef();
@@ -103,7 +103,7 @@ export const Experience = () => {
           position={maps[map]?.position || [-0.1, -9.5, 7]}
           model={`models/${map}.glb`}
         />
-        <CharacterController />
+        <CharacterController onTouchAction={onTouchAction} />
         <CandleSystem />
       </Physics>
     </>

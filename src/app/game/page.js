@@ -6,7 +6,8 @@ import { Experience } from "../../../illumin80/components/Experience";
 // import { ScoreDisplay } from "../../components/ScoreDisplay";
 import { EnhancedHUD } from "../../../illumin80/components/EnhancedHUD";
 import ErrorBoundary from "../../components/ErrorBoundary";
-import { Suspense, useCallback, useState } from "react";
+import { TouchControls } from "../../components/TouchControls";
+import { Suspense, useCallback, useState, useRef } from "react";
 
 const keyboardMap = [
   { name: "forward", keys: ["ArrowUp", "KeyW"] },
@@ -36,6 +37,7 @@ function LoadingFallback() {
 
 export default function GamePage() {
   const [contextLost, setContextLost] = useState(false);
+  const touchActionHandler = useRef(null);
 
   const handleCreated = useCallback(({ gl }) => {
     gl.setClearColor("#4a9fbb");
@@ -102,12 +104,17 @@ export default function GamePage() {
           fallback={<LoadingFallback />}
         >
           <Suspense fallback={null}>
-            <Experience />
+            <Experience onTouchAction={(handler) => { touchActionHandler.current = handler; }} />
           </Suspense>
         </Canvas>
       </KeyboardControls>
       {/* <ScoreDisplay /> */}
       <EnhancedHUD />
+      <TouchControls onAction={(action, value) => {
+        if (touchActionHandler.current) {
+          touchActionHandler.current(action, value);
+        }
+      }} />
     </div>
   );
 }

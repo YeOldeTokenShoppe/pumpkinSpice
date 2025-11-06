@@ -7,6 +7,7 @@ import { degToRad } from "three/src/math/MathUtils.js";
 import { GameState } from "../../src/lib/GameState";
 import { Character } from "./Character";
 import { useAudio } from "../../src/hooks/useAudio";
+import { useTouchControls } from "../../src/hooks/useTouchControls";
 
 const normalizeAngle = (angle) => {
   while (angle > Math.PI) angle -= 2 * Math.PI;
@@ -29,7 +30,7 @@ const lerpAngle = (start, end, t) => {
   return normalizeAngle(start + (end - start) * t);
 };
 
-export const CharacterController = () => {
+export const CharacterController = ({ onTouchAction }) => {
   // Fixed values instead of Leva controls
   const WALK_SPEED = 1.4;
   const RUN_SPEED = 2.6;
@@ -41,7 +42,16 @@ export const CharacterController = () => {
   const container = useRef();
   const character = useRef();
   
+  
   const { loadSound, playSound, stopSound } = useAudio();
+  const { getTouchControls, handleTouchAction, getMovementVector } = useTouchControls();
+
+  // Expose touch action handler to parent
+  useEffect(() => {
+    if (onTouchAction) {
+      onTouchAction(handleTouchAction);
+    }
+  }, [onTouchAction, handleTouchAction]);
 
   const [animation, setAnimation] = useState("idle");
   const [isLightingAction, setIsLightingAction] = useState(false);
@@ -101,15 +111,33 @@ export const CharacterController = () => {
         z: 0,
       };
 
-      if (get().forward) {
+      // Combine keyboard and touch controls
+      const touchControls = getTouchControls();
+      const touchMovement = getMovementVector();
+
+      // Keyboard controls
+      if (get().forward || touchControls.forward) {
         movement.z = 1;
       }
-      if (get().backward) {
+      if (get().backward || touchControls.backward) {
         movement.z = -1;
       }
+      if (get().left || touchControls.left) {
+        movement.x = 1;
+      }
+      if (get().right || touchControls.right) {
+        movement.x = -1;
+      }
 
-      let speed = get().run ? RUN_SPEED : WALK_SPEED;
+      // Touch joystick has priority for smooth movement
+      if (Math.abs(touchMovement.x) > 0.1 || Math.abs(touchMovement.z) > 0.1) {
+        movement.x = touchMovement.x;
+        movement.z = touchMovement.z;
+      }
 
+      let speed = (get().run || touchControls.run) ? RUN_SPEED : WALK_SPEED;
+
+      // Mouse drag controls (existing functionality)
       if (isClicking.current) {
         console.log("clicking", mouse.x, mouse.y);
         if (Math.abs(mouse.x) > 0.1) {
@@ -119,13 +147,6 @@ export const CharacterController = () => {
         if (Math.abs(movement.x) > 0.5 || Math.abs(movement.z) > 0.5) {
           speed = RUN_SPEED;
         }
-      }
-
-      if (get().left) {
-        movement.x = 1;
-      }
-      if (get().right) {
-        movement.x = -1;
       }
 
       if (movement.x !== 0) {
@@ -168,13 +189,13 @@ export const CharacterController = () => {
       // Ground detection
       isOnGround.current = Math.abs(vel.y) < 0.1;
 
-      // Jump logic with lighting action detection
-      if (get().jump && isOnGround.current && canJump.current) {
+      // Jump logic with lighting action detection (keyboard + touch)
+      if ((get().jump || touchControls.jump) && isOnGround.current && canJump.current) {
         vel.y = JUMP_FORCE;
         canJump.current = false;
         
         // Check if L key is also pressed for spinning torch action
-        if (get().light) {
+        if (get().light || touchControls.light) {
           setAnimation("jump");
           setIsLightingAction(true);
           originalRotation.current = rotationTarget.current;
@@ -214,13 +235,13 @@ export const CharacterController = () => {
         }
       }
 
-      // Reset jump ability when on ground
-      if (isOnGround.current && !get().jump) {
+      // Reset jump ability when on ground (keyboard + touch)
+      if (isOnGround.current && !get().jump && !touchControls.jump) {
         canJump.current = true;
       }
 
-      // Zoom control - maintain zoom state independently of movement
-      if (get().zoom) {
+      // Zoom control - maintain zoom state independently of movement (keyboard + touch)
+      if (get().zoom || touchControls.zoom) {
         cameraDistance.current = Math.max(1, cameraDistance.current - ZOOM_DISTANCE * 0.05);
       } else {
         cameraDistance.current = Math.min(4, cameraDistance.current + 0.02);
