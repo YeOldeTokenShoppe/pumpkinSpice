@@ -37,6 +37,9 @@ import CarouselWrapper from '@/components/CarouselWrapper';
 import BreathSmoke from "@/components/BreathSmoke";
 import SkewedHeading from "@/components/SkewedHeading";
 import AngelOfCurrencies from "@/components/AngelOfCurrencies";
+import SlidingNav from "@/components/SlidingNav";
+
+
 
 
 
@@ -2673,7 +2676,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
 
       
                              <CyberButton
-                       onClick={() => window.open('/gallery3', '_blank')}
+                       onClick={() => window.open('/game', '_blank')}
                         size={isMobile ? 'medium' : 'large'}
                         variant="primary"
                         style={{
@@ -2712,6 +2715,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
 
  
 
+  <SlidingNav is80sMode={false} />
         
 
 

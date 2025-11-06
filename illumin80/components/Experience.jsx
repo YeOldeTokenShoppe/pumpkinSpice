@@ -1,12 +1,13 @@
 import { OrthographicCamera } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
-import { useRef, useEffect, useState } from "react";
-import { useSnapshot } from "valtio";
+import { useRef, useEffect } from "react";
 import { DirectionalLightHelper } from "three";
 import { useThree } from "@react-three/fiber";
-import { GameState } from "../lib/GameState";
+import { useGameStore } from "../../src/lib/gameStore";
+import { GameState } from "../../src/lib/GameState";
+import { useSnapshot } from "valtio";
 import { CharacterController } from "./CharacterController";
-import { CandleSystem } from "./CandleSystem";
+import { CandleSystem } from "../../src/components/CandleSystem";
 import { Map } from "./Map";
 
 export const maps = {
@@ -23,30 +24,31 @@ export const Experience = () => {
   const spotlightRef = useRef();
   const { scene } = useThree();
   
+  // Get map from Valtio GameState and characterPosition from Zustand store
+  const gameState = useSnapshot(GameState);
+  const map = gameState.map || 'underworld2'; // default fallback
+  const { characterPosition } = useGameStore();
 
-  const { map } = useSnapshot(GameState);
-
-  useEffect(() => {
-    if (directionalLightRef.current) {
-      const helper = new DirectionalLightHelper(directionalLightRef.current, 5);
-      scene.add(helper);
-      return () => scene.remove(helper);
-    }
-  }, [scene]);
+  // useEffect(() => {
+  //   if (directionalLightRef.current) {
+  //     const helper = new DirectionalLightHelper(directionalLightRef.current, 5);
+  //     scene.add(helper);
+  //     return () => scene.remove(helper);
+  //   }
+  // }, [scene]);
 
   useEffect(() => {
     const updateSpotlight = () => {
-      if (spotlightRef.current) {
-        const characterPos = GameState.characterPosition;
+      if (spotlightRef.current && characterPosition) {
         spotlightRef.current.position.set(
-          characterPos.x + 2,
-          characterPos.y + 5,
-          characterPos.z + 2
+          characterPosition.x + 2,
+          characterPosition.y + 5,
+          characterPosition.z + 2
         );
         spotlightRef.current.target.position.set(
-          characterPos.x,
-          characterPos.y,
-          characterPos.z
+          characterPosition.x,
+          characterPosition.y,
+          characterPosition.z
         );
         spotlightRef.current.target.updateMatrixWorld();
       }
@@ -54,7 +56,7 @@ export const Experience = () => {
 
     const interval = setInterval(updateSpotlight, 16); // ~60fps
     return () => clearInterval(interval);
-  }, []);
+  }, [characterPosition]);
 
   return (
     <>
@@ -97,8 +99,8 @@ export const Experience = () => {
       />
       <Physics key={map} >
         <Map
-          scale={maps[map].scale}
-          position={maps[map].position}
+          scale={maps[map]?.scale || 0.7}
+          position={maps[map]?.position || [-0.1, -9.5, 7]}
           model={`models/${map}.glb`}
         />
         <CharacterController />

@@ -487,7 +487,7 @@ function ShadowConfig({ isMobileView }) {
 
 
 
-// Main scene component
+// Main scene component`
 function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableStatue = false, onPaginationChange, candleData = [], sortBy, onCandleClick, showFloatingViewer, onAssetsLoaded, onEffectChange, choirWheel, coinTrigger, onWheelClick }) {
   const modelRef = useRef();
   const [statueLoaded, setStatueLoaded] = useState(!enableStatue); // Consider loaded if not enabled

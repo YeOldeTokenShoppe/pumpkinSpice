@@ -51,7 +51,9 @@
     "three": "^0.164.1",
     "three-stdlib": "^2.36.0",
     "tone": "^15.1.22",
-    "wouter": "^3.7.1"
+    "valtio": "^2.2.0",
+    "wouter": "^3.7.1",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
