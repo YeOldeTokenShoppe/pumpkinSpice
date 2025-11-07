@@ -1,20 +1,16 @@
 import { useThree } from "@react-three/fiber";
 import { useEffect, useRef, useCallback } from "react";
 import { Vector3, PointLight } from "three";
-import { useGameStore } from "../lib/gameStore";
+import { GameState } from "../../src/lib/GameState";
+import { useSnapshot } from "valtio";
 
 export const CandleSystem = () => {
   const { scene } = useThree();
   const candleFlames = useRef([]);
   const lightingDistance = 3.0;
   
-  // Zustand store access
-  const { 
-    characterPosition, 
-    litCandles, 
-    addLitCandle,
-    setLightNearestCandle 
-  } = useGameStore();
+  // Valtio state access
+  const gameState = useSnapshot(GameState);
 
   // Create burst light effect
   const createLightBurst = (position) => {
@@ -44,7 +40,7 @@ export const CandleSystem = () => {
       try {
         scene.traverse((object) => {
           if (object.name && object.name.toLowerCase().includes('candleflame')) {
-            console.log(`Found candle: ${object.name}, type: ${object.type}`);
+            // console.log(`Found candle: ${object.name}, type: ${object.type}`);
             
             // Store initial world position immediately
             const worldPos = new Vector3();
@@ -63,7 +59,7 @@ export const CandleSystem = () => {
         });
         
         candleFlames.current = flames;
-        console.log(`Found ${flames.length} candle flames`);
+        // console.log(`Found ${flames.length} candle flames`);
         
         // Now safely hide them after positions are stored
         flames.forEach(candle => {
@@ -90,11 +86,11 @@ export const CandleSystem = () => {
   // Simple lighting function that checks distance when called
   const lightNearestCandle = useCallback(() => {
     try {
-      console.log(`DEBUG: lightNearestCandle called. Character position:`, characterPosition);
-      console.log(`DEBUG: Found ${candleFlames.current.length} candles`);
+      // console.log(`DEBUG: lightNearestCandle called. Character position:`, gameState.characterPosition);
+      // console.log(`DEBUG: Found ${candleFlames.current.length} candles`);
       
-      if (!characterPosition || candleFlames.current.length === 0) {
-        console.log(`DEBUG: Early return - no character position or no candles`);
+      if (!gameState.characterPosition || candleFlames.current.length === 0) {
+        // console.log(`DEBUG: Early return - no character position or no candles`);
         return false;
       }
 
@@ -104,8 +100,8 @@ export const CandleSystem = () => {
       // Find nearest unlit candle
       candleFlames.current.forEach(candle => {
         if (!candle.lit && candle.object) {
-          const distance = candle.worldPosition.distanceTo(characterPosition);
-          console.log(`DEBUG: Candle ${candle.name} - Distance: ${distance.toFixed(2)}, Lighting distance: ${lightingDistance}`);
+          const distance = candle.worldPosition.distanceTo(gameState.characterPosition);
+          // console.log(`DEBUG: Candle ${candle.name} - Distance: ${distance.toFixed(2)}, Lighting distance: ${lightingDistance}`);
           
           if (distance <= lightingDistance && distance < nearestDistance) {
             nearestDistance = distance;
@@ -114,14 +110,17 @@ export const CandleSystem = () => {
         }
       });
       
-      console.log(`DEBUG: Nearest candle: ${nearestCandle ? nearestCandle.name : 'none'}, Distance: ${nearestDistance.toFixed(2)}`);
+      // console.log(`DEBUG: Nearest candle: ${nearestCandle ? nearestCandle.name : 'none'}, Distance: ${nearestDistance.toFixed(2)}`);
 
       // Light the nearest candle with a delay
       if (nearestCandle) {
         try {
           // Mark as lit immediately to prevent double-lighting
           nearestCandle.lit = true;
-          addLitCandle(nearestCandle.name);
+          
+          // Add to GameState
+          GameState.litCandles.add(nearestCandle.name);
+          GameState.litCandleCount = GameState.litCandles.size;
           
           console.log(`Lighting candle: ${nearestCandle.name} at distance ${nearestDistance.toFixed(2)} (will appear in 400ms)`);
           
@@ -153,12 +152,12 @@ export const CandleSystem = () => {
     }
     
     return false;
-  }, [characterPosition, addLitCandle, lightingDistance]);
+  }, [gameState.characterPosition, lightingDistance]);
 
-  // Expose lighting function to the gameStore
+  // Expose lighting function to GameState
   useEffect(() => {
-    setLightNearestCandle(lightNearestCandle);
-  }, [setLightNearestCandle, lightNearestCandle]);
+    GameState.lightNearestCandle = lightNearestCandle;
+  }, [lightNearestCandle]);
 
   return null;
 };

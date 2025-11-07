@@ -235,6 +235,8 @@ export const EnhancedHUD = () => {
   
   // Get coin count from GameState
   const coinCount = gameState.coinCount || 0;
+  // Get diamond count from GameState
+  const diamondCount = gameState.diamondCount || 0;
   const xp = 0;
   const maxXP = 100;
   const combo = 1;
@@ -246,10 +248,12 @@ export const EnhancedHUD = () => {
   const [scoreParticleTrigger, setScoreParticleTrigger] = useState(0);
   const [healthParticleTrigger, setHealthParticleTrigger] = useState(0);
   const [coinParticleTrigger, setCoinParticleTrigger] = useState(0);
+  const [diamondParticleTrigger, setDiamondParticleTrigger] = useState(0);
   const prevLevel = useRef(level);
   const prevScore = useRef(score);
   const prevHealth = useRef(characterHealth);
   const prevCoins = useRef(coinCount);
+  const prevDiamonds = useRef(diamondCount);
   
   // Detect mobile
   useEffect(() => {
@@ -307,6 +311,14 @@ export const EnhancedHUD = () => {
     prevCoins.current = coinCount;
   }, [coinCount]);
   
+  // Diamond collection particles
+  useEffect(() => {
+    if (diamondCount > prevDiamonds.current) {
+      setDiamondParticleTrigger(prev => prev + 1);
+    }
+    prevDiamonds.current = diamondCount;
+  }, [diamondCount]);
+  
   return (
     <>
       <div className={`modern-hud ${isMobile ? 'mobile' : 'desktop'}`}>
@@ -334,6 +346,12 @@ export const EnhancedHUD = () => {
                 <div className="resource-icon">🪙</div>
                 <span className="resource-value">{coinCount}</span>
                 <ParticleEffect trigger={coinParticleTrigger} color="#ffd700" />
+              </div>
+              
+              <div className="resource-item">
+                <div className="resource-icon">💎</div>
+                <span className="resource-value">{diamondCount}</span>
+                <ParticleEffect trigger={diamondParticleTrigger} color="#00ffff" />
               </div>
               
               <div className="resource-item">

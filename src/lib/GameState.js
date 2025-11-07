@@ -20,4 +20,5 @@ export const GameState = proxy({
   characterHealth: 100,
   candles: 0,
   keys: 0,
+  lightNearestCandle: null, // Function to light nearest candle
 });

@@ -7,7 +7,7 @@ import { useGameStore } from "../../src/lib/gameStore";
 import { GameState } from "../../src/lib/GameState";
 import { useSnapshot } from "valtio";
 import { CharacterController } from "./CharacterController";
-import { CandleSystem } from "../../src/components/CandleSystem";
+import { CandleSystem } from "./CandleSystem";
 import { Map } from "./Map";
 
 export const maps = {

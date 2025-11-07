@@ -27,7 +27,6 @@ export const TouchControls = ({ onAction }) => {
 
   // Handle virtual joystick
   const handleJoystickStart = (e) => {
-    e.preventDefault();
     setJoystickActive(true);
     const touch = e.touches ? e.touches[0] : e;
     updateJoystickPosition(touch);
@@ -35,13 +34,11 @@ export const TouchControls = ({ onAction }) => {
 
   const handleJoystickMove = (e) => {
     if (!joystickActive) return;
-    e.preventDefault();
     const touch = e.touches ? e.touches[0] : e;
     updateJoystickPosition(touch);
   };
 
   const handleJoystickEnd = (e) => {
-    e.preventDefault();
     setJoystickActive(false);
     setJoystickPosition({ x: 0, y: 0 });
     // Reset movement
@@ -75,11 +72,12 @@ export const TouchControls = ({ onAction }) => {
       y: normalizedY 
     });
     
-    // Convert to movement values (-1 to 1)
-    // Match the keyboard control mapping: left=+1, right=-1, forward=+1, backward=-1
-    const movementX = -normalizedX / maxDistance;  // invert X: left stick = left movement
-    const movementZ = -normalizedY / maxDistance; // invert Y: up stick = forward movement
+    // Convert to movement values (-1 to 1) with CORRECT mapping
+    // Based on CharacterController: left = positive X, right = negative X
+    const movementX = -normalizedX / maxDistance; // RIGHT stick = negative X (invert!)
+    const movementZ = -normalizedY / maxDistance; // UP stick = positive Z (forward)
     
+    console.log('Touch movement:', { x: movementX, z: movementZ });
     onAction('movement', { x: movementX, z: movementZ });
   };
 
@@ -149,8 +147,8 @@ export const TouchControls = ({ onAction }) => {
         <div className="primary-action">
           <button
             className={`action-btn light-jump-btn ${activeActions.jump || activeActions.light ? 'active' : ''}`}
-            onTouchStart={(e) => { e.preventDefault(); handleLightJump(); }}
-            onMouseDown={(e) => { e.preventDefault(); handleLightJump(); }}
+            onTouchStart={() => handleLightJump()}
+            onMouseDown={() => handleLightJump()}
           >
             <div className="btn-icon">🕯️⚡</div>
             <div className="btn-label">Light</div>
@@ -161,10 +159,10 @@ export const TouchControls = ({ onAction }) => {
         <div className="secondary-actions">
           <button
             className={`action-btn jump-btn ${activeActions.jump ? 'active' : ''}`}
-            onTouchStart={(e) => { e.preventDefault(); handleActionStart('jump'); }}
-            onTouchEnd={(e) => { e.preventDefault(); handleActionEnd('jump'); }}
-            onMouseDown={(e) => { e.preventDefault(); handleActionStart('jump'); }}
-            onMouseUp={(e) => { e.preventDefault(); handleActionEnd('jump'); }}
+            onTouchStart={() => handleActionStart('jump')}
+            onTouchEnd={() => handleActionEnd('jump')}
+            onMouseDown={() => handleActionStart('jump')}
+            onMouseUp={() => handleActionEnd('jump')}
           >
             <div className="btn-icon">⬆️</div>
             <div className="btn-label">Jump</div>
@@ -172,10 +170,10 @@ export const TouchControls = ({ onAction }) => {
           
           <button
             className={`action-btn sprint-btn ${activeActions.sprint ? 'active' : ''}`}
-            onTouchStart={(e) => { e.preventDefault(); handleActionStart('sprint'); }}
-            onTouchEnd={(e) => { e.preventDefault(); handleActionEnd('sprint'); }}
-            onMouseDown={(e) => { e.preventDefault(); handleActionStart('sprint'); }}
-            onMouseUp={(e) => { e.preventDefault(); handleActionEnd('sprint'); }}
+            onTouchStart={() => handleActionStart('sprint')}
+            onTouchEnd={() => handleActionEnd('sprint')}
+            onMouseDown={() => handleActionStart('sprint')}
+            onMouseUp={() => handleActionEnd('sprint')}
           >
             <div className="btn-icon">💨</div>
             <div className="btn-label">Sprint</div>

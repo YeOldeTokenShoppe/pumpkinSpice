@@ -139,7 +139,7 @@ export const CharacterController = ({ onTouchAction }) => {
 
       // Mouse drag controls (existing functionality)
       if (isClicking.current) {
-        console.log("clicking", mouse.x, mouse.y);
+        // console.log("clicking", mouse.x, mouse.y);
         if (Math.abs(mouse.x) > 0.1) {
           movement.x = -mouse.x;
         }

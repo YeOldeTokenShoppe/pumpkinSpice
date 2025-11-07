@@ -81,7 +81,7 @@ export function Character({ animation, ...props }) {
   // Add flame effect to torch tip
   useEffect(() => {
     if (nodes._rootJoint) {
-      console.log('All objects in character:', Object.keys(nodes));
+      // console.log('All objects in character:', Object.keys(nodes));
       
       // Look for torch-related objects or an empty/locator for flame position
       const findObject = (name) => {
@@ -100,7 +100,7 @@ export function Character({ animation, ...props }) {
       const flamePoint = findObject('TorchFireEmpty') || findObject('flame') || findObject('fire') || findObject('torch') || findObject('empty');
       
       if (flamePoint) {
-        console.log('Found TorchFireEmpty:', flamePoint.name, 'at position:', flamePoint.position);
+        // console.log('Found TorchFireEmpty:', flamePoint.name, 'at position:', flamePoint.position);
         
         // Find all fire pieces attached to TorchFireEmpty
         const firePieces = [];
@@ -110,7 +110,7 @@ export function Character({ animation, ...props }) {
             child.userData.originalPosition = child.position.clone();
             child.userData.originalRotation = child.rotation.clone();
             firePieces.push(child);
-            console.log('Found fire piece:', child.name);
+            // console.log('Found fire piece:', child.name);
           }
         });
         
@@ -124,9 +124,9 @@ export function Character({ animation, ...props }) {
         flamePoint.add(light);
         torchRef.current = light;
         
-        console.log('Found', firePieces.length, 'fire pieces for animation');
+        // console.log('Found', firePieces.length, 'fire pieces for animation');
       } else {
-        console.log('No TorchFireEmpty found. Available objects:', Object.keys(nodes));
+        // console.log('No TorchFireEmpty found. Available objects:', Object.keys(nodes));
       }
     }
   }, [nodes]);
