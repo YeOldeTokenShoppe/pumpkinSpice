@@ -338,7 +338,12 @@ export const CharacterController = ({ onTouchAction }) => {
           />
         </group>
       </group>
-      <CapsuleCollider args={[0.15, 0.60]} debug />
+      <CapsuleCollider args={[0.35, 0.40]} debug />
+      {/* Additional visual debug collider with wireframe */}
+      {/* <mesh position-y={0.45}>
+        <capsuleGeometry args={[0.35, 0.40]} />
+        <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.8} />
+      </mesh> */}
     </RigidBody>
   );
 };

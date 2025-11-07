@@ -100,6 +100,7 @@ export default function GamePage() {
             height: "100%",
             touchAction: "none",
           }}
+          onContextMenu={(e) => e.preventDefault()}
           onCreated={handleCreated}
           fallback={<LoadingFallback />}
         >

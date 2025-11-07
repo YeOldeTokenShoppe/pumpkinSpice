@@ -752,6 +752,7 @@ export const Map = ({ model, ...props }) => {
   const { scene: obstacleScene, animations } = useGLTF('/models/underworld2_obstacles.glb'); // Obstacles
   const group = useRef();
   const obstacleGroup = useRef();
+  const [isLoaded, setIsLoaded] = useState(false);
   const { actions } = useAnimations(animations, obstacleGroup);
   const { loadSound, playSound } = useAudio();
   const [hammerMeshes, setHammerMeshes] = useState([]);
@@ -764,6 +765,13 @@ export const Map = ({ model, ...props }) => {
   
   // Valtio GameState access
   const gameState = useSnapshot(GameState);
+  
+  // Check if both scenes are loaded
+  useEffect(() => {
+    if (platformScene && obstacleScene) {
+      setIsLoaded(true);
+    }
+  }, [platformScene, obstacleScene]);
   
   // Find obstacles in the obstacle scene
   useEffect(() => {
@@ -1224,6 +1232,11 @@ export const Map = ({ model, ...props }) => {
     }
   }, [pillars, playSound]);
   
+  // Don't render physics until both scenes are loaded
+  if (!isLoaded) {
+    return null;
+  }
+
   return (
     <>
       {/* Static platform collision mesh - NO obstacles included */}
