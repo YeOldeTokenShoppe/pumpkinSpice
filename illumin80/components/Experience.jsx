@@ -3,15 +3,17 @@ import { Physics } from "@react-three/rapier";
 import { useRef, useEffect } from "react";
 import { DirectionalLightHelper } from "three";
 import { useThree } from "@react-three/fiber";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { useGameStore } from "../../src/lib/gameStore";
 import { GameState } from "../../src/lib/GameState";
 import { useSnapshot } from "valtio";
 import { CharacterController } from "./CharacterController";
 import { CandleSystem } from "./CandleSystem";
 import { Map } from "./Map";
+import { MonsterSystem } from "./MonsterSystem";
 
 export const maps = {
-  underworld2: {
+  underworld3: {
     scale: 0.7,
     position: [-0.1, -9.5, 7],
   },
@@ -26,7 +28,7 @@ export const Experience = ({ onTouchAction }) => {
   
   // Get map from Valtio GameState and characterPosition from Zustand store
   const gameState = useSnapshot(GameState);
-  const map = gameState.map || 'underworld2'; // default fallback
+  const map = gameState.map || 'underworld3'; // default fallback
   const { characterPosition } = useGameStore();
 
   // useEffect(() => {
@@ -37,32 +39,32 @@ export const Experience = ({ onTouchAction }) => {
   //   }
   // }, [scene]);
 
-  useEffect(() => {
-    const updateSpotlight = () => {
-      if (spotlightRef.current && characterPosition) {
-        spotlightRef.current.position.set(
-          characterPosition.x + 2,
-          characterPosition.y + 5,
-          characterPosition.z + 2
-        );
-        spotlightRef.current.target.position.set(
-          characterPosition.x,
-          characterPosition.y,
-          characterPosition.z
-        );
-        spotlightRef.current.target.updateMatrixWorld();
-      }
-    };
+  // useEffect(() => {
+  //   const updateSpotlight = () => {
+  //     if (spotlightRef.current && characterPosition) {
+  //       spotlightRef.current.position.set(
+  //         characterPosition.x + 2,
+  //         characterPosition.y + 5,
+  //         characterPosition.z + 2
+  //       );
+  //       spotlightRef.current.target.position.set(
+  //         characterPosition.x,
+  //         characterPosition.y,
+  //         characterPosition.z
+  //       );
+  //       spotlightRef.current.target.updateMatrixWorld();
+  //     }
+  //   };
 
-    const interval = setInterval(updateSpotlight, 16); // ~60fps
-    return () => clearInterval(interval);
-  }, [characterPosition]);
+  //   const interval = setInterval(updateSpotlight, 16); // ~60fps
+  //   return () => clearInterval(interval);
+  // }, [characterPosition]);
 
   return (
     <>
       {/* <OrbitControls /> */}
       <fog attach="fog" args={["#4a9fbb", 5, 35]} />
-      <ambientLight intensity={2.3} color="#6bb6cc" />
+      <ambientLight intensity={1.0} color="#6bb6cc" />
       <directionalLight
         ref={directionalLightRef}
         intensity={1.4}
@@ -85,7 +87,7 @@ export const Experience = ({ onTouchAction }) => {
           attach={"shadow-camera"}
         />
       </directionalLight>
-      <spotLight
+      {/* <spotLight
         ref={spotlightRef}
         intensity={1.5}
         angle={Math.PI / 6}
@@ -96,7 +98,7 @@ export const Experience = ({ onTouchAction }) => {
         color="#ffffff"
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
-      />
+      /> */}
       <Physics key={map} >
         <Map
           scale={maps[map]?.scale || 0.7}
@@ -105,7 +107,20 @@ export const Experience = ({ onTouchAction }) => {
         />
         <CharacterController onTouchAction={onTouchAction} />
         <CandleSystem />
+        {/* <MonsterSystem /> */}
       </Physics>
+      
+      {/* Post-processing effects */}
+      <EffectComposer>
+        <Bloom 
+          intensity={0.6}
+          width={300}
+          height={300}
+          kernelSize={5}
+          luminanceThreshold={0.95}
+          luminanceSmoothing={0.025}
+        />
+      </EffectComposer>
     </>
   );
 };

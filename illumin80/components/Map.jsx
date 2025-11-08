@@ -341,8 +341,14 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
       const pendulumAngle = 0.6; // Maximum swing angle in radians (about 34 degrees)
       const time = state.clock.elapsedTime;
       
-      // Use sine wave for smooth pendulum motion
-      const newRotation = Math.sin(time * pendulumSpeed) * pendulumAngle;
+      // Add phase offset based on obstacle name to desynchronize pendulums
+      let phaseOffset = 0;
+      if (obstacleMesh.name.includes('004') || obstacleMesh.name.includes('.004')) {
+        phaseOffset = Math.PI; // Half cycle offset (180 degrees)
+      }
+      
+      // Use sine wave for smooth pendulum motion with phase offset
+      const newRotation = Math.sin(time * pendulumSpeed + phaseOffset) * pendulumAngle;
       obstacleMesh.rotation.z = newRotation;
       
       // Debug log occasionally
@@ -748,12 +754,13 @@ const CompoundHammerCollider = ({ hammerMesh, index }) => {
 
 // Simplified Map component
 export const Map = ({ model, ...props }) => {
-  const { scene: platformScene } = useGLTF(model); // Main platform
-  const { scene: obstacleScene, animations } = useGLTF('/models/underworld2_obstacles.glb'); // Obstacles
-  const group = useRef();
+  const { scene: platformScene, animations: platformAnimations } = useGLTF(model); // Main platform
+  const { scene: obstacleScene, animations } = useGLTF('/models/underworld3_obstacles.glb'); // Obstacles
   const obstacleGroup = useRef();
+  const platformGroup = useRef();
   const [isLoaded, setIsLoaded] = useState(false);
   const { actions } = useAnimations(animations, obstacleGroup);
+  const { actions: platformActions } = useAnimations(platformAnimations, platformGroup);
   const { loadSound, playSound } = useAudio();
   const [hammerMeshes, setHammerMeshes] = useState([]);
   const [collectibles, setCollectibles] = useState([]);
@@ -864,10 +871,10 @@ export const Map = ({ model, ...props }) => {
       
       // Also try targeting the child groups directly (obstacle_1_002001, obstacle_1_002002)
       if ((child.type === 'Group' || child.type === 'Object3D') && (
-           name.includes('obstacle_1_002001') || 
-           name.includes('obstacle_1_002002') ||
-           name.includes('obstacle_1_002.001') || 
-           name.includes('obstacle_1_002.002'))) {
+           name.includes('obstacle_1_002004') || 
+           name.includes('obstacle_1_002005') ||
+           name.includes('obstacle_1_002.004') || 
+           name.includes('obstacle_1_002.005'))) {
         foundHammers.push(child); // Track the animated GROUP
         child.userData.isPendulum = true;
         
@@ -1001,6 +1008,57 @@ export const Map = ({ model, ...props }) => {
     setFires(foundFires);
     // console.log(`Found ${foundFires.length} fires:`, foundFires.map(f => f.name));
   }, [platformScene]);
+
+  // Handle flame animation
+  useEffect(() => {
+    if (!platformScene || !platformAnimations || platformAnimations.length === 0) return;
+    
+    // Flame animation found and will be started with delay
+    
+    // Try to find and play Take 01 animation in either model
+    let animationFound = false;
+    
+    // Delayed access to let the actions initialize properly
+    setTimeout(() => {
+      if (platformActions) {
+        const actionKey = Object.keys(platformActions)[0];
+        if (actionKey) {
+          const action = platformActions[actionKey];
+          if (action && typeof action.play === 'function') {
+            action.reset();
+            action.setLoop(THREE.LoopRepeat, Infinity);
+            action.play();
+            // console.log('🔥 Flame animation started');
+          }
+        }
+      }
+    }, 100);
+    
+    if (actions && actions['Take 01']) {
+      // console.log('🔥 Playing Take 01 from OBSTACLE model');
+      const action = actions['Take 01'];
+      action.reset();
+      action.setLoop(THREE.LoopRepeat, Infinity); // Loop infinitely  
+      action.play();
+      // console.log('🔥 Animation state:', { isRunning: action.isRunning(), enabled: action.enabled, paused: action.paused });
+      animationFound = true;
+    }
+    
+    // if (!animationFound) {
+    //   console.log('🔥 Take 01 animation not found in either model');
+    // }
+    
+    // Only log candleFlame objects (the ones we actually use)
+    let candleFlameCount = 0;
+    platformScene.traverse((child) => {
+      const name = child.name.toLowerCase();
+      if (name.includes('candleflame')) {
+        candleFlameCount++;
+        // console.log(`🔥 Found candleFlame: ${child.name} (type: ${child.type})`);
+      }
+    });
+    // console.log(`🔥 Total candleFlame objects found: ${candleFlameCount}`);
+  }, [platformActions, platformScene]);
 
   // Apply iridescent shader to 'Emissive' materials
   useEffect(() => {
@@ -1241,7 +1299,7 @@ export const Map = ({ model, ...props }) => {
     <>
       {/* Static platform collision mesh - NO obstacles included */}
       <RigidBody type="fixed" colliders="trimesh">
-        <primitive object={platformScene} {...props} ref={group} />
+        <primitive object={platformScene} {...props} ref={platformGroup} />
       </RigidBody>
       
       {/* Visual obstacles WITHOUT collision */}

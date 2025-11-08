@@ -22,11 +22,22 @@ export const useGameStore = create(
     candles: 0,
     keys: 0,
     
+    // Monster state
+    defeatedMonsters: new Set(),
+    activeMonsterCount: 0,
+    
     // Game actions
     addScore: (points) => set((state) => ({ score: state.score + points })),
     removeLife: () => set((state) => ({ lives: state.lives - 1 })),
     addCandle: () => set((state) => ({ candles: state.candles + 1 })),
     addKey: () => set((state) => ({ keys: state.keys + 1 })),
+    
+    // Monster actions
+    defeatMonster: (monsterId) => set((state) => ({
+      defeatedMonsters: new Set([...state.defeatedMonsters, monsterId])
+    })),
+    setActiveMonsterCount: (count) => set({ activeMonsterCount: count }),
+    resetMonsters: () => set({ defeatedMonsters: new Set(), activeMonsterCount: 0 }),
     
     setCharacterPosition: (position) => set({ characterPosition: position }),
     setCharacterHealth: (health) => set({ characterHealth: health }),
@@ -52,6 +63,8 @@ export const useGameStore = create(
       lightNearestCandle: null,
       candles: 0,
       keys: 0,
+      defeatedMonsters: new Set(),
+      activeMonsterCount: 0,
     }),
   }))
 );

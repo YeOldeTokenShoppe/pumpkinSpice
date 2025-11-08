@@ -332,7 +332,7 @@ export const CharacterController = ({ onTouchAction }) => {
         <group ref={character} userData={{ isCharacter: true }}>
           <Character 
             scale={0.38} 
-            position-y={-0.15} 
+            position-y={-.35} 
             animation={animation}
             lightingAction={isLightingAction}
           />

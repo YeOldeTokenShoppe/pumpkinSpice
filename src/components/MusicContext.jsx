@@ -337,7 +337,7 @@ export const MusicProvider = ({ children }) => {
 
   // Handle 80s mode change - reload track from new playlist
   useEffect(() => {
-    console.log('[MusicContext] 80s mode changed to:', is80sMode);
+    // console.log('[MusicContext] 80s mode changed to:', is80sMode);
     
     // Save mode change to global manager
     if (globalAudioManager) {

@@ -211,27 +211,33 @@ const MiniMap = ({ playerPosition = { x: 50, y: 50 }, objectives = [] }) => {
 };
 
 export const EnhancedHUD = () => {
-  // Using Valtio GameState for all game data since that's what the game components update
+  // Using both Valtio GameState and Zustand store for all game data
   const gameState = useSnapshot(GameState);
-  const score = gameState.score || 0;
+  const { 
+    score, 
+    characterHealth, 
+    defeatedMonsters, 
+    activeMonsterCount 
+  } = useGameStore();
+  
   const keys = gameState.keys || 0;
-  const characterHealth = gameState.characterHealth || 100;
   const level = gameState.level || 1;
   const candles = gameState.candles || 0;
   const litCandles = gameState.litCandles || new Set();
+  const monstersDefeated = defeatedMonsters?.size || 0;
   
   // Debug logging
-  useEffect(() => {
-    console.log("EnhancedHUD - Debug:", {
-      litCandles,
-      litCandlesLength: litCandles?.size,
-      candles,
-      gameState: {
-        litCandles: gameState.litCandles,
-        candles: gameState.candles
-      }
-    });
-  }, [litCandles, candles, gameState.litCandles, gameState.candles]);
+  // useEffect(() => {
+  //   console.log("EnhancedHUD - Debug:", {
+  //     litCandles,
+  //     litCandlesLength: litCandles?.size,
+  //     candles,
+  //     gameState: {
+  //       litCandles: gameState.litCandles,
+  //       candles: gameState.candles
+  //     }
+  //   });
+  // }, [litCandles, candles, gameState.litCandles, gameState.candles]);
   
   // Get coin count from GameState
   const coinCount = gameState.coinCount || 0;
@@ -338,8 +344,13 @@ export const EnhancedHUD = () => {
             <div className="resources-horizontal">
               <div className="resource-item">
                 <div className="resource-icon">❤️</div>
-                <span className="resource-value">{characterHealth}</span>
+                <span className="resource-value">{characterHealth}/100</span>
                 <ParticleEffect trigger={healthParticleTrigger} color="#ff0040" />
+              </div>
+              
+              <div className="resource-item">
+                <div className="resource-icon">⚔️</div>
+                <span className="resource-value">{monstersDefeated}</span>
               </div>
               
               <div className="resource-item">

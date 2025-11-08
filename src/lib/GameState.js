@@ -2,7 +2,7 @@ import { proxy } from 'valtio';
 import { Vector3 } from 'three';
 
 export const GameState = proxy({
-  map: "underworld2",
+  map: "underworld3",
   characterPosition: new Vector3(0, 0, 0),
   containerRotation: 0,
   score: 0,

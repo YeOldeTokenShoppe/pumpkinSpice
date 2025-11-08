@@ -8,6 +8,7 @@ export const CandleSystem = () => {
   const { scene } = useThree();
   const candleFlames = useRef([]);
   const lightingDistance = 3.0;
+  const cullDistance = 15.0; // Distance at which to turn off lights
   
   // Valtio state access
   const gameState = useSnapshot(GameState);
@@ -60,6 +61,9 @@ export const CandleSystem = () => {
         
         candleFlames.current = flames;
         // console.log(`Found ${flames.length} candle flames`);
+        
+        // Set total candle count in GameState
+        GameState.candles = flames.length;
         
         // Now safely hide them after positions are stored
         flames.forEach(candle => {
@@ -136,7 +140,19 @@ export const CandleSystem = () => {
               // Create the light burst effect at the candle position
               createLightBurst(nearestCandle.worldPosition);
               
-              console.log(`Candle ${nearestCandle.name} is now lit!`);
+              // Add permanent point light at the candle position
+              const candleLight = new PointLight('#FFB347', 2, 8, 2); // Warm orange light
+              candleLight.position.copy(nearestCandle.worldPosition);
+              candleLight.position.y += 0.3; // Slightly above the candle
+              candleLight.castShadow = true;
+              candleLight.shadow.mapSize.width = 512;
+              candleLight.shadow.mapSize.height = 512;
+              scene.add(candleLight);
+              
+              // Store the light reference for potential cleanup
+              nearestCandle.pointLight = candleLight;
+              
+              console.log(`Candle ${nearestCandle.name} is now lit with point light!`);
             } catch (delayError) {
               console.error(`Error during delayed lighting of ${nearestCandle.name}:`, delayError);
             }
@@ -158,6 +174,38 @@ export const CandleSystem = () => {
   useEffect(() => {
     GameState.lightNearestCandle = lightNearestCandle;
   }, [lightNearestCandle]);
+
+  // Culling system - manage distant candle lights for performance
+  useEffect(() => {
+    const cullCandleLights = () => {
+      if (!gameState.characterPosition || candleFlames.current.length === 0) {
+        return;
+      }
+
+      candleFlames.current.forEach(candle => {
+        if (candle.lit && candle.pointLight) {
+          const distance = candle.worldPosition.distanceTo(gameState.characterPosition);
+          
+          // Turn off light if too far, turn on if close enough
+          if (distance > cullDistance) {
+            if (candle.pointLight.visible) {
+              candle.pointLight.visible = false;
+              // console.log(`Culled candle light: ${candle.name} (distance: ${distance.toFixed(2)})`);
+            }
+          } else {
+            if (!candle.pointLight.visible) {
+              candle.pointLight.visible = true;
+              // console.log(`Restored candle light: ${candle.name} (distance: ${distance.toFixed(2)})`);
+            }
+          }
+        }
+      });
+    };
+
+    // Run culling every 500ms (2fps) to avoid performance impact
+    const cullInterval = setInterval(cullCandleLights, 500);
+    return () => clearInterval(cullInterval);
+  }, [gameState.characterPosition, cullDistance]);
 
   return null;
 };

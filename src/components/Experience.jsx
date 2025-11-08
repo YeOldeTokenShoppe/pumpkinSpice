@@ -10,7 +10,7 @@ import { CandleSystem } from "./CandleSystem";
 import { Map } from "./Map";
 
 export const maps = {
-  underworld2: {
+  underworld3: {
     scale: 0.7,
     position: [-0.1, -9.5, 7],
   },
