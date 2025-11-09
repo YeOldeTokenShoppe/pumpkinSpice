@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './PlayingCard.scss';
-import { BuyWidget } from "thirdweb";
-import { defineChain } from "thirdweb";
-import { createWallet } from "thirdweb/wallets";
-import { client } from "../client";
+// import { defineChain } from "thirdweb";
+// import { createWallet } from "thirdweb/wallets";
+// import { client } from "../client";
 
 const PlayingCard = ({ frontImage = '/queenOfHearts.png', scale = 1 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -117,15 +116,6 @@ const PlayingCard = ({ frontImage = '/queenOfHearts.png', scale = 1 }) => {
           >
             ← Back
           </button>
-      <BuyWidget
-      client={client}
-      // image={"https://rl80.com/vvv.jpg"}
-      currency={"USD"}
-      chain={defineChain(8453)}
-      amount={"0.002"}
-      tokenAddress={"0x532f27101965dd16442E59d40670FaF5eBB142E4"}
-      seller={"0x0000000000000000000000000000000000000000"}
-    />
         </div>
       </div>
     </div>

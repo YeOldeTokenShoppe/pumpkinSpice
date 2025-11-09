@@ -1,5 +1,13 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { 
+  getFirestore, 
+  collection, 
+  getDocs, 
+  addDoc, 
+  doc, 
+  serverTimestamp, 
+  writeBatch 
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -36,4 +44,13 @@ try {
   db = null;
 }
 
-export { db, app };
+export { 
+  db, 
+  app, 
+  collection, 
+  getDocs, 
+  addDoc, 
+  doc, 
+  serverTimestamp, 
+  writeBatch 
+};
