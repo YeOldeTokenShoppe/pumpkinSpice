@@ -109,6 +109,7 @@ export const CharacterController = ({ onTouchAction }) => {
     };
   }, [loadSound]);
 
+
   useFrame(({ camera, mouse }) => {
     if (rb.current) {
       // Store rigid body reference in GameState for collision detection

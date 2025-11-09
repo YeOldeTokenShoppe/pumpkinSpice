@@ -1,6 +1,6 @@
 import { OrthographicCamera } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { DirectionalLightHelper } from "three";
 import { useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
@@ -27,11 +27,19 @@ export const Experience = ({ onTouchAction, onLoad }) => {
   const directionalLightRef = useRef();
   const spotlightRef = useRef();
   const { scene } = useThree();
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
   
   // Get map from Valtio GameState and characterPosition from Zustand store
   const gameState = useSnapshot(GameState);
   const map = gameState.map || 'underworld3'; // default fallback
   const { characterPosition } = useGameStore();
+
+  const handleMapLoad = () => {
+    setIsMapLoaded(true);
+    if (onLoad) {
+      onLoad();
+    }
+  };
 
   // useEffect(() => {
   //   if (directionalLightRef.current) {
@@ -111,9 +119,9 @@ export const Experience = ({ onTouchAction, onLoad }) => {
           scale={maps[map]?.scale || 0.7}
           position={maps[map]?.position || [-0.1, -9.5, 7]}
           model={`models/${map}.glb`}
-          onLoad={onLoad}
+          onLoad={handleMapLoad}
         />
-        <CharacterController onTouchAction={onTouchAction} />
+        {isMapLoaded && <CharacterController onTouchAction={onTouchAction} />}
         <CandleSystem />
         {/* <MonsterSystem /> */}
       </Physics>
