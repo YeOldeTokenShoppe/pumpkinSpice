@@ -7,7 +7,7 @@ import { useSnapshot } from "valtio";
 export const CandleSystem = () => {
   const { scene } = useThree();
   const candleFlames = useRef([]);
-  const lightingDistance = 3.0;
+  const lightingDistance = 2.0;
   const cullDistance = 15.0; // Distance at which to turn off lights
   
   // Valtio state access

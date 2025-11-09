@@ -753,7 +753,7 @@ const CompoundHammerCollider = ({ hammerMesh, index }) => {
 };
 
 // Simplified Map component
-export const Map = ({ model, ...props }) => {
+export const Map = ({ model, onLoad, ...props }) => {
   const { scene: platformScene, animations: platformAnimations } = useGLTF(model); // Main platform
   const { scene: obstacleScene, animations } = useGLTF('/models/underworld3_obstacles.glb'); // Obstacles
   const obstacleGroup = useRef();
@@ -777,8 +777,11 @@ export const Map = ({ model, ...props }) => {
   useEffect(() => {
     if (platformScene && obstacleScene) {
       setIsLoaded(true);
+      if (onLoad) {
+        onLoad();
+      }
     }
-  }, [platformScene, obstacleScene]);
+  }, [platformScene, obstacleScene, onLoad]);
   
   // Find obstacles in the obstacle scene
   useEffect(() => {

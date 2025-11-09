@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 const CoinLoader = ({ loading = true, onComplete }) => {
   const [isVisible, setIsVisible] = useState(loading);
+  const [showInscription, setShowInscription] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -19,6 +20,19 @@ const CoinLoader = ({ loading = true, onComplete }) => {
     }
   }, [loading, onComplete]);
 
+  // Show inscription after a brief delay to prevent FOUC
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setShowInscription(true);
+      }, 150); // Small delay to let CSS load
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowInscription(false);
+    }
+  }, [loading]);
+
   if (!isVisible) return null;
 
   return (
@@ -31,13 +45,13 @@ const CoinLoader = ({ loading = true, onComplete }) => {
           <div className="pl__coin-flare"></div>
           <div className="pl__coin-layers">
             <div className="pl__coin-layer">
-              <div className="pl__coin-inscription">RL80</div>
+              <div className="pl__coin-inscription">{showInscription ? 'RL80' : ''}</div>
             </div>
             <div className="pl__coin-layer"></div>
             <div className="pl__coin-layer"></div>
             <div className="pl__coin-layer"></div>
             <div className="pl__coin-layer">
-              <div className="pl__coin-inscription">RL80</div>
+              <div className="pl__coin-inscription">{showInscription ? 'RL80' : ''}</div>
             </div>
           </div>
         </div>
@@ -52,7 +66,7 @@ const CoinLoader = ({ loading = true, onComplete }) => {
           left: 0;
           width: 100%;
           height: 100%;
-          background-color: rgba(0, 0, 0, 0.8);
+          background-color: rgb(0, 0, 0);
           display: flex;
           justify-content: center;
           align-items: center;
@@ -78,6 +92,8 @@ const CoinLoader = ({ loading = true, onComplete }) => {
           animation-duration: 2s;
           animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
           animation-iteration-count: infinite;
+          animation-delay: 0.1s;
+          animation-fill-mode: both;
         }
 
         .pl__coin {

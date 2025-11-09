@@ -1,10 +1,10 @@
 import Image from "next/image";
 // import { Link, Button } from "@chakra-ui/react";
-import { ConnectButton, darkTheme } from "thirdweb/react";
+import { ConnectButton, darkTheme } from "thirdweb";
 import { client } from "../client";
 import { CHAIN } from "@/utilities/constants";
 import { createWallet, walletConnect } from "thirdweb/wallets";
-import { ThirdwebProvider, MediaRenderer } from "thirdweb/react";
+import { ThirdwebProvider, MediaRenderer } from "thirdweb";
 
 const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
 

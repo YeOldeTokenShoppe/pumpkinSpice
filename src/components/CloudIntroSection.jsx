@@ -6,7 +6,7 @@ import DropInTitle from './DropInTitle';
 import Coin from '@/components/Coin';
 import Link from 'next/link';
 import { gsap } from 'gsap';
-import { BuyWidget } from "thirdweb/react";
+import { BuyWidget } from "thirdweb";
 import { defineChain } from "thirdweb";
 import { createWallet } from "thirdweb/wallets";
 import { client } from "../client";

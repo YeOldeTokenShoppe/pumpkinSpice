@@ -8,7 +8,8 @@ export default function SkewedHeading({
   isMobile = false,
   fontFamily = "'Fjalla One', sans-serif",
   useGradient = false,
-  gradientColors = ['#ffd700', '#00ff00']
+  gradientColors = ['#ffd700', '#00ff00'],
+  textAlign = 'center'
 }) {
   // Create a stable ID for unique CSS class names
   const stableId = useMemo(() => 
@@ -21,7 +22,7 @@ export default function SkewedHeading({
       position: 'relative',
       display: 'inline-block',
       width: '100%',
-      textAlign: 'center',
+      textAlign: textAlign,
       padding: '10px ', // Add padding to prevent shadow clipping
       overflow: 'visible', // Ensure shadows are visible
     }}>

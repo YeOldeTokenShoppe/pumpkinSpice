@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
-const TradingOverlay = ({ show = false, data = null, isConnected = false, tradingMode = 'DEMO', onModeChange }) => {
+const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [activeTab, setActiveTab] = useState(null); // for mobile view - start with no tab selected
   const [desktopPositionsTab, setDesktopPositionsTab] = useState('positions'); // for desktop tabbed interface
   const [showMobileMenu, setShowMobileMenu] = useState(false); // for mobile menu display
-  const [showModeConfirm, setShowModeConfirm] = useState(false);
-  const [pendingMode, setPendingMode] = useState(null);
   
   // Use passed data if available, otherwise use default mock data
   const defaultData = {
@@ -20,17 +18,17 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
     tvl: 888888.88,
     apy: 69.42,
     performanceScore: 7,
-    activePositions: tradingMode === 'DEMO' ? [
+    activePositions: [
       { symbol: 'ETH/USDT', side: 'LONG', size: 2.5, entry: 3450.00, current: 3512.50, pnl: 156.25, pnlPercent: 1.81 },
       { symbol: 'SOL/USDT', side: 'SHORT', size: 100, entry: 142.80, current: 141.20, pnl: 160.00, pnlPercent: 1.12 },
       { symbol: 'BTC/USDT', side: 'LONG', size: 0.15, entry: 65800, current: 67200, pnl: 210.00, pnlPercent: 2.13 },
-    ] : [],
-    recentTrades: tradingMode === 'DEMO' ? [
+    ],
+    recentTrades: [
       { time: '17:42', symbol: 'DOGE', side: 'BUY', amount: '10K', price: 0.385, pnl: '+$142', status: 'exceptional' },
       { time: '16:21', symbol: 'AVAX', side: 'SELL', amount: '50', price: 42.10, pnl: '+$89', status: 'profit' },
       { time: '14:55', symbol: 'LINK', side: 'BUY', amount: '200', price: 18.95, pnl: '-$23', status: 'loss' },
       { time: '13:12', symbol: 'ARB', side: 'BUY', amount: '1.5K', price: 1.82, pnl: '+$217', status: 'exceptional' },
-    ] : [],
+    ],
     nextAnalysis: '00:42:17',
     winStreak: 13,
     profitMultiplier: 1.77,
@@ -80,31 +78,16 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
   
   const [tradingData, setTradingData] = useState(defaultData);
 
-  // Update trading data when props change or mode changes
+  // Update trading data when props change
   useEffect(() => {
-    if (data && tradingMode !== 'DEMO') {
-      // Use real data when connected
+    if (data && isConnected) {
+      // Use real data from paper trading bot when connected
       setTradingData(data);
-    } else if (tradingMode === 'DEMO') {
-      // Use demo data with sample positions and trades
-      setTradingData({
-        ...defaultData,
-        activePositions: [
-          { symbol: 'ETH/USDT', side: 'LONG', size: 2.5, entry: 3450.00, current: 3512.50, pnl: 156.25, pnlPercent: 1.81 },
-          { symbol: 'SOL/USDT', side: 'SHORT', size: 100, entry: 142.80, current: 141.20, pnl: 160.00, pnlPercent: 1.12 },
-          { symbol: 'BTC/USDT', side: 'LONG', size: 0.15, entry: 65800, current: 67200, pnl: 210.00, pnlPercent: 2.13 },
-        ],
-        recentTrades: [
-          { time: '17:42', symbol: 'DOGE', side: 'BUY', amount: '10K', price: 0.385, pnl: '+$142', status: 'exceptional' },
-          { time: '16:21', symbol: 'AVAX', side: 'SELL', amount: '50', price: 42.10, pnl: '+$89', status: 'profit' },
-          { time: '14:55', symbol: 'LINK', side: 'BUY', amount: '200', price: 18.95, pnl: '-$23', status: 'loss' },
-          { time: '13:12', symbol: 'ARB', side: 'BUY', amount: '1.5K', price: 1.82, pnl: '+$217', status: 'exceptional' },
-          { time: '11:30', symbol: 'MATIC', side: 'SELL', amount: '500', price: 1.15, pnl: '+$67', status: 'profit' },
-          { time: '10:45', symbol: 'DOT', side: 'BUY', amount: '100', price: 8.75, pnl: '-$45', status: 'loss' },
-        ]
-      });
+    } else {
+      // Use default paper trading simulation data
+      setTradingData(defaultData);
     }
-  }, [data, tradingMode]);
+  }, [data, isConnected]);
 
   // Check for mobile and tablet on mount and resize
   useEffect(() => {
@@ -148,28 +131,6 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
     return num.toFixed(2);
   };
 
-  const handleModeClick = (newMode) => {
-    if (newMode === tradingMode) return;
-    
-    // Show confirmation for LIVE mode
-    if (newMode === 'LIVE') {
-      setPendingMode(newMode);
-      setShowModeConfirm(true);
-    } else {
-      // Direct switch for DEMO and PAPER
-      if (onModeChange) {
-        onModeChange(newMode);
-      }
-    }
-  };
-
-  const confirmModeChange = () => {
-    if (pendingMode && onModeChange) {
-      onModeChange(pendingMode);
-    }
-    setShowModeConfirm(false);
-    setPendingMode(null);
-  };
 
   // Mobile and Tablet view - side flyout interface
   if ((isMobile || isTablet) && show) {
@@ -392,57 +353,54 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
                     ⚡ RL80 TRADING FUND
                   </div>
                 </div>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px'
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '3px',
+                  alignItems: 'flex-end'
                 }}>
-                  {/* Mode Switcher Buttons */}
-                  {['DEMO', 'PAPER', 'LIVE'].map(mode => (
-                    <button
-                      key={mode}
-                      onClick={() => handleModeClick(mode)}
-                      style={{
-                        padding: '2px 6px',
-                        background: tradingMode === mode ? 
-                          (mode === 'LIVE' ? 'rgba(0, 255, 0, 0.3)' :
-                           mode === 'PAPER' ? 'rgba(255, 221, 0, 0.3)' :
-                           'rgba(136, 136, 136, 0.3)') :
-                          'rgba(0, 0, 0, 0.5)',
-                        border: `1px solid ${
-                          tradingMode === mode ?
-                            (mode === 'LIVE' ? '#00ff00' :
-                             mode === 'PAPER' ? '#ffdd00' : '#888') :
-                            'rgba(255, 255, 255, 0.2)'
-                        }`,
-                        borderRadius: '3px',
-                        fontSize: '9px',
-                        fontWeight: 'bold',
-                        color: tradingMode === mode ?
-                          (mode === 'LIVE' ? '#00ff00' :
-                           mode === 'PAPER' ? '#ffdd00' : '#fff') :
-                          '#888',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px'
-                      }}
-                    >
-                      {tradingMode === mode && (
-                        <div style={{
-                          width: '5px',
-                          height: '5px',
-                          borderRadius: '50%',
-                          background: mode === 'LIVE' ? '#00ff00' : 
-                                    mode === 'PAPER' ? '#ffdd00' : '#888',
-                          animation: mode === 'LIVE' && tradingMode === mode ? 'pulse 2s infinite' : 'none'
-                        }} />
-                      )}
-                      {mode === 'LIVE' ? '💰' : mode === 'PAPER' ? '📝' : '🔌'}
-                      {mode}
-                    </button>
-                  ))}
+                  <div style={{
+                    padding: '2px 8px',
+                    background: 'rgba(255, 221, 0, 0.3)',
+                    border: '1px solid #ffdd00',
+                    borderRadius: '3px',
+                    fontSize: '9px',
+                    fontWeight: 'bold',
+                    color: '#ffdd00',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px'
+                  }}>
+                    <div style={{
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '50%',
+                      background: '#ffdd00'
+                    }} />
+                    📝 PAPER
+                  </div>
+                  {isConnected && (
+                    <div style={{
+                      padding: '1px 4px',
+                      background: 'rgba(0, 255, 0, 0.2)',
+                      border: '1px solid rgba(0, 255, 0, 0.4)',
+                      borderRadius: '2px',
+                      fontSize: '7px',
+                      color: '#00ff00',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px'
+                    }}>
+                      <div style={{
+                        width: '3px',
+                        height: '3px',
+                        borderRadius: '50%',
+                        background: '#00ff00',
+                        animation: 'pulse 2s infinite'
+                      }} />
+                      LIVE MARKET
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -887,90 +845,6 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
   // Desktop view - original layout
   return (
     <>
-      {/* Confirmation Modal for LIVE mode */}
-      {showModeConfirm && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10001
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(20, 0, 0, 0.9) 100%)',
-            border: '2px solid #ff3333',
-            borderRadius: '10px',
-            padding: '20px',
-            maxWidth: '400px',
-            fontFamily: 'monospace',
-            boxShadow: '0 0 30px rgba(255, 0, 0, 0.5)'
-          }}>
-            <h3 style={{ color: '#ff3333', marginBottom: '15px', textAlign: 'center' }}>
-              ⚠️ LIVE TRADING MODE ⚠️
-            </h3>
-            <p style={{ color: '#fff', marginBottom: '20px', fontSize: '14px' }}>
-              <strong>Important:</strong> This UI indicator shows your intended mode.
-            </p>
-            <div style={{ 
-              background: 'rgba(255, 255, 255, 0.1)', 
-              padding: '10px', 
-              borderRadius: '5px', 
-              marginBottom: '15px' 
-            }}>
-              <p style={{ color: '#ffdd00', fontSize: '13px', marginBottom: '10px' }}>
-                ⚠️ To actually trade with real money, you must:
-              </p>
-              <ol style={{ color: '#fff', fontSize: '12px', marginLeft: '20px' }}>
-                <li>Edit your bot's .env file:</li>
-                <li style={{ fontFamily: 'monospace', color: '#00ff00' }}>
-                  TRADING_ENABLED=true<br/>
-                  PAPER_TRADING=false
-                </li>
-                <li>Restart the Python bot</li>
-                <li>Have funds in your Hyperliquid wallet</li>
-              </ol>
-            </div>
-            <p style={{ color: '#ff3333', marginBottom: '20px', fontSize: '12px', fontWeight: 'bold' }}>
-              The UI indicator helps you track which mode you're targeting, but actual trading is controlled by the bot configuration!
-            </p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <button
-                onClick={() => setShowModeConfirm(false)}
-                style={{
-                  padding: '10px 20px',
-                  background: 'rgba(136, 136, 136, 0.3)',
-                  border: '1px solid #888',
-                  borderRadius: '5px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                CANCEL
-              </button>
-              <button
-                onClick={confirmModeChange}
-                style={{
-                  padding: '10px 20px',
-                  background: 'rgba(0, 255, 0, 0.2)',
-                  border: '1px solid #00ff00',
-                  borderRadius: '5px',
-                  color: '#00ff00',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                I UNDERSTAND
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Main Trading Stats Panel - Left Side */}
       <div style={{
         position: 'fixed',
@@ -1011,62 +885,59 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
               ⚡ RL80 TRADING FUND ⚡
             </div>
           </div>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '4px'
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            alignItems: 'flex-end'
           }}>
-            {/* Mode Switcher Buttons */}
-            {['DEMO', 'PAPER', 'LIVE'].map(mode => (
-              <button
-                key={mode}
-                onClick={() => handleModeClick(mode)}
-                style={{
-                  padding: '3px 8px',
-                  background: tradingMode === mode ? 
-                    (mode === 'LIVE' ? 'rgba(0, 255, 0, 0.3)' :
-                     mode === 'PAPER' ? 'rgba(255, 221, 0, 0.3)' :
-                     'rgba(136, 136, 136, 0.3)') :
-                    'rgba(0, 0, 0, 0.5)',
-                  border: `1px solid ${
-                    tradingMode === mode ?
-                      (mode === 'LIVE' ? '#00ff00' :
-                       mode === 'PAPER' ? '#ffdd00' : '#888') :
-                      'rgba(255, 255, 255, 0.2)'
-                  }`,
-                  borderRadius: '4px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  color: tradingMode === mode ?
-                    (mode === 'LIVE' ? '#00ff00' :
-                     mode === 'PAPER' ? '#ffdd00' : '#fff') :
-                    '#666',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                {tradingMode === mode && (
-                  <div style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: mode === 'LIVE' ? '#00ff00' : 
-                              mode === 'PAPER' ? '#ffdd00' : '#888',
-                    animation: mode === 'LIVE' && tradingMode === mode ? 'pulse 2s infinite' : 'none'
-                  }} />
-                )}
-                {mode === 'LIVE' ? '💰' : mode === 'PAPER' ? '📝' : '🔌'}
-                {mode}
-              </button>
-            ))}
+            <div style={{
+              padding: '3px 8px',
+              background: 'rgba(255, 221, 0, 0.3)',
+              border: '1px solid #ffdd00',
+              borderRadius: '4px',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              color: '#ffdd00',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <div style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#ffdd00'
+              }} />
+              📝 PAPER TRADING
+            </div>
+            {isConnected && (
+              <div style={{
+                padding: '2px 6px',
+                background: 'rgba(0, 255, 0, 0.2)',
+                border: '1px solid rgba(0, 255, 0, 0.4)',
+                borderRadius: '3px',
+                fontSize: '8px',
+                color: '#00ff00',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px'
+              }}>
+                <div style={{
+                  width: '4px',
+                  height: '4px',
+                  borderRadius: '50%',
+                  background: '#00ff00',
+                  animation: 'pulse 2s infinite'
+                }} />
+                LIVE MARKET
+              </div>
+            )}
           </div>
         </div>
 
         {/* Connection Status Info */}
-        {!isConnected && tradingMode !== 'DEMO' && (
+        {!isConnected && (
           <div style={{
             marginBottom: '12px',
             padding: '8px',
@@ -1075,12 +946,10 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, tradin
             borderRadius: '5px'
           }}>
             <div style={{ color: '#ffdd00', fontSize: '10px', marginBottom: '4px' }}>
-              📌 Bot Not Connected
+              📌 Simulated Data Mode
             </div>
             <div style={{ color: '#888', fontSize: '9px' }}>
-              {tradingMode === 'PAPER' ? 
-                'Start bot with PAPER_TRADING=true in .env' :
-                'Start bot with TRADING_ENABLED=true in .env'}
+              Currently using simulated market data for demonstration
             </div>
           </div>
         )}

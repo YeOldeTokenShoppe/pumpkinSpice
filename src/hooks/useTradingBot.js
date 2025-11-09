@@ -4,7 +4,6 @@ import tradingBotService from '@/services/tradingBotService';
 
 export function useTradingBot() {
   const [isConnected, setIsConnected] = useState(false);
-  const [tradingMode, setTradingMode] = useState('DEMO'); // 'DEMO', 'PAPER', 'LIVE'
   const [tradingData, setTradingData] = useState({
     fundBalance: 142857.33,
     dailyPnl: 3847.21,
@@ -56,23 +55,12 @@ export function useTradingBot() {
     switch (type) {
       case 'connected':
         setIsConnected(true);
-        console.log('Trading bot connected');
-        // Determine trading mode from bot status
-        if (data.status) {
-          if (!data.status.trading_enabled) {
-            setTradingMode('DEMO');
-          } else if (data.status.paper_trading) {
-            setTradingMode('PAPER');
-          } else {
-            setTradingMode('LIVE');
-          }
-        }
+        console.log('Paper trading bot connected');
         break;
         
       case 'disconnected':
         setIsConnected(false);
-        setTradingMode('DEMO');
-        console.log('Trading bot disconnected');
+        console.log('Paper trading bot disconnected');
         break;
         
       case 'update':
@@ -144,29 +132,12 @@ export function useTradingBot() {
     tradingBotService.updateSettings(settings);
   }, []);
 
-  const changeTradingMode = useCallback((newMode) => {
-    console.log('UI Mode changed to:', newMode);
-    
-    // Always update UI state - this is just for display
-    setTradingMode(newMode);
-    
-    // Note: This is just UI state!
-    // Actual trading mode is controlled by the Python bot's .env settings
-    // TRADING_ENABLED and PAPER_TRADING in the bot determine real behavior
-    
-    if (!isConnected && newMode !== 'DEMO') {
-      console.info(`Bot not connected. When you start the bot, configure it for ${newMode} mode in .env`);
-    }
-  }, [isConnected]);
-
   return {
     isConnected,
-    tradingMode,
     tradingData,
     startTrading,
     stopTrading,
     closePosition,
-    updateSettings,
-    changeTradingMode
+    updateSettings
   };
 }

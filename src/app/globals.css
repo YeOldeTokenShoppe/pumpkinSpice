@@ -29,22 +29,25 @@
   animation: accordion-up 0.2s ease-out;
 }
 
-/* Fix for white border around canvas pages */
+/* Base styles for all pages */
 html, body {
-  margin: 0 !important;
-  padding: 0 !important;
+  margin: 0;
+  padding: 0;
   width: 100%;
-  height: 100%;
   overflow-x: hidden;
   background: #000000;
 }
 
-/* Specific fix for React Three Fiber Canvas */
-body > div:first-child {
-  width: 100vw !important;
-  height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
+/* Game-specific styles - only apply to game pages */
+.game-page {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.game-page html,
+.game-page body {
+  height: 100%;
 }
 
 /* Remove any default margins from Next.js app wrapper */
@@ -68,7 +71,7 @@ canvas {
 @import url("https://fonts.googleapis.com/css?family=Share+Tech+Mono");
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@1,500&display=swap");
 /* @import "sparkle.css"; */
-@import "coinLoaderSimple.css";
+/* @import "coinLoaderSimple.css"; */
 
 
 

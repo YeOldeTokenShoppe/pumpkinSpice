@@ -1,13 +1,14 @@
 import { useKeyboardControls } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { CapsuleCollider, RigidBody } from "@react-three/rapier";
 import { useEffect, useRef, useState } from "react";
-import { MathUtils, Vector3 } from "three";
+import { MathUtils, Vector3, Raycaster } from "three";
 import { degToRad } from "three/src/math/MathUtils.js";
 import { GameState } from "../../src/lib/GameState";
 import { Character } from "./Character";
 import { useAudio } from "../../src/hooks/useAudio";
 import { useTouchControls } from "../../src/hooks/useTouchControls";
+import { magicActions } from "../hooks/useMagic";
 
 const normalizeAngle = (angle) => {
   while (angle > Math.PI) angle -= 2 * Math.PI;
@@ -31,6 +32,7 @@ const lerpAngle = (start, end, t) => {
 };
 
 export const CharacterController = ({ onTouchAction }) => {
+  const { camera, scene } = useThree();
   // Fixed values instead of Leva controls
   const WALK_SPEED = 1.4;
   const RUN_SPEED = 2.6;
@@ -75,11 +77,18 @@ export const CharacterController = ({ onTouchAction }) => {
   const isWalking = useRef(false);
   const hasFallen = useRef(false);
   const lastStepTime = useRef(0);
+  const isFalling = useRef(false);
+  const fallStartTime = useRef(0);
+  const hasPlayedFallSound = useRef(false);
+  const gameJustStarted = useRef(true);
+  const justRespawned = useRef(false);
+  const raycaster = useRef(new Raycaster());
+  const lastSpellCast = useRef(0);
 
   useEffect(() => {
     loadSound('jump', '/sounds/jump.ogg');
-    loadSound('walking', '/sounds/clickStep.mp3', false);
-    loadSound('fall', '/sounds/fall.ogg');
+    loadSound('walking', '/sounds/cuteCursor3.mp3', false);
+    loadSound('fall', '/sounds/fall.mp3', false);
     
     const onMouseDown = (e) => {
       isClicking.current = true;
@@ -161,10 +170,14 @@ export const CharacterController = ({ onTouchAction }) => {
         vel.z =
           Math.cos(rotationTarget.current + characterRotationTarget.current) *
           speed;
-        if (speed === RUN_SPEED) {
-          setAnimation("run");
-        } else {
-          setAnimation("walk");
+        
+        // Only set walk/run animations if not falling
+        if (!isFalling.current) {
+          if (speed === RUN_SPEED) {
+            setAnimation("run");
+          } else {
+            setAnimation("walk");
+          }
         }
         
         // Play step sound at regular intervals
@@ -173,12 +186,12 @@ export const CharacterController = ({ onTouchAction }) => {
           const stepInterval = speed === RUN_SPEED ? 300 : 500; // Faster steps when running
           
           if (currentTime - lastStepTime.current > stepInterval) {
-            playSound('walking', { volume: 0.9, loop: false });
+            playSound('walking', { volume: 0.1, loop: false });
             lastStepTime.current = currentTime;
           }
           isWalking.current = true;
         }
-      } else {
+      } else if (!isFalling.current) {
         setAnimation("idle");
         // Reset walking state when not moving
         if (isWalking.current) {
@@ -188,6 +201,43 @@ export const CharacterController = ({ onTouchAction }) => {
 
       // Ground detection
       isOnGround.current = Math.abs(vel.y) < 0.1;
+      
+      // Mark game as started after first ground contact
+      if (isOnGround.current && gameJustStarted.current) {
+        gameJustStarted.current = false;
+      }
+      
+      // Clear respawn flag after landing
+      if (isOnGround.current && justRespawned.current) {
+        justRespawned.current = false;
+      }
+      
+      // Fall detection logic (skip during initial spawn and after respawn)
+      if (!gameJustStarted.current && !justRespawned.current && !isOnGround.current && vel.y < -3.5) { // Falling faster than -3.5 units/sec
+        if (!isFalling.current) {
+          // Just started falling
+          isFalling.current = true;
+          fallStartTime.current = Date.now();
+          hasPlayedFallSound.current = false; // Reset sound flag for new fall
+        } else {
+          // Check if we've been falling long enough to trigger animation
+          const fallDuration = Date.now() - fallStartTime.current;
+          if (fallDuration > 400) { // 400ms threshold for longer falls
+            setAnimation("fall");
+            // Play fall sound only once per fall
+            if (!hasPlayedFallSound.current) {
+              playSound('fall', { volume: 0.7, loop: false });
+              hasPlayedFallSound.current = true;
+            }
+          }
+        }
+      } else if (isOnGround.current && isFalling.current) {
+        // Just landed from a fall
+        isFalling.current = false;
+        fallStartTime.current = 0;
+        hasPlayedFallSound.current = false;
+        setAnimation("idle");
+      }
 
       // Jump logic with lighting action detection (keyboard + touch)
       if ((get().jump || touchControls.jump) && isOnGround.current && canJump.current) {
@@ -240,6 +290,54 @@ export const CharacterController = ({ onTouchAction }) => {
         canJump.current = true;
       }
 
+      // Spell casting controls
+      // Switch spells with Q/E or touch controls
+      if (get().prevSpell || touchControls.prevSpell) {
+        magicActions.prevSpell();
+      }
+      if (get().nextSpell || touchControls.nextSpell) {
+        magicActions.nextSpell();
+      }
+      
+      // Cast spell with mouse click or F key or touch
+      if ((get().cast || touchControls.cast) && Date.now() - lastSpellCast.current > 200) {
+        console.log("Attempting to cast spell");
+        // Calculate target position
+        const characterPos = new Vector3();
+        character.current.getWorldPosition(characterPos);
+        
+        // Get direction based on camera/container rotation
+        // The character faces the direction of movement/camera
+        const angle = container.current.rotation.y + character.current.rotation.y;
+        const forward = new Vector3(
+          Math.sin(angle),
+          0,
+          Math.cos(angle)
+        );
+        
+        // Create target position 10 units ahead
+        const targetPos = characterPos.clone().add(forward.multiplyScalar(10));
+        targetPos.y = characterPos.y + 1; // Aim at chest height
+        
+        console.log("Casting spell - angle:", angle, "forward:", forward, "at:", targetPos, "from:", characterPos);
+        
+        // Cast the spell
+        if (magicActions.castSpell(targetPos, characterPos)) {
+          console.log("Spell cast successfully!");
+          lastSpellCast.current = Date.now();
+          setAnimation("cast"); // You may want to add a casting animation
+          
+          // Return to idle after cast
+          setTimeout(() => {
+            if (movement.x === 0 && movement.z === 0 && !isFalling.current) {
+              setAnimation("idle");
+            }
+          }, 500);
+        } else {
+          console.log("Spell cast failed - on cooldown or already casting");
+        }
+      }
+
       // Zoom control - maintain zoom state independently of movement (keyboard + touch)
       if (get().zoom || touchControls.zoom) {
         cameraDistance.current = Math.max(1, cameraDistance.current - ZOOM_DISTANCE * 0.05);
@@ -266,30 +364,40 @@ export const CharacterController = ({ onTouchAction }) => {
 
     // Fall detection and respawn
     if (GameState.characterPosition.y < FALL_THRESHOLD) {
-      // Play fall sound once
+      // Don't play fall sound here - it's already playing from fall detection
       if (!hasFallen.current) {
-        playSound('fall', 0.5);
         hasFallen.current = true;
-      }
-      
-      // Reset character position to spawn point
-      rb.current.setTranslation(spawnPoint.current, true);
-      rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      rb.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      
-      // Reset container rotation
-      container.current.rotation.y = 0;
-      rotationTarget.current = 0;
-      characterRotationTarget.current = 0;
-      
-      // Update game state
-      GameState.characterPosition.copy(spawnPoint.current);
-      GameState.containerRotation = 0;
-      
-      // Stop walking sound if playing
-      if (isWalking.current) {
-        stopSound('walking');
-        isWalking.current = false;
+        
+        // Trigger respawn with black screen transition
+        GameState.triggerRespawn = true;
+        
+        // Delay the actual respawn to allow overlay to show
+        setTimeout(() => {
+          // Set respawn flag to prevent fall sound after respawn
+          justRespawned.current = true;
+          isFalling.current = false;
+          hasPlayedFallSound.current = false;
+          
+          // Reset character position to spawn point
+          rb.current.setTranslation(spawnPoint.current, true);
+          rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+          rb.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+          
+          // Reset container rotation
+          container.current.rotation.y = 0;
+          rotationTarget.current = 0;
+          characterRotationTarget.current = 0;
+          
+          // Update game state
+          GameState.characterPosition.copy(spawnPoint.current);
+          GameState.containerRotation = 0;
+          
+          // Stop walking sound if playing
+          if (isWalking.current) {
+            stopSound('walking');
+            isWalking.current = false;
+          }
+        }, 100);
       }
     } else {
       // Reset fall flag when not falling

@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { GameState } from '../lib/GameState';
+import { useEffect, useState } from 'react';
 
-export const TouchControls = ({ onAction }) => {
+export const TouchControls = ({ onAction, style }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [activeActions, setActiveActions] = useState({
     jump: false,
@@ -9,12 +8,6 @@ export const TouchControls = ({ onAction }) => {
     sprint: false,
     zoom: false
   });
-
-  // Virtual joystick state
-  const [joystickActive, setJoystickActive] = useState(false);
-  const [joystickPosition, setJoystickPosition] = useState({ x: 0, y: 0 });
-  const joystickRef = useRef(null);
-  const knobRef = useRef(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -24,62 +17,6 @@ export const TouchControls = ({ onAction }) => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Handle virtual joystick
-  const handleJoystickStart = (e) => {
-    setJoystickActive(true);
-    const touch = e.touches ? e.touches[0] : e;
-    updateJoystickPosition(touch);
-  };
-
-  const handleJoystickMove = (e) => {
-    if (!joystickActive) return;
-    const touch = e.touches ? e.touches[0] : e;
-    updateJoystickPosition(touch);
-  };
-
-  const handleJoystickEnd = (e) => {
-    setJoystickActive(false);
-    setJoystickPosition({ x: 0, y: 0 });
-    // Reset movement
-    onAction('movement', { x: 0, z: 0 });
-  };
-
-  const updateJoystickPosition = (touch) => {
-    if (!joystickRef.current) return;
-    
-    const rect = joystickRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const deltaX = touch.clientX - centerX;
-    const deltaY = touch.clientY - centerY;
-    
-    // Limit to joystick radius
-    const maxDistance = rect.width / 2 - 15; // 15px for knob radius
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    
-    let normalizedX = deltaX;
-    let normalizedY = deltaY;
-    
-    if (distance > maxDistance) {
-      normalizedX = (deltaX / distance) * maxDistance;
-      normalizedY = (deltaY / distance) * maxDistance;
-    }
-    
-    setJoystickPosition({ 
-      x: normalizedX, 
-      y: normalizedY 
-    });
-    
-    // Convert to movement values (-1 to 1) with CORRECT mapping
-    // Based on CharacterController: left = positive X, right = negative X
-    const movementX = -normalizedX / maxDistance; // RIGHT stick = negative X (invert!)
-    const movementZ = -normalizedY / maxDistance; // UP stick = positive Z (forward)
-    
-    console.log('Touch movement:', { x: movementX, z: movementZ });
-    onAction('movement', { x: movementX, z: movementZ });
-  };
 
   // Handle action buttons
   const handleActionStart = (action) => {
@@ -115,31 +52,7 @@ export const TouchControls = ({ onAction }) => {
   if (!isMobile) return null;
 
   return (
-    <div className="touch-controls">
-      {/* Virtual Joystick - Left Side */}
-      <div className="joystick-container">
-        <div 
-          ref={joystickRef}
-          className="virtual-joystick"
-          onTouchStart={handleJoystickStart}
-          onTouchMove={handleJoystickMove}
-          onTouchEnd={handleJoystickEnd}
-          onMouseDown={handleJoystickStart}
-          onMouseMove={handleJoystickMove}
-          onMouseUp={handleJoystickEnd}
-          onMouseLeave={handleJoystickEnd}
-        >
-          <div 
-            ref={knobRef}
-            className="joystick-knob"
-            style={{
-              transform: `translate(${joystickPosition.x}px, ${joystickPosition.y}px)`
-            }}
-          />
-        </div>
-        <div className="joystick-label">Move</div>
-      </div>
-
+    <div className="touch-controls" style={style}>
       {/* Action Buttons - Right Side */}
       <div className="action-buttons">
         
@@ -191,58 +104,6 @@ export const TouchControls = ({ onAction }) => {
           pointer-events: none;
           z-index: 100;
           font-family: 'Orbitron', 'Courier New', monospace;
-        }
-
-        .joystick-container {
-          position: absolute;
-          bottom: 80px;
-          left: 40px;
-          pointer-events: auto;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .virtual-joystick {
-          width: 120px;
-          height: 120px;
-          border: 3px solid rgba(0, 255, 65, 0.6);
-          border-radius: 50%;
-          background: radial-gradient(circle, 
-            rgba(0, 255, 65, 0.1),
-            rgba(0, 0, 0, 0.7));
-          position: relative;
-          backdrop-filter: blur(10px);
-          box-shadow: 
-            0 0 30px rgba(0, 255, 65, 0.3),
-            inset 0 0 20px rgba(0, 255, 65, 0.1);
-          touch-action: none;
-          cursor: pointer;
-        }
-
-        .joystick-knob {
-          width: 30px;
-          height: 30px;
-          background: linear-gradient(135deg, #00ff41, #00ffaa);
-          border-radius: 50%;
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          box-shadow: 
-            0 0 20px rgba(0, 255, 65, 0.8),
-            inset 0 2px 0 rgba(255, 255, 255, 0.3);
-          transition: transform 0.1s ease;
-        }
-
-        .joystick-label {
-          color: #00ff41;
-          font-size: 12px;
-          font-weight: bold;
-          text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
-          text-transform: uppercase;
-          letter-spacing: 1px;
         }
 
         .action-buttons {

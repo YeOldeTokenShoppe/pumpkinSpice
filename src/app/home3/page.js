@@ -452,6 +452,7 @@ function ScrollTriggeredTitle({ isMobile }) {
         colors={["rgba(0, 255, 0, 1)"]}
     fontSize={{ mobile: "1.3rem", desktop: "3rem" }}
     isMobile={isMobile}
+    textAlign="left"
   />
         <h2 style={{
           fontSize: isMobile ? '1.3rem' : '1.8rem',

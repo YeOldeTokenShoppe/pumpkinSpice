@@ -67,8 +67,8 @@ export const Experience = () => {
         castShadow
         position={[-1, 20, 35]}
         color="#87ceeb"
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={2024}
         shadow-bias={-0.0001}
         shadow-normalBias={0.02}
         shadow-radius={15}

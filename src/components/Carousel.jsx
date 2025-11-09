@@ -31,7 +31,6 @@ import {
 // import { Input } from "./ui/input";
 import Image from "next/image";
 // import { useRouter } from "next/router"; // Removed - not needed
-// import { useActiveAccount } from "thirdweb/react";
 // import StyledPopup from "./StyledPopup";
 import { signInWithCustomToken } from "firebase/auth";
 import axios from "axios";

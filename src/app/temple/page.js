@@ -34,7 +34,7 @@ export default function CyborgTemple() {
   const [triggerSnapshot, setTriggerSnapshot] = useState(false);
   
   // Connect to trading bot for real data
-  const { isConnected, tradingMode, tradingData, changeTradingMode } = useTradingBot();
+  const { isConnected, tradingData } = useTradingBot();
 
   // Get music context functions
   const {
@@ -247,8 +247,6 @@ export default function CyborgTemple() {
           show={showTrading} 
           data={tradingData} 
           isConnected={isConnected}
-          tradingMode={tradingMode}
-          onModeChange={changeTradingMode}
         />
         {/* Main Canvas */}
         <Canvas

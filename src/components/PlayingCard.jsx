@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './PlayingCard.scss';
-import { BuyWidget } from "thirdweb/react";
+import { BuyWidget } from "thirdweb";
 import { defineChain } from "thirdweb";
 import { createWallet } from "thirdweb/wallets";
 import { client } from "../client";

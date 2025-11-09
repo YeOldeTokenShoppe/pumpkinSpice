@@ -7,7 +7,8 @@ import { Experience } from "../../../illumin80/components/Experience";
 import { EnhancedHUD } from "../../../illumin80/components/EnhancedHUD";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { TouchControls } from "../../components/TouchControls";
-import { Suspense, useCallback, useState, useRef } from "react";
+import CoinLoader from "@/components/CoinLoader";
+import { Suspense, useCallback, useState, useRef, useEffect } from "react";
 
 const keyboardMap = [
   { name: "forward", keys: ["ArrowUp", "KeyW"] },
@@ -37,7 +38,38 @@ function LoadingFallback() {
 
 export default function GamePage() {
   const [contextLost, setContextLost] = useState(false);
+  const [isSceneLoading, setIsSceneLoading] = useState(true);
+  const [fontLoaded, setFontLoaded] = useState(false);
+  const [modelLoaded, setModelLoaded] = useState(false);
   const touchActionHandler = useRef(null);
+
+  // Font loading effect (matching home3 page)
+  useEffect(() => {
+    const checkFont = async () => {
+      try {
+        await document.fonts.load("1em 'UnifrakturCook'");
+        await document.fonts.load("1em 'UnifrakturMaguntia'");
+        await document.fonts.load("1em 'Fjalla One'");
+        setFontLoaded(true);
+        document.body.classList.add('fonts-loaded');
+      } catch (e) {
+        setTimeout(() => {
+          setFontLoaded(true);
+          document.body.classList.add('fonts-loaded');
+        }, 1000);
+      }
+    };
+    checkFont();
+  }, []);
+
+  // Update loading state when both font and model are loaded (matching home3 page)
+  useEffect(() => {
+    if (fontLoaded && modelLoaded) {
+      setTimeout(() => {
+        setIsSceneLoading(false);
+      }, 500); // Small delay for smooth transition
+    }
+  }, [fontLoaded, modelLoaded]);
 
   const handleCreated = useCallback(({ gl }) => {
     gl.setClearColor("#4a9fbb");
@@ -67,6 +99,9 @@ export default function GamePage() {
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
+      {/* CoinLoader preloader */}
+      <CoinLoader loading={isSceneLoading} />
+      
       {contextLost && (
         <div style={{
           position: "absolute",
@@ -105,7 +140,10 @@ export default function GamePage() {
           fallback={<LoadingFallback />}
         >
           <Suspense fallback={null}>
-            <Experience onTouchAction={(handler) => { touchActionHandler.current = handler; }} />
+            <Experience 
+              onTouchAction={(handler) => { touchActionHandler.current = handler; }} 
+              onLoad={() => setModelLoaded(true)}
+            />
           </Suspense>
         </Canvas>
       </KeyboardControls>

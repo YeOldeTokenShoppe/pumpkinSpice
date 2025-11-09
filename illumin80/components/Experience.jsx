@@ -12,6 +12,8 @@ import { CandleSystem } from "./CandleSystem";
 import { Map } from "./Map";
 import { MonsterSystem } from "./MonsterSystem";
 
+import { WizardSpellEffects } from "./WizardSpellEffects";
+
 export const maps = {
   underworld3: {
     scale: 0.7,
@@ -20,7 +22,7 @@ export const maps = {
 
 };
 
-export const Experience = ({ onTouchAction }) => {
+export const Experience = ({ onTouchAction, onLoad }) => {
   const shadowCameraRef = useRef();
   const directionalLightRef = useRef();
   const spotlightRef = useRef();
@@ -99,11 +101,17 @@ export const Experience = ({ onTouchAction }) => {
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
       /> */}
+      {/* <SpellEffects /> */}
+      {/* <SimpleSpellTest /> */}
+      {/* <BasicSpellVisual /> */}
+      {/* <TestVFX /> */}
+      <WizardSpellEffects />
       <Physics key={map} >
         <Map
           scale={maps[map]?.scale || 0.7}
           position={maps[map]?.position || [-0.1, -9.5, 7]}
           model={`models/${map}.glb`}
+          onLoad={onLoad}
         />
         <CharacterController onTouchAction={onTouchAction} />
         <CandleSystem />

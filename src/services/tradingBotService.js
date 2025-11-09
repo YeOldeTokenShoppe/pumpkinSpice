@@ -19,13 +19,13 @@ class TradingBotService {
       return;
     }
 
-    console.log(`Connecting to trading bot at ${this.botUrl}...`);
+    console.log(`Connecting to live market data feed at ${this.botUrl}...`);
     
     try {
       this.ws = new WebSocket(this.botUrl);
 
       this.ws.onopen = () => {
-        console.log('✅ Connected to trading bot');
+        console.log('✅ Connected to live market data (paper trading mode)');
         this.isConnected = true;
         this.reconnectAttempts = 0;
         this.notifySubscribers('connected', { connected: true });
@@ -63,9 +63,9 @@ class TradingBotService {
     }
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('Trading bot not running - using demo mode');
-      this.notifySubscribers('demo_mode', { 
-        message: 'Bot offline - displaying demo data' 
+      console.log('Live market data not available - using simulated data');
+      this.notifySubscribers('simulated_mode', { 
+        message: 'Bot offline - displaying simulated paper trading data' 
       });
       // Reset for future manual reconnection attempts
       this.reconnectAttempts = 0;
