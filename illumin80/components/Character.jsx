@@ -4,174 +4,84 @@ Command: npx gltfjsx@6.2.3 public/models/character.glb -o src/components/Charact
 */
 
 import { useAnimations, useGLTF } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
 import React, { useEffect, useRef } from "react";
-import * as THREE from "three";
 
 export function Character({ animation, ...props }) {
   const group = useRef();
-  const { nodes, materials, animations } = useGLTF("/models/character1.glb");
+  const { nodes, materials, animations } = useGLTF("/models/MeshTintCharacter.glb");
   const { actions } = useAnimations(animations, group);
-  const torchRef = useRef();
-  const flameMaterialRef = useRef();
-  const particleSystemRef = useRef();
-  const coreLightRef = useRef();
 
   useEffect(() => {
-    actions[animation]?.reset().fadeIn(0.24).play();
-    return () => actions?.[animation]?.fadeOut(0.24);
-  }, [animation]);
-
-
-  // Single useFrame with all animations combined
-  useFrame((state) => {
-    // Flame material animation
-    if (flameMaterialRef.current) {
-      flameMaterialRef.current.uniforms.time.value = state.clock.elapsedTime;
-    }
-
-    // Torch light flickering
-    if (torchRef.current) {
-      const time = state.clock.elapsedTime;
-      // Create realistic fire flicker
-      const flicker = Math.sin(time * 10) * 0.1 +
-                      Math.sin(time * 15) * 0.05 +
-                      Math.sin(time * 7) * 0.08;
-
-      torchRef.current.intensity = 3 + flicker;
-
-      // Slight color variation
-      const colorFlicker = 0.1 + flicker * 0.05;
-      torchRef.current.color.setHSL(0.08, 0.9, 0.5 + colorFlicker);
-    }
-
-    // Flicker the core light too
-    if (coreLightRef.current) {
-      const time = state.clock.elapsedTime;
-      const coreFlicker = Math.sin(time * 12) * 0.2 + Math.sin(time * 20) * 0.1;
-      coreLightRef.current.intensity = 1.5 + coreFlicker;
-    }
-
-    // Animate fire pieces like in Map.jsx
-    if (particleSystemRef.current && Array.isArray(particleSystemRef.current)) {
-      const time = state.clock.elapsedTime;
+    // Debug: Log available animations and nodes
+    // console.log('MeshTintCharacter: Available nodes:', Object.keys(nodes || {}));
+    // console.log('MeshTintCharacter: Available materials:', Object.keys(materials || {}));
+    // if (animations && animations.length > 0) {
+    //   console.log('MeshTintCharacter: Available animations:', animations.map(anim => anim.name));
+    //   console.log('MeshTintCharacter: Available actions:', Object.keys(actions || {}));
+    // }
+    
+    if (actions && animation) {
+      // Map animation names - capitalize first letter to match MeshTintCharacter animations
+      let animationName = animation;
+      if (animation === 'idle') animationName = 'Idle';
+      if (animation === 'walk') animationName = 'Walk';
+      if (animation === 'run') animationName = 'Run';
+      if (animation === 'jump') animationName = 'Jump';
+      if (animation === 'fall') animationName = 'Falling';
+      if (animation === 'cast') animationName = 'Casting';
+      if (animation === 'light') animationName = 'Light';
       
-      particleSystemRef.current.forEach((firePiece, index) => {
-        if (firePiece && firePiece.userData.originalPosition) {
-          // Create individual movement for each fire piece
-          const offsetTime = time + index * 0.5; // Stagger animation
-          
-          // Reset to original position/rotation and add small offsets
-          const orig = firePiece.userData.originalPosition;
-          const origRot = firePiece.userData.originalRotation;
-          
-          // Very subtle swaying motion for tiny pieces
-          firePiece.rotation.x = origRot.x + Math.sin(offsetTime * 2) * 0.02;
-          firePiece.rotation.z = origRot.z + Math.cos(offsetTime * 1.5) * 0.03;
-          
-          // Tiny position jostling relative to original position
-          firePiece.position.x = orig.x + Math.sin(offsetTime * 3) * 0.0002;
-          firePiece.position.z = orig.z + Math.cos(offsetTime * 2.5) * 0.0002;
-          firePiece.position.y = orig.y + Math.sin(offsetTime * 4) * 0.0001;
-        }
-      });
-    }
-  });
-
-  // Add flame effect to torch tip
-  useEffect(() => {
-    if (nodes._rootJoint) {
-      // console.log('All objects in character:', Object.keys(nodes));
+      console.log('MeshTintCharacter: Transitioning to animation:', animationName, 'for requested:', animation);
       
-      // Look for torch-related objects or an empty/locator for flame position
-      const findObject = (name) => {
-        const traverse = (obj) => {
-          if (obj.name && obj.name.toLowerCase().includes(name.toLowerCase())) return obj;
-          for (const child of obj.children) {
-            const found = traverse(child);
-            if (found) return found;
-          }
-          return null;
-        };
-        return traverse(nodes._rootJoint);
-      };
-
-      // Look for the specific flame attachment point
-      const flamePoint = findObject('TorchFireEmpty') || findObject('flame') || findObject('fire') || findObject('torch') || findObject('empty');
-      
-      if (flamePoint) {
-        // console.log('Found TorchFireEmpty:', flamePoint.name, 'at position:', flamePoint.position);
-        
-        // Find all fire pieces attached to TorchFireEmpty
-        const firePieces = [];
-        flamePoint.traverse((child) => {
-          if (child.name && child.name.includes('fire_piece')) {
-            // Store original position for each fire piece
-            child.userData.originalPosition = child.position.clone();
-            child.userData.originalRotation = child.rotation.clone();
-            firePieces.push(child);
-            // console.log('Found fire piece:', child.name);
+      if (actions[animationName]) {
+        // Crossfade: fade out all other animations while fading in the new one
+        Object.entries(actions).forEach(([name, action]) => {
+          if (action && typeof action.fadeOut === 'function') {
+            if (name === animationName) {
+              // Fade in the target animation
+              action.reset().fadeIn(0.4).play();
+            } else {
+              // Fade out other animations
+              action.fadeOut(0.4);
+            }
           }
         });
-        
-        // Store fire pieces for animation
-        particleSystemRef.current = firePieces;
-        
-        // Add lighting to the torch
-        const light = new THREE.PointLight('#FF6B35', 3, 4);
-        light.position.set(0, 0.1, 0);
-        light.castShadow = true;
-        flamePoint.add(light);
-        torchRef.current = light;
-        
-        // console.log('Found', firePieces.length, 'fire pieces for animation');
       } else {
-        // console.log('No TorchFireEmpty found. Available objects:', Object.keys(nodes));
+        // console.warn('MeshTintCharacter: Animation not found:', animationName);
+        // Fallback to Idle
+        if (actions['Idle']) {
+          Object.values(actions).forEach(action => {
+            if (action && typeof action.fadeOut === 'function') {
+              action.fadeOut(0.4);
+            }
+          });
+          actions['Idle'].reset().fadeIn(0.4).play();
+        }
       }
     }
-  }, [nodes]);
+    
+    return () => {
+      if (actions && animation) {
+        Object.values(actions).forEach(action => {
+          if (action && typeof action.fadeOut === 'function') {
+            action.fadeOut(0.24);
+          }
+        });
+      }
+    };
+  }, [animation, animations, actions, nodes, materials]);
+
+
+
+  // Use a generic primitive approach until we know the node structure
+  const primitiveObject = nodes.Scene || nodes._rootJoint || nodes.Root || Object.values(nodes)[0];
+  // console.log('MeshTintCharacter: Using primitive object:', primitiveObject?.name, primitiveObject?.type);
 
   return (
     <group ref={group} {...props} dispose={null}>
-      <group name="Scene">
-        <group name="fall_guys">
-          <primitive object={nodes._rootJoint} />
-          <skinnedMesh
-            name="body"
-            geometry={nodes.body.geometry}
-            material={materials.Material || materials["Material.001"]}
-            skeleton={nodes.body.skeleton}
-            castShadow
-            receiveShadow
-          />
-          <skinnedMesh
-            name="eye"
-            geometry={nodes.eye.geometry}
-            material={materials.Material || materials["Material.001"]}
-            skeleton={nodes.eye.skeleton}
-            castShadow
-            receiveShadow
-          />
-          <skinnedMesh
-            name="hand-"
-            geometry={nodes["hand-"].geometry}
-            material={materials.Material || materials["Material.001"]}
-            skeleton={nodes["hand-"].skeleton}
-            castShadow
-            receiveShadow
-          />
-          <skinnedMesh
-            name="leg"
-            geometry={nodes.leg.geometry}
-            material={materials.Material || materials["Material.001"]}
-            skeleton={nodes.leg.skeleton}
-            castShadow
-            receiveShadow
-          />
-        </group>
-      </group>
+      <primitive object={primitiveObject} />
     </group>
   );
 }
 
-useGLTF.preload("/models/character1.glb");
+useGLTF.preload("/models/MeshTintCharacter.glb");

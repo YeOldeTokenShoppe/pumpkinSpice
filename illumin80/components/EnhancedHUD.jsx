@@ -374,6 +374,13 @@ export const EnhancedHUD = () => {
                 <div className="resource-icon">🕯️</div>
                 <span className="resource-value">{gameState.litCandleCount || 0}/{candles}</span>
               </div>
+              
+              <div className="resource-item">
+                <div className="resource-icon">📍</div>
+                <span className="resource-value" style={{ fontSize: '12px' }}>
+                  Y:{gameState.characterY} Z:{gameState.characterZ}
+                </span>
+              </div>
             </div>
           </div>
         </div>

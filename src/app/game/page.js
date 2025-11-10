@@ -19,6 +19,8 @@ const keyboardMap = [
   { name: "jump", keys: ["Space"] },
   { name: "light", keys: ["KeyL"] },
   { name: "zoom", keys: ["Equal", "NumpadAdd"] },
+  { name: "doorToggle", keys: ["KeyO"] },
+  { name: "lookUp", keys: ["KeyU", "KeyQ"] },
 ];
 
 function LoadingFallback() {

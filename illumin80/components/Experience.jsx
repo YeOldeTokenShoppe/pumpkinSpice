@@ -1,4 +1,4 @@
-import { OrthographicCamera } from "@react-three/drei";
+import { OrthographicCamera, Environment, Stats} from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { useRef, useEffect, useState } from "react";
 import { DirectionalLightHelper } from "three";
@@ -11,6 +11,7 @@ import { CharacterController } from "./CharacterController";
 import { CandleSystem } from "./CandleSystem";
 import { Map } from "./Map";
 import { MonsterSystem } from "./MonsterSystem";
+import { DemonCharacter } from "./DemonCharacter";
 
 import { WizardSpellEffects } from "./WizardSpellEffects";
 
@@ -72,17 +73,21 @@ export const Experience = ({ onTouchAction, onLoad }) => {
 
   return (
     <>
+      {/* Performance Stats - top left */}
+      <Stats />
+      
       {/* <OrbitControls /> */}
       <fog attach="fog" args={["#4a9fbb", 5, 35]} />
-      <ambientLight intensity={1.0} color="#6bb6cc" />
+      {/* <ambientLight intensity={1.0} color="#6bb6cc" /> */}
+          <Environment preset="night" />
       <directionalLight
         ref={directionalLightRef}
         intensity={1.4}
         castShadow
         position={[-1, 20, 35]}
         color="#87ceeb"
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-bias={-0.0001}
         shadow-normalBias={0.02}
         shadow-radius={15}
@@ -113,8 +118,8 @@ export const Experience = ({ onTouchAction, onLoad }) => {
       {/* <SimpleSpellTest /> */}
       {/* <BasicSpellVisual /> */}
       {/* <TestVFX /> */}
-      <WizardSpellEffects />
-      <Physics key={map} >
+      {/* <WizardSpellEffects /> */}
+      <Physics key={map}>
         <Map
           scale={maps[map]?.scale || 0.7}
           position={maps[map]?.position || [-0.1, -9.5, 7]}
@@ -122,6 +127,13 @@ export const Experience = ({ onTouchAction, onLoad }) => {
           onLoad={handleMapLoad}
         />
         {isMapLoaded && <CharacterController onTouchAction={onTouchAction} />}
+        {/* {isMapLoaded && (
+          <DemonCharacter 
+            position={[0, -12, -3]} 
+            scale={1.0} 
+            animation="idle" 
+          />
+        )} */}
         <CandleSystem />
         {/* <MonsterSystem /> */}
       </Physics>
@@ -129,11 +141,11 @@ export const Experience = ({ onTouchAction, onLoad }) => {
       {/* Post-processing effects */}
       <EffectComposer>
         <Bloom 
-          intensity={0.6}
+          intensity={2.9}
           width={300}
           height={300}
           kernelSize={5}
-          luminanceThreshold={0.95}
+          luminanceThreshold={0.55}
           luminanceSmoothing={0.025}
         />
       </EffectComposer>

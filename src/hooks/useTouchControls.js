@@ -14,19 +14,26 @@ export const useTouchControls = () => {
 
   // Create a virtual keyboard controls getter that includes touch input
   const getTouchControls = () => {
-    return {
-      forward: touchState.current.movement.z > 0.3,
-      backward: touchState.current.movement.z < -0.3,
-      left: touchState.current.movement.x > 0.3,
-      right: touchState.current.movement.x < -0.3,
+    // Block ALL movement when light action is active
+    const isLightActive = touchState.current.light;
+    
+    const controls = {
+      forward: !isLightActive && touchState.current.movement.z > 0.3,
+      backward: !isLightActive && touchState.current.movement.z < -0.3,
+      left: !isLightActive && touchState.current.movement.x > 0.3,
+      right: !isLightActive && touchState.current.movement.x < -0.3,
       jump: touchState.current.jump,
       light: touchState.current.light,
-      run: touchState.current.sprint,
+      run: !isLightActive && touchState.current.sprint,
       zoom: touchState.current.zoom,
       cast: touchState.current.cast,
       nextSpell: touchState.current.nextSpell,
       prevSpell: touchState.current.prevSpell
     };
+    
+    // Debug removed to reduce spam
+    
+    return controls;
   };
 
   // Handle touch actions
@@ -73,6 +80,10 @@ export const useTouchControls = () => {
 
   // Get movement values for analog control (for mouse dragging)
   const getMovementVector = () => {
+    // Block movement vector when light is active
+    if (touchState.current.light) {
+      return { x: 0, z: 0 };
+    }
     return touchState.current.movement;
   };
 

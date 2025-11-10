@@ -1,7 +1,7 @@
-import { useAnimations, useGLTF } from "@react-three/drei";
+import { useAnimations, useGLTF, useKeyboardControls } from "@react-three/drei";
 import { RigidBody, CapsuleCollider, CuboidCollider, TrimeshCollider, ConvexHullCollider } from "@react-three/rapier";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Vector3, Quaternion, Box3 } from "three";
 import * as THREE from "three";
 import { GameState } from "../../src/lib/GameState";
@@ -207,6 +207,327 @@ const AnimatedPillar = ({ pillarMesh, index }) => {
   return null;
 };
 
+// Helper function to check if an object is a child of another
+const isChildOf = (child, parent) => {
+  let current = child.parent;
+  while (current) {
+    if (current === parent) return true;
+    current = current.parent;
+  }
+  return false;
+};
+
+// Door controller that targets doorMaster for animations
+const DoorController = ({ obstacleScene, obstacleAnimations, platformScene }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const wasDoorTogglePressed = useRef(false);
+  const doorMasterRef = useRef();
+  const [doorAnimations, setDoorAnimations] = useState({ door1: null, door2: null });
+  const [doorMaster, setDoorMaster] = useState(null);
+  const [door1Object, setDoor1Object] = useState(null);
+  const [door2Object, setDoor2Object] = useState(null);
+  const { loadSound, playSound } = useAudio();
+  
+  // Use animations with the doorMaster object as the target
+  const { actions } = useAnimations(obstacleAnimations || [], doorMasterRef);
+  
+  // Helper function to check if an object is a child of another
+  const isChildOf = (child, parent) => {
+    let current = child.parent;
+    while (current) {
+      if (current === parent) return true;
+      current = current.parent;
+    }
+    return false;
+  };
+  
+  // Load door sound effect
+  useEffect(() => {
+    loadSound('doorStone', '/sounds/stone.mp3');
+  }, [loadSound]);
+
+  useEffect(() => {
+    // Find the single doorMaster object in the obstacle scene
+    let foundDoorMaster = null;
+    
+    if (obstacleScene) {
+      console.log(`🔍 Searching for doorMaster in obstacle scene...`);
+      obstacleScene.traverse((child) => {
+        if (child.name === 'doorMaster' && !foundDoorMaster) {
+          foundDoorMaster = child;
+          doorMasterRef.current = child; // Set ref for animations
+          console.log(`🚪 Found doorMaster object:`, {
+            name: child.name,
+            type: child.type,
+            children: child.children.length,
+            position: child.position,
+            visible: child.visible,
+            uuid: child.uuid
+          });
+          
+          // Log children to debug and store door references
+          if (child.children) {
+            child.children.forEach(door => {
+              console.log(`  └── Door child: ${door.name} (type: ${door.type})`);
+              if (door.name === 'door1') {
+                setDoor1Object(door);
+                console.log(`📍 Door1 position:`, door.position);
+                console.log(`📍 Door1 world position:`, door.getWorldPosition(new THREE.Vector3()));
+              } else if (door.name === 'door2') {
+                setDoor2Object(door);
+                console.log(`📍 Door2 position:`, door.position);
+                console.log(`📍 Door2 world position:`, door.getWorldPosition(new THREE.Vector3()));
+              }
+            });
+          }
+        }
+      });
+      
+      if (foundDoorMaster) {
+        console.log(`👀 Using doorMaster: ${foundDoorMaster.uuid}`);
+        
+        // Ensure doorMaster and its children are visible
+        foundDoorMaster.visible = true;
+        if (foundDoorMaster.children) {
+          foundDoorMaster.children.forEach(child => {
+            child.visible = true;
+            if (child.children) {
+              child.children.forEach(grandchild => {
+                grandchild.visible = true;
+              });
+            }
+          });
+        }
+        
+        // Hide ALL other door objects that aren't part of doorMaster in BOTH scenes
+        console.log(`🔍 Searching for duplicate doors to hide...`);
+        
+        // Check obstacle scene
+        obstacleScene.traverse((child) => {
+          const nameLower = child.name ? child.name.toLowerCase() : '';
+          
+          // Check if this is a door-related object
+          if (nameLower.includes('door')) {
+            // Check if it's NOT the doorMaster or its children
+            if (child !== foundDoorMaster && !isChildOf(child, foundDoorMaster)) {
+              console.log(`🙈 Hiding duplicate door in obstacles: "${child.name}" (type: ${child.type}, parent: ${child.parent?.name})`);
+              child.visible = false;
+              
+              // Also hide all children of this duplicate door
+              if (child.children) {
+                child.traverse((subChild) => {
+                  subChild.visible = false;
+                });
+              }
+            } else {
+              console.log(`✅ Keeping door: "${child.name}" (part of doorMaster)`);
+            }
+          }
+        });
+        
+        // Also check platform scene for any door objects
+        if (platformScene) {
+          console.log(`🔍 Checking platform scene for doors...`);
+          platformScene.traverse((child) => {
+            const nameLower = child.name ? child.name.toLowerCase() : '';
+            if (nameLower.includes('door')) {
+              console.log(`🙈 Hiding door in platform: "${child.name}" (type: ${child.type})`);
+              child.visible = false;
+              
+              // Hide all children
+              if (child.children) {
+                child.traverse((subChild) => {
+                  subChild.visible = false;
+                });
+              }
+            }
+          });
+        }
+      }
+    }
+    
+    setDoorMaster(foundDoorMaster);
+  }, [obstacleScene, platformScene]);
+  
+  // Set up animations once actions are available
+  useEffect(() => {
+    if (!actions || !doorMaster) return;
+
+    console.log(`🚪 Door animations available:`, Object.keys(actions));
+    
+    const animations = {};
+    
+    // Find and initialize door1 animation (Action)
+    if (actions['Action']) {
+      const action = actions['Action'];
+      action.reset();
+      action.setLoop(THREE.LoopOnce);
+      action.clampWhenFinished = true;
+      action.enabled = false;
+      action.stop();
+      animations.door1 = action;
+      console.log(`✅ Found door1 animation: Action`);
+    }
+    
+    // Find and initialize door2 animation (door2Action)
+    if (actions['door2Action']) {
+      const action = actions['door2Action'];
+      action.reset();
+      action.setLoop(THREE.LoopOnce);
+      action.clampWhenFinished = true;
+      action.enabled = false;
+      action.stop();
+      animations.door2 = action;
+      console.log(`✅ Found door2 animation: door2Action`);
+    }
+    
+    setDoorAnimations(animations);
+    console.log(`🚪 Door controller ready - ${Object.keys(animations).length} animations found`);
+  }, [actions, doorMaster]);
+
+  useFrame(() => {
+    const doorTogglePressed = GameState.doorTogglePressed;
+    
+    if (doorTogglePressed && !wasDoorTogglePressed.current) {
+      wasDoorTogglePressed.current = true;
+      const newIsOpen = !isOpen;
+      setIsOpen(newIsOpen);
+      
+      console.log(`🚪 Door toggle - ${newIsOpen ? 'Opening' : 'Closing'} doors (doorMaster: ${!!doorMaster})`);
+      
+      // Play stone sound effect
+      playSound('doorStone');
+      
+      if (doorAnimations.door1) {
+        const clip1 = doorAnimations.door1.getClip();
+        
+        if (newIsOpen) {
+          // Opening - play forward from start
+          doorAnimations.door1.reset();
+          doorAnimations.door1.enabled = true;
+          doorAnimations.door1.timeScale = 1;
+          doorAnimations.door1.time = 0;
+          doorAnimations.door1.play();
+        } else {
+          // Closing - play backward from end
+          doorAnimations.door1.enabled = true;
+          doorAnimations.door1.paused = false;
+          doorAnimations.door1.timeScale = -1;
+          doorAnimations.door1.time = clip1.duration;
+          doorAnimations.door1.play();
+        }
+        
+        console.log(`🎬 ${newIsOpen ? 'Opening' : 'Closing'} door1 (Action)`);
+      }
+      
+      if (doorAnimations.door2) {
+        const clip2 = doorAnimations.door2.getClip();
+        
+        if (newIsOpen) {
+          // Opening - play forward from start
+          doorAnimations.door2.reset();
+          doorAnimations.door2.enabled = true;
+          doorAnimations.door2.timeScale = 1;
+          doorAnimations.door2.time = 0;
+          doorAnimations.door2.play();
+        } else {
+          // Closing - play backward from end
+          doorAnimations.door2.enabled = true;
+          doorAnimations.door2.paused = false;
+          doorAnimations.door2.timeScale = -1;
+          doorAnimations.door2.time = clip2.duration;
+          doorAnimations.door2.play();
+        }
+        
+        console.log(`🎬 ${newIsOpen ? 'Opening' : 'Closing'} door2 (door2Action)`);
+      }
+    }
+    
+    if (!doorTogglePressed) {
+      wasDoorTogglePressed.current = false;
+    }
+  });
+
+  // Return door collision components
+  return (
+    <>
+      {door1Object && <DoorCollider doorObject={door1Object} isOpen={isOpen} doorName="door1" />}
+      {door2Object && <DoorCollider doorObject={door2Object} isOpen={isOpen} doorName="door2" />}
+    </>
+  );
+};
+
+// Separate component for door collision that properly tracks the door position
+const DoorCollider = ({ doorObject, isOpen, doorName }) => {
+  const [worldPos, setWorldPos] = useState(new THREE.Vector3());
+  
+  useEffect(() => {
+    if (doorObject) {
+      // Update world matrix and get position
+      doorObject.updateWorldMatrix(true, false);
+      const pos = new THREE.Vector3();
+      doorObject.getWorldPosition(pos);
+      setWorldPos(pos);
+      console.log(`🚧 ${doorName} collider position:`, pos);
+    }
+  }, [doorObject, doorName]);
+  
+  if (isOpen) {
+    return null;
+  }
+  
+  return (
+    <RigidBody type="fixed" position={[worldPos.x, worldPos.y, worldPos.z]}>
+      <CuboidCollider args={[1.8, 3.5, 0.4]} position={[0, 1.75, 0]} />
+    </RigidBody>
+  );
+};
+
+// Component for animating the warlock circle with continuous Y-axis rotation
+const AnimatedWarlockCircle = ({ warlockCircleMesh }) => {
+  useFrame((state) => {
+    if (!warlockCircleMesh) return;
+    
+    // Continuous rotation around Y-axis
+    const rotationSpeed = 0.2; // Adjust speed as needed (1.0 = one full rotation per second)
+    warlockCircleMesh.rotation.z = state.clock.elapsedTime * rotationSpeed;
+  });
+  
+  return null; // This component only provides animation logic
+};
+
+// Component for animating the Corazon object with gentle hover
+const AnimatedCorazon = ({ corazonMesh }) => {
+  const originalPosition = useRef(null);
+  
+  useFrame((state) => {
+    if (!corazonMesh) return;
+    
+    // Store original position on first run
+    if (!originalPosition.current) {
+      originalPosition.current = {
+        x: corazonMesh.position.x,
+        y: corazonMesh.position.y,
+        z: corazonMesh.position.z
+      };
+    }
+    
+    const time = state.clock.elapsedTime;
+    
+    // Gentle hover animation - slow up and down movement
+    const hoverSpeed = 1.2; // Slow, gentle speed
+    const hoverAmplitude = 0.3; // Small movement range
+    const hoverOffset = Math.sin(time * hoverSpeed) * hoverAmplitude;
+    
+    // Apply hover to Y position
+    corazonMesh.position.x = originalPosition.current.x;
+    corazonMesh.position.y = originalPosition.current.y + hoverOffset;
+    corazonMesh.position.z = originalPosition.current.z;
+  });
+  
+  return null; // This component only provides animation logic
+};
+
 // Component for animating fire flames with individual piece movement
 const AnimatedFire = ({ fireMesh, index }) => {
   const originalPositions = useRef(new window.Map());
@@ -308,6 +629,7 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
   const isObstacle006 = obstacleMesh.userData?.isObstacle006;
   const isPendulum = obstacleMesh.userData?.isPendulum;
   const isPillar = obstacleMesh.userData?.isPillar;
+  const isCorazon = obstacleMesh.userData?.isCorazon;
   
   // Access Valtio GameState for collision handling
   const gameState = useSnapshot(GameState);
@@ -378,6 +700,8 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
       // }
     }
     
+    // Corazon doesn't need special animation logic since it's handled by AnimatedCorazon component
+    // Just ensure the collider follows the object position
     
     // Update obstacle's world matrix
     obstacleMesh.updateMatrixWorld(true);
@@ -413,9 +737,11 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
       if (isObstacle006) type = 'Obstacle_006';
       if (isPendulum) type = 'Pendulum';
       if (isPillar) type = 'Pillar';
+      if (isCorazon) type = 'Corazon';
       // console.log(`💥 ${type} ${index} hit!`);
       
-      if (GameState.characterRigidBody) {
+      // Apply knockback for all obstacles except Corazon
+      if (!isCorazon && GameState.characterRigidBody) {
         const currentVel = GameState.characterRigidBody.linvel();
         const obstaclePos = new Vector3();
         obstacleMesh.getWorldPosition(obstaclePos);
@@ -427,6 +753,11 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
           y: Math.max(currentVel.y + 8, 8),
           z: currentVel.z + knockbackDir.z * knockbackForce
         }, true);
+      }
+      
+      // Corazon collision - no knockback, just log interaction
+      if (isCorazon) {
+        console.log(`💖 Player touched the Corazon! (peaceful interaction)`);
       }
     } else {
       console.log(`❌ No match - not character collision`);
@@ -667,6 +998,30 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
         </mesh>
       </RigidBody>
     );
+  } else if (isCorazon) {
+    // Corazon collider - simple cuboid for heart-shaped object
+    console.log(`💖 Creating Corazon collider for: ${obstacleMesh.name}`);
+    return (
+      <RigidBody
+        ref={rbRef}
+        type="kinematicPosition"
+        colliders={false}
+        onIntersectionEnter={handleCollision}
+        sensor
+      >
+        {/* Simple cuboid collider for Corazon - positioned at object center */}
+        <CuboidCollider 
+          args={[1.0, 1.5, 1.0]} // [half-width, half-height, half-depth] - adjust as needed
+          position={[0, 0, 0]} // Center relative to RigidBody position
+        />
+        
+        {/* Debug visualization - always visible */}
+        {/* <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[2.0, 3.0, 2.0]} />
+          <meshBasicMaterial color="magenta" opacity={0.5} transparent wireframe />
+        </mesh> */}
+      </RigidBody>
+    );
   } else {
     // Original hammer collider
     return (
@@ -767,11 +1122,28 @@ export const Map = ({ model, onLoad, ...props }) => {
   const [coins, setCoins] = useState([]);
   const [fires, setFires] = useState([]);
   const [pillars, setPillars] = useState([]);
+  const [doors, setDoors] = useState([]);
   const [collectedItems, setCollectedItems] = useState(new Set());
   const [iridiscentMaterials, setIridiscentMaterials] = useState([]);
+  const [warlockCircle, setWarlockCircle] = useState(null);
+  const [corazonObject, setCorazonObject] = useState(null);
+  const [corazonParts, setCorazonParts] = useState([]);
+  const [, get] = useKeyboardControls();
   
   // Valtio GameState access
   const gameState = useSnapshot(GameState);
+  
+  // Handle door toggle input
+  useFrame(() => {
+    const doorTogglePressed = get().doorToggle;
+    
+    // Debug: Log when door toggle state changes
+    if (doorTogglePressed !== GameState.doorTogglePressed) {
+      console.log(`🎹 Door toggle key state changed: ${GameState.doorTogglePressed} → ${doorTogglePressed}`);
+    }
+    
+    GameState.doorTogglePressed = doorTogglePressed;
+  });
   
   // Check if both scenes are loaded
   useEffect(() => {
@@ -791,13 +1163,50 @@ export const Map = ({ model, onLoad, ...props }) => {
     const foundCollectibles = [];
     const foundCoins = [];
     const foundPillars = [];
+    const foundDoors = [];
+    let foundWarlockCircle = null;
+    let foundCorazon = null;
+    const foundCorazonParts = [];
     
-    // console.log('=== OBSTACLE SCENE OBJECTS ===');
+    // Remove door search logs - doorMaster handles everything now
     obstacleScene.traverse((child) => {
       const name = child.name.toLowerCase();
       
-      // Log ALL objects to help identify naming patterns
-      // console.log(`Object: "${child.name}" (type: ${child.type}, isMesh: ${child.isMesh})`);
+      // Debug: Log spindle-related objects to see what's actually there
+      if (child.name.includes('spindle')) {
+        console.log(`🔍 Spindle-related object: "${child.name}" (type: ${child.type}, children: ${child.children?.length || 0})`);
+      }
+      
+      // Look for Corazon object for hover animation
+      if (child.name === 'Corazon' || child.name.toLowerCase() === 'corazon') {
+        foundCorazon = child;
+        console.log(`💖 Found Corazon object: ${child.name} (type: ${child.type})`);
+        
+        // Add Corazon to collision system
+        foundHammers.push(child);
+        child.userData.isCorazon = true;
+        console.log(`💖 Added Corazon to collision system: ${child.name}`);
+      }
+      
+      // Look for Corazon child objects (Object_8, Object_9, Object_10)
+      if (child.name === 'Object_8' || child.name === 'Object_9' || child.name === 'Object_10') {
+        foundCorazonParts.push({
+          id: child.uuid,
+          name: child.name,
+          object: child
+        });
+        console.log(`💖 Found Corazon part: ${child.name} (type: ${child.type})`);
+        
+        if (!foundCorazon) {
+          foundCorazon = child.parent; // Use the parent as the Corazon object
+          console.log(`💖 Found Corazon parent via child ${child.name}, parent: ${child.parent?.name} (type: ${child.parent?.type})`);
+        }
+      }
+      
+      // Debug: Log objects that might be related to Corazon
+      if (child.name.includes('Object_') || child.name.toLowerCase().includes('corazon') || child.name.toLowerCase().includes('heart')) {
+        console.log(`🔍 Potential Corazon-related object: "${child.name}" (type: ${child.type}, parent: ${child.parent?.name})`);
+      }
       
       // SPECIAL DEBUG: Look for our renamed pillars
       // if (child.name.includes('pillar_animated')) {
@@ -832,11 +1241,17 @@ export const Map = ({ model, onLoad, ...props }) => {
       }
       
       // Look for the GROUP that contains the spinning obstacle, not individual meshes
-      if (child.type === 'Group' && name === 'obstacle_spindle') {
+      // Handle obstacle_spindle1, obstacle_spindle2, obstacle_spindle3, obstacle_spindle4
+      if (child.type === 'Group' && (
+           name === 'obstacle_spindle' ||
+           name === 'obstacle_spindle1' ||
+           name === 'obstacle_spindle2' ||
+           name === 'obstacle_spindle3' ||
+           name === 'obstacle_spindle4')) {
         foundHammers.push(child); // Track the animated GROUP
         child.userData.isSpindle = true;
         
-        // console.log(`Found spinning group: ${child.name} with ${child.children.length} children`);
+        console.log(`✅ Found spinning group: ${child.name} with ${child.children.length} children`);
       }
       
       // Look for obstacle_2_001 GROUP objects (they are Groups, not individual meshes)
@@ -936,6 +1351,18 @@ export const Map = ({ model, onLoad, ...props }) => {
         }
       }
       
+      // Look for the warlock circle object (child of statue_warlock)
+      if (child.name === 'state_warlock_circle') {
+        if (!foundWarlockCircle) {
+          foundWarlockCircle = child;
+          console.log(`✅ Found warlock circle: ${child.name} (type: ${child.type})`);
+        } else {
+          // Hide duplicate warlock circles
+          child.visible = false;
+          console.log(`🙈 Hiding duplicate warlock circle: ${child.name}`);
+        }
+      }
+      
       // Look for the new standardized pillar naming: pillar_animated_001 through pillar_animated_016
       // Target only the parent Groups that contain hieroglypoh sub-objects, not the individual meshes
       const isPillar = name.startsWith('pillar_animated_') && child.type === 'Group';
@@ -968,21 +1395,26 @@ export const Map = ({ model, onLoad, ...props }) => {
           // console.log(`🔄 DUPLICATE pillar skipped: ${child.name} (type: ${child.type})`);
         }
       }
+      
     });
     
     setHammerMeshes(foundHammers);
     setCollectibles(foundCollectibles);
     setCoins(foundCoins);
     setPillars(foundPillars);
+    setDoors(foundDoors);
+    setWarlockCircle(foundWarlockCircle);
+    setCorazonObject(foundCorazon);
+    setCorazonParts(foundCorazonParts);
     
-    // Debug: Log found objects
+    // Debug: Log found objects (doors handled by DoorController now)
     // console.log(`🪙 Found ${foundCoins.length} coins:`, foundCoins.map(c => c.name));
     // console.log(`🏛️ Found ${foundPillars.length}/16 pillars for display:`, foundPillars.map(p => p.name));
     // console.log(`💥 Found ${foundHammers.filter(h => h.userData?.isPillar).length}/16 pillars for COLLISION:`, foundHammers.filter(h => h.userData?.isPillar).map(p => p.name));
     // console.log(`🎯 Total collision objects:`, foundHammers.length);
   }, [obstacleScene]);
 
-  // Find fires in the main platform scene
+  // Find fires in the main platform scene and hide duplicate warlock circles
   useEffect(() => {
     if (!platformScene) return;
     
@@ -991,6 +1423,12 @@ export const Map = ({ model, onLoad, ...props }) => {
     // console.log('=== PLATFORM SCENE OBJECTS (searching for fires) ===');
     platformScene.traverse((child) => {
       const name = child.name.toLowerCase();
+      
+      // Hide any warlock circles found in platform scene since we animate the one from obstacle scene
+      if (child.name === 'state_warlock_circle') {
+        child.visible = false;
+        console.log(`🙈 Hiding warlock circle in platform scene: ${child.name}`);
+      }
       
       // Log ALL objects that contain "fire" to see what's actually there
       // if (child.name.toLowerCase().includes('fire')) {
@@ -1144,8 +1582,10 @@ export const Map = ({ model, onLoad, ...props }) => {
   useEffect(() => {
     if (actions) {
       Object.values(actions).forEach(action => {
-        action.play();
-        action.setLoop(true);
+        if (action && typeof action.play === 'function') {
+          action.play();
+          action.setLoop(true);
+        }
       });
     }
   }, [actions]);
@@ -1293,6 +1733,12 @@ export const Map = ({ model, onLoad, ...props }) => {
     }
   }, [pillars, playSound]);
   
+  // Use simple door controller with targeted static door hiding
+  const doorController = useMemo(() => {
+    console.log(`🔧 Creating simple door controller (memoized)`);
+    return <DoorController obstacleScene={obstacleScene} obstacleAnimations={animations} platformScene={platformScene} />;
+  }, [obstacleScene, animations, platformScene]);
+
   // Don't render physics until both scenes are loaded
   if (!isLoaded) {
     return null;
@@ -1352,6 +1798,32 @@ export const Map = ({ model, onLoad, ...props }) => {
           index={index}
         />
       ))}
+      
+      {/* Animated warlock circle */}
+      {warlockCircle && (
+        <AnimatedWarlockCircle 
+          warlockCircleMesh={warlockCircle}
+        />
+      )}
+      
+      {/* Animated Corazon with gentle hover */}
+      {corazonObject && (
+        <AnimatedCorazon 
+          corazonMesh={corazonObject}
+        />
+      )}
+      
+      {/* Centralized door controller */}
+      {doorController}
+      
+      {/* Collider Visualizer - comment out to hide */}
+      <RigidBody type="fixed" position={[0, -10, 0]}>
+        <CuboidCollider args={[25, 0.1, 25]} />
+        {/* <mesh>
+          <boxGeometry args={[50, 0.2, 50]} />
+          <meshBasicMaterial color="cyan" opacity={0.3} transparent wireframe />
+        </mesh> */}
+      </RigidBody>
     </>
   );
 };

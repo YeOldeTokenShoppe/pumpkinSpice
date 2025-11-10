@@ -1,6 +1,6 @@
 import { useKeyboardControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { CapsuleCollider, RigidBody } from "@react-three/rapier";
+import { CapsuleCollider, BallCollider, ConvexHullCollider, TrimeshCollider, CuboidCollider, RigidBody, } from "@react-three/rapier";
 import { useEffect, useRef, useState } from "react";
 import { MathUtils, Vector3, Raycaster } from "three";
 import { degToRad } from "three/src/math/MathUtils.js";
@@ -37,7 +37,7 @@ export const CharacterController = ({ onTouchAction }) => {
   const WALK_SPEED = 1.4;
   const RUN_SPEED = 2.6;
   const ROTATION_SPEED = degToRad(0.5);
-  const JUMP_FORCE = 4;
+  const JUMP_FORCE = 6;
   const ZOOM_DISTANCE = 2;
   const FALL_THRESHOLD = -20;
   const rb = useRef();
@@ -55,10 +55,19 @@ export const CharacterController = ({ onTouchAction }) => {
     }
   }, [onTouchAction, handleTouchAction]);
 
-  const [animation, setAnimation] = useState("idle");
+  const [animation, setAnimationRaw] = useState("idle");
+  
+  // Clean wrapper without spam logs
+  const setAnimation = (newAnimation) => {
+    if (newAnimation === "Light" || newAnimation === "light") {
+      console.log(`🎬 LIGHT ANIMATION SET: "${newAnimation}"`);
+    }
+    setAnimationRaw(newAnimation);
+  };
   const [isLightingAction, setIsLightingAction] = useState(false);
-  const originalRotation = useRef(0);
-  const spinStartTime = useRef(0);
+  const [isJumping, setIsJumping] = useState(false);
+  const wasLightPressed = useRef(false);
+  // Removed originalRotation and spinStartTime - no longer needed for spinning torch
 
   const characterRotationTarget = useRef(0);
   const rotationTarget = useRef(0);
@@ -71,8 +80,9 @@ export const CharacterController = ({ onTouchAction }) => {
   const isClicking = useRef(false);
   const isOnGround = useRef(false);
   const canJump = useRef(true);
-  const cameraDistance = useRef(4); // Default camera distance
-  const spawnPoint = useRef(new Vector3(0, 0, 0)); // Starting position
+  const cameraDistance = useRef(3); // Default camera distance
+  const cameraPitch = useRef(0); // Vertical camera angle
+  const spawnPoint = useRef(new Vector3(0, 0, 10)); // Starting position - moved forward
   const hasSetSpawnPoint = useRef(false);
   const isWalking = useRef(false);
   const hasFallen = useRef(false);
@@ -81,6 +91,7 @@ export const CharacterController = ({ onTouchAction }) => {
   const fallStartTime = useRef(0);
   const hasPlayedFallSound = useRef(false);
   const gameJustStarted = useRef(true);
+  const spawnTimer = useRef(null);
   const justRespawned = useRef(false);
   const raycaster = useRef(new Raycaster());
   const lastSpellCast = useRef(0);
@@ -124,6 +135,20 @@ export const CharacterController = ({ onTouchAction }) => {
       // Combine keyboard and touch controls
       const touchControls = getTouchControls();
       const touchMovement = getMovementVector();
+      
+      // Debug touch inputs during lighting
+      if (touchControls.light || (touchMovement.x !== 0 || touchMovement.z !== 0)) {
+        console.log('🎮 TOUCH INPUT - light:', touchControls.light, 'movement:', touchMovement, 'isLightingAction:', isLightingAction);
+      }
+
+      // Early exit if lighting action is active - completely prevent movement processing
+      if (isLightingAction) {
+        vel.x = 0;
+        vel.z = 0;
+        rb.current.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
+        console.log('🚫 BLOCKING MOVEMENT - isLightingAction is true');
+        return;
+      }
 
       // Keyboard controls
       if (get().forward || touchControls.forward) {
@@ -172,8 +197,8 @@ export const CharacterController = ({ onTouchAction }) => {
           Math.cos(rotationTarget.current + characterRotationTarget.current) *
           speed;
         
-        // Only set walk/run animations if not falling
-        if (!isFalling.current) {
+        // Only set walk/run animations if not falling, jumping, or lighting
+        if (!isFalling.current && !isJumping && !isLightingAction) {
           if (speed === RUN_SPEED) {
             setAnimation("run");
           } else {
@@ -192,7 +217,7 @@ export const CharacterController = ({ onTouchAction }) => {
           }
           isWalking.current = true;
         }
-      } else if (!isFalling.current) {
+      } else if (!isFalling.current && !isJumping && !isLightingAction) {
         setAnimation("idle");
         // Reset walking state when not moving
         if (isWalking.current) {
@@ -200,12 +225,27 @@ export const CharacterController = ({ onTouchAction }) => {
         }
       }
 
-      // Ground detection
-      isOnGround.current = Math.abs(vel.y) < 0.1;
+      // Much more forgiving ground detection
+      const currentPos = rb.current.translation();
+      const isNearGround = currentPos.y > -10 && currentPos.y < 5; // Position-based check
+      const hasLowVerticalVelocity = Math.abs(vel.y) < 1.0; // More forgiving velocity
+      isOnGround.current = isNearGround && hasLowVerticalVelocity;
       
-      // Mark game as started after first ground contact
-      if (isOnGround.current && gameJustStarted.current) {
-        gameJustStarted.current = false;
+      // Debug ground detection
+      if (get().jump || touchControls.jump) {
+        console.log("Ground check - pos.y:", currentPos.y, "vel.y:", vel.y, "isNearGround:", isNearGround, "hasLowVel:", hasLowVerticalVelocity);
+      }
+      
+      // Disable fall detection for first 4 seconds after spawn
+      if (gameJustStarted.current) {
+        if (!spawnTimer.current) {
+          spawnTimer.current = Date.now();
+          console.log('Spawn protection timer started - fall detection disabled for 4 seconds');
+        } else if (Date.now() - spawnTimer.current > 4000) {
+          console.log('Spawn protection ending - fall detection now enabled');
+          gameJustStarted.current = false;
+          spawnTimer.current = null;
+        }
       }
       
       // Clear respawn flag after landing
@@ -213,23 +253,15 @@ export const CharacterController = ({ onTouchAction }) => {
         justRespawned.current = false;
       }
       
-      // Fall detection logic (skip during initial spawn and after respawn)
-      if (!gameJustStarted.current && !justRespawned.current && !isOnGround.current && vel.y < -3.5) { // Falling faster than -3.5 units/sec
+      // Fall detection logic - for animation only, no sound
+      if (!gameJustStarted.current && !justRespawned.current && !isOnGround.current && vel.y < -8) {
         if (!isFalling.current) {
-          // Just started falling
           isFalling.current = true;
           fallStartTime.current = Date.now();
-          hasPlayedFallSound.current = false; // Reset sound flag for new fall
         } else {
-          // Check if we've been falling long enough to trigger animation
           const fallDuration = Date.now() - fallStartTime.current;
-          if (fallDuration > 400) { // 400ms threshold for longer falls
-            setAnimation("fall");
-            // Play fall sound only once per fall
-            if (!hasPlayedFallSound.current) {
-              playSound('fall', { volume: 0.7, loop: false });
-              hasPlayedFallSound.current = true;
-            }
+          if (fallDuration > 800) {
+            setAnimation("fall"); // Only animation, no sound
           }
         }
       } else if (isOnGround.current && isFalling.current) {
@@ -237,58 +269,138 @@ export const CharacterController = ({ onTouchAction }) => {
         isFalling.current = false;
         fallStartTime.current = 0;
         hasPlayedFallSound.current = false;
-        setAnimation("idle");
+        setIsJumping(false);
+        if (!isLightingAction) {
+          setAnimation("idle");
+        }
       }
 
       // Jump logic with lighting action detection (keyboard + touch)
+      if (get().jump || touchControls.jump) {
+        console.log("Jump input detected - isOnGround:", isOnGround.current, "canJump:", canJump.current, "vel.y:", vel.y);
+      }
       if ((get().jump || touchControls.jump) && isOnGround.current && canJump.current) {
-        vel.y = JUMP_FORCE;
         canJump.current = false;
+        setIsJumping(true);
+        setAnimation("jump");
         
-        // Check if L key is also pressed for spinning torch action
-        if (get().light || touchControls.light) {
-          setAnimation("jump");
-          setIsLightingAction(true);
-          originalRotation.current = rotationTarget.current;
-          spinStartTime.current = Date.now();
-          playSound('jump', 0.5);
-          
-          // Try to light nearby candle
-          if (GameState.lightNearestCandle) {
-            const success = GameState.lightNearestCandle();
-            if (success) {
-              console.log("Successfully lit a candle!");
-            } else {
-              console.log("No candles nearby to light");
-            }
+        console.log("JUMP TRIGGERED - Setting animation to jump");
+        
+        // Delay the physics jump to better match animation timing
+        setTimeout(() => {
+          if (rb.current) {
+            const currentVel = rb.current.linvel();
+            // Reduce jump force for more realistic timing
+            rb.current.setLinvel({ x: currentVel.x, y: JUMP_FORCE * 0.6, z: currentVel.z }, true);
           }
-        } else {
-          setAnimation("jump");
-          setIsLightingAction(false);
-          playSound('jump', 0.5);
-        }
+        }, 600); // Later takeoff to match animation
+        
+        // Delay the jump sound to match when feet actually leave ground
+        setTimeout(() => {
+          playSound('walking', { volume: 0.8, loop: false }); // Use walking sound, louder
+        }, 1600);
+        
+        // Reset can jump after animation
+        setTimeout(() => {
+          canJump.current = true;
+        }, 1000);
       }
 
-      // Handle spinning torch action
-      if (isLightingAction) {
-        const elapsedTime = Date.now() - spinStartTime.current;
-        const spinDuration = 800; // 0.8 seconds for full spin
+      // Check for light key press (only trigger once per press)
+      const lightPressed = get().light || touchControls.light;
+      if (lightPressed && !wasLightPressed.current) {
+        wasLightPressed.current = true;
+        console.log('🔥 LIGHTING ACTION - touchLight:', touchControls.light, 'keyLight:', get().light);
         
-        if (elapsedTime < spinDuration) {
-          // Create a smooth spin: 0° -> 30° -> 0°
-          const progress = elapsedTime / spinDuration;
-          const spinAmount = Math.sin(progress * Math.PI) * (Math.PI / 6); // 30 degrees max
-          rotationTarget.current = originalRotation.current + spinAmount;
+        // IMMEDIATELY set lighting action and stop all movement to prevent interference
+        setIsLightingAction(true);
+        vel.x = 0;
+        vel.z = 0;
+        rb.current.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
+        console.log('🔥 LIGHTING STARTED - Movement blocked immediately');
+        
+        // Check for nearby candles first, but don't light them yet
+        if (GameState.lightNearestCandle) {
+          console.log('🕯️ Checking for nearby candles at character position:', GameState.characterPosition);
+          
+          // First, find the nearest candle without lighting it
+          const nearestCandleInfo = GameState.findNearestCandle ? GameState.findNearestCandle() : null;
+          
+          if (nearestCandleInfo && nearestCandleInfo.success) {
+            // Calculate direction to candle and check if character is facing it
+            const characterPos = GameState.characterPosition;
+            const candlePos = nearestCandleInfo.candlePosition;
+            const direction = candlePos.clone().sub(characterPos);
+            const targetRotation = Math.atan2(direction.x, direction.z);
+            
+            // Get current character rotation
+            const currentRotation = rotationTarget.current + characterRotationTarget.current;
+            
+            // Calculate angle difference (normalize to -π to π)
+            let angleDiff = targetRotation - currentRotation;
+            while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+            
+            // Allow lighting only if facing within 15 degrees (π/12 radians) of the candle  
+            const maxAngleDiff = Math.PI / 12; // 15 degrees
+            
+            if (Math.abs(angleDiff) <= maxAngleDiff) {
+              console.log("✅ Character is facing candle - will light it at frame 55!");
+              
+              // Set animation and prevent movement override by setting it immediately
+              setAnimation("Light");
+              
+              // Delay lighting to frame 55 (55/60 ≈ 0.92 seconds at 60fps)
+              setTimeout(() => {
+                const result = GameState.lightNearestCandle();
+                if (result.success) {
+                  console.log("🔥 Candle lit at animation contact point!");
+                }
+              }, 1300); // 55 frames at 60fps = 916ms, rounded to 920ms
+            } else {
+              console.log("❌ Character not facing candle - turn toward it first!", 
+                `Angle diff: ${(angleDiff * 180 / Math.PI).toFixed(1)}°`);
+              // Reset lighting action since no animation will play
+              setIsLightingAction(false);
+            }
+          } else {
+            console.log("❌ No candles nearby to light");
+            // Reset lighting action since no animation will play
+            setIsLightingAction(false);
+          }
         } else {
-          // Spin complete, return to original rotation
-          rotationTarget.current = originalRotation.current;
-          setIsLightingAction(false);
+          // No candle system available - play animation for testing
+          console.log("⚠️ No candle system - playing animation for testing");
+          setAnimation("Light");
         }
+        
+        // Auto-reset lighting action after animation (112 frames ≈ 1.87s at 60fps)
+        setTimeout(() => {
+          // Auto-reset complete
+          setIsLightingAction(false);
+          if (!isFalling.current && !isJumping) {
+            setAnimation("idle");
+          }
+        }, 2500); // 2.5 seconds to allow full 112-frame animation
       }
+
+      // Reset light pressed flag when key is released (but allow animation to complete)
+      if (!lightPressed && !isLightingAction) {
+        wasLightPressed.current = false;
+      }
+
+      // Note: Removed immediate manual reset - let timeout handle animation completion
+
+      // Old spinning torch logic removed - now using full Light animation
 
       // Reset jump ability when on ground (keyboard + touch)
       if (isOnGround.current && !get().jump && !touchControls.jump) {
         canJump.current = true;
+        // Reset jumping state when we land and stop pressing jump
+        if (isJumping) {
+          setIsJumping(false);
+          console.log("LANDED - Resetting jump state");
+        }
       }
 
       // Spell casting controls
@@ -330,7 +442,7 @@ export const CharacterController = ({ onTouchAction }) => {
           
           // Return to idle after cast
           setTimeout(() => {
-            if (movement.x === 0 && movement.z === 0 && !isFalling.current) {
+            if (movement.x === 0 && movement.z === 0 && !isFalling.current && !isLightingAction) {
               setAnimation("idle");
             }
           }, 500);
@@ -346,16 +458,57 @@ export const CharacterController = ({ onTouchAction }) => {
         cameraDistance.current = Math.min(4, cameraDistance.current + 0.02);
       }
 
+      // Look up control - tilt camera upward to see high objects like the warlock circle
+      if (get().lookUp) {
+        cameraPitch.current = Math.min(Math.PI / 4, cameraPitch.current + 0.02); // Look up (positive pitch)
+      } else {
+        cameraPitch.current = Math.max(0, cameraPitch.current - 0.02); // Return to normal
+      }
+
       character.current.rotation.y = lerpAngle(
         character.current.rotation.y,
         characterRotationTarget.current,
         0.1
       );
 
+      // Clamp very small velocities to prevent jittering
+      if (Math.abs(vel.x) < 0.01) vel.x = 0;
+      if (Math.abs(vel.z) < 0.01) vel.z = 0;
+      
+      // Apply stronger damping when on ground and not moving
+      if (isOnGround.current && movement.x === 0 && movement.z === 0) {
+        vel.x *= 0.5; // More aggressive stopping
+        vel.z *= 0.5;
+      }
+
+      // Physics-based step climbing using momentum
+      if ((movement.x !== 0 || movement.z !== 0) && isOnGround.current) {
+        const horizontalSpeed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
+        const movementIntensity = Math.sqrt(movement.x * movement.x + movement.z * movement.z);
+        
+        // More sensitive detection - if we're pressing movement but not getting much speed
+        if (horizontalSpeed < speed * 0.7 && movementIntensity > 0.1) {
+          // Use forward momentum to "tip" over obstacles
+          const stepForce = Math.min(horizontalSpeed + 1.0, 3.0); // Scale with current momentum
+          vel.y = Math.max(vel.y, stepForce);
+          
+          // Also add a small forward boost to help get over the step
+          const forwardBoost = 0.3;
+          vel.x += Math.sign(movement.x) * forwardBoost * movementIntensity;
+          vel.z += Math.sign(movement.z) * forwardBoost * movementIntensity;
+          
+          console.log("Step climbing with momentum - force:", stepForce, "horizontalSpeed:", horizontalSpeed);
+        }
+      }
+
       rb.current.setLinvel(vel, true);
     }
 
     character.current.getWorldPosition(GameState.characterPosition);
+    
+    // Update reactive position properties for UI
+    GameState.characterY = Math.round(GameState.characterPosition.y);
+    GameState.characterZ = Math.round(GameState.characterPosition.z);
 
     // Set spawn point on first frame when character is on solid ground
     if (!hasSetSpawnPoint.current && isOnGround.current) {
@@ -365,9 +518,11 @@ export const CharacterController = ({ onTouchAction }) => {
 
     // Fall detection and respawn
     if (GameState.characterPosition.y < FALL_THRESHOLD) {
-      // Don't play fall sound here - it's already playing from fall detection
       if (!hasFallen.current) {
         hasFallen.current = true;
+        
+        // Play fall sound for actual death
+        playSound('fall', { volume: 0.7, loop: false });
         
         // Trigger respawn with black screen transition
         GameState.triggerRespawn = true;
@@ -414,45 +569,75 @@ export const CharacterController = ({ onTouchAction }) => {
 
     GameState.containerRotation = container.current.rotation.y;
 
-    // Update camera position based on zoom distance
-    cameraPosition.current.position.z = -cameraDistance.current;
+    // Update camera position based on zoom distance and pitch
+    const baseCameraHeight = 3.5; // Default camera height
+    const pitchOffset = Math.sin(cameraPitch.current) * cameraDistance.current;
+    cameraPosition.current.position.z = -cameraDistance.current * Math.cos(cameraPitch.current);
+    cameraPosition.current.position.y = baseCameraHeight + pitchOffset;
 
     cameraPosition.current.getWorldPosition(cameraWorldPosition.current);
     camera.position.lerp(cameraWorldPosition.current, 0.1);
 
     if (cameraTarget.current) {
       cameraTarget.current.getWorldPosition(cameraLookAtWorldPosition.current);
-      cameraLookAt.current.lerp(cameraLookAtWorldPosition.current, 0.1);
-
+      
+      // Adjust look-at target based on pitch to actually look up/down
+      const adjustedLookAt = cameraLookAtWorldPosition.current.clone();
+      adjustedLookAt.y += Math.tan(cameraPitch.current) * 5; // Adjust vertical look-at based on pitch
+      
+      cameraLookAt.current.lerp(adjustedLookAt, 0.1);
       camera.lookAt(cameraLookAt.current);
     }
 
   });
 
   return (
-    <RigidBody colliders={false} lockRotations ref={rb} userData={{ isCharacter: true }} >
+<RigidBody 
+  colliders={false} 
+  lockRotations 
+  ref={rb} 
+  userData={{ isCharacter: true }} 
+  position={[0, -3.5, 0]} // change this value to move character's start position on platform
+  friction={0.2}  // Lower friction helps with step climbing
+  restitution={0}
+  linearDamping={0.5}  // Lower damping for better movement
+>
       <group ref={container}>
         <group ref={cameraTarget} position-z={1.5} />
         <group 
           ref={cameraPosition} 
-          position-y={3} 
+          position-y={3.5} 
           position-z={1} 
         />
         <group ref={character} userData={{ isCharacter: true }}>
           <Character 
-            scale={0.38} 
-            position-y={-.35} 
+            scale={.75} 
+            position-y={1.4} 
+            position-z={0}
             animation={animation}
             lightingAction={isLightingAction}
           />
         </group>
       </group>
-      <CapsuleCollider args={[0.35, 0.40]} debug />
-      {/* Additional visual debug collider with wireframe */}
-      {/* <mesh position-y={0.45}>
-        <capsuleGeometry args={[0.35, 0.40]} />
-        <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.8} />
-      </mesh> */}
+      {/* Single box collider that doesn't extend below feet */}
+      {/* Lower body: capsule for smooth movement */}
+      {/* Lower body: very narrow for step climbing */}
+      {/* <CapsuleCollider 
+        args={[0.1, 0.3]} 
+        position={[0, 1.7, 0]} 
+        debug 
+      /> */}
+        <BallCollider 
+    args={[0.25]} 
+    position={[0, 1.5, 0]}  // Position at feet level
+  />
+      {/* Upper body: slightly wider for shoulders/head */}
+  <CapsuleCollider 
+    args={[0.4, 0.25]} 
+    position={[0, 2.3, 0]} 
+  />
+      
+
     </RigidBody>
   );
 };

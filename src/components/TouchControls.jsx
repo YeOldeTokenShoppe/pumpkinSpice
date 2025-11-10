@@ -29,24 +29,24 @@ export const TouchControls = ({ onAction, style }) => {
     onAction(action, false);
   };
 
-  // Special handler for combo actions (jump + light)
-  const handleLightJump = () => {
-    onAction('lightJump', true);
+  // Special handler for light action only (no more jump combo)
+  const handleLightAction = () => {
+    onAction('light', true);
     
-    // Visual feedback
+    // Visual feedback for light only
     setActiveActions(prev => ({ 
       ...prev, 
-      jump: true, 
       light: true 
     }));
     
+    // Immediate release like L-key to prevent movement interference
     setTimeout(() => {
       setActiveActions(prev => ({ 
         ...prev, 
-        jump: false, 
         light: false 
       }));
-    }, 300);
+      onAction('light', false);
+    }, 100); // Very brief press like keyboard
   };
 
   if (!isMobile) return null;
@@ -60,8 +60,8 @@ export const TouchControls = ({ onAction, style }) => {
         <div className="primary-action">
           <button
             className={`action-btn light-jump-btn ${activeActions.jump || activeActions.light ? 'active' : ''}`}
-            onTouchStart={() => handleLightJump()}
-            onMouseDown={() => handleLightJump()}
+            onTouchStart={() => handleLightAction()}
+            onMouseDown={() => handleLightAction()}
           >
             <div className="btn-icon">🕯️⚡</div>
             <div className="btn-label">Light</div>

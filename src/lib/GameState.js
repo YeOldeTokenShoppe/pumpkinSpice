@@ -4,6 +4,8 @@ import { Vector3 } from 'three';
 export const GameState = proxy({
   map: "underworld3",
   characterPosition: new Vector3(0, 0, 0),
+  characterY: 0, // Reactive Y position for UI
+  characterZ: 0, // Reactive Z position for UI
   containerRotation: 0,
   score: 0,
   collectedItems: new Set(),
@@ -21,4 +23,5 @@ export const GameState = proxy({
   candles: 0,
   keys: 0,
   lightNearestCandle: null, // Function to light nearest candle
+  doorTogglePressed: false, // Door toggle key state
 });
