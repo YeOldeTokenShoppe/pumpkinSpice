@@ -13,25 +13,18 @@ export const CandleSystem = () => {
   // Valtio state access
   const gameState = useSnapshot(GameState);
 
-  // Create burst light effect
+  // Optimized burst light effect - no animation for performance
   const createLightBurst = (position) => {
-    // Create a bright temporary light
-    const burstLight = new PointLight('#FFD700', 15, 8, 2); // Bright golden light
+    // Create a brief static burst instead of animated
+    const burstLight = new PointLight('#FFD700', 8, 6, 2);
     burstLight.position.copy(position);
-    burstLight.position.y += 0.5; // Slightly above the candle
+    burstLight.position.y += 0.5;
     scene.add(burstLight);
 
-    // Animate the burst - fade out over 800ms
-    let intensity = 15;
-    const fadeInterval = setInterval(() => {
-      intensity *= 0.85; // Fade out exponentially
-      burstLight.intensity = intensity;
-      
-      if (intensity < 0.1) {
-        clearInterval(fadeInterval);
-        scene.remove(burstLight);
-      }
-    }, 50); // Update every 50ms for smooth fade
+    // Single timeout instead of interval for better performance
+    setTimeout(() => {
+      scene.remove(burstLight);
+    }, 200); // Quick burst, no animation
   };
 
   // Find and store candle positions once
@@ -92,19 +85,9 @@ export const CandleSystem = () => {
   // Simple lighting function that checks distance when called
   const lightNearestCandle = useCallback(() => {
     try {
-      console.log(`🔍 lightNearestCandle called - Character:`, gameState.characterPosition, 'Candles found:', candleFlames.current.length);
-      
-      if (!gameState.characterPosition) {
-        console.log(`❌ Early return - no character position`);
+      if (!gameState.characterPosition || candleFlames.current.length === 0) {
         return { success: false };
       }
-      
-      if (candleFlames.current.length === 0) {
-        console.log(`❌ Early return - no candles (${candleFlames.current.length})`);
-        return { success: false };
-      }
-      
-      console.log(`✅ Proceeding with candle detection...`);
 
       let nearestCandle = null;
       let nearestDistance = Infinity;
@@ -153,19 +136,17 @@ export const CandleSystem = () => {
               const candleLight = new PointLight('#FFB347', 2, 8, 2); // Warm orange light
               candleLight.position.copy(nearestCandle.worldPosition);
               candleLight.position.y += 0.3; // Slightly above the candle
-              candleLight.castShadow = true;
-              candleLight.shadow.mapSize.width = 512;
-              candleLight.shadow.mapSize.height = 512;
+              candleLight.castShadow = false; // Disable shadows for tablet performance
               scene.add(candleLight);
               
               // Store the light reference for potential cleanup
               nearestCandle.pointLight = candleLight;
               
-              console.log(`Candle ${nearestCandle.name} is now lit with point light! Visible:`, nearestCandle.object.visible, 'Intensity:', nearestCandle.object.intensity);
+              // Candle lighting completed
             } catch (delayError) {
               console.error(`Error during delayed lighting of ${nearestCandle.name}:`, delayError);
             }
-          }, 400); // 400ms delay - should be mid-jump
+          }, 100); // Reduced delay for faster lighting
           
           return {
             success: true,
@@ -198,13 +179,14 @@ export const CandleSystem = () => {
       let nearestCandle = null;
       let nearestDistance = Infinity;
 
-      // Find nearest unlit candle
+      // Find nearest unlit candle using squared distance for performance
+      const lightingDistanceSquared = lightingDistance * lightingDistance;
       candleFlames.current.forEach(candle => {
         if (!candle.lit && candle.object) {
-          const distance = candle.worldPosition.distanceTo(gameState.characterPosition);
+          const distanceSquared = candle.worldPosition.distanceToSquared(gameState.characterPosition);
           
-          if (distance <= lightingDistance && distance < nearestDistance) {
-            nearestDistance = distance;
+          if (distanceSquared <= lightingDistanceSquared && distanceSquared < nearestDistance) {
+            nearestDistance = distanceSquared;
             nearestCandle = candle;
           }
         }
@@ -238,28 +220,22 @@ export const CandleSystem = () => {
         return;
       }
 
+      const cullDistanceSquared = cullDistance * cullDistance;
       candleFlames.current.forEach(candle => {
         if (candle.lit && candle.pointLight) {
-          const distance = candle.worldPosition.distanceTo(gameState.characterPosition);
+          const distanceSquared = candle.worldPosition.distanceToSquared(gameState.characterPosition);
           
-          // Turn off light if too far, turn on if close enough
-          if (distance > cullDistance) {
-            if (candle.pointLight.visible) {
-              candle.pointLight.visible = false;
-              // console.log(`Culled candle light: ${candle.name} (distance: ${distance.toFixed(2)})`);
-            }
-          } else {
-            if (!candle.pointLight.visible) {
-              candle.pointLight.visible = true;
-              // console.log(`Restored candle light: ${candle.name} (distance: ${distance.toFixed(2)})`);
-            }
+          // Turn off light if too far, turn on if close enough - using squared distance for performance
+          const shouldBeVisible = distanceSquared <= cullDistanceSquared;
+          if (candle.pointLight.visible !== shouldBeVisible) {
+            candle.pointLight.visible = shouldBeVisible;
           }
         }
       });
     };
 
-    // Run culling every 500ms (2fps) to avoid performance impact
-    const cullInterval = setInterval(cullCandleLights, 500);
+    // Run culling every 1000ms (1fps) for better performance with 60 max candles
+    const cullInterval = setInterval(cullCandleLights, 1000);
     return () => clearInterval(cullInterval);
   }, [gameState.characterPosition, cullDistance]);
 

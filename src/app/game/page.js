@@ -133,9 +133,10 @@ export default function GamePage() {
             failIfMajorPerformanceCaveat: false
           }}
           style={{
-            width: "100%",
-            height: "100%",
-            touchAction: "none",
+            width: "100vw",
+            height: "100vh",
+            touchAction: "pan-y",
+            display: "block",
           }}
           onContextMenu={(e) => e.preventDefault()}
           onCreated={handleCreated}

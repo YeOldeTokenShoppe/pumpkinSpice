@@ -264,7 +264,7 @@ export const EnhancedHUD = () => {
   // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768 || window.innerHeight <= 600);
+      setIsMobile(false); // Force desktop mode to prevent tablet flashing
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);

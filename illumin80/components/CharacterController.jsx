@@ -2,13 +2,12 @@ import { useKeyboardControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { CapsuleCollider, BallCollider, ConvexHullCollider, TrimeshCollider, CuboidCollider, RigidBody, } from "@react-three/rapier";
 import { useEffect, useRef, useState } from "react";
-import { MathUtils, Vector3, Raycaster } from "three";
+import { MathUtils, Vector3 } from "three";
 import { degToRad } from "three/src/math/MathUtils.js";
 import { GameState } from "../../src/lib/GameState";
 import { Character } from "./Character";
 import { useAudio } from "../../src/hooks/useAudio";
 import { useTouchControls } from "../../src/hooks/useTouchControls";
-import { magicActions } from "../hooks/useMagic";
 
 const normalizeAngle = (angle) => {
   while (angle > Math.PI) angle -= 2 * Math.PI;
@@ -93,8 +92,6 @@ export const CharacterController = ({ onTouchAction }) => {
   const gameJustStarted = useRef(true);
   const spawnTimer = useRef(null);
   const justRespawned = useRef(false);
-  const raycaster = useRef(new Raycaster());
-  const lastSpellCast = useRef(0);
 
   useEffect(() => {
     loadSound('jump', '/sounds/jump.ogg');
@@ -125,6 +122,15 @@ export const CharacterController = ({ onTouchAction }) => {
     if (rb.current) {
       // Store rigid body reference in GameState for collision detection
       GameState.characterRigidBody = rb.current;
+      
+      // PERFORMANCE: Skip expensive calculations during lighting action
+      if (isLightingAction) {
+        // Only update essential position data during lighting
+        character.current.getWorldPosition(GameState.characterPosition);
+        GameState.characterY = Math.round(GameState.characterPosition.y);
+        GameState.characterZ = Math.round(GameState.characterPosition.z);
+        return; // Skip all other expensive calculations
+      }
       const vel = rb.current.linvel();
 
       const movement = {
@@ -403,53 +409,6 @@ export const CharacterController = ({ onTouchAction }) => {
         }
       }
 
-      // Spell casting controls
-      // Switch spells with Q/E or touch controls
-      if (get().prevSpell || touchControls.prevSpell) {
-        magicActions.prevSpell();
-      }
-      if (get().nextSpell || touchControls.nextSpell) {
-        magicActions.nextSpell();
-      }
-      
-      // Cast spell with mouse click or F key or touch
-      if ((get().cast || touchControls.cast) && Date.now() - lastSpellCast.current > 200) {
-        console.log("Attempting to cast spell");
-        // Calculate target position
-        const characterPos = new Vector3();
-        character.current.getWorldPosition(characterPos);
-        
-        // Get direction based on camera/container rotation
-        // The character faces the direction of movement/camera
-        const angle = container.current.rotation.y + character.current.rotation.y;
-        const forward = new Vector3(
-          Math.sin(angle),
-          0,
-          Math.cos(angle)
-        );
-        
-        // Create target position 10 units ahead
-        const targetPos = characterPos.clone().add(forward.multiplyScalar(10));
-        targetPos.y = characterPos.y + 1; // Aim at chest height
-        
-        console.log("Casting spell - angle:", angle, "forward:", forward, "at:", targetPos, "from:", characterPos);
-        
-        // Cast the spell
-        if (magicActions.castSpell(targetPos, characterPos)) {
-          console.log("Spell cast successfully!");
-          lastSpellCast.current = Date.now();
-          setAnimation("cast"); // You may want to add a casting animation
-          
-          // Return to idle after cast
-          setTimeout(() => {
-            if (movement.x === 0 && movement.z === 0 && !isFalling.current && !isLightingAction) {
-              setAnimation("idle");
-            }
-          }, 500);
-        } else {
-          console.log("Spell cast failed - on cooldown or already casting");
-        }
-      }
 
       // Zoom control - maintain zoom state independently of movement (keyboard + touch)
       if (get().zoom || touchControls.zoom) {

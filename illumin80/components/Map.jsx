@@ -100,14 +100,23 @@ const createIridescentMaterial = (originalTexture) => {
 };
 
 
-// Component for animating coins with spinning motion
+// Component for animating coins with spinning motion - DISTANCE CULLED
 const AnimatedCoin = ({ coinMesh, index, onCollect }) => {
   const coinRef = useRef();
+  const ANIMATION_DISTANCE = 15.0; // Only animate within 15M
   
   useFrame((state) => {
-    if (!coinMesh || !coinMesh.visible) return;
+    if (!coinMesh || !coinMesh.visible || !GameState.characterPosition) return;
     
-    // Spin the coin like Super Mario
+    // Distance check - skip expensive animations if too far
+    const worldPos = new Vector3();
+    coinMesh.getWorldPosition(worldPos);
+    const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
+    const cullDistanceSquared = ANIMATION_DISTANCE * ANIMATION_DISTANCE;
+    
+    if (distanceSquared > cullDistanceSquared) return; // Skip animation if too far
+    
+    // Only animate if within range
     const rotationSpeed = 3; // Rotations per second
     coinMesh.rotation.y = state.clock.elapsedTime * rotationSpeed;
     
@@ -124,12 +133,21 @@ const AnimatedCoin = ({ coinMesh, index, onCollect }) => {
   return null; // This component only provides animation logic
 };
 
-// Component for animating diamonds with spinning and hovering motion
+// Component for animating diamonds with spinning and hovering motion - DISTANCE CULLED
 const AnimatedDiamond = ({ diamondMesh, index }) => {
   const originalPosition = useRef(null);
+  const ANIMATION_DISTANCE = 15.0; // Only animate within 15M
   
   useFrame((state) => {
-    if (!diamondMesh || !diamondMesh.visible) return;
+    if (!diamondMesh || !diamondMesh.visible || !GameState.characterPosition) return;
+    
+    // Distance check - skip expensive animations if too far
+    const worldPos = new Vector3();
+    diamondMesh.getWorldPosition(worldPos);
+    const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
+    const cullDistanceSquared = ANIMATION_DISTANCE * ANIMATION_DISTANCE;
+    
+    if (distanceSquared > cullDistanceSquared) return; // Skip animation if too far
     
     // Store original position on first run
     if (!originalPosition.current) {
@@ -142,7 +160,7 @@ const AnimatedDiamond = ({ diamondMesh, index }) => {
     
     const time = state.clock.elapsedTime;
     
-    // Spinning animation - continuous Y-axis rotation
+    // Only animate if within range
     const spinSpeed = 2.0; // Rotations per second
     diamondMesh.rotation.y = time * spinSpeed;
     
@@ -159,53 +177,6 @@ const AnimatedDiamond = ({ diamondMesh, index }) => {
   return null; // This component only provides animation logic
 };
 
-// Component for animating pillars with independent rising/falling motion
-const AnimatedPillar = ({ pillarMesh, index }) => {
-  const originalPosition = useRef(null);
-  const debugLogged = useRef(false);
-  
-  useFrame((state) => {
-    if (!pillarMesh) return;
-    
-    // Debug log once per pillar
-    if (!debugLogged.current) {
-      // console.log(`🏛️ AnimatedPillar ${index}: "${pillarMesh.name}" starting animation (type: ${pillarMesh.type})`);
-      debugLogged.current = true;
-    }
-    
-    // Store original position on first run
-    if (!originalPosition.current) {
-      originalPosition.current = pillarMesh.position.y;
-      // console.log(`🏛️ Pillar ${index} (${pillarMesh.name}): Original Y position = ${originalPosition.current}`);
-    }
-    
-    const time = state.clock.elapsedTime;
-    
-    // Create unique timing for each pillar
-    const baseSpeed = 0.6; // Base animation speed (slowed down)
-    const pillarSpeed = baseSpeed + (index * 0.15); // Vary speed per pillar (reduced variation)
-    const pillarPhase = index * 1.8; // Phase offset for independent timing
-    
-    // Rising and falling motion - creates a challenging pattern
-    const riseHeight = 2.5; // How high pillars can rise
-    const motion = Math.sin(time * pillarSpeed + pillarPhase);
-    
-    // Convert from [-1, 1] to [0, riseHeight] range
-    const normalizedMotion = (motion + 1) / 2;
-    const newY = originalPosition.current + (normalizedMotion * riseHeight);
-    pillarMesh.position.y = newY;
-    
-    // Debug log occasionally for the first few pillars
-    if (index < 3 && Math.floor(time) % 3 === 0 && Math.floor(time * 10) % 10 === 0) {
-      // console.log(`🏛️ Pillar ${index} (${pillarMesh.name}): Y = ${newY.toFixed(2)} (motion: ${motion.toFixed(2)})`);
-    }
-    
-    // Update world matrix for proper collision detection
-    pillarMesh.updateMatrixWorld(true);
-  });
-  
-  return null;
-};
 
 // Helper function to check if an object is a child of another
 const isChildOf = (child, parent) => {
@@ -483,10 +454,20 @@ const DoorCollider = ({ doorObject, isOpen, doorName }) => {
   );
 };
 
-// Component for animating the warlock circle with continuous Y-axis rotation
+// Component for animating the warlock circle with continuous Y-axis rotation - DISTANCE CULLED
 const AnimatedWarlockCircle = ({ warlockCircleMesh }) => {
+  const ANIMATION_DISTANCE = 30.0; // Larger distance for important visual element
+  
   useFrame((state) => {
-    if (!warlockCircleMesh) return;
+    if (!warlockCircleMesh || !GameState.characterPosition) return;
+    
+    // Distance check - skip expensive animations if too far
+    const worldPos = new Vector3();
+    warlockCircleMesh.getWorldPosition(worldPos);
+    const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
+    const cullDistanceSquared = ANIMATION_DISTANCE * ANIMATION_DISTANCE;
+    
+    if (distanceSquared > cullDistanceSquared) return; // Skip animation if too far
     
     // Continuous rotation around Y-axis
     const rotationSpeed = 0.2; // Adjust speed as needed (1.0 = one full rotation per second)
@@ -496,12 +477,21 @@ const AnimatedWarlockCircle = ({ warlockCircleMesh }) => {
   return null; // This component only provides animation logic
 };
 
-// Component for animating the Corazon object with gentle hover
+// Component for animating the Corazon object with gentle hover - DISTANCE CULLED
 const AnimatedCorazon = ({ corazonMesh }) => {
   const originalPosition = useRef(null);
+  const ANIMATION_DISTANCE = 20.0; // Animate within 20M for important object
   
   useFrame((state) => {
-    if (!corazonMesh) return;
+    if (!corazonMesh || !GameState.characterPosition) return;
+    
+    // Distance check - skip expensive animations if too far
+    const worldPos = new Vector3();
+    corazonMesh.getWorldPosition(worldPos);
+    const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
+    const cullDistanceSquared = ANIMATION_DISTANCE * ANIMATION_DISTANCE;
+    
+    if (distanceSquared > cullDistanceSquared) return; // Skip animation if too far
     
     // Store original position on first run
     if (!originalPosition.current) {
@@ -528,13 +518,22 @@ const AnimatedCorazon = ({ corazonMesh }) => {
   return null; // This component only provides animation logic
 };
 
-// Component for animating fire flames with individual piece movement
+// Component for animating fire flames with individual piece movement - DISTANCE CULLED
 const AnimatedFire = ({ fireMesh, index }) => {
   const originalPositions = useRef(new window.Map());
   const debugLogged = useRef(false);
+  const ANIMATION_DISTANCE = 15.0; // Only animate within 15M
   
   useFrame((state) => {
-    if (!fireMesh) return;
+    if (!fireMesh || !GameState.characterPosition) return;
+    
+    // Distance check - skip expensive animations if too far
+    const worldPos = new Vector3();
+    fireMesh.getWorldPosition(worldPos);
+    const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
+    const cullDistanceSquared = ANIMATION_DISTANCE * ANIMATION_DISTANCE;
+    
+    if (distanceSquared > cullDistanceSquared) return; // Skip animation if too far
     
     // Debug log once to see fire structure
     // if (!debugLogged.current) {
@@ -628,15 +627,33 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
   const isObstacle2 = obstacleMesh.userData?.isObstacle2;
   const isObstacle006 = obstacleMesh.userData?.isObstacle006;
   const isPendulum = obstacleMesh.userData?.isPendulum;
-  const isPillar = obstacleMesh.userData?.isPillar;
   const isCorazon = obstacleMesh.userData?.isCorazon;
+  const ANIMATION_DISTANCE = 25.0; // Larger distance for dangerous obstacles
   
   // Access Valtio GameState for collision handling
   const gameState = useSnapshot(GameState);
   
   useFrame((state) => {
-    if (!obstacleMesh || !rbRef.current) return;
+    if (!obstacleMesh || !rbRef.current || !GameState.characterPosition) return;
     
+    // Distance check - skip expensive animations if too far
+    const worldPos = new Vector3();
+    obstacleMesh.getWorldPosition(worldPos);
+    const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
+    const cullDistanceSquared = ANIMATION_DISTANCE * ANIMATION_DISTANCE;
+    
+    if (distanceSquared > cullDistanceSquared) {
+      // Still update collider position for distant objects, but skip animation
+      const quaternion = new Quaternion();
+      const position = new Vector3();
+      const scale = new Vector3();
+      obstacleMesh.matrixWorld.decompose(position, quaternion, scale);
+      rbRef.current.setNextKinematicTranslation(position);
+      rbRef.current.setNextKinematicRotation(quaternion);
+      return;
+    }
+    
+    // Only do expensive animations if within range
     frameCount.current++;
     
     if (isSpindle) {
@@ -672,36 +689,8 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
       // Use sine wave for smooth pendulum motion with phase offset
       const newRotation = Math.sin(time * pendulumSpeed + phaseOffset) * pendulumAngle;
       obstacleMesh.rotation.z = newRotation;
-      
-      // Debug log occasionally
-      // if (frameCount.current % 120 === 0) {
-      //   console.log(`🔄 Pendulum ${index} animating: rotation.z = ${newRotation.toFixed(3)}, time = ${time.toFixed(1)}`);
-      // }
     }
     
-    if (isPillar) {
-      // Pillar animation - up and down movement (y-axis translation)
-      const pillarSpeed = 0.8; // Speed of up/down movement
-      const pillarRange = 0.5; // How far up/down they move (in units)
-      const time = state.clock.elapsedTime;
-      
-      // Store original position if not stored yet
-      if (!originalPosition.current) {
-        originalPosition.current = obstacleMesh.position.clone();
-      }
-      
-      // Use sine wave for smooth up/down motion
-      const yOffset = Math.sin(time * pillarSpeed) * pillarRange;
-      obstacleMesh.position.y = originalPosition.current.y + yOffset;
-      
-      // Debug log occasionally
-      // if (frameCount.current % 180 === 0) {
-      //   console.log(`🏛️ Pillar ${index} animating: y-offset = ${yOffset.toFixed(3)}, time = ${time.toFixed(1)}`);
-      // }
-    }
-    
-    // Corazon doesn't need special animation logic since it's handled by AnimatedCorazon component
-    // Just ensure the collider follows the object position
     
     // Update obstacle's world matrix
     obstacleMesh.updateMatrixWorld(true);
@@ -715,12 +704,6 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
     // Update collider transform to match animated mesh
     rbRef.current.setNextKinematicTranslation(position);
     rbRef.current.setNextKinematicRotation(quaternion);
-    
-    // Debug log occasionally
-    // if (frameCount.current % 180 === 0) {
-    //   const type = isSpindle ? 'Spindle' : 'Hammer';
-    //   console.log(`${type} ${index}: Position (${position.x.toFixed(1)}, ${position.y.toFixed(1)}, ${position.z.toFixed(1)})`);
-    // }
   });
   
   const handleCollision = ({ other }) => {
@@ -736,7 +719,6 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
       if (isObstacle2) type = 'Obstacle_2_001';
       if (isObstacle006) type = 'Obstacle_006';
       if (isPendulum) type = 'Pendulum';
-      if (isPillar) type = 'Pillar';
       if (isCorazon) type = 'Corazon';
       // console.log(`💥 ${type} ${index} hit!`);
       
@@ -957,47 +939,6 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
         })}
       </RigidBody>
     );
-  } else if (isPillar) {
-    // console.log(`🏗️ Creating kinematic pillar collider for: ${obstacleMesh.name} (index: ${index})`);
-    
-    // Pillar colliders - use kinematic like other animated obstacles
-    return (
-      <RigidBody
-        ref={rbRef}
-        type="kinematicPosition"
-        colliders={false}
-        onIntersectionEnter={handleCollision}
-        sensor={false} // Solid collision for pillars
-      >
-        {/* Single well-fitted cuboid collider for the pillar */}
-        <CuboidCollider 
-          args={[0.6, 1.5, 0.6]} // [half-width, half-height, half-depth] - properly sized
-          position={[0, 1.5, 0]} // Center the collider on the pillar
-        />
-        
-        {/* Additional smaller collider for hieroglyph/top section */}
-        <CuboidCollider 
-          args={[0.5, 0.4, 0.5]} // Small top section
-          position={[0, 3.2, 0]} // Top of pillar
-        />
-        
-        {/* Debug visualization - ALWAYS VISIBLE */}
-        <mesh position={[0, 1.5, 0]}>
-          <boxGeometry args={[1.2, 3.0, 1.2]} />
-          <meshBasicMaterial color="lime" opacity={0.5} transparent wireframe />
-        </mesh>
-        {/* Top section */}
-        <mesh position={[0, 3.2, 0]}>
-          <boxGeometry args={[1.0, 0.8, 1.0]} />
-          <meshBasicMaterial color="yellow" opacity={0.5} transparent wireframe />
-        </mesh>
-        {/* Label for debugging */}
-        <mesh position={[0, 0.5, 0]}>
-          <boxGeometry args={[0.1, 0.1, 0.1]} />
-          <meshBasicMaterial color="red" />
-        </mesh>
-      </RigidBody>
-    );
   } else if (isCorazon) {
     // Corazon collider - simple cuboid for heart-shaped object
     console.log(`💖 Creating Corazon collider for: ${obstacleMesh.name}`);
@@ -1121,7 +1062,6 @@ export const Map = ({ model, onLoad, ...props }) => {
   const [collectibles, setCollectibles] = useState([]);
   const [coins, setCoins] = useState([]);
   const [fires, setFires] = useState([]);
-  const [pillars, setPillars] = useState([]);
   const [doors, setDoors] = useState([]);
   const [collectedItems, setCollectedItems] = useState(new Set());
   const [iridiscentMaterials, setIridiscentMaterials] = useState([]);
@@ -1162,7 +1102,6 @@ export const Map = ({ model, onLoad, ...props }) => {
     const foundHammers = [];
     const foundCollectibles = [];
     const foundCoins = [];
-    const foundPillars = [];
     const foundDoors = [];
     let foundWarlockCircle = null;
     let foundCorazon = null;
@@ -1336,21 +1275,6 @@ export const Map = ({ model, onLoad, ...props }) => {
         // console.log(`💎 Found diamond collectible: ${child.name} (type: ${child.type})`);
       }
       
-      // Log ALL objects to help identify pillar naming patterns
-      if (child.name.toLowerCase().includes('pillar')) {
-        // console.log(`🏛️ Pillar object found: "${child.name}" (type: ${child.type}, isMesh: ${child.isMesh}, children: ${child.children?.length || 0})`);
-        
-        // Log children for each pillar to see hieroglyphs
-        if (child.children && child.children.length > 0) {
-          child.children.forEach((grandchild, i) => {
-            // console.log(`  └── Pillar child ${i}: "${grandchild.name}" (type: ${grandchild.type})`);
-            if (grandchild.name.toLowerCase().includes('hieroglyph')) {
-              // console.log(`    📜 Found hieroglyph: "${grandchild.name}" as child of ${child.name}`);
-            }
-          });
-        }
-      }
-      
       // Look for the warlock circle object (child of statue_warlock)
       if (child.name === 'state_warlock_circle') {
         if (!foundWarlockCircle) {
@@ -1363,45 +1287,11 @@ export const Map = ({ model, onLoad, ...props }) => {
         }
       }
       
-      // Look for the new standardized pillar naming: pillar_animated_001 through pillar_animated_016
-      // Target only the parent Groups that contain hieroglypoh sub-objects, not the individual meshes
-      const isPillar = name.startsWith('pillar_animated_') && child.type === 'Group';
-      
-      // Debug: log when we find pillar groups vs individual hieroglypoh meshes
-      // if (name.includes('hieroglypoh')) {
-      //   console.log(`🔍 Found hieroglypoh mesh: "${child.name}" (parent should be pillar group)`);
-      // }
-      
-      if (isPillar) {
-        foundPillars.push({
-          id: child.uuid,
-          name: child.name,
-          object: child
-        });
-        // Mark pillars for collision detection
-        child.userData.isPillar = true;
-        
-        // Only add unique pillars to avoid duplicates - check by name only
-        const existingPillar = foundHammers.find(p => p.name === child.name);
-        if (!existingPillar) {
-          foundHammers.push(child); // Add to collision system
-          // console.log(`✅ UNIQUE PILLAR ADDED: ${child.name} (type: ${child.type})`);
-          
-          // Debug position
-          const worldPos = new Vector3();
-          child.getWorldPosition(worldPos);
-          // console.log(`   📍 Position: (${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)}, ${worldPos.z.toFixed(1)})`);
-        } else {
-          // console.log(`🔄 DUPLICATE pillar skipped: ${child.name} (type: ${child.type})`);
-        }
-      }
-      
     });
     
     setHammerMeshes(foundHammers);
     setCollectibles(foundCollectibles);
     setCoins(foundCoins);
-    setPillars(foundPillars);
     setDoors(foundDoors);
     setWarlockCircle(foundWarlockCircle);
     setCorazonObject(foundCorazon);
@@ -1409,8 +1299,6 @@ export const Map = ({ model, onLoad, ...props }) => {
     
     // Debug: Log found objects (doors handled by DoorController now)
     // console.log(`🪙 Found ${foundCoins.length} coins:`, foundCoins.map(c => c.name));
-    // console.log(`🏛️ Found ${foundPillars.length}/16 pillars for display:`, foundPillars.map(p => p.name));
-    // console.log(`💥 Found ${foundHammers.filter(h => h.userData?.isPillar).length}/16 pillars for COLLISION:`, foundHammers.filter(h => h.userData?.isPillar).map(p => p.name));
     // console.log(`🎯 Total collision objects:`, foundHammers.length);
   }, [obstacleScene]);
 
@@ -1575,7 +1463,6 @@ export const Map = ({ model, onLoad, ...props }) => {
   // Load coin collection sound
   useEffect(() => {
     loadSound('coinCollect', '/sounds/whimsyCoin.wav');
-    loadSound('slidingStone', '/sounds/slidingStone.mp3');
   }, [loadSound]);
   
   // Play animations
@@ -1673,65 +1560,6 @@ export const Map = ({ model, onLoad, ...props }) => {
     }
   }, [coins, collectedItems, playSound]);
 
-  // Pillar proximity sound detection with sound stopping
-  useEffect(() => {
-    const checkPillarProximity = () => {
-      if (!GameState.characterPosition || pillars.length === 0) {
-        // if (pillars.length === 0) console.log('🏛️ No pillars found for sound detection');
-        return;
-      }
-      
-      const proximityDistance = 3.0; // Distance to trigger sound
-      let nearPillar = false;
-      let closestDistance = Infinity;
-      
-      pillars.forEach((pillar, index) => {
-        const worldPos = new Vector3();
-        pillar.object.getWorldPosition(worldPos);
-        const distance = GameState.characterPosition.distanceTo(worldPos);
-        
-        if (distance < closestDistance) {
-          closestDistance = distance;
-        }
-        
-        if (distance < proximityDistance) {
-          nearPillar = true;
-          // console.log(`🏛️ Near pillar ${index} (${pillar.name}): distance ${distance.toFixed(2)}`);
-        }
-      });
-      
-      // Debug log distance to closest pillar occasionally
-      if (Math.floor(Date.now() / 1000) % 2 === 0) {
-        // console.log(`🏛️ Closest pillar distance: ${closestDistance.toFixed(2)}`);
-      }
-      
-      // Handle sound playing/stopping
-      if (nearPillar) {
-        // Play sound if near any pillar (with throttling to avoid spam)
-        if (!GameState.lastPillarSoundTime || Date.now() - GameState.lastPillarSoundTime > 3000) {
-          // console.log('🏛️ Playing sliding stone sound!');
-          playSound('slidingStone', 0.4);
-          GameState.lastPillarSoundTime = Date.now();
-          GameState.pillarSoundPlaying = true;
-        }
-      } else {
-        // Stop sound if we were playing it and now we're far from pillars
-        if (GameState.pillarSoundPlaying) {
-          // console.log('🏛️ Stopping sliding stone sound - left pillar area');
-          // Note: Most audio systems don't have a direct stop method for individual sounds
-          // The sound will finish its current loop and not restart
-          GameState.pillarSoundPlaying = false;
-          GameState.lastPillarSoundTime = 0; // Reset so sound can play again immediately when re-entering
-        }
-      }
-    };
-    
-    if (pillars.length > 0) {
-      // console.log(`🏛️ Starting pillar sound detection for ${pillars.length} pillars`);
-      const interval = setInterval(checkPillarProximity, 200); // Check every 200ms for performance
-      return () => clearInterval(interval);
-    }
-  }, [pillars, playSound]);
   
   // Use simple door controller with targeted static door hiding
   const doorController = useMemo(() => {
@@ -1790,14 +1618,6 @@ export const Map = ({ model, onLoad, ...props }) => {
         />
       ))}
       
-      {/* Animated pillars */}
-      {pillars.map((pillar, index) => (
-        <AnimatedPillar 
-          key={`pillar-${index}`} 
-          pillarMesh={pillar.object}
-          index={index}
-        />
-      ))}
       
       {/* Animated warlock circle */}
       {warlockCircle && (

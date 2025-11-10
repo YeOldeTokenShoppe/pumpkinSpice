@@ -13,7 +13,6 @@ import { Map } from "./Map";
 import { MonsterSystem } from "./MonsterSystem";
 import { DemonCharacter } from "./DemonCharacter";
 
-import { WizardSpellEffects } from "./WizardSpellEffects";
 
 export const maps = {
   underworld3: {
@@ -114,11 +113,7 @@ export const Experience = ({ onTouchAction, onLoad }) => {
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
       /> */}
-      {/* <SpellEffects /> */}
-      {/* <SimpleSpellTest /> */}
-      {/* <BasicSpellVisual /> */}
-      {/* <TestVFX /> */}
-      {/* <WizardSpellEffects /> */}
+ 
       <Physics key={map}>
         <Map
           scale={maps[map]?.scale || 0.7}

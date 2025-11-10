@@ -6,10 +6,7 @@ export const useTouchControls = () => {
     jump: false,
     light: false,
     sprint: false,
-    zoom: false,
-    cast: false,
-    nextSpell: false,
-    prevSpell: false
+    zoom: false
   });
 
   // Create a virtual keyboard controls getter that includes touch input
@@ -25,10 +22,7 @@ export const useTouchControls = () => {
       jump: touchState.current.jump,
       light: touchState.current.light,
       run: !isLightActive && touchState.current.sprint,
-      zoom: touchState.current.zoom,
-      cast: touchState.current.cast,
-      nextSpell: touchState.current.nextSpell,
-      prevSpell: touchState.current.prevSpell
+      zoom: touchState.current.zoom
     };
     
     // Debug removed to reduce spam
@@ -65,15 +59,6 @@ export const useTouchControls = () => {
         break;
       case 'zoom':
         touchState.current.zoom = value;
-        break;
-      case 'cast':
-        touchState.current.cast = value;
-        break;
-      case 'nextSpell':
-        touchState.current.nextSpell = value;
-        break;
-      case 'prevSpell':
-        touchState.current.prevSpell = value;
         break;
     }
   };
