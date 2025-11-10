@@ -220,8 +220,16 @@ const PalmsScene = ({ onLoadingChange }) => {
   const scrollProgressRef = useRef(0); // Start at 0 for aerial view
   const animationFrameRef = useRef(null); // Track animation frame ID for cleanup
 
-  // Force initial scroll position on mount and page load
+  // Force initial scroll position on mount and page load + fix CSS conflicts
   useEffect(() => {
+    // CRITICAL: Override CSS that breaks scrolling
+    document.body.style.overflow = 'auto';
+    document.body.style.overflowY = 'auto';
+    document.body.style.overflowX = 'hidden';
+    document.documentElement.style.overflow = 'auto';
+    document.documentElement.style.overflowY = 'auto';
+    document.documentElement.style.overflowX = 'hidden';
+    
     // Scroll to top immediately
     window.scrollTo(0, 0);
     
@@ -259,6 +267,14 @@ const PalmsScene = ({ onLoadingChange }) => {
       if ('scrollRestoration' in history) {
         history.scrollRestoration = 'auto';
       }
+      
+      // Restore original CSS overflow settings
+      document.body.style.overflow = '';
+      document.body.style.overflowY = '';
+      document.body.style.overflowX = 'hidden'; // Keep this as it was
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.overflowY = '';
+      document.documentElement.style.overflowX = 'hidden'; // Keep this as it was
     };
   }, []);
   
@@ -2135,6 +2151,8 @@ const PalmsScene = ({ onLoadingChange }) => {
         }, 1500); // 1.5 second delay after reaching Mary
       });
       
+      console.log('[PalmTreeDrive] Creating ScrollTrigger with timeline progress:', tl.progress());
+      
       // Create ScrollTrigger - use document scrolling
       const st = ScrollTrigger.create({
         trigger: document.body,
@@ -2237,6 +2255,8 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     // Set up scroll animation after a short delay to ensure scene is ready
     setTimeout(() => {
+      console.log('[PalmTreeDrive] Setting up scroll animation...');
+      
       // Enable ScrollTrigger for mobile with better touch handling
       ScrollTrigger.config({
         ignoreMobileResize: true,
@@ -2247,6 +2267,8 @@ const PalmsScene = ({ onLoadingChange }) => {
         force3D: true, // Force hardware acceleration
         limitCallbacks: true // Optimize performance
       });
+      
+      console.log('[PalmTreeDrive] ScrollTrigger config set');
       
       // Ensure the page is scrollable on mobile
       if (isMobile) {
@@ -2272,7 +2294,9 @@ const PalmsScene = ({ onLoadingChange }) => {
         }
       }
       
+      console.log('[PalmTreeDrive] Calling setupScrollAnimation...');
       setupScrollAnimation();
+      console.log('[PalmTreeDrive] setupScrollAnimation called');
     }, 100);
     
 
@@ -2877,18 +2901,19 @@ const PalmsScene = ({ onLoadingChange }) => {
           </div>
           
       
-          <div style={{
-            position: 'absolute',
-            bottom: isMobile ? '-4rem' : '-5.5rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            opacity: 1,
-            transition: 'opacity 2s ease-in',
-            textAlign: 'center',
-            pointerEvents: 'auto',
-            touchAction: 'auto',
-          }}>
-            <button
+          {showEnterButton && (
+            <div style={{
+              position: 'absolute',
+              bottom: isMobile ? '-4rem' : '-5.5rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              opacity: 1,
+              transition: 'opacity 2s ease-in',
+              textAlign: 'center',
+              pointerEvents: 'auto',
+              touchAction: 'auto',
+            }}>
+              <button
                 onClick={() => {
                   const isMobile = detectMobileDevice();
                   const destination = isMobile ? '/home3' : '/home3';
@@ -2919,7 +2944,8 @@ const PalmsScene = ({ onLoadingChange }) => {
               >
                 Enter
               </button>
-          </div>
+            </div>
+          )}
           
         </div>
       )}

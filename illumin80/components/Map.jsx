@@ -366,8 +366,8 @@ const DoorController = ({ obstacleScene, obstacleAnimations, platformScene }) =>
       
       console.log(`🚪 Door toggle - ${newIsOpen ? 'Opening' : 'Closing'} doors (doorMaster: ${!!doorMaster})`);
       
-      // Play stone sound effect
-      playSound('doorStone');
+      // Play stone sound effect with volume for tablet compatibility
+      playSound('doorStone', { volume: 0.5 });
       
       if (doorAnimations.door1) {
         const clip1 = doorAnimations.door1.getClip();
@@ -1544,8 +1544,8 @@ export const Map = ({ model, onLoad, ...props }) => {
             if (!GameState.coinCount) GameState.coinCount = 0;
             GameState.coinCount += 1;
             
-            // Play coin collection sound
-            playSound('coinCollect', 0.3);
+            // Play coin collection sound with proper options object
+            playSound('coinCollect', { volume: 0.3 });
             
             coin.object.visible = false;
             // console.log(`Collected coin! Total coins: ${GameState.coinCount}, Score: ${GameState.score}`);
