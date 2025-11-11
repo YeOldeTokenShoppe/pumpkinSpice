@@ -6,7 +6,8 @@ export const useTouchControls = () => {
     jump: false,
     light: false,
     sprint: false,
-    zoom: false
+    zoom: false,
+    joystickActive: false
   });
 
   // Create a virtual keyboard controls getter that includes touch input
@@ -36,6 +37,9 @@ export const useTouchControls = () => {
     switch (action) {
       case 'movement':
         touchState.current.movement = value;
+        break;
+      case 'joystickActive':
+        touchState.current.joystickActive = value;
         break;
       case 'jump':
         touchState.current.jump = value;
@@ -72,10 +76,16 @@ export const useTouchControls = () => {
     return touchState.current.movement;
   };
 
+  // Check if joystick is actively being used
+  const isJoystickActive = () => {
+    return touchState.current.joystickActive;
+  };
+
   return {
     getTouchControls,
     handleTouchAction,
     getMovementVector,
+    isJoystickActive,
     touchState: touchState.current
   };
 };

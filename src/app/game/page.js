@@ -55,10 +55,38 @@ export default function GamePage() {
   const [isMobileView, setIsMobileView] = useState(false);
   const touchActionHandler = useRef(null);
 
-  // Detect mobile view
+  // Detect mobile view and setup fullscreen
   useEffect(() => {
     const checkMobileView = () => {
-      setIsMobileView(window.innerWidth <= 768);
+      const isMobile = window.innerWidth <= 768;
+      setIsMobileView(isMobile);
+      
+      // Auto-enter fullscreen on mobile for better gaming experience
+      if (isMobile && !document.fullscreenElement) {
+        // Add a click handler to enter fullscreen on first interaction
+        const enterFullscreen = async () => {
+          try {
+            if (document.documentElement.requestFullscreen) {
+              await document.documentElement.requestFullscreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+              await document.documentElement.webkitRequestFullscreen();
+            }
+            console.log('Entered fullscreen mode');
+          } catch (err) {
+            console.log('Could not enter fullscreen:', err);
+          }
+        };
+        
+        // Enter fullscreen on first touch/click
+        const handleFirstInteraction = () => {
+          enterFullscreen();
+          document.removeEventListener('touchstart', handleFirstInteraction);
+          document.removeEventListener('click', handleFirstInteraction);
+        };
+        
+        document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+        document.addEventListener('click', handleFirstInteraction, { once: true });
+      }
     };
     
     checkMobileView();
@@ -97,7 +125,7 @@ export default function GamePage() {
     }
   }, [modelLoaded]);
 
-  // Disable system context menus globally during gameplay
+  // Disable system context menus globally during gameplay and prevent mobile scrolling
   useEffect(() => {
     const handleGlobalContextMenu = (e) => {
       e.preventDefault();
@@ -114,14 +142,33 @@ export default function GamePage() {
       }
     };
 
+    // Prevent mobile scrolling/bouncing for better game experience
+    const handleTouchMove = (e) => {
+      e.preventDefault();
+    };
+
     // Add event listeners
     document.addEventListener('contextmenu', handleGlobalContextMenu);
     document.addEventListener('keydown', handleGlobalKeyDown);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    // Add CSS to prevent scrolling
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
 
     return () => {
       // Cleanup
       document.removeEventListener('contextmenu', handleGlobalContextMenu);
       document.removeEventListener('keydown', handleGlobalKeyDown);
+      document.removeEventListener('touchmove', handleTouchMove);
+      
+      // Reset body styles
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
     };
   }, []);
 

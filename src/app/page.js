@@ -60,12 +60,24 @@ export default function Home() {
     checkFont();
   }, []);
   
-  // Check if mobile view
+  // Check if mobile view and ensure touch scrolling works
   useEffect(() => {
     const checkMobile = () => {
       const isMobile = window.innerWidth <= 768;
       setIsMobileView(isMobile);
       setIsMobileDevice(isMobile);
+      
+      // Ensure touch scrolling is enabled
+      if (isMobile || 'ontouchstart' in window) {
+        document.body.style.overflow = 'auto';
+        document.body.style.height = 'auto';
+        document.body.style.touchAction = 'manipulation';
+        document.body.style.WebkitOverflowScrolling = 'touch';
+        document.documentElement.style.overflow = 'auto';
+        document.documentElement.style.height = 'auto';
+        document.documentElement.style.touchAction = 'manipulation';
+        document.documentElement.style.WebkitOverflowScrolling = 'touch';
+      }
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);

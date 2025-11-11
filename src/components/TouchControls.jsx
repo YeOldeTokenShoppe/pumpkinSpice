@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { VirtualJoystick } from './VirtualJoystick';
 
 export const TouchControls = ({ onAction, style }) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -8,6 +9,7 @@ export const TouchControls = ({ onAction, style }) => {
     sprint: false,
     zoom: false
   });
+  const joystickActive = useRef(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -49,10 +51,25 @@ export const TouchControls = ({ onAction, style }) => {
     }, 100); // Very brief press like keyboard
   };
 
+  // Handle joystick movement
+  const handleJoystickMove = (movement) => {
+    joystickActive.current = movement.x !== 0 || movement.z !== 0;
+    onAction('movement', movement);
+    onAction('joystickActive', joystickActive.current);
+  };
+
   if (!isMobile) return null;
 
   return (
     <div className="touch-controls" style={style}>
+      {/* Virtual Joystick - Left Side */}
+      <div className="joystick-container">
+        <VirtualJoystick 
+          onMove={handleJoystickMove}
+          size={180}
+        />
+      </div>
+
       {/* Action Buttons - Right Side */}
       <div className="action-buttons">
         
@@ -104,6 +121,16 @@ export const TouchControls = ({ onAction, style }) => {
           pointer-events: none;
           z-index: 100;
           font-family: 'Orbitron', 'Courier New', monospace;
+        }
+
+        .joystick-container {
+          position: absolute;
+          bottom: 60px;
+          left: 40px;
+          pointer-events: auto;
+          display: flex;
+          align-items: flex-end;
+          height: 150px;
         }
 
         .action-buttons {
@@ -202,7 +229,7 @@ export const TouchControls = ({ onAction, style }) => {
         /* Responsive adjustments */
         @media (max-width: 480px) {
           .joystick-container {
-            bottom: 60px;
+            bottom: 40px;
             left: 20px;
           }
           
@@ -230,7 +257,7 @@ export const TouchControls = ({ onAction, style }) => {
         /* Landscape mode adjustments */
         @media (orientation: landscape) and (max-height: 600px) {
           .joystick-container {
-            bottom: 40px;
+            bottom: 30px;
             left: 30px;
           }
           

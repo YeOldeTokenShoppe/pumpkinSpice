@@ -92,8 +92,12 @@ export const CharacterController = ({ onTouchAction }) => {
   const gameJustStarted = useRef(true);
   const spawnTimer = useRef(null);
   const justRespawned = useRef(false);
+  const isMobileDevice = useRef(false);
 
   useEffect(() => {
+    // Check if mobile device
+    isMobileDevice.current = window.innerWidth <= 768 || 'ontouchstart' in window;
+    
     loadSound('jump', '/sounds/cuteCursor3.mp3', false);
     loadSound('walking', '/sounds/cuteCursor3.mp3', false);
     loadSound('fall', '/sounds/fall.mp3', false);
@@ -105,7 +109,10 @@ export const CharacterController = ({ onTouchAction }) => {
     };
     
     const onMouseDown = () => {
-      isClicking.current = true;
+      // Only enable click-to-move on desktop
+      if (!isMobileDevice.current) {
+        isClicking.current = true;
+      }
       // Test audio on first interaction
       if (!window.audioTested) {
         testAudio();
@@ -117,8 +124,14 @@ export const CharacterController = ({ onTouchAction }) => {
     };
     document.addEventListener("mousedown", onMouseDown);
     document.addEventListener("mouseup", onMouseUp);
-    // touch
-    document.addEventListener("touchstart", onMouseDown);
+    // touch - disable click-to-move on mobile
+    document.addEventListener("touchstart", () => {
+      // Only trigger audio test, don't enable clicking
+      if (!window.audioTested) {
+        testAudio();
+        window.audioTested = true;
+      }
+    });
     document.addEventListener("touchend", onMouseUp);
     return () => {
       document.removeEventListener("mousedown", onMouseDown);
@@ -189,8 +202,8 @@ export const CharacterController = ({ onTouchAction }) => {
 
       let speed = (get().run || touchControls.run) ? RUN_SPEED : WALK_SPEED;
 
-      // Mouse drag controls (existing functionality)
-      if (isClicking.current) {
+      // Mouse drag controls - ONLY on desktop (mobile uses joystick exclusively)
+      if (isClicking.current && !isMobileDevice.current) {
         // console.log("clicking", mouse.x, mouse.y);
         if (Math.abs(mouse.x) > 0.1) {
           movement.x = -mouse.x;
@@ -229,7 +242,7 @@ export const CharacterController = ({ onTouchAction }) => {
           const stepInterval = speed === RUN_SPEED ? 300 : 500; // Faster steps when running
           
           if (currentTime - lastStepTime.current > stepInterval) {
-            playSound('walking', { volume: 0.3, loop: false });
+            playSound('walking', { volume: 0.5, loop: false });
             lastStepTime.current = currentTime;
           }
           isWalking.current = true;

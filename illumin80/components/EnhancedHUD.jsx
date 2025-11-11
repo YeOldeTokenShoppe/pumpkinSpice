@@ -191,6 +191,7 @@ export const EnhancedHUD = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [scoreParticleTrigger, setScoreParticleTrigger] = useState(0);
   const [coinParticleTrigger, setCoinParticleTrigger] = useState(0);
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
   const prevLevel = useRef(level);
   const prevScore = useRef(score);
   const prevCoins = useRef(coinCount);
@@ -198,7 +199,9 @@ export const EnhancedHUD = () => {
   // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(false); // Force desktop mode to prevent tablet flashing
+      const isMobileDevice = window.innerWidth <= 768;
+      console.log('Mobile detection:', { width: window.innerWidth, isMobile: isMobileDevice });
+      setIsMobile(isMobileDevice);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -245,9 +248,229 @@ export const EnhancedHUD = () => {
   }, [coinCount]);
   
   
+  // Mobile HUD Component
+  const MobileHUD = () => {
+    return (
+      <div 
+        className="mobile-hud-container" 
+        style={{ 
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          bottom: 'auto',
+          left: 'auto',
+          zIndex: 99999
+        }}
+      >
+        {/* Integrated Panel */}
+        <div 
+          style={{
+            background: 'rgba(0, 0, 0, 0.9)',
+            border: '2px solid rgba(0, 255, 255, 0.4)',
+            borderRadius: '16px',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 255, 255, 0.2)',
+            padding: '12px',
+            minWidth: '140px',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: mobileDropdownOpen ? 'scale(1.01)' : 'scale(1)',
+            height: mobileDropdownOpen ? '180px' : '60px',
+            overflow: 'hidden',
+            willChange: 'height, transform'
+          }}
+        >
+          {/* Score Header - Always Visible */}
+          <div 
+            onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              padding: '8px 4px',
+              borderBottom: mobileDropdownOpen ? '1px solid rgba(0, 255, 255, 0.3)' : 'none',
+              marginBottom: mobileDropdownOpen ? '8px' : '0'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flex: 1
+            }}>
+              <div style={{
+                fontSize: '8px',
+                fontWeight: 'bold',
+                color: '#FFD700',
+                textShadow: '0 0 6px rgba(255, 215, 0, 0.8)',
+                fontFamily: 'Orbitron, Courier New, monospace',
+                letterSpacing: '1px',
+                marginBottom: '2px'
+              }}>SCORE</div>
+              <div style={{
+                fontSize: '14px',
+                fontWeight: 'bold',
+                color: '#00ffff',
+                textShadow: '0 0 8px rgba(0, 255, 255, 0.8)',
+                fontFamily: 'Orbitron, Courier New, monospace'
+              }}>{score.toLocaleString()}</div>
+            </div>
+            <div style={{
+              color: '#00ffff',
+              fontSize: '12px',
+              marginLeft: '8px'
+            }}>{mobileDropdownOpen ? '▲' : '▼'}</div>
+          </div>
+
+          {/* Stats Details - Shown when expanded */}
+          <div style={{
+            opacity: mobileDropdownOpen ? 1 : 0,
+            transform: mobileDropdownOpen ? 'translateY(0)' : 'translateY(-20px)',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            transitionDelay: mobileDropdownOpen ? '0.05s' : '0s',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px',
+            marginTop: '8px'
+          }}>
+              {/* Row 1 */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 8px',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '6px',
+                transition: 'all 0.2s ease',
+                transform: mobileDropdownOpen ? 'translateY(0) scale(1)' : 'translateY(-10px) scale(0.9)',
+                transitionDelay: mobileDropdownOpen ? '0.08s' : '0s'
+              }}>
+                <span style={{ fontSize: '14px' }}>⚔️</span>
+                <span style={{
+                  color: '#00ffff',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  textShadow: '0 0 6px rgba(0, 255, 255, 0.8)',
+                  fontFamily: 'Orbitron, Courier New, monospace'
+                }}>{monstersDefeated}</span>
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 8px',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '6px',
+                transition: 'all 0.2s ease',
+                transform: mobileDropdownOpen ? 'translateY(0) scale(1)' : 'translateY(-10px) scale(0.9)',
+                transitionDelay: mobileDropdownOpen ? '0.25s' : '0s'
+              }}>
+                <span style={{ fontSize: '14px' }}>🪙</span>
+                <span style={{
+                  color: '#00ffff',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  textShadow: '0 0 6px rgba(0, 255, 255, 0.8)',
+                  fontFamily: 'Orbitron, Courier New, monospace'
+                }}>{coinCount}</span>
+              </div>
+
+              {/* Row 2 */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 8px',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '6px',
+                transition: 'all 0.2s ease',
+                transform: mobileDropdownOpen ? 'translateY(0) scale(1)' : 'translateY(-10px) scale(0.9)',
+                transitionDelay: mobileDropdownOpen ? '0.25s' : '0s'
+              }}>
+                <span style={{ fontSize: '14px' }}>🗝️</span>
+                <span style={{
+                  color: '#00ffff',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  textShadow: '0 0 6px rgba(0, 255, 255, 0.8)',
+                  fontFamily: 'Orbitron, Courier New, monospace'
+                }}>{keys}</span>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 8px',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '6px',
+                transition: 'all 0.2s ease',
+                transform: mobileDropdownOpen ? 'translateY(0) scale(1)' : 'translateY(-10px) scale(0.9)',
+                transitionDelay: mobileDropdownOpen ? '0.25s' : '0s'
+              }}>
+                <span style={{ fontSize: '14px' }}>🕯️</span>
+                <span style={{
+                  color: '#00ffff',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  textShadow: '0 0 6px rgba(0, 255, 255, 0.8)',
+                  fontFamily: 'Orbitron, Courier New, monospace'
+                }}>{gameState.litCandleCount || 0}/{candles}</span>
+              </div>
+
+              {/* Health spans full width */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 8px',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '6px',
+                transition: 'all 0.2s ease',
+                transform: mobileDropdownOpen ? 'translateY(0) scale(1)' : 'translateY(-10px) scale(0.9)',
+                transitionDelay: mobileDropdownOpen ? '0.12s' : '0s',
+                gridColumn: '1 / -1'
+              }}>
+                <span style={{ fontSize: '14px' }}>💚</span>
+                <span style={{
+                  color: '#00ffff',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  textShadow: '0 0 6px rgba(0, 255, 255, 0.8)',
+                  fontFamily: 'Orbitron, Courier New, monospace'
+                }}>{characterHealth}</span>
+              </div>
+            </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Return appropriate HUD based on device
+  if (isMobile) {
+    return (
+      <>
+        <MobileHUD />
+        {/* Keep notifications and level up for mobile too */}
+        {showLevelUp && (
+          <div className="level-up-notification">
+            <div className="level-up-text">LEVEL UP!</div>
+            <div className="level-up-number">Level {level}</div>
+          </div>
+        )}
+        {notifications.map(notification => (
+          <div key={notification.id} className={`notification ${notification.type}`}>
+            {notification.text}
+          </div>
+        ))}
+      </>
+    );
+  }
+
   return (
     <>
-      <div className={`modern-hud ${isMobile ? 'mobile' : 'desktop'}`}>
+      <div className={`modern-hud desktop`}>
         
         {/* Top Right - Score & Resources */}
         <div className="resource-panel">
@@ -1267,6 +1490,163 @@ export const EnhancedHUD = () => {
             flex-direction: column;
             align-items: center;
           }
+        }
+
+        /* Mobile HUD Styles */
+        .mobile-hud-container {
+          position: fixed !important;
+          top: 20px !important;
+          right: 20px !important;
+          bottom: auto !important;
+          left: auto !important;
+          z-index: 99999 !important;
+          pointer-events: auto !important;
+          transform: none !important;
+        }
+
+        .mobile-score-button {
+          width: 80px;
+          height: 80px;
+          border: 2px solid rgba(0, 255, 255, 0.6);
+          border-radius: 50%;
+          background: linear-gradient(135deg, 
+            rgba(0, 0, 0, 0.9),
+            rgba(0, 50, 100, 0.8),
+            rgba(0, 100, 150, 0.9)
+          );
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          backdrop-filter: blur(10px);
+          box-shadow: 
+            0 4px 15px rgba(0, 255, 255, 0.3),
+            0 0 20px rgba(0, 255, 255, 0.1),
+            inset 0 1px 0 rgba(255, 215, 0, 0.2);
+          transition: all 0.3s ease;
+          user-select: none;
+        }
+
+        .mobile-score-button:hover,
+        .mobile-score-button:active {
+          transform: scale(0.95);
+          box-shadow: 
+            0 2px 10px rgba(0, 255, 255, 0.4),
+            0 0 25px rgba(0, 255, 255, 0.2),
+            inset 0 -2px 0 rgba(0, 100, 255, 0.3);
+          border-color: rgba(0, 255, 255, 0.8);
+        }
+
+        .mobile-score-label {
+          font-size: 8px;
+          font-weight: bold;
+          color: #FFD700;
+          text-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+          font-family: 'Orbitron', 'Courier New', monospace;
+          text-align: center;
+          letter-spacing: 1px;
+          margin-bottom: -2px;
+        }
+
+        .mobile-score-value {
+          font-size: 12px;
+          font-weight: bold;
+          color: #00ffff;
+          text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
+          font-family: 'Orbitron', 'Courier New', monospace;
+          text-align: center;
+          line-height: 1.1;
+        }
+
+        .mobile-dropdown-arrow {
+          color: #00ffff;
+          font-size: 10px;
+          transition: transform 0.3s ease;
+          margin-top: 2px;
+        }
+
+        .mobile-dropdown-panel {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          margin-top: 8px;
+          background: rgba(255, 0, 0, 0.9) !important;
+          border: 4px solid yellow !important;
+          border-radius: 12px;
+          backdrop-filter: blur(20px) saturate(1.5);
+          box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.6),
+            0 0 20px rgba(0, 255, 255, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+          min-width: 180px;
+          animation: dropdownSlide 0.3s ease;
+          overflow: hidden;
+        }
+
+        .mobile-dropdown-panel::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(135deg, 
+            rgba(0, 50, 100, 0.3),
+            rgba(0, 0, 0, 0.8),
+            rgba(0, 100, 150, 0.2)
+          );
+          z-index: -1;
+        }
+
+        @keyframes dropdownSlide {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .mobile-dropdown-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 16px;
+          border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+          transition: background-color 0.2s ease;
+          min-height: 40px;
+        }
+
+        .mobile-dropdown-item:last-child {
+          border-bottom: none;
+        }
+
+        .mobile-dropdown-item:hover {
+          background: rgba(0, 255, 255, 0.15);
+          backdrop-filter: blur(5px);
+        }
+
+        .mobile-item-icon {
+          font-size: 18px;
+          width: 24px;
+          text-align: center;
+          filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+        }
+
+        .mobile-item-value {
+          color: #00ffff;
+          font-weight: bold;
+          font-size: 14px;
+          text-shadow: 
+            0 0 8px rgba(0, 255, 255, 0.8),
+            0 1px 2px rgba(0, 0, 0, 0.8);
+          font-family: 'Orbitron', 'Courier New', monospace;
+          background: rgba(0, 0, 0, 0.3);
+          padding: 2px 6px;
+          border-radius: 4px;
         }
       `}</style>
     </>

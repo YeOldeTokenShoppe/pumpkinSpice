@@ -2140,7 +2140,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         }, 1500); // 1.5 second delay after reaching Mary
       });
       
-      // Create ScrollTrigger - track the document scroll
+      // Create ScrollTrigger - track the document scroll with touch support
       const st = ScrollTrigger.create({
         trigger: "#scroll-container",
         start: "top top",
@@ -2149,10 +2149,11 @@ const PalmsScene = ({ onLoadingChange }) => {
         animation: tl,
         markers: false, // Hide markers for cleaner view
         immediateRender: false, // Don't jump to end
-        normalizeScroll: false, // Disable - can interfere with native touch scrolling
+        normalizeScroll: isMobile ? true : false, // Enable for mobile to handle touch properly
         anticipatePin: 0, // Reduce this to see if it helps
         preventOverlaps: true, // Prevent scroll conflicts
         fastScrollEnd: false, // Disable for better touch response
+        ignoreMobileResize: true, // Ignore resize events on mobile
         onUpdate: (self) => {
           // Debug logging to track scroll progress and timeline
           if (self.progress > 0.9 || self.progress === 0 || Math.abs(self.progress - 0.5) < 0.01 || Math.abs(self.progress - 0.25) < 0.01 || Math.abs(self.progress - 0.75) < 0.01) {
@@ -2595,7 +2596,9 @@ const PalmsScene = ({ onLoadingChange }) => {
         left: 0,
         width: '100%',
         height: '100vh',
-        backgroundColor: 'black'
+        backgroundColor: 'black',
+        pointerEvents: 'none', // Allow touch events to pass through to scroll container
+        touchAction: 'none' // Disable default touch behavior on this layer
       }}>
         
         {/* Three.js scene container */}
@@ -2606,7 +2609,8 @@ const PalmsScene = ({ onLoadingChange }) => {
           overflow: 'hidden', 
           backgroundColor: 'black',
           opacity: isSceneLoading ? 0 : 1,
-          transition: 'opacity 0.5s ease-in-out'
+          transition: 'opacity 0.5s ease-in-out',
+          pointerEvents: 'none' // Pass through touch events
         }}>
           
         
@@ -2618,7 +2622,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             position: 'absolute', 
             top: 0, 
             left: 0,
-            pointerEvents: 'auto',  // Enable pointer events for scrolling
+            pointerEvents: 'none',  // Pass through touch events
             zIndex: 1
           }}
         />
@@ -2892,11 +2896,13 @@ const PalmsScene = ({ onLoadingChange }) => {
       <div 
         id="scroll-container" 
         style={{ 
-  
           height: isMobile ? '800vh' : '400vh', // Even more height on mobile to ensure reaching the end
           position: 'relative',
           width: '100%',
-          backgroundColor: 'transparent' // Make it transparent but present
+          backgroundColor: 'transparent', // Make it transparent but present
+          WebkitOverflowScrolling: 'touch', // Enable momentum scrolling on iOS
+          touchAction: 'pan-y', // Allow vertical scrolling on touch
+          overscrollBehavior: 'none' // Prevent overscroll bounce on mobile
         }} 
       />
       
