@@ -41,6 +41,28 @@ export const Experience = ({ onTouchAction, onLoad }) => {
       onLoad();
     }
   };
+  
+  // Position Stats panel in center
+  useEffect(() => {
+    const positionStats = () => {
+      // Find the Stats panel (it's usually the first canvas element outside the main canvas)
+      const statsPanel = document.querySelector('body > div > canvas');
+      if (statsPanel && statsPanel.parentElement) {
+        const container = statsPanel.parentElement;
+        container.style.position = 'fixed';
+        container.style.top = '10px';
+        container.style.left = '50%';
+        container.style.transform = 'translateX(-50%)';
+        container.style.zIndex = '1000';
+      }
+    };
+    
+    // Try immediately and after a short delay to ensure it's rendered
+    positionStats();
+    const timer = setTimeout(positionStats, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // useEffect(() => {
   //   if (directionalLightRef.current) {
@@ -73,9 +95,11 @@ export const Experience = ({ onTouchAction, onLoad }) => {
 
   return (
     <>
-      {/* Performance Stats - top left */}
-      <Stats />
-      
+      {/* Performance Stats - top center */}
+      <Stats 
+        showPanel={0} // 0: fps, 1: ms, 2: mb
+      />
+ 
       {/* <OrbitControls /> */}
       <fog attach="fog" args={["#4a9fbb", 5, 35]} />
       {/* <ambientLight intensity={0.8} color="#6bb6cc" /> */}

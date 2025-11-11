@@ -48,6 +48,21 @@
   animation: accordion-up 0.2s ease-out;
 }
 
+/* Position Stats panel in top center */
+/* Target the drei Stats panel directly by its default positioning */
+body > div:first-child,
+canvas + div:has(canvas) {
+  /* Stats panel container */
+}
+
+body > div:first-child > div:first-child {
+  /* This targets the Stats panel more specifically */
+  position: fixed !important;
+  top: 10px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
 /* Fix for white border around canvas pages */
 html, body {
   margin: 0 !important;

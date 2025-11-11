@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const VirtualJoystick = ({ onMove, size = 120, style }) => {
+export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [knobPosition, setKnobPosition] = useState({ x: 0, y: 0 });
+  const [isSprinting, setIsSprinting] = useState(false);
+  const [isJumping, setIsJumping] = useState(false);
   const joystickRef = useRef(null);
   const touchId = useRef(null);
   const centerPos = useRef({ x: 0, y: 0 });
@@ -10,6 +12,8 @@ export const VirtualJoystick = ({ onMove, size = 120, style }) => {
   
   const knobSize = size * 0.4;
   const maxDistance = size * 0.35;
+  const sprintThreshold = maxDistance * 0.75; // Sprint when joystick is 75% extended
+  const centerButtonSize = size * 0.25; // Center jump button size
 
   useEffect(() => {
     const updateCenterPosition = () => {
@@ -46,12 +50,24 @@ export const VirtualJoystick = ({ onMove, size = 120, style }) => {
       y = Math.sin(angle) * maxDistance;
     }
 
+    // Check if we should trigger sprint
+    const shouldSprint = distance >= sprintThreshold;
+    if (shouldSprint !== isSprinting) {
+      setIsSprinting(shouldSprint);
+      if (onSprint) {
+        onSprint(shouldSprint);
+      }
+    }
+
     return { x, y, normalizedX: x / maxDistance, normalizedY: y / maxDistance };
   };
 
   const handleStart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Don't check for center button here - allow dragging from anywhere
+    // The jump button will handle its own events independently
     
     if (e.touches) {
       // Touch event
@@ -75,6 +91,22 @@ export const VirtualJoystick = ({ onMove, size = 120, style }) => {
       const output = { x: normalizedX, z: -normalizedY };
       lastOutput.current = output;
       onMove(output);
+    }
+  };
+  
+  const handleJumpStart = (e) => {
+    e.stopPropagation(); // Don't prevent default to allow multi-touch
+    setIsJumping(true);
+    if (onJump) {
+      onJump(true);
+    }
+  };
+  
+  const handleJumpEnd = (e) => {
+    e.stopPropagation();
+    setIsJumping(false);
+    if (onJump) {
+      onJump(false);
     }
   };
 
@@ -122,6 +154,14 @@ export const VirtualJoystick = ({ onMove, size = 120, style }) => {
     touchId.current = null;
     lastOutput.current = { x: 0, y: 0 };
     onMove({ x: 0, z: 0 });
+    
+    // Reset sprint state
+    if (isSprinting) {
+      setIsSprinting(false);
+      if (onSprint) {
+        onSprint(false);
+      }
+    }
   };
 
   useEffect(() => {
@@ -189,6 +229,71 @@ export const VirtualJoystick = ({ onMove, size = 120, style }) => {
         }}
       />
       
+      {/* Sprint zone indicator */}
+      <div
+        className="sprint-zone"
+        style={{
+          position: 'absolute',
+          width: `${(sprintThreshold / maxDistance) * 100}%`,
+          height: `${(sprintThreshold / maxDistance) * 100}%`,
+          borderRadius: '50%',
+          border: '1px dashed rgba(255, 140, 0, 0.3)',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: 'none',
+        }}
+      />
+      
+      {/* Center Jump Button */}
+      <button
+        className="jump-button"
+        onTouchStart={handleJumpStart}
+        onTouchEnd={handleJumpEnd}
+        onTouchCancel={handleJumpEnd}
+        onMouseDown={handleJumpStart}
+        onMouseUp={handleJumpEnd}
+        onMouseLeave={handleJumpEnd}
+        style={{
+          position: 'absolute',
+          width: `${centerButtonSize}px`,
+          height: `${centerButtonSize}px`,
+          borderRadius: '50%',
+          left: '50%',
+          top: '50%',
+          transform: `translate(-50%, -50%) ${isJumping ? 'scale(0.9)' : 'scale(1)'}`,
+          background: isJumping
+            ? `radial-gradient(circle at 40% 40%, 
+                rgba(0, 255, 100, 0.8), 
+                rgba(0, 150, 60, 0.9))`
+            : `radial-gradient(circle at 40% 40%, 
+                rgba(0, 255, 255, 0.4), 
+                rgba(0, 100, 100, 0.7))`,
+          border: isJumping 
+            ? '2px solid rgba(0, 255, 100, 0.9)' 
+            : '2px solid rgba(0, 255, 255, 0.6)',
+          boxShadow: isJumping
+            ? `0 0 20px rgba(0, 255, 100, 0.8),
+               inset 0 0 10px rgba(0, 255, 100, 0.3)`
+            : `0 0 15px rgba(0, 255, 255, 0.4),
+               inset 0 0 5px rgba(0, 255, 255, 0.2)`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          color: '#fff',
+          cursor: 'pointer',
+          transition: 'transform 0.1s ease',
+          touchAction: 'manipulation',
+          zIndex: 10,
+          padding: 0,
+          outline: 'none',
+        }}
+      >
+        ⬆️
+      </button>
+      
       <div
         className="joystick-knob"
         style={{
@@ -196,14 +301,19 @@ export const VirtualJoystick = ({ onMove, size = 120, style }) => {
           width: `${knobSize}px`,
           height: `${knobSize}px`,
           borderRadius: '50%',
-          border: '2px solid rgba(0, 255, 255, 0.8)',
-          background: `radial-gradient(circle at 40% 40%, 
-            rgba(0, 255, 255, 0.6), 
-            rgba(0, 100, 100, 0.9))`,
-          boxShadow: `
-            0 0 15px rgba(0, 255, 255, 0.6),
-            inset -2px -2px 5px rgba(0, 0, 0, 0.5)
-          `,
+          border: isSprinting ? '3px solid rgba(255, 140, 0, 0.9)' : '2px solid rgba(0, 255, 255, 0.8)',
+          background: isSprinting 
+            ? `radial-gradient(circle at 40% 40%, 
+                rgba(255, 140, 0, 0.7), 
+                rgba(255, 69, 0, 0.9))` 
+            : `radial-gradient(circle at 40% 40%, 
+                rgba(0, 255, 255, 0.6), 
+                rgba(0, 100, 100, 0.9))`,
+          boxShadow: isSprinting
+            ? `0 0 25px rgba(255, 140, 0, 0.8),
+               inset -2px -2px 5px rgba(0, 0, 0, 0.5)`
+            : `0 0 15px rgba(0, 255, 255, 0.6),
+               inset -2px -2px 5px rgba(0, 0, 0, 0.5)`,
           left: '50%',
           top: '50%',
           transform: `translate(calc(-50% + ${knobPosition.x}px), calc(-50% + ${knobPosition.y}px))`,

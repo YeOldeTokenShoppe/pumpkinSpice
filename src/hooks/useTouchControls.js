@@ -7,6 +7,7 @@ export const useTouchControls = () => {
     light: false,
     sprint: false,
     zoom: false,
+    lookUp: false,
     joystickActive: false
   });
 
@@ -23,7 +24,8 @@ export const useTouchControls = () => {
       jump: touchState.current.jump,
       light: touchState.current.light,
       run: !isLightActive && touchState.current.sprint,
-      zoom: touchState.current.zoom
+      zoom: touchState.current.zoom,
+      lookUp: touchState.current.lookUp
     };
     
     // Debug removed to reduce spam
@@ -63,6 +65,9 @@ export const useTouchControls = () => {
         break;
       case 'zoom':
         touchState.current.zoom = value;
+        break;
+      case 'lookUp':
+        touchState.current.lookUp = value;
         break;
     }
   };

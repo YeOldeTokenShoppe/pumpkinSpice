@@ -196,7 +196,7 @@ export const CharacterController = ({ onTouchAction }) => {
 
       // Touch joystick has priority for smooth movement
       if (Math.abs(touchMovement.x) > 0.1 || Math.abs(touchMovement.z) > 0.1) {
-        movement.x = touchMovement.x;
+        movement.x = -touchMovement.x;  // Invert x-axis for correct lateral movement
         movement.z = touchMovement.z;
       }
 
@@ -493,8 +493,8 @@ export const CharacterController = ({ onTouchAction }) => {
         cameraDistance.current = Math.min(4, cameraDistance.current + 0.02);
       }
 
-      // Look up control - tilt camera upward to see high objects like the warlock circle
-      if (get().lookUp) {
+      // Look up control - tilt camera upward to see high objects like the warlock circle (keyboard + touch)
+      if (get().lookUp || touchControls.lookUp) {
         cameraPitch.current = Math.min(Math.PI / 4, cameraPitch.current + 0.02); // Look up (positive pitch)
       } else {
         cameraPitch.current = Math.max(0, cameraPitch.current - 0.02); // Return to normal

@@ -53,47 +53,64 @@ export default function GamePage() {
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [modelLoaded, setModelLoaded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const touchActionHandler = useRef(null);
 
   // Detect mobile view and setup fullscreen
   useEffect(() => {
     const checkMobileView = () => {
-      const isMobile = window.innerWidth <= 768;
+      // More strict mobile detection - must be small screen AND have touch
+      const isMobile = window.innerWidth <= 768 && 'ontouchstart' in window;
       setIsMobileView(isMobile);
       
-      // Auto-enter fullscreen on mobile for better gaming experience
-      if (isMobile && !document.fullscreenElement) {
-        // Add a click handler to enter fullscreen on first interaction
-        const enterFullscreen = async () => {
-          try {
-            if (document.documentElement.requestFullscreen) {
-              await document.documentElement.requestFullscreen();
-            } else if (document.documentElement.webkitRequestFullscreen) {
-              await document.documentElement.webkitRequestFullscreen();
-            }
-            console.log('Entered fullscreen mode');
-          } catch (err) {
-            console.log('Could not enter fullscreen:', err);
-          }
-        };
-        
-        // Enter fullscreen on first touch/click
-        const handleFirstInteraction = () => {
-          enterFullscreen();
-          document.removeEventListener('touchstart', handleFirstInteraction);
-          document.removeEventListener('click', handleFirstInteraction);
-        };
-        
-        document.addEventListener('touchstart', handleFirstInteraction, { once: true });
-        document.addEventListener('click', handleFirstInteraction, { once: true });
+      // Show fullscreen prompt on mobile if not already fullscreen
+      if (isMobile && !document.fullscreenElement && !document.webkitFullscreenElement) {
+        setShowFullscreenPrompt(true);
+      } else if (!isMobile) {
+        // Hide prompt on desktop
+        setShowFullscreenPrompt(false);
       }
     };
     
     checkMobileView();
     window.addEventListener('resize', checkMobileView);
     
-    return () => window.removeEventListener('resize', checkMobileView);
+    // Listen for fullscreen changes
+    const handleFullscreenChange = () => {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        setShowFullscreenPrompt(false);
+        console.log('Entered fullscreen mode');
+      }
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobileView);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
+  
+  // Handle fullscreen request
+  const enterFullscreen = async () => {
+    try {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        await elem.webkitRequestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        await elem.mozRequestFullScreen();
+      } else if (elem.msRequestFullscreen) {
+        await elem.msRequestFullscreen();
+      }
+      setShowFullscreenPrompt(false);
+    } catch (err) {
+      console.log('Could not enter fullscreen:', err);
+    }
+  };
 
   // Font loading effect (non-blocking)
   useEffect(() => {
@@ -281,6 +298,46 @@ export default function GamePage() {
       
       {/* Respawn overlay - renders as DOM element outside Canvas */}
       <RespawnOverlay />
+      
+      {/* Fullscreen button for mobile - minimal icon only */}
+      {showFullscreenPrompt && isMobileView && (
+        <button
+          onClick={enterFullscreen}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            left: '20px',
+            width: '40px',
+            height: '40px',
+            zIndex: 10000,
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(10, 25, 15, 0.8))',
+            border: '2px solid rgba(0, 255, 255, 0.4)',
+            borderRadius: '50%',
+            color: '#00ffff',
+            fontSize: '20px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.2s ease',
+            padding: 0,
+            outline: 'none',
+          }}
+          onTouchStart={(e) => {
+            e.currentTarget.style.transform = 'scale(0.95)';
+            e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.5), 0 0 25px rgba(0, 255, 255, 0.4)';
+          }}
+          onTouchEnd={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 255, 0.2)';
+          }}
+          aria-label="Enter fullscreen"
+        >
+          ⛶
+        </button>
+      )}
       
       {/* RL80 Logo - Top Left (only show when game is loaded) */}
       {/* {!isSceneLoading && (

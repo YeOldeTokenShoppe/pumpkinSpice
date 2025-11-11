@@ -271,10 +271,11 @@ export const EnhancedHUD = () => {
             backdropFilter: 'blur(20px)',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 255, 255, 0.2)',
             padding: '12px',
-            minWidth: '140px',
+            minWidth: '80px',
+            maxWidth: '100px',
             transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             transform: mobileDropdownOpen ? 'scale(1.01)' : 'scale(1)',
-            height: mobileDropdownOpen ? '180px' : '60px',
+            height: mobileDropdownOpen ? 'auto' : '60px',
             overflow: 'hidden',
             willChange: 'height, transform'
           }}
@@ -328,9 +329,9 @@ export const EnhancedHUD = () => {
             transform: mobileDropdownOpen ? 'translateY(0)' : 'translateY(-20px)',
             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             transitionDelay: mobileDropdownOpen ? '0.05s' : '0s',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
             marginTop: '8px'
           }}>
               {/* Row 1 */}
@@ -419,7 +420,7 @@ export const EnhancedHUD = () => {
                 }}>{gameState.litCandleCount || 0}/{candles}</span>
               </div>
 
-              {/* Health spans full width */}
+              {/* Health */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -429,8 +430,7 @@ export const EnhancedHUD = () => {
                 borderRadius: '6px',
                 transition: 'all 0.2s ease',
                 transform: mobileDropdownOpen ? 'translateY(0) scale(1)' : 'translateY(-10px) scale(0.9)',
-                transitionDelay: mobileDropdownOpen ? '0.12s' : '0s',
-                gridColumn: '1 / -1'
+                transitionDelay: mobileDropdownOpen ? '0.12s' : '0s'
               }}>
                 <span style={{ fontSize: '14px' }}>💚</span>
                 <span style={{

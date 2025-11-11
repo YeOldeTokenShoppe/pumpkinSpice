@@ -7,7 +7,8 @@ export const TouchControls = ({ onAction, style }) => {
     jump: false,
     light: false,
     sprint: false,
-    zoom: false
+    zoom: false,
+    lookUp: false
   });
   const joystickActive = useRef(false);
 
@@ -20,18 +21,7 @@ export const TouchControls = ({ onAction, style }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Handle action buttons
-  const handleActionStart = (action) => {
-    setActiveActions(prev => ({ ...prev, [action]: true }));
-    onAction(action, true);
-  };
-
-  const handleActionEnd = (action) => {
-    setActiveActions(prev => ({ ...prev, [action]: false }));
-    onAction(action, false);
-  };
-
-  // Special handler for light action only (no more jump combo)
+  // Special handler for light action only
   const handleLightAction = () => {
     onAction('light', true);
     
@@ -57,6 +47,30 @@ export const TouchControls = ({ onAction, style }) => {
     onAction('movement', movement);
     onAction('joystickActive', joystickActive.current);
   };
+  
+  // Handle joystick sprint
+  const handleJoystickSprint = (sprinting) => {
+    onAction('sprint', sprinting);
+    setActiveActions(prev => ({ ...prev, sprint: sprinting }));
+  };
+  
+  // Handle joystick jump
+  const handleJoystickJump = (jumping) => {
+    onAction('jump', jumping);
+    setActiveActions(prev => ({ ...prev, jump: jumping }));
+  };
+  
+  // Handle zoom action
+  const handleZoomAction = (active) => {
+    onAction('zoom', active);
+    setActiveActions(prev => ({ ...prev, zoom: active }));
+  };
+  
+  // Handle look up action
+  const handleLookUpAction = (active) => {
+    onAction('lookUp', active);
+    setActiveActions(prev => ({ ...prev, lookUp: active }));
+  };
 
   if (!isMobile) return null;
 
@@ -66,6 +80,8 @@ export const TouchControls = ({ onAction, style }) => {
       <div className="joystick-container">
         <VirtualJoystick 
           onMove={handleJoystickMove}
+          onSprint={handleJoystickSprint}
+          onJump={handleJoystickJump}
           size={180}
         />
       </div>
@@ -88,25 +104,25 @@ export const TouchControls = ({ onAction, style }) => {
         {/* Secondary Actions */}
         <div className="secondary-actions">
           <button
-            className={`action-btn jump-btn ${activeActions.jump ? 'active' : ''}`}
-            onTouchStart={() => handleActionStart('jump')}
-            onTouchEnd={() => handleActionEnd('jump')}
-            onMouseDown={() => handleActionStart('jump')}
-            onMouseUp={() => handleActionEnd('jump')}
+            className={`action-btn zoom-btn ${activeActions.zoom ? 'active' : ''}`}
+            onTouchStart={() => handleZoomAction(true)}
+            onTouchEnd={() => handleZoomAction(false)}
+            onMouseDown={() => handleZoomAction(true)}
+            onMouseUp={() => handleZoomAction(false)}
           >
-            <div className="btn-icon">⬆️</div>
-            <div className="btn-label">Jump</div>
+            <div className="btn-icon">🔍</div>
+            <div className="btn-label">Zoom</div>
           </button>
           
           <button
-            className={`action-btn sprint-btn ${activeActions.sprint ? 'active' : ''}`}
-            onTouchStart={() => handleActionStart('sprint')}
-            onTouchEnd={() => handleActionEnd('sprint')}
-            onMouseDown={() => handleActionStart('sprint')}
-            onMouseUp={() => handleActionEnd('sprint')}
+            className={`action-btn look-btn ${activeActions.lookUp ? 'active' : ''}`}
+            onTouchStart={() => handleLookUpAction(true)}
+            onTouchEnd={() => handleLookUpAction(false)}
+            onMouseDown={() => handleLookUpAction(true)}
+            onMouseUp={() => handleLookUpAction(false)}
           >
-            <div className="btn-icon">💨</div>
-            <div className="btn-label">Sprint</div>
+            <div className="btn-icon">👁️</div>
+            <div className="btn-label">Look Up</div>
           </button>
         </div>
       </div>
@@ -130,7 +146,7 @@ export const TouchControls = ({ onAction, style }) => {
           pointer-events: auto;
           display: flex;
           align-items: flex-end;
-          height: 150px;
+          height: 180px;
         }
 
         .action-buttons {
