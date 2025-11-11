@@ -85,3 +85,4 @@ export function Character({ animation, ...props }) {
 }
 
 useGLTF.preload("/models/MeshTintCharacter.glb");
+

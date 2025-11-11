@@ -44,14 +44,16 @@ export default function Home() {
         await document.fonts.load("1em 'UnifrakturMaguntia'");
         console.log('Font loaded successfully');
         setFontLoaded(true);
-        // Add fonts-loaded class to body to reveal hidden font elements
+        // Add fonts-loaded class to body and html to reveal hidden font elements
         document.body.classList.add('fonts-loaded');
+        document.documentElement.classList.add('fonts-loaded');
       } catch (e) {
         console.log('Font loading error:', e);
         setTimeout(() => {
           setFontLoaded(true);
           // Add fonts-loaded class even on error after timeout
           document.body.classList.add('fonts-loaded');
+          document.documentElement.classList.add('fonts-loaded');
         }, 100);
       }
     };

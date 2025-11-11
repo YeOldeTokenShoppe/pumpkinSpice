@@ -59,12 +59,19 @@ export default function DropInTitle({
       textAlign: 'center',
     }}>
       <style jsx>{`
-        @import url('https://fonts.googleapis.com/css?family=Fjalla+One');
+        @font-face {
+          font-family: 'Fjalla One';
+          src: url('/fonts/FjallaOne-Regular.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+          font-display: swap;
+        }
         
         .title-letter-${stableId} {
           transform: skew(-10deg);
           display: block;
           float: left;
+          font-family: 'Fjalla One', sans-serif !important;
         text-shadow: rgba(83, 61, 74, 0.8) 1px 1px,
                        rgba(83, 61, 74, 0.8) 2px 2px,
                        rgba(83, 61, 74, 0.8) 3px 3px,
@@ -101,7 +108,10 @@ export default function DropInTitle({
               <span 
                 key={`${lineIndex}-${charIndex}`}
                 className={`title-letter title-letter-${stableId}`}
-                style={{ color: colors[lineIndex % colors.length] }}
+                style={{ 
+                  color: colors[lineIndex % colors.length],
+                  fontFamily: "'Fjalla One', sans-serif"
+                }}
               >
                 {char === ' ' ? '\u00A0' : char}
               </span>

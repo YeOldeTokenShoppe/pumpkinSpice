@@ -4,7 +4,7 @@ import { CapsuleCollider, BallCollider, ConvexHullCollider, TrimeshCollider, Cub
 import { useEffect, useRef, useState } from "react";
 import { MathUtils, Vector3 } from "three";
 import { degToRad } from "three/src/math/MathUtils.js";
-import { GameState } from "../../src/lib/GameState";
+import { GameState } from "../lib/GameState";
 import { Character } from "./Character";
 import { useAudio } from "../../src/hooks/useAudio";
 import { useTouchControls } from "../../src/hooks/useTouchControls";
@@ -231,15 +231,15 @@ export const CharacterController = ({ onTouchAction }) => {
         }
       }
 
-      // Much more forgiving ground detection
+      // More forgiving ground detection for better knockback recovery
       const currentPos = rb.current.translation();
-      const isNearGround = currentPos.y > -10 && currentPos.y < 5; // Position-based check
-      const hasLowVerticalVelocity = Math.abs(vel.y) < 1.0; // More forgiving velocity
+      const isNearGround = currentPos.y > -2 && currentPos.y < 5; // Tighter ground detection
+      const hasLowVerticalVelocity = Math.abs(vel.y) < 2.0; // More forgiving velocity for knockback recovery
       isOnGround.current = isNearGround && hasLowVerticalVelocity;
       
-      // Debug ground detection
-      if (get().jump || touchControls.jump) {
-        console.log("Ground check - pos.y:", currentPos.y, "vel.y:", vel.y, "isNearGround:", isNearGround, "hasLowVel:", hasLowVerticalVelocity);
+      // Debug ground detection and fall state
+      if (isFalling.current) {
+        console.log("Fall state - pos.y:", currentPos.y.toFixed(2), "vel.y:", vel.y.toFixed(2), "isOnGround:", isOnGround.current, "isNearGround:", isNearGround, "hasLowVel:", hasLowVerticalVelocity);
       }
       
       // Disable fall detection for first 4 seconds after spawn
@@ -260,24 +260,66 @@ export const CharacterController = ({ onTouchAction }) => {
       }
       
       // Fall detection logic - for animation only, no sound
-      if (!gameJustStarted.current && !justRespawned.current && !isOnGround.current && vel.y < -8) {
+      // Only trigger fall animation if falling fast AND position indicates a true fall (not just knockback recovery)
+      const isFallingFast = vel.y < -8;
+      const isProbablyTrueFall = currentPos.y < -5; // Below normal platform level
+      const shouldTriggerFallAnimation = !gameJustStarted.current && !justRespawned.current && !isOnGround.current && isFallingFast && (isProbablyTrueFall || isFalling.current);
+      
+      if (shouldTriggerFallAnimation) {
         if (!isFalling.current) {
           isFalling.current = true;
           fallStartTime.current = Date.now();
         } else {
           const fallDuration = Date.now() - fallStartTime.current;
-          if (fallDuration > 800) {
+          if (fallDuration > 300) { // Reduced from 800ms for more responsive fall animation
             setAnimation("fall"); // Only animation, no sound
           }
         }
       } else if (isOnGround.current && isFalling.current) {
-        // Just landed from a fall
+        // Just landed from a fall - reset physics state to prevent sliding
         isFalling.current = false;
         fallStartTime.current = 0;
         hasPlayedFallSound.current = false;
         setIsJumping(false);
+        
+        // Reset physics state to fix sliding after multiple knockbacks
+        const currentVel = rb.current.linvel();
+        rb.current.setLinvel({ 
+          x: currentVel.x * 0.3, // Reduce horizontal momentum
+          y: currentVel.y, 
+          z: currentVel.z * 0.3 
+        }, true);
+        
+        // Reset angular velocity to stop any rotation
+        rb.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        
         if (!isLightingAction) {
           setAnimation("idle");
+        }
+        
+        console.log("Landing from fall - physics state reset");
+      } else if (isFalling.current && fallStartTime.current > 0) {
+        // Safety timeout - if been falling for more than 5 seconds and near ground, force landing
+        const fallDuration = Date.now() - fallStartTime.current;
+        if (fallDuration > 5000 && isNearGround) {
+          console.log("Force landing after long fall");
+          isFalling.current = false;
+          fallStartTime.current = 0;
+          hasPlayedFallSound.current = false;
+          setIsJumping(false);
+          
+          // Reset physics state here too
+          const currentVel = rb.current.linvel();
+          rb.current.setLinvel({ 
+            x: currentVel.x * 0.3, 
+            y: currentVel.y, 
+            z: currentVel.z * 0.3 
+          }, true);
+          rb.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+          
+          if (!isLightingAction) {
+            setAnimation("idle");
+          }
         }
       }
 
@@ -483,36 +525,24 @@ export const CharacterController = ({ onTouchAction }) => {
         // Play fall sound for actual death
         playSound('fall', { volume: 0.7, loop: false });
         
-        // Trigger respawn with black screen transition
+        // Trigger respawn overlay - user will choose to respawn or exit
         GameState.triggerRespawn = true;
         
-        // Delay the actual respawn to allow overlay to show
-        setTimeout(() => {
-          // Set respawn flag to prevent fall sound after respawn
-          justRespawned.current = true;
-          isFalling.current = false;
-          hasPlayedFallSound.current = false;
-          
-          // Reset character position to spawn point
-          rb.current.setTranslation(spawnPoint.current, true);
-          rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-          rb.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
-          
-          // Reset container rotation
-          container.current.rotation.y = 0;
-          rotationTarget.current = 0;
-          characterRotationTarget.current = 0;
-          
-          // Update game state
-          GameState.characterPosition.copy(spawnPoint.current);
-          GameState.containerRotation = 0;
-          
-          // Stop walking sound if playing
-          if (isWalking.current) {
-            stopSound('walking');
-            isWalking.current = false;
-          }
-        }, 100);
+        // Stop the character from continuing to fall
+        rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        rb.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        
+        // The RespawnOverlay will handle respawn via page reload
+        
+        // Update game state
+        GameState.characterPosition.copy(spawnPoint.current);
+        GameState.containerRotation = 0;
+        
+        // Stop walking sound if playing
+        if (isWalking.current) {
+          stopSound('walking');
+          isWalking.current = false;
+        }
       }
     } else {
       // Reset fall flag when not falling
@@ -556,7 +586,7 @@ export const CharacterController = ({ onTouchAction }) => {
   lockRotations 
   ref={rb} 
   userData={{ isCharacter: true }} 
-  position={[0, -3.5, 0]} // change this value to move character's start position on platform
+  position={[0, 0, 0]} // change this value to move character's start position on platform
   friction={0.2}  // Lower friction helps with step climbing
   restitution={0}
   linearDamping={0.5}  // Lower damping for better movement
@@ -587,8 +617,8 @@ export const CharacterController = ({ onTouchAction }) => {
         debug 
       /> */}
         <BallCollider 
-    args={[0.25]} 
-    position={[0, 1.5, 0]}  // Position at feet level
+    args={[0.55]} 
+    position={[0, 2, 0]}  // Position at feet level
   />
       {/* Upper body: slightly wider for shoulders/head */}
   <CapsuleCollider 
@@ -600,3 +630,4 @@ export const CharacterController = ({ onTouchAction }) => {
     </RigidBody>
   );
 };
+

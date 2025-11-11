@@ -220,16 +220,8 @@ const PalmsScene = ({ onLoadingChange }) => {
   const scrollProgressRef = useRef(0); // Start at 0 for aerial view
   const animationFrameRef = useRef(null); // Track animation frame ID for cleanup
 
-  // Force initial scroll position on mount and page load + fix CSS conflicts
+  // Force initial scroll position on mount and page load
   useEffect(() => {
-    // CRITICAL: Override CSS that breaks scrolling
-    document.body.style.overflow = 'auto';
-    document.body.style.overflowY = 'auto';
-    document.body.style.overflowX = 'hidden';
-    document.documentElement.style.overflow = 'auto';
-    document.documentElement.style.overflowY = 'auto';
-    document.documentElement.style.overflowX = 'hidden';
-    
     // Scroll to top immediately
     window.scrollTo(0, 0);
     
@@ -267,14 +259,6 @@ const PalmsScene = ({ onLoadingChange }) => {
       if ('scrollRestoration' in history) {
         history.scrollRestoration = 'auto';
       }
-      
-      // Restore original CSS overflow settings
-      document.body.style.overflow = '';
-      document.body.style.overflowY = '';
-      document.body.style.overflowX = 'hidden'; // Keep this as it was
-      document.documentElement.style.overflow = '';
-      document.documentElement.style.overflowY = '';
-      document.documentElement.style.overflowX = 'hidden'; // Keep this as it was
     };
   }, []);
   
@@ -2090,6 +2074,11 @@ const PalmsScene = ({ onLoadingChange }) => {
   
       // Single onUpdate for the entire timeline
       tl.eventCallback("onUpdate", () => {
+        // Debug log camera position
+        if (tl.progress() % 0.1 < 0.01) {  // Log every 10% of progress
+          console.log(`[Timeline ${Math.round(tl.progress() * 100)}%] Camera:`, 
+            `x:${cameraPath.x.toFixed(2)}, y:${cameraPath.y.toFixed(2)}, z:${cameraPath.z.toFixed(2)}`);
+        }
         
         // Try updating the local camera variable instead of cameraRef
         if (camera) {
@@ -2151,13 +2140,11 @@ const PalmsScene = ({ onLoadingChange }) => {
         }, 1500); // 1.5 second delay after reaching Mary
       });
       
-      console.log('[PalmTreeDrive] Creating ScrollTrigger with timeline progress:', tl.progress());
-      
-      // Create ScrollTrigger - use document scrolling
+      // Create ScrollTrigger - track the document scroll
       const st = ScrollTrigger.create({
-        trigger: document.body,
+        trigger: "#scroll-container",
         start: "top top",
-        end: isMobile ? "bottom bottom" : "bottom bottom", // Use full document height
+        end: "bottom bottom",
         scrub: isMobile ? 0.3 : 0.5, // Lower scrub for more responsive mobile animation
         animation: tl,
         markers: false, // Hide markers for cleaner view
@@ -2255,8 +2242,6 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     // Set up scroll animation after a short delay to ensure scene is ready
     setTimeout(() => {
-      console.log('[PalmTreeDrive] Setting up scroll animation...');
-      
       // Enable ScrollTrigger for mobile with better touch handling
       ScrollTrigger.config({
         ignoreMobileResize: true,
@@ -2267,8 +2252,6 @@ const PalmsScene = ({ onLoadingChange }) => {
         force3D: true, // Force hardware acceleration
         limitCallbacks: true // Optimize performance
       });
-      
-      console.log('[PalmTreeDrive] ScrollTrigger config set');
       
       // Ensure the page is scrollable on mobile
       if (isMobile) {
@@ -2294,9 +2277,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         }
       }
       
-      console.log('[PalmTreeDrive] Calling setupScrollAnimation...');
       setupScrollAnimation();
-      console.log('[PalmTreeDrive] setupScrollAnimation called');
     }, 100);
     
 
@@ -2569,7 +2550,7 @@ const PalmsScene = ({ onLoadingChange }) => {
 
 
   return (
-    <div ref={intersectionRef} style={{ position: 'relative', width: '100%', backgroundColor: 'black' }}>
+    <div ref={intersectionRef} style={{ position: 'relative', width: '100%', minHeight: '100vh', backgroundColor: 'black' }}>
       <style jsx global>{`
         @font-face {
           font-family: 'UnifrakturMaguntia';
@@ -2637,7 +2618,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             position: 'absolute', 
             top: 0, 
             left: 0,
-            pointerEvents: 'none',  // Disabled since clicking Mary is no longer needed
+            pointerEvents: 'auto',  // Enable pointer events for scrolling
             zIndex: 1
           }}
         />
@@ -2792,12 +2773,14 @@ const PalmsScene = ({ onLoadingChange }) => {
             width: isMobile ? '60%' : '40%',
             maxWidth: '600px',
             pointerEvents: 'none',
-            zIndex: "100",
-            height: '60vh',
+            zIndex: "1000",
+            height: 'auto',
+            minHeight: '60vh',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             gap: '20px',
+            overflow: 'visible',
           }}
         >
           {/* <div style={{ marginBottom: isMobile ? '-20px' : '0', position: 'relative' }}>
@@ -2899,54 +2882,6 @@ const PalmsScene = ({ onLoadingChange }) => {
           }}>
             scroll up to continue
           </div>
-          
-      
-          {showEnterButton && (
-            <div style={{
-              position: 'absolute',
-              bottom: isMobile ? '-4rem' : '-5.5rem',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              opacity: 1,
-              transition: 'opacity 2s ease-in',
-              textAlign: 'center',
-              pointerEvents: 'auto',
-              touchAction: 'auto',
-            }}>
-              <button
-                onClick={() => {
-                  const isMobile = detectMobileDevice();
-                  const destination = isMobile ? '/home3' : '/home3';
-                  router.push(destination);
-                }}
-                style={{
-                  padding: isMobile ? '10px 25px' : '15px 40px',
-                  fontSize: isMobile ? "1.3rem" : "1.8rem",
-                  fontFamily: "'UnifrakturMaguntia', serif",
-                  backgroundColor: "#000000",
-                  color: "#ff00ee",
-                  border: "2px solid #ff00ee",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  boxShadow: "0 0 20px rgba(255, 0, 238, 0.5)",
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#1a001a";
-                  e.target.style.transform = "scale(1.05)";
-                  e.target.style.boxShadow = "0 0 30px rgba(255, 0, 238, 0.8)";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "#000000";
-                  e.target.style.transform = "scale(1)";
-                  e.target.style.boxShadow = "0 0 20px rgba(255, 0, 238, 0.5)";
-                }}
-              >
-                Enter
-              </button>
-            </div>
-          )}
-          
         </div>
       )}
       
@@ -2960,11 +2895,60 @@ const PalmsScene = ({ onLoadingChange }) => {
   
           height: isMobile ? '800vh' : '400vh', // Even more height on mobile to ensure reaching the end
           position: 'relative',
-          pointerEvents: 'none', // Don't capture any pointer events
-          zIndex: 0, // Lowest z-index
-
+          width: '100%',
+          backgroundColor: 'transparent' // Make it transparent but present
         }} 
       />
+      
+      {/* Enter Button - positioned under the pagination dots */}
+      {currentCameraStage === 4 && (
+        <div style={{
+          position: 'fixed',
+          right: isMobile ? '20px' : '15%',
+          top: '50%',
+          transform: 'translateY(calc(-50% + 120px))', // Position below the text section
+          width: isMobile ? '60%' : '40%',
+          maxWidth: '600px',
+          display: 'flex',
+          justifyContent: 'center',
+          zIndex: 999999,
+          pointerEvents: 'auto',
+        }}>
+          <button
+            onClick={() => {
+              console.log('[Enter Button] Clicked!');
+              const isMobile = detectMobileDevice();
+              const destination = isMobile ? '/home3' : '/home3';
+              console.log('[Enter Button] Navigating to:', destination);
+              router.push(destination);
+            }}
+            style={{
+              padding: isMobile ? '10px 25px' : '15px 40px',
+              fontSize: isMobile ? "1.3rem" : "1.8rem",
+              fontFamily: "'UnifrakturMaguntia', serif",
+              backgroundColor: "#000000",
+              color: "#ff00ee",
+              border: "2px solid #ff00ee",
+              borderRadius: "8px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 0 20px rgba(255, 0, 238, 0.5)",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "#1a001a";
+              e.target.style.transform = "scale(1.05)";
+              e.target.style.boxShadow = "0 0 30px rgba(255, 0, 238, 0.8)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "#000000";
+              e.target.style.transform = "scale(1)";
+              e.target.style.boxShadow = "0 0 20px rgba(255, 0, 238, 0.5)";
+            }}
+          >
+            Enter
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -74,7 +74,10 @@ const CyberFloatingBar = ({ isMobile = false }) => {
         right: 0,
         background: 'linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 10, 0, 0.9))',
         backdropFilter: 'blur(20px)',
-        padding: isMobile ? '12px 10px' : '15px 20px',
+        paddingTop: isMobile ? '12px' : '15px',
+        paddingRight: isMobile ? '10px' : '20px',
+        paddingBottom: isMobile ? '15px' : '15px',
+        paddingLeft: isMobile ? '10px' : '20px',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -84,7 +87,6 @@ const CyberFloatingBar = ({ isMobile = false }) => {
         zIndex: 10000,
         animation: 'slideUp 0.4s ease-out',
         flexDirection: isMobile ? 'column' : 'row',
-        paddingBottom: isMobile ? '15px' : '15px',
         overflow: 'hidden',
       }}
     >

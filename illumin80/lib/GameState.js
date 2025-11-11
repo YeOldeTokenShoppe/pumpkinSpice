@@ -2,7 +2,7 @@ import { proxy } from 'valtio';
 import { Vector3 } from 'three';
 
 export const GameState = proxy({
-  map: "underworld3",
+  map: "underworld3Japanese",
   characterPosition: new Vector3(0, 0, 0),
   characterY: 0, // Reactive Y position for UI
   characterZ: 0, // Reactive Z position for UI

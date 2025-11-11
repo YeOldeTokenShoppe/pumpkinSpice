@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Font Declarations */
+@font-face {
+  font-family: 'Fjalla One';
+  src: url('/fonts/FjallaOne-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Accordion animations for shadcn/ui */
 @keyframes accordion-down {
   from {
@@ -40,12 +49,14 @@ html, body {
 }
 
 /* Specific fix for React Three Fiber Canvas */
+/* Commented out to allow scrolling on root page
 body > div:first-child {
   width: 100vw !important;
   height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
 }
+*/
 
 /* Remove any default margins from Next.js app wrapper */
 #__next {

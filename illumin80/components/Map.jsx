@@ -1,10 +1,10 @@
 import { useAnimations, useGLTF, useKeyboardControls } from "@react-three/drei";
 import { RigidBody, CapsuleCollider, CuboidCollider, TrimeshCollider, ConvexHullCollider } from "@react-three/rapier";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Vector3, Quaternion, Box3 } from "three";
 import * as THREE from "three";
-import { GameState } from "../../src/lib/GameState";
+import { GameState } from "../lib/GameState";
 import { useSnapshot } from "valtio";
 import { useAudio } from "../../src/hooks/useAudio";
 
@@ -103,7 +103,7 @@ const createIridescentMaterial = (originalTexture) => {
 // Component for animating coins with spinning motion - DISTANCE CULLED
 const AnimatedCoin = ({ coinMesh, index, onCollect }) => {
   const coinRef = useRef();
-  const ANIMATION_DISTANCE = 15.0; // Only animate within 15M
+  const ANIMATION_DISTANCE = 8.0; // Only animate within 8M - reduced for performance
   
   useFrame((state) => {
     if (!coinMesh || !coinMesh.visible || !GameState.characterPosition) return;
@@ -136,7 +136,7 @@ const AnimatedCoin = ({ coinMesh, index, onCollect }) => {
 // Component for animating diamonds with spinning and hovering motion - DISTANCE CULLED
 const AnimatedDiamond = ({ diamondMesh, index }) => {
   const originalPosition = useRef(null);
-  const ANIMATION_DISTANCE = 15.0; // Only animate within 15M
+  const ANIMATION_DISTANCE = 8.0; // Only animate within 8M - reduced for performance
   
   useFrame((state) => {
     if (!diamondMesh || !diamondMesh.visible || !GameState.characterPosition) return;
@@ -522,7 +522,7 @@ const AnimatedCorazon = ({ corazonMesh }) => {
 const AnimatedFire = ({ fireMesh, index }) => {
   const originalPositions = useRef(new window.Map());
   const debugLogged = useRef(false);
-  const ANIMATION_DISTANCE = 15.0; // Only animate within 15M
+  const ANIMATION_DISTANCE = 10.0; // Only animate within 8M - reduced for performance
   
   useFrame((state) => {
     if (!fireMesh || !GameState.characterPosition) return;
@@ -628,7 +628,7 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
   const isObstacle006 = obstacleMesh.userData?.isObstacle006;
   const isPendulum = obstacleMesh.userData?.isPendulum;
   const isCorazon = obstacleMesh.userData?.isCorazon;
-  const ANIMATION_DISTANCE = 25.0; // Larger distance for dangerous obstacles
+  const ANIMATION_DISTANCE = 25.0; // Larger distance for dangerous obstacles - reduced for performance
   
   // Access Valtio GameState for collision handling
   const gameState = useSnapshot(GameState);
@@ -729,10 +729,10 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
         obstacleMesh.getWorldPosition(obstaclePos);
         const knockbackDir = GameState.characterPosition.clone().sub(obstaclePos).normalize();
         
-        const knockbackForce = 10;
+        const knockbackForce = 0.3; // Further reduced
         GameState.characterRigidBody.setLinvel({
           x: currentVel.x + knockbackDir.x * knockbackForce,
-          y: Math.max(currentVel.y + 8, 8),
+          y: Math.max(currentVel.y + 6, 6), // Reduced upward force
           z: currentVel.z + knockbackDir.z * knockbackForce
         }, true);
       }
@@ -1050,6 +1050,11 @@ const CompoundHammerCollider = ({ hammerMesh, index }) => {
 
 // Simplified Map component
 export const Map = ({ model, onLoad, ...props }) => {
+  // Clear cache for the model to ensure fresh load
+  React.useEffect(() => {
+    useGLTF.clear(model);
+  }, [model]);
+  
   const { scene: platformScene, animations: platformAnimations } = useGLTF(model); // Main platform
   const { scene: obstacleScene, animations } = useGLTF('/models/underworld3_obstacles.glb'); // Obstacles
   const obstacleGroup = useRef();
@@ -1239,9 +1244,11 @@ export const Map = ({ model, onLoad, ...props }) => {
       }
       
       
-      // Set shadows for all meshes
+      // Set shadows for all meshes - but disable for small objects
       if (child.isMesh) {
-        child.castShadow = true;
+        // Only enable shadows on larger objects
+        const isSmallObject = name.startsWith('coin') || name.startsWith('star') || name.startsWith('diamond');
+        child.castShadow = !isSmallObject; // Disable shadows for collectibles
         child.receiveShadow = true;
         
         // Separate coins from other collectibles
@@ -1441,22 +1448,27 @@ export const Map = ({ model, onLoad, ...props }) => {
     // console.log(`Applied iridescent shader to ${foundIridiscentMaterials.length} 'Emissive' materials`);
   }, [platformScene]);
 
-  // Animate iridescent materials
+  // Animate iridescent materials - throttled for performance
   useFrame((state) => {
-    // Update time uniform for all iridescent materials
-    iridiscentMaterials.forEach(material => {
-      if (material.uniforms && material.uniforms.time) {
-        material.uniforms.time.value = state.clock.elapsedTime;
-      }
-    });
-    
-    // Also update global materials if they exist (client-side only)
-    if (typeof window !== 'undefined' && window.iridiscentMaterials) {
-      window.iridiscentMaterials.forEach(material => {
-        if (material.uniforms && material.uniforms.time) {
-          material.uniforms.time.value = state.clock.elapsedTime;
+    // Only update every 3 frames (20fps for shader animation is fine)
+    if (state.frame % 3 === 0) {
+      const time = state.clock.elapsedTime;
+      
+      // Update time uniform for all iridescent materials
+      iridiscentMaterials.forEach(material => {
+        if (material.uniforms?.time) {
+          material.uniforms.time.value = time;
         }
       });
+      
+      // Also update global materials if they exist (client-side only)
+      if (typeof window !== 'undefined' && window.iridiscentMaterials) {
+        window.iridiscentMaterials.forEach(material => {
+          if (material.uniforms?.time) {
+            material.uniforms.time.value = time;
+          }
+        });
+      }
     }
   });
 
@@ -1477,88 +1489,57 @@ export const Map = ({ model, onLoad, ...props }) => {
     }
   }, [actions]);
   
-  // Star and Diamond collision detection
-  useEffect(() => {
-    const checkCollectibleCollisions = () => {
-      if (!GameState.characterPosition) return;
-      
-      const collectionDistance = 1.5;
-      
-      collectibles.forEach(collectible => {
-        if (!collectedItems.has(collectible.id) && collectible.object.visible) {
-          const worldPos = new Vector3();
-          collectible.object.getWorldPosition(worldPos);
-          const distance = GameState.characterPosition.distanceTo(worldPos);
+  // Consolidated collision detection in useFrame for better performance
+  useFrame(React.useCallback(() => {
+    if (!GameState.characterPosition) return;
+    
+    const collectibleDistance = 1.5;
+    const coinDistance = 1.2;
+    
+    // Check collectibles (stars, diamonds)
+    collectibles.forEach(collectible => {
+      if (!collectedItems.has(collectible.id) && collectible.object.visible) {
+        const worldPos = new Vector3();
+        collectible.object.getWorldPosition(worldPos);
+        const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
+        
+        if (distanceSquared < collectibleDistance * collectibleDistance) {
+          setCollectedItems(prev => new Set([...prev, collectible.id]));
+          GameState.collectedItems.add(collectible.id);
+          collectible.object.visible = false;
           
-          if (distance < collectionDistance) {
-            setCollectedItems(prev => new Set([...prev, collectible.id]));
-            GameState.collectedItems.add(collectible.id);
-            
-            collectible.object.visible = false;
-            
-            if (collectible.type === 'star') {
-              GameState.score += 100;
-              // console.log(`Collected star! Score: ${GameState.score}`);
-            } else if (collectible.type === 'diamond') {
-              // Increment diamond count in GameState
-              if (!GameState.diamondCount) GameState.diamondCount = 0;
-              GameState.diamondCount += 1;
-              GameState.score += 50; // Diamonds worth 50 points
-              // console.log(`Collected diamond! Total diamonds: ${GameState.diamondCount}, Score: ${GameState.score}`);
-            }
+          if (collectible.type === 'star') {
+            GameState.score += 100;
+          } else if (collectible.type === 'diamond') {
+            if (!GameState.diamondCount) GameState.diamondCount = 0;
+            GameState.diamondCount += 1;
+            GameState.score += 50;
           }
         }
-      });
-    };
+      }
+    });
     
-    if (collectibles.length > 0) {
-      const interval = setInterval(checkCollectibleCollisions, 16);
-      return () => clearInterval(interval);
-    }
-  }, [collectibles, collectedItems]);
-
-  // Coin collision detection with enhanced effects
-  useEffect(() => {
-    const checkCoinCollisions = () => {
-      if (!GameState.characterPosition) return;
-      
-      const collectionDistance = 1.2; // Slightly smaller collection distance for coins
-      
-      // Debug: Log collision check
-      // if (coins.length > 0) {
-      //   console.log(`Checking coin collisions. Character at:`, characterPosition, `Coins available:`, coins.length);
-      // }
-      
-      coins.forEach(coin => {
-        if (!collectedItems.has(coin.id) && coin.object.visible) {
-          const worldPos = new Vector3();
-          coin.object.getWorldPosition(worldPos);
-          const distance = GameState.characterPosition.distanceTo(worldPos);
+    // Check coins
+    coins.forEach(coin => {
+      if (!collectedItems.has(coin.id) && coin.object.visible) {
+        const worldPos = new Vector3();
+        coin.object.getWorldPosition(worldPos);
+        const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
+        
+        if (distanceSquared < coinDistance * coinDistance) {
+          setCollectedItems(prev => new Set([...prev, coin.id]));
+          GameState.collectedItems.add(coin.id);
+          GameState.score += 10;
           
-          if (distance < collectionDistance) {
-            setCollectedItems(prev => new Set([...prev, coin.id]));
-            GameState.collectedItems.add(coin.id);
-            GameState.score += 10;
-            
-            // Increment coin count in GameState
-            if (!GameState.coinCount) GameState.coinCount = 0;
-            GameState.coinCount += 1;
-            
-            // Play coin collection sound with proper options object
-            playSound('coinCollect', { volume: 0.3 });
-            
-            coin.object.visible = false;
-            // console.log(`Collected coin! Total coins: ${GameState.coinCount}, Score: ${GameState.score}`);
-          }
+          if (!GameState.coinCount) GameState.coinCount = 0;
+          GameState.coinCount += 1;
+          
+          playSound('coinCollect', { volume: 0.3 });
+          coin.object.visible = false;
         }
-      });
-    };
-    
-    if (coins.length > 0) {
-      const interval = setInterval(checkCoinCollisions, 16);
-      return () => clearInterval(interval);
-    }
-  }, [coins, collectedItems, playSound]);
+      }
+    });
+  }, [collectibles, coins, collectedItems, playSound]));
 
   
   // Use simple door controller with targeted static door hiding
@@ -1636,14 +1617,6 @@ export const Map = ({ model, onLoad, ...props }) => {
       {/* Centralized door controller */}
       {doorController}
       
-      {/* Collider Visualizer - comment out to hide */}
-      <RigidBody type="fixed" position={[0, -10, 0]}>
-        <CuboidCollider args={[25, 0.1, 25]} />
-        {/* <mesh>
-          <boxGeometry args={[50, 0.2, 50]} />
-          <meshBasicMaterial color="cyan" opacity={0.3} transparent wireframe />
-        </mesh> */}
-      </RigidBody>
     </>
   );
 };

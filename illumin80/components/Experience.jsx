@@ -5,7 +5,7 @@ import { DirectionalLightHelper } from "three";
 import { useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { useGameStore } from "../../src/lib/gameStore";
-import { GameState } from "../../src/lib/GameState";
+import { GameState } from "../lib/GameState";
 import { useSnapshot } from "valtio";
 import { CharacterController } from "./CharacterController";
 import { CandleSystem } from "./CandleSystem";
@@ -15,7 +15,7 @@ import { DemonCharacter } from "./DemonCharacter";
 
 
 export const maps = {
-  underworld3: {
+  underworld3Japanese: {
     scale: 0.7,
     position: [-0.1, -9.5, 7],
   },
@@ -31,8 +31,9 @@ export const Experience = ({ onTouchAction, onLoad }) => {
   
   // Get map from Valtio GameState and characterPosition from Zustand store
   const gameState = useSnapshot(GameState);
-  const map = gameState.map || 'underworld3'; // default fallback
+  const map = gameState.map || 'underworld3Japanese'; // default fallback
   const { characterPosition } = useGameStore();
+
 
   const handleMapLoad = () => {
     setIsMapLoaded(true);
@@ -77,7 +78,7 @@ export const Experience = ({ onTouchAction, onLoad }) => {
       
       {/* <OrbitControls /> */}
       <fog attach="fog" args={["#4a9fbb", 5, 35]} />
-      {/* <ambientLight intensity={1.0} color="#6bb6cc" /> */}
+      {/* <ambientLight intensity={0.8} color="#6bb6cc" /> */}
           <Environment preset="night" />
       <directionalLight
         ref={directionalLightRef}
@@ -85,12 +86,12 @@ export const Experience = ({ onTouchAction, onLoad }) => {
         castShadow
         position={[-1, 20, 35]}
         color="#87ceeb"
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={512}
+        shadow-mapSize-height={512}
         shadow-bias={-0.0001}
         shadow-normalBias={0.02}
-        shadow-radius={15}
-        shadow-blurSamples={25}
+        shadow-radius={3}
+        shadow-blurSamples={8}
       >
         <OrthographicCamera
           left={-60}
@@ -133,12 +134,12 @@ export const Experience = ({ onTouchAction, onLoad }) => {
         {/* <MonsterSystem /> */}
       </Physics>
       
-      {/* Post-processing effects */}
+      {/* Post-processing effects - DISABLED for performance */}
       <EffectComposer>
         <Bloom 
-          intensity={2.9}
-          width={300}
-          height={300}
+          intensity={1.9}
+          // width={300}
+          // height={300}
           kernelSize={5}
           luminanceThreshold={0.55}
           luminanceSmoothing={0.025}

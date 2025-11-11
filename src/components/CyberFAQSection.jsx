@@ -10,6 +10,7 @@ export default function CyberFAQSection({ isMobile = false }) {
   const [typedText, setTypedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [scanlinePos, setScanlinePos] = useState(0);
+  const [sessionId, setSessionId] = useState('LOADING');
 
   // FAQ data with terminal-style queries
   const faqData = [
@@ -99,8 +100,11 @@ Response time: < 2 hours during US market hours`,
     }
   ];
 
-  // Animate scanline
+  // Animate scanline and set session ID
   useEffect(() => {
+    // Generate session ID only on client side
+    setSessionId(Math.random().toString(36).substring(2, 8).toUpperCase());
+    
     const interval = setInterval(() => {
       setScanlinePos(prev => (prev + 1) % 100);
     }, 50);
@@ -575,7 +579,7 @@ Response time: < 2 hours during US market hours`,
             fontFamily: 'monospace',
             opacity: 0.5
           }}>
-            TERMINAL.SESSION.ID: {Math.random().toString(36).substring(2, 8).toUpperCase()}
+            TERMINAL.SESSION.ID: {sessionId}
           </div>
           <div style={{
             fontSize: '10px',
@@ -637,10 +641,10 @@ Response time: < 2 hours during US market hours`,
         
         @keyframes transmissionGlitch3 {
           0%, 88%, 100% { transform: translateX(0px); }
-          // 89% { transform: translateX(2px); }
-          // 90% { transform: translateX(-1px); }
-          // 91% { transform: translateX(1px); }
-          // 92% { transform: translateX(0px); }
+          /* 89% { transform: translateX(2px); } */
+          /* 90% { transform: translateX(-1px); } */
+          /* 91% { transform: translateX(1px); } */
+          /* 92% { transform: translateX(0px); } */
         }
         
         @keyframes scanlines {

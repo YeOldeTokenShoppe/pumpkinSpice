@@ -1,5 +1,5 @@
 import { useGameStore } from "../../src/lib/gameStore";
-import { GameState } from "../../src/lib/GameState";
+import { GameState } from "../lib/GameState";
 import { useSnapshot } from "valtio";
 import { useEffect, useState, useRef } from "react";
 

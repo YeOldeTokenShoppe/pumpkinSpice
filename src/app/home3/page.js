@@ -1054,14 +1054,14 @@ const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
   );
 };
 
-export default function CloudTestPage() {
+export default function Home3() {
   // Firestore data
   const topBurners = useFirestoreResults("burnedAmount");
   
   // State for overlay buttons (from home3/page)
   const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : true);
-  const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -1249,10 +1249,10 @@ export default function CloudTestPage() {
         
         if (entry.isIntersecting) {
           console.log('🎯 Second title entered viewport!');
-          setSecondTitleInView(true);
+          // secondTitleInView is managed by useInView hook
         } else {
           console.log('🎯 Second title left viewport!');
-          setSecondTitleInView(false);
+          // secondTitleInView is managed by useInView hook
         }
       },
       {
@@ -1274,24 +1274,12 @@ export default function CloudTestPage() {
       {/* Loading Screen */}
       <CoinLoader loading={isSceneLoading} />
 
-      {/* Mobile-specific style override */}
-      {isMobile && (
-        <style jsx global>{`
-          html, body {
-            height: auto !important;
-            overflow: visible !important;
-          }
-        `}</style>
-      )}
           
       <div style={{ 
         width: '100vw', 
         background: 'transparent', 
         minHeight: '100vh',
-        overflowX: 'hidden',
-        overflowY: isMobile ? 'visible' : 'auto',
-        height: isMobile ? 'auto' : undefined,
-        WebkitOverflowScrolling: 'touch', // Enable smooth scrolling on iOS
+        height: 'auto',
         opacity: isSceneLoading ? 0 : 1,
         transition: 'opacity 0.5s ease-in-out',
       }}>
@@ -1419,11 +1407,11 @@ export default function CloudTestPage() {
           width: '100%',
           minHeight: '100vh',
           zIndex: 10,
-          pointerEvents: 'none',
+          pointerEvents: 'auto',
           opacity: isSceneLoading ? 0 : 1,
           transition: 'opacity 0.5s ease-in-out',
         }}>
-        <div style={{
+  <div style={{
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
@@ -1436,23 +1424,10 @@ export default function CloudTestPage() {
               id="main-title"
               style={{ 
               position: "relative",
-              left: isMobile ? "5%" : "10%",
+              left: isMobile ? "-10%" : "-25%",
               color: "#d4af37",
-                // color: "#00ff00",
-                  // colors={["#00ff00"]}
               fontFamily: 'UnifrakturCook, serif',
-              textShadow: `
-                rgba(83, 61, 74, 0.9) 1px 1px,
-                rgba(83, 61, 74, 0.9) 2px 2px,
-                rgba(83, 61, 74, 0.8) 3px 3px,
-                rgba(83, 61, 74, 0.8) 4px 4px,
-                rgba(83, 61, 74, 0.7) 5px 5px,
-                rgba(83, 61, 74, 0.7) 6px 6px,
-                rgba(83, 61, 74, 0.6) 7px 7px,
-                rgba(83, 61, 74, 0.6) 8px 8px,
-                rgba(255, 192, 203, 0.4) -1px -1px 5px,
-                rgba(0, 0, 0, 0.8) 10px 10px 15px
-              `,
+              textShadow: "3px 3px 5px #000, -1px -1px 5px pink",
               fontSize: getResponsiveValue("4rem", "5rem", "6rem", "7rem"),
               fontWeight: 900,
               lineHeight: 0.8,
@@ -2552,7 +2527,10 @@ Burn or stake RL80 to add a green candle to her timeline and watch miracles happ
             background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
             border: '2px solid #00ff00',
             borderRadius: '0',
+            paddingTop: '0px',
+            paddingRight: '0px',
             paddingBottom: isMobile ? '20px' : '0px',
+            paddingLeft: '0px',
             backdropFilter: 'blur(10px)',
             boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
             position: 'relative'
@@ -2880,18 +2858,35 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
           box-sizing: border-box;
         }
         
-        html, body {
+        html {
           width: 100%;
-          height: 100%;
+          height: auto;
           margin: 0;
           padding: 0;
           overflow-x: hidden;
+          overflow-y: auto;
           box-sizing: border-box;
+          scroll-behavior: auto;
         }
         
         body {
+          width: 100%;
+          height: auto;
           margin: 0;
           padding: 0;
+          overflow-x: hidden;
+          overflow-y: visible;
+          box-sizing: border-box;
+        }
+        
+        body > div:first-child {
+          height: auto;
+          min-height: 100vh;
+        }
+        
+        #__next {
+          height: auto;
+          min-height: 100vh;
         }
         
         canvas {

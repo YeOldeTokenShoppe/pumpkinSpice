@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function SkewedHeading({ 
   lines = ['DEFAULT', 'HEADING'], 
@@ -12,10 +12,12 @@ export default function SkewedHeading({
   textAlign = 'center'
 }) {
   // Create a stable ID for unique CSS class names
-  const stableId = useMemo(() => 
-    Math.random().toString(36).substring(2, 9), 
-    []
-  );
+  const [stableId, setStableId] = useState('default');
+  
+  useEffect(() => {
+    // Generate ID only on client side
+    setStableId(Math.random().toString(36).substring(2, 9));
+  }, []);
 
   return (
     <div style={{
@@ -27,12 +29,19 @@ export default function SkewedHeading({
       overflow: 'visible', // Ensure shadows are visible
     }}>
       <style jsx>{`
-        @import url('https://fonts.googleapis.com/css?family=Fjalla+One');
+        @font-face {
+          font-family: 'Fjalla One';
+          src: url('/fonts/FjallaOne-Regular.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+          font-display: swap;
+        }
         
         .title-letter-${stableId} {
           transform: skew(-10deg);
           display: block;
           float: left;
+          font-family: 'Fjalla One', sans-serif !important;
         text-shadow: rgba(83, 61, 74, 0.8) 1px 1px,
                        rgba(83, 61, 74, 0.8) 2px 2px,
                        rgba(83, 61, 74, 0.8) 3px 3px,
@@ -81,9 +90,11 @@ export default function SkewedHeading({
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
                   position: 'relative',
+                  fontFamily: "'Fjalla One', sans-serif",
                 } : { 
                   color: colors[lineIndex % colors.length],
                   position: 'relative',
+                  fontFamily: "'Fjalla One', sans-serif",
                 }}
                 data-char={char === ' ' ? '\u00A0' : char}
               >
