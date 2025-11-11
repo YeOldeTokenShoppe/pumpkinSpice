@@ -94,14 +94,25 @@ export const CharacterController = ({ onTouchAction }) => {
   const justRespawned = useRef(false);
 
   useEffect(() => {
-    loadSound('jump', '/sounds/jump.ogg');
+    loadSound('jump', '/sounds/cuteCursor3.mp3', false);
     loadSound('walking', '/sounds/cuteCursor3.mp3', false);
     loadSound('fall', '/sounds/fall.mp3', false);
     
-    const onMouseDown = (e) => {
-      isClicking.current = true;
+    // Test audio on first user interaction
+    const testAudio = () => {
+      console.log('Testing audio with user interaction...');
+      playSound('jump', { volume: 0.1, loop: false });
     };
-    const onMouseUp = (e) => {
+    
+    const onMouseDown = () => {
+      isClicking.current = true;
+      // Test audio on first interaction
+      if (!window.audioTested) {
+        testAudio();
+        window.audioTested = true;
+      }
+    };
+    const onMouseUp = () => {
       isClicking.current = false;
     };
     document.addEventListener("mousedown", onMouseDown);
@@ -218,7 +229,7 @@ export const CharacterController = ({ onTouchAction }) => {
           const stepInterval = speed === RUN_SPEED ? 300 : 500; // Faster steps when running
           
           if (currentTime - lastStepTime.current > stepInterval) {
-            playSound('walking', { volume: 0.1, loop: false });
+            playSound('walking', { volume: 0.3, loop: false });
             lastStepTime.current = currentTime;
           }
           isWalking.current = true;
@@ -233,9 +244,10 @@ export const CharacterController = ({ onTouchAction }) => {
 
       // More forgiving ground detection for better knockback recovery
       const currentPos = rb.current.translation();
-      const isNearGround = currentPos.y > -2 && currentPos.y < 5; // Tighter ground detection
-      const hasLowVerticalVelocity = Math.abs(vel.y) < 2.0; // More forgiving velocity for knockback recovery
+      const isNearGround = currentPos.y > -10 && currentPos.y < 5; // Expanded ground detection to account for actual character position
+      const hasLowVerticalVelocity = Math.abs(vel.y) < 0.1; // Much more forgiving - tiny physics values are essentially zero
       isOnGround.current = isNearGround && hasLowVerticalVelocity;
+      
       
       // Debug ground detection and fall state
       if (isFalling.current) {
@@ -324,34 +336,43 @@ export const CharacterController = ({ onTouchAction }) => {
       }
 
       // Jump logic with lighting action detection (keyboard + touch)
-      if (get().jump || touchControls.jump) {
-        console.log("Jump input detected - isOnGround:", isOnGround.current, "canJump:", canJump.current, "vel.y:", vel.y);
-      }
-      if ((get().jump || touchControls.jump) && isOnGround.current && canJump.current) {
+      const jumpPressed = get().jump || touchControls.jump;
+      if (jumpPressed && isOnGround.current && canJump.current) {
         canJump.current = false;
         setIsJumping(true);
+        
+        // Stop all movement during jump to prevent animation mixing
+        const currentVel = rb.current.linvel();
+        rb.current.setLinvel({ x: 0, y: currentVel.y, z: 0 }, true);
+        
         setAnimation("jump");
         
-        console.log("JUMP TRIGGERED - Setting animation to jump");
-        
-        // Delay the physics jump to better match animation timing
+        // Physics jump with timing to match 57-frame animation (approximately 1.9 seconds at 30fps)
         setTimeout(() => {
           if (rb.current) {
-            const currentVel = rb.current.linvel();
-            // Reduce jump force for more realistic timing
-            rb.current.setLinvel({ x: currentVel.x, y: JUMP_FORCE * 0.6, z: currentVel.z }, true);
+            const vel = rb.current.linvel();
+            rb.current.setLinvel({ x: vel.x, y: JUMP_FORCE, z: vel.z }, true);
           }
-        }, 600); // Later takeoff to match animation
+        }, 300); // Delay takeoff to match animation windup
         
-        // Delay the jump sound to match when feet actually leave ground
+        // Play jump sound delayed to match animation timing
         setTimeout(() => {
-          playSound('walking', { volume: 0.8, loop: false }); // Use walking sound, louder
-        }, 1600);
+          playSound('jump', { volume: 0.5, loop: false });
+        }, 1500);
         
-        // Reset can jump after animation
+        // Reset can jump after full animation completes (57 frames ≈ 1900ms)
         setTimeout(() => {
           canJump.current = true;
-        }, 1000);
+          setIsJumping(false);
+          // Only reset to idle if not moving
+          const controls = get();
+          const touchControls = getTouchControls();
+          const isMoving = controls.forward || controls.backward || controls.left || controls.right ||
+                          touchControls.forward || touchControls.backward || touchControls.left || touchControls.right;
+          if (!isMoving && !isLightingAction) {
+            setAnimation("idle");
+          }
+        }, 2000);
       }
 
       // Check for light key press (only trigger once per press)

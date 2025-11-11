@@ -4,10 +4,18 @@ import { KeyboardControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Experience } from "../../../illumin80/components/Experience";
 // import { ScoreDisplay } from "../../components/ScoreDisplay";
-import { EnhancedHUD } from "../../../illumin80/components/EnhancedHUD";
-import { RespawnOverlay } from "../../../illumin80/components/RespawnOverlay";
-import ErrorBoundary from "../../components/ErrorBoundary";
-import { TouchControls } from "../../components/TouchControls";
+import dynamic from 'next/dynamic';
+
+// Dynamic imports for non-critical components
+const EnhancedHUD = dynamic(() => import("../../../illumin80/components/EnhancedHUD").then(mod => ({ default: mod.EnhancedHUD })), {
+  ssr: false
+});
+const RespawnOverlay = dynamic(() => import("../../../illumin80/components/RespawnOverlay").then(mod => ({ default: mod.RespawnOverlay })), {
+  ssr: false
+});
+const TouchControls = dynamic(() => import("../../components/TouchControls").then(mod => ({ default: mod.TouchControls })), {
+  ssr: false
+});
 import CoinLoader from "@/components/CoinLoader";
 import { Suspense, useCallback, useState, useRef, useEffect } from "react";
 import Link from 'next/link';
@@ -43,7 +51,6 @@ function LoadingFallback() {
 export default function GamePage() {
   const [contextLost, setContextLost] = useState(false);
   const [isSceneLoading, setIsSceneLoading] = useState(true);
-  const [fontLoaded, setFontLoaded] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const touchActionHandler = useRef(null);
@@ -60,7 +67,7 @@ export default function GamePage() {
     return () => window.removeEventListener('resize', checkMobileView);
   }, []);
 
-  // Font loading effect (matching home3 page)
+  // Font loading effect (non-blocking)
   useEffect(() => {
     const checkFont = async () => {
       try {
@@ -68,12 +75,11 @@ export default function GamePage() {
         await document.fonts.load("1em 'UnifrakturMaguntia'");
         await document.fonts.load("1em 'Fjalla One'");
         console.log("Fonts loaded including UnifrakturMaguntia");
-        setFontLoaded(true);
         document.body.classList.add('fonts-loaded');
-        document.documentElement.classList.add('fonts-loaded'); // This is the key fix!
+        document.documentElement.classList.add('fonts-loaded');
       } catch (e) {
+        // Fallback after timeout
         setTimeout(() => {
-          setFontLoaded(true);
           document.body.classList.add('fonts-loaded');
           document.documentElement.classList.add('fonts-loaded');
         }, 1000);
@@ -82,14 +88,14 @@ export default function GamePage() {
     checkFont();
   }, []);
 
-  // Update loading state when both font and model are loaded (matching home3 page)
+  // Update loading state - prioritize model loading, fonts can load separately
   useEffect(() => {
-    if (fontLoaded && modelLoaded) {
+    if (modelLoaded) {
       setTimeout(() => {
         setIsSceneLoading(false);
       }, 500); // Small delay for smooth transition
     }
-  }, [fontLoaded, modelLoaded]);
+  }, [modelLoaded]);
 
   // Disable system context menus globally during gameplay
   useEffect(() => {
@@ -161,7 +167,7 @@ export default function GamePage() {
       onContextMenu={(e) => e.preventDefault()} // Disable right-click context menu
       onDragStart={(e) => e.preventDefault()} // Disable dragging
     >
-      {/* CoinLoader preloader */}
+      {/* CoinLoader preloader - only show while models are loading */}
       <CoinLoader loading={isSceneLoading} />
       
       {contextLost && (
@@ -190,19 +196,27 @@ export default function GamePage() {
             preserveDrawingBuffer: false, 
             antialias: false,
             powerPreference: "default",
-            failIfMajorPerformanceCaveat: false
+            failIfMajorPerformanceCaveat: false,
+            alpha: false // Optimize for performance
           }}
           style={{
             width: "100vw",
             height: "100vh",
             touchAction: "pan-y",
             display: "block",
+            backgroundColor: "#4a9fbb" // Show background immediately
           }}
           onContextMenu={(e) => e.preventDefault()}
           onCreated={handleCreated}
           fallback={<LoadingFallback />}
         >
-          <Suspense fallback={null}>
+          {/* Always render Experience but with Suspense for model loading */}
+          <Suspense fallback={
+            <mesh>
+              <boxGeometry args={[1, 1, 1]} />
+              <meshBasicMaterial color="#4a9fbb" transparent opacity={0.1} />
+            </mesh>
+          }>
             <Experience 
               onTouchAction={(handler) => { touchActionHandler.current = handler; }} 
               onLoad={() => setModelLoaded(true)}

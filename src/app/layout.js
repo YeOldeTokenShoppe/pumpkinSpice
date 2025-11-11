@@ -31,7 +31,7 @@ export default function RootLayout({ children }) {
         {/* <link rel="preload" href="/fonts/Orbitron.ttf" as="font" type="font/ttf" crossOrigin="anonymous" /> */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Bitcount+Single+Ink&family=Orbitron:wght@400;700;800;900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Bitcount+Single+Ink&family=Orbitron:wght@400;700;800;900&family=UnifrakturCook&family=UnifrakturMaguntia&display=swap" rel="stylesheet" />
         <style dangerouslySetInnerHTML={{__html: `
           /* Critical: Hide custom font text until loaded */
           // [style*="UnifrakturCook"],
