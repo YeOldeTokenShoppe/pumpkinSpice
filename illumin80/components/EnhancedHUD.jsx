@@ -84,68 +84,6 @@ const AnimatedNumber = ({ value, prefix = "", suffix = "", size = "normal" }) =>
   );
 };
 
-// Advanced health bar with segments and effects
-const AdvancedHealthBar = ({ health, maxHealth = 100, shield = 0 }) => {
-  const percentage = (health / maxHealth) * 100;
-  const shieldPercentage = (shield / maxHealth) * 100;
-  const [isLowHealth, setIsLowHealth] = useState(false);
-  const [takingDamage, setTakingDamage] = useState(false);
-  const prevHealth = useRef(health);
-  
-  useEffect(() => {
-    setIsLowHealth(percentage < 30);
-    if (health < prevHealth.current) {
-      setTakingDamage(true);
-      setTimeout(() => setTakingDamage(false), 500);
-    }
-    prevHealth.current = health;
-  }, [health, percentage]);
-  
-  const segments = 10;
-  const filledSegments = Math.ceil((percentage / 100) * segments);
-  
-  return (
-    <div className={`advanced-health-container ${isLowHealth ? 'low-health' : ''} ${takingDamage ? 'damage-flash' : ''}`}>
-      <div className="health-icon-wrapper">
-        <div className="health-icon">❤️</div>
-        {isLowHealth && <div className="pulse-ring" />}
-      </div>
-      
-      <div className="health-content">
-        <div className="health-label" style={{ color: '#00ff41' }}>VITALITY: </div>
-        <div className="health-bar-wrapper">
-          <div className="health-segments">
-            {Array.from({ length: segments }, (_, i) => (
-              <div
-                key={i}
-                className={`segment ${i < filledSegments ? 'filled' : 'empty'}`}
-                style={{
-                  animationDelay: `${i * 0.05}s`,
-                  backgroundColor: i < filledSegments 
-                    ? percentage > 60 ? '#10b981' 
-                    : percentage > 30 ? '#f59e0b' 
-                    : '#ef4444'
-                    : 'rgba(0,0,0,0.4)'
-                }}
-              />
-            ))}
-          </div>
-          {shield > 0 && (
-            <div className="shield-overlay" style={{ width: `${shieldPercentage}%` }}>
-              <div className="shield-pattern" />
-            </div>
-          )}
-        </div>
-        <div className="health-numbers" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <AnimatedNumber value={health} />
-          <span className="divider" style={{ color: 'rgba(0, 255, 255, 0.5)' }}>/</span>
-          <AnimatedNumber value={maxHealth} />
-          {shield > 0 && <span className="shield-value" style={{ color: '#00d4ff' }}>+{shield}🛡️</span>}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // XP/Progress bar component
 const ProgressBar = ({ current, max, label = "XP: ", level }) => {
@@ -252,14 +190,10 @@ export const EnhancedHUD = () => {
   const [notifications, setNotifications] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [scoreParticleTrigger, setScoreParticleTrigger] = useState(0);
-  const [healthParticleTrigger, setHealthParticleTrigger] = useState(0);
   const [coinParticleTrigger, setCoinParticleTrigger] = useState(0);
-  const [diamondParticleTrigger, setDiamondParticleTrigger] = useState(0);
   const prevLevel = useRef(level);
   const prevScore = useRef(score);
-  const prevHealth = useRef(characterHealth);
   const prevCoins = useRef(coinCount);
-  const prevDiamonds = useRef(diamondCount);
   
   // Detect mobile
   useEffect(() => {
@@ -301,13 +235,6 @@ export const EnhancedHUD = () => {
     prevScore.current = score;
   }, [score]);
   
-  // Health change particles
-  useEffect(() => {
-    if (characterHealth < prevHealth.current) {
-      setHealthParticleTrigger(prev => prev + 1);
-    }
-    prevHealth.current = characterHealth;
-  }, [characterHealth]);
   
   // Coin collection particles
   useEffect(() => {
@@ -317,13 +244,6 @@ export const EnhancedHUD = () => {
     prevCoins.current = coinCount;
   }, [coinCount]);
   
-  // Diamond collection particles
-  useEffect(() => {
-    if (diamondCount > prevDiamonds.current) {
-      setDiamondParticleTrigger(prev => prev + 1);
-    }
-    prevDiamonds.current = diamondCount;
-  }, [diamondCount]);
   
   return (
     <>
@@ -342,11 +262,6 @@ export const EnhancedHUD = () => {
             
             {/* Resources Section */}
             <div className="resources-horizontal">
-              <div className="resource-item">
-                <div className="resource-icon">❤️</div>
-                <span className="resource-value">{characterHealth}/100</span>
-                <ParticleEffect trigger={healthParticleTrigger} color="#ff0040" />
-              </div>
               
               <div className="resource-item">
                 <div className="resource-icon">⚔️</div>
@@ -359,11 +274,6 @@ export const EnhancedHUD = () => {
                 <ParticleEffect trigger={coinParticleTrigger} color="#ffd700" />
               </div>
               
-              <div className="resource-item">
-                <div className="resource-icon">💎</div>
-                <span className="resource-value">{diamondCount}</span>
-                <ParticleEffect trigger={diamondParticleTrigger} color="#00ffff" />
-              </div>
               
               <div className="resource-item">
                 <div className="resource-icon">🗝️</div>
@@ -469,11 +379,11 @@ export const EnhancedHUD = () => {
           }
         }
         
-        /* Status Panel - Top Left */
+        /* Status Panel - Top Right to avoid logo collision */
         .status-panel {
           position: absolute;
           top: 1rem;
-          left: 1rem;
+          right: 1rem;
           padding: 0.75rem;
           border-radius: 1rem;
           width: 12rem;
@@ -492,189 +402,6 @@ export const EnhancedHUD = () => {
           }
         }
         
-        /* Advanced Health Bar */
-        .advanced-health-container {
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
-          margin-bottom: 0.6rem;
-          padding: 0.5rem;
-          background: rgba(0, 0, 0, 0.8);
-          border-radius: 0.75rem;
-          border: 1px solid rgba(0, 255, 65, 0.3);
-          transition: all 0.3s ease;
-          position: relative;
-        }
-        
-        .advanced-health-container.low-health {
-          animation: lowHealthPulse 1s ease infinite;
-          border-color: #ff0040;
-          box-shadow: 0 0 30px rgba(255, 0, 64, 0.5);
-        }
-        
-        @keyframes lowHealthPulse {
-          0%, 100% {
-            box-shadow: 0 0 30px rgba(255, 0, 64, 0.4);
-          }
-          50% {
-            box-shadow: 0 0 40px rgba(255, 0, 64, 0.8);
-          }
-        }
-        
-        .advanced-health-container.damage-flash {
-          animation: damageFlash 0.5s ease;
-        }
-        
-        @keyframes damageFlash {
-          0%, 100% {
-            background: rgba(0, 0, 0, 0.8);
-          }
-          50% {
-            background: rgba(255, 0, 64, 0.4);
-          }
-        }
-        
-        .health-icon-wrapper {
-          position: relative;
-        }
-        
-        .health-icon {
-          font-size: 32px;
-          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
-          animation: heartbeat 2s ease infinite;
-        }
-        
-        @keyframes heartbeat {
-          0%, 100% { transform: scale(1); }
-          10% { transform: scale(1.1); }
-          20% { transform: scale(1); }
-        }
-        
-        .pulse-ring {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 50px;
-          height: 50px;
-          border: 2px solid rgba(239, 68, 68, 0.5);
-          border-radius: 50%;
-          animation: pulseRing 1.5s ease infinite;
-        }
-        
-        @keyframes pulseRing {
-          0% {
-            width: 30px;
-            height: 30px;
-            opacity: 1;
-          }
-          100% {
-            width: 60px;
-            height: 60px;
-            opacity: 0;
-          }
-        }
-        
-        .health-content {
-          flex: 1;
-        }
-        
-        .health-content .health-label {
-          font-size: 0.625rem;
-          color: #00ff41 !important;
-          letter-spacing: 0.1875rem;
-          margin-bottom: 0.25rem;
-          text-transform: uppercase;
-          text-shadow: 0 0 0.625rem rgba(0, 255, 65, 0.8);
-          font-weight: bold;
-        }
-        
-        .health-segments {
-          display: flex;
-          gap: 2px;
-          height: 24px;
-          background: rgba(0, 0, 0, 0.9);
-          padding: 3px;
-          border-radius: 5px;
-          border: 1px solid rgba(0, 255, 65, 0.2);
-        }
-        
-        .segment {
-          flex: 1;
-          border-radius: 2px;
-          transition: all 0.3s ease;
-        }
-        
-        .segment.filled {
-          animation: segmentGlow 2s ease infinite;
-          box-shadow: 0 0 15px currentColor;
-        }
-        
-        @keyframes segmentGlow {
-          0%, 100% { opacity: 0.9; }
-          50% { opacity: 1; }
-        }
-        
-        .shield-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          height: 100%;
-          background: linear-gradient(90deg, 
-            rgba(59, 130, 246, 0.3),
-            rgba(147, 197, 253, 0.3));
-          border-radius: 5px;
-          overflow: hidden;
-        }
-        
-        .shield-pattern {
-          width: 100%;
-          height: 100%;
-          background-image: repeating-linear-gradient(
-            45deg,
-            transparent,
-            transparent 5px,
-            rgba(255, 255, 255, 0.1) 5px,
-            rgba(255, 255, 255, 0.1) 10px
-          );
-          animation: shieldMove 1s linear infinite;
-        }
-        
-        @keyframes shieldMove {
-          from { transform: translateX(0); }
-          to { transform: translateX(10px); }
-        }
-        
-        .health-numbers {
-          margin-top: 6px;
-          font-size: 14px;
-          color: #00ff41;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
-        }
-        
-        .health-numbers .current {
-          font-weight: bold;
-          font-size: 16px;
-          color: #00ff88;
-        }
-        
-        .health-numbers .divider {
-          color: rgba(0, 255, 65, 0.5);
-        }
-        
-        .health-numbers .max {
-          color: rgba(0, 255, 65, 0.8);
-        }
-        
-        .shield-value {
-          margin-left: 8px;
-          color: #00d4ff;
-          font-weight: bold;
-          text-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
-        }
         
         /* Progress Bar */
         .progress-container {
@@ -1486,9 +1213,6 @@ export const EnhancedHUD = () => {
           display: none;
         }
         
-        .modern-hud.mobile .health-icon {
-          font-size: 20px;
-        }
         
         .modern-hud.mobile .level-hexagon {
           width: 40px;
@@ -1519,10 +1243,6 @@ export const EnhancedHUD = () => {
           font-size: 14px;
         }
         
-        .modern-hud.mobile .health-content .health-label {
-          font-size: 8px;
-          letter-spacing: 1px;
-        }
         
         .modern-hud.mobile .progress-label {
           font-size: 8px;

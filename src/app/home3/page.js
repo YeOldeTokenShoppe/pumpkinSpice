@@ -1161,18 +1161,58 @@ export default function Home3() {
       console.log('Mobile detection:', { width, mobile, isMobileValue }); // Debug log
     };
     
-    // Handle scroll events
-    const handleScroll = () => {
-      setScrollY(window.scrollY || window.pageYOffset || document.documentElement.scrollTop);
+    // Handle scroll events - check all possible scroll sources
+    const handleScroll = (event) => {
+      // Try to find the actual scrolling element
+      let currentScroll = 0;
+      
+      // Check if event target is scrolling
+      if (event && event.target) {
+        currentScroll = event.target.scrollTop || 0;
+      }
+      
+      // Fallback to standard scroll detection
+      if (currentScroll === 0) {
+        const scrollingElement = document.scrollingElement || document.documentElement || document.body;
+        currentScroll = scrollingElement.scrollTop || window.scrollY || window.pageYOffset || 0;
+      }
+      
+      if (currentScroll > 0) {
+        console.log('Scroll detected:', currentScroll);
+      }
+      
+      setScrollY(currentScroll);
     };
     
     checkDevice();
+    handleScroll(); // Set initial scroll position
     window.addEventListener('resize', checkDevice);
+    
+    // Add scroll listeners to multiple elements to catch the scroll
     window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('scroll', handleScroll, { passive: true });
+    document.body.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Also check for scrolling on the main app container
+    const checkForScrollContainer = () => {
+      // Find all elements that might be scrolling
+      const possibleContainers = document.querySelectorAll('div, main, section');
+      possibleContainers.forEach(container => {
+        if (container.scrollHeight > container.clientHeight) {
+          console.log('Found scrollable container:', container.className || container.id || container.tagName);
+          container.addEventListener('scroll', handleScroll, { passive: true });
+        }
+      });
+    };
+    
+    // Delay to ensure DOM is ready
+    setTimeout(checkForScrollContainer, 100);
     
     return () => {
       window.removeEventListener('resize', checkDevice);
       window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('scroll', handleScroll);
+      document.body.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
@@ -1283,15 +1323,16 @@ export default function Home3() {
         opacity: isSceneLoading ? 0 : 1,
         transition: 'opacity 0.5s ease-in-out',
       }}>
-      {/* 3D Scene Background */}
+      {/* 3D Scene Background - Fixed viewport with scrolling camera */}
       <div style={{
         position: 'fixed',
         top: 0,
         left: 0,
         width: '100vw',
-        height: '100vh',
+        height: '100vh', // Keep canvas at viewport height
         zIndex: 0,
         pointerEvents: 'none',
+        background: 'linear-gradient(to bottom, #87CEEB, #98D8E8, #B0E0E6)', // Sky gradient
       }}>
         <Canvas
           camera={{ position: [0, -10, 40], fov: 40, near: 0.1, far: 300 }}
@@ -3121,8 +3162,10 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
         }}
       />
       
-      {/* Floating Action Bar */}
-      <CyberFloatingBar isMobile={isMobile} />
+      {/* Floating Action Bar - Only show after scrolling past halfway point */}
+      {scrollY > (isMobile ? 600 : 800) && (
+        <CyberFloatingBar isMobile={isMobile} />
+      )}
     </div>
     </>
   );

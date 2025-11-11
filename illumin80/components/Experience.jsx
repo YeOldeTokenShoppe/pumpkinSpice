@@ -79,7 +79,7 @@ export const Experience = ({ onTouchAction, onLoad }) => {
       {/* <OrbitControls /> */}
       <fog attach="fog" args={["#4a9fbb", 5, 35]} />
       {/* <ambientLight intensity={0.8} color="#6bb6cc" /> */}
-          <Environment preset="night" />
+          {/* <Environment preset="night" /> */}
       <directionalLight
         ref={directionalLightRef}
         intensity={1.4}

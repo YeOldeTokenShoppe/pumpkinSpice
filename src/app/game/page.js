@@ -45,7 +45,20 @@ export default function GamePage() {
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
   const touchActionHandler = useRef(null);
+
+  // Detect mobile view
+  useEffect(() => {
+    const checkMobileView = () => {
+      setIsMobileView(window.innerWidth <= 768);
+    };
+    
+    checkMobileView();
+    window.addEventListener('resize', checkMobileView);
+    
+    return () => window.removeEventListener('resize', checkMobileView);
+  }, []);
 
   // Font loading effect (matching home3 page)
   useEffect(() => {
@@ -209,13 +222,13 @@ export default function GamePage() {
       <RespawnOverlay />
       
       {/* RL80 Logo - Top Left (only show when game is loaded) */}
-      {!isSceneLoading && (
+      {/* {!isSceneLoading && (
         <div style={{
           position: "fixed",
-          top: "20px", 
-          left: "20px",
+          top: isMobileView ? "10px" : "20px", 
+          left: isMobileView ? "10px" : "20px",
           borderRadius: "8px",
-          padding: "10px",
+          padding: isMobileView ? "5px" : "10px",
           pointerEvents: "auto",
           zIndex: 99999,
         }}>
@@ -224,7 +237,7 @@ export default function GamePage() {
             style={{
               position: "relative",
               fontFamily: "'UnifrakturMaguntia', 'serif', 'Arial', sans-serif",
-              fontSize: "3rem",
+              fontSize: isMobileView ? "1.5rem" : "3rem", // Much smaller on mobile
               color: "#ffffff",
               cursor: "pointer",
             }}
@@ -259,7 +272,7 @@ export default function GamePage() {
             })}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
