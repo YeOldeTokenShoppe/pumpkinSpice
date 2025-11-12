@@ -1469,7 +1469,7 @@ export default function Home3() {
               color: "#d4af37",
               fontFamily: 'UnifrakturCook, serif',
               textShadow: "3px 3px 5px #000, -1px -1px 5px pink",
-              fontSize: getResponsiveValue("4rem", "5rem", "6rem", "7rem"),
+              fontSize: getResponsiveValue("4rem", "5rem", "5rem", "5rem"),
               fontWeight: 900,
               lineHeight: 0.8,
               transform: isMobile ? "rotate(-5deg)" : "rotate(-8deg) skew(-15deg)",
