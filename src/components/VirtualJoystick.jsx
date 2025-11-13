@@ -6,7 +6,7 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
   const [isSprinting, setIsSprinting] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const joystickRef = useRef(null);
-  const touchId = useRef(null);
+  const activePointers = useRef(new Map());
   const centerPos = useRef({ x: 0, y: 0 });
   const lastOutput = useRef({ x: 0, y: 0 });
   
@@ -15,17 +15,17 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
   const sprintThreshold = maxDistance * 0.75; // Sprint when joystick is 75% extended
   const centerButtonSize = size * 0.25; // Center jump button size
 
-  useEffect(() => {
-    const updateCenterPosition = () => {
-      if (joystickRef.current) {
-        const rect = joystickRef.current.getBoundingClientRect();
-        centerPos.current = {
-          x: rect.left + rect.width / 2,
-          y: rect.top + rect.height / 2
-        };
-      }
-    };
+  const updateCenterPosition = () => {
+    if (joystickRef.current) {
+      const rect = joystickRef.current.getBoundingClientRect();
+      centerPos.current = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      };
+    }
+  };
 
+  useEffect(() => {
     updateCenterPosition();
     window.addEventListener('resize', updateCenterPosition);
     window.addEventListener('scroll', updateCenterPosition);
@@ -66,32 +66,48 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
     e.preventDefault();
     e.stopPropagation();
     
+    // Update center position on every start to handle dynamic positioning
+    updateCenterPosition();
+    
     // Don't check for center button here - allow dragging from anywhere
     // The jump button will handle its own events independently
     
+    let pointerId, clientX, clientY;
+    
     if (e.touches) {
-      // Touch event
-      touchId.current = e.touches[0].identifier;
-      const { x, y, normalizedX, normalizedY } = calculatePosition(
-        e.touches[0].clientX,
-        e.touches[0].clientY
-      );
-      setKnobPosition({ x, y });
-      setIsDragging(true);
+      // Touch event - only track if we're not already dragging
+      if (activePointers.current.size > 0) return;
       
-      const output = { x: normalizedX, z: -normalizedY };
-      lastOutput.current = output;
-      onMove(output);
+      const touch = e.touches[0];
+      pointerId = touch.identifier;
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+      activePointers.current.set(pointerId, { clientX, clientY });
+    } else if (e.pointerType !== undefined) {
+      // Pointer event (handles both mouse and touch on touch-enabled laptops)
+      if (activePointers.current.size > 0) return;
+      
+      pointerId = e.pointerId;
+      clientX = e.clientX;
+      clientY = e.clientY;
+      activePointers.current.set(pointerId, { clientX, clientY });
     } else {
-      // Mouse event (for testing)
-      const { x, y, normalizedX, normalizedY } = calculatePosition(e.clientX, e.clientY);
-      setKnobPosition({ x, y });
-      setIsDragging(true);
+      // Regular mouse event
+      if (activePointers.current.size > 0) return;
       
-      const output = { x: normalizedX, z: -normalizedY };
-      lastOutput.current = output;
-      onMove(output);
+      pointerId = 'mouse';
+      clientX = e.clientX;
+      clientY = e.clientY;
+      activePointers.current.set(pointerId, { clientX, clientY });
     }
+    
+    const { x, y, normalizedX, normalizedY } = calculatePosition(clientX, clientY);
+    setKnobPosition({ x, y });
+    setIsDragging(true);
+    
+    const output = { x: normalizedX, z: -normalizedY };
+    lastOutput.current = output;
+    onMove(output);
   };
   
   const handleJumpStart = (e) => {
@@ -111,23 +127,41 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
   };
 
   const handleMove = (e) => {
-    if (!isDragging) return;
+    if (!isDragging || activePointers.current.size === 0) return;
     
     e.preventDefault();
     e.stopPropagation();
 
     let clientX, clientY;
+    let found = false;
     
     if (e.touches) {
       // Find the correct touch
-      const touch = Array.from(e.touches).find(t => t.identifier === touchId.current);
-      if (!touch) return;
-      clientX = touch.clientX;
-      clientY = touch.clientY;
+      for (const touch of e.touches) {
+        if (activePointers.current.has(touch.identifier)) {
+          clientX = touch.clientX;
+          clientY = touch.clientY;
+          found = true;
+          break;
+        }
+      }
+    } else if (e.pointerType !== undefined) {
+      // Pointer event
+      if (activePointers.current.has(e.pointerId)) {
+        clientX = e.clientX;
+        clientY = e.clientY;
+        found = true;
+      }
     } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
+      // Regular mouse event
+      if (activePointers.current.has('mouse')) {
+        clientX = e.clientX;
+        clientY = e.clientY;
+        found = true;
+      }
     }
+    
+    if (!found) return;
 
     const { x, y, normalizedX, normalizedY } = calculatePosition(clientX, clientY);
     setKnobPosition({ x, y });
@@ -143,15 +177,33 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
     e.preventDefault();
     e.stopPropagation();
 
-    // Check if this is the correct touch ending
+    let shouldEnd = false;
+    
+    // Check if this is the correct touch/pointer ending
     if (e.changedTouches) {
-      const touch = Array.from(e.changedTouches).find(t => t.identifier === touchId.current);
-      if (!touch) return;
+      for (const touch of e.changedTouches) {
+        if (activePointers.current.has(touch.identifier)) {
+          activePointers.current.delete(touch.identifier);
+          shouldEnd = true;
+        }
+      }
+    } else if (e.pointerType !== undefined) {
+      if (activePointers.current.has(e.pointerId)) {
+        activePointers.current.delete(e.pointerId);
+        shouldEnd = true;
+      }
+    } else {
+      // Regular mouse event
+      if (activePointers.current.has('mouse')) {
+        activePointers.current.delete('mouse');
+        shouldEnd = true;
+      }
     }
+    
+    if (!shouldEnd) return;
 
     setIsDragging(false);
     setKnobPosition({ x: 0, y: 0 });
-    touchId.current = null;
     lastOutput.current = { x: 0, y: 0 };
     onMove({ x: 0, z: 0 });
     
@@ -184,17 +236,19 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
       document.addEventListener('touchend', handleGlobalEnd, { passive: false });
       document.addEventListener('touchcancel', handleGlobalEnd, { passive: false });
       
-      // Mouse events (for testing)
-      document.addEventListener('mousemove', handleGlobalMove);
-      document.addEventListener('mouseup', handleGlobalEnd);
+      // Pointer events (handles both mouse and touch)
+      document.addEventListener('pointermove', handleGlobalMove, { passive: false });
+      document.addEventListener('pointerup', handleGlobalEnd, { passive: false });
+      document.addEventListener('pointercancel', handleGlobalEnd, { passive: false });
     }
 
     return () => {
       document.removeEventListener('touchmove', handleGlobalMove);
       document.removeEventListener('touchend', handleGlobalEnd);
       document.removeEventListener('touchcancel', handleGlobalEnd);
-      document.removeEventListener('mousemove', handleGlobalMove);
-      document.removeEventListener('mouseup', handleGlobalEnd);
+      document.removeEventListener('pointermove', handleGlobalMove);
+      document.removeEventListener('pointerup', handleGlobalEnd);
+      document.removeEventListener('pointercancel', handleGlobalEnd);
     };
   }, [isDragging]);
 
@@ -203,7 +257,7 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
       ref={joystickRef}
       className="virtual-joystick"
       onTouchStart={handleStart}
-      onMouseDown={handleStart}
+      onPointerDown={handleStart}
       style={{
         position: 'absolute',
         width: `${size}px`,

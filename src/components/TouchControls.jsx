@@ -16,17 +16,31 @@ export const TouchControls = ({ onAction, style }) => {
   useEffect(() => {
     const checkMobile = () => {
       const width = window.innerWidth;
-      const hasTouch = 'ontouchstart' in window;
+      const hasTouch = 'ontouchstart' in window || 
+                      navigator.maxTouchPoints > 0 ||
+                      navigator.msMaxTouchPoints > 0;
+      
+      // Better iPad Pro detection
+      const isIPad = navigator.userAgent.match(/iPad/i) || 
+                    (navigator.userAgentData?.platform === 'macOS' && navigator.maxTouchPoints > 1) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       
       // Detect if it's a tablet (wider than phone but still touch)
       // iPad Pro can be up to 1366px wide
-      const isTabletDevice = width > 600 && hasTouch;
-      const isMobileDevice = width <= 768 || hasTouch;
+      const isTabletDevice = (width > 600 && hasTouch) || isIPad;
+      const isMobileDevice = width <= 768 || hasTouch || isIPad;
       
       setIsTablet(isTabletDevice);
       setIsMobile(isMobileDevice);
       
-      console.log('Device detection:', { width, isTablet: isTabletDevice, isMobile: isMobileDevice });
+      console.log('Device detection:', { 
+        width, 
+        isTablet: isTabletDevice, 
+        isMobile: isMobileDevice,
+        isIPad,
+        hasTouch,
+        maxTouchPoints: navigator.maxTouchPoints
+      });
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
