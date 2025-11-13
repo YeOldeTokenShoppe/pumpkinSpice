@@ -143,18 +143,19 @@ export const CharacterController = ({ onTouchAction }) => {
 
 
   useFrame(({ camera, mouse }) => {
+    // PERFORMANCE: Exit immediately during lighting action
+    if (isLightingAction) {
+      // Only update essential position for candle system
+      if (character.current) {
+        character.current.getWorldPosition(GameState.characterPosition);
+      }
+      return; // Skip EVERYTHING else
+    }
+    
     if (rb.current) {
       // Store rigid body reference in GameState for collision detection
       GameState.characterRigidBody = rb.current;
       
-      // PERFORMANCE: Skip expensive calculations during lighting action
-      if (isLightingAction) {
-        // Only update essential position data during lighting
-        character.current.getWorldPosition(GameState.characterPosition);
-        GameState.characterY = Math.round(GameState.characterPosition.y);
-        GameState.characterZ = Math.round(GameState.characterPosition.z);
-        return; // Skip all other expensive calculations
-      }
       const vel = rb.current.linvel();
 
       const movement = {
@@ -396,17 +397,16 @@ export const CharacterController = ({ onTouchAction }) => {
         
         // IMMEDIATELY set lighting action and stop all movement to prevent interference
         setIsLightingAction(true);
-        vel.x = 0;
-        vel.z = 0;
-        rb.current.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
-        console.log('🔥 LIGHTING STARTED - Movement blocked immediately');
+        
+        // Stop movement completely
+        if (rb.current) {
+          const currentVel = rb.current.linvel();
+          rb.current.setLinvel({ x: 0, y: currentVel.y, z: 0 }, true);
+        }
         
         // Check for nearby candles first, but don't light them yet
-        if (GameState.lightNearestCandle) {
-          console.log('🕯️ Checking for nearby candles at character position:', GameState.characterPosition);
-          
-          // First, find the nearest candle without lighting it
-          const nearestCandleInfo = GameState.findNearestCandle ? GameState.findNearestCandle() : null;
+        if (GameState.findNearestCandle) {
+          const nearestCandleInfo = GameState.findNearestCandle();
           
           if (nearestCandleInfo && nearestCandleInfo.success) {
             // Calculate direction to candle and check if character is facing it
@@ -424,7 +424,7 @@ export const CharacterController = ({ onTouchAction }) => {
             while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
             
             // Allow lighting only if facing within 15 degrees (π/12 radians) of the candle  
-            const maxAngleDiff = Math.PI / 12; // 15 degrees
+            const maxAngleDiff = Math.PI / 6; // 20 degrees
             
             if (Math.abs(angleDiff) <= maxAngleDiff) {
               console.log("✅ Character is facing candle - will light it at frame 55!");
@@ -432,13 +432,15 @@ export const CharacterController = ({ onTouchAction }) => {
               // Set animation and prevent movement override by setting it immediately
               setAnimation("Light");
               
-              // Delay lighting to frame 55 (55/60 ≈ 0.92 seconds at 60fps)
+              // Delay lighting to frame 75 (75/60 = 1.25 seconds at 60fps)
               setTimeout(() => {
-                const result = GameState.lightNearestCandle();
-                if (result.success) {
-                  console.log("🔥 Candle lit at animation contact point!");
+                if (GameState.lightNearestCandle) {
+                  const result = GameState.lightNearestCandle();
+                  if (result && result.success) {
+                    console.log("🔥 Candle lit!");
+                  }
                 }
-              }, 1300); // 55 frames at 60fps = 916ms, rounded to 920ms
+              }, 1250); // 75 frames at 60fps = 1.25s
             } else {
               console.log("❌ Character not facing candle - turn toward it first!", 
                 `Angle diff: ${(angleDiff * 180 / Math.PI).toFixed(1)}°`);
@@ -463,7 +465,7 @@ export const CharacterController = ({ onTouchAction }) => {
           if (!isFalling.current && !isJumping) {
             setAnimation("idle");
           }
-        }, 2500); // 2.5 seconds to allow full 112-frame animation
+        }, 1900); // 112 frames at 60fps = 1.87s
       }
 
       // Reset light pressed flag when key is released (but allow animation to complete)
@@ -626,7 +628,7 @@ export const CharacterController = ({ onTouchAction }) => {
   linearDamping={0.5}  // Lower damping for better movement
 >
       <group ref={container}>
-        <group ref={cameraTarget} position-z={1.5} />
+        <group ref={cameraTarget} position-z={24.5} />
         <group 
           ref={cameraPosition} 
           position-y={3.5} 

@@ -1,4 +1,4 @@
-import { OrthographicCamera, Environment, Stats} from "@react-three/drei";
+import { OrthographicCamera, Environment, Stats, OrbitControls} from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { useRef, useEffect, useState } from "react";
 import { DirectionalLightHelper } from "three";
@@ -12,6 +12,9 @@ import { CandleSystem } from "./CandleSystem";
 import { Map } from "./Map";
 import { MonsterSystem } from "./MonsterSystem";
 import { DemonCharacter } from "./DemonCharacter";
+import { ZoneLighting } from "./ZoneLighting";
+
+
 
 
 export const maps = {
@@ -99,6 +102,9 @@ export const Experience = ({ onTouchAction, onLoad }) => {
       <Stats 
         showPanel={0} // 0: fps, 1: ms, 2: mb
       />
+      
+      {/* Zone-based lighting system */}
+      <ZoneLighting />
  
       {/* <OrbitControls /> */}
       <fog attach="fog" args={["#4a9fbb", 5, 35]} />
@@ -126,6 +132,22 @@ export const Experience = ({ onTouchAction, onLoad }) => {
           attach={"shadow-camera"}
         />
       </directionalLight>
+   {/* <OrbitControls 
+                position={[0, 0, 80]} 
+                enablePan={true}
+                enableZoom={true}
+                zoomSpeed={0.2}
+                enableDamping={true}
+                dampingFactor={0.1}
+                minDistance={1}
+                maxDistance={280}
+                minPolarAngle={0}
+                maxPolarAngle={Math.PI / 1.9}
+                zoomToCursor={true}
+                autoRotate={false}
+                autoRotateSpeed={0.2}
+                target={[0, 0, 85]}
+              /> */}
       {/* <spotLight
         ref={spotlightRef}
         intensity={1.5}
@@ -146,7 +168,8 @@ export const Experience = ({ onTouchAction, onLoad }) => {
           model={`models/${map}.glb`}
           onLoad={handleMapLoad}
         />
-        {isMapLoaded && <CharacterController onTouchAction={onTouchAction} />}
+        {isMapLoaded }
+          {isMapLoaded && <CharacterController onTouchAction={onTouchAction} />}
         {/* {isMapLoaded && (
           <DemonCharacter 
             position={[0, -12, -3]} 

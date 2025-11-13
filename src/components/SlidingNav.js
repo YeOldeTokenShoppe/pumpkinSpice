@@ -11,6 +11,7 @@ const SlidingNav = () => {
   const [viewMode, setViewMode] = useState('desktop');
   const [isMobile, setIsMobile] = useState(false);
   const [scanlinePos, setScanlinePos] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const navItems = [
     { id: '00', date: 'ICON ON I-80', title: "ROADMAP", path: '/', thumbnail: '/I80.png' },
@@ -117,14 +118,24 @@ const SlidingNav = () => {
   const canGoPrev = () => currentPage > 0;
 
   const handleNext = () => {
-    if (canGoNext()) {
-      setCurrentPage(currentPage + 1);
+    if (canGoNext() && !isTransitioning) {
+      setIsTransitioning(true);
+      // Glitch effect duration
+      setTimeout(() => {
+        setCurrentPage(currentPage + 1);
+        setTimeout(() => setIsTransitioning(false), 300);
+      }, 150);
     }
   };
 
   const handlePrev = () => {
-    if (canGoPrev()) {
-      setCurrentPage(currentPage - 1);
+    if (canGoPrev() && !isTransitioning) {
+      setIsTransitioning(true);
+      // Glitch effect duration  
+      setTimeout(() => {
+        setCurrentPage(currentPage - 1);
+        setTimeout(() => setIsTransitioning(false), 300);
+      }, 150);
     }
   };
 
@@ -381,54 +392,125 @@ const SlidingNav = () => {
           ‹
         </button>
 
-        {/* Tabs Container */}
+        {/* Tabs Container with Carousel Effect */}
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '15px',
             overflow: 'hidden',
             flex: 1,
             position: 'relative',
-            zIndex: 3
+            zIndex: 3,
+            height: tabDimensions.height
           }}
         >
-          {getVisibleTabs().map((item, visibleIndex) => {
-            const actualIndex = navItems.findIndex(navItem => navItem.id === item.id);
-            const isSelected = actualIndex === selectedIndex;
+          {/* Glitch overlay during transitions */}
+          {isTransitioning && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: `
+                repeating-linear-gradient(
+                  90deg,
+                  transparent 0px,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.1) 2px,
+                  rgba(0, 255, 0, 0.1) 4px
+                ),
+                repeating-linear-gradient(
+                  0deg,
+                  transparent 0px,
+                  rgba(255, 0, 0, 0.05) 1px,
+                  transparent 2px
+                )
+              `,
+              zIndex: 10,
+              animation: 'glitchFlicker 0.15s infinite',
+              pointerEvents: 'none'
+            }} />
+          )}
           
-            return (
-              <Link key={item.id} href={item.path}>
-                <div
-                  onClick={() => setSelectedIndex(actualIndex)}
-                  style={{
+          {/* Sliding tabs container */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '15px',
+              transition: isTransitioning 
+                ? 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), filter 0.15s ease'
+                : 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
+              transform: `translateX(calc(-${currentPage * (parseInt(tabDimensions.width) + 15) * tabDimensions.visibleCount}px))`,
+              filter: isTransitioning ? 'blur(1px) brightness(1.2) contrast(1.1)' : 'none',
+              width: 'max-content'
+            }}
+          >
+            {navItems.map((item, index) => {
+              const isSelected = index === selectedIndex;
+          
+              return (
+                <Link key={item.id} href={item.path} style={{ textDecoration: 'none' }}>
+                  <div
+                    onClick={() => setSelectedIndex(index)}
+                    style={{
                     position: 'relative',
                     width: tabDimensions.width,
                     flex: 'none',
                     height: tabDimensions.height,
-                    background: isSelected 
-                      ? 'linear-gradient(135deg, rgba(0, 255, 0, 0.15), rgba(0, 20, 0, 0.3))'
-                      : 'linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 10, 0, 0.4))',
-                    backdropFilter: 'blur(10px)',
-                    borderRadius: '0',
                     padding: tabDimensions.padding,
                     display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    boxShadow: isSelected 
-                      ? '0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 30px rgba(0, 255, 0, 0.1)'
-                      : '0 0 10px rgba(0, 0, 0, 0.5)',
-                    border: isSelected 
-                      ? '2px solid #00ff00'
-                      : '1px solid rgba(0, 255, 0, 0.3)',
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     cursor: 'pointer',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     transform: isSelected ? 'translateY(-5px)' : 'translateY(0)',
-                    clipPath: "polygon(95% 0%, 100% 20%, 100% 100%, 0 100%, 0 0)"
+                    clipPath: isSelected 
+                      ? "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))"
+                      : "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))"
                   }}
                 >
+                  {/* Border element that follows the clip path */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-3px',
+                    left: '-3px',
+                    right: '-3px', 
+                    bottom: '-3px',
+                    background: isSelected ? '#00ff00' : 'rgba(0, 255, 255, 0.6)',
+                    clipPath: isSelected 
+                      ? "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))"
+                      : "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))",
+                    zIndex: -1
+                  }} />
+                  {/* Background image layer */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `url(${item.thumbnail})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    zIndex: 0
+                  }} />
+
+                  {/* Color overlay with cyberpunk effects */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: isSelected 
+                      ? 'linear-gradient(135deg, rgba(0, 255, 0, 0.3), rgba(0, 20, 0, 0.5))'
+                      : 'linear-gradient(135deg, rgba(0, 150, 150, 0.4), rgba(0, 100, 120, 0.6))',
+                    pointerEvents: 'none',
+                    zIndex: 1
+                  }} />
+
                   {/* Terminal scanlines overlay */}
                   <div style={{
                     position: 'absolute',
@@ -446,43 +528,83 @@ const SlidingNav = () => {
                       )
                     `,
                     pointerEvents: 'none',
-                    zIndex: 1
+                    zIndex: 2
                   }} />
 
-                  {/* Green selector bar */}
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '4px',
-                      background: isSelected 
-                        ? 'linear-gradient(90deg, #00ff00, #00ff00)'
-                        : 'rgba(0, 255, 0, 0.1)',
-                      transition: 'all 0.3s ease',
-                      boxShadow: isSelected ? '0 0 20px rgba(0, 255, 0, 0.8)' : 'none',
-                      zIndex: 2
-                    }}
-                  />
+                  {/* Glow effect layer */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    boxShadow: isSelected 
+                      ? '0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 30px rgba(0, 255, 0, 0.1)'
+                      : '0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.1)',
+                    pointerEvents: 'none',
+                    zIndex: 2
+                  }} />
                   
-                  {/* Thumbnail image with cyber effects */}
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      marginBottom: '8px',
-                      borderRadius: '0',
-                      overflow: 'hidden',
-                      border: `2px solid ${isSelected ? '#00ff00' : 'rgba(0, 255, 0, 0.3)'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: isSelected ? '0 0 15px rgba(0, 255, 0, 0.6)' : 'none',
-                      position: 'relative',
-                      zIndex: 2
-                    }}
-                  >
+                  {/* Left side text content */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
+                    flex: 1,
+                    zIndex: 3,
+                    position: 'relative'
+                  }}>
+                    {/* Tab number */}
+                    <span
+                      style={{
+                        color: isSelected ? '#00ff00' : '#ffffff',
+                        fontSize: tabDimensions.fontSize.number,
+                        fontWeight: 'bold',
+                        marginBottom: '2px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '2px',
+                        transition: 'all 0.3s ease',
+                        textShadow: isSelected ? '0 0 15px #00ff00' : '2px 2px 4px rgba(0, 0, 0, 0.8)',
+                      }}
+                    >
+                      {item.id}
+                    </span>
+                    
+                    {/* Tab title */}
+                    <span
+                      style={{
+                        color: '#ffffff',
+                        fontSize: tabDimensions.fontSize.title,
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1.5px',
+                        fontFamily: 'monospace',
+                        transition: 'all 0.3s ease',
+                        textAlign: 'left',
+                        lineHeight: '1.2',
+                        textShadow: isSelected ? '0 0 10px rgba(255, 255, 255, 0.5)' : '2px 2px 4px rgba(0, 0, 0, 0.8)',
+                      }}
+                    >
+                      {item.title}
+                    </span>
+                  </div>
+
+                  {/* Right side image */}
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '0',
+                    overflow: 'hidden',
+                    border: `2px solid ${isSelected ? '#00ff00' : 'rgba(0, 255, 255, 0.6)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: isSelected ? '0 0 15px rgba(0, 255, 0, 0.6)' : 'none',
+                    position: 'relative',
+                    zIndex: 3,
+                    flexShrink: 0
+                  }}>
                     <img
                       src={item.thumbnail}
                       alt={item.title}
@@ -492,48 +614,10 @@ const SlidingNav = () => {
                         objectFit: 'cover',
                         filter: isSelected 
                           ? 'brightness(1.3) contrast(1.2) saturate(1.1) drop-shadow(0 0 5px rgba(0, 255, 0, 0.5))'
-                          : 'brightness(0.9) contrast(1.1) saturate(0.8)'
+                          : 'brightness(1.1) contrast(1.15) saturate(1.0)'
                       }}
                     />
                   </div>
-                  
-                  {/* Tab number */}
-                  <span
-                    style={{
-                      color: isSelected ? '#00ff00' : 'rgba(0, 255, 0, 0.6)',
-                      fontSize: tabDimensions.fontSize.number,
-                      fontWeight: 'bold',
-                      marginBottom: '4px',
-                      fontFamily: 'monospace',
-                      letterSpacing: '2px',
-                      transition: 'all 0.3s ease',
-                      textShadow: isSelected ? '0 0 15px #00ff00' : 'none',
-                      position: 'relative',
-                      zIndex: 2
-                    }}
-                  >
-                    {item.id}
-                  </span>
-                  
-                  {/* Tab title */}
-                  <span
-                    style={{
-                      color: isSelected ? '#ffffff' : 'rgba(0, 255, 0, 0.7)',
-                      fontSize: tabDimensions.fontSize.title,
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1.5px',
-                      fontFamily: 'monospace',
-                      transition: 'all 0.3s ease',
-                      textAlign: 'center',
-                      lineHeight: '1.2',
-                      textShadow: isSelected ? '0 0 10px rgba(255, 255, 255, 0.5)' : 'none',
-                      position: 'relative',
-                      zIndex: 2
-                    }}
-                  >
-                    {item.title}
-                  </span>
 
                   {/* Status indicator for selected tab */}
                   {isSelected && (
@@ -551,10 +635,11 @@ const SlidingNav = () => {
                       [ACTIVE]
                     </div>
                   )}
-                </div>
-              </Link>
-            );
-          })}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
         {/* Right Arrow */}
@@ -599,11 +684,65 @@ const SlidingNav = () => {
           opacity: 0.5,
           letterSpacing: '1px'
         }}>
-          PAGE {currentPage + 1}/{getTotalPages()} :: {getVisibleTabs().length} NODES.ACTIVE
+          PAGE {currentPage + 1}/{getTotalPages()} :: {tabDimensions.visibleCount} OF {navItems.length} NODES.ACTIVE
         </div>
       </div>
 
       <style jsx>{`
+        .cyber-tab {
+          clip-path: polygon(
+            0 0, 
+            calc(100% - var(--corner-size)) 0, 
+            100% var(--corner-size), 
+            100% 100%, 
+            var(--corner-size) 100%, 
+            0 calc(100% - var(--corner-size))
+          );
+        }
+
+        .cyber-tab::before {
+          content: '';
+          position: absolute;
+          top: -3px;
+          left: -3px;
+          right: -3px;
+          bottom: -3px;
+          background: var(--border-color);
+          clip-path: polygon(
+            0 0, 
+            calc(100% - var(--corner-size)) 0, 
+            100% var(--corner-size), 
+            100% 100%, 
+            var(--corner-size) 100%, 
+            0 calc(100% - var(--corner-size))
+          );
+          z-index: -1;
+        }
+
+        .cyber-tab::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          box-shadow: 0 0 15px var(--glow-color), inset 0 0 15px var(--glow-color);
+          pointer-events: none;
+          clip-path: polygon(
+            0 0, 
+            calc(100% - var(--corner-size)) 0, 
+            100% var(--corner-size), 
+            100% 100%, 
+            var(--corner-size) 100%, 
+            0 calc(100% - var(--corner-size))
+          );
+          z-index: 2;
+        }
+
+        .cyber-tab.selected::after {
+          box-shadow: 0 0 30px var(--glow-color), inset 0 0 30px var(--glow-color);
+        }
+
         @keyframes pulse {
           0%, 100% {
             opacity: 1;
@@ -618,6 +757,20 @@ const SlidingNav = () => {
         @keyframes scanlines {
           0% { transform: translateY(0px); }
           100% { transform: translateY(4px); }
+        }
+        
+        @keyframes glitchFlicker {
+          0% { opacity: 0.8; transform: translateX(0px); }
+          10% { opacity: 0.6; transform: translateX(-2px); }
+          20% { opacity: 0.9; transform: translateX(2px); }
+          30% { opacity: 0.4; transform: translateX(-1px); }
+          40% { opacity: 0.7; transform: translateX(1px); }
+          50% { opacity: 0.8; transform: translateX(0px); }
+          60% { opacity: 0.5; transform: translateX(-1px); }
+          70% { opacity: 0.9; transform: translateX(1px); }
+          80% { opacity: 0.6; transform: translateX(-2px); }
+          90% { opacity: 0.8; transform: translateX(2px); }
+          100% { opacity: 0.7; transform: translateX(0px); }
         }
       `}</style>
     </div>

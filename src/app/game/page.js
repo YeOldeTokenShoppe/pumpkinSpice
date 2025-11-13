@@ -375,7 +375,7 @@ export default function GamePage() {
       )}
       
       {/* RL80 Logo - Top Left (only show when game is loaded) */}
-      {/* {!isSceneLoading && (
+      {!isSceneLoading && (
         <div style={{
           position: "fixed",
           top: isMobileView ? "10px" : "20px", 
@@ -425,7 +425,7 @@ export default function GamePage() {
             })}
           </div>
         </div>
-      )} */}
+      )}
     </div>
   );
 }

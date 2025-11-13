@@ -3,6 +3,7 @@ import { VirtualJoystick } from './VirtualJoystick';
 
 export const TouchControls = ({ onAction, style }) => {
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const [activeActions, setActiveActions] = useState({
     jump: false,
     light: false,
@@ -14,7 +15,18 @@ export const TouchControls = ({ onAction, style }) => {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+      const width = window.innerWidth;
+      const hasTouch = 'ontouchstart' in window;
+      
+      // Detect if it's a tablet (wider than phone but still touch)
+      // iPad Pro can be up to 1366px wide
+      const isTabletDevice = width > 600 && hasTouch;
+      const isMobileDevice = width <= 768 || hasTouch;
+      
+      setIsTablet(isTabletDevice);
+      setIsMobile(isMobileDevice);
+      
+      console.log('Device detection:', { width, isTablet: isTabletDevice, isMobile: isMobileDevice });
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -142,7 +154,7 @@ export const TouchControls = ({ onAction, style }) => {
         .joystick-container {
           position: absolute;
           bottom: 60px;
-          left: 40px;
+          left: ${isTablet ? '45%' : '40px'};
           pointer-events: auto;
           display: flex;
           align-items: flex-end;
@@ -152,7 +164,7 @@ export const TouchControls = ({ onAction, style }) => {
         .action-buttons {
           position: absolute;
           bottom: 60px;
-          right: 40px;
+          right: ${isTablet ? '20%' : '40px'};
           pointer-events: auto;
           display: flex;
           flex-direction: column;
@@ -274,14 +286,15 @@ export const TouchControls = ({ onAction, style }) => {
         @media (orientation: landscape) and (max-height: 600px) {
           .joystick-container {
             bottom: 30px;
-            left: 30px;
+            left: ${isTablet ? '20%' : '30px'};
           }
           
           .action-buttons {
             bottom: 30px;
-            right: 30px;
+            right: ${isTablet ? '20%' : '30px'};
           }
         }
+        
       `}</style>
     </div>
   );

@@ -1100,6 +1100,28 @@ export const Map = ({ model, onLoad, ...props }) => {
     }
   }, [platformScene, obstacleScene, onLoad]);
   
+  // Disable original model lights for performance (we use ScriptedLightingSystem instead)
+  useEffect(() => {
+    if (!obstacleScene) return;
+    
+    let lightCount = 0;
+    let spotLightCount = 0;
+    let pointLightCount = 0;
+    
+    obstacleScene.traverse((child) => {
+      if (child.isLight) {
+        child.visible = false; // Disable original lights
+        lightCount++;
+        if (child.type === 'SpotLight') spotLightCount++;
+        if (child.type === 'PointLight') pointLightCount++;
+      }
+    });
+    
+    if (lightCount > 0) {
+      console.log(`🔇 Disabled ${lightCount} original model lights (${spotLightCount} spots, ${pointLightCount} points) - using ScriptedLightingSystem instead`);
+    }
+  }, [obstacleScene]);
+  
   // Find obstacles in the obstacle scene
   useEffect(() => {
     if (!obstacleScene) return;
