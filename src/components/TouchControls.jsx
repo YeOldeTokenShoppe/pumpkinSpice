@@ -12,6 +12,7 @@ export const TouchControls = ({ onAction, style }) => {
     lookUp: false
   });
   const joystickActive = useRef(false);
+  const lightActionTimeout = useRef(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -49,6 +50,12 @@ export const TouchControls = ({ onAction, style }) => {
 
   // Special handler for light action only
   const handleLightAction = () => {
+    // Prevent rapid firing with debounce
+    if (activeActions.light || lightActionTimeout.current) {
+      console.log('⏸️ Light button blocked - animation in progress');
+      return;
+    }
+    
     onAction('light', true);
     
     // Visual feedback for light only
@@ -56,6 +63,12 @@ export const TouchControls = ({ onAction, style }) => {
       ...prev, 
       light: true 
     }));
+    
+    // Set debounce timeout - matches animation duration (50 frames ≈ 1 second)
+    lightActionTimeout.current = setTimeout(() => {
+      lightActionTimeout.current = null;
+      console.log('🔓 Light button ready again');
+    }, 1000); // Match the animation duration (50 frames)
     
     // Immediate release like L-key to prevent movement interference
     setTimeout(() => {
@@ -119,8 +132,14 @@ export const TouchControls = ({ onAction, style }) => {
         <div className="primary-action">
           <button
             className={`action-btn light-jump-btn ${activeActions.jump || activeActions.light ? 'active' : ''}`}
-            onTouchStart={() => handleLightAction()}
-            onMouseDown={() => handleLightAction()}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              handleLightAction();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleLightAction();
+            }}
           >
             <div className="btn-icon">🕯️⚡</div>
             <div className="btn-label">Light</div>

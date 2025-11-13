@@ -2,6 +2,7 @@ import { useKeyboardControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { CapsuleCollider, BallCollider, ConvexHullCollider, TrimeshCollider, CuboidCollider, RigidBody, } from "@react-three/rapier";
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { MathUtils, Vector3 } from "three";
 import { degToRad } from "three/src/math/MathUtils.js";
 import { GameState } from "../lib/GameState";
@@ -55,17 +56,26 @@ export const CharacterController = ({ onTouchAction }) => {
   }, [onTouchAction, handleTouchAction]);
 
   const [animation, setAnimationRaw] = useState("idle");
+  const animationRef = useRef("idle"); // Immediate reference for animation
+  const animationCounter = useRef(0); // Counter to force remount only on animation change
   
   // Clean wrapper without spam logs
   const setAnimation = (newAnimation) => {
-    if (newAnimation === "Light" || newAnimation === "light") {
-      console.log(`🎬 LIGHT ANIMATION SET: "${newAnimation}"`);
+    // Normalize to lowercase for Character component
+    const normalized = newAnimation.toLowerCase();
+    if (normalized !== animationRef.current) { // Only update if actually changing
+      if (normalized === "light") {
+        console.log(`🎬 LIGHT ANIMATION SET: "${normalized}"`);
+      }
+      animationRef.current = normalized; // Update ref immediately
+      animationCounter.current++; // Increment counter to force remount
+      setAnimationRaw(normalized);
     }
-    setAnimationRaw(newAnimation);
   };
   const [isLightingAction, setIsLightingAction] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const wasLightPressed = useRef(false);
+  const lightingActionId = useRef(0);  // Track which lighting action is current
   // Removed originalRotation and spinStartTime - no longer needed for spinning torch
 
   const characterRotationTarget = useRef(0);
@@ -143,16 +153,24 @@ export const CharacterController = ({ onTouchAction }) => {
 
 
   useFrame(({ camera, mouse }) => {
-    // PERFORMANCE: Exit immediately during lighting action
-    if (isLightingAction) {
-      // Only update essential position for candle system
-      if (character.current) {
-        character.current.getWorldPosition(GameState.characterPosition);
-      }
-      return; // Skip EVERYTHING else
+    // Always update character position for candle system
+    if (character.current) {
+      character.current.getWorldPosition(GameState.characterPosition);
     }
     
-    if (rb.current) {
+    // Check for light button BEFORE early exit so it can be queued
+    const touchControls = getTouchControls();
+    const lightPressed = get().light || touchControls.light;
+    
+    // Reset light pressed flag when released (must happen before early exit)
+    if (!lightPressed) {
+      wasLightPressed.current = false;
+    }
+    
+    // During lighting action, skip movement but continue rendering
+    // (removed early return to allow animation updates)
+    
+    if (rb.current && !isLightingAction) {
       // Store rigid body reference in GameState for collision detection
       GameState.characterRigidBody = rb.current;
       
@@ -163,8 +181,7 @@ export const CharacterController = ({ onTouchAction }) => {
         z: 0,
       };
 
-      // Combine keyboard and touch controls
-      const touchControls = getTouchControls();
+      // Get touch movement (touchControls already defined above)
       const touchMovement = getMovementVector();
       
       // Debug touch inputs during lighting
@@ -390,8 +407,8 @@ export const CharacterController = ({ onTouchAction }) => {
       }
 
       // Check for light key press (only trigger once per press)
-      const lightPressed = get().light || touchControls.light;
-      if (lightPressed && !wasLightPressed.current) {
+      // lightPressed already defined above before early exit
+      if (lightPressed && !wasLightPressed.current && !isLightingAction) {
         wasLightPressed.current = true;
         console.log('🔥 LIGHTING ACTION - touchLight:', touchControls.light, 'keyLight:', get().light);
         
@@ -407,6 +424,7 @@ export const CharacterController = ({ onTouchAction }) => {
         // Check for nearby candles first, but don't light them yet
         if (GameState.findNearestCandle) {
           const nearestCandleInfo = GameState.findNearestCandle();
+          console.log('🕯️ Finding nearest candle:', nearestCandleInfo);
           
           if (nearestCandleInfo && nearestCandleInfo.success) {
             // Calculate direction to candle and check if character is facing it
@@ -429,10 +447,15 @@ export const CharacterController = ({ onTouchAction }) => {
             if (Math.abs(angleDiff) <= maxAngleDiff) {
               console.log("✅ Character is facing candle - will light it at frame 55!");
               
-              // Set animation and prevent movement override by setting it immediately
-              setAnimation("Light");
+              // Increment action ID for this specific lighting action
+              const thisActionId = ++lightingActionId.current;
               
-              // Delay lighting to frame 75 (75/60 = 1.25 seconds at 60fps)
+              // Set animation for all devices (mobile and desktop)
+              console.log("Setting Light animation, current:", animation);
+              setAnimation("Light");
+              console.log("Light animation set, new should be: light");
+              
+              // Delay lighting to around frame 25-30 (midway through 50-frame animation)
               setTimeout(() => {
                 if (GameState.lightNearestCandle) {
                   const result = GameState.lightNearestCandle();
@@ -440,7 +463,21 @@ export const CharacterController = ({ onTouchAction }) => {
                     console.log("🔥 Candle lit!");
                   }
                 }
-              }, 1250); // 75 frames at 60fps = 1.25s
+              }, 500); // Light candle midway through animation
+              
+              // Reset after animation completes (50 frames at 30fps = 1.67s, at 60fps = 0.83s)
+              // Using 1 second to cover both frame rates
+              setTimeout(() => {
+                if (lightingActionId.current === thisActionId) {
+                  setIsLightingAction(false);
+                  if (!isFalling.current && !isJumping) {
+                    setAnimation("idle");
+                  }
+                  console.log("🔓 Lighting action complete - movement enabled");
+                } else {
+                  console.log("⏭️ Skipping reset - newer lighting action in progress");
+                }
+              }, 1000); // 50 frames ≈ 1 second average
             } else {
               console.log("❌ Character not facing candle - turn toward it first!", 
                 `Angle diff: ${(angleDiff * 180 / Math.PI).toFixed(1)}°`);
@@ -456,22 +493,18 @@ export const CharacterController = ({ onTouchAction }) => {
           // No candle system available - play animation for testing
           console.log("⚠️ No candle system - playing animation for testing");
           setAnimation("Light");
+          
+          // Reset after animation completes
+          setTimeout(() => {
+            setIsLightingAction(false);
+            if (!isFalling.current && !isJumping) {
+              setAnimation("idle");
+            }
+          }, 1900);
         }
-        
-        // Auto-reset lighting action after animation (112 frames ≈ 1.87s at 60fps)
-        setTimeout(() => {
-          // Auto-reset complete
-          setIsLightingAction(false);
-          if (!isFalling.current && !isJumping) {
-            setAnimation("idle");
-          }
-        }, 1900); // 112 frames at 60fps = 1.87s
       }
 
-      // Reset light pressed flag when key is released (but allow animation to complete)
-      if (!lightPressed && !isLightingAction) {
-        wasLightPressed.current = false;
-      }
+      // Light button tracking now happens above before early exit
 
       // Note: Removed immediate manual reset - let timeout handle animation completion
 
@@ -636,10 +669,11 @@ export const CharacterController = ({ onTouchAction }) => {
         />
         <group ref={character} userData={{ isCharacter: true }}>
           <Character 
+            key={`anim-${animationCounter.current}`} // Force remount only when animation changes
             scale={.75} 
             position-y={1.4} 
             position-z={0}
-            animation={animation}
+            animation={animationRef.current} // Use ref for immediate value
             lightingAction={isLightingAction}
           />
         </group>

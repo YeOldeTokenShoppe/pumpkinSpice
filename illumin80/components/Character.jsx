@@ -6,7 +6,8 @@ Command: npx gltfjsx@6.2.3 public/models/character.glb -o src/components/Charact
 import { useAnimations, useGLTF } from "@react-three/drei";
 import React, { useEffect, useRef } from "react";
 
-export function Character({ animation, ...props }) {
+export function Character({ animation, lightingAction, ...props }) {
+  console.log('Character component render - animation:', animation, 'lightingAction:', lightingAction);
   const group = useRef();
   const { nodes, materials, animations } = useGLTF("/models/MeshTintCharacter.glb");
   const { actions } = useAnimations(animations, group);
@@ -31,7 +32,7 @@ export function Character({ animation, ...props }) {
       if (animation === 'cast') animationName = 'Casting';
       if (animation === 'light') animationName = 'Light';
       
-      console.log('MeshTintCharacter: Transitioning to animation:', animationName, 'for requested:', animation);
+      console.log('MeshTintCharacter: Transitioning to animation:', animationName, 'for requested:', animation, 'lightingAction:', lightingAction);
       
       if (actions[animationName]) {
         // Crossfade: fade out all other animations while fading in the new one

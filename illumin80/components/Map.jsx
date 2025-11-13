@@ -1378,28 +1378,66 @@ export const Map = ({ model, onLoad, ...props }) => {
     
     // Delayed access to let the actions initialize properly
     setTimeout(() => {
+      // Check if mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                       (navigator.maxTouchPoints > 0 && window.innerWidth <= 1024) ||
+                       ('ontouchstart' in window) ||
+                       (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+      
       if (platformActions) {
         const actionKey = Object.keys(platformActions)[0];
+        console.log('Platform animation found:', actionKey);
         if (actionKey) {
           const action = platformActions[actionKey];
           if (action && typeof action.play === 'function') {
-            action.reset();
-            action.setLoop(THREE.LoopRepeat, Infinity);
-            action.play();
-            // console.log('🔥 Flame animation started');
+            if (!isMobile) {
+              action.reset();
+              action.setLoop(THREE.LoopRepeat, Infinity);
+              action.play();
+              console.log('🔥 Flame animation started (desktop)');
+            } else {
+              action.stop();
+              console.log('📱 Flame animation stopped (mobile)');
+            }
           }
         }
       }
     }, 100);
     
-    if (actions && actions['Take 01']) {
-      // console.log('🔥 Playing Take 01 from OBSTACLE model');
-      const action = actions['Take 01'];
-      action.reset();
-      action.setLoop(THREE.LoopRepeat, Infinity); // Loop infinitely  
-      action.play();
-      // console.log('🔥 Animation state:', { isRunning: action.isRunning(), enabled: action.enabled, paused: action.paused });
-      animationFound = true;
+    // Better mobile detection including Chrome DevTools
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                     (navigator.maxTouchPoints > 0 && window.innerWidth <= 1024) ||
+                     ('ontouchstart' in window) ||
+                     (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    
+    console.log('Mobile detection:', { 
+      isMobile, 
+      userAgent: navigator.userAgent,
+      maxTouchPoints: navigator.maxTouchPoints,
+      width: window.innerWidth,
+      hasTouch: 'ontouchstart' in window,
+      pointerCoarse: window.matchMedia && window.matchMedia('(pointer: coarse)').matches
+    });
+    
+    // Check for Take 01 or Take 001 animation names
+    const takeAnimation = actions && (actions['Take 01'] || actions['Take 001']);
+    const takeAnimationName = takeAnimation ? (actions['Take 01'] ? 'Take 01' : 'Take 001') : null;
+    
+    if (takeAnimation) {
+      console.log(`Found ${takeAnimationName} animation`);
+      if (!isMobile) {
+        console.log(`🔥 Playing ${takeAnimationName} flame animation (desktop mode)`);
+        const action = takeAnimation;
+        action.reset();
+        action.setLoop(THREE.LoopRepeat, Infinity); // Loop infinitely  
+        action.play();
+        animationFound = true;
+      } else {
+        console.log(`📱 Stopping ${takeAnimationName} flame animation (mobile mode)`);
+        // Make sure to stop it if it's already playing
+        const action = takeAnimation;
+        action.stop();
+      }
     }
     
     // if (!animationFound) {
@@ -1499,13 +1537,40 @@ export const Map = ({ model, onLoad, ...props }) => {
     loadSound('coinCollect', '/sounds/whimsyCoin.wav');
   }, [loadSound]);
   
-  // Play animations
+  // Play animations (skip flame animations on mobile)
   useEffect(() => {
     if (actions) {
-      Object.values(actions).forEach(action => {
-        if (action && typeof action.play === 'function') {
-          action.play();
-          action.setLoop(true);
+      // Better mobile detection including Chrome DevTools
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                       (navigator.maxTouchPoints > 0 && window.innerWidth <= 1024) ||
+                       ('ontouchstart' in window) ||
+                       (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+      
+      console.log('Animation setup - Mobile:', isMobile);
+      console.log('Available animations:', Object.keys(actions));
+      
+      Object.entries(actions).forEach(([name, action]) => {
+        // Skip Take 01 or Take 001 (flame animation) on mobile
+        if (name === 'Take 01' || name === 'Take 001' || name.toLowerCase().includes('take')) {
+          console.log(`Found Take animation: ${name}`);
+          if (isMobile) {
+            console.log('📱 Stopping Take 01 flame animation (mobile)');
+            if (action && typeof action.stop === 'function') {
+              action.stop();
+            }
+          } else {
+            console.log('🔥 Playing Take 01 flame animation (desktop)');
+            if (action && typeof action.play === 'function') {
+              action.play();
+              action.setLoop(true);
+            }
+          }
+        } else {
+          // Play all other animations normally
+          if (action && typeof action.play === 'function') {
+            action.play();
+            action.setLoop(true);
+          }
         }
       });
     }

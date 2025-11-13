@@ -326,53 +326,6 @@ export default function GamePage() {
       {/* Respawn overlay - renders as DOM element outside Canvas */}
       <RespawnOverlay />
       
-      {/* Fullscreen button for mobile - shows enter or exit based on state */}
-      {isMobileView && (showFullscreenPrompt || isFullscreen) && (
-        <button
-          onClick={isFullscreen ? exitFullscreen : enterFullscreen}
-          style={{
-            position: 'fixed',
-            top: '20px',
-            right: '120px', // Position to the left of the Score display
-            width: '40px',
-            height: '40px',
-            zIndex: 100000, // Even higher z-index to be above everything
-            background: isFullscreen 
-              ? 'linear-gradient(135deg, rgba(255, 100, 0, 0.9), rgba(200, 50, 0, 0.8))'
-              : 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(10, 25, 15, 0.8))',
-            border: `2px solid ${isFullscreen ? 'rgba(255, 140, 0, 0.6)' : 'rgba(0, 255, 255, 0.4)'}`,
-            borderRadius: '50%',
-            color: isFullscreen ? '#ff8800' : '#00ffff',
-            fontSize: '20px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: isFullscreen 
-              ? '0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 140, 0, 0.3)'
-              : '0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 255, 0.2)',
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.2s ease',
-            padding: 0,
-            outline: 'none',
-          }}
-          onTouchStart={(e) => {
-            e.currentTarget.style.transform = 'scale(0.95)';
-            e.currentTarget.style.boxShadow = isFullscreen
-              ? '0 2px 10px rgba(0, 0, 0, 0.5), 0 0 25px rgba(255, 140, 0, 0.5)'
-              : '0 2px 10px rgba(0, 0, 0, 0.5), 0 0 25px rgba(0, 255, 255, 0.4)';
-          }}
-          onTouchEnd={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = isFullscreen
-              ? '0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 140, 0, 0.3)'
-              : '0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 255, 0.2)';
-          }}
-          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-        >
-          {isFullscreen ? '⊗' : '⛶'}
-        </button>
-      )}
       
       {/* RL80 Logo - Top Left (only show when game is loaded) */}
       {!isSceneLoading && (

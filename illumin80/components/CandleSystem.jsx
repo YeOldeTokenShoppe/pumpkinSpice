@@ -9,24 +9,33 @@ export const CandleSystem = () => {
   const candleFlames = useRef([]);
   const lightingDistance = 220.0; // Adjusted for actual distance scale
   const cullDistance = 15.0; // Distance at which to turn off lights
-  const maxActiveLights = 8; // Limit total active lights for performance
+  // Check if mobile/tablet device
+  const isMobile = typeof window !== 'undefined' && 
+    (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+     (navigator.maxTouchPoints > 0 && window.innerWidth <= 1024));
+  
+  const maxActiveLights = isMobile ? 3 : 8; // Reduced on mobile only
   
   // Valtio state access
   const gameState = useSnapshot(GameState);
 
-  // Optimized burst light effect - no animation for performance
+  // Burst light effect - disabled on mobile for performance
   const createLightBurst = (position) => {
-    // Create a brief static burst instead of animated
+    if (isMobile) {
+      // Skip burst effect on mobile for better FPS
+      return;
+    }
+    
+    // Desktop gets the burst effect
     const burstLight = new PointLight('#FFD700', 8, 6, 2);
     burstLight.position.copy(position);
     burstLight.position.y += 0.5;
     scene.add(burstLight);
 
-    // Single timeout instead of interval for better performance
     setTimeout(() => {
       scene.remove(burstLight);
-      burstLight.dispose(); // Dispose Three.js object to prevent memory leak
-    }, 200); // Quick burst, no animation
+      burstLight.dispose();
+    }, 200);
   };
 
   // Find and store candle positions once
@@ -55,7 +64,10 @@ export const CandleSystem = () => {
         });
         
         candleFlames.current = flames;
-        // console.log(`CandleSystem: Found ${flames.length} candle flames`);
+        console.log(`CandleSystem: Found ${flames.length} candle flames`);
+        if (flames.length > 0) {
+          console.log('Candle names:', flames.map(f => f.name));
+        }
         
         // Set total candle count in GameState
         GameState.candles = flames.length;
@@ -133,15 +145,17 @@ export const CandleSystem = () => {
               // Create the light burst effect at the candle position
               createLightBurst(nearestCandle.worldPosition);
               
-              // Create permanent point light for this candle (no pooling needed)
-              const candleLight = new PointLight('#FFB347', 2, 8, 2); // Warm orange light
-              candleLight.position.copy(nearestCandle.worldPosition);
-              candleLight.position.y += 0.3; // Slightly above the candle
-              candleLight.castShadow = false; // Disable shadows for tablet performance
-              scene.add(candleLight);
-              
-              // Store the light reference permanently with the candle
-              nearestCandle.pointLight = candleLight;
+              // Skip individual candle lights on mobile for performance
+              // Only the first few candles get lights based on maxActiveLights
+              const litCount = Array.from(GameState.litCandles).length;
+              if (litCount <= maxActiveLights) {
+                const candleLight = new PointLight('#FFB347', 1.5, 6, 2); // Reduced intensity & distance
+                candleLight.position.copy(nearestCandle.worldPosition);
+                candleLight.position.y += 0.3;
+                candleLight.castShadow = false;
+                scene.add(candleLight);
+                nearestCandle.pointLight = candleLight;
+              }
               
               // Candle lighting completed
             } catch (delayError) {
@@ -246,8 +260,8 @@ export const CandleSystem = () => {
       });
     };
 
-    // Run culling every 500ms (2fps) for better performance
-    const cullInterval = setInterval(cullCandleLights, 500);
+    // Run culling less frequently on mobile (1fps)
+    const cullInterval = setInterval(cullCandleLights, 1000);
     return () => clearInterval(cullInterval);
   }, [gameState.characterPosition, cullDistance, maxActiveLights]);
 
