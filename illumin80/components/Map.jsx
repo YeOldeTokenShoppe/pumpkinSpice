@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { GameState } from "../lib/GameState";
 import { useSnapshot } from "valtio";
 import { useAudio } from "../../src/hooks/useAudio";
+import { RedCandle } from "./RedCandle";
 
 // Iridescent shader material creator
 const createIridescentMaterial = (originalTexture) => {
@@ -103,7 +104,7 @@ const createIridescentMaterial = (originalTexture) => {
 // Component for animating coins with spinning motion - DISTANCE CULLED
 const AnimatedCoin = ({ coinMesh, index, onCollect }) => {
   const coinRef = useRef();
-  const ANIMATION_DISTANCE = 8.0; // Only animate within 8M - reduced for performance
+  const ANIMATION_DISTANCE = 25.0; // Match obstacle animation distance
   
   useFrame((state) => {
     if (!coinMesh || !coinMesh.visible || !GameState.characterPosition) return;
@@ -113,6 +114,8 @@ const AnimatedCoin = ({ coinMesh, index, onCollect }) => {
     coinMesh.getWorldPosition(worldPos);
     const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
     const cullDistanceSquared = ANIMATION_DISTANCE * ANIMATION_DISTANCE;
+    const distance = Math.sqrt(distanceSquared);
+    
     
     if (distanceSquared > cullDistanceSquared) return; // Skip animation if too far
     
@@ -684,6 +687,10 @@ const AnimatedObstacleCollider = ({ obstacleMesh, index }) => {
       let phaseOffset = 0;
       if (obstacleMesh.name.includes('004') || obstacleMesh.name.includes('.004')) {
         phaseOffset = Math.PI; // Half cycle offset (180 degrees)
+      } else if (obstacleMesh.name.includes('obstacle_1_002002') || obstacleMesh.name.includes('002002')) {
+        phaseOffset = Math.PI; // Half cycle offset for obstacle_1_002002 (opposite direction)
+      } else if (obstacleMesh.name.includes('obstacle_1_002001') || obstacleMesh.name.includes('002001')) {
+        phaseOffset = 0; // No offset for obstacle_1_002001 (default direction)
       }
       
       // Use sine wave for smooth pendulum motion with phase offset
@@ -1057,11 +1064,14 @@ export const Map = ({ model, onLoad, ...props }) => {
   
   const { scene: platformScene, animations: platformAnimations } = useGLTF(model); // Main platform
   const { scene: obstacleScene, animations } = useGLTF('/models/underworld3_obstacles.glb'); // Obstacles
+  const { scene: druidScene, animations: druidAnimations } = useGLTF('/models/druid.glb'); // Druid character
   const obstacleGroup = useRef();
   const platformGroup = useRef();
+  const druidGroup = useRef();
   const [isLoaded, setIsLoaded] = useState(false);
   const { actions } = useAnimations(animations, obstacleGroup);
   const { actions: platformActions } = useAnimations(platformAnimations, platformGroup);
+  const { actions: druidActions } = useAnimations(druidAnimations, druidGroup);
   const { loadSound, playSound } = useAudio();
   const [hammerMeshes, setHammerMeshes] = useState([]);
   const [collectibles, setCollectibles] = useState([]);
@@ -1090,15 +1100,15 @@ export const Map = ({ model, onLoad, ...props }) => {
     GameState.doorTogglePressed = doorTogglePressed;
   });
   
-  // Check if both scenes are loaded
+  // Check if all scenes are loaded
   useEffect(() => {
-    if (platformScene && obstacleScene) {
+    if (platformScene && obstacleScene && druidScene) {
       setIsLoaded(true);
       if (onLoad) {
         onLoad();
       }
     }
-  }, [platformScene, obstacleScene, onLoad]);
+  }, [platformScene, obstacleScene, druidScene, onLoad]);
   
   // Disable original model lights for performance (we use ScriptedLightingSystem instead)
   useEffect(() => {
@@ -1243,6 +1253,13 @@ export const Map = ({ model, onLoad, ...props }) => {
            name.includes('obstacle_1_001002') ||
            name.includes('obstacle_1_001.001') || 
            name.includes('obstacle_1_001.002') ||
+          name.includes('obstacle_1_002002') ||
+           name.includes('obstacle_1_002.002') || 
+                 name.includes('obstacle_1_002001') ||
+           name.includes('obstacle_1_002.001') || 
+           
+          name === 'obstacle_1_002002' ||
+               name === 'obstacle_1_002001' ||
            name === 'obstacle_1_001001' ||
            name === 'obstacle_1_001002' ||
            name === 'obstacle_1_001.001' ||
@@ -1575,6 +1592,17 @@ export const Map = ({ model, onLoad, ...props }) => {
       });
     }
   }, [actions]);
+
+  // Play druid 'Still' animation
+  useEffect(() => {
+    if (druidActions && druidActions.Still) {
+      console.log('🧙‍♂️ Playing Druid Still animation');
+      const waitingAction = druidActions.Still;
+      waitingAction.reset();
+      waitingAction.setLoop(THREE.LoopRepeat, Infinity);
+      waitingAction.play();
+    }
+  }, [druidActions]);
   
   // Consolidated collision detection in useFrame for better performance
   useFrame(React.useCallback(() => {
@@ -1611,9 +1639,12 @@ export const Map = ({ model, onLoad, ...props }) => {
       if (!collectedItems.has(coin.id) && coin.object.visible) {
         const worldPos = new Vector3();
         coin.object.getWorldPosition(worldPos);
-        const distanceSquared = GameState.characterPosition.distanceToSquared(worldPos);
         
-        if (distanceSquared < coinDistance * coinDistance) {
+        // Use only horizontal distance (X and Z) for coin collection
+        const horizontalDistanceSquared = Math.pow(GameState.characterPosition.x - worldPos.x, 2) + 
+                                        Math.pow(GameState.characterPosition.z - worldPos.z, 2);
+        
+        if (horizontalDistanceSquared < coinDistance * coinDistance) {
           setCollectedItems(prev => new Set([...prev, coin.id]));
           GameState.collectedItems.add(coin.id);
           GameState.score += 10;
@@ -1649,6 +1680,9 @@ export const Map = ({ model, onLoad, ...props }) => {
       
       {/* Visual obstacles WITHOUT collision */}
       <primitive object={obstacleScene} {...props} ref={obstacleGroup} />
+      
+      {/* Druid character */}
+      <primitive object={druidScene} {...props} ref={druidGroup} />
       
       {/* Dynamic colliders for animated obstacles */}
       {hammerMeshes.map((obstacle, index) => (
@@ -1703,6 +1737,10 @@ export const Map = ({ model, onLoad, ...props }) => {
       
       {/* Centralized door controller */}
       {doorController}
+      
+      {/* Red Candle - appears when character reaches z=21 */}
+     <RedCandle position={[1.5, -11.03, -5]} />
+        {/* <RedCandle /> */}
       
     </>
   );

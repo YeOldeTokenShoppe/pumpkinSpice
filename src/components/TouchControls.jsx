@@ -111,7 +111,7 @@ export const TouchControls = ({ onAction, style }) => {
     setActiveActions(prev => ({ ...prev, lookUp: active }));
   };
 
-  if (!isMobile) return null;
+  // Always show touch controls on all devices
 
   return (
     <div className="touch-controls" style={style}>
@@ -187,17 +187,20 @@ export const TouchControls = ({ onAction, style }) => {
         .joystick-container {
           position: absolute;
           bottom: 60px;
-          left: ${isTablet ? '45%' : '40px'};
+          left: 50%;
+          transform: translateX(-50%);
           pointer-events: auto;
           display: flex;
-          align-items: flex-end;
+          align-items: center;
+          justify-content: center;
           height: 180px;
+          width: 180px;
         }
 
         .action-buttons {
           position: absolute;
           bottom: 60px;
-          right: ${isTablet ? '20%' : '40px'};
+          right: ${isMobile ? (isTablet ? '20%' : '40px') : '40px'};
           pointer-events: auto;
           display: flex;
           flex-direction: column;
@@ -291,7 +294,8 @@ export const TouchControls = ({ onAction, style }) => {
         @media (max-width: 480px) {
           .joystick-container {
             bottom: 40px;
-            left: 20px;
+            left: 50%;
+            transform: translateX(-50%);
           }
           
           .action-buttons {
@@ -319,7 +323,8 @@ export const TouchControls = ({ onAction, style }) => {
         @media (orientation: landscape) and (max-height: 600px) {
           .joystick-container {
             bottom: 30px;
-            left: ${isTablet ? '20%' : '30px'};
+            left: 50%;
+            transform: translateX(-50%);
           }
           
           .action-buttons {

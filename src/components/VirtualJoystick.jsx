@@ -12,7 +12,7 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
   
   const knobSize = size * 0.4;
   const maxDistance = size * 0.35;
-  const sprintThreshold = maxDistance * 0.75; // Sprint when joystick is 75% extended
+  const sprintThreshold = maxDistance * 0.9; // Sprint when joystick is 75% extended
   const centerButtonSize = size * 0.25; // Center jump button size
 
   const updateCenterPosition = () => {

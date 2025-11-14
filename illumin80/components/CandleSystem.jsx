@@ -7,7 +7,7 @@ import { useSnapshot } from "valtio";
 export const CandleSystem = () => {
   const { scene } = useThree();
   const candleFlames = useRef([]);
-  const lightingDistance = 220.0; // Adjusted for actual distance scale
+  const lightingDistance = 5.0; // Close proximity required - about arm's reach
   const cullDistance = 15.0; // Distance at which to turn off lights
   // Check if mobile/tablet device
   const isMobile = typeof window !== 'undefined' && 

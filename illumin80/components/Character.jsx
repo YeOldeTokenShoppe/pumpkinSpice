@@ -8,6 +8,11 @@ import React, { useEffect, useRef } from "react";
 
 export function Character({ animation, lightingAction, ...props }) {
   console.log('Character component render - animation:', animation, 'lightingAction:', lightingAction);
+  
+  // Extra debug for Light animation
+  if (lightingAction || animation === 'light') {
+    console.log('🎭 LIGHT ANIMATION DEBUG:', { animation, lightingAction, received: animation });
+  }
   const group = useRef();
   const { nodes, materials, animations } = useGLTF("/models/MeshTintCharacter.glb");
   const { actions } = useAnimations(animations, group);
@@ -22,41 +27,63 @@ export function Character({ animation, lightingAction, ...props }) {
     // }
     
     if (actions && animation) {
-      // Map animation names - capitalize first letter to match MeshTintCharacter animations
+      // Map animation names to match your character animations: Idle, Walk, Run, Jump, LightCandle, Falling
       let animationName = animation;
       if (animation === 'idle') animationName = 'Idle';
       if (animation === 'walk') animationName = 'Walk';
       if (animation === 'run') animationName = 'Run';
       if (animation === 'jump') animationName = 'Jump';
+      if (animation === 'light') animationName = 'LightCandle';
       if (animation === 'fall') animationName = 'Falling';
-      if (animation === 'cast') animationName = 'Casting';
-      if (animation === 'light') animationName = 'Light';
+      // Fallback for unsupported animations (cast, etc.) -> use Idle
+      if (animation === 'cast') animationName = 'Idle';
       
       console.log('MeshTintCharacter: Transitioning to animation:', animationName, 'for requested:', animation, 'lightingAction:', lightingAction);
       
       if (actions[animationName]) {
-        // Crossfade: fade out all other animations while fading in the new one
-        Object.entries(actions).forEach(([name, action]) => {
-          if (action && typeof action.fadeOut === 'function') {
-            if (name === animationName) {
-              // Fade in the target animation
-              action.reset().fadeIn(0.4).play();
-            } else {
-              // Fade out other animations
-              action.fadeOut(0.4);
+        // Use crossfade for Reach animation and when transitioning FROM Reach
+        const isTransitioningFromReach = Object.values(actions).some(action => 
+          action && action.isRunning() && action.getClip().name === 'LightCandle'
+        );
+        
+        if (animationName === 'LightCandle' || isTransitioningFromReach) {
+          Object.entries(actions).forEach(([name, action]) => {
+            if (action && typeof action.fadeOut === 'function') {
+              if (name === animationName) {
+                // Fade in the target animation smoothly
+                action.reset().fadeIn(0.1).play();
+              } else {
+                // Fade out other animations
+                action.fadeOut(0.1);
+              }
             }
+          });
+        } else {
+          // Use immediate transitions for other animations
+          Object.entries(actions).forEach(([name, action]) => {
+            if (action && name !== animationName) {
+              action.stop();
+            }
+          });
+          
+          const targetAction = actions[animationName];
+          if (targetAction) {
+            targetAction.reset();
+            targetAction.setEffectiveTimeScale(1);
+            targetAction.setEffectiveWeight(1);
+            targetAction.play();
           }
-        });
+        }
       } else {
         // console.warn('MeshTintCharacter: Animation not found:', animationName);
         // Fallback to Idle
         if (actions['Idle']) {
           Object.values(actions).forEach(action => {
             if (action && typeof action.fadeOut === 'function') {
-              action.fadeOut(0.4);
+              action.fadeOut(0.1);
             }
           });
-          actions['Idle'].reset().fadeIn(0.4).play();
+          actions['Idle'].reset().fadeIn(0.1).play();
         }
       }
     }

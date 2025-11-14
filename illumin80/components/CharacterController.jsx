@@ -55,24 +55,26 @@ export const CharacterController = ({ onTouchAction }) => {
     }
   }, [onTouchAction, handleTouchAction]);
 
-  const [animation, setAnimationRaw] = useState("idle");
-  const animationRef = useRef("idle"); // Immediate reference for animation
-  const animationCounter = useRef(0); // Counter to force remount only on animation change
+  const [animation, setAnimation] = useState("idle");
+  const animationRef = useRef("idle"); // Keep ref for consistency but don't force remounting
   
-  // Clean wrapper without spam logs
-  const setAnimation = (newAnimation) => {
-    // Normalize to lowercase for Character component
+  // Clean animation setter without force remounting
+  const handleSetAnimation = (newAnimation) => {
     const normalized = newAnimation.toLowerCase();
-    if (normalized !== animationRef.current) { // Only update if actually changing
+    if (normalized !== animationRef.current) {
       if (normalized === "light") {
         console.log(`🎬 LIGHT ANIMATION SET: "${normalized}"`);
       }
-      animationRef.current = normalized; // Update ref immediately
-      animationCounter.current++; // Increment counter to force remount
-      setAnimationRaw(normalized);
+      animationRef.current = normalized;
+      // Force state update for critical animations like Light
+      if (normalized === "light") {
+        console.log(`🎬 FORCING LIGHT ANIMATION STATE UPDATE`);
+      }
+      setAnimation(normalized);
     }
   };
   const [isLightingAction, setIsLightingAction] = useState(false);
+  const isLightingActionRef = useRef(false); // Immediate ref to prevent animation conflicts
   const [isJumping, setIsJumping] = useState(false);
   const wasLightPressed = useRef(false);
   const lightingActionId = useRef(0);  // Track which lighting action is current
@@ -189,12 +191,141 @@ export const CharacterController = ({ onTouchAction }) => {
         console.log('🎮 TOUCH INPUT - light:', touchControls.light, 'movement:', touchMovement, 'isLightingAction:', isLightingAction);
       }
 
-      // Early exit if lighting action is active - completely prevent movement processing
+      // Check for light button BEFORE blocking movement to ensure animation can be set
+      const lightPressed = get().light || touchControls.light;
+      
+      // Handle light key press (moved here to happen before early return)
+      if (lightPressed && !wasLightPressed.current && !isLightingAction) {
+        wasLightPressed.current = true;
+        console.log('🔥 LIGHTING ACTION - touchLight:', touchControls.light, 'keyLight:', get().light);
+        
+        // IMMEDIATELY set ref to prevent other animation logic from interfering
+        isLightingActionRef.current = true;
+        
+        // Stop movement completely FIRST
+        if (rb.current) {
+          const currentVel = rb.current.linvel();
+          rb.current.setLinvel({ x: 0, y: currentVel.y, z: 0 }, true);
+        }
+        
+        // Set lighting action state
+        setIsLightingAction(true);
+        
+        // Check for nearby candles and set animation immediately
+        if (GameState.findNearestCandle) {
+          const nearestCandleInfo = GameState.findNearestCandle();
+          console.log('🕯️ Finding nearest candle:', nearestCandleInfo);
+          
+          if (nearestCandleInfo && nearestCandleInfo.success) {
+            // Calculate direction to candle and check if character is facing it
+            const characterPos = GameState.characterPosition;
+            const candlePos = nearestCandleInfo.candlePosition;
+            const direction = candlePos.clone().sub(characterPos);
+            const targetRotation = Math.atan2(direction.x, direction.z);
+            
+            // Get current character rotation
+            const currentRotation = rotationTarget.current + characterRotationTarget.current;
+            
+            // Calculate angle difference (normalize to -π to π)
+            let angleDiff = targetRotation - currentRotation;
+            while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+            
+            // Debug logging
+            console.log('🧭 DIRECTION DEBUG:');
+            console.log('Character pos:', characterPos.x.toFixed(2), characterPos.z.toFixed(2));
+            console.log('Candle pos:', candlePos.x.toFixed(2), candlePos.z.toFixed(2));
+            console.log('Direction vec:', direction.x.toFixed(2), direction.z.toFixed(2));
+            console.log('Target rotation:', (targetRotation * 180 / Math.PI).toFixed(1) + '°');
+            console.log('Current rotation:', (currentRotation * 180 / Math.PI).toFixed(1) + '°');
+            console.log('Angle diff:', (angleDiff * 180 / Math.PI).toFixed(1) + '°');
+            
+            // Allow lighting only if facing within 30 degrees of the candle (realistic aiming)
+            const maxAngleDiff = Math.PI / 6; // 30 degrees - must be facing candle directly
+            
+            if (Math.abs(angleDiff) <= maxAngleDiff) {
+              console.log("✅ Character is facing candle - will light it!");
+              
+              // Increment action ID for this specific lighting action
+              const thisActionId = ++lightingActionId.current;
+              
+              // Set animation IMMEDIATELY using flushSync to force synchronous update
+              console.log("Setting Light animation, current:", animation);
+              
+              // Force synchronous animation state update
+              flushSync(() => {
+                setAnimation("light");
+                animationRef.current = "light";
+              });
+              console.log("🎬 REACH ANIMATION SET with flushSync, new should be: light");
+              console.log("🎬 Current animation state after flushSync:", animation);
+              console.log("🎬 Current animationRef after flushSync:", animationRef.current);
+              console.log("🔒 isLightingActionRef.current:", isLightingActionRef.current);
+              
+              // Delay lighting to around frame 25-30 (midway through 50-frame animation)
+              setTimeout(() => {
+                if (GameState.lightNearestCandle) {
+                  const result = GameState.lightNearestCandle();
+                  if (result && result.success) {
+                    console.log("🔥 Candle lit!");
+                  }
+                }
+              }, 1100); // Light candle midway through 66-frame animation (~33 frames at 30fps)
+              
+              // Reset after animation completes (66 frames at 30fps = 2.2s, at 60fps = 1.1s)
+              // Wait for full animation + extra time for smooth transition
+              setTimeout(() => {
+                if (lightingActionId.current === thisActionId) {
+                  setIsLightingAction(false);
+                  isLightingActionRef.current = false; // Clear ref
+                  if (!isFalling.current && !isJumping) {
+                    handleSetAnimation("idle");
+                  }
+                  console.log("🔓 Lighting action complete - movement enabled");
+                } else {
+                  console.log("⏭️ Skipping reset - newer lighting action in progress");
+                }
+              }, 2200); // 66 frames + buffer to let animation complete naturally
+            } else {
+              console.log("❌ Character not facing candle - turn toward it first!", 
+                `Angle diff: ${(angleDiff * 180 / Math.PI).toFixed(1)}°`);
+              // Reset lighting action since no animation will play
+              setIsLightingAction(false);
+              isLightingActionRef.current = false;
+            }
+          } else {
+            console.log("❌ No candles nearby to light");
+            // Reset lighting action since no animation will play
+            setIsLightingAction(false);
+          }
+        } else {
+          // No candle system available - play animation for testing
+          console.log("⚠️ No candle system - playing animation for testing");
+          flushSync(() => {
+            setAnimation("light");
+            animationRef.current = "light";
+          });
+          
+          // Reset after animation completes
+          setTimeout(() => {
+            setIsLightingAction(false);
+            isLightingActionRef.current = false;
+            if (!isFalling.current && !isJumping) {
+              handleSetAnimation("idle");
+            }
+          }, 1900);
+        }
+      }
+
+      // Reset light pressed flag when released (must happen before early exit)
+      if (!lightPressed) {
+        wasLightPressed.current = false;
+      }
+
+      // Block movement during lighting action but allow animation updates
       if (isLightingAction) {
-        vel.x = 0;
-        vel.z = 0;
         rb.current.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
-        console.log('🚫 BLOCKING MOVEMENT - isLightingAction is true');
+        // Skip movement processing but continue with camera updates
         return;
       }
 
@@ -232,12 +363,20 @@ export const CharacterController = ({ onTouchAction }) => {
         }
       }
 
-      if (movement.x !== 0) {
+      if (movement.x !== 0 && !isLightingActionRef.current) {
         rotationTarget.current += ROTATION_SPEED * movement.x;
       }
 
       if (movement.x !== 0 || movement.z !== 0) {
-        characterRotationTarget.current = Math.atan2(movement.x, movement.z);
+        // Debug movement during lighting action
+        if (isLightingActionRef.current) {
+          console.log('⚠️ MOVEMENT DETECTED DURING LIGHTING:', { x: movement.x, z: movement.z, speed });
+        }
+        
+        // Don't update character rotation target during lighting action
+        if (!isLightingActionRef.current) {
+          characterRotationTarget.current = Math.atan2(movement.x, movement.z);
+        }
         vel.x =
           Math.sin(rotationTarget.current + characterRotationTarget.current) *
           speed;
@@ -246,12 +385,14 @@ export const CharacterController = ({ onTouchAction }) => {
           speed;
         
         // Only set walk/run animations if not falling, jumping, or lighting
-        if (!isFalling.current && !isJumping && !isLightingAction) {
+        if (!isFalling.current && !isJumping && !isLightingAction && !isLightingActionRef.current) {
           if (speed === RUN_SPEED) {
-            setAnimation("run");
+            handleSetAnimation("run");
           } else {
-            setAnimation("walk");
+            handleSetAnimation("walk");
           }
+        } else if (isLightingActionRef.current) {
+          console.log('🚫 BLOCKING MOVEMENT ANIMATION - lighting action active');
         }
         
         // Play step sound at regular intervals
@@ -265,8 +406,8 @@ export const CharacterController = ({ onTouchAction }) => {
           }
           isWalking.current = true;
         }
-      } else if (!isFalling.current && !isJumping && !isLightingAction) {
-        setAnimation("idle");
+      } else if (!isFalling.current && !isJumping && !isLightingAction && !isLightingActionRef.current) {
+        handleSetAnimation("idle");
         // Reset walking state when not moving
         if (isWalking.current) {
           isWalking.current = false;
@@ -315,7 +456,7 @@ export const CharacterController = ({ onTouchAction }) => {
         } else {
           const fallDuration = Date.now() - fallStartTime.current;
           if (fallDuration > 300) { // Reduced from 800ms for more responsive fall animation
-            setAnimation("fall"); // Only animation, no sound
+            handleSetAnimation("fall"); // Only animation, no sound
           }
         }
       } else if (isOnGround.current && isFalling.current) {
@@ -337,7 +478,7 @@ export const CharacterController = ({ onTouchAction }) => {
         rb.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
         
         if (!isLightingAction) {
-          setAnimation("idle");
+          handleSetAnimation("idle");
         }
         
         console.log("Landing from fall - physics state reset");
@@ -361,7 +502,7 @@ export const CharacterController = ({ onTouchAction }) => {
           rb.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
           
           if (!isLightingAction) {
-            setAnimation("idle");
+            handleSetAnimation("idle");
           }
         }
       }
@@ -376,7 +517,7 @@ export const CharacterController = ({ onTouchAction }) => {
         const currentVel = rb.current.linvel();
         rb.current.setLinvel({ x: 0, y: currentVel.y, z: 0 }, true);
         
-        setAnimation("jump");
+        handleSetAnimation("jump");
         
         // Physics jump with timing to match 57-frame animation (approximately 1.9 seconds at 30fps)
         setTimeout(() => {
@@ -401,7 +542,7 @@ export const CharacterController = ({ onTouchAction }) => {
           const isMoving = controls.forward || controls.backward || controls.left || controls.right ||
                           touchControls.forward || touchControls.backward || touchControls.left || touchControls.right;
           if (!isMoving && !isLightingAction) {
-            setAnimation("idle");
+            handleSetAnimation("idle");
           }
         }, 2000);
       }
@@ -412,14 +553,14 @@ export const CharacterController = ({ onTouchAction }) => {
         wasLightPressed.current = true;
         console.log('🔥 LIGHTING ACTION - touchLight:', touchControls.light, 'keyLight:', get().light);
         
-        // IMMEDIATELY set lighting action and stop all movement to prevent interference
-        setIsLightingAction(true);
-        
-        // Stop movement completely
+        // Stop movement completely FIRST
         if (rb.current) {
           const currentVel = rb.current.linvel();
           rb.current.setLinvel({ x: 0, y: currentVel.y, z: 0 }, true);
         }
+        
+        // Set lighting action AFTER stopping movement
+        setIsLightingAction(true);
         
         // Check for nearby candles first, but don't light them yet
         if (GameState.findNearestCandle) {
@@ -441,8 +582,17 @@ export const CharacterController = ({ onTouchAction }) => {
             while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
             while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
             
-            // Allow lighting only if facing within 15 degrees (π/12 radians) of the candle  
-            const maxAngleDiff = Math.PI / 6; // 20 degrees
+            // Debug logging
+            console.log('🧭 DIRECTION DEBUG:');
+            console.log('Character pos:', characterPos.x.toFixed(2), characterPos.z.toFixed(2));
+            console.log('Candle pos:', candlePos.x.toFixed(2), candlePos.z.toFixed(2));
+            console.log('Direction vec:', direction.x.toFixed(2), direction.z.toFixed(2));
+            console.log('Target rotation:', (targetRotation * 180 / Math.PI).toFixed(1) + '°');
+            console.log('Current rotation:', (currentRotation * 180 / Math.PI).toFixed(1) + '°');
+            console.log('Angle diff:', (angleDiff * 180 / Math.PI).toFixed(1) + '°');
+            
+            // Allow lighting only if facing within 30 degrees of the candle (realistic aiming)
+            const maxAngleDiff = Math.PI / 8; // 30 degrees - must be facing candle directly
             
             if (Math.abs(angleDiff) <= maxAngleDiff) {
               console.log("✅ Character is facing candle - will light it at frame 55!");
@@ -452,7 +602,10 @@ export const CharacterController = ({ onTouchAction }) => {
               
               // Set animation for all devices (mobile and desktop)
               console.log("Setting Light animation, current:", animation);
-              setAnimation("Light");
+              flushSync(() => {
+            setAnimation("light");
+            animationRef.current = "light";
+          });
               console.log("Light animation set, new should be: light");
               
               // Delay lighting to around frame 25-30 (midway through 50-frame animation)
@@ -463,7 +616,7 @@ export const CharacterController = ({ onTouchAction }) => {
                     console.log("🔥 Candle lit!");
                   }
                 }
-              }, 500); // Light candle midway through animation
+              }, 1100); // Light candle midway through 66-frame animation (~33 frames at 30fps)
               
               // Reset after animation completes (50 frames at 30fps = 1.67s, at 60fps = 0.83s)
               // Using 1 second to cover both frame rates
@@ -471,7 +624,7 @@ export const CharacterController = ({ onTouchAction }) => {
                 if (lightingActionId.current === thisActionId) {
                   setIsLightingAction(false);
                   if (!isFalling.current && !isJumping) {
-                    setAnimation("idle");
+                    handleSetAnimation("idle");
                   }
                   console.log("🔓 Lighting action complete - movement enabled");
                 } else {
@@ -483,6 +636,7 @@ export const CharacterController = ({ onTouchAction }) => {
                 `Angle diff: ${(angleDiff * 180 / Math.PI).toFixed(1)}°`);
               // Reset lighting action since no animation will play
               setIsLightingAction(false);
+              isLightingActionRef.current = false;
             }
           } else {
             console.log("❌ No candles nearby to light");
@@ -492,13 +646,17 @@ export const CharacterController = ({ onTouchAction }) => {
         } else {
           // No candle system available - play animation for testing
           console.log("⚠️ No candle system - playing animation for testing");
-          setAnimation("Light");
+          flushSync(() => {
+            setAnimation("light");
+            animationRef.current = "light";
+          });
           
           // Reset after animation completes
           setTimeout(() => {
             setIsLightingAction(false);
+            isLightingActionRef.current = false;
             if (!isFalling.current && !isJumping) {
-              setAnimation("idle");
+              handleSetAnimation("idle");
             }
           }, 1900);
         }
@@ -535,11 +693,16 @@ export const CharacterController = ({ onTouchAction }) => {
         cameraPitch.current = Math.max(0, cameraPitch.current - 0.02); // Return to normal
       }
 
-      character.current.rotation.y = lerpAngle(
-        character.current.rotation.y,
-        characterRotationTarget.current,
-        0.1
-      );
+      // Don't update character rotation during lighting action to prevent unwanted spinning
+      if (!isLightingActionRef.current) {
+        character.current.rotation.y = lerpAngle(
+          character.current.rotation.y,
+          characterRotationTarget.current,
+          0.1
+        );
+      } else {
+        console.log('🔒 BLOCKING CHARACTER ROTATION during lighting action');
+      }
 
       // Clamp very small velocities to prevent jittering
       if (Math.abs(vel.x) < 0.01) vel.x = 0;
@@ -628,7 +791,7 @@ export const CharacterController = ({ onTouchAction }) => {
     GameState.containerRotation = container.current.rotation.y;
 
     // Update camera position based on zoom distance and pitch
-    const baseCameraHeight = 3.5; // Default camera height
+    const baseCameraHeight = 4; // Default camera height
     const pitchOffset = Math.sin(cameraPitch.current) * cameraDistance.current;
     cameraPosition.current.position.z = -cameraDistance.current * Math.cos(cameraPitch.current);
     cameraPosition.current.position.y = baseCameraHeight + pitchOffset;
@@ -669,11 +832,10 @@ export const CharacterController = ({ onTouchAction }) => {
         />
         <group ref={character} userData={{ isCharacter: true }}>
           <Character 
-            key={`anim-${animationCounter.current}`} // Force remount only when animation changes
             scale={.75} 
             position-y={1.4} 
             position-z={0}
-            animation={animationRef.current} // Use ref for immediate value
+            animation={animation} // Use state value directly
             lightingAction={isLightingAction}
           />
         </group>
