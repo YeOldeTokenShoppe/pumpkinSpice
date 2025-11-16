@@ -1055,6 +1055,40 @@ const CompoundHammerCollider = ({ hammerMesh, index }) => {
   );
 };
 
+// RedCandle collider component
+const RedCandleCollider = ({ redCandleScene }) => {
+  const [redCandlePosition, setRedCandlePosition] = useState(new THREE.Vector3());
+  
+  useEffect(() => {
+    if (redCandleScene) {
+      // Find the RedCandle's position in the scene
+      redCandleScene.traverse((child) => {
+        if (child.name.toLowerCase().includes('redcandle') || child.name.toLowerCase().includes('candle')) {
+          const pos = new THREE.Vector3();
+          child.getWorldPosition(pos);
+          setRedCandlePosition(pos);
+          console.log('🕯️ RedCandle position found:', pos);
+          return;
+        }
+      });
+      
+      // If no specific candle object found, use scene position
+      if (redCandlePosition.equals(new THREE.Vector3())) {
+        const box = new THREE.Box3().setFromObject(redCandleScene);
+        const center = box.getCenter(new THREE.Vector3());
+        setRedCandlePosition(center);
+        console.log('🕯️ RedCandle center position:', center);
+      }
+    }
+  }, [redCandleScene]);
+  
+  return (
+    <RigidBody type="fixed" position={[redCandlePosition.x, redCandlePosition.y, redCandlePosition.z]}>
+      <CuboidCollider args={[0.5, 1.5, 0.5]} position={[0, 0.75, 0]} />
+    </RigidBody>
+  );
+};
+
 // Simplified Map component
 export const Map = ({ model, onLoad, ...props }) => {
   // Clear cache for the model to ensure fresh load
@@ -1064,14 +1098,18 @@ export const Map = ({ model, onLoad, ...props }) => {
   
   const { scene: platformScene, animations: platformAnimations } = useGLTF(model); // Main platform
   const { scene: obstacleScene, animations } = useGLTF('/models/underworld3_obstacles.glb'); // Obstacles
-  const { scene: druidScene, animations: druidAnimations } = useGLTF('/models/druid.glb'); // Druid character
+  // Druid is now part of main model - no separate loading needed
+  const { scene: redCandleScene, animations: redCandleAnimations } = useGLTF('/models/RedCandle.glb'); // Red candle
+    const { scene: druidScene, animations: druidAnimations } = useGLTF('/models/Druid3.glb'); // Red candle
   const obstacleGroup = useRef();
   const platformGroup = useRef();
   const druidGroup = useRef();
+  const redCandleGroup = useRef();
   const [isLoaded, setIsLoaded] = useState(false);
   const { actions } = useAnimations(animations, obstacleGroup);
   const { actions: platformActions } = useAnimations(platformAnimations, platformGroup);
   const { actions: druidActions } = useAnimations(druidAnimations, druidGroup);
+  const { actions: redCandleActions } = useAnimations(redCandleAnimations, redCandleGroup);
   const { loadSound, playSound } = useAudio();
   const [hammerMeshes, setHammerMeshes] = useState([]);
   const [collectibles, setCollectibles] = useState([]);
@@ -1102,13 +1140,13 @@ export const Map = ({ model, onLoad, ...props }) => {
   
   // Check if all scenes are loaded
   useEffect(() => {
-    if (platformScene && obstacleScene && druidScene) {
+    if (platformScene && obstacleScene && druidScene && redCandleScene) {
       setIsLoaded(true);
       if (onLoad) {
         onLoad();
       }
     }
-  }, [platformScene, obstacleScene, druidScene, onLoad]);
+  }, [platformScene, obstacleScene, druidScene, redCandleScene, onLoad]);
   
   // Disable original model lights for performance (we use ScriptedLightingSystem instead)
   useEffect(() => {
@@ -1593,16 +1631,27 @@ export const Map = ({ model, onLoad, ...props }) => {
     }
   }, [actions]);
 
-  // Play druid 'Still' animation
+  // Play druid 'Idle' animation
   useEffect(() => {
-    if (druidActions && druidActions.Still) {
-      console.log('🧙‍♂️ Playing Druid Still animation');
-      const waitingAction = druidActions.Still;
+    if (druidActions && druidActions.Idle) {
+      console.log('🧙‍♂️ Playing Druid Idle animation');
+      const waitingAction = druidActions.Idle;
       waitingAction.reset();
       waitingAction.setLoop(THREE.LoopRepeat, Infinity);
       waitingAction.play();
     }
   }, [druidActions]);
+
+  // Play RedCandle 'Waving' animation
+  useEffect(() => {
+    if (redCandleActions && redCandleActions.Waving) {
+      console.log('🕯️ Playing RedCandle Waving animation');
+      const tauntAction = redCandleActions.Waving;
+      tauntAction.reset();
+      tauntAction.setLoop(THREE.LoopRepeat, Infinity);
+      tauntAction.play();
+    }
+  }, [redCandleActions]);
   
   // Consolidated collision detection in useFrame for better performance
   useFrame(React.useCallback(() => {
@@ -1682,7 +1731,10 @@ export const Map = ({ model, onLoad, ...props }) => {
       <primitive object={obstacleScene} {...props} ref={obstacleGroup} />
       
       {/* Druid character */}
-      <primitive object={druidScene} {...props} ref={druidGroup} />
+      {/* <primitive object={druidScene} {...props} ref={druidGroup} scale={[0.4, 0.4, 0.4]} position={[0, -7, 0]}/> */}
+      
+      {/* Red Candle */}
+      <primitive object={redCandleScene} {...props} ref={redCandleGroup} />
       
       {/* Dynamic colliders for animated obstacles */}
       {hammerMeshes.map((obstacle, index) => (
@@ -1739,7 +1791,7 @@ export const Map = ({ model, onLoad, ...props }) => {
       {doorController}
       
       {/* Red Candle - appears when character reaches z=21 */}
-     <RedCandle position={[1.5, -11.03, -5]} />
+     {/* <RedCandle position={[1.5, -11.03, -5]} /> */}
         {/* <RedCandle /> */}
       
     </>

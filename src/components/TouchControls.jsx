@@ -187,8 +187,7 @@ export const TouchControls = ({ onAction, style }) => {
         .joystick-container {
           position: absolute;
           bottom: 60px;
-          left: 50%;
-          transform: translateX(-50%);
+          left: 40px;
           pointer-events: auto;
           display: flex;
           align-items: center;
@@ -290,46 +289,94 @@ export const TouchControls = ({ onAction, style }) => {
           text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
         }
 
-        /* Responsive adjustments */
+        /* Responsive adjustments - Mobile Portrait */
         @media (max-width: 480px) {
           .joystick-container {
-            bottom: 40px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
+            width: 150px;
+            height: 150px;
           }
           
           .action-buttons {
-            bottom: 40px;
-            right: 20px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            top: auto;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 20px 50px 20px;
+            pointer-events: none;
           }
           
-          .virtual-joystick {
-            width: 100px;
-            height: 100px;
+          .action-buttons > * {
+            pointer-events: auto;
+          }
+          
+          .primary-action {
+            order: -1; /* Move to left side */
+            margin-bottom: 0;
+          }
+          
+          .secondary-actions {
+            order: 1; /* Move to right side */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
           }
           
           .action-btn {
-            width: 70px;
-            height: 70px;
+            width: 60px;
+            height: 60px;
           }
           
           .light-jump-btn {
-            width: 85px;
-            height: 85px;
+            width: 75px;
+            height: 75px;
+          }
+          
+          .btn-icon {
+            font-size: 18px;
+          }
+          
+          .light-jump-btn .btn-icon {
+            font-size: 22px;
+          }
+          
+          .btn-label {
+            font-size: 8px;
           }
         }
 
         /* Landscape mode adjustments */
         @media (orientation: landscape) and (max-height: 600px) {
           .joystick-container {
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 20px;
+            left: 30px;
+            transform: none;
+            width: 140px;
+            height: 140px;
           }
           
           .action-buttons {
-            bottom: 30px;
+            bottom: 20px;
             right: ${isTablet ? '20%' : '30px'};
+            gap: 12px;
+          }
+          
+          .action-btn {
+            width: 60px;
+            height: 60px;
+          }
+          
+          .light-jump-btn {
+            width: 75px;
+            height: 75px;
           }
         }
         

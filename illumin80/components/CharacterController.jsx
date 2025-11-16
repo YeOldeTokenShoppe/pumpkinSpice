@@ -120,9 +120,12 @@ export const CharacterController = ({ onTouchAction }) => {
       playSound('jump', { volume: 0.1, loop: false });
     };
     
-    const onMouseDown = () => {
-      // Only enable click-to-move on desktop
-      if (!isMobileDevice.current) {
+    const onMouseDown = (event) => {
+      // Check if click is on UI element (touch controls, buttons, etc.)
+      const isUIClick = event.target.closest('.touch-controls, .action-btn, .joystick-container, .virtual-joystick');
+      
+      // Only enable click-to-move on desktop AND not clicking UI
+      if (!isMobileDevice.current && !isUIClick) {
         isClicking.current = true;
       }
       // Test audio on first interaction
@@ -244,7 +247,49 @@ export const CharacterController = ({ onTouchAction }) => {
             const maxAngleDiff = Math.PI / 6; // 30 degrees - must be facing candle directly
             
             if (Math.abs(angleDiff) <= maxAngleDiff) {
-              console.log("✅ Character is facing candle - will light it!");
+              console.log("✅ Character is within range - auto-rotating to face candle!");
+              
+              // Calculate current distance to candle
+              const currentDistance = nearestCandleInfo.candlePosition.distanceTo(characterPos);
+              console.log(`📏 Distance to candle: ${currentDistance.toFixed(2)} units`);
+              
+              // Only proceed if within reasonable animation range (not too far)
+              const maxAnimationDistance = 4.5; // Maximum distance for animation to look good
+              const minAnimationDistance = 4; // Increased - moves character back if closer than this
+              
+              if (currentDistance > maxAnimationDistance) {
+                console.log("❌ Too far from candle for animation to look good");
+                setIsLightingAction(false);
+                isLightingActionRef.current = false;
+                return;
+              }
+              
+              if (currentDistance < minAnimationDistance) {
+                console.log("⚠️ Very close to candle - adjusting slightly backward");
+                // Only move backward if TOO close
+                const moveBack = minAnimationDistance - currentDistance;
+                const moveDirection = direction.normalize();
+                const newPos = characterPos.clone().sub(moveDirection.multiplyScalar(moveBack));
+                
+                if (rb.current) {
+                  rb.current.setTranslation({
+                    x: newPos.x,
+                    y: rb.current.translation().y,
+                    z: newPos.z
+                  }, true);
+                }
+              }
+              
+              // Smoothly rotate character to face the candle exactly (no 10-degree offset)
+              characterRotationTarget.current = targetRotation - rotationTarget.current;
+              
+              // Apply rotation immediately for better visual feedback
+              if (character.current) {
+                character.current.rotation.y = characterRotationTarget.current;
+              }
+              
+              // Store the target candle name to ensure we light the correct one
+              const targetCandleName = nearestCandleInfo.candleName;
               
               // Increment action ID for this specific lighting action
               const thisActionId = ++lightingActionId.current;
@@ -351,7 +396,9 @@ export const CharacterController = ({ onTouchAction }) => {
 
       let speed = (get().run || touchControls.run) ? RUN_SPEED : WALK_SPEED;
 
-      // Mouse drag controls - ONLY on desktop (mobile uses joystick exclusively)
+      // Mouse drag controls - DISABLED since we're using touch controls
+      // Comment out or remove the click-to-move feature entirely
+      /*
       if (isClicking.current && !isMobileDevice.current) {
         // console.log("clicking", mouse.x, mouse.y);
         if (Math.abs(mouse.x) > 0.1) {
@@ -362,6 +409,7 @@ export const CharacterController = ({ onTouchAction }) => {
           speed = RUN_SPEED;
         }
       }
+      */
 
       if (movement.x !== 0 && !isLightingActionRef.current) {
         rotationTarget.current += ROTATION_SPEED * movement.x;
@@ -592,10 +640,52 @@ export const CharacterController = ({ onTouchAction }) => {
             console.log('Angle diff:', (angleDiff * 180 / Math.PI).toFixed(1) + '°');
             
             // Allow lighting only if facing within 30 degrees of the candle (realistic aiming)
-            const maxAngleDiff = Math.PI / 8; // 30 degrees - must be facing candle directly
+            const maxAngleDiff = Math.PI / 6; // 30 degrees - must be facing candle directly
             
             if (Math.abs(angleDiff) <= maxAngleDiff) {
-              console.log("✅ Character is facing candle - will light it at frame 55!");
+              console.log("✅ Character is within range - auto-rotating to face candle!");
+              
+              // Calculate current distance to candle
+              const currentDistance = nearestCandleInfo.candlePosition.distanceTo(characterPos);
+              console.log(`📏 Distance to candle: ${currentDistance.toFixed(2)} units`);
+              
+              // Only proceed if within reasonable animation range (not too far)
+              const maxAnimationDistance = 4.5; // Maximum distance for animation to look good
+              const minAnimationDistance = 4; // Increased - moves character back if closer than this
+              
+              if (currentDistance > maxAnimationDistance) {
+                console.log("❌ Too far from candle for animation to look good");
+                setIsLightingAction(false);
+                isLightingActionRef.current = false;
+                return;
+              }
+              
+              if (currentDistance < minAnimationDistance) {
+                console.log("⚠️ Very close to candle - adjusting slightly backward");
+                // Only move backward if TOO close
+                const moveBack = minAnimationDistance - currentDistance;
+                const moveDirection = direction.normalize();
+                const newPos = characterPos.clone().sub(moveDirection.multiplyScalar(moveBack));
+                
+                if (rb.current) {
+                  rb.current.setTranslation({
+                    x: newPos.x,
+                    y: rb.current.translation().y,
+                    z: newPos.z
+                  }, true);
+                }
+              }
+              
+              // Smoothly rotate character to face the candle exactly (no 10-degree offset)
+              characterRotationTarget.current = targetRotation - rotationTarget.current;
+              
+              // Apply rotation immediately for better visual feedback
+              if (character.current) {
+                character.current.rotation.y = characterRotationTarget.current;
+              }
+              
+              // Store the target candle name to ensure we light the correct one
+              const targetCandleName = nearestCandleInfo.candleName;
               
               // Increment action ID for this specific lighting action
               const thisActionId = ++lightingActionId.current;

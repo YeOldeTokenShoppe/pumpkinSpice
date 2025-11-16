@@ -348,7 +348,7 @@ export default function GamePage() {
               cursor: "pointer",
             }}
           >
-            <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
+            <Link href="/home3" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}>
               RL80
             </Link>
             {Array.from({length: 100}).map((_, i) => {

@@ -161,7 +161,7 @@ export const Experience = ({ onTouchAction, onLoad }) => {
         shadow-mapSize-height={1024}
       /> */}
  
-      <Physics key={map}>
+      <Physics key={map}  >
         <Map
           scale={maps[map]?.scale || 0.7}
           position={maps[map]?.position || [-0.1, -9.5, 7]}
