@@ -292,11 +292,11 @@ export const TouchControls = ({ onAction, style }) => {
         /* Responsive adjustments - Mobile Portrait */
         @media (max-width: 480px) {
           .joystick-container {
-            bottom: 30px;
+            bottom: 5vh;
             left: 50%;
             transform: translateX(-50%);
-            width: 150px;
-            height: 150px;
+            width: min(150px, 35vw);
+            height: min(150px, 35vw);
           }
           
           .action-buttons {
@@ -309,7 +309,7 @@ export const TouchControls = ({ onAction, style }) => {
             flex-direction: row;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 0 20px 50px 20px;
+            padding: 0 3vw 7vh 3vw;
             pointer-events: none;
           }
           
@@ -326,30 +326,57 @@ export const TouchControls = ({ onAction, style }) => {
             order: 1; /* Move to right side */
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 2vh;
             align-items: center;
           }
           
           .action-btn {
-            width: 60px;
-            height: 60px;
+            width: min(60px, 15vw);
+            height: min(60px, 15vw);
           }
           
           .light-jump-btn {
-            width: 75px;
-            height: 75px;
+            width: min(75px, 18vw);
+            height: min(75px, 18vw);
           }
           
           .btn-icon {
-            font-size: 18px;
+            font-size: min(18px, 5vw);
           }
           
           .light-jump-btn .btn-icon {
-            font-size: 22px;
+            font-size: min(22px, 6vw);
           }
           
           .btn-label {
-            font-size: 8px;
+            font-size: min(8px, 2vw);
+          }
+        }
+        
+        /* Extra small devices (iPhone SE, small phones) */
+        @media (max-width: 375px) and (max-height: 700px) {
+          .joystick-container {
+            bottom: 3vh;
+            width: 120px;
+            height: 120px;
+          }
+          
+          .action-buttons {
+            padding: 0 2vw 5vh 2vw;
+          }
+          
+          .action-btn {
+            width: 50px;
+            height: 50px;
+          }
+          
+          .light-jump-btn {
+            width: 65px;
+            height: 65px;
+          }
+          
+          .secondary-actions {
+            gap: 1.5vh;
           }
         }
 

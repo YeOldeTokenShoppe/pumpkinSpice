@@ -1,6 +1,6 @@
 'use client'
 
-import { KeyboardControls } from "@react-three/drei";
+import { KeyboardControls, PerformanceMonitor } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Experience } from "../../../illumin80/components/Experience";
 // import { ScoreDisplay } from "../../components/ScoreDisplay";
@@ -56,6 +56,14 @@ export default function GamePage() {
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const touchActionHandler = useRef(null);
+  const frameCount = useRef(0); // For FPS logging
+  
+  // Performance quality settings
+  const [dpr, setDpr] = useState(1); // Device pixel ratio
+  const [shadowsEnabled, setShadowsEnabled] = useState(true);
+  const [qualityLevel, setQualityLevel] = useState('auto'); // 'low', 'medium', 'high', 'auto'
+  const [currentFPS, setCurrentFPS] = useState(0); // For visual FPS display
+  const [showFPS, setShowFPS] = useState(true); // Toggle FPS display
 
   // Detect mobile view and setup fullscreen
   useEffect(() => {
@@ -63,6 +71,13 @@ export default function GamePage() {
       // More strict mobile detection - must be small screen AND have touch
       const isMobile = window.innerWidth <= 768 && 'ontouchstart' in window;
       setIsMobileView(isMobile);
+      
+      // Disable shadows on mobile by default for better performance
+      if (isMobile && qualityLevel === 'auto') {
+        setShadowsEnabled(false);
+        setDpr(1); // Lower pixel ratio on mobile
+        console.log('Mobile detected: Disabling shadows, setting DPR to 1');
+      }
       
       // Show fullscreen prompt on mobile if not already fullscreen
       if (isMobile && !document.fullscreenElement && !document.webkitFullscreenElement) {
@@ -281,12 +296,13 @@ export default function GamePage() {
       <KeyboardControls map={keyboardMap}>
         <Canvas
           key={contextLost ? 'lost' : 'active'} // Force remount on context loss
-          shadows
+          shadows={shadowsEnabled}
+          dpr={[dpr, 2]} // Min and max DPR
           camera={{ position: [3, -1, 1], near: 0.1, fov: 80 }}
           gl={{ 
             preserveDrawingBuffer: false, 
             antialias: false,
-            powerPreference: "default",
+            powerPreference: isMobileView ? "low-power" : "default",
             failIfMajorPerformanceCaveat: false,
             alpha: false // Optimize for performance
           }}
@@ -301,6 +317,45 @@ export default function GamePage() {
           onCreated={handleCreated}
           fallback={<LoadingFallback />}
         >
+          {/* Performance Monitor for dynamic quality adjustment */}
+          <PerformanceMonitor
+            factor={1.5}
+            ms={200} // Check every 200ms
+            iterations={30}
+            threshold={[25, 50]} // Target 25-50 FPS
+            onIncline={() => {
+              // Performance is good, increase quality
+              console.log('Performance GOOD - increasing quality');
+              if (qualityLevel === 'auto') {
+                setShadowsEnabled(!isMobileView); // Only enable shadows on desktop
+                setDpr(isMobileView ? 1 : 1.5);
+                setQualityLevel('medium');
+              }
+            }}
+            onDecline={() => {
+              // Performance is bad, decrease quality
+              console.log('Performance BAD - decreasing quality');
+              if (qualityLevel === 'auto' || qualityLevel === 'medium') {
+                setShadowsEnabled(false);
+                setDpr(1);
+                setQualityLevel('low');
+                
+                // Store quality preference for this device
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('gameQuality', 'low');
+                }
+              }
+            }}
+            onChange={({ fps }) => {
+              // Update FPS display
+              if (frameCount.current % 30 === 0) { // Update every 30 frames
+                setCurrentFPS(Math.round(fps));
+                console.log(`Current FPS: ${fps.toFixed(1)}`);
+              }
+              frameCount.current++;
+            }}
+          />
+          
           {/* Always render Experience but with Suspense for model loading */}
           <Suspense fallback={
             <mesh>
@@ -311,6 +366,8 @@ export default function GamePage() {
             <Experience 
               onTouchAction={(handler) => { touchActionHandler.current = handler; }} 
               onLoad={() => setModelLoaded(true)}
+              qualityLevel={qualityLevel}
+              shadowsEnabled={shadowsEnabled}
             />
           </Suspense>
         </Canvas>
@@ -326,6 +383,27 @@ export default function GamePage() {
       {/* Respawn overlay - renders as DOM element outside Canvas */}
       <RespawnOverlay />
       
+      
+      {/* FPS Display - Top Right */}
+      {showFPS && !isSceneLoading && (
+        <div style={{
+          position: 'fixed',
+          top: isMobileView ? '10px' : '20px',
+          right: isMobileView ? '10px' : '20px',
+          backgroundColor: currentFPS < 20 ? 'rgba(255, 0, 0, 0.7)' : 
+                          currentFPS < 30 ? 'rgba(255, 255, 0, 0.7)' : 
+                          'rgba(0, 255, 0, 0.7)',
+          color: 'white',
+          padding: '5px 10px',
+          borderRadius: '5px',
+          fontSize: isMobileView ? '12px' : '14px',
+          fontFamily: 'monospace',
+          zIndex: 99999,
+          pointerEvents: 'none',
+        }}>
+          FPS: {currentFPS} | {qualityLevel.toUpperCase()} | {shadowsEnabled ? 'Shadows' : 'No Shadows'}
+        </div>
+      )}
       
       {/* RL80 Logo - Top Left (only show when game is loaded) */}
       {!isSceneLoading && (

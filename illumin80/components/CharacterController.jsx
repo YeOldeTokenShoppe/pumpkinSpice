@@ -157,9 +157,19 @@ export const CharacterController = ({ onTouchAction }) => {
   }, [loadSound]);
 
 
+  // Frame limiter for mobile
+  const frameCount = useRef(0);
+  const isMobile = useRef(window.innerWidth <= 768 || 'ontouchstart' in window);
+  
   useFrame(({ camera, mouse }) => {
-    // Always update character position for candle system
-    if (character.current) {
+    frameCount.current++;
+    
+    // Skip some frames on mobile for better performance
+    const skipFrames = isMobile.current ? 2 : 1; // Process every 3rd frame on mobile
+    const shouldSkipFrame = frameCount.current % skipFrames !== 0;
+    
+    // Always update character position but less frequently on mobile
+    if (character.current && !shouldSkipFrame) {
       character.current.getWorldPosition(GameState.characterPosition);
     }
     
@@ -829,9 +839,11 @@ export const CharacterController = ({ onTouchAction }) => {
 
     character.current.getWorldPosition(GameState.characterPosition);
     
-    // Update reactive position properties for UI
-    GameState.characterY = Math.round(GameState.characterPosition.y);
-    GameState.characterZ = Math.round(GameState.characterPosition.z);
+    // Update reactive position properties for UI (less frequently on mobile)
+    if (!shouldSkipFrame) {
+      GameState.characterY = Math.round(GameState.characterPosition.y);
+      GameState.characterZ = Math.round(GameState.characterPosition.z);
+    }
 
     // Set spawn point on first frame when character is on solid ground
     if (!hasSetSpawnPoint.current && isOnGround.current) {
@@ -871,33 +883,35 @@ export const CharacterController = ({ onTouchAction }) => {
       hasFallen.current = false;
     }
 
-    // CAMERA
-    container.current.rotation.y = MathUtils.lerp(
-      container.current.rotation.y,
-      rotationTarget.current,
-      0.1
-    );
+    // CAMERA - Update less frequently on mobile
+    if (!shouldSkipFrame || !isMobile.current) {
+      container.current.rotation.y = MathUtils.lerp(
+        container.current.rotation.y,
+        rotationTarget.current,
+        isMobile.current ? 0.15 : 0.1 // Slightly faster lerp on mobile to compensate for skipped frames
+      );
 
-    GameState.containerRotation = container.current.rotation.y;
+      GameState.containerRotation = container.current.rotation.y;
 
-    // Update camera position based on zoom distance and pitch
-    const baseCameraHeight = 4; // Default camera height
-    const pitchOffset = Math.sin(cameraPitch.current) * cameraDistance.current;
-    cameraPosition.current.position.z = -cameraDistance.current * Math.cos(cameraPitch.current);
-    cameraPosition.current.position.y = baseCameraHeight + pitchOffset;
+      // Update camera position based on zoom distance and pitch
+      const baseCameraHeight = 4; // Default camera height
+      const pitchOffset = Math.sin(cameraPitch.current) * cameraDistance.current;
+      cameraPosition.current.position.z = -cameraDistance.current * Math.cos(cameraPitch.current);
+      cameraPosition.current.position.y = baseCameraHeight + pitchOffset;
 
-    cameraPosition.current.getWorldPosition(cameraWorldPosition.current);
-    camera.position.lerp(cameraWorldPosition.current, 0.1);
+      cameraPosition.current.getWorldPosition(cameraWorldPosition.current);
+      camera.position.lerp(cameraWorldPosition.current, isMobile.current ? 0.15 : 0.1);
 
-    if (cameraTarget.current) {
-      cameraTarget.current.getWorldPosition(cameraLookAtWorldPosition.current);
-      
-      // Adjust look-at target based on pitch to actually look up/down
-      const adjustedLookAt = cameraLookAtWorldPosition.current.clone();
-      adjustedLookAt.y += Math.tan(cameraPitch.current) * 5; // Adjust vertical look-at based on pitch
-      
-      cameraLookAt.current.lerp(adjustedLookAt, 0.1);
-      camera.lookAt(cameraLookAt.current);
+      if (cameraTarget.current) {
+        cameraTarget.current.getWorldPosition(cameraLookAtWorldPosition.current);
+        
+        // Adjust look-at target based on pitch to actually look up/down
+        const adjustedLookAt = cameraLookAtWorldPosition.current.clone();
+        adjustedLookAt.y += Math.tan(cameraPitch.current) * 5; // Adjust vertical look-at based on pitch
+        
+        cameraLookAt.current.lerp(adjustedLookAt, isMobile.current ? 0.15 : 0.1);
+        camera.lookAt(cameraLookAt.current);
+      }
     }
 
   });
@@ -917,8 +931,8 @@ export const CharacterController = ({ onTouchAction }) => {
         <group ref={cameraTarget} position-z={24.5} />
         <group 
           ref={cameraPosition} 
-          position-y={3.5} 
-          position-z={1} 
+          position-y={4.5} 
+          position-z={2} 
         />
         <group ref={character} userData={{ isCharacter: true }}>
           <Character 
