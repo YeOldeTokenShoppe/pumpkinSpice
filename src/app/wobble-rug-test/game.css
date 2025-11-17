@@ -1,0 +1,35 @@
+/* Prevent text selection and dictionary popup globally */
+* {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -khtml-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+}
+
+html, body {
+  overflow: hidden;
+  touch-action: none;
+}
+
+canvas {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  touch-action: none !important;
+}
+
+/* Disable text cursor */
+body {
+  cursor: default;
+}
+
+/* Prevent highlighting on triple-click */
+*::selection {
+  background: transparent;
+}
+
+*::-moz-selection {
+  background: transparent;
+}

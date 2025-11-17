@@ -111,7 +111,9 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
   };
   
   const handleJumpStart = (e) => {
-    e.stopPropagation(); // Don't prevent default to allow multi-touch
+    e.preventDefault(); // Prevent context menu
+    e.stopPropagation(); // Don't interfere with joystick dragging
+    console.log('Jump button pressed - calling onJump(true)');
     setIsJumping(true);
     if (onJump) {
       onJump(true);
@@ -119,7 +121,9 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
   };
   
   const handleJumpEnd = (e) => {
+    e.preventDefault();
     e.stopPropagation();
+    console.log('Jump button released - calling onJump(false)');
     setIsJumping(false);
     if (onJump) {
       onJump(false);
@@ -258,6 +262,7 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
       className="virtual-joystick"
       onTouchStart={handleStart}
       onPointerDown={handleStart}
+      onContextMenu={(e) => e.preventDefault()}
       style={{
         position: 'absolute',
         width: `${size}px`,
@@ -298,55 +303,6 @@ export const VirtualJoystick = ({ onMove, onSprint, onJump, size = 120, style })
           pointerEvents: 'none',
         }}
       />
-      
-      {/* Center Jump Button */}
-      <button
-        className="jump-button"
-        onTouchStart={handleJumpStart}
-        onTouchEnd={handleJumpEnd}
-        onTouchCancel={handleJumpEnd}
-        onMouseDown={handleJumpStart}
-        onMouseUp={handleJumpEnd}
-        onMouseLeave={handleJumpEnd}
-        style={{
-          position: 'absolute',
-          width: `${centerButtonSize}px`,
-          height: `${centerButtonSize}px`,
-          borderRadius: '50%',
-          left: '50%',
-          top: '50%',
-          transform: `translate(-50%, -50%) ${isJumping ? 'scale(0.9)' : 'scale(1)'}`,
-          background: isJumping
-            ? `radial-gradient(circle at 40% 40%, 
-                rgba(0, 255, 100, 0.8), 
-                rgba(0, 150, 60, 0.9))`
-            : `radial-gradient(circle at 40% 40%, 
-                rgba(0, 255, 255, 0.4), 
-                rgba(0, 100, 100, 0.7))`,
-          border: isJumping 
-            ? '2px solid rgba(0, 255, 100, 0.9)' 
-            : '2px solid rgba(0, 255, 255, 0.6)',
-          boxShadow: isJumping
-            ? `0 0 20px rgba(0, 255, 100, 0.8),
-               inset 0 0 10px rgba(0, 255, 100, 0.3)`
-            : `0 0 15px rgba(0, 255, 255, 0.4),
-               inset 0 0 5px rgba(0, 255, 255, 0.2)`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '18px',
-          fontWeight: 'bold',
-          color: '#fff',
-          cursor: 'pointer',
-          transition: 'transform 0.1s ease',
-          touchAction: 'manipulation',
-          zIndex: 10,
-          padding: 0,
-          outline: 'none',
-        }}
-      >
-        ⬆️
-      </button>
       
       <div
         className="joystick-knob"
