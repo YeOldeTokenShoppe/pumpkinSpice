@@ -452,9 +452,9 @@ export default function Gallery3Page() {
         </div>
         
         {/* Social Bar */}
-        <div style={{ order: isMobileDevice ? 4 : 4 }}>
+        {/* <div style={{ order: isMobileDevice ? 4 : 4 }}>
           <SocialBar is80sMode={is80sMode} />
-        </div>
+        </div> */}
       </div>
       
       {/* Tokens Burned Display */}

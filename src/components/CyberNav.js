@@ -55,8 +55,8 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: isMobile ? "40px" : "60px",
-            height: isMobile ? "40px" : "60px",
+               width: isMobile ? "2.5rem" : "3.75rem",
+                  height: isMobile ? "2.5rem" : "3.75rem",
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
           }}
           aria-label="Menu"

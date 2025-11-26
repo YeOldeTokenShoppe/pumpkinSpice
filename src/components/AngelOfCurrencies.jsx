@@ -160,11 +160,11 @@ function AngelOfCurrencies({
   return (
     <div style={{
       position: 'absolute',
-      left: isMobile ? '-20%' : '-25%',
-      top: isMobile ? '12%' : '50%',
+      left: isMobile ? '-40%' : '-30%',
+      top: isMobile ? '-1rem' : '20%',
       transform: 'translateY(-50%)',
-      width: isMobile ? '50%' : '60%',
-      height: isMobile ? '300px' : '400px',
+      width: isMobile ? '100%' : '60%',
+      height: isMobile ? '14rem' : '400px',
       pointerEvents: 'none',
       zIndex: 5,
       ...style

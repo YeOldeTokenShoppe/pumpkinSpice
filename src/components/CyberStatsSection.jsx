@@ -164,7 +164,7 @@ export default function CyberStatsSection({ isMobile }) {
             right: 0,
             height: '5px',
             background: 'rgba(255, 255, 255, 0.1)',
-            animation: 'scanline 3s linear infinite',
+            animation: `scanline 3s linear infinite ${index * 0.3}s`,
             pointerEvents: 'none',
           }} />
         </div>
@@ -233,6 +233,14 @@ export default function CyberStatsSection({ isMobile }) {
             textAlign: 'center',
             flexGrow: 1,
             fontFamily: 'monospace',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            hyphens: 'auto',
+            lineHeight: '1.2',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
           }} className="card-description">
             {metric.description}
           </div>

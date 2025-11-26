@@ -20,13 +20,13 @@
   margin-left: calc(var(--coin-diam) * -0.5);
 
   perspective: 1000px;
-  -webkit-box-reflect: below 0
+  /* -webkit-box-reflect: below 0
     linear-gradient(
       hsla(0, 0%, 100%, 0),
       hsla(0, 0%, 100%, 0) 45%,
       hsla(0, 0%, 100%, 0.2)
-    );
-  filter: saturate(1.45) hue-rotate(2deg);
+    ); */
+  /* filter: saturate(1.45) hue-rotate(2deg); */
 }
 
 /* The Coin ------------------- */

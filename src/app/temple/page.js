@@ -32,6 +32,7 @@ export default function CyborgTemple() {
   const [modelLoaded, setModelLoaded] = useState(false);
   const [showTrading, setShowTrading] = useState(true);
   const [triggerSnapshot, setTriggerSnapshot] = useState(false);
+  const [showAnnotations, setShowAnnotations] = useState(true);
   
   // Connect to trading bot for real data
   const { isConnected, tradingData } = useTradingBot();
@@ -294,6 +295,8 @@ export default function CyborgTemple() {
               rotation={[0, 0, 0]}
               isPlaying={contextIsPlaying}
               onLoad={handleSceneLoad}
+              showAnnotations={showAnnotations}
+              is80sMode={is80sMode}
             />
 
             <TickerDisplay3 />
@@ -507,18 +510,94 @@ export default function CyborgTemple() {
               )}
             </div>
 
+            {/* Annotations Toggle */}
+            <div style={{ order: isMobileView ? 3 : 2 }}>
+              <button
+                style={{
+                  width: isMobileView ? "2.5rem" : "3.75rem",
+                  height: isMobileView ? "2.5rem" : "3.75rem",
+                  borderRadius: "0.5rem",
+                  backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
+                  border: is80sMode ? "1px solid #D946EF" : "1px solid rgba(255, 255, 255, 0.2)",
+                  color: is80sMode ? "#67e8f9" : (showAnnotations ? "#ffff00" : "#ffffff"),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  backdropFilter: "blur(10px)",
+                  boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
+                }}
+                aria-label="Toggle Annotations"
+                onClick={() => setShowAnnotations(!showAnnotations)}
+                title="Toggle Annotations"
+              >
+                <svg width={isMobileView ? "20" : "30"} height={isMobileView ? "20" : "30"} viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill={showAnnotations ? "currentColor" : "none"}/>
+                  <text 
+                    x="12" 
+                    y="12" 
+                    textAnchor="middle" 
+                    dominantBaseline="middle" 
+                    fontSize="14" 
+                    fontWeight="bold"
+                    fill={showAnnotations ? "#000" : "currentColor"}
+                  >
+                    ?
+                  </text>
+                </svg>
+              </button>
+            </div>
+
             {/* CyberNav Menu */}
-            <div style={{ order: isMobileView ? 0 : 2 }}>
+            <div style={{ order: isMobileView ? 0 : 3 }}>
               <CyberNav is80sMode={is80sMode} position="relative" />
             </div>
 
             {/* Social Bar */}
-            <div style={{ order: isMobileView ? 4 : 3 }}>
+            {/* <div style={{ order: isMobileView ? 4 : 3 }}>
               <SocialBar is80sMode={is80sMode} />
-            </div>
+            </div> */}
           </div>
         )}
-
+        
+        {/* Annotations Toggle */}
+        {/* {mounted && sceneReady && (
+          <button
+            style={{
+              position: "fixed",
+              // top: isMobileView ? "8rem" : "6rem",
+              // right: isMobileView ? "1rem" : "1rem",
+              zIndex: 10002,
+              color: is80sMode ? "#67e8f9" : (showAnnotations ? "#ffff00" : "#ffffff"),
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              border: `1px solid ${showAnnotations ? "#ffff00" : "rgba(255, 255, 255, 0.2)"}`,
+              borderRadius: "0.5rem",
+              cursor: "pointer",
+              padding: "0.5rem",
+              transition: "all 0.3s ease",
+              backdropFilter: "blur(10px)",
+              boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)"
+            }}
+            aria-label="Toggle Annotations"
+            onClick={() => setShowAnnotations(!showAnnotations)}
+          >
+            <svg width={isMobileView ? "30" : "40"} height={isMobileView ? "30" : "40"} viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill={showAnnotations ? "currentColor" : "none"}/>
+              <text 
+                x="12" 
+                y="12" 
+                textAnchor="middle" 
+                dominantBaseline="middle" 
+                fontSize="14" 
+                fontWeight="bold"
+                fill={showAnnotations ? "#000" : "currentColor"}
+              >
+                ?
+              </text>
+            </svg>
+          </button>
+        )} */}
         {/* Snapshot Button */}
         {/* <button
           onClick={() => setTriggerSnapshot(true)}

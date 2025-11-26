@@ -38,7 +38,7 @@ import BreathSmoke from "@/components/BreathSmoke";
 import SkewedHeading from "@/components/SkewedHeading";
 import AngelOfCurrencies from "@/components/AngelOfCurrencies";
 import SlidingNav from "@/components/SlidingNav";
-
+import CircularCTA from "@/components/CircularCTA";
 
 
 
@@ -402,7 +402,7 @@ function ScrollTriggeredTitle({ isMobile }) {
       <div style={{
     maxWidth: '1200px',
         margin: '25rem auto 0 auto',
-        padding: isMobile ? '30px 20px' : '40px 30px',
+        padding: isMobile ? '30px 0' : '40px 0',
             background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
         borderRadius: '0',
         border: '2px solid #00ff00',
@@ -411,9 +411,9 @@ function ScrollTriggeredTitle({ isMobile }) {
         textAlign: 'center',
         opacity: titleInView ? 1 : 0,
         transform: titleInView ? 'translateY(0)' : 'translateY(20px)',
-        transition: 'all 0.5s ease-out 1s',
+        transition: 'all 0.5s ease-out 0.5s',
         position: 'relative',
-    width: '90%',
+    width: '100%',
 
         zIndex: 10,
    
@@ -450,20 +450,21 @@ function ScrollTriggeredTitle({ isMobile }) {
     lines={["THE ANNUNCIATION"]}
     // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
         colors={["rgba(0, 255, 0, 1)"]}
-    fontSize={{ mobile: "1.3rem", desktop: "3rem" }}
+    fontSize={{ mobile: "1.8rem", desktop: "3rem" }}
     isMobile={isMobile}
     textAlign="left"
   />
-        <h2 style={{
-          fontSize: isMobile ? '1.3rem' : '1.8rem',
+        <div style={{
+          fontSize: isMobile ? '1.8rem' : '2.8rem',
           color: '#ffffff',
-          fontFamily: "'Fjalla One', sans-serif",
+          fontFamily: "'scotland', sans-serif",
           marginBottom: '0',
           textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
-          lineHeight: '1.5',
+          lineHeight: '1.1',
 
-          width: isMobile ? '90%' : '80%',
-          margin: '0 auto'
+          width: '100%',
+          padding: isMobile ? '0 20px' : '0 80px',
+          position: 'relative'
         }}>
  
         
@@ -471,424 +472,40 @@ function ScrollTriggeredTitle({ isMobile }) {
         <AngelOfCurrencies 
           isMobile={isMobile}
           onLoad={() => console.log('Angel of Currencies loaded for intro')}
-        />Descending from the Cloud servers comes the Virtual Virgin, the digital manifestation of the icon of intercession, sent to light the way through the dark realm of DeFi.
-           She is the singularity from antiquity - creating smart contracts with maternal wisdom and eternal vigilance - always on and always on your side. 
-        She's the mother of memes, aider to traders, fren to degens, and your guide up and to the right.
+        />
+       
         
+        <span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem',}}>D</span>escending from the cloud servers comes the digital manifestation of the icon of intercession - the virtual mary in the virtual machine, the protectress of dexes, aider to traders, fren to degens - here to light the way through the dark realm of <span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem'}}>D</span>e<span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem'}}>F</span>i. <br/><br/>
 
-          {/* Whether you need a Hail Mary for hard times, or just sanctuary from scams,
-         let <b>Our Lady of Perpetual Profit</b>  */}
-        </h2>
-        {/* <p style={{
-          fontSize: isMobile ? '0.95rem' : '1.1rem',
-          color: 'rgba(255, 255, 255, 0.9)',
-          lineHeight: '1.6',
-          fontFamily: '"Inter", sans-serif',
-          textShadow: '1px 1px 3px rgba(0,0,0,0.5)'
-        }}>
-          Our Lady of Perpetual Profit rides eternal through the digital realm, 
-          blessing holders with divine gains. Join the faithful as we ascend 
-          to financial enlightenment together.
-        </p> */}
-      </div>
-    </div>
-  );
-}
-
-// Modern StatsSection with terminal/trading style (replaced by CyberStatsSection)
-function StatsSection({ isMobile }) {
-  const statsRef = useRef(null);
-  const isInView = useInView(statsRef, { threshold: 0.3 });
-
-  const metrics = [
-    // Staking-related metrics
-    { value: 1337, suffix: '', prefix: '', label: 'STAKERS', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-      </svg>
-    ), gradient: 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)' },
-    { value: 888.8, suffix: 'K', prefix: '$', label: 'TVL', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-      </svg>
-    ), gradient: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' },
-    { value: 42.86, suffix: '%', prefix: '+', label: 'TOTAL P&L', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" x2="12" y1="20" y2="10"/>
-        <line x1="18" x2="18" y1="20" y2="4"/>
-        <line x1="6" x2="6" y1="20" y2="16"/>
-      </svg>
-    ), gradient: 'linear-gradient(135deg, #fbbf24 0%, #f97316 100%)' },
-    { value: 69.42, suffix: '%', prefix: '', label: 'APY', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>
-      </svg>
-    ), gradient: 'linear-gradient(135deg, #84cc16 0%, #10b981 100%)' },
-    // Market-related metrics
-    { value: 144.7, suffix: 'K', prefix: '$', label: 'MARKET CAP', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
-        <path d="M12 18V6"/>
-      </svg>
-    ), gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' },
-    { value: 134, suffix: '', prefix: '', label: 'HOLDERS', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/>
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    ), gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)' },
-    { value: 2.8, suffix: '%', prefix: '', label: 'BURNED', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 12c0-2-1-3.5-2.5-5s-1-4.5-1-4.5c-.5 2.5-2 4.9-4.5 6.5 0 0 1.5 1 1.5 3.5C5.5 15 7 17 9 18c1 .5 1.5 1 2 1.5V12Z"/>
-        <path d="M16 9.5c0-.5-.5-2-1.5-3.5S13.5 3 13.5 3s-.5 1.5-1 2.5c0 0 .5.5.5 1.5 0 1 .5 2 1 2.5.5.5.5 1 1 1.5v-2Z"/>
-        <path d="M20.5 13.5s-.5 1.5-1.5 2.5-1.5 1.5-1.5 1.5"/>
-      </svg>
-    ), gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' },
-    { value: 42.0, suffix: 'K', prefix: '$', label: 'LIQUIDITY', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
-        <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>
-      </svg>
-    ), gradient: 'linear-gradient(135deg, #6366f1 0%, #3b82f6 100%)' }
-  ];
-
-  return (
-    <div ref={statsRef} style={{ width: '100%' }}>
-      {/* Staking Metrics Section */}
-      <div style={{ marginBottom: '40px' }}>
-        <h3 style={{
-          fontSize: isMobile ? '14px' : '18px',
-          fontWeight: 'bold',
-          color: '#00ff00',
-          marginBottom: '20px',
-          fontFamily: 'monospace',
-          textTransform: 'uppercase',
-          letterSpacing: '2px',
-          textAlign: 'center',
-          textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
-        }}>
-          STAKING METRICS
-        </h3>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-          gap: isMobile ? '15px' : '20px',
-          width: '100%',
-          alignItems: 'stretch',
-          justifyItems: 'stretch',
-        }}>
-          {metrics.slice(0, 4).map((metric, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
-            transition={{ duration: 0.8, delay: 0.05 * index }}
-            style={{
-              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(0, 255, 0, 0.3)',
-              borderRadius: '8px',
-              padding: isMobile ? '15px' : '20px',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-              height: isMobile ? '140px' : '160px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-start',
-              width: '100%',
-              boxSizing: 'border-box',
-              position: 'relative',
-              boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
-            }}
-            whileHover={{
-              borderColor: 'rgba(0, 255, 0, 0.6)',
-              boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
-            }}
-          >
-            {/* Grid pattern overlay */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundImage: `
-                repeating-linear-gradient(
-                  0deg,
-                  transparent,
-                  transparent 2px,
-                  rgba(0, 255, 0, 0.02) 2px,
-                  rgba(0, 255, 0, 0.02) 4px
-                ),
-                repeating-linear-gradient(
-                  90deg,
-                  transparent,
-                  transparent 2px,
-                  rgba(0, 255, 0, 0.02) 2px,
-                  rgba(0, 255, 0, 0.02) 4px
-                )
-              `,
-              pointerEvents: 'none',
-            }} />
-            {/* Icon */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: isMobile ? '10px' : '15px',
-              }}
-            >
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#00ff00',
-                animation: 'pulse 2s infinite',
-                boxShadow: '0 0 10px #00ff00'
-              }} />
-              <div style={{ 
-                color: '#00ff00',
-                display: 'flex',
-                alignItems: 'center',
-                filter: 'drop-shadow(0 0 8px rgba(0, 255, 0, 0.5))'
-              }}>
-                {metric.icon}
-              </div>
-            </div>
-
-            {/* Value */}
-            <div style={{
-              fontSize: isMobile ? '24px' : '32px',
-              fontWeight: 'bold',
-              color: '#00ff00',
-              marginBottom: '8px',
-              fontFamily: 'monospace',
-              textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
-            }}>
-              <AnimatedCounter 
-                target={metric.value} 
-                suffix={metric.suffix} 
-                prefix={metric.prefix} 
-              />
-            </div>
-
-            {/* Label */}
-            <div style={{
-              fontSize: isMobile ? '10px' : '11px',
-              color: '#888',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              fontWeight: '600',
-              fontFamily: 'monospace',
-            }}>
-              {metric.label}
-            </div>
-          </motion.div>
-          ))}
         </div>
-      </div>
-
-      {/* Market Metrics Section */}
-      <div>
-        <h3 style={{
-          fontSize: isMobile ? '14px' : '18px',
-          fontWeight: 'bold',
-          color: '#00ff00',
-          marginBottom: '20px',
-          fontFamily: 'monospace',
-          textTransform: 'uppercase',
-          letterSpacing: '2px',
-          textAlign: 'center',
-          textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
-        }}>
-          MARKET METRICS
-        </h3>
+ 
+        {/* Circular CTA positioned in bottom right */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-          gap: isMobile ? '15px' : '20px',
-          width: '100%',
-          alignItems: 'stretch',
-          justifyItems: 'stretch',
+          position: 'absolute',
+          bottom: '20px',
+          right: '20px',
+          width: isMobile ? '80px' : '150px',
+          height: isMobile ? '75px' : '150px',
+          zIndex: 20,
         }}>
-          {metrics.slice(4).map((metric, index) => (
-          <motion.div
-            key={index + 4}
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
-            transition={{ duration: 0.8, delay: 0.05 * (index + 4) }}
-            style={{
-              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(0, 255, 0, 0.3)',
-              borderRadius: '8px',
-              padding: isMobile ? '15px' : '20px',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-              height: isMobile ? '140px' : '160px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-start',
-              width: '100%',
-              boxSizing: 'border-box',
-              position: 'relative',
-              boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
-            }}
-            whileHover={{
-              borderColor: 'rgba(0, 255, 0, 0.6)',
-              boxShadow: '0 0 30px rgba(0, 255, 0, 0.3)',
-            }}
-          >
-            {/* Grid pattern overlay */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundImage: `
-                repeating-linear-gradient(
-                  0deg,
-                  transparent,
-                  transparent 2px,
-                  rgba(0, 255, 0, 0.02) 2px,
-                  rgba(0, 255, 0, 0.02) 4px
-                ),
-                repeating-linear-gradient(
-                  90deg,
-                  transparent,
-                  transparent 2px,
-                  rgba(0, 255, 0, 0.02) 2px,
-                  rgba(0, 255, 0, 0.02) 4px
-                )
-              `,
-              pointerEvents: 'none',
-            }} />
-            {/* Icon */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: isMobile ? '10px' : '15px',
-              }}
-            >
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#00ff00',
-                animation: 'pulse 2s infinite',
-                boxShadow: '0 0 10px #00ff00'
-              }} />
-              <div style={{ 
-                color: '#00ff00',
-                display: 'flex',
-                alignItems: 'center',
-                filter: 'drop-shadow(0 0 8px rgba(0, 255, 0, 0.5))'
-              }}>
-                {metric.icon}
-              </div>
-            </div>
-
-            {/* Value */}
-            <div style={{
-              fontSize: isMobile ? '24px' : '32px',
-              fontWeight: 'bold',
-              color: '#00ff00',
-              marginBottom: '8px',
-              fontFamily: 'monospace',
-              textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
-            }}>
-              <AnimatedCounter 
-                target={metric.value} 
-                suffix={metric.suffix} 
-                prefix={metric.prefix} 
-              />
-            </div>
-
-            {/* Label */}
-            <div style={{
-              fontSize: isMobile ? '10px' : '11px',
-              color: '#888',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              fontWeight: '600',
-              fontFamily: 'monospace',
-            }}>
-              {metric.label}
-            </div>
-          </motion.div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// LayeredClouds - individual cloud sprites with parallax
-function LayeredClouds({ scrollY }) {
-  const cloudTexture = useMemo(() => {
-    const texture = new THREE.TextureLoader().load('/PinkCloudA.png');
-    texture.generateMipmaps = false;
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    return texture;
-  }, []);
-  
-  const cloudRefs = useRef([]);
-  
-  // Different parallax speeds for depth layers (moved much closer to be visible)
-  const cloudLayers = [
-    // Background layer - behind model but visible
-    { position: [-80, -20, -50], scale: [60, 60, 60], speed: 0.003, opacity: 0.6 },
-    { position: [60, -10, -45], scale: [50, 50, 50], speed: 0.003, opacity: 0.6 },
-    { position: [-30, -35, -40], scale: [40, 40, 40], speed: 0.003, opacity: 0.6 },
-    
-    // Mid layer - further behind model
-    { position: [-50, 20, -35], scale: [55, 55, 55], speed: 0.007, opacity: 0.7 },
-    { position: [40, 45, -30], scale: [45, 45, 45], speed: 0.007, opacity: 0.7 },
-    { position: [0, -10, -25], scale: [50, 50, 50], speed: 0.007, opacity: 0.7 },
-  ];
-  
-  // Animate each cloud layer with different parallax speeds
-  useFrame(() => {
-    cloudRefs.current.forEach((cloudMesh, index) => {
-      if (cloudMesh && cloudLayers[index]) {
-        cloudMesh.position.y = cloudLayers[index].position[1] + scrollY * cloudLayers[index].speed;
-      }
-    });
-  });
-  
-  return (
-    <group>
-      {cloudLayers.map((cloud, index) => (
-        <sprite
-          key={index}
-          ref={el => cloudRefs.current[index] = el}
-          position={cloud.position}
-          scale={cloud.scale}
-          renderOrder={0}
-        >
-          <spriteMaterial 
-            map={cloudTexture}
-            transparent={true}
-            opacity={cloud.opacity * 0.6}
-            alphaTest={0.1}
-            depthTest={true}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
+                <CircularCTA
+    text="• PREME EMERE • CLICK TO BUY • PREME EMERE • CLICK TO BUY • PREME EMERE"
+    href="/temple"
+    accentColor="#00ff00"
+    bgColor="none"
+            size={isMobile ? 100 : 150}
+            textSize={isMobile ? 7 : 8}
           />
-        </sprite>
-      ))}
-    </group>
+        </div>
+      </div>
+     
+    </div>
   );
 }
+
+
+
+
 
 // Exact TickerCurve from Simple3DScene
 const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
@@ -1078,8 +695,9 @@ export default function Home3() {
   // useInView hooks
   const ctasInView = useInView(ctasRef, { threshold: 0.3, once: true });
   const secondTitleInView = useInView(secondTitleRef, { 
-    threshold: 0.3, 
-    triggerOnce: false  // Allow re-triggering when scrolling up/down
+    threshold: 0.1,  // Trigger when 10% visible (earlier trigger)
+    triggerOnce: false,  // Allow re-triggering when scrolling up/down
+    rootMargin: '0px 0px -20% 0px'  // Trigger 20% before element fully enters viewport
   });
 
   // Auth state
@@ -1177,9 +795,9 @@ export default function Home3() {
         currentScroll = scrollingElement.scrollTop || window.scrollY || window.pageYOffset || 0;
       }
       
-      if (currentScroll > 0) {
-        console.log('Scroll detected:', currentScroll);
-      }
+      // if (currentScroll > 0) {
+      //   console.log('Scroll detected:', currentScroll);
+      // }
       
       setScrollY(currentScroll);
     };
@@ -1199,7 +817,7 @@ export default function Home3() {
       const possibleContainers = document.querySelectorAll('div, main, section');
       possibleContainers.forEach(container => {
         if (container.scrollHeight > container.clientHeight) {
-          console.log('Found scrollable container:', container.className || container.id || container.tagName);
+          // console.log('Found scrollable container:', container.className || container.id || container.tagName);
           container.addEventListener('scroll', handleScroll, { passive: true });
         }
       });
@@ -1468,7 +1086,14 @@ export default function Home3() {
               left: isMobile ? "-10%" : "-25%",
               color: "#d4af37",
               fontFamily: 'UnifrakturCook, serif',
-              textShadow: "3px 3px 5px #000, -1px -1px 5px pink",
+              textShadow: `
+                0 0 10px rgba(212, 175, 55, 0.8),
+                0 0 20px rgba(212, 175, 55, 0.6),
+                0 0 30px rgba(212, 175, 55, 0.8),
+                6px 6px 16px rgba(0, 0, 0, 1),
+                -2px -2px 8px rgba(255, 192, 203, 0.7),
+                0 0 100px rgba(212, 175, 55, 0.1)
+              `,
               fontSize: getResponsiveValue("4rem", "5rem", "5rem", "5rem"),
               fontWeight: 900,
               lineHeight: 0.8,
@@ -1486,6 +1111,21 @@ export default function Home3() {
               </span>
               <span className="title-line" style={{ display: 'block', marginLeft: isMobile ? "2rem" : "6rem", position: 'relative' }}>Profit</span>
             </h1>
+{/* {!isMobile && (
+              <div style={{position: "relative", left: "-22%",}}>
+                <div className="purse">
+                  <div className="coin">
+                    <div className="front"></div>
+                    <div className="back"></div>
+                    <div className="side">
+                      {[...Array(16)].map((_, index) => (
+                        <div key={index} className="spoke"></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )} */}
         </div>
         
       </div>
@@ -1672,9 +1312,9 @@ export default function Home3() {
         </div>
         
         {/* Social Bar */}
-        <div style={{ order: isMobileDevice ? 4 : 3 }}>
+        {/* <div style={{ order: isMobileDevice ? 4 : 3 }}>
           <SocialBar is80sMode={is80sMode} />
-        </div>
+        </div> */}
         
         {/* Global Copy Lighting Values Button (commented out - uncomment if using GUI controls) */}
         {/* <div style={{ order: isMobileDevice ? 5 : 4 }}>
@@ -1731,7 +1371,7 @@ export default function Home3() {
           }}
           style={{
             textAlign: 'center',
-            padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
+            padding: isMobile ? '2rem 1rem' : '5rem 2.8rem',
             // maxWidth: '900px',
             margin: '0 auto',
           }}
@@ -1740,46 +1380,489 @@ export default function Home3() {
           <ScrollTriggeredTitle isMobile={isMobile} />
         </div>
 
-        {/* Split Hero CTAs */}
+       
+        
+
+        {/* Additional content sections */}
+
         <motion.div
-          ref={ctasRef}
-          initial={{ opacity: 0, y: 30 }}
-          animate={ctasInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8, delay: 0.3 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
           style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: isMobile ? '20px' : '30px',
-            margin: isMobile ? '40px auto' : '60px auto',
+            position: 'relative',
+            margin: '4rem auto',
+            width: isMobile ? '95%' : '90%',
             maxWidth: '1200px',
-            padding: isMobile ? '0 1.5rem' : '0 2rem',
-            minHeight: '30vh'
+            zIndex: 1,
+            pointerEvents: 'auto'
           }}
         >
-          {/* Buy RL80 Card */}
-          <CyberCTACard
-            variant="buy"
-            buttonText="BUY RL80"
-            value="$0.0048"
-            description="Available on Uniswap"
-            icon="💰"
-            onClick={() => window.open('#', '_blank')}
-            isMobile={isMobile}
-          />
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
+            border: '2px solid #00ff00',
+            borderRadius: '0',
+            padding: isMobile ? '30px 20px' : '40px',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            
+            {/* Grid pattern overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                )
+              `,
+              pointerEvents: 'none',
+            }} />
 
-          {/* Stake & Earn Card */}
-          <CyberCTACard
-            variant="stake"
-            buttonText="STAKE RL80"
-            value="24.5% APY"
-            description="Lock your tokens and earn passive rewards daily"
-            icon="🔒"
-            onClick={() => window.open('#', '_blank')}
-            isMobile={isMobile}
-          />
+            {/* Glow effect */}
+            <div style={{
+              content: '',
+              position: 'absolute',
+              top: '-50%',
+              left: '-50%',
+              width: '200%',
+              height: '200%',
+              background: 'radial-gradient(circle, rgba(0, 255, 0, 0.05) 0%, transparent 70%)',
+              animation: 'handsRotate 30s linear infinite',
+              zIndex: 0
+            }} />
+
+            <div style={{
+              position: "relative",
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.55fr) minmax(0, 0.45fr)",
+              gap: isMobile ? "2rem" : "3rem",
+              alignItems: "center",
+              color: '#ffffff',
+              zIndex: 1
+            }}>
+                               
+                              <div style={{
+                          height: isMobile ? '50vh' : '70vh',
+                          minHeight: '400px',
+                        }}>
+                          <HandsGLTFScene />
+                        </div>
+                               {/* Right Column - Text Content */}
+                   <div style={{
+              padding: isMobile ? '0 0.5rem' : '0 1rem',
+              color: '#ffffff',
+              minHeight: isMobile ? '300px' : '500px', // Match the candle container height
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center', // Center all children horizontally
+              width: '100%', // Ensure full width of grid column
+              boxSizing: 'border-box', // Include padding in width calculation
+              overflow: 'hidden', // Prevent content overflow
+              position: 'relative',
+              marginTop: isMobile ? '0' : '0'
+            }}>
+             
+     
+              <br/>
+     
+              {/* <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginTop: '2rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get On Her Watchlist</h1> */}
+                  {/* <h1 style={{
+              fontSize: '3rem',
+              marginBottom: '1rem',
+              lineHeight: '2.5rem',
+              color: '#d4af37',
+              fontFamily: 'UnifrakturCook, serif',
+              // textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
+textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
+  textAlign: 'center',
+            }}>Get On Her Watchlist</h1> */}
+              <SkewedHeading 
+    lines={["GET ON HER", "WATCHLIST"]}
+    // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+        colors={["#00ff00"]}
+    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+    isMobile={isMobile}
+  />
+              <div style={{
+                lineHeight: 1.5,
+                opacity: 0.9,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                fontWeight: 400,
+                letterSpacing: '0.02em',
+                fontSize: isMobile ? '1.2rem' : '1.4rem',
+                textAlign: 'center',
+                width: '100%',
+                // maxWidth: '600px',
+              }}>
+              {/* <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
+                Add a Green Candle to Her Timeline
+              </span> */}
+              {/* <p style={{ 
+                marginBottom: '2rem',
+                fontFamily: "'Pirata One', cursive",
+                fontSize: isMobile ? '1.5rem' : '1.8rem',
+                fontWeight: '400',
+                textAlign: 'center',
+                color: '#ffffff',
+                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)'
+              }}>
+                Join The Leaderboard of Luminaries
+              </p> */}
+                   {/* <img src="/timeline2.png" alt="Candle Icon" style={{ width: isMobile ? '50%' : '50%', height: 'auto', marginBottom: '-1rem', marginTop: '-2rem' }} /> */}
+                    <span style={{               fontFamily: "'Fjalla One', sans-serif",
+fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem', lineHeight: '1.3' }}>
+                Light a Green Candle for Luck
+              </span>         
+              <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
+Burn or stake RL80 to add a green candle to her timeline and watch miracles happen.  
+              </p>
+
+              {/* Top Burners Leaderboard */}
+              <div style={{
+                margin: '2rem 0',
+                padding: '1.5rem',
+                background: 'rgba(0, 0, 0, 0.4)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                borderRadius: '15px',
+                color: '#ffffff',
+                fontFamily: "'Inter', sans-serif",
+                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
+              }}>
+                <h3 style={{
+                  fontSize: isMobile ? '1.2rem' : '1.4rem',
+                  color: '#d4af37',
+                  textAlign: 'center',
+                  marginBottom: '1rem',
+                  fontFamily: "'Fjalla One', sans-serif",
+                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+                }}>
+                  🔥 Top Burners
+                </h3>
+                <div 
+                  className="leaderboard-scroll"
+                  style={{
+                    maxHeight: '220px',
+                    overflowY: 'auto',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(212, 175, 55, 0.5) transparent',
+                    paddingRight: '5px',
+                  }}
+                >
+                  {topBurners.slice(0, 10).map((burner, index) => (
+                    <div 
+                      key={burner.id || index} 
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.5rem 0.5rem',
+                        borderBottom: index < 9 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                        borderRadius: '8px',
+                        transition: 'background 0.2s ease',
+                        position: 'relative',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(212, 175, 55, 0.08)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                      }}>
+                        <span style={{
+                          fontSize: isMobile ? '0.9rem' : '1rem',
+                          fontWeight: 'bold',
+                          color: index === 0 ? '#ffd700' : index === 1 ? '#c0c0c0' : index === 2 ? '#cd7f32' : '#d4af37',
+                          minWidth: '2rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                        }}>
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
+                        </span>
+                        {burner.image && (
+                          <div style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            border: '1px solid rgba(212, 175, 55, 0.5)',
+                            flexShrink: 0,
+                          }}>
+                            <img 
+                              src={burner.image} 
+                              alt={burner.userName || 'User'} 
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <span style={{
+                          fontSize: isMobile ? '0.9rem' : '1rem',
+                          color: '#ffffff',
+                        }}>
+                          {burner.userName || 'Anonymous'}
+                        </span>
+                      </div>
+                      <span style={{
+                        fontSize: isMobile ? '0.8rem' : '0.9rem',
+                        color: '#ffd700',
+                        fontWeight: 'bold',
+                        textShadow: '0 0 5px rgba(255, 215, 0, 0.3)',
+                      }}>
+                        {(burner.burnedAmount || 0).toLocaleString()} RL80
+                      </span>
+                    </div>
+                  ))}
+                  {topBurners.length === 0 && (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontStyle: 'italic',
+                    }}>
+                      Loading top burners...
+                    </div>
+                  )}
+                </div>
+              </div>
+
+          </div>
+       <CyberButton
+                        onClick={handleOpenModal}
+                        size={isMobile ? 'medium' : 'large'}
+                        variant="primary"
+                        style={{
+                          marginTop: '1rem',
+                          zIndex: 102,
+                        }}
+                      >
+                        Get Lit
+                      </CyberButton>
+               
+           
+                    </div>
+            </div>
+          </div>
+
         </motion.div>
 
-        {/* Combined Token Information Section */}
+        {/* Illumin80 Section - 2 Column Layout */}
+        <div style={{
+          position: 'relative',
+          // top: "5rem",
+          margin: '4rem auto 4rem auto',
+          width: isMobile ? '95%' : '90%',
+          maxWidth: '1200px',
+          zIndex: 1,
+          pointerEvents: 'auto'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
+            border: '2px solid #00ff00',
+            borderRadius: '0',
+            paddingTop: '0px',
+            paddingRight: '0px',
+            paddingBottom: isMobile ? '20px' : '0px',
+            paddingLeft: '0px',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
+            position: 'relative'
+          }}>
+            
+            {/* Grid pattern overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0, 255, 0, 0.02) 2px,
+                  rgba(0, 255, 0, 0.02) 4px
+                )
+              `,
+              pointerEvents: 'none',
+            }} />
+
+            <div style={{
+              position: "relative",
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+              gap: isMobile ? "2rem" : "3rem",
+              alignItems: "center",
+              color: '#ffffff',
+              zIndex: 1,
+              overflow: "visible"
+            }}>
+              {/* Left Column - Bouncer */}
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+                // minHeight: "40rem",
+                overflow: "visible"
+              }}>
+    
+               <div style={{
+                 position: "relative",
+                 width: "150%",
+                 marginLeft: "-5%",
+                 height: "250%",
+                //  minHeight: isMobile ? '60vh' : '60vh',
+                //  width: "150%",
+                //  marginBottom: "-15%"
+               }}>
+                 <Numerology1/>
+               </div>
+               <p style={{
+                 color: '#ffffff',
+                 textAlign: 'center',
+                 marginTop: isMobile ? '1rem' : '-2rem',
+         
+                 fontSize: '1rem',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+
+               }}>
+                 {/* [ Click to shake ] */}
+               </p>
+       
+              </div>
+              
+              {/* Right Column - Illumin80 Perks */}
+              <div style={{
+                padding: '0 1rem',
+                color: '#ffffff',
+                textAlign: 'center',
+                padding: '40px 20px',
+              }}>
+ <SkewedHeading 
+    lines={["THE ILLUMIN80"]}
+    // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
+        colors={["#00ff00"]}
+    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
+    isMobile={isMobile}
+  />
+                    {/* <span style={{               fontFamily: "'Fjalla One', sans-serif",
+fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
+               (Keep this part on the down-low)
+              </span> */}
+                <p style={{
+                                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+
+                  fontSize: '1.2rem',
+           
+                  marginBottom: '1.5rem',
+                  lineHeight: 1.6,
+                  color: '#ffffff',
+                  opacity: 0.9
+                }}>
+                  Part mystery cult, part secret trading guild, The Illumin80 represent the true believers among token holders by amount staked or burned — a level that unlocks even more glorious gains. Powerful but not evil.
+                </p>
+                
+                <ul style={{
+                  fontSize: '1.1rem',
+                  lineHeight: 1.8,
+                  color: '#ffffff',
+                  listStyle: 'none',
+                  paddingLeft: '0'
+                }}>
+                      <li style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
+                    Staking rewards of 63% of all taxes
+                  </li>
+                  <li style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
+                    Access to the Moon Room
+                  </li>
+        
+                   <li style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
+                    Air drops of upcoming token events
+                  </li>
+                  {/* <li style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🌙</span>
+                    Divine blessings
+                  </li> */}
+                </ul>
+
+      
+                             <CyberButton
+                       onClick={() => window.open('/gallery3', '_blank')}
+                        size={isMobile ? 'medium' : 'large'}
+                        variant="primary"
+                        style={{
+                          marginTop: '1rem',
+                          zIndex: 102,
+                        }}
+                      >
+                        GET ELITE
+                      </CyberButton>
+              </div>
+            </div>
+          </div>
+        </div>
+
+                        <div style={{position: 'relative', zIndex: 1, marginTop: '2rem', marginBottom: '1rem'}}>
+                         <div ref={secondTitleRef} style={{
+                                  textAlign: 'center',
+                                  padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
+                                  maxWidth: '900px',
+                                  margin: '0 auto',
+                                }}>
+                                  {/* Animated Drop-In Title */}
+                                  <DropInTitle
+                                    lines={["PROSPER80", "FOR ALL", "HUMAN80!"]}
+                                    colors={["#00ff00", "#f4e4c1", "#ffd700"]}
+                                    fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
+                                    isMobile={isMobile}
+                                    triggerAnimation={secondTitleInView}
+                                  />
+                        </div>
+                                 </div>
+{/* Combined Token Information Section */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -2261,473 +2344,8 @@ export default function Home3() {
           {/* End of hidden old tokenomics section */}
         </motion.div>
 
-        {/* Additional content sections */}
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-          style={{
-            position: 'relative',
-            margin: '4rem auto',
-            width: isMobile ? '95%' : '90%',
-            maxWidth: '1200px',
-            zIndex: 1,
-            pointerEvents: 'auto'
-          }}
-        >
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
-            border: '2px solid #00ff00',
-            borderRadius: '0',
-            padding: isMobile ? '30px 20px' : '40px',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            
-            {/* Grid pattern overlay */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundImage: `
-                repeating-linear-gradient(
-                  0deg,
-                  transparent,
-                  transparent 2px,
-                  rgba(0, 255, 0, 0.02) 2px,
-                  rgba(0, 255, 0, 0.02) 4px
-                ),
-                repeating-linear-gradient(
-                  90deg,
-                  transparent,
-                  transparent 2px,
-                  rgba(0, 255, 0, 0.02) 2px,
-                  rgba(0, 255, 0, 0.02) 4px
-                )
-              `,
-              pointerEvents: 'none',
-            }} />
 
-            {/* Glow effect */}
-            <div style={{
-              content: '',
-              position: 'absolute',
-              top: '-50%',
-              left: '-50%',
-              width: '200%',
-              height: '200%',
-              background: 'radial-gradient(circle, rgba(0, 255, 0, 0.05) 0%, transparent 70%)',
-              animation: 'handsRotate 30s linear infinite',
-              zIndex: 0
-            }} />
-
-            <div style={{
-              position: "relative",
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 0.55fr) minmax(0, 0.45fr)",
-              gap: isMobile ? "2rem" : "3rem",
-              alignItems: "center",
-              color: '#ffffff',
-              zIndex: 1
-            }}>
-                               
-                              <div style={{
-                          height: isMobile ? '50vh' : '70vh',
-                          minHeight: '400px',
-                        }}>
-                          <HandsGLTFScene />
-                        </div>
-                               {/* Right Column - Text Content */}
-                   <div style={{
-              padding: isMobile ? '0 0.5rem' : '0 1rem',
-              color: '#ffffff',
-              minHeight: isMobile ? '300px' : '500px', // Match the candle container height
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center', // Center all children horizontally
-              width: '100%', // Ensure full width of grid column
-              boxSizing: 'border-box', // Include padding in width calculation
-              overflow: 'hidden', // Prevent content overflow
-              position: 'relative',
-              marginTop: isMobile ? '0' : '0'
-            }}>
-             
-     
-              <br/>
-     
-              {/* <h1 style={{fontFamily: 'UnifrakturCook, serif', fontSize: isMobile ? '2.5rem' : '3.5rem', marginTop: '2rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '0.8',color: '#d4af37'}}>Get On Her Watchlist</h1> */}
-                  {/* <h1 style={{
-              fontSize: '3rem',
-              marginBottom: '1rem',
-              lineHeight: '2.5rem',
-              color: '#d4af37',
-              fontFamily: 'UnifrakturCook, serif',
-              // textShadow: '0 0 15px rgba(212, 175, 55, 0.5)',
-textShadow: '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000',
-  textAlign: 'center',
-            }}>Get On Her Watchlist</h1> */}
-              <SkewedHeading 
-    lines={["GET ON HER", "WATCHLIST"]}
-    // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
-        colors={["#00ff00"]}
-    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
-    isMobile={isMobile}
-  />
-              <div style={{
-                lineHeight: 1.5,
-                opacity: 0.9,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                fontWeight: 400,
-                letterSpacing: '0.02em',
-                fontSize: isMobile ? '1.2rem' : '1.4rem',
-                textAlign: 'center',
-                width: '100%',
-                maxWidth: '600px',
-              }}>
-              {/* <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-                Add a Green Candle to Her Timeline
-              </span> */}
-              {/* <p style={{ 
-                marginBottom: '2rem',
-                fontFamily: "'Pirata One', cursive",
-                fontSize: isMobile ? '1.5rem' : '1.8rem',
-                fontWeight: '400',
-                textAlign: 'center',
-                color: '#ffffff',
-                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)'
-              }}>
-                Join The Leaderboard of Luminaries
-              </p> */}
-                   {/* <img src="/timeline2.png" alt="Candle Icon" style={{ width: isMobile ? '50%' : '50%', height: 'auto', marginBottom: '-1rem', marginTop: '-2rem' }} /> */}
-                    <span style={{               fontFamily: "'Fjalla One', sans-serif",
-fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem', lineHeight: '1.3' }}>
-                Light a Green Candle for Luck
-              </span>         
-              <p style={{ marginBottom: '1rem', opacity: 0.8, fontSize: isMobile ? '1rem' : '1.1rem' }}>
-Burn or stake RL80 to add a green candle to her timeline and watch miracles happen.  
-              </p>
-
-              {/* Top Burners Leaderboard */}
-              <div style={{
-                margin: '2rem 0',
-                padding: '1.5rem',
-                background: 'rgba(0, 0, 0, 0.4)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(212, 175, 55, 0.3)',
-                borderRadius: '15px',
-                color: '#ffffff',
-                fontFamily: "'Inter', sans-serif",
-                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
-              }}>
-                <h3 style={{
-                  fontSize: isMobile ? '1.2rem' : '1.4rem',
-                  color: '#d4af37',
-                  textAlign: 'center',
-                  marginBottom: '1rem',
-                  fontFamily: "'Fjalla One', sans-serif",
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                }}>
-                  🔥 Top Burners
-                </h3>
-                <div 
-                  className="leaderboard-scroll"
-                  style={{
-                    maxHeight: '220px',
-                    overflowY: 'auto',
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: 'rgba(212, 175, 55, 0.5) transparent',
-                    paddingRight: '5px',
-                  }}
-                >
-                  {topBurners.slice(0, 10).map((burner, index) => (
-                    <div 
-                      key={burner.id || index} 
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.5rem 0.5rem',
-                        borderBottom: index < 9 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-                        borderRadius: '8px',
-                        transition: 'background 0.2s ease',
-                        position: 'relative',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(212, 175, 55, 0.08)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                      }}
-                    >
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                      }}>
-                        <span style={{
-                          fontSize: isMobile ? '0.9rem' : '1rem',
-                          fontWeight: 'bold',
-                          color: index === 0 ? '#ffd700' : index === 1 ? '#c0c0c0' : index === 2 ? '#cd7f32' : '#d4af37',
-                          minWidth: '2rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.25rem',
-                        }}>
-                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
-                        </span>
-                        {burner.image && (
-                          <div style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            border: '1px solid rgba(212, 175, 55, 0.5)',
-                            flexShrink: 0,
-                          }}>
-                            <img 
-                              src={burner.image} 
-                              alt={burner.userName || 'User'} 
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                              }}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                              }}
-                            />
-                          </div>
-                        )}
-                        <span style={{
-                          fontSize: isMobile ? '0.9rem' : '1rem',
-                          color: '#ffffff',
-                        }}>
-                          {burner.userName || 'Anonymous'}
-                        </span>
-                      </div>
-                      <span style={{
-                        fontSize: isMobile ? '0.8rem' : '0.9rem',
-                        color: '#ffd700',
-                        fontWeight: 'bold',
-                        textShadow: '0 0 5px rgba(255, 215, 0, 0.3)',
-                      }}>
-                        {(burner.burnedAmount || 0).toLocaleString()} RL80
-                      </span>
-                    </div>
-                  ))}
-                  {topBurners.length === 0 && (
-                    <div style={{
-                      textAlign: 'center',
-                      padding: '1rem',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      fontStyle: 'italic',
-                    }}>
-                      Loading top burners...
-                    </div>
-                  )}
-                </div>
-              </div>
-
-          </div>
-       <CyberButton
-                        onClick={handleOpenModal}
-                        size={isMobile ? 'medium' : 'large'}
-                        variant="primary"
-                        style={{
-                          marginTop: '1rem',
-                          zIndex: 102,
-                        }}
-                      >
-                        Get Lit
-                      </CyberButton>
-               
-           
-                    </div>
-            </div>
-          </div>
-
-        </motion.div>
-
-        {/* Illumin80 Bouncer Section - 2 Column Layout */}
-        <div style={{
-          position: 'relative',
-          // top: "5rem",
-          margin: '4rem auto 4rem auto',
-          width: isMobile ? '95%' : '90%',
-          maxWidth: '1200px',
-          zIndex: 1,
-          pointerEvents: 'auto'
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
-            border: '2px solid #00ff00',
-            borderRadius: '0',
-            paddingTop: '0px',
-            paddingRight: '0px',
-            paddingBottom: isMobile ? '20px' : '0px',
-            paddingLeft: '0px',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
-            position: 'relative'
-          }}>
-            
-            {/* Grid pattern overlay */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundImage: `
-                repeating-linear-gradient(
-                  0deg,
-                  transparent,
-                  transparent 2px,
-                  rgba(0, 255, 0, 0.02) 2px,
-                  rgba(0, 255, 0, 0.02) 4px
-                ),
-                repeating-linear-gradient(
-                  90deg,
-                  transparent,
-                  transparent 2px,
-                  rgba(0, 255, 0, 0.02) 2px,
-                  rgba(0, 255, 0, 0.02) 4px
-                )
-              `,
-              pointerEvents: 'none',
-            }} />
-
-            <div style={{
-              position: "relative",
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-              gap: isMobile ? "2rem" : "3rem",
-              alignItems: "center",
-              color: '#ffffff',
-              zIndex: 1
-            }}>
-              {/* Left Column - Bouncer */}
-              <div style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-                minHeight: "500px"
-              }}>
-                {/* <Illumin80Bouncer /> */}
-               <Numerology1/>
-               <p style={{
-                 color: '#ffffff',
-                 textAlign: 'center',
-                 marginTop: isMobile ? '1rem' : '-2rem',
-         
-                 fontSize: '1rem',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-
-               }}>
-                 {/* [ Click to shake ] */}
-               </p>
-       
-              </div>
-              
-              {/* Right Column - Illumin80 Perks */}
-              <div style={{
-                padding: '0 1rem',
-                color: '#ffffff',
-                textAlign: 'center',
-                padding: '40px 20px',
-              }}>
- <SkewedHeading 
-    lines={["THE ILLUMIN80"]}
-    // colors={["#d4af37", "#f4e4c1", "#ffd700"]}
-        colors={["#00ff00"]}
-    fontSize={{ mobile: "2.5rem", desktop: "3rem" }}
-    isMobile={isMobile}
-  />
-                    <span style={{               fontFamily: "'Fjalla One', sans-serif",
-fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: '1.5rem', lineHeight: '1.3' }}>
-               (Keep this part on the down-low)
-              </span>
-                <p style={{
-                                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-
-                  fontSize: '1.2rem',
-           
-                  marginBottom: '1.5rem',
-                  lineHeight: 1.6,
-                  color: '#ffffff',
-                  opacity: 0.9
-                }}>
-                  Part mystery cult, part secret trading guild, The Illumin80 represent the 80th percentile and higher of token holders by amount staked or burned — a level that unlocks even more glorious gains. Powerful but not evil.
-                </p>
-                
-                <ul style={{
-                  fontSize: '1.1rem',
-                  lineHeight: 1.8,
-                  color: '#ffffff',
-                  listStyle: 'none',
-                  paddingLeft: '0'
-                }}>
-                      <li style={{ marginBottom: '0.5rem' }}>
-                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
-                    Staking rewards of 63% of all taxes
-                  </li>
-                  <li style={{ marginBottom: '0.5rem' }}>
-                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
-                    Access to the Moon Room
-                  </li>
-        
-                   <li style={{ marginBottom: '0.5rem' }}>
-                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>✨</span>
-                    Air drops of upcoming token events
-                  </li>
-                  {/* <li style={{ marginBottom: '0.5rem' }}>
-                    <span style={{ color: '#d4af37', marginRight: '0.5rem' }}>🌙</span>
-                    Divine blessings
-                  </li> */}
-                </ul>
-
-      
-                             <CyberButton
-                       onClick={() => window.open('/game', '_blank')}
-                        size={isMobile ? 'medium' : 'large'}
-                        variant="primary"
-                        style={{
-                          marginTop: '1rem',
-                          zIndex: 102,
-                        }}
-                      >
-                        JOIN NOW
-                      </CyberButton>
-              </div>
-            </div>
-          </div>
-        </div>
-
-                        <div style={{position: 'relative', zIndex: 1, marginTop: '2rem', marginBottom: '1rem'}}>
-                         <div ref={secondTitleRef} style={{
-                                  textAlign: 'center',
-                                  padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
-                                  maxWidth: '900px',
-                                  margin: '0 auto',
-                                }}>
-                                  {/* Animated Drop-In Title */}
-                                  <DropInTitle
-                                    lines={["PROSPER80", "FOR ALL", "HUMAN80!"]}
-                                    colors={["#00ff00", "#f4e4c1", "#ffd700"]}
-                                    fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
-                                    isMobile={isMobile}
-                                    triggerAnimation={secondTitleInView}
-                                  />
-                        </div>
-                                 </div>
                                         <CyberFAQSection isMobile={isMobile} />
 
       {/* Carousel Section */}
@@ -2735,7 +2353,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
 
  
 
-  <SlidingNav is80sMode={false} />
+  {/* <SlidingNav is80sMode={false} /> */}
         
 
 
@@ -2758,11 +2376,37 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
           {/* Footer Title with Coin */}
           <div style={{
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: isMobile ? '1rem' : '2rem',
+            gap: '2rem',
             marginTop: isMobile ? '1rem' : '3rem',
           }}>
+            {/* Coin positioned above title */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+            }}>
+                <CircularCTA
+    text="• PREME EMERE • CLICK TO BUY • PREME EMERE • CLICK TO BUY • PREME EMERE • CLICK TO BUY"
+    href="/temple"
+    accentColor="#00ff00"
+    bgColor="none"
+            size={200}
+            textSize={isMobile ? 7 : 7}
+          />
+              {/* <div className="purse">
+                <div className="coin">
+                  <div className="front"></div>
+                  <div className="back"></div>
+                  <div className="side">
+                    {[...Array(16)].map((_, index) => (
+                      <div key={index} className="spoke"></div>
+                    ))}
+                  </div>
+                </div>
+              </div> */}
+            </div>
             <h1 className='custom-title'
               id="main-title"
               style={{ 
@@ -2891,7 +2535,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
 
       </motion.div>
 
-      {/* Add spinning record CSS and fonts */}
+      Add spinning record CSS and fonts
       <style jsx global>{`
         * {
           margin: 0;
@@ -2994,7 +2638,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
         
         /* Complete 3D Coin CSS from coin.css */
         :root {
-          --coin-diam: 9rem;
+          --coin-diam: 6.75rem;
           --coin-depth: calc(var(--coin-diam) * 0.1);
           --spin-speed: 4s;
           --facets: 32;
@@ -3009,12 +2653,6 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
           position: relative;
           margin: 0 auto;
           perspective: 1000px;
-          -webkit-box-reflect: below 0
-            linear-gradient(
-              hsla(0, 0%, 100%, 0),
-              hsla(0, 0%, 100%, 0) 45%,
-              hsla(0, 0%, 100%, 0.2)
-            );
           filter: saturate(1.45) hue-rotate(2deg);
         }
 
@@ -3024,7 +2662,8 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
           position: absolute;
           transform-style: preserve-3d;
           transform-origin: 50%;
-          animation: spinCoin var(--spin-speed) infinite linear;
+          animation: spinCoin 7s infinite linear;
+          cursor: pointer;
         }
 
         .coin .front,
@@ -3044,6 +2683,39 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
         .coin .back {
           transform: translateZ(calc(var(--coin-depth) / -2)) rotateY(180deg);
           background-image: url("/coinBack1.png");
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .coin .back::after {
+          content: "CLICK TO BUY!";
+          color: #000000ff;
+          font-family: 'FjallaOne', serif;
+          font-size: calc(var(--coin-diam) * 0.15);
+          font-weight: bold;
+          text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+          background: linear-gradient(135deg, rgb(255, 215, 0), rgb(212, 175, 55), rgb(184, 134, 11));
+          width: calc(var(--coin-diam) * 0.85);
+          height: calc(var(--coin-diam) * 0.85);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          text-align: center;
+          line-height: 1.2;
+          border: 3px solid #fff;
+          box-shadow: 
+            0 0 20px rgba(255, 215, 0, 0.8),
+            0 0 40px rgba(255, 215, 0, 0.4),
+            inset 0 2px 0 rgba(255, 255, 255, 0.3),
+            inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
         }
 
         .coin .side {
@@ -3106,8 +2778,12 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
         .coin .side .spoke:nth-child(16) { transform: rotateY(90deg) rotateX(calc(180deg / var(--spokes) * 15)); }
 
         @keyframes spinCoin {
-          from { transform: rotateY(0deg); }
-          to { transform: rotateY(360deg); }
+          0% { transform: rotateY(0deg); }
+          25% { transform: rotateY(0deg); }
+          37.5% { transform: rotateY(540deg); }
+          62.5% { transform: rotateY(540deg); }
+          75% { transform: rotateY(1080deg); }
+          100% { transform: rotateY(1080deg); }
         }
         
         /* Override the font hiding rule for our title */

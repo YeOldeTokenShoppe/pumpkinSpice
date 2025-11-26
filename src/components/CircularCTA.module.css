@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
+.bmcCircle {
+  position: relative;
+  width: var(--bmc-size);
+  height: var(--bmc-size);
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  isolation: isolate;
+  z-index: 10;
+  transition: all 0.4s ease;
+}
+
+.bmcRing {
+  position: absolute;
+  inset: 0;
+  animation: spin 12s linear infinite;
+}
+
+.bmcText {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: var(--fsize);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  fill: var(--bmc-accent);
+   /* fill: #000000; */
+}
+
+.bmcCenter {
+  width: 55%;
+  height: 55%;
+  border-radius: 50%;
+  background: radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,0.1), rgba(0,0,0,0)), 
+              linear-gradient(180deg, var(--bmc-bg), rgba(0,0,0,0.85));
+  box-shadow: 0 0 0 2px var(--bmc-accent) inset, 
+              0 0 12px var(--bmc-accent);
+  display: grid;
+  place-items: center;
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
+}
+
+.logo {
+  width: 60%;
+  height: 60%;
+  display: block;
+  filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.7));
+  object-fit: contain;
+}
+
+.customIcon {
+  width: 60%;
+  height: 60%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.7));
+}
+
+.customIcon > * {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.bmcCircle:hover .bmcCenter {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px var(--bmc-accent) inset, 
+              0 0 22px var(--bmc-accent);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

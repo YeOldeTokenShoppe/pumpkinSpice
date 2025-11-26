@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
+import AnnotationSystem from "@/components/AnnotationSystem";
 
 
 
@@ -11,7 +12,10 @@ function CyborgTempleScene({
   position = [0, -4, 0],
   rotation = [0, 0, 0],
   scale = [1, 1, 1],
-  isPlaying = false,
+  isPlaying = false, 
+  showAnnotations = true,
+  is80sMode = false,
+  onAnnotationClick = null, // Callback when annotation is clicked
 }) {
   const groupRef = useRef();
   const { scene } = useThree();
@@ -20,6 +24,48 @@ function CyborgTempleScene({
   const actionsRef = useRef({});
   const danceTimeoutRef = useRef(null);
   const slowdownIntervalRef = useRef(null);
+
+  // Define annotation points - adjust positions based on your temple scene
+  const annotations = [
+    {
+      position: [0, 0, 0], // Near the main altar/center
+      text: "Sacred Altar\nThe heart of the cyborg temple",
+      customCamera: {
+        position: [2, -0.8, -0.3], // Camera moved right and lower
+        lookAt: [0, -0.5, 0], // Look outward toward the characters
+        distance: 2 // Slightly increased distance for better framing
+      },
+      annotationOffset: [20, 150] // [x, y] offset in pixels from center
+    },
+    // {
+    //   position: [2, 0, -2], // Right side
+    //   text: "Digital Offering Station\nPlace virtual candles here"
+    // },
+
+    // {
+    //   position: [0.3, -1.6, 2], 
+    //   text: "Neural Chandelier\nSyncs with collective thoughts",
+    //   customCamera: {
+    //     position: [0, -1.8, 1.8], // Camera moved right and lower
+    //     lookAt: [0, -1.6, 1.6], // Look outward toward the characters
+    //     distance: 2 // Slightly increased distance for better framing
+    //   },
+    //   annotationOffset: [20, 150] // [x, y] offset in pixels from center
+    // },
+    {
+      position: [-2, -0.99, 0.3], // Left side
+      text: "The 3 Wise Mechs",
+      // Special camera settings for viewing characters from center
+      customCamera: {
+        position: [2, -1.3, -0.5], // Camera moved right and lower
+        lookAt: [-3, -1, 0.5], // Look outward toward the characters
+        distance: 2.9 // Slightly increased distance for better framing
+      },
+      // Custom annotation position for this view (in screen space)
+      annotationOffset: [50, 150] // [x, y] offset in pixels from center
+    },
+  ];
+  
 
   useEffect(() => {
     if (hasLoadedRef.current) return;
@@ -282,6 +328,7 @@ function CyborgTempleScene({
       }, intervalTime);
     }
   }, [isPlaying]);
+  
 
   // Animation loop
   useFrame((_, delta) => {
@@ -290,7 +337,20 @@ function CyborgTempleScene({
     }
   });
 
-  return null; // This component doesn't render JSX, it manipulates the Three.js scene directly
+  // Return AnnotationSystem component if annotations should be shown
+  if (!showAnnotations) {
+    return null;
+  }
+
+  return (
+    <AnnotationSystem 
+      annotations={annotations} 
+      is80sMode={is80sMode} 
+      onAnnotationClick={onAnnotationClick}
+      scale={0.8}
+      textScale={0.8}
+    />
+  );
 }
 
 export default memo(CyborgTempleScene);

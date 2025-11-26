@@ -22,7 +22,13 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
   const [tickerScale, setTickerScale] = useState(null);
   const [isReady, setIsReady] = useState(false);
 
-  const [marketData, setMarketData] = useState([]);
+  const [marketData, setMarketData] = useState([
+    // Initialize with placeholder data to avoid "Loading" message
+    { name: "Bitcoin", symbol: "BTC", price: 0, changePercent: 0 },
+    { name: "Ethereum", symbol: "ETH", price: 0, changePercent: 0 },
+    { name: "S&P 500", symbol: "^GSPC", price: 0, changePercent: 0 },
+    { name: "Nasdaq", symbol: "^IXIC", price: 0, changePercent: 0 }
+  ]);
   const [fearGreed, setFearGreed] = useState(null);
 
   // Cleanup on unmount
@@ -50,35 +56,26 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
     }
   }, [threeContext, mainScene]);
 
-  // Use mock market data with a timer for updates
+  // Fetch all data immediately on mount
   useEffect(() => {
-    mockMarketData(); // Initially populate with mock data
-    // fetchAlphaVantageData(); // Disabled due to CORS issues
+    // Fetch both market and crypto data immediately
+    const fetchAllData = async () => {
+      await Promise.all([
+        fetchYahooFinanceData(),
+        fetchCryptoData()
+      ]);
+    };
     
-    // Update mock data every 5 minutes for other items
-    const mockDataInterval = setInterval(() => {
-      mockMarketData();
-    }, 300000);
+    fetchAllData();
+    
+    // Set up intervals for regular updates
+    const marketDataInterval = setInterval(fetchYahooFinanceData, 300000); // 5 minutes
+    const cryptoInterval = setInterval(fetchCryptoData, 300000); // 5 minutes
     
     return () => {
-      clearInterval(mockDataInterval);
+      clearInterval(marketDataInterval);
+      clearInterval(cryptoInterval);
     };
-  }, []);
-
-  // Fear & Greed Index effect - disabled due to CORS
-  // useEffect(() => {
-  //   fetchFearGreedIndex();
-  //   // Fetch Fear & Greed index every 2 hours
-  //   const interval = setInterval(fetchFearGreedIndex, 7200000);
-  //   return () => clearInterval(interval);
-  // }, []);
-
-  // Crypto data effect
-  useEffect(() => {
-    fetchCryptoData();
-    // Fetch crypto every 30 minutes
-    const interval = setInterval(fetchCryptoData, 1800000);
-    return () => clearInterval(interval);
   }, []);
 
   // Alpha Vantage data effect - disabled due to CORS
@@ -186,18 +183,19 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
       // Flip texture horizontally to correct mirroring
       texture.repeat.set(-1, 1); // Negative X to flip horizontally
       
-      // Redraw the loading text with adjusted size
+      // Start rendering immediately with placeholder data
       const ctx2 = canvas.getContext("2d");
       if (ctx2) {
         ctx2.fillStyle = "#000000";
         ctx2.fillRect(0, 0, canvas.width, canvas.height);
         ctx2.fillStyle = "#FFFFFF";
         ctx2.font = "bold 20px Arial"; // Smaller font for smaller height
-        ctx2.textAlign = "center";
+        ctx2.textAlign = "left";
         ctx2.textBaseline = "middle";
+        // Show initial ticker items even with 0 values
         ctx2.fillText(
-          "LOADING TICKER DATA...",
-          canvas.width / 2,
+          "Bitcoin: Loading... ◆ Ethereum: Loading... ◆ S&P 500: Loading... ◆ Nasdaq: Loading...",
+          10,
           canvas.height / 2
         );
         texture.needsUpdate = true;
@@ -267,20 +265,22 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
     { name: "Gold", symbol: "GC=F" },
   ];
 
-  // Use mock data for market indices
+  // Use mock data as fallback when FMP API is unavailable
   const mockMarketData = () => {
     // Create reliable mock data with small fluctuations
     const now = Date.now();
     
-    // Filter out Oil from the indices list so we don't add it here
-    const filteredIndices = [
-      ...fmpIndices,
-      ...marketSymbolsGroup1,
-      ...marketSymbolsGroup2
-    ].filter(item => item.name !== "Oil"); // Explicitly filter out Oil from mock data
+    // Include all indices including Oil as fallback
+    const allIndices = [
+      { name: "S&P 500", symbol: "^GSPC" },
+      { name: "Nasdaq", symbol: "^IXIC" },
+      { name: "VIX", symbol: "^VIX" },
+      { name: "Gold", symbol: "GC=F" },
+      { name: "Oil", symbol: "CL=F" }
+    ];
     
     // Create the initial data
-    const mockIndices = filteredIndices.map(({ name, symbol }) => {
+    const mockIndices = allIndices.map(({ name, symbol }) => {
       // Base price with slight randomization based on time
       const basePrice = getMockPrice(symbol);
       // Small change that varies slightly over time 
@@ -303,23 +303,7 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
         item => item.name === "Bitcoin" || item.name === "Ethereum"
       );
       
-      // Keep real oil data fetched from Alpha Vantage
-      const oilData = prevData.filter(
-        item => item.name === "Oil" && item.symbol === "CL=F"
-      );
-      
-      // First the indices, then VIX, Dollar Index, Gold, Oil
-      // Move 10Y Treasury Yield to the end to give it more space
-      const treasuryYield = mockIndices.find(item => item.name === "10Y Treasury Yield");
-      const otherItems = mockIndices.filter(item => item.name !== "10Y Treasury Yield");
-      
-      // Create the ordered array with Treasury Yield at the end if found
-      const orderedItems = [...otherItems];
-      if (treasuryYield) {
-        orderedItems.push(treasuryYield);
-      }
-      
-      return [...cryptoData, ...oilData, ...orderedItems];
+      return [...cryptoData, ...mockIndices];
     });
   };
 
@@ -333,45 +317,29 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
       case "^VIX": return 14.2;      // VIX
       case "DX-Y.NYB": return 105.8; // Dollar Index
       case "GC=F": return 2328.7;    // Gold
+      case "CL=F": return 72.5;      // Oil (WTI Crude)
       case "^TNX": return 4.427;     // 10Y Treasury
       default: return 100.0;
     }
   };
   
   
-  // Add a function to fetch crypto data from CoinGecko
+  // Fetch crypto data from our server-side API (with caching)
   const fetchCryptoData = async () => {
     try {
-      const response = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true"
-      );
-      const data = await response.json();
-
-      const cryptoMarketData = [
-        {
-          name: "Bitcoin",
-          symbol: "BTC",
-          price: data.bitcoin.usd,
-          changePercent: data.bitcoin.usd_24h_change,
-        },
-        {
-          name: "Ethereum",
-          symbol: "ETH",
-          price: data.ethereum.usd,
-          changePercent: data.ethereum.usd_24h_change,
-        }
-      ];
+      const response = await fetch('/api/crypto-data');
+      const cryptoMarketData = await response.json();
 
       setMarketData(prevData => {
-        // Remove any existing BTC/ETH entries
+        // Remove any existing crypto entries
         const filteredData = prevData.filter(
-          item => item.name !== "Bitcoin" && item.name !== "Ethereum"
+          item => item.name !== "Bitcoin" && item.name !== "Ethereum" && 
+                  item.name !== "Solana"
         );
         return [...filteredData, ...cryptoMarketData];
       });
     } catch (error) {
-      console.error("Error fetching crypto data from CoinGecko:", error);
-      // Optionally, set mock data here as a fallback
+      console.error("Error fetching crypto data:", error);
     }
   };
 
@@ -414,7 +382,7 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
 
   // Calculate total width of one set of data
   const calculateTotalWidth = (ctx, data) => {
-    if (!ctx || !data || data.length === 0) return 0;
+    if (!ctx || !data || data.length === 0) return 2048; // Return default width for initial render
 
     let totalWidth = 0;
     const basepadding = 80; // Match the basepadding in drawData
@@ -756,11 +724,24 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
     }
   };
 
-  // Disabled Alpha Vantage data fetching due to CORS issues
-  const fetchAlphaVantageData = async () => {
-    // API calls disabled due to CORS issues
-    // Will be re-enabled when proper backend proxy is implemented
-    console.log("Alpha Vantage data fetch disabled");
+  // Fetch real market data from our API route (bypasses CORS)
+  const fetchYahooFinanceData = async () => {
+    try {
+      const response = await fetch('/api/market-data');
+      const marketData = await response.json();
+      
+      // Update market data, preserving crypto data from CoinGecko
+      setMarketData(prevData => {
+        const cryptoData = prevData.filter(
+          item => item.name === 'Bitcoin' || item.name === 'Ethereum' || 
+                  item.name === 'Solana'
+        );
+        return [...cryptoData, ...marketData];
+      });
+      
+    } catch (error) {
+      console.error('Error fetching market data:', error);
+    }
   };
 
   return null;

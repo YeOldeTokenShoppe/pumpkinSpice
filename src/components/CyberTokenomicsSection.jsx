@@ -370,7 +370,7 @@ export default function CyberTokenomicsSection({ isMobile }) {
                       <h4 style={{
                         color: card.color,
                         fontSize: '16px',
-                        fontFamily: 'monospace',
+                        fontFamily: 'Blackletter, serif !important',
                         margin: 0
                       }}>
                         {card.title}
@@ -517,7 +517,7 @@ export default function CyberTokenomicsSection({ isMobile }) {
                   <h4 style={{
                     color: '#fff',
                     fontSize: '18px',
-                    fontFamily: 'monospace',
+                    fontFamily: 'Blackletter, serif !important',
                     margin: 0,
                     letterSpacing: '1px'
                   }}>

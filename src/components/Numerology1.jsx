@@ -410,12 +410,13 @@ const Numerology1 = ({ isMobile = false }) => {
                         // paddingTop: '30px',
 
                         width: '100%',
-                        maxWidth: '600px',
-                        height: effectiveIsMobile ? '60vh' : '60vh',
-                        // minHeight: effectiveIsMobile ? '500px' : '500px',
+                        // maxWidth: '600px',
+                        // height: effectiveIsMobile ? '60vh' : '60vh',
+                        // minHeight: effectiveIsMobile ? '40rem' : '40rem',
                         borderRadius: '1em',
-                        transform: 'scale(1)',
+                        transform: 'scale(1.3)',
                         transformOrigin: 'center center',
+                        overflow: 'visible',
                       }}
                     >
                       
@@ -471,25 +472,26 @@ const Numerology1 = ({ isMobile = false }) => {
 
                       {/* Holy Grail 3D Model */}
                       <div
-                        style={{
-                          position: "relative",
-                          width: effectiveIsMobile ? "100%" : "100%",
-                          maxWidth: effectiveIsMobile ? "380px" : "750px",
-                          height: effectiveIsMobile ? "100%" : "100%",
-                          // maxHeight: effectiveIsMobile ? "550px" : "450px",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          zIndex: "2",
-                          marginBottom: effectiveIsMobile ? '0px' : '0px',
-                        }}
+                        // style={{
+                        //   position: "relative",
+                        //   width: effectiveIsMobile ? "100%" : "100%",
+                        //   maxWidth: effectiveIsMobile ? "380px" : "750px",
+                        //   height: effectiveIsMobile ? "100%" : "100%",
+                        //   // maxHeight: effectiveIsMobile ? "550px" : "450px",
+                        //   display: "flex",
+                        //   justifyContent: "center",
+                        //   alignItems: "center",
+                        //   zIndex: "2",
+                        //   marginBottom: effectiveIsMobile ? '0px' : '0px',
+                        // }}
                       >
                         {clientSideReady && (
                           <Canvas
-                            camera={{ position: [0, 1.5, 6], fov: effectiveIsMobile ? 60 : 50 }}
+                            camera={{ position: [0, 1.5, 6], fov: effectiveIsMobile ? 50 : 60 }}
                             style={{
                               width: '100%',
                               height: '100%',
+                              overflow: 'visible',
                             }}
                           >
                             <Suspense fallback={null}>
@@ -512,12 +514,12 @@ const Numerology1 = ({ isMobile = false }) => {
                               {/* <Environment preset="night" /> */}
                             </Suspense>
                             <EffectComposer>
-                              <DepthOfField
+                              {/* <DepthOfField
                                 focusDistance={0.01}
                                 focalLength={0.025}
                                 bokehScale={3}
                                 height={480}
-                              />
+                              /> */}
                               <Bloom 
                                 intensity={0.3}
                                 luminanceThreshold={0.4}
