@@ -564,42 +564,42 @@ function HandsModel({ mousePosition, scrollY, onLoad, hasReachedSection }) {
   // }, [currentImageIndex, randomUserImages, imageTransition]) - DISABLED
 
   // Trigger rotation animation when component comes into view
-  useEffect(() => {
-    if (hasReachedSection && !animationStartTime.current) {
-      console.log('🔄 Starting rotation animation now!')
-      // Start animation after 2 second delay
-      setTimeout(() => {
-        animationStartTime.current = Date.now()
-      }, 3500)
-    }
-  }, [hasReachedSection])
+  // useEffect(() => {
+  //   if (hasReachedSection && !animationStartTime.current) {
+  //     console.log('🔄 Starting rotation animation now!')
+  //     // Start animation after 2 second delay
+  //     setTimeout(() => {
+  //       animationStartTime.current = Date.now()
+  //     }, 3500)
+  //   }
+  // }, [hasReachedSection])
 
-  // Memoized rotation calculation
-  const calculateRotation = useMemo(() => {
-    const initialRotation = -Math.PI * 0.8
+  // // Memoized rotation calculation
+  // const calculateRotation = useMemo(() => {
+  //   const initialRotation = -Math.PI * 0.8
     
-    // If animation hasn't started yet, keep initial rotation
-    if (!animationStartTime.current) {
-      return initialRotation
-    }
+  //   // If animation hasn't started yet, keep initial rotation
+  //   if (!animationStartTime.current) {
+  //     return initialRotation
+  //   }
     
-    // Interpolate from initial rotation to 0 based on animation progress
-    const rotation = initialRotation * (1 - rotationProgress)
+  //   // Interpolate from initial rotation to 0 based on animation progress
+  //   const rotation = initialRotation * (1 - rotationProgress)
     
-    return rotation
-  }, [rotationProgress])
+  //   return rotation
+  // }, [rotationProgress])
 
 // MINIMAL: Only rotation animation useFrame
-useFrame(() => {
-  // Only animate rotation progress when triggered
-  if (animationStartTime.current) {
-    const elapsed = Date.now() - animationStartTime.current
-    const duration = 2000
-    const progress = Math.min(elapsed / duration, 1)
-    const easedProgress = 1 - Math.pow(1 - progress, 3)
-    setRotationProgress(easedProgress)
-  }
-})
+// useFrame(() => {
+//   // Only animate rotation progress when triggered
+//   if (animationStartTime.current) {
+//     const elapsed = Date.now() - animationStartTime.current
+//     const duration = 2000
+//     const progress = Math.min(elapsed / duration, 1)
+//     const easedProgress = 1 - Math.pow(1 - progress, 3)
+//     setRotationProgress(easedProgress)
+//   }
+// })
 
 
 // Removed duplicate useFrame and useEffect - functionality merged into main useFrame above
@@ -684,7 +684,7 @@ return (
     <primitive 
       object={gltf.scene} 
       scale={[0.5, 0.5, 0.5]} 
-      rotation={[0, calculateRotation, 0]}
+      rotation={[0, Math.PI, 0]}
       onClick={handleClick}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
@@ -827,7 +827,7 @@ export default function HandsGLTFScene({ onLoadComplete }) {
           <HandsModel 
             mousePosition={mousePosition} 
             scrollY={scrollY}
-            hasReachedSection={hasReachedSection}
+            // hasReachedSection={hasReachedSection}
             onLoad={() => {
               setModelLoaded(true);
               if (onLoadComplete) onLoadComplete();
@@ -840,8 +840,8 @@ export default function HandsGLTFScene({ onLoadComplete }) {
         
         <OrbitControls 
           enableZoom={false}
-          // autoRotate
-          // autoRotateSpeed={0.8}
+          autoRotate
+          autoRotateSpeed={0.8}
           enablePan={false}
           maxPolarAngle={0}
           minPolarAngle={Math.PI / 2}

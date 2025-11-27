@@ -23,8 +23,9 @@
   font-size: var(--fsize);
   letter-spacing: 1px;
   text-transform: uppercase;
-  fill: var(--bmc-accent);
-   /* fill: #000000; */
+  /* fill: var(--bmc-accent); */
+   fill: #c29f3c;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.7));
 }
 
 .bmcCenter {
@@ -41,10 +42,10 @@
 }
 
 .logo {
-  width: 60%;
-  height: 60%;
+  width: 100%;
+  height: 100%;
   display: block;
-  filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.7));
+  /* filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.7)); */
   object-fit: contain;
 }
 

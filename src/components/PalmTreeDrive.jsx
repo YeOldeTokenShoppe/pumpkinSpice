@@ -2787,14 +2787,14 @@ const PalmsScene = ({ onLoadingChange }) => {
             overflow: 'visible',
           }}
         >
-          {/* <div style={{ marginBottom: isMobile ? '-20px' : '0', position: 'relative' }}>
+          <div style={{ marginBottom: isMobile ? '-20px' : '0', position: 'relative' }}>
             {currentCameraStage === 4 ? (
               <MorphingSynthwaveText 
                 startText="REAL80"
                 shouldMorph={true}
                 morphDelay={3000}
                 fontSize={300}
-                scale={1.1}  // Make REAL80/RL80 larger
+                scale={1.8}  // Make REAL80/RL80 larger
                 spacingX={6}
                 outsideColor="rgba(0, 255, 255, 0)"
                 insideColor="rgba(255, 0, 255, 1)"
@@ -2814,7 +2814,7 @@ const PalmsScene = ({ onLoadingChange }) => {
                 className="mb-4"
               />
             )}
-          </div> */}
+          </div>
           <div style={{
             minHeight: isMobile ? '220px' : '320px', // Fixed height for text container
             display: 'flex',
@@ -2911,7 +2911,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         <div style={{
           position: 'fixed',
           right: isMobile ? '20px' : '15%',
-          top: '50%',
+          top: '55%',
           transform: 'translateY(calc(-50% + 120px))', // Position below the text section
           width: isMobile ? '60%' : '40%',
           maxWidth: '600px',

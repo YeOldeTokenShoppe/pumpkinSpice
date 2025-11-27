@@ -11,9 +11,9 @@
 
 
 
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */
 
 /* Font imports */
 
@@ -53,12 +53,8 @@
   animation: accordion-up 0.2s ease-out;
 }
 
-/* Position Stats panel in top center */
-/* Target the drei Stats panel directly by its default positioning */
-body > div:first-child,
-canvas + div:has(canvas) {
-  /* Stats panel container */
-}
+
+
 
 body > div:first-child > div:first-child {
   /* This targets the Stats panel more specifically */
@@ -157,7 +153,7 @@ canvas {
 
 @font-face {
   font-family: 'Blackletter';
-  src: url('/fonts/BLACEB__.ttf') format('truetype');
+  src: url('/fonts/BLACEB__.TTF') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: block; /* Block rendering until font loads */
@@ -3095,7 +3091,7 @@ h3 {
   text-transform: uppercase;
   color: var(--color-primary);
   -webkit-text-stroke: 2px var(--color-second);
-  text-stroke: 2px var(--color-second);
+  /* text-stroke: 2px var(--color-second); */
   text-shadow: 1px 1px 5px var(--color-second);
   position: relative;
   line-height: 100%;
@@ -3181,7 +3177,7 @@ h3 {
   font-family: "UnifrakturCook", cursive;
   font-size: 62pt;
   text-align: center;
-  text-stroke: 1px black;
+  /* text-stroke: 1px black; */
   -webkit-text-stroke: 1px black;
 }
 
@@ -5664,7 +5660,7 @@ body.rocket-page {
 [class*=" icon-"] {
   /* use !important to prevent issues with browser extensions that change fonts */
   font-family: "icomoon" !important;
-  speak: never;
+  /* speak: never; */
   font-style: normal;
   font-weight: normal;
   font-variant: normal;

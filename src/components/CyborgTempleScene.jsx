@@ -29,7 +29,7 @@ function CyborgTempleScene({
   const annotations = [
     {
       position: [0, 0, 0], // Near the main altar/center
-      text: "Sacred Altar\nThe heart of the cyborg temple",
+      text: "RL80 Trades 24/7 - A virgin trader and autonomous agent with one purpose: learn to trade on a perp exhange and maximize profits for her investors.",
       customCamera: {
         position: [2, -0.8, -0.3], // Camera moved right and lower
         lookAt: [0, -0.5, 0], // Look outward toward the characters

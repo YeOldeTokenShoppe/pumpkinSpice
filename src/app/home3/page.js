@@ -401,7 +401,7 @@ function ScrollTriggeredTitle({ isMobile }) {
       {/* Introduction Section */}
       <div style={{
     maxWidth: '1200px',
-        margin: '25rem auto 0 auto',
+        margin: '15rem auto 0 auto',
         padding: isMobile ? '30px 0' : '40px 0',
             background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
         borderRadius: '0',
@@ -475,7 +475,7 @@ function ScrollTriggeredTitle({ isMobile }) {
         />
        
         
-        <span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem',}}>D</span>escending from the cloud servers comes the digital manifestation of the icon of intercession - the virtual mary in the virtual machine, the protectress of dexes, aider to traders, fren to degens - here to light the way through the dark realm of <span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem'}}>D</span>e<span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem'}}>F</span>i. <br/><br/>
+        <span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem',}}>D</span>escending from the cloud servers comes the digital manifestation of the icon of intercession - the virtual mary in the virtual machine, guardian of good times, patron saint of portfolios, aider to traders, fren to degens - here to light the way through the dark realm of <span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem'}}>D</span>e<span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem'}}>F</span>i. <br/><br/>
 
         </div>
  
@@ -1838,7 +1838,7 @@ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '600', display: 'block', m
                           zIndex: 102,
                         }}
                       >
-                        GET ELITE
+                        GET ELITE 
                       </CyberButton>
               </div>
             </div>

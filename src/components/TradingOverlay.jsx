@@ -5,19 +5,115 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [isTablet, setIsTablet] = useState(false);
   const [activeTab, setActiveTab] = useState(null); // for mobile view - start with no tab selected
   const [desktopPositionsTab, setDesktopPositionsTab] = useState('positions'); // for desktop tabbed interface
+  const [mainTab, setMainTab] = useState('overview'); // main tabs: overview, chat
+  const [leftPanelTab, setLeftPanelTab] = useState('summary'); // tabs for left panel
+  const [rightTopTab, setRightTopTab] = useState('macro'); // tabs for top right panel
   const [showMobileMenu, setShowMobileMenu] = useState(false); // for mobile menu display
   
   // Use passed data if available, otherwise use default mock data
   const defaultData = {
-    fundBalance: 142857.33,
-    dailyPnl: 3847.21,
-    dailyPnlPercent: 2.77,
-    totalPnl: 42857.33,
-    totalPnlPercent: 42.86,
+    // Model Info
+    modelName: 'RL80-v3.1',
+    modelVersion: 'Temple Edition',
+    rank: 1,
+    totalModels: 1,
+    
+    // Fund Stats
+    fundBalance: 11442.95,
+    initialBalance: 10000.00,
+    dailyPnl: 847.21,
+    dailyPnlPercent: 8.47,
+    totalPnl: 1442.95,
+    totalPnlPercent: 14.43,
+    
+    // Performance Metrics
+    winRate: 74.8,
+    sharpeRatio: 2.3,
+    maxDrawdown: -8.9,
+    profitFactor: 1.8,
+    avgWin: 142.50,
+    avgLoss: -67.30,
+    
+    // Strategy Evolution
+    iterationCount: 127,
+    lastImprovement: '2m ago',
+    strategyConfidence: 86.5,
+    learningRate: 0.001,
+    explorationRate: 0.15,
+    
+    // AI Model Chat/Thoughts  
+    modelThoughts: [
+      {
+        timestamp: '11:26:48',
+        type: 'analysis',
+        message: "Holding BNB and SOL longs - uptrend remains supportive with stops at key support levels for risk management.",
+        consultant: 'market'
+      },
+      {
+        timestamp: '11:26:45',
+        type: 'position',
+        message: "Current positions performing well: BTC/USD long showing +2.13% with 6-hour trend intact. Maintaining long bias across portfolio.",
+        consultant: null
+      },
+      {
+        timestamp: '11:26:43',
+        type: 'strategy',
+        message: "Adjusted position sizing based on volatility metrics. Increased allocation to ETH given strong volume absorption and technical setup.",
+        consultant: 'market'
+      },
+      {
+        timestamp: '11:26:40',
+        type: 'market',
+        message: "Market sentiment: Risk-on with VIX < 15. DXY weakness supporting crypto positions. Monitoring FOMC minutes for policy shifts.",
+        consultant: 'macro'
+      },
+      {
+        timestamp: '11:26:35',
+        type: 'learning',
+        message: "Strategy iteration #127: Win rate improved to 74.8% after optimizing entry timing. Exploration rate at 15% for new pattern discovery.",
+        consultant: null
+      },
+      {
+        timestamp: '11:26:32',
+        type: 'sentiment',
+        message: "Social sentiment bullish on SOL with 87% positive mentions. Whale accumulation detected on-chain. Retail FOMO indicators still moderate.",
+        consultant: 'sentiment'
+      }
+    ],
+    
+    // Mini-Assistant Consultants
+    consultants: {
+      market: {
+        name: 'Market Analyst',
+        icon: '📊',
+        status: 'active',
+        confidence: 92,
+        lastSignal: 'BULLISH',
+        contribution: 35
+      },
+      macro: {
+        name: 'Macro Specialist',
+        icon: '🌍',
+        status: 'active',
+        confidence: 78,
+        lastSignal: 'RISK-ON',
+        contribution: 30
+      },
+      sentiment: {
+        name: 'Sentiment Oracle',
+        icon: '💭',
+        status: 'active',
+        confidence: 85,
+        lastSignal: 'GREED',
+        contribution: 35
+      }
+    },
+    
+    // Community
     stakersCount: 1337,
     tvl: 888888.88,
     apy: 69.42,
-    performanceScore: 7,
+    performanceScore: 8.9,
     activePositions: [
       { symbol: 'ETH/USDT', side: 'LONG', size: 2.5, entry: 3450.00, current: 3512.50, pnl: 156.25, pnlPercent: 1.81 },
       { symbol: 'SOL/USDT', side: 'SHORT', size: 100, entry: 142.80, current: 141.20, pnl: 160.00, pnlPercent: 1.12 },
@@ -214,6 +310,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               
               {[
                 { key: 'stats', icon: '⚡', label: 'FUND STATS', color: '#00ff00' },
+                { key: 'thoughts', icon: '🧠', label: 'AI THOUGHTS', color: '#ff00ff' },
                 { key: 'macro', icon: '🌍', label: 'MACRO ANALYSIS', color: '#00ddff' },
                 { key: 'positions', icon: '📈', label: 'ACTIVE POSITIONS', color: '#ffdd00' },
                 { key: 'trades', icon: '📜', label: 'COMPLETED TRADES', color: '#ff8800' }
@@ -349,8 +446,13 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                     animation: 'pulse 2s infinite',
                     boxShadow: '0 0 10px #00ff00'
                   }} />
-                  <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '12px' }}>
-                    ⚡ RL80 TRADING FUND
+                  <div>
+                    <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '11px' }}>
+                      {tradingData.modelName}
+                    </div>
+                    <div style={{ color: '#888', fontSize: '8px' }}>
+                      {tradingData.modelVersion}
+                    </div>
                   </div>
                 </div>
                 <div style={{
@@ -404,33 +506,48 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 </div>
               </div>
 
-              {/* Fund Balance */}
+              {/* Fund Balance with Total P&L */}
               <div style={{ marginBottom: '8px' }}>
-                <div style={{ color: '#00ff00', fontSize: '10px', opacity: 0.7, marginBottom: '2px' }}>
-                  FUND BALANCE
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+                  <div style={{ color: '#00ff00', fontSize: '10px', opacity: 0.7 }}>
+                    TOTAL P&L
+                  </div>
+                  <div style={{ 
+                    fontSize: '14px', 
+                    fontWeight: 'bold',
+                    color: tradingData.totalPnl > 0 ? '#00ff00' : '#ff3333',
+                    textShadow: '0 0 10px rgba(0, 255, 0, 0.5)'
+                  }}>
+                    {tradingData.totalPnl > 0 ? '+' : ''}${formatNumber(Math.abs(tradingData.totalPnl))}
+                  </div>
                 </div>
                 <div style={{ 
-                  fontSize: '18px', 
+                  fontSize: '16px', 
                   fontWeight: 'bold',
                   color: '#00ff00',
-                  textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
                   marginBottom: '3px'
                 }}>
                   ${formatNumber(tradingData.fundBalance)}
                 </div>
-                <div>
-                  <span style={{ color: '#888', fontSize: '10px' }}>24H: </span>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '4px 6px',
+                  background: tradingData.totalPnlPercent > 0 ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
+                  borderRadius: '3px'
+                }}>
+                  <span style={{ color: '#888', fontSize: '9px' }}>TOTAL RETURN</span>
                   <span style={{ 
-                    color: tradingData.dailyPnl > 0 ? '#00ff00' : '#ff3333',
-                    fontSize: '11px'
+                    color: tradingData.totalPnlPercent > 0 ? '#00ff00' : '#ff3333',
+                    fontSize: '11px',
+                    fontWeight: 'bold'
                   }}>
-                    {tradingData.dailyPnl > 0 ? '+' : ''}${formatNumber(Math.abs(tradingData.dailyPnl))} 
-                    ({tradingData.dailyPnlPercent > 0 ? '+' : ''}{tradingData.dailyPnlPercent}%)
+                    {tradingData.totalPnlPercent > 0 ? '+' : ''}{tradingData.totalPnlPercent.toFixed(2)}%
                   </span>
                 </div>
               </div>
 
-              {/* Metrics Grid */}
+              {/* Performance Metrics Grid */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
@@ -438,51 +555,53 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 marginBottom: '8px'
               }}>
                 <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
-                  <div style={{ color: '#888', fontSize: '9px' }}>STAKERS</div>
+                  <div style={{ color: '#888', fontSize: '9px' }}>WIN RATE</div>
                   <div style={{ color: '#00ff00', fontSize: '13px', fontWeight: 'bold' }}>
-                    {tradingData.stakersCount}
+                    {tradingData.winRate}%
                   </div>
                 </div>
                 <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
-                  <div style={{ color: '#888', fontSize: '9px' }}>TVL</div>
+                  <div style={{ color: '#888', fontSize: '9px' }}>SHARPE</div>
                   <div style={{ color: '#00ff00', fontSize: '13px', fontWeight: 'bold' }}>
-                    ${formatNumber(tradingData.tvl)}
+                    {tradingData.sharpeRatio}
                   </div>
                 </div>
                 <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
-                  <div style={{ color: '#888', fontSize: '9px' }}>APY</div>
-                  <div style={{ color: '#00ff00', fontSize: '13px', fontWeight: 'bold' }}>
-                    {tradingData.apy}%
+                  <div style={{ color: '#888', fontSize: '9px' }}>MAX DD</div>
+                  <div style={{ color: '#ff3333', fontSize: '13px', fontWeight: 'bold' }}>
+                    {tradingData.maxDrawdown}%
                   </div>
                 </div>
                 <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '4px' }}>
-                  <div style={{ color: '#888', fontSize: '9px' }}>PERF. SCORE</div>
+                  <div style={{ color: '#888', fontSize: '9px' }}>P. FACTOR</div>
                   <div style={{ color: '#00ff00', fontSize: '13px', fontWeight: 'bold' }}>
-                    {tradingData.performanceScore}/10
+                    {tradingData.profitFactor}
                   </div>
                 </div>
               </div>
 
-              {/* Performance */}
+              {/* Strategy Evolution */}
               <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
                 padding: '6px',
-                background: 'rgba(0, 255, 0, 0.1)',
+                background: 'linear-gradient(90deg, rgba(255, 221, 0, 0.1) 0%, rgba(0, 255, 0, 0.1) 100%)',
                 borderRadius: '5px',
-                marginBottom: '8px'
+                marginBottom: '8px',
+                border: '1px solid rgba(255, 221, 0, 0.3)'
               }}>
-                <div>
-                  <div style={{ color: '#888', fontSize: '9px' }}>WIN STREAK</div>
-                  <div style={{ color: '#ffdd00', fontSize: '14px', fontWeight: 'bold' }}>
-                    {tradingData.winStreak}🔥
-                  </div>
+                <div style={{ color: '#ffdd00', fontSize: '9px', marginBottom: '4px', fontWeight: 'bold' }}>
+                  🧠 LEARNING ITERATION #{tradingData.iterationCount}
                 </div>
-                <div>
-                  <div style={{ color: '#888', fontSize: '9px' }}>PROFIT MULT.</div>
-                  <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
-                    {tradingData.profitMultiplier}x
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                  <span style={{ color: '#888', fontSize: '9px' }}>Strategy Confidence</span>
+                  <span style={{ color: '#00ff00', fontSize: '10px', fontWeight: 'bold' }}>
+                    {tradingData.strategyConfidence}%
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#888', fontSize: '9px' }}>Last Improvement</span>
+                  <span style={{ color: '#ffdd00', fontSize: '10px' }}>
+                    {tradingData.lastImprovement}
+                  </span>
                 </div>
               </div>
 
@@ -500,6 +619,100 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold', fontFamily: 'monospace' }}>
                   {tradingData.nextAnalysis}
                 </div>
+              </div>
+            </>
+          )}
+
+          {/* AI Thoughts Tab */}
+          {activeTab === 'thoughts' && (
+            <>
+              <div style={{
+                marginBottom: '12px',
+                paddingBottom: '8px',
+                borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '13px' }}>
+                  🧠 RL80 AI THOUGHTS
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}>
+                  <div style={{
+                    width: '5px',
+                    height: '5px',
+                    borderRadius: '50%',
+                    background: '#00ff00',
+                    animation: 'pulse 2s infinite'
+                  }} />
+                  <span style={{ color: '#00ff00', fontSize: '9px' }}>LIVE</span>
+                </div>
+              </div>
+              
+              {/* Thoughts Messages */}
+              <div style={{
+                maxHeight: 'calc(100vh - 240px)',
+                overflowY: 'auto',
+                paddingRight: '5px'
+              }}>
+                {tradingData.modelThoughts.map((thought, idx) => (
+                  <div key={idx} style={{
+                    marginBottom: '10px',
+                    padding: '8px',
+                    background: thought.type === 'learning' ? 'rgba(255, 221, 0, 0.05)' :
+                               thought.type === 'position' ? 'rgba(0, 255, 0, 0.05)' :
+                               thought.type === 'strategy' ? 'rgba(0, 150, 255, 0.05)' :
+                               'rgba(255, 255, 255, 0.02)',
+                    borderLeft: `2px solid ${
+                      thought.type === 'learning' ? '#ffdd00' :
+                      thought.type === 'position' ? '#00ff00' :
+                      thought.type === 'strategy' ? '#0096ff' :
+                      thought.type === 'analysis' ? '#ff00ff' :
+                      '#888'
+                    }`,
+                    borderRadius: '3px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '4px'
+                    }}>
+                      <span style={{
+                        color: thought.type === 'learning' ? '#ffdd00' :
+                               thought.type === 'position' ? '#00ff00' :
+                               thought.type === 'strategy' ? '#0096ff' :
+                               thought.type === 'analysis' ? '#ff00ff' :
+                               '#888',
+                        fontSize: '9px',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase'
+                      }}>
+                        {thought.type === 'learning' ? '🧠 LEARNING' :
+                         thought.type === 'position' ? '📈 POSITION' :
+                         thought.type === 'strategy' ? '♟️ STRATEGY' :
+                         thought.type === 'analysis' ? '🔍 ANALYSIS' :
+                         thought.type === 'market' ? '🌍 MARKET' : '💭 THOUGHT'}
+                      </span>
+                      <span style={{
+                        color: '#666',
+                        fontSize: '8px'
+                      }}>
+                        {thought.timestamp}
+                      </span>
+                    </div>
+                    <div style={{
+                      color: '#ddd',
+                      fontSize: '10px',
+                      lineHeight: '1.4'
+                    }}>
+                      {thought.message}
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}
@@ -845,47 +1058,131 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   // Desktop view - original layout
   return (
     <>
-      {/* Main Trading Stats Panel - Left Side */}
+      <style>{`
+        @keyframes pulse {
+          0% { opacity: 1; }
+          50% { opacity: 0.5; }
+          100% { opacity: 1; }
+        }
+      `}</style>
+
+      {/* Combined Left Panel with Tabs */}
       <div style={{
         position: 'fixed',
         top: '120px',
-        left: '10px',
+        left: '20px',
         background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
         border: '1px solid #00ff00',
         borderRadius: '8px',
         padding: '12px',
         fontFamily: 'monospace',
-        fontSize: '12px',
+        fontSize: '11px',
         zIndex: 9999,
-        width: 'min(280px, 22vw)',
-        minWidth: '240px',
-        maxWidth: '300px',
+        width: 'min(320px, 25vw)',
+        minWidth: '260px',
+        maxWidth: '340px',
         boxShadow: '0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 255, 0, 0.05)',
         backdropFilter: 'blur(10px)'
       }}>
-        {/* Header */}
+        {/* Tab Navigation */}
         <div style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          marginBottom: '12px',
+          borderBottom: '1px solid rgba(0, 255, 0, 0.3)'
+        }}>
+          <button
+            onClick={() => setLeftPanelTab('summary')}
+            style={{
+              flex: 1,
+              padding: '8px',
+              background: leftPanelTab === 'summary' ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
+              border: 'none',
+              borderBottom: leftPanelTab === 'summary' ? '2px solid #00ff00' : '2px solid transparent',
+              color: leftPanelTab === 'summary' ? '#00ff00' : '#888',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontFamily: 'monospace'
+            }}
+          >
+            📊 SUMMARY
+          </button>
+          <button
+            onClick={() => setLeftPanelTab('positions')}
+            style={{
+              flex: 1,
+              padding: '8px',
+              background: leftPanelTab === 'positions' ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
+              border: 'none',
+              borderBottom: leftPanelTab === 'positions' ? '2px solid #00ff00' : '2px solid transparent',
+              color: leftPanelTab === 'positions' ? '#00ff00' : '#888',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontFamily: 'monospace'
+            }}
+          >
+            ⚡ POSITIONS
+          </button>
+          <button
+            onClick={() => setLeftPanelTab('trades')}
+            style={{
+              flex: 1,
+              padding: '8px',
+              background: leftPanelTab === 'trades' ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
+              border: 'none',
+              borderBottom: leftPanelTab === 'trades' ? '2px solid #00ff00' : '2px solid transparent',
+              color: leftPanelTab === 'trades' ? '#00ff00' : '#888',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontFamily: 'monospace'
+            }}
+          >
+            📜 TRADES
+          </button>
+        </div>
+        
+        {/* Tab Content Container */}
+        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        
+        {/* Summary Tab */}
+        {leftPanelTab === 'summary' && (
+          <>
+        {/* Header with Model Info */}
+        <div style={{
           marginBottom: '15px',
           paddingBottom: '10px',
           borderBottom: '1px solid rgba(0, 255, 0, 0.3)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              background: '#00ff00',
-              borderRadius: '50%',
-              animation: 'pulse 2s infinite',
-              boxShadow: '0 0 10px #00ff00'
-            }} />
-            <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '14px' }}>
-              ⚡ RL80 TRADING FUND ⚡
-            </div>
-          </div>
           <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                background: '#00ff00',
+                borderRadius: '50%',
+                animation: 'pulse 2s infinite',
+                boxShadow: '0 0 10px #00ff00'
+              }} />
+              <div>
+                <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '14px' }}>
+                  {tradingData.modelName}
+                </div>
+                <div style={{ color: '#888', fontSize: '10px' }}>
+                  {tradingData.modelVersion}
+                </div>
+              </div>
+            </div>
+            <div style={{
             display: 'flex',
             flexDirection: 'column',
             gap: '4px',
@@ -934,8 +1231,9 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               </div>
             )}
           </div>
+          </div>
         </div>
-
+        
         {/* Connection Status Info */}
         {!isConnected && (
           <div style={{
@@ -954,35 +1252,71 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           </div>
         )}
         
-        {/* Fund Stats */}
+        {/* Fund Stats with nof1 Style */}
         <div style={{ marginBottom: '15px' }}>
-          <div style={{ color: '#00ff00', fontSize: '11px', opacity: 0.7, marginBottom: '5px' }}>
-            FUND BALANCE
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '10px'
+          }}>
+            <div>
+              <div style={{ color: '#888', fontSize: '10px', marginBottom: '2px' }}>
+                TOTAL P&L
+              </div>
+              <div style={{ 
+                fontSize: '20px', 
+                fontWeight: 'bold',
+                color: tradingData.totalPnl > 0 ? '#00ff00' : '#ff3333',
+                textShadow: `0 0 10px ${tradingData.totalPnl > 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 51, 51, 0.5)'}`
+              }}>
+                {tradingData.totalPnl > 0 ? '+' : ''}${formatNumber(Math.abs(tradingData.totalPnl))}
+              </div>
+            </div>
+            <div style={{
+              padding: '8px 12px',
+              background: tradingData.totalPnlPercent > 0 ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)',
+              border: `2px solid ${tradingData.totalPnlPercent > 0 ? '#00ff00' : '#ff3333'}`,
+              borderRadius: '5px'
+            }}>
+              <div style={{ color: '#888', fontSize: '9px', marginBottom: '2px' }}>RETURN</div>
+              <div style={{ 
+                fontSize: '18px', 
+                fontWeight: 'bold',
+                color: tradingData.totalPnlPercent > 0 ? '#00ff00' : '#ff3333'
+              }}>
+                {tradingData.totalPnlPercent > 0 ? '+' : ''}{tradingData.totalPnlPercent.toFixed(2)}%
+              </div>
+            </div>
           </div>
           <div style={{ 
-            fontSize: '24px', 
+            fontSize: '16px', 
             fontWeight: 'bold',
-            color: '#00ff00',
-            textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
+            color: '#fff',
             marginBottom: '5px'
           }}>
-            ${formatNumber(tradingData.fundBalance)}
+            Balance: ${formatNumber(tradingData.fundBalance)}
           </div>
           <div style={{ display: 'flex', gap: '15px' }}>
+            <div>
+              <span style={{ color: '#888', fontSize: '10px' }}>Initial: </span>
+              <span style={{ color: '#fff', fontSize: '11px' }}>
+                ${formatNumber(tradingData.initialBalance)}
+              </span>
+            </div>
             <div>
               <span style={{ color: '#888', fontSize: '10px' }}>24H: </span>
               <span style={{ 
                 color: tradingData.dailyPnl > 0 ? '#00ff00' : '#ff3333',
-                fontSize: '12px'
+                fontSize: '11px'
               }}>
-                {tradingData.dailyPnl > 0 ? '+' : ''}${formatNumber(Math.abs(tradingData.dailyPnl))} 
-                ({tradingData.dailyPnlPercent > 0 ? '+' : ''}{tradingData.dailyPnlPercent}%)
+                {tradingData.dailyPnl > 0 ? '+' : ''}{tradingData.dailyPnlPercent}%
               </span>
             </div>
           </div>
         </div>
 
-        {/* Staking Info */}
+        {/* Performance Metrics Grid */}
         <div style={{
           background: 'rgba(0, 255, 0, 0.05)',
           padding: '10px',
@@ -992,52 +1326,67 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>STAKERS</div>
+              <div style={{ color: '#888', fontSize: '10px' }}>WIN RATE</div>
               <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
-                {tradingData.stakersCount}
+                {tradingData.winRate}%
               </div>
             </div>
             <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>TVL</div>
+              <div style={{ color: '#888', fontSize: '10px' }}>SHARPE</div>
               <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
-                ${formatNumber(tradingData.tvl)}
+                {tradingData.sharpeRatio}
               </div>
             </div>
             <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>APY</div>
-              <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
-                {tradingData.apy}%
+              <div style={{ color: '#888', fontSize: '10px' }}>MAX DD</div>
+              <div style={{ color: '#ff3333', fontSize: '14px', fontWeight: 'bold' }}>
+                {tradingData.maxDrawdown}%
               </div>
             </div>
             <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>PERF. SCORE</div>
+              <div style={{ color: '#888', fontSize: '10px' }}>PROFIT FACTOR</div>
               <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
-                {tradingData.performanceScore}/10
+                {tradingData.profitFactor}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Performance Metrics */}
+        {/* Strategy Evolution Metrics */}
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
           padding: '10px',
-          background: 'linear-gradient(90deg, rgba(0, 255, 0, 0.1) 0%, transparent 100%)',
+          background: 'linear-gradient(135deg, rgba(255, 221, 0, 0.1) 0%, rgba(0, 255, 0, 0.1) 100%)',
           borderRadius: '5px',
-          marginBottom: '10px'
+          marginBottom: '10px',
+          border: '1px solid rgba(255, 221, 0, 0.3)'
         }}>
-          <div>
-            <div style={{ color: '#888', fontSize: '10px' }}>WIN STREAK</div>
-            <div style={{ color: '#ffdd00', fontSize: '16px', fontWeight: 'bold' }}>
-              {tradingData.winStreak}🔥
+          <div style={{ color: '#ffdd00', fontSize: '11px', marginBottom: '8px', fontWeight: 'bold' }}>
+            🧠 LEARNING ITERATION #{tradingData.iterationCount}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>
+              <div style={{ color: '#888', fontSize: '10px' }}>CONFIDENCE</div>
+              <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
+                {tradingData.strategyConfidence}%
+              </div>
+            </div>
+            <div>
+              <div style={{ color: '#888', fontSize: '10px' }}>EXPLORATION</div>
+              <div style={{ color: '#ffdd00', fontSize: '14px', fontWeight: 'bold' }}>
+                {(tradingData.explorationRate * 100).toFixed(0)}%
+              </div>
             </div>
           </div>
-          <div>
-            <div style={{ color: '#888', fontSize: '10px' }}>PROFIT MULT.</div>
-            <div style={{ color: '#00ff00', fontSize: '16px', fontWeight: 'bold' }}>
-              {tradingData.profitMultiplier}x
-            </div>
+          <div style={{
+            marginTop: '8px',
+            padding: '4px',
+            background: 'rgba(0, 0, 0, 0.3)',
+            borderRadius: '3px',
+            fontSize: '10px',
+            color: '#888',
+            textAlign: 'center'
+          }}>
+            Last improvement: <span style={{ color: '#ffdd00' }}>{tradingData.lastImprovement}</span>
           </div>
         </div>
 
@@ -1056,13 +1405,121 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             {tradingData.nextAnalysis}
           </div>
         </div>
+          </>
+        )}
+        
+        {/* Positions Tab */}
+        {leftPanelTab === 'positions' && (
+          <div>
+            <div style={{ marginBottom: '8px', color: '#00ff00', fontWeight: 'bold', fontSize: '12px' }}>
+              ACTIVE POSITIONS ({tradingData.activePositions.length})
+            </div>
+            {tradingData.activePositions.map((pos, idx) => (
+              <div key={idx} style={{
+                padding: '8px',
+                marginBottom: '8px',
+                background: pos.pnl > 0 ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
+                border: `1px solid ${pos.pnl > 0 ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'}`,
+                borderRadius: '5px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                  <div style={{ color: '#00ff00', fontWeight: 'bold' }}>
+                    {pos.symbol}
+                  </div>
+                  <div style={{
+                    padding: '2px 6px',
+                    background: pos.side === 'LONG' ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)',
+                    color: pos.side === 'LONG' ? '#00ff00' : '#ff3333',
+                    borderRadius: '3px',
+                    fontSize: '10px',
+                    fontWeight: 'bold'
+                  }}>
+                    {pos.side}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '10px' }}>
+                  <div>
+                    <span style={{ color: '#888' }}>Entry: </span>
+                    <span style={{ color: '#fff' }}>${pos.entry.toFixed(2)}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#888' }}>Current: </span>
+                    <span style={{ color: '#fff' }}>${pos.current.toFixed(2)}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#888' }}>Size: </span>
+                    <span style={{ color: '#fff' }}>{pos.size}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#888' }}>P&L: </span>
+                    <span style={{ 
+                      color: pos.pnl > 0 ? '#00ff00' : '#ff3333',
+                      fontWeight: 'bold'
+                    }}>
+                      {pos.pnl > 0 ? '+' : ''}${pos.pnl.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Trades Tab */}
+        {leftPanelTab === 'trades' && (
+          <div>
+            <div style={{ marginBottom: '8px', color: '#00ff00', fontWeight: 'bold', fontSize: '12px' }}>
+              COMPLETED TRADES
+            </div>
+            {tradingData.recentTrades.map((trade, idx) => (
+              <div key={idx} style={{
+                padding: '8px',
+                marginBottom: '6px',
+                background: trade.status === 'exceptional' ? 'rgba(255, 215, 0, 0.05)' : 
+                          trade.status === 'profit' ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
+                borderLeft: `3px solid ${
+                  trade.status === 'exceptional' ? '#ffd700' : 
+                  trade.status === 'profit' ? '#00ff00' : '#ff3333'
+                }`,
+                borderRadius: '3px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <span style={{ color: '#888', fontSize: '10px' }}>{trade.time}</span>
+                    <span style={{ color: '#00ff00', fontWeight: 'bold' }}>{trade.symbol}</span>
+                    <span style={{
+                      color: trade.side === 'BUY' ? '#00ff00' : '#ff3333',
+                      fontSize: '10px',
+                      fontWeight: 'bold'
+                    }}>
+                      {trade.side}
+                    </span>
+                  </div>
+                  <span style={{ 
+                    color: trade.status === 'exceptional' ? '#ffd700' : 
+                          trade.status === 'profit' ? '#00ff00' : '#ff3333',
+                    fontWeight: 'bold'
+                  }}>
+                    {trade.pnl} {trade.status === 'exceptional' ? '✨' : ''}
+                  </span>
+                </div>
+                <div style={{ fontSize: '10px', color: '#888' }}>
+                  {trade.amount} @ ${trade.price}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        </div>
       </div>
 
-      {/* Combined Positions & Trades Panel - Bottom Left */}
+      {/* Removed old Combined Positions & Trades Panel - Bottom Left */}
+      {false && (
       <div style={{
         position: 'fixed',
         bottom: '20px',
-        left: '10px',
+        left: '20px',
         background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
         border: '1px solid #00ff00',
         borderRadius: '8px',
@@ -1219,12 +1676,142 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           )}
         </div>
       </div>
+      )}
 
-      {/* Macro Analysis Panel - Top Right */}
+
+      {/* Model Chat Panel - Bottom Right - Always Visible */}
+      <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+          border: '2px solid #00ff00',
+          borderRadius: '8px',
+          padding: '12px',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          zIndex: 9999,
+          width: 'min(320px, 25vw)',
+          minWidth: '260px',
+          maxWidth: '340px',
+          maxHeight: '350px',
+          boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          {/* Chat Header */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '12px',
+            paddingBottom: '10px',
+            borderBottom: '2px solid rgba(0, 255, 0, 0.4)'
+          }}>
+            <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '13px' }}>
+              🧠 RL80 THOUGHTS
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <div style={{
+                width: '6px',
+                height: '6px',
+                background: '#00ff00',
+                borderRadius: '50%',
+                animation: 'pulse 2s infinite'
+              }} />
+              <span style={{ color: '#00ff00', fontSize: '9px' }}>LIVE</span>
+            </div>
+          </div>
+          
+          {/* Chat Messages */}
+          <div style={{
+            overflowY: 'auto',
+            maxHeight: '280px',
+            paddingRight: '5px'
+          }}>
+            {tradingData.modelThoughts.map((thought, idx) => (
+              <div key={idx} style={{
+                marginBottom: '12px',
+                padding: '10px',
+                background: thought.type === 'learning' ? 'rgba(255, 221, 0, 0.05)' :
+                           thought.type === 'position' ? 'rgba(0, 255, 0, 0.05)' :
+                           thought.type === 'strategy' ? 'rgba(0, 150, 255, 0.05)' :
+                           'rgba(255, 255, 255, 0.02)',
+                borderLeft: `2px solid ${
+                  thought.type === 'learning' ? '#ffdd00' :
+                  thought.type === 'position' ? '#00ff00' :
+                  thought.type === 'strategy' ? '#0096ff' :
+                  thought.type === 'analysis' ? '#ff00ff' :
+                  '#888'
+                }`,
+                borderRadius: '3px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '4px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{
+                      color: thought.type === 'learning' ? '#ffdd00' :
+                             thought.type === 'position' ? '#00ff00' :
+                             thought.type === 'strategy' ? '#0096ff' :
+                             thought.type === 'analysis' ? '#ff00ff' :
+                             thought.type === 'sentiment' ? '#ff8800' :
+                             '#888',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase'
+                    }}>
+                      {thought.type === 'learning' ? '🧠 LEARNING' :
+                       thought.type === 'position' ? '📈 POSITION' :
+                       thought.type === 'strategy' ? '♟️ STRATEGY' :
+                       thought.type === 'analysis' ? '🔍 ANALYSIS' :
+                       thought.type === 'sentiment' ? '💬 SENTIMENT' :
+                       thought.type === 'market' ? '🌍 MARKET' : '💭 THOUGHT'}
+                    </span>
+                    {thought.consultant && (
+                      <span style={{
+                        padding: '1px 4px',
+                        background: 'rgba(255, 221, 0, 0.2)',
+                        border: '1px solid rgba(255, 221, 0, 0.4)',
+                        borderRadius: '2px',
+                        fontSize: '8px',
+                        color: '#ffdd00'
+                      }}>
+                        via {thought.consultant === 'market' ? '📊' : 
+                             thought.consultant === 'macro' ? '🌍' : 
+                             thought.consultant === 'sentiment' ? '💭' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <span style={{
+                    color: '#666',
+                    fontSize: '9px'
+                  }}>
+                    {thought.timestamp}
+                  </span>
+                </div>
+                <div style={{
+                  color: '#ddd',
+                  fontSize: '11px',
+                  lineHeight: '1.5'
+                }}>
+                  {thought.message}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      {/* AI Consultants Panel with Tabs - Top Right */}
       <div style={{
         position: 'fixed',
         top: '120px',
-        right: '10px',
+        right: '20px',
         background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
         border: '1px solid #00ff00',
         borderRadius: '8px',
@@ -1238,18 +1825,80 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)',
         backdropFilter: 'blur(10px)'
       }}>
-        {/* Header */}
+        {/* Tab Navigation */}
         <div style={{
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
           marginBottom: '12px',
-          paddingBottom: '8px',
           borderBottom: '1px solid rgba(0, 255, 0, 0.3)'
         }}>
-          <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '13px' }}>
-            🌍 MACRO ANALYSIS
-          </div>
+          <button
+            onClick={() => setRightTopTab('market')}
+            style={{
+              flex: 1,
+              padding: '8px',
+              background: rightTopTab === 'market' ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
+              border: 'none',
+              borderBottom: rightTopTab === 'market' ? '2px solid #00ff00' : '2px solid transparent',
+              color: rightTopTab === 'market' ? '#00ff00' : '#888',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontFamily: 'monospace'
+            }}
+          >
+            📊 MARKET
+          </button>
+          <button
+            onClick={() => setRightTopTab('macro')}
+            style={{
+              flex: 1,
+              padding: '8px',
+              background: rightTopTab === 'macro' ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
+              border: 'none',
+              borderBottom: rightTopTab === 'macro' ? '2px solid #00ff00' : '2px solid transparent',
+              color: rightTopTab === 'macro' ? '#00ff00' : '#888',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontFamily: 'monospace'
+            }}
+          >
+            🌍 MACRO
+          </button>
+          <button
+            onClick={() => setRightTopTab('sentiment')}
+            style={{
+              flex: 1,
+              padding: '8px',
+              background: rightTopTab === 'sentiment' ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
+              border: 'none',
+              borderBottom: rightTopTab === 'sentiment' ? '2px solid #00ff00' : '2px solid transparent',
+              color: rightTopTab === 'sentiment' ? '#00ff00' : '#888',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontFamily: 'monospace'
+            }}
+          >
+            💭 SENTIMENT
+          </button>
+        </div>
+        
+        {/* Market Analyst Tab */}
+        {rightTopTab === 'market' && (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '12px'
+            }}>
+              <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '12px' }}>
+                📊 MARKET ANALYST
+              </div>
           <div style={{
             padding: '4px 10px',
             background: tradingData.macroData.marketRegime === 'RISK_ON' ? 'rgba(0, 255, 0, 0.2)' :
@@ -1264,8 +1913,13 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           }}>
             {tradingData.macroData.marketRegime}
           </div>
-        </div>
+            </div>
+          </>
+        )}
 
+        {/* Macro Specialist Tab */}
+        {rightTopTab === 'macro' && (
+          <>
         {/* Risk Score Bar */}
         <div style={{ marginBottom: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
@@ -1437,17 +2091,86 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             </span>
           </div>
         </div>
+          </>
+        )}
+        
+        {/* Sentiment Oracle Tab */}
+        {rightTopTab === 'sentiment' && (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '12px'
+            }}>
+              <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '12px' }}>
+                💭 SENTIMENT ORACLE
+              </div>
+              <div style={{
+                padding: '2px 6px',
+                background: 'rgba(255, 221, 0, 0.2)',
+                border: '1px solid rgba(255, 221, 0, 0.4)',
+                borderRadius: '3px',
+                fontSize: '9px',
+                color: '#ffdd00'
+              }}>
+                GREED • 85%
+              </div>
+            </div>
+            
+            {/* Fear & Greed Index */}
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px' }}>FEAR & GREED INDEX</div>
+              <div style={{
+                padding: '8px',
+                background: 'linear-gradient(90deg, #ff3333 0%, #ffdd00 50%, #00ff00 100%)',
+                borderRadius: '4px',
+                position: 'relative',
+                height: '30px'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  left: '72%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '4px',
+                  height: '20px',
+                  background: '#fff',
+                  borderRadius: '2px'
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  bottom: '-18px',
+                  left: '72%',
+                  transform: 'translateX(-50%)',
+                  color: '#ffdd00',
+                  fontSize: '11px',
+                  fontWeight: 'bold'
+                }}>
+                  72
+                </div>
+              </div>
+            </div>
+            
+            {/* Social Metrics */}
+            <div style={{ marginBottom: '12px', marginTop: '24px' }}>
+              <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px' }}>SOCIAL METRICS</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '3px' }}>
+                  <div style={{ color: '#888', fontSize: '9px' }}>MENTIONS</div>
+                  <div style={{ color: '#00ff00', fontSize: '12px', fontWeight: 'bold' }}>↑ 145%</div>
+                </div>
+                <div style={{ padding: '6px', background: 'rgba(0, 255, 0, 0.05)', borderRadius: '3px' }}>
+                  <div style={{ color: '#888', fontSize: '9px' }}>SENTIMENT</div>
+                  <div style={{ color: '#00ff00', fontSize: '12px', fontWeight: 'bold' }}>87% +</div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      <style jsx>{`
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.5; }
-          100% { opacity: 1; }
-        }
-      `}</style>
     </>
   );
 };
-
 export default TradingOverlay;

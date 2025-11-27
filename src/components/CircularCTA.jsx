@@ -62,11 +62,11 @@ const CircularCTA = ({
           </div>
         ) : (
           <img 
-            src="/favicon.svg" 
+            src="/coinfront.png" 
             alt="Logo"
             className={styles.logo}
-            width="60%"
-            height="60%"
+            width="100%"
+            height="100%"
           />
         )}
       </div>
