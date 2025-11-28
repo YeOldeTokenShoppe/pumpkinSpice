@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo } from "react";
+import { useEffect, useRef, useState, memo, forwardRef, useImperativeHandle } from "react";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import * as THREE from "three";
@@ -7,7 +7,7 @@ import AnnotationSystem from "@/components/AnnotationSystem";
 
 
 
-function CyborgTempleScene({ 
+const CyborgTempleScene = forwardRef(({ 
   onLoad, 
   position = [0, -4, 0],
   rotation = [0, 0, 0],
@@ -16,7 +16,7 @@ function CyborgTempleScene({
   showAnnotations = true,
   is80sMode = false,
   onAnnotationClick = null, // Callback when annotation is clicked
-}) {
+}, ref) => {
   const groupRef = useRef();
   const { scene } = useThree();
   const hasLoadedRef = useRef(false);
@@ -24,6 +24,12 @@ function CyborgTempleScene({
   const actionsRef = useRef({});
   const danceTimeoutRef = useRef(null);
   const slowdownIntervalRef = useRef(null);
+  const [loadedModel, setLoadedModel] = useState(null);
+  
+  // Expose the loaded model through ref
+  useImperativeHandle(ref, () => ({
+    current: loadedModel
+  }), [loadedModel]);
 
   // Define annotation points - adjust positions based on your temple scene
   const annotations = [
@@ -83,6 +89,10 @@ function CyborgTempleScene({
       
       const templeScene = gltf.scene;
       
+      // Store the loaded model in state for external access
+      setLoadedModel(templeScene);
+      console.log('[CyborgTempleScene] Model loaded and stored:', templeScene);
+      
       // Create an anchor group for positioning
       const anchorGroup = new THREE.Group();
       anchorGroup.position.set(...position);
@@ -132,7 +142,7 @@ function CyborgTempleScene({
             }
             
             action.play();
-            console.log(`Playing idle animation: ${animation.name} with offset ${action.time}`);
+            // console.log(`Playing idle animation: ${animation.name} with offset ${action.time}`);
           }
         });
       }
@@ -351,6 +361,8 @@ function CyborgTempleScene({
       textScale={0.8}
     />
   );
-}
+});
+
+CyborgTempleScene.displayName = 'CyborgTempleScene';
 
 export default memo(CyborgTempleScene);

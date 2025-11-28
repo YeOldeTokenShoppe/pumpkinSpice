@@ -1,4 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { useFirestoreResults } from '@/utilities/useFirestoreResults';
+
+// Dynamically import SingleCandleDisplay to avoid SSR issues with Three.js
+const SingleCandleDisplay = dynamic(() => import('./SingleCandleDisplay'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ 
+      width: '100%', 
+      height: '280px', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      color: '#666'
+    }}>
+      Loading 3D...
+    </div>
+  )
+});
 
 const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -9,6 +28,29 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [leftPanelTab, setLeftPanelTab] = useState('summary'); // tabs for left panel
   const [rightTopTab, setRightTopTab] = useState('macro'); // tabs for top right panel
   const [showMobileMenu, setShowMobileMenu] = useState(false); // for mobile menu display
+  
+  // Get Firestore results for candle display
+  const firestoreResults = useFirestoreResults('burnedAmount'); // Get top burners
+  const [candleIndex, setCandleIndex] = useState(0);
+  
+  // Rotate through different candles every 30 seconds
+  useEffect(() => {
+    if (firestoreResults && firestoreResults.length > 0) {
+      const interval = setInterval(() => {
+        setCandleIndex(prev => (prev + 1) % firestoreResults.length);
+      }, 30000); // Change every 30 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [firestoreResults]);
+  
+  // Select user based on current index
+  const randomFirestoreData = useMemo(() => {
+    if (firestoreResults && firestoreResults.length > 0) {
+      return firestoreResults[candleIndex % firestoreResults.length];
+    }
+    return null;
+  }, [firestoreResults, candleIndex]);
   
   // Use passed data if available, otherwise use default mock data
   const defaultData = {
@@ -44,37 +86,37 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
     // AI Model Chat/Thoughts  
     modelThoughts: [
       {
-        timestamp: '11:26:48',
-        type: 'analysis',
+        timestamp: 'Nov 26, 11:26:48 PM',
+        type: 'trading',
         message: "Holding BNB and SOL longs - uptrend remains supportive with stops at key support levels for risk management.",
         consultant: 'market'
       },
       {
-        timestamp: '11:26:45',
-        type: 'position',
+        timestamp: 'Nov 26, 11:26:45 PM',
+        type: 'trading',
         message: "Current positions performing well: BTC/USD long showing +2.13% with 6-hour trend intact. Maintaining long bias across portfolio.",
         consultant: null
       },
       {
-        timestamp: '11:26:43',
-        type: 'strategy',
+        timestamp: 'Nov 26, 11:26:43 PM',
+        type: 'trading',
         message: "Adjusted position sizing based on volatility metrics. Increased allocation to ETH given strong volume absorption and technical setup.",
         consultant: 'market'
       },
       {
-        timestamp: '11:26:40',
+        timestamp: 'Nov 26, 11:26:40 PM',
         type: 'market',
         message: "Market sentiment: Risk-on with VIX < 15. DXY weakness supporting crypto positions. Monitoring FOMC minutes for policy shifts.",
         consultant: 'macro'
       },
       {
-        timestamp: '11:26:35',
+        timestamp: 'Nov 26, 11:26:35 PM',
         type: 'learning',
         message: "Strategy iteration #127: Win rate improved to 74.8% after optimizing entry timing. Exploration rate at 15% for new pattern discovery.",
         consultant: null
       },
       {
-        timestamp: '11:26:32',
+        timestamp: 'Nov 26, 11:26:32 PM',
         type: 'sentiment',
         message: "Social sentiment bullish on SOL with 87% positive mentions. Whale accumulation detected on-chain. Retail FOMO indicators still moderate.",
         consultant: 'sentiment'
@@ -125,7 +167,14 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
       { time: '14:55', symbol: 'LINK', side: 'BUY', amount: '200', price: 18.95, pnl: '-$23', status: 'loss' },
       { time: '13:12', symbol: 'ARB', side: 'BUY', amount: '1.5K', price: 1.82, pnl: '+$217', status: 'exceptional' },
     ],
-    nextAnalysis: '00:42:17',
+    nextAnalysis: '00:14:32',
+    agentStatus: 'active', // active, analyzing, trading
+    microActions: [
+      { time: '12s ago', action: 'Adjusted BTC stop-loss to $96,200' },
+      { time: '45s ago', action: 'Monitoring SOL breakout pattern' },
+      { time: '2m ago', action: 'Risk check passed - positions within limits' },
+      { time: '3m ago', action: 'Tightened ETH trailing stop by 0.5%' }
+    ],
     winStreak: 13,
     profitMultiplier: 1.77,
     // Macro Economic Data
@@ -580,44 +629,203 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 </div>
               </div>
 
-              {/* Strategy Evolution */}
+              {/* Trading Activity Stats */}
               <div style={{
                 padding: '6px',
                 background: 'linear-gradient(90deg, rgba(255, 221, 0, 0.1) 0%, rgba(0, 255, 0, 0.1) 100%)',
                 borderRadius: '5px',
-                marginBottom: '8px',
+                marginBottom: '12px', // Increased from 8px to prevent overlap
                 border: '1px solid rgba(255, 221, 0, 0.3)'
               }}>
                 <div style={{ color: '#ffdd00', fontSize: '9px', marginBottom: '4px', fontWeight: 'bold' }}>
-                  🧠 LEARNING ITERATION #{tradingData.iterationCount}
+                  📊 TRADES EXECUTED: {tradingData.iterationCount}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                  <span style={{ color: '#888', fontSize: '9px' }}>Strategy Confidence</span>
-                  <span style={{ color: '#00ff00', fontSize: '10px', fontWeight: 'bold' }}>
-                    {tradingData.strategyConfidence}%
+                  <span style={{ color: '#888', fontSize: '9px' }}>Strategy Status</span>
+                  <span style={{ color: tradingData.lastImprovement === 'Active' ? '#00ff00' : '#ffdd00', fontSize: '10px', fontWeight: 'bold' }}>
+                    {tradingData.lastImprovement}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#888', fontSize: '9px' }}>Last Improvement</span>
-                  <span style={{ color: '#ffdd00', fontSize: '10px' }}>
-                    {tradingData.lastImprovement}
+                  <span style={{ color: '#888', fontSize: '9px' }}>Open Positions</span>
+                  <span style={{ color: '#00ff00', fontSize: '10px' }}>
+                    {tradingData.positions?.length || 0} / 5
                   </span>
                 </div>
               </div>
 
-              {/* Next Analysis */}
+              {/* Assistant Insights Section */}
               <div style={{
-                textAlign: 'center',
-                padding: '4px',
-                background: 'rgba(0, 255, 0, 0.1)',
-                borderRadius: '5px',
-                border: '1px solid rgba(0, 255, 0, 0.3)'
+                marginBottom: '12px',
+                padding: '8px',
+                background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.9) 0%, rgba(0, 40, 20, 0.8) 100%)',
+                borderRadius: '6px',
+                border: '1px solid rgba(0, 255, 0, 0.4)',
+                boxShadow: '0 2px 8px rgba(0, 255, 0, 0.2)'
               }}>
-                <div style={{ color: '#888', fontSize: '9px', marginBottom: '2px' }}>
-                  NEXT ANALYSIS
+                <div style={{ 
+                  color: '#00ff00', 
+                  fontSize: '10px', 
+                  marginBottom: '6px', 
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  🤖 ASSISTANT INSIGHTS
                 </div>
-                <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold', fontFamily: 'monospace' }}>
-                  {tradingData.nextAnalysis}
+                
+                {/* Technical Analysis from TradingView */}
+                <div style={{
+                  marginBottom: '5px',
+                  padding: '4px',
+                  background: 'rgba(0, 150, 255, 0.1)',
+                  borderLeft: '2px solid #0096ff',
+                  borderRadius: '2px'
+                }}>
+                  <div style={{ color: '#0096ff', fontSize: '8px', fontWeight: 'bold', marginBottom: '2px' }}>
+                    📈 TECHNICAL (TradingView)
+                  </div>
+                  <div style={{ color: '#ddd', fontSize: '9px', lineHeight: '1.3' }}>
+                    {tradingData.assistantInsights?.technical || 'RSI 52, MACD neutral. Waiting for breakout above resistance at $98,500.'}
+                  </div>
+                </div>
+                
+                {/* Sentiment from Grok */}
+                <div style={{
+                  marginBottom: '5px',
+                  padding: '4px',
+                  background: 'rgba(255, 0, 255, 0.1)',
+                  borderLeft: '2px solid #ff00ff',
+                  borderRadius: '2px'
+                }}>
+                  <div style={{ color: '#ff00ff', fontSize: '8px', fontWeight: 'bold', marginBottom: '2px' }}>
+                    💭 SENTIMENT (Grok)
+                  </div>
+                  <div style={{ color: '#ddd', fontSize: '9px', lineHeight: '1.3' }}>
+                    {tradingData.assistantInsights?.sentiment || 'Crowd euphoric on BTC. Fear/Greed at 72 (Greed). Retail FOMO building.'}
+                  </div>
+                </div>
+                
+                {/* Macro from Claude */}
+                <div style={{
+                  marginBottom: '5px',
+                  padding: '4px',
+                  background: 'rgba(255, 165, 0, 0.1)',
+                  borderLeft: '2px solid #ffa500',
+                  borderRadius: '2px'
+                }}>
+                  <div style={{ color: '#ffa500', fontSize: '8px', fontWeight: 'bold', marginBottom: '2px' }}>
+                    🌍 MACRO (Claude)
+                  </div>
+                  <div style={{ color: '#ddd', fontSize: '9px', lineHeight: '1.3' }}>
+                    {tradingData.assistantInsights?.macro || 'Fed pivot narrative intact. DXY weakening supports crypto. Risk-on environment.'}
+                  </div>
+                </div>
+                
+                {/* Main Agent Summary */}
+                <div style={{
+                  padding: '4px',
+                  background: 'rgba(0, 255, 0, 0.1)',
+                  borderLeft: '2px solid #00ff00',
+                  borderRadius: '2px'
+                }}>
+                  <div style={{ color: '#00ff00', fontSize: '8px', fontWeight: 'bold', marginBottom: '2px' }}>
+                    ⚡ STRATEGY (RL80 Main)
+                  </div>
+                  <div style={{ color: '#ddd', fontSize: '9px', lineHeight: '1.3', fontWeight: 'bold' }}>
+                    {tradingData.assistantInsights?.strategy || 'Long bias maintained. Adding on dips to $95K support. Target $105K by month end.'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Agent Status & Next Analysis */}
+              <div style={{
+                marginBottom: '8px'
+              }}>
+                {/* Live Status Indicator */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '6px',
+                  gap: '6px'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: '#00ff00',
+                    boxShadow: '0 0 8px #00ff00',
+                    animation: 'pulse 2s infinite'
+                  }} />
+                  <span style={{ color: '#00ff00', fontSize: '10px', fontWeight: 'bold' }}>
+                    LIVE MONITORING
+                  </span>
+                </div>
+                
+                {/* Next Deep Analysis Timer */}
+                <div style={{
+                  textAlign: 'center',
+                  padding: '4px',
+                  background: 'rgba(0, 255, 0, 0.1)',
+                  borderRadius: '5px',
+                  border: '1px solid rgba(0, 255, 0, 0.3)',
+                  marginBottom: '6px'
+                }}>
+                  <div style={{ color: '#888', fontSize: '9px', marginBottom: '2px' }}>
+                    NEXT DEEP ANALYSIS
+                  </div>
+                  <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                    {tradingData.nextAnalysis}
+                  </div>
+                </div>
+                
+                {/* Recent Micro-Actions - More Visible */}
+                <div style={{
+                  padding: '6px',
+                  background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
+                  borderRadius: '4px',
+                  border: '1px solid rgba(0, 255, 0, 0.3)',
+                  boxShadow: '0 2px 6px rgba(0, 255, 0, 0.2)'
+                }}>
+                  <div style={{ 
+                    color: '#00ff00', 
+                    fontSize: '8px', 
+                    marginBottom: '4px', 
+                    textTransform: 'uppercase',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <span style={{
+                      display: 'inline-block',
+                      width: '5px',
+                      height: '5px',
+                      background: '#00ff00',
+                      borderRadius: '50%',
+                      animation: 'pulse 1s infinite'
+                    }} />
+                    Recent Actions
+                    <span style={{
+                      fontSize: '7px',
+                      color: '#ffdd00',
+                      marginLeft: 'auto',
+                      animation: 'bounce 2s infinite'
+                    }}>↓</span>
+                  </div>
+                  {tradingData.microActions.slice(0, 2).map((action, idx) => (
+                    <div key={idx} style={{
+                      fontSize: '9px',
+                      color: '#aaa',
+                      marginBottom: '2px',
+                      paddingLeft: '8px',
+                      borderLeft: '2px solid rgba(0, 255, 0, 0.3)'
+                    }}>
+                      <span style={{ color: '#00ff00', opacity: 0.7 }}>{action.time}:</span> {action.action}
+                    </div>
+                  ))}
                 </div>
               </div>
             </>
@@ -664,14 +872,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                     marginBottom: '10px',
                     padding: '8px',
                     background: thought.type === 'learning' ? 'rgba(255, 221, 0, 0.05)' :
-                               thought.type === 'position' ? 'rgba(0, 255, 0, 0.05)' :
-                               thought.type === 'strategy' ? 'rgba(0, 150, 255, 0.05)' :
+                               thought.type === 'trading' ? 'rgba(0, 255, 0, 0.05)' :
+                               thought.type === 'market' ? 'rgba(0, 150, 255, 0.05)' :
+                               thought.type === 'sentiment' ? 'rgba(255, 0, 255, 0.05)' :
                                'rgba(255, 255, 255, 0.02)',
                     borderLeft: `2px solid ${
                       thought.type === 'learning' ? '#ffdd00' :
-                      thought.type === 'position' ? '#00ff00' :
-                      thought.type === 'strategy' ? '#0096ff' :
-                      thought.type === 'analysis' ? '#ff00ff' :
+                      thought.type === 'trading' ? '#00ff00' :
+                      thought.type === 'market' ? '#0096ff' :
+                      thought.type === 'sentiment' ? '#ff00ff' :
                       '#888'
                     }`,
                     borderRadius: '3px'
@@ -683,19 +892,18 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                     }}>
                       <span style={{
                         color: thought.type === 'learning' ? '#ffdd00' :
-                               thought.type === 'position' ? '#00ff00' :
-                               thought.type === 'strategy' ? '#0096ff' :
-                               thought.type === 'analysis' ? '#ff00ff' :
+                               thought.type === 'trading' ? '#00ff00' :
+                               thought.type === 'market' ? '#0096ff' :
+                               thought.type === 'sentiment' ? '#ff00ff' :
                                '#888',
                         fontSize: '9px',
                         fontWeight: 'bold',
                         textTransform: 'uppercase'
                       }}>
                         {thought.type === 'learning' ? '🧠 LEARNING' :
-                         thought.type === 'position' ? '📈 POSITION' :
-                         thought.type === 'strategy' ? '♟️ STRATEGY' :
-                         thought.type === 'analysis' ? '🔍 ANALYSIS' :
-                         thought.type === 'market' ? '🌍 MARKET' : '💭 THOUGHT'}
+                         thought.type === 'trading' ? '📈 TRADING' :
+                         thought.type === 'market' ? '🌍 MARKET' :
+                         thought.type === 'sentiment' ? '💭 SENTIMENT' : '💡 INSIGHT'}
                       </span>
                       <span style={{
                         color: '#666',
@@ -1059,10 +1267,40 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   return (
     <>
       <style>{`
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(3px); }
+        }
+        
+        /* Webkit scrollbar styles */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(0, 255, 0, 0.1);
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(0, 255, 0, 0.5);
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 255, 0, 0.7);
+        }
+        
         @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.5; }
-          100% { opacity: 1; }
+          0% { 
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.6;
+            transform: scale(1.1);
+          }
+          100% { 
+            opacity: 1;
+            transform: scale(1);
+          }
         }
       `}</style>
 
@@ -1147,11 +1385,18 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         </div>
         
         {/* Tab Content Container */}
-        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        <div className="custom-scrollbar" style={{ 
+          maxHeight: 'calc(100vh - 600px)', 
+          minHeight: '200px',
+          overflowY: 'auto',
+          position: 'relative',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#00ff00 rgba(0, 255, 0, 0.1)'
+        }}>
         
         {/* Summary Tab */}
         {leftPanelTab === 'summary' && (
-          <>
+          <div style={{ marginBottom: '30px' }}>
         {/* Header with Model Info */}
         <div style={{
           marginBottom: '15px',
@@ -1357,23 +1602,23 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           padding: '10px',
           background: 'linear-gradient(135deg, rgba(255, 221, 0, 0.1) 0%, rgba(0, 255, 0, 0.1) 100%)',
           borderRadius: '5px',
-          marginBottom: '10px',
+          marginBottom: '15px', // Increased spacing to prevent overlap
           border: '1px solid rgba(255, 221, 0, 0.3)'
         }}>
           <div style={{ color: '#ffdd00', fontSize: '11px', marginBottom: '8px', fontWeight: 'bold' }}>
-            🧠 LEARNING ITERATION #{tradingData.iterationCount}
+            📊 TRADING ACTIVITY
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>CONFIDENCE</div>
+              <div style={{ color: '#888', fontSize: '10px' }}>TOTAL TRADES</div>
               <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
-                {tradingData.strategyConfidence}%
+                {tradingData.iterationCount}
               </div>
             </div>
             <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>EXPLORATION</div>
+              <div style={{ color: '#888', fontSize: '10px' }}>POSITIONS</div>
               <div style={{ color: '#ffdd00', fontSize: '14px', fontWeight: 'bold' }}>
-                {(tradingData.explorationRate * 100).toFixed(0)}%
+                {tradingData.positions?.length || 0} / 5
               </div>
             </div>
           </div>
@@ -1390,22 +1635,91 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           </div>
         </div>
 
-        {/* Next Analysis Timer */}
+        {/* Agent Status & Next Analysis */}
         <div style={{
-          textAlign: 'center',
-          padding: '8px',
-          background: 'rgba(0, 255, 0, 0.1)',
-          borderRadius: '5px',
-          border: '1px solid rgba(0, 255, 0, 0.3)'
+          marginBottom: '12px'
         }}>
-          <div style={{ color: '#888', fontSize: '10px', marginBottom: '3px' }}>
-            NEXT ANALYSIS
+          {/* Live Status Indicator */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '8px',
+            gap: '8px'
+          }}>
+            <div style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              background: '#00ff00',
+              boxShadow: '0 0 10px #00ff00',
+              animation: 'pulse 2s infinite'
+            }} />
+            <span style={{ color: '#00ff00', fontSize: '11px', fontWeight: 'bold' }}>
+              ⚡ LIVE MONITORING
+            </span>
           </div>
-          <div style={{ color: '#00ff00', fontSize: '16px', fontWeight: 'bold', fontFamily: 'monospace' }}>
-            {tradingData.nextAnalysis}
+          
+          {/* Next Deep Analysis Timer */}
+          <div style={{
+            textAlign: 'center',
+            padding: '8px',
+            background: 'rgba(0, 255, 0, 0.1)',
+            borderRadius: '5px',
+            border: '1px solid rgba(0, 255, 0, 0.3)',
+            marginBottom: '8px'
+          }}>
+            <div style={{ color: '#888', fontSize: '10px', marginBottom: '3px' }}>
+              NEXT DEEP ANALYSIS
+            </div>
+            <div style={{ color: '#00ff00', fontSize: '16px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+              {tradingData.nextAnalysis}
+            </div>
+          </div>
+          
+          {/* Recent Micro-Actions - More Prominent */}
+          <div style={{
+            padding: '8px',
+            background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
+            borderRadius: '4px',
+            border: '1px solid rgba(0, 255, 0, 0.3)',
+            boxShadow: '0 2px 8px rgba(0, 255, 0, 0.2)',
+            marginTop: '8px'
+          }}>
+            <div style={{ 
+              color: '#00ff00', 
+              fontSize: '10px', 
+              marginBottom: '6px', 
+              textTransform: 'uppercase',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{
+                display: 'inline-block',
+                width: '6px',
+                height: '6px',
+                background: '#00ff00',
+                borderRadius: '50%',
+                animation: 'pulse 1s infinite'
+              }} />
+              Recent Actions
+            </div>
+            {tradingData.microActions.map((action, idx) => (
+              <div key={idx} style={{
+                fontSize: '10px',
+                color: '#aaa',
+                marginBottom: '4px',
+                paddingLeft: '10px',
+                borderLeft: '2px solid rgba(0, 255, 0, 0.3)'
+              }}>
+                <span style={{ color: '#00ff00', opacity: 0.7 }}>{action.time}:</span> {action.action}
+              </div>
+            ))}
           </div>
         </div>
-          </>
+          </div>
         )}
         
         {/* Positions Tab */}
@@ -1679,6 +1993,93 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
       )}
 
 
+      {/* Candle Visualization Panel - Bottom Left */}
+      <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '20px',
+          background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+          border: '2px solid #00ff00',
+          borderRadius: '8px',
+          padding: '12px',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          zIndex: 9999,
+          width: 'min(320px, 25vw)',
+          minWidth: '260px',
+          maxWidth: '340px',
+          boxShadow: '0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 255, 0, 0.05)',
+          backdropFilter: 'blur(10px)'
+        }}>
+        {/* Header */}
+        <div style={{
+          marginBottom: '10px',
+          paddingBottom: '8px',
+          borderBottom: '1px solid rgba(0, 255, 0, 0.3)'
+        }}>
+          <div style={{
+            color: '#00ff00',
+            fontWeight: 'bold',
+            fontSize: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{
+              display: 'inline-block',
+              width: '8px',
+              height: '8px',
+              background: '#00ff00',
+              borderRadius: '50%',
+              animation: 'pulse 2s infinite',
+              boxShadow: '0 0 6px #00ff00'
+            }} />
+            🕯️ PERFORMANCE CANDLE
+          </div>
+          <div style={{ color: '#888', fontSize: '9px', marginTop: '4px' }}>
+            Firestore Results Visualization
+          </div>
+        </div>
+
+        {/* Three.js Canvas Container */}
+        <div 
+          id="candle-visualization-container"
+          style={{
+            width: '100%',
+            height: '280px',
+            background: 'rgba(0, 0, 0, 0.5)',
+            borderRadius: '4px',
+            border: '1px solid rgba(0, 255, 0, 0.2)',
+            overflow: 'hidden',
+            position: 'relative'
+          }}
+        >
+          <SingleCandleDisplay 
+            firestoreData={randomFirestoreData}
+          />
+        </div>
+
+        {/* Compact Status */}
+        <div style={{
+          marginTop: '8px',
+          padding: '4px 6px',
+          background: 'rgba(0, 255, 0, 0.05)',
+          borderRadius: '3px',
+          border: '1px solid rgba(0, 255, 0, 0.1)'
+        }}>
+          <div style={{ 
+            color: '#888', 
+            fontSize: '8px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span><span style={{ color: '#00ff00', fontSize: '7px' }}>●</span> Live</span>
+            <span style={{ color: '#666' }}>Cycling Users</span>
+          </div>
+        </div>
+      </div>
+
       {/* Model Chat Panel - Bottom Right - Always Visible */}
       <div style={{
           position: 'fixed',
@@ -1737,14 +2138,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 marginBottom: '12px',
                 padding: '10px',
                 background: thought.type === 'learning' ? 'rgba(255, 221, 0, 0.05)' :
-                           thought.type === 'position' ? 'rgba(0, 255, 0, 0.05)' :
-                           thought.type === 'strategy' ? 'rgba(0, 150, 255, 0.05)' :
+                           thought.type === 'trading' ? 'rgba(0, 255, 0, 0.05)' :
+                           thought.type === 'market' ? 'rgba(0, 150, 255, 0.05)' :
+                           thought.type === 'sentiment' ? 'rgba(255, 0, 255, 0.05)' :
                            'rgba(255, 255, 255, 0.02)',
                 borderLeft: `2px solid ${
                   thought.type === 'learning' ? '#ffdd00' :
-                  thought.type === 'position' ? '#00ff00' :
-                  thought.type === 'strategy' ? '#0096ff' :
-                  thought.type === 'analysis' ? '#ff00ff' :
+                  thought.type === 'trading' ? '#00ff00' :
+                  thought.type === 'market' ? '#0096ff' :
+                  thought.type === 'sentiment' ? '#ff00ff' :
                   '#888'
                 }`,
                 borderRadius: '3px'
@@ -1757,21 +2159,18 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{
                       color: thought.type === 'learning' ? '#ffdd00' :
-                             thought.type === 'position' ? '#00ff00' :
-                             thought.type === 'strategy' ? '#0096ff' :
-                             thought.type === 'analysis' ? '#ff00ff' :
-                             thought.type === 'sentiment' ? '#ff8800' :
+                             thought.type === 'trading' ? '#00ff00' :
+                             thought.type === 'market' ? '#0096ff' :
+                             thought.type === 'sentiment' ? '#ff00ff' :
                              '#888',
                       fontSize: '10px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase'
                     }}>
                       {thought.type === 'learning' ? '🧠 LEARNING' :
-                       thought.type === 'position' ? '📈 POSITION' :
-                       thought.type === 'strategy' ? '♟️ STRATEGY' :
-                       thought.type === 'analysis' ? '🔍 ANALYSIS' :
-                       thought.type === 'sentiment' ? '💬 SENTIMENT' :
-                       thought.type === 'market' ? '🌍 MARKET' : '💭 THOUGHT'}
+                       thought.type === 'trading' ? '📈 TRADING' :
+                       thought.type === 'market' ? '🌍 MARKET' :
+                       thought.type === 'sentiment' ? '💭 SENTIMENT' : '💡 INSIGHT'}
                     </span>
                     {thought.consultant && (
                       <span style={{

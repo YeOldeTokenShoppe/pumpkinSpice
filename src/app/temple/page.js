@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import ConstellationModel from '@/components/ConstellationModel';
@@ -17,11 +17,14 @@ import SocialBar from '@/components/SocialBar';
 import CoinLoader from '@/components/CoinLoader';
 import MemoryMonitor from '@/components/MemoryMonitor';
 import TradingOverlay from '@/components/TradingOverlay';
-import { useTradingBot } from '@/hooks/useTradingBot';
+// import { useTradingBot } from '@/hooks/useTradingBot'; // Old paper trading bot
+// import { useLighterTrading } from '@/hooks/useLighterTrading'; // Direct Lighter integration
+import { useLighterAPI } from '@/hooks/useLighterAPI'; // API-based Lighter integration
 // import PolaroidSnapshot from '@/components/PolaroidSnapshot';
 
 
 export default function CyborgTemple() {
+  const modelRef = useRef(null); // Reference to the 3D model for candle extraction
   const [isMobileView, setIsMobileView] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [showMusicControls, setShowMusicControls] = useState(false);
@@ -34,8 +37,22 @@ export default function CyborgTemple() {
   const [triggerSnapshot, setTriggerSnapshot] = useState(false);
   const [showAnnotations, setShowAnnotations] = useState(true);
   
-  // Connect to trading bot for real data
-  const { isConnected, tradingData } = useTradingBot();
+  // Connect to Lighter trading API (simplified version for now)
+  const { 
+    isConnected, 
+    tradingData, 
+    initialize
+  } = useLighterAPI({
+    initialBalance: 27000 // Your approximate initial balance
+  });
+  
+  // Initialize Lighter connection on mount
+  useEffect(() => {
+    if (!isConnected && mounted) {
+      console.log('[Temple] Initializing Lighter API connection...');
+      initialize();
+    }
+  }, [mounted, isConnected]);
 
   // Get music context functions
   const {
@@ -101,6 +118,7 @@ export default function CyborgTemple() {
   // Handle model loading completion
   const handleSceneLoad = () => {
     console.log('CyborgTempleScene loaded');
+    console.log('ModelRef current:', modelRef.current);
     setModelLoaded(true);
   };
 
@@ -248,6 +266,8 @@ export default function CyborgTemple() {
           show={showTrading} 
           data={tradingData} 
           isConnected={isConnected}
+          modelRef={modelRef}
+          modelLoaded={modelLoaded}
         />
         {/* Main Canvas */}
         <Canvas
