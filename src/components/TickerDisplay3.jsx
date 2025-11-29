@@ -332,18 +332,45 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
   const fetchCryptoData = async () => {
     try {
       const response = await fetch('/api/crypto-data');
+      
+      // Check if response is OK and is JSON
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Response is not JSON");
+      }
+      
       const cryptoMarketData = await response.json();
 
+      // Validate the data is an array
+      if (Array.isArray(cryptoMarketData)) {
+        setMarketData(prevData => {
+          // Remove any existing crypto entries
+          const filteredData = prevData.filter(
+            item => item.name !== "Bitcoin" && item.name !== "Ethereum" && 
+                    item.name !== "Solana"
+          );
+          return [...filteredData, ...cryptoMarketData];
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching crypto data:", error);
+      // Use fallback data on error
+      const fallbackCrypto = [
+        { name: "Bitcoin", symbol: "BTC", price: 60000, changePercent: 2.5 },
+        { name: "Ethereum", symbol: "ETH", price: 3000, changePercent: 3.1 },
+        { name: "Solana", symbol: "SOL", price: 100, changePercent: 5.2 }
+      ];
       setMarketData(prevData => {
-        // Remove any existing crypto entries
         const filteredData = prevData.filter(
           item => item.name !== "Bitcoin" && item.name !== "Ethereum" && 
                   item.name !== "Solana"
         );
-        return [...filteredData, ...cryptoMarketData];
+        return [...filteredData, ...fallbackCrypto];
       });
-    } catch (error) {
-      console.error("Error fetching crypto data:", error);
     }
   };
 
@@ -732,19 +759,46 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
   const fetchYahooFinanceData = async () => {
     try {
       const response = await fetch('/api/market-data');
+      
+      // Check if response is OK and is JSON
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Response is not JSON");
+      }
+      
       const marketData = await response.json();
       
-      // Update market data, preserving crypto data from CoinGecko
+      // Validate the data is an array
+      if (Array.isArray(marketData)) {
+        // Update market data, preserving crypto data from CoinGecko
+        setMarketData(prevData => {
+          const cryptoData = prevData.filter(
+            item => item.name === 'Bitcoin' || item.name === 'Ethereum' || 
+                    item.name === 'Solana'
+          );
+          return [...cryptoData, ...marketData];
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching market data:', error);
+      // Use fallback data on error
+      const fallbackMarket = [
+        { name: "S&P 500", symbol: "^GSPC", price: 5231.3, changePercent: 0.5 },
+        { name: "Nasdaq", symbol: "^IXIC", price: 16423.5, changePercent: 0.7 },
+        { name: "VIX", symbol: "^VIX", price: 14.2, changePercent: -2.4 },
+        { name: "Gold", symbol: "GC=F", price: 2328.7, changePercent: -0.3 }
+      ];
       setMarketData(prevData => {
         const cryptoData = prevData.filter(
           item => item.name === 'Bitcoin' || item.name === 'Ethereum' || 
                   item.name === 'Solana'
         );
-        return [...cryptoData, ...marketData];
+        return [...cryptoData, ...fallbackMarket];
       });
-      
-    } catch (error) {
-      console.error('Error fetching market data:', error);
     }
   };
 

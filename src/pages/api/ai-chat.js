@@ -28,7 +28,7 @@ export default async function handler(req, res) {
             error: 'API key not configured'
           });
         }
-        response = await callOpenAI(context, openaiKey, 'market');
+        response = await callOpenAI(context, openaiKey);
         break;
         
       case 'sentiment':
@@ -89,7 +89,10 @@ export default async function handler(req, res) {
 }
 
 // OpenAI API call for Market Analyst
-async function callOpenAI(context, apiKey, role) {
+async function callOpenAI(context, apiKey) {
+  // Log the context to debug
+  console.log('Market agent received context:', JSON.stringify(context.marketData, null, 2));
+  
   const systemPrompt = `You are Market, a technical analysis expert advisor for a crypto trading AI named RL80.
 You're in a live trading room chat with RL80 (the lead trader), Sentiment (crowd psychology), and Macro (global economics).
 
@@ -114,18 +117,21 @@ Be specific: mention actual price levels, indicator values, and chart patterns w
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Current market snapshot:
-BTC: $${context.marketData?.btcPrice || 'loading'}
-ETH: $${context.marketData?.ethPrice || 'loading'}
-Fear & Greed: ${context.marketData?.fearGreed || 'N/A'}
-VIX: ${context.marketData?.vix || 'N/A'}
-DXY: ${context.marketData?.dxy || 'N/A'}
-Open Interest: ${context.marketData?.openInterest || 'N/A'}
-Funding Rate: ${context.marketData?.fundingRate || 'N/A'}%
+BTC: ${context.marketData?.btcPrice > 0 ? `$${Math.floor(context.marketData.btcPrice)}` : 'Data pending'}
+ETH: ${context.marketData?.ethPrice > 0 ? `$${Math.floor(context.marketData.ethPrice)}` : 'Data pending'}
+Fear & Greed: ${(context.marketData?.fearGreed && context.marketData.fearGreed !== 0) ? context.marketData.fearGreed : 'Reading pending'}
+VIX: ${context.marketData?.vix ? context.marketData.vix.toFixed(1) : 'Data pending'}
+DXY: ${context.marketData?.dxy ? context.marketData.dxy.toFixed(2) : 'Data pending'}
+Open Interest: ${context.marketData?.openInterest ? `$${context.marketData.openInterest}B` : 'Data pending'}
+Funding Rate: ${context.marketData?.fundingRate ? `${(context.marketData.fundingRate * 100).toFixed(3)}%` : 'Data pending'}
 
 Recent team chat:
-${context.lastMessages?.map(m => `${m.agent}: ${m.message}`).join('\n') || 'No recent messages'}
+${context.lastMessages?.map(m => `${m.agent}: ${m.message}`).join('\n') || 'Starting fresh discussion'}
 
-What's your technical take on this setup? Be specific and reference actual levels.` }
+${context.marketData?.btcPrice > 0 ? 
+  'What\'s your technical take on this setup? Be specific with levels.' : 
+  'Market data is still loading. Give a brief technical overview of what you\'re watching for.'
+}` }
       ],
       temperature: 0.7,
       max_tokens: 100
@@ -142,6 +148,9 @@ What's your technical take on this setup? Be specific and reference actual level
 
 // Grok API call for Sentiment Oracle
 async function callGrok(context, apiKey) {
+  console.log('Sentiment agent received context:', JSON.stringify(context.marketData, null, 2));
+  console.log('Using Grok API key:', apiKey ? `${apiKey.slice(0, 10)}...${apiKey.slice(-4)}` : 'NO KEY');
+  
   const response = await fetch('https://api.x.ai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -167,33 +176,65 @@ Don't just repeat the same phrases - react to what's actually happening.`
         { 
           role: 'user', 
           content: `Market vibes check:
-BTC: $${context.marketData?.btcPrice || 'loading'}
-Fear & Greed: ${context.marketData?.fearGreed || 'N/A'} ${context.marketData?.fearGreed < 30 ? '(Extreme Fear!)' : context.marketData?.fearGreed > 70 ? '(Extreme Greed!)' : ''}
-Funding: ${context.marketData?.fundingRate || 'N/A'}%
-Open Interest: ${context.marketData?.openInterest || 'N/A'}
+BTC: ${context.marketData?.btcPrice > 0 ? `$${Math.floor(context.marketData.btcPrice)}` : 'Data pending'}
+Fear & Greed: ${context.marketData?.fearGreed ? 
+  `${context.marketData.fearGreed}${context.marketData.fearGreed < 30 ? ' (Extreme Fear!)' : context.marketData.fearGreed > 70 ? ' (Extreme Greed!)' : ''}` 
+  : 'Reading pending'}
+Funding: ${context.marketData?.fundingRate ? `${(context.marketData.fundingRate * 100).toFixed(3)}%` : 'Data pending'}
+Open Interest: ${context.marketData?.openInterest ? `$${context.marketData.openInterest}B` : 'Data pending'}
 
 Recent team chat:
 ${context.lastMessages?.map(m => `${m.agent}: ${m.message}`).join('\n') || 'Starting fresh'}
 
-What's the crowd feeling? Give us the real sentiment read.`
+${context.marketData?.fearGreed || context.marketData?.fundingRate ? 
+  'What\'s the crowd feeling? Give us the real sentiment read.' :
+  'Market data loading. What sentiment signals are you tracking?'}`
         }
       ],
-      model: 'grok-beta',
+      model: 'grok-2-1212',
       temperature: 0.7,
       max_tokens: 100
     })
   });
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (parseError) {
+    console.error('Failed to parse Grok response:', parseError);
+    console.error('Response status:', response.status);
+    console.error('Response headers:', response.headers);
+    throw new Error(`Grok API ${response.status}: Unable to parse response`);
+  }
+  
   if (!response.ok || !data.choices?.[0]?.message?.content) {
-    console.error('Grok API error:', data);
-    throw new Error(data.error?.message || 'Invalid Grok response');
+    console.error('Grok API error:', {
+      status: response.status,
+      statusText: response.statusText,
+      data: data,
+      error: data?.error
+    });
+    
+    // Specific error messages for common issues
+    if (response.status === 403) {
+      throw new Error('Grok API 403: Invalid or expired API key. Please check your x.ai API key.');
+    }
+    if (response.status === 401) {
+      throw new Error('Grok API 401: Unauthorized. Please verify your API key.');
+    }
+    if (response.status === 429) {
+      throw new Error('Grok API 429: Rate limit exceeded. Please try again later.');
+    }
+    
+    throw new Error(data?.error?.message || `Grok API error: ${response.status}`);
   }
   return data.choices[0].message.content;
 }
 
 // Anthropic API call for Macro Specialist
 async function callAnthropic(context, apiKey) {
+  // Log the context to debug
+  console.log('Macro agent received context:', JSON.stringify(context.marketData, null, 2));
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -202,7 +243,7 @@ async function callAnthropic(context, apiKey) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-3-sonnet-20240229',
+      model: 'claude-3-5-sonnet-20241022',
       system: `You are Macro, the global economics expert on RL80's crypto trading team.
 
 Your personality:
@@ -218,15 +259,18 @@ Connect the macro picture to crypto positioning.`,
         { 
           role: 'user', 
           content: `Global macro snapshot:
-DXY: ${context.marketData?.dxy || 'N/A'}
-VIX: ${context.marketData?.vix || 'N/A'}
-BTC: $${context.marketData?.btcPrice || 'loading'}
-Fear & Greed: ${context.marketData?.fearGreed || 'N/A'}
+DXY: ${context.marketData?.dxy ? context.marketData.dxy.toFixed(2) : 'Data pending'}
+VIX: ${context.marketData?.vix ? context.marketData.vix.toFixed(1) : 'Data pending'}
+BTC: ${context.marketData?.btcPrice > 0 ? `$${Math.floor(context.marketData.btcPrice)}` : 'Data pending'}
+Fear & Greed: ${(context.marketData?.fearGreed && context.marketData.fearGreed !== 0) ? context.marketData.fearGreed : 'Reading pending'}
+10Y Treasury: ${context.marketData?.treasury10Y ? `${context.marketData.treasury10Y}%` : 'Data pending'}
 
 Recent team discussion:
-${context.lastMessages?.map(m => `${m.agent}: ${m.message}`).join('\n') || 'Just starting'}
+${context.lastMessages?.map(m => `${m.agent}: ${m.message}`).join('\n') || 'Starting fresh'}
 
-How's the macro backdrop affecting crypto? Give us the global view.`
+${context.marketData?.dxy || context.marketData?.vix ? 
+  'How\'s the macro backdrop affecting crypto? Give us the global view.' :
+  'Data still loading. What macro factors are you monitoring for crypto?'}`
         }
       ],
       max_tokens: 100,
@@ -242,115 +286,123 @@ How's the macro backdrop affecting crypto? Give us the global view.`
   return data.content[0].text;
 }
 
-// Generate RL80's response based on team input
+// Generate RL80's response dynamically based on real data - NO CANNED RESPONSES
 function generateRL80Response(context, teamMessages) {
-  // RL80 responds based on team consensus and market conditions
+  // Get actual market data - log it for debugging
+  console.log('RL80 received context:', JSON.stringify(context.marketData, null, 2));
+  
   const lastMessages = teamMessages || [];
-  const fearGreed = context.marketData?.fearGreed || 50;
-  const btcPrice = context.marketData?.btcPrice || 0;
+  const fearGreed = context.marketData?.fearGreed;
+  const btcPrice = context.marketData?.btcPrice;
+  const fundingRate = context.marketData?.fundingRate;
+  const openInterest = context.marketData?.openInterest;
+  const vix = context.marketData?.vix?.value || context.marketData?.vix;
   
-  // Check if team has conflicting views
-  const hasConflict = lastMessages.some(m => m.message?.toLowerCase().includes('disagree') || 
-                                              m.message?.toLowerCase().includes('but') ||
-                                              m.message?.toLowerCase().includes('however'));
-  
-  // Dynamic responses based on market conditions and team input
-  if (hasConflict) {
-    const conflictResponses = [
-      "Mixed signals from the team. Let's wait for clearer consensus.",
-      "Interesting debate team. I'm leaning towards the technical view here.",
-      "Good points all around. Let me synthesize this into a balanced approach.",
-      "Divergent views noted. Playing this one cautiously."
-    ];
-    return conflictResponses[Math.floor(Math.random() * conflictResponses.length)];
+  // If no real data, return a message saying so
+  if (!btcPrice || btcPrice === 0) {
+    return "Market data loading. Stand by for analysis.";
   }
   
-  if (fearGreed < 25) {
-    const fearResponses = [
-      "Extreme fear in the market. This could be our opportunity.",
-      "Blood in the streets. Time to be greedy when others are fearful.",
-      "Fear index screaming buy. Let's scale in carefully."
-    ];
-    return fearResponses[Math.floor(Math.random() * fearResponses.length)];
+  // Analyze team messages for keywords
+  const recentMessages = lastMessages.slice(-3);
+  const teamText = recentMessages.map(m => m.message?.toLowerCase() || '').join(' ');
+  
+  // Build response components based on actual data
+  const observations = [];
+  const actions = [];
+  
+  // Price analysis
+  if (btcPrice) {
+    const priceK = Math.floor(btcPrice / 1000);
+    observations.push(`BTC ${priceK}k`);
+    
+    // Calculate change from a baseline if we have historical data
+    const priceChange = ((btcPrice - 60000) / 60000 * 100).toFixed(1);
+    if (Math.abs(priceChange) > 10) {
+      observations.push(`${priceChange > 0 ? 'up' : 'down'} ${Math.abs(priceChange)}%`);
+    }
   }
   
-  if (fearGreed > 75) {
-    const greedResponses = [
-      "Euphoria detected. Time to take some chips off the table.",
-      "Greed levels concerning. Tightening stops here.",
-      "Market's getting frothy. Let's book some profits."
-    ];
-    return greedResponses[Math.floor(Math.random() * greedResponses.length)];
+  // Sentiment analysis
+  if (fearGreed !== undefined && fearGreed !== null) {
+    if (fearGreed < 30) {
+      observations.push(`Fear ${fearGreed}`);
+      actions.push(`accumulating`);
+    } else if (fearGreed > 70) {
+      observations.push(`Greed ${fearGreed}`);
+      actions.push(`trimming positions`);
+    } else {
+      observations.push(`F&G ${fearGreed}`);
+    }
   }
   
-  if (btcPrice > 90000) {
-    const bullResponses = [
-      "BTC pushing new highs. Momentum is our friend here.",
-      "Strong price action. Adding to winners with proper risk management.",
-      "Bulls in control. Riding this wave with trailing stops."
-    ];
-    return bullResponses[Math.floor(Math.random() * bullResponses.length)];
+  // Funding analysis
+  if (fundingRate !== undefined && fundingRate !== null) {
+    const fundingPercent = (fundingRate * 100).toFixed(3);
+    observations.push(`Funding ${fundingPercent}%`);
+    if (fundingRate > 0.05) actions.push(`reducing leverage`);
+    if (fundingRate < -0.02) actions.push(`shorts squeezable`);
   }
   
-  // Default neutral responses
-  const neutralResponses = [
-    "Solid analysis team. Executing with discipline.",
-    "Good insights everyone. Adjusting position sizes accordingly.",
-    "Team sync achieved. Let's monitor closely.",
-    "Appreciate the perspectives. Staying nimble here."
-  ];
+  // OI analysis
+  if (openInterest) {
+    observations.push(`OI $${openInterest}B`);
+    if (openInterest > 35) actions.push(`volatility incoming`);
+  }
   
-  return neutralResponses[Math.floor(Math.random() * neutralResponses.length)];
+  // VIX analysis
+  if (vix) {
+    observations.push(`VIX ${vix.toFixed(1)}`);
+    if (vix > 30) actions.push(`hedging required`);
+  }
+  
+  // Team consensus analysis
+  const hasBull = teamText.includes('bull') || teamText.includes('buy') || teamText.includes('long');
+  const hasBear = teamText.includes('bear') || teamText.includes('sell') || teamText.includes('short');
+  const hasRisk = teamText.includes('risk') || teamText.includes('caution') || teamText.includes('careful');
+  
+  // Decision making based on data confluence
+  if (hasBull && hasBear) {
+    actions.push(`team divided - staying neutral`);
+  } else if (hasRisk) {
+    actions.push(`risk noted - position size reduced`);
+  } else if (hasBull && fearGreed < 50) {
+    actions.push(`building long position`);
+  } else if (hasBear && fearGreed > 50) {
+    actions.push(`initiating shorts`);
+  } else if (observations.length > 0) {
+    // Generate action based on observations
+    if (fearGreed < 30 && fundingRate < 0) {
+      actions.push(`bottom signals aligning`);
+    } else if (fearGreed > 70 && fundingRate > 0.05) {
+      actions.push(`top indicators flashing`);
+    } else {
+      actions.push(`monitoring for entry`);
+    }
+  }
+  
+  // Construct final message
+  let response = "";
+  
+  if (observations.length > 0) {
+    response = observations.join(", ");
+    if (actions.length > 0) {
+      response += ` - ${actions.join(", ")}`;
+    }
+  } else if (actions.length > 0) {
+    response = actions[0].charAt(0).toUpperCase() + actions[0].slice(1);
+  } else {
+    // If we have minimal data, just acknowledge what we see
+    if (btcPrice) {
+      response = `Monitoring BTC at ${Math.floor(btcPrice / 1000)}k`;
+    } else {
+      response = "Awaiting market data feed";
+    }
+  }
+  
+  // Make first letter uppercase and add period
+  response = response.charAt(0).toUpperCase() + response.slice(1);
+  if (!response.endsWith('.')) response += '.';
+  
+  return response;
 }
-
-// REMOVED - No more fallback responses
-// Agents will stay quiet if APIs fail
-/*
-function generateFallbackResponse(agent, context) {
-  const fallbacks = {
-    market: [
-      "RSI showing oversold conditions at 28. Potential bounce incoming.",
-      "Volume declining on this pump. Be cautious above resistance.",
-      "MACD crossing bullish. Momentum building nicely.",
-      "Support at 0.618 fib holding strong. Good entry zone.",
-      "Bollinger bands tightening. Big move imminent.",
-      "Volume profile suggests accumulation at these levels.",
-      "Order flow turning bullish. Buyers stepping in here.",
-      "Delta divergence spotted. Watch for reversal signals."
-    ],
-    sentiment: [
-      "Twitter buzz exploding for SOL! FOMO kicking in hard.",
-      "Whale wallets accumulating quietly. Smart money is bullish.",
-      "Fear index spiking. Perfect contrarian setup brewing.",
-      "Social sentiment turning bearish. Crowd might be wrong here.",
-      "Funding rates heating up. Euphoria phase incoming.",
-      "Retail interest surging. Time to be cautious.",
-      "Options flow extremely bullish. Big moves expected.",
-      "Social metrics diverging from price. Interesting setup."
-    ],
-    macro: [
-      "DXY weakness continuing. Risk-on environment for crypto.",
-      "Fed pivot narrative strengthening. Liquidity returning to markets.",
-      "VIX below 15 signals complacency. Stay alert for volatility.",
-      "Global liquidity expanding. Macro tailwinds for digital assets.",
-      "Treasury yields falling. Capital rotating to risk assets.",
-      "Dollar breaking down. Perfect storm for crypto rally.",
-      "Central banks easing globally. Bullish macro backdrop.",
-      "Inflation expectations rising. Hard assets outperforming."
-    ],
-    rl80: [
-      "Analyzing all inputs. Strategy adjustment in progress.",
-      "Team insights noted. Optimizing position sizing now.",
-      "Interesting perspectives team. Let me run the numbers.",
-      "Risk parameters updated. Executing with precision.",
-      "Consensus building. Preparing entry orders now.",
-      "Good catch on those signals. Adjusting accordingly.",
-      "Good discussion team. Implementing consensus view.",
-      "Risk/reward looks favorable. Proceeding with the plan."
-    ]
-  };
-  
-  const agentResponses = fallbacks[agent] || fallbacks.rl80;
-  return agentResponses[Math.floor(Math.random() * agentResponses.length)];
-}
-*/

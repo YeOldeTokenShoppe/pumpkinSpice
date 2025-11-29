@@ -24,8 +24,8 @@ export function useLighterAPI(config = {}) {
     flowDirection: 'NEUTRAL'
   });
   const [fearGreedIndex, setFearGreedIndex] = useState({
-    value: 50,
-    classification: 'Neutral'
+    value: null,
+    classification: 'Loading'
   });
   const [macroMetrics, setMacroMetrics] = useState({});
   
@@ -74,7 +74,7 @@ export function useLighterAPI(config = {}) {
         }
         
         // Fetch Fear & Greed Index
-        let fearGreedData = { value: 50, classification: 'Neutral' };
+        let fearGreedData = { value: null, classification: 'Loading' };
         try {
           const fgResponse = await fetch('/api/fear-greed');
           if (fgResponse.ok) {
@@ -326,18 +326,23 @@ export function useLighterAPI(config = {}) {
       const currentAgent = agents[Math.floor(Math.random() * agents.length)];
       
       // Create context from current market data - NO HARDCODED VALUES
+      console.log('Building context - fearGreedIndex:', fearGreedIndex);
+      console.log('Building context - macroMetrics:', macroMetrics);
+      
       const context = {
         marketData: {
-          btcPrice: marketData['BTC-USD']?.ticker?.lastPrice || 0,
-          ethPrice: marketData['ETH-USD']?.ticker?.lastPrice || 0,
-          fearGreed: fearGreedIndex.value || 0, // No fake defaults!
-          vix: macroMetrics.vix?.value || 0,
-          dxy: macroMetrics.dxy?.value || 0,
-          openInterest: macroMetrics.openInterest?.value || 0,
-          fundingRate: macroMetrics.fundingRate?.value || 0
+          btcPrice: macroMetrics.btcPrice || marketData['BTC-USD']?.ticker?.lastPrice || null,
+          ethPrice: macroMetrics.ethPrice || marketData['ETH-USD']?.ticker?.lastPrice || null,
+          fearGreed: fearGreedIndex.value || null, // Use null instead of 0 for missing data
+          vix: macroMetrics.vix?.value || null,
+          dxy: macroMetrics.dxy?.value || null,
+          openInterest: macroMetrics.openInterest?.value || null,
+          fundingRate: macroMetrics.fundingRate?.value || null
         },
         lastMessages: agentThoughts.slice(-5) // Last 5 messages for context
       };
+      
+      console.log('Final context being sent:', JSON.stringify(context.marketData, null, 2));
       
       const response = await fetch('/api/ai-chat', {
         method: 'POST',
@@ -348,6 +353,16 @@ export function useLighterAPI(config = {}) {
           lastMessages: agentThoughts.slice(-3)
         })
       });
+      
+      // Check if response is OK and is JSON
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Response is not JSON");
+      }
       
       const data = await response.json();
       
