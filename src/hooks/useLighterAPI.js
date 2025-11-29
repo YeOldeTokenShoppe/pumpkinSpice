@@ -12,6 +12,16 @@ export function useLighterAPI(config = {}) {
   const [performance, setPerformance] = useState(null);
   const [agentThoughts, setAgentThoughts] = useState([]);
   const [marketData, setMarketData] = useState({});
+  
+  // Rate limiting for Grok API - track last call time
+  // Initialize from localStorage to persist across refreshes
+  const [lastGrokCall, setLastGrokCall] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('lastGrokCallTime');
+      return saved ? parseInt(saved) : null;
+    }
+    return null;
+  });
   const [assistantInsights, setAssistantInsights] = useState({
     technical: null,
     sentiment: null,
@@ -311,7 +321,40 @@ export function useLighterAPI(config = {}) {
     callAPI('executeStrategy', { markets }), [callAPI]);
 
   // Clean up on unmount
+  // Load recent chat history on component mount
   useEffect(() => {
+    const loadRecentChatHistory = async () => {
+      try {
+        const response = await fetch('/api/team-chat-history?action=recent&limit=10');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.messages && result.messages.length > 0) {
+            console.log(`Loading ${result.messages.length} recent messages from Firestore`);
+            
+            // Transform Firestore messages to match the agentThoughts format
+            const historicalThoughts = result.messages.map(msg => ({
+              id: Date.parse(msg.timestamp) || Date.now() + Math.random(),
+              agent: msg.agent,
+              type: msg.agent,
+              consultant: msg.agent,
+              message: msg.message,
+              timestamp: msg.timestamp || new Date().toISOString()
+            }));
+            
+            // Set the historical messages as initial thoughts
+            setAgentThoughts(historicalThoughts);
+            console.log('Loaded chat history:', historicalThoughts);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      }
+    };
+    
+    // Load chat history on mount
+    loadRecentChatHistory();
+    
+    // Cleanup interval on unmount
     return () => {
       if (updateIntervalRef.current) {
         clearInterval(updateIntervalRef.current);
@@ -321,9 +364,25 @@ export function useLighterAPI(config = {}) {
 
   // Format data for TradingOverlay
   const generateTeamChat = async () => {
+    // TEMPORARILY DISABLED - No agent calls this evening
+    console.log('Agent calls temporarily disabled for the evening');
+    return;
+    
     try {
-      const agents = ['sentiment', 'market', 'macro', 'rl80'];
-      const currentAgent = agents[Math.floor(Math.random() * agents.length)];
+      // Check if we should exclude Grok (sentiment) due to rate limiting
+      const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
+      const now = Date.now();
+      const canCallGrok = !lastGrokCall || (now - lastGrokCall) > ONE_HOUR;
+      
+      // Build agent list based on rate limits
+      let availableAgents = ['market', 'macro', 'rl80'];
+      if (canCallGrok) {
+        availableAgents.push('sentiment');
+      } else {
+        console.log(`Grok rate limited. Last call was ${Math.round((now - lastGrokCall) / 1000 / 60)} minutes ago. Waiting for 1 hour cooldown.`);
+      }
+      
+      const currentAgent = availableAgents[Math.floor(Math.random() * availableAgents.length)];
       
       // Create context from current market data - NO HARDCODED VALUES
       console.log('Building context - fearGreedIndex:', fearGreedIndex);
@@ -343,6 +402,18 @@ export function useLighterAPI(config = {}) {
       };
       
       console.log('Final context being sent:', JSON.stringify(context.marketData, null, 2));
+      
+      // Track when we call Grok for rate limiting
+      if (currentAgent === 'sentiment') {
+        const callTime = Date.now();
+        setLastGrokCall(callTime);
+        // Persist to localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lastGrokCallTime', callTime.toString());
+        }
+        console.log('Grok API called at:', new Date().toISOString());
+        console.log('Next Grok call allowed after:', new Date(callTime + 60 * 60 * 1000).toISOString());
+      }
       
       const response = await fetch('/api/ai-chat', {
         method: 'POST',

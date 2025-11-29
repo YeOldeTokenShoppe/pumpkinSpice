@@ -68,8 +68,42 @@ export default async function handler(req, res) {
         limit: queryLimit = 50, 
         sessionId,
         agent: filterAgent,
-        startTime 
+        startTime,
+        action 
       } = req.query;
+      
+      // Special handling for 'recent' action to get last N messages
+      if (action === 'recent') {
+        const recentLimit = parseInt(queryLimit) || 10;
+        const chatRef = collection(db, 'team-chat');
+        const q = query(
+          chatRef,
+          orderBy('createdAt', 'desc'),
+          limit(recentLimit)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const messages = [];
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          messages.push({
+            id: doc.id,
+            ...data,
+            timestamp: data.timestamp?.toDate?.()?.toLocaleString() || data.timestamp,
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt
+          });
+        });
+        
+        // Reverse to get chronological order (oldest first)
+        messages.reverse();
+        
+        return res.status(200).json({
+          success: true,
+          messages,
+          count: messages.length
+        });
+      }
 
       const chatRef = collection(db, 'team-chat');
       let q = query(
