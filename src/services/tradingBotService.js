@@ -92,7 +92,7 @@ class TradingBotService {
     // Map Python bot data structure to your UI's TradingOverlay format
     if (botData.type === 'update') {
       return {
-        fundBalance: botData.performance?.balance || 142857.33,
+        fundBalance: botData.performance?.balance || 0,
         dailyPnl: botData.performance?.daily_pnl || 0,
         dailyPnlPercent: botData.performance?.daily_pnl_percent || 0,
         totalPnl: botData.performance?.pnl || 0,

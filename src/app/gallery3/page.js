@@ -295,8 +295,8 @@ export default function Gallery3Page() {
             <button
               onClick={() => handleMusicToggle(true)}
               style={{
-                width: isMobileDevice ? "40px" : "60px",
-                height: isMobileDevice ? "40px" : "60px",
+                width: isMobileDevice ? "2.5rem" : "3.75rem",
+                height: isMobileDevice ? "2.5rem" : "3.75rem",
                 borderRadius: "8px",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -395,8 +395,8 @@ export default function Gallery3Page() {
           ) : (
             <SignInButton mode="modal" forceRedirectUrl="/gallery3">
               <button style={{
-                width: isMobileDevice ? "40px" : "60px",
-                height: isMobileDevice ? "40px" : "60px",
+               width: isMobileDevice ? "2.5rem" : "3.75rem",
+                height: isMobileDevice ? "2.5rem" : "3.75rem",
                 borderRadius: "8px",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -419,8 +419,8 @@ export default function Gallery3Page() {
           <button
             onClick={toggle80sMode}
             style={{
-              width: isMobileDevice ? "40px" : "60px",
-              height: isMobileDevice ? "40px" : "60px",
+              width: isMobileDevice ? "2.5rem" : "3.75rem",
+              height: isMobileDevice ? "2.5rem" : "3.75rem",
               borderRadius: "8px",
               backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.3)" : "rgba(0, 0, 0, 0.7)",
               border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",

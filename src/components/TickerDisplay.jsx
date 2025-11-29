@@ -224,9 +224,9 @@ const TickerDisplay = ({ modelRef, isMobileView, ...props }) => {
         console.warn("Failed to fetch from CoinMarketCap Fear & Greed API via Firebase, trying alternative.me...");
       }
 
-      // Fallback to alternative.me API
+      // Fallback to our server-side API endpoint
 
-      const altResponse = await fetch("https://api.alternative.me/fng/");
+      const altResponse = await fetch("/api/fear-greed");
       
       if (!altResponse.ok) {
         throw new Error("Failed to fetch from alternative.me");

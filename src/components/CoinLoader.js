@@ -73,6 +73,12 @@ const CoinLoader = ({ loading = true, onComplete }) => {
           z-index: 10001;
           opacity: ${loading ? '1' : '0'};
           transition: opacity 0.5s ease-out;
+          will-change: opacity;
+          transform: translateZ(0);
+          backface-visibility: hidden;
+          perspective: 1000px;
+          contain: layout style paint;
+          isolation: isolate;
         }
 
         .pl {
@@ -82,6 +88,8 @@ const CoinLoader = ({ loading = true, onComplete }) => {
           align-items: center;
           width: 9.1em;
           height: 9.1em;
+          will-change: transform;
+          transform: translateZ(0);
         }
 
         .pl__coin,
@@ -94,13 +102,16 @@ const CoinLoader = ({ loading = true, onComplete }) => {
           animation-iteration-count: infinite;
           animation-delay: 0.1s;
           animation-fill-mode: both;
+          will-change: transform;
         }
 
         .pl__coin {
           animation-name: bounce;
           position: relative;
-          transform: translateY(0.5em);
+          transform: translate3d(0, 0.5em, 0);
           z-index: 1;
+          will-change: transform;
+          backface-visibility: hidden;
         }
 
         .pl__coin-flare,
@@ -233,12 +244,12 @@ const CoinLoader = ({ loading = true, onComplete }) => {
           50%,
           to {
             animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-            transform: translateY(0.5em);
+            transform: translate3d(0, 0.5em, 0);
           }
           25%,
           75% {
             animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-            transform: translateY(5.1em);
+            transform: translate3d(0, 5.1em, 0);
           }
         }
 

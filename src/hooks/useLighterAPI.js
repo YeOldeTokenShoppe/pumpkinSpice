@@ -1,5 +1,6 @@
 // Simplified client-side hook for Lighter trading via API route
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { calculateMarketRiskAppetite } from '@/lib/risk-appetite-calculator';
 
 export function useLighterAPI(config = {}) {
   const [isConnected, setIsConnected] = useState(false);
@@ -17,61 +18,116 @@ export function useLighterAPI(config = {}) {
     macro: null,
     strategy: null
   });
+  const [stablecoinData, setStablecoinData] = useState({
+    totalMarketCap: 140.2e9,
+    netFlow24h: 0,
+    flowDirection: 'NEUTRAL'
+  });
+  const [fearGreedIndex, setFearGreedIndex] = useState({
+    value: 50,
+    classification: 'Neutral'
+  });
+  const [macroMetrics, setMacroMetrics] = useState({});
   
   const updateIntervalRef = useRef(null);
 
-  // Fetch account state from API
+  // Fetch account state from server-side API (no direct Lighter connection)
   const fetchAccountState = useCallback(async () => {
     try {
-      const response = await fetch('/api/lighter/simple');
-      if (!response.ok) throw new Error('Failed to fetch account state');
+      // Use the new server-side endpoint that manages the Lighter connection
+      const response = await fetch('/api/lighter-data?type=markets');
+      if (!response.ok) throw new Error('Failed to fetch Lighter data');
       
       const result = await response.json();
-      if (result.success) {
-        setPositions(result.data.positions || []);
-        setOrders(result.data.orders || []);
-        setAccountData({
-          balance: result.data.accountBalance,
-          availableMargin: result.data.availableMargin
-        });
-        setPerformance(result.data.performance);
+      if (result.success && result.data) {
+        // Update market data from server-managed connection
+        setMarketData(result.data);
         setIsConnected(true);
         
-        // Store market data from stats
-        let marketDataUpdate = {};
-        if (result.data.stats?.order_book_stats) {
-          result.data.stats.order_book_stats.forEach(stat => {
-            marketDataUpdate[stat.symbol] = {
-              ticker: {
-                lastPrice: stat.last_trade_price,
-                priceChange24h: stat.price_change_24h,
-                volume24h: stat.volume_24h
-              }
-            };
-          });
-          setMarketData(marketDataUpdate);
-        }
+        // For now, set empty positions/orders since we're not connecting wallets
+        setPositions([]);
+        setOrders([]);
+        setAccountData({
+          balance: 0,
+          availableMargin: 0
+        });
+        setPerformance({
+          totalPnL: 0,
+          dayPnL: 0,
+          weekPnL: 0,
+          monthPnL: 0
+        });
+      }
         
         // Run AI analysis using the API
+        // Fetch stablecoin flow data
+        let stablecoinFlows = {};
+        try {
+          const flowResponse = await fetch('/api/stablecoin-flows');
+          if (flowResponse.ok) {
+            const flowData = await flowResponse.json();
+            stablecoinFlows = flowData.data;
+            setStablecoinData(flowData.data); // Store in state for formatTradingData
+          }
+        } catch (error) {
+          console.error('Failed to fetch stablecoin flows:', error);
+        }
+        
+        // Fetch Fear & Greed Index
+        let fearGreedData = { value: 50, classification: 'Neutral' };
+        try {
+          const fgResponse = await fetch('/api/fear-greed');
+          if (fgResponse.ok) {
+            const fgResult = await fgResponse.json();
+            if (fgResult.success) {
+              fearGreedData = fgResult.data;
+              setFearGreedIndex(fgResult.data); // Store in state
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch Fear & Greed:', error);
+        }
+        
+        // Fetch comprehensive market data (VIX, DXY, BTC dominance, funding, OI)
+        let macroData = {};
+        try {
+          const macroResponse = await fetch('/api/market-data?format=object');
+          if (macroResponse.ok) {
+            const macroResult = await macroResponse.json();
+            macroData = macroResult.data || {};
+            setMacroMetrics(macroData); // Store in state for formatTradingData
+          }
+        } catch (error) {
+          console.error('Failed to fetch macro data:', error);
+        }
+        
         const marketContext = {
-          btcPrice: marketDataUpdate['BTC-USD']?.ticker?.lastPrice || marketDataUpdate['BTC/USDC']?.ticker?.lastPrice,
-          btcChange: marketDataUpdate['BTC-USD']?.ticker?.priceChange24h || 0,
-          ethPrice: marketDataUpdate['ETH-USD']?.ticker?.lastPrice || marketDataUpdate['ETH/USDC']?.ticker?.lastPrice,
-          ethChange: marketDataUpdate['ETH-USD']?.ticker?.priceChange24h || 0,
-          positionCount: result.data.positions?.length || 0,
-          totalPnL: result.data.positions?.reduce((sum, p) => sum + (p.unrealizedPnl || 0), 0) || 0,
-          accountBalance: result.data.accountBalance || 0,
-          availableMargin: result.data.availableMargin || 0,
-          vix: 14.2,
-          dxy: 103.42,
-          dxyChange: -0.8,
-          fearGreed: 72,
-          marketRegime: 'RISK_ON'
+          btcPrice: result.data['BTC-USD']?.ticker?.lastPrice || result.data['BTC/USDC']?.ticker?.lastPrice || 0,
+          btcChange: result.data['BTC-USD']?.ticker?.priceChange24h || 0,
+          ethPrice: result.data['ETH-USD']?.ticker?.lastPrice || result.data['ETH/USDC']?.ticker?.lastPrice || 0,
+          ethChange: result.data['ETH-USD']?.ticker?.priceChange24h || 0,
+          positionCount: 0,
+          totalPnL: 0,
+          accountBalance: 0,
+          availableMargin: 0,
+          vix: macroData.vix?.value || 14.2,
+          dxy: macroData.dxy?.value || 103.42,
+          dxyChange: macroData.dxy?.changePercent || -0.8,
+          fearGreed: fearGreedData.value || 50,
+          fearGreedText: fearGreedData.classification || 'Neutral',
+          marketRegime: 'RISK_ON',
+          // Add stablecoin flow data
+          stableMcap: (stablecoinFlows.totalMarketCap || 140.2e9) / 1e9, // Convert to billions
+          stableFlow: Math.abs(stablecoinFlows.netFlow24h || 0),
+          stableFlowDirection: stablecoinFlows.flowDirection || 'NEUTRAL'
         };
         
+        // DISABLED - Using generateTeamChat instead
         // Generate thoughts from different consultants via API
         const newThoughts = [];
         
+        // Skip old thought generation - we use generateTeamChat now
+        if (false) {
         try {
           // Main trading analysis
           const tradingPrompt = `Market snapshot: BTC $${marketContext.btcPrice || 'N/A'} (${marketContext.btcChange}% 24h), ETH $${marketContext.ethPrice || 'N/A'} (${marketContext.ethChange}% 24h). ${marketContext.positionCount} positions, P&L: $${marketContext.totalPnL.toFixed(2)}. What's the play?`;
@@ -145,7 +201,7 @@ export function useLighterAPI(config = {}) {
             body: JSON.stringify({ 
               prompt: technicalPrompt, 
               consultant: 'technical', 
-              marketData: { ...marketContext, fullMarketData: marketDataUpdate }
+              marketData: { ...marketContext, fullMarketData: result.data }
             })
           });
           
@@ -178,11 +234,8 @@ export function useLighterAPI(config = {}) {
             return combined.slice(0, 30); // Keep last 30 thoughts
           });
         }
+        } // End of disabled section
         
-        return result.data;
-      } else {
-        throw new Error(result.error);
-      }
     } catch (err) {
       console.error('Failed to fetch account state:', err);
       setError(err.message);
@@ -211,6 +264,17 @@ export function useLighterAPI(config = {}) {
       updateIntervalRef.current = setInterval(() => {
         fetchAccountState();
       }, 3600000); // 60 minutes * 60 seconds * 1000ms
+      
+      // Generate AI team chat every 30 seconds for testing, then slow to 15 minutes
+      generateTeamChat();
+      const chatInterval = setInterval(() => {
+        generateTeamChat();
+      }, 30000); // 30 seconds for testing - change to 900000 for 15 minutes in production
+      
+      // Clean up chat interval on unmount
+      return () => {
+        clearInterval(chatInterval);
+      };
       
     } catch (err) {
       console.error('Failed to initialize Lighter API:', err);
@@ -256,10 +320,109 @@ export function useLighterAPI(config = {}) {
   }, []);
 
   // Format data for TradingOverlay
+  const generateTeamChat = async () => {
+    try {
+      const agents = ['sentiment', 'market', 'macro', 'rl80'];
+      const currentAgent = agents[Math.floor(Math.random() * agents.length)];
+      
+      // Create context from current market data - NO HARDCODED VALUES
+      const context = {
+        marketData: {
+          btcPrice: marketData['BTC-USD']?.ticker?.lastPrice || 0,
+          ethPrice: marketData['ETH-USD']?.ticker?.lastPrice || 0,
+          fearGreed: fearGreedIndex.value || 0, // No fake defaults!
+          vix: macroMetrics.vix?.value || 0,
+          dxy: macroMetrics.dxy?.value || 0,
+          openInterest: macroMetrics.openInterest?.value || 0,
+          fundingRate: macroMetrics.fundingRate?.value || 0
+        },
+        lastMessages: agentThoughts.slice(-5) // Last 5 messages for context
+      };
+      
+      const response = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agent: currentAgent,
+          context,
+          lastMessages: agentThoughts.slice(-3)
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success && data.message) {
+        console.log(`Team Chat - ${currentAgent}:`, data.message);
+        
+        const newThought = {
+          id: Date.now(),
+          agent: currentAgent,
+          type: currentAgent,
+          consultant: currentAgent,
+          message: data.message,
+          timestamp: new Date().toLocaleTimeString(),
+          icon: getAgentIcon(currentAgent),
+          color: getAgentColor(currentAgent)
+        };
+        
+        // Save to Firestore
+        try {
+          await fetch('/api/team-chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              agent: currentAgent,
+              message: data.message,
+              context: context.marketData,
+              timestamp: new Date().toISOString()
+            })
+          });
+          console.log(`Saved ${currentAgent} message to Firestore`);
+        } catch (error) {
+          console.error('Failed to save to Firestore:', error);
+        }
+        
+        setAgentThoughts(prev => {
+          console.log('Adding thought:', newThought);
+          // Keep only last 20 messages
+          const updated = [...prev, newThought].slice(-20);
+          return updated;
+        });
+      } else if (!data.success) {
+        // API failed - stay quiet, no fallback messages
+        console.log(`Team Chat - ${currentAgent} API failed:`, data.error);
+      } else {
+        console.error(`Team Chat - Unexpected response from ${currentAgent}:`, data);
+      }
+    } catch (error) {
+      console.error('Failed to generate team chat:', error);
+    }
+  };
+  
+  const getAgentIcon = (agent) => {
+    const icons = {
+      sentiment: '🔮',
+      market: '📊',
+      macro: '🌍',
+      rl80: '🤖'
+    };
+    return icons[agent] || '💬';
+  };
+  
+  const getAgentColor = (agent) => {
+    const colors = {
+      sentiment: '#ff00ff',
+      market: '#00ffff',
+      macro: '#ffff00',
+      rl80: '#00ff00'
+    };
+    return colors[agent] || '#ffffff';
+  };
+
   const formatTradingData = useCallback(() => {
     const totalPnl = positions.reduce((sum, pos) => sum + (pos.unrealizedPnl || 0), 0);
-    const balance = accountData?.balance || config.initialBalance || 27000;
-    const initialBalance = config.initialBalance || 27000;
+    const balance = accountData?.balance || config.initialBalance || 0;
+    const initialBalance = config.initialBalance || 0;
     
     return {
       // Model Info
@@ -319,7 +482,7 @@ export function useLighterAPI(config = {}) {
         },
         {
           time: new Date(Date.now() - 10000).toLocaleTimeString(),
-          action: isConnected ? 'Market data synchronized' : 'Connecting to Lighter...'
+          action: isConnected ? 'Market data synchronized' : 'Loading market data...'
         },
         {
           time: new Date(Date.now() - 15000).toLocaleTimeString(),
@@ -327,20 +490,67 @@ export function useLighterAPI(config = {}) {
         }
       ],
       
-      // Market Data
-      macroData: {
-        marketRegime: 'RISK_ON',
-        riskScore: 72,
-        fedRate: 5.50,
-        fedRateChange: -0.25,
-        nextFOMC: 'Mar 20',
-        rateCutProb: 85,
-        dxy: 103.42,
-        dxyChange: -0.8,
-        vix: 14.2,
-        vixChange: -2.1,
-        signals: ['Fed Dovish', 'DXY Weak', 'Stables Flowing In']
-      },
+      // Market Data with live stablecoin flows
+      macroData: (() => {
+        // Calculate live risk appetite score
+        const riskData = calculateMarketRiskAppetite({
+          btcPrice: marketData['BTC-USD']?.ticker?.lastPrice || marketData['BTC/USDC']?.ticker?.lastPrice || 0,
+          btcChange24h: marketData['BTC-USD']?.ticker?.priceChange24h || 0,
+          ethPrice: marketData['ETH-USD']?.ticker?.lastPrice || marketData['ETH/USDC']?.ticker?.lastPrice || 0,
+          ethChange24h: marketData['ETH-USD']?.ticker?.priceChange24h || 0,
+          fearGreedIndex: fearGreedIndex.value || 50, // Live Fear & Greed from API
+          vix: macroMetrics.vix?.value || 20, // Live VIX from Yahoo Finance
+          dxy: macroMetrics.dxy?.value || 100, // Live DXY
+          dxyChange: macroMetrics.dxy?.changePercent || -0.8,
+          stableFlowDirection: stablecoinData.flowDirection,
+          stableFlowMagnitude: Math.abs(stablecoinData.netFlow24h || 0),
+          btcDominance: macroMetrics.btcDominance?.value || 50, // Live from CoinGecko
+          totalCryptoMcap: macroMetrics.totalCryptoMcap || 2.68,
+          defiTVL: (stablecoinData.defiTVL || 68.5e9) / 1e9,
+          fundingRate: macroMetrics.fundingRate?.value || 0.012, // Live from Binance
+          openInterest: macroMetrics.openInterest?.value || 0, // Live from exchanges
+          openInterestChange: macroMetrics.openInterest?.change24h || 0,
+          volume24h: marketData['BTC-USD']?.ticker?.volume24h || 50
+        });
+        
+        return {
+          marketRegime: riskData.regime,
+          riskScore: riskData.score,
+          fedRate: macroMetrics.fedRate || 5.0,
+          fedRateChange: macroMetrics.fedRateChange || -0.25,
+          nextFOMC: macroMetrics.nextFOMC || 'Mar 20',
+          rateCutProb: macroMetrics.rateCutProb || 85,
+          dxy: macroMetrics.dxy?.value || 100,
+          dxyChange: macroMetrics.dxy?.changePercent || -0.8,
+          vix: macroMetrics.vix?.value || 20,
+          vixChange: macroMetrics.vix?.changePercent || -2.1,
+          
+          // Live stablecoin data
+          stableMcap: (stablecoinData.totalMarketCap || 140.2e9) / 1e9,
+          stableFlow: Math.abs(stablecoinData.netFlow24h || 0),
+          stableFlowDirection: stablecoinData.flowDirection || 'NEUTRAL',
+          
+          // Additional metrics
+          btcDominance: macroMetrics.btcDominance?.value || 50,
+          btcDomChange: macroMetrics.btcDominance?.change || 0,
+          fearGreed: fearGreedIndex.value || 50,
+          fearGreedText: fearGreedIndex.classification || 'Neutral',
+          totalCryptoMcap: macroMetrics.totalCryptoMcap || 2.68,
+          defiTVL: (stablecoinData.defiTVL || 68.5e9) / 1e9,
+          
+          // Exchange Metrics
+          fundingRate: macroMetrics.fundingRate?.value || 0.012,
+          openInterest: macroMetrics.openInterest?.value || 0,
+          openInterestChange: macroMetrics.openInterest?.change24h || 0,
+          exchangeReserves: stablecoinData.exchangeReserves?.change24h || -2.3,
+          
+          // Dynamic risk multiplier based on calculated risk score
+          riskMultiplier: riskData.score > 65 ? 1.5 : riskData.score > 50 ? 1.2 : riskData.score > 35 ? 1.0 : 0.8,
+          
+          // Use signals from risk calculator
+          signals: riskData.signals.slice(0, 3)
+        };
+      })(),
       
       // Connection Status
       isConnected,
@@ -349,7 +559,7 @@ export function useLighterAPI(config = {}) {
       // Assistant Insights
       assistantInsights
     };
-  }, [accountData, positions, orders, performance, isConnected, error, config.initialBalance, agentThoughts, assistantInsights]);
+  }, [accountData, positions, orders, performance, isConnected, error, config.initialBalance, agentThoughts, assistantInsights, stablecoinData, marketData, fearGreedIndex, macroMetrics]);
 
   return {
     // State

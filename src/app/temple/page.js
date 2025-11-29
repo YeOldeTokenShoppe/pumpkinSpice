@@ -14,10 +14,9 @@ import { useUser, SignInButton } from "@clerk/nextjs";
 import { Illumin80ClerkButton } from "@/components/Illumin80Display";
 import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
-import CoinLoader from '@/components/CoinLoader';
+import SimpleTextLoader from '@/components/SimpleTextLoader';
 import MemoryMonitor from '@/components/MemoryMonitor';
 import TradingOverlay from '@/components/TradingOverlay';
-// import { useTradingBot } from '@/hooks/useTradingBot'; // Old paper trading bot
 // import { useLighterTrading } from '@/hooks/useLighterTrading'; // Direct Lighter integration
 import { useLighterAPI } from '@/hooks/useLighterAPI'; // API-based Lighter integration
 // import PolaroidSnapshot from '@/components/PolaroidSnapshot';
@@ -33,24 +32,35 @@ export default function CyborgTemple() {
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [sceneReady, setSceneReady] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [tickerLoaded, setTickerLoaded] = useState(false);
   const [showTrading, setShowTrading] = useState(true);
   const [triggerSnapshot, setTriggerSnapshot] = useState(false);
   const [showAnnotations, setShowAnnotations] = useState(true);
+  const [canvasReady, setCanvasReady] = useState(false);
+  const [tickerReady, setTickerReady] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState("Initializing");
   
-  // Connect to Lighter trading API (simplified version for now)
+  // Connect to Lighter trading API
+  // Initial balance will be fetched from the actual account
   const { 
     isConnected, 
     tradingData, 
     initialize
   } = useLighterAPI({
-    initialBalance: 27000 // Your approximate initial balance
+    initialBalance: 0 // Will be replaced with actual balance from API
   });
   
-  // Initialize Lighter connection on mount
+  // Initialize market data fetching after a delay
   useEffect(() => {
     if (!isConnected && mounted) {
-      console.log('[Temple] Initializing Lighter API connection...');
-      initialize();
+      // Defer initialization to not block animations
+      const timer = setTimeout(() => {
+        console.log('[Temple] Initializing market data...');
+        initialize();
+      }, 2000); // 2 second delay
+      
+      return () => clearTimeout(timer);
     }
   }, [mounted, isConnected]);
 
@@ -79,6 +89,19 @@ export default function CyborgTemple() {
       window.addEventListener('resize', checkMobile);
     }
     setMounted(true);
+    setLoadingProgress(10);
+    setLoadingMessage("Setting up environment");
+    
+    // Now we can start Canvas immediately since we're using a lightweight loader
+    setCanvasReady(true);
+    setLoadingProgress(20);
+    setLoadingMessage("Initializing Trading Environment");
+    
+    // Delay TickerDisplay3 slightly
+    setTimeout(() => {
+      setTickerReady(true);
+    }, 300);
+    
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('resize', checkMobile);
@@ -94,15 +117,18 @@ export default function CyborgTemple() {
           await document.fonts.load("1em 'UnifrakturMaguntia'");
           console.log('Font loaded successfully');
           setFontLoaded(true);
+          setLoadingProgress(prev => Math.min(prev + 10, 100));
         } catch (e) {
           console.log('Font load failed, using fallback');
           setTimeout(() => {
             setFontLoaded(true);
+            setLoadingProgress(prev => Math.min(prev + 10, 100));
           }, 100);
         }
       } else {
         // Server-side fallback
         setFontLoaded(true);
+        setLoadingProgress(prev => Math.min(prev + 10, 100));
       }
     };
     checkFont();
@@ -120,23 +146,38 @@ export default function CyborgTemple() {
     console.log('CyborgTempleScene loaded');
     console.log('ModelRef current:', modelRef.current);
     setModelLoaded(true);
+    setLoadingProgress(70);
+    setLoadingMessage("Loading trading data");
+  };
+
+  // Handle ticker loading completion
+  const handleTickerLoad = () => {
+    console.log('TickerDisplay3 loaded');
+    setTickerLoaded(true);
+    setLoadingProgress(90);
+    setLoadingMessage("Almost ready");
   };
 
   // Comprehensive loading coordination
   useEffect(() => {
     // Only hide loading when everything is ready
-    if (fontLoaded && mounted && modelLoaded) {
-      // Add extra delay to ensure TickerDisplay3 and other components are rendered
+    // Don't wait for ticker if it hasn't started loading yet
+    const tickerCondition = tickerReady ? tickerLoaded : true;
+    
+    if (fontLoaded && mounted && modelLoaded && tickerCondition) {
+      setLoadingProgress(100);
+      setLoadingMessage("Ready!");
+      // Add extra delay to ensure all components are rendered
       const timer = setTimeout(() => {
         setSceneReady(true);
         setTimeout(() => {
           setIsSceneLoading(false);
         }, 500); // Brief additional delay for smooth transition
-      }, 1000); // Wait for all components to initialize
+      }, 800); // Slightly shorter wait since loader is lightweight
       
       return () => clearTimeout(timer);
     }
-  }, [fontLoaded, mounted, modelLoaded]);
+  }, [fontLoaded, mounted, modelLoaded, tickerLoaded, tickerReady]);
 
   // Fallback timeout to prevent infinite loading
   useEffect(() => {
@@ -153,13 +194,17 @@ export default function CyborgTemple() {
 
   // Don't render on server-side
   if (!mounted) {
-    return <CoinLoader loading={true} />;
+    return <SimpleTextLoader loading={true} progress={0} message="Loading" />;
   }
 
   return (
     <>
       {/* Loading Screen */}
-      <CoinLoader loading={isSceneLoading} />
+      <SimpleTextLoader 
+        loading={isSceneLoading} 
+        progress={loadingProgress}
+        message={loadingMessage}
+      />
           
       <div style={{ 
         width: '100vw', 
@@ -269,7 +314,8 @@ export default function CyborgTemple() {
           modelRef={modelRef}
           modelLoaded={modelLoaded}
         />
-        {/* Main Canvas */}
+        {/* Main Canvas - Delayed render for smoother loader animation */}
+        {canvasReady && (
         <Canvas
           key="temple-canvas"
           camera={{ position: [0, 0, 7.5], fov: 50 }}
@@ -286,6 +332,7 @@ export default function CyborgTemple() {
             (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1)
           }
           performance={{ min: 0.5 }}
+          frameloop={isSceneLoading ? "demand" : "always"}
           style={{ 
             background: 'transparent', 
             position: 'absolute',
@@ -319,7 +366,7 @@ export default function CyborgTemple() {
               is80sMode={is80sMode}
             />
 
-            <TickerDisplay3 />
+            {tickerReady && <TickerDisplay3 onLoad={handleTickerLoad} />}
 
             
             {/* Constellation */}
@@ -349,6 +396,7 @@ export default function CyborgTemple() {
             />
           </Suspense>
         </Canvas>
+        )}
 
         {/* Top Controls Container - Music, User, and Nav */}
         {mounted && (

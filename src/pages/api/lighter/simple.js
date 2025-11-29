@@ -50,10 +50,10 @@ export default async function handler(req, res) {
       const assets = account.assets || [];
       
       // Calculate spot equity from assets
-      // Get prices from stats if available
-      const ethUsdcPrice = stats?.order_book_stats?.find(s => s.symbol === 'ETH/USDC')?.last_trade_price || 3027;
-      const provePrice = stats?.order_book_stats?.find(s => s.symbol === 'PROVE/USDC')?.last_trade_price || 0.487;
-      const zkPrice = stats?.order_book_stats?.find(s => s.symbol === 'ZK/USDC')?.last_trade_price || 0.038;
+      // Get prices from stats - no fallback values, use 0 if unavailable
+      const ethUsdcPrice = stats?.order_book_stats?.find(s => s.symbol === 'ETH/USDC')?.last_trade_price || 0;
+      const provePrice = stats?.order_book_stats?.find(s => s.symbol === 'PROVE/USDC')?.last_trade_price || 0;
+      const zkPrice = stats?.order_book_stats?.find(s => s.symbol === 'ZK/USDC')?.last_trade_price || 0;
       
       assets.forEach(asset => {
         let assetValue = 0;

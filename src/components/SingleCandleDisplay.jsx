@@ -5,7 +5,7 @@ import * as THREE from 'three';
 
 // Scene content that loads the candle model directly
 function CandleScene({ firestoreData }) {
-  const { scene, animations } = useGLTF("/models/singleCandleAnimatedFlame.glb");
+  const { scene, animations } = useGLTF("/models/XCandleAnimatedFlame.glb");
   const candleRef = useRef();
   const mixerRef = useRef(null);
   
@@ -31,8 +31,8 @@ function CandleScene({ firestoreData }) {
       const clonedCandle = scene.clone();
       
       // Scale up for better visibility
-      clonedCandle.scale.set(1.5, 1.5, 1.5);
-      clonedCandle.position.set(0, -1.5, 0);
+      clonedCandle.scale.set(1, 1, 1);
+      clonedCandle.position.set(0, 0, 0);
       
       // Apply any Firestore data if provided
       if (firestoreData) {
@@ -274,7 +274,7 @@ function CandleScene({ firestoreData }) {
     
     if (candleRef.current) {
       // Gentle rotation
-      candleRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.3;
+      // candleRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.3;
     }
   });
   
@@ -321,12 +321,13 @@ function CandleScene({ firestoreData }) {
       
       {/* Camera controls - with zoom and manual rotation enabled */}
       <OrbitControls
+      dampingFactor={0.2}
         enablePan={true}
         enableZoom={true}
         minDistance={2}
         maxDistance={10}
-        autoRotate
-        autoRotateSpeed={1}
+        // autoRotate
+        // autoRotateSpeed={1}
       />
     </>
   );
@@ -336,7 +337,7 @@ function CandleScene({ firestoreData }) {
 export default function SingleCandleDisplay({ firestoreData }) {
   return (
     <Canvas
-      camera={{ position: [0, 2, 5], fov: 35 }}
+      camera={{ position: [0, 2, 7], fov: 35 }}
       style={{ width: '100%', height: '100%' }}
       gl={{ 
         antialias: true,
@@ -351,4 +352,4 @@ export default function SingleCandleDisplay({ firestoreData }) {
 }
 
 // Preload the model
-useGLTF.preload("/models/singleCandleAnimatedFlame.glb");
+useGLTF.preload("/models/XCandleAnimatedFlame.glb");

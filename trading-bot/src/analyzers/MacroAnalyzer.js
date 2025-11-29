@@ -37,35 +37,55 @@ export class MacroAnalyzer {
   
   async getTraditionalMacro() {
     try {
-      const [fedRate, dxy, vix, cpi, treasury10Y] = await Promise.all([
-        this.getFredData('DFF', 1), // Federal Funds Rate
-        this.getFredData('DEXUSEU', 1), // USD/EUR (proxy for DXY)
-        this.getFredData('VIXCLS', 1), // VIX
-        this.getFredData('CPIAUCSL', 1), // CPI
-        this.getFredData('DGS10', 1) // 10-Year Treasury
-      ]);
+      // Try to fetch from our market-data API first
+      const response = await axios.get('http://localhost:3000/api/market-data?format=object');
       
-      return {
-        fedRate: parseFloat(fedRate[0]?.value || 5.5),
-        fedRateChange: this.calculateChange(fedRate),
-        nextFOMC: this.getNextFOMCDate(),
-        rateCutProb: this.estimateRateCutProbability(fedRate),
+      if (response.data?.success && response.data?.data) {
+        const data = response.data.data;
         
-        dxy: parseFloat(dxy[0]?.value || 103),
-        dxyChange: this.calculateChange(dxy),
+        // Use API data if available, otherwise try FRED
+        const fedRate = data.fedRate || await this.getFredData('DFF', 1);
+        const dxy = data.dxy?.value || await this.getFredData('DEXUSEU', 1);
+        const vix = data.vix?.value || await this.getFredData('VIXCLS', 1);
+        const cpi = await this.getFredData('CPIAUCSL', 2); // Need 2 values for comparison
+        const treasury10Y = data.treasury10Y?.value || await this.getFredData('DGS10', 1);
         
-        vix: parseFloat(vix[0]?.value || 15),
-        vixChange: this.calculateChange(vix),
-        
-        cpi: parseFloat(cpi[0]?.value || 3.0),
-        cpiPrev: parseFloat(cpi[1]?.value || 3.2),
-        
-        treasury10Y: parseFloat(treasury10Y[0]?.value || 4.25)
-      };
+        return {
+          fedRate: data.fedRate || parseFloat(fedRate[0]?.value) || 0,
+          fedRateChange: data.fedRateChange || this.calculateChange(fedRate),
+          nextFOMC: data.nextFOMC || this.getNextFOMCDate(),
+          rateCutProb: data.rateCutProb || this.estimateRateCutProbability(fedRate),
+          
+          dxy: data.dxy?.value || parseFloat(dxy[0]?.value) || 0,
+          dxyChange: data.dxy?.changePercent || this.calculateChange(dxy),
+          
+          vix: data.vix?.value || parseFloat(vix[0]?.value) || 0,
+          vixChange: data.vix?.changePercent || this.calculateChange(vix),
+          
+          cpi: parseFloat(cpi[0]?.value) || 0,
+          cpiPrev: parseFloat(cpi[1]?.value) || 0,
+          
+          treasury10Y: data.treasury10Y?.value || parseFloat(treasury10Y[0]?.value) || 0
+        };
+      }
     } catch (error) {
       logger.error('Traditional macro fetch error:', error);
-      return this.getDefaultTraditionalMacro();
     }
+    
+    // Return zeros instead of hardcoded values
+    return {
+      fedRate: 0,
+      fedRateChange: 0,
+      nextFOMC: 'Unknown',
+      rateCutProb: 0,
+      dxy: 0,
+      dxyChange: 0,
+      vix: 0,
+      vixChange: 0,
+      cpi: 0,
+      cpiPrev: 0,
+      treasury10Y: 0
+    };
   }
   
   async getFredData(series, limit = 10) {
@@ -135,37 +155,75 @@ export class MacroAnalyzer {
     if (cached) return cached;
     
     try {
-      const response = await axios.get(this.alternativeUrl);
-      const data = response.data.data[0];
-      
-      const result = {
-        value: parseInt(data.value),
-        text: data.value_classification,
-        timestamp: data.timestamp
-      };
-      
-      this.setCache(cacheKey, result);
-      return result;
-    } catch (error) {
-      logger.error('Fear & Greed API error:', error.message);
-      return { value: 50, text: 'Neutral' };
+      // First try our own endpoint
+      const ourResponse = await axios.get('http://localhost:3000/api/fear-greed');
+      if (ourResponse.data?.success && ourResponse.data?.data) {
+        const result = {
+          value: ourResponse.data.data.value,
+          text: ourResponse.data.data.classification,
+          timestamp: ourResponse.data.data.timestamp
+        };
+        this.setCache(cacheKey, result);
+        return result;
+      }
+    } catch (err) {
+      // If our endpoint fails, try alternative.me
+      try {
+        const response = await axios.get(this.alternativeUrl);
+        const data = response.data.data[0];
+        
+        const result = {
+          value: parseInt(data.value),
+          text: data.value_classification,
+          timestamp: data.timestamp
+        };
+        
+        this.setCache(cacheKey, result);
+        return result;
+      } catch (error) {
+        logger.error('Fear & Greed API error:', error.message);
+      }
     }
+    
+    return { value: 0, text: 'Unknown' };
   }
   
   async getCryptoMarketData() {
-    // This would integrate with CoinGecko, DeFiLlama, etc.
-    // For now, returning mock data
+    try {
+      // Fetch from our market-data API endpoint
+      const response = await axios.get('http://localhost:3000/api/market-data?format=object');
+      
+      if (response.data?.success && response.data?.data) {
+        const data = response.data.data;
+        return {
+          btcDominance: data.btcDominance?.value || 0,
+          btcDomChange: data.btcDominance?.change || 0,
+          stableMcap: data.totalCryptoMcap || 0,
+          stableFlow: 0, // Would need stablecoin-flows endpoint
+          stableFlowDirection: 'NEUTRAL',
+          totalMcap: data.totalCryptoMcap || 0,
+          defiTVL: 0, // Would need DeFiLlama integration
+          avgFunding: data.fundingRate?.value || 0,
+          totalOI: data.openInterest?.value || 0,
+          exchangeReserves: 0
+        };
+      }
+    } catch (error) {
+      logger.error('Failed to fetch crypto market data:', error.message);
+    }
+    
+    // Return zeros instead of hardcoded values
     return {
-      btcDominance: 52.3,
-      btcDomChange: 1.2,
-      stableMcap: 140.2,
-      stableFlow: 2.8,
-      stableFlowDirection: 'IN',
-      totalMcap: 2.68,
-      defiTVL: 68.5,
-      avgFunding: 0.012,
-      totalOI: 18.7,
-      exchangeReserves: -2.3
+      btcDominance: 0,
+      btcDomChange: 0,
+      stableMcap: 0,
+      stableFlow: 0,
+      stableFlowDirection: 'NEUTRAL',
+      totalMcap: 0,
+      defiTVL: 0,
+      avgFunding: 0,
+      totalOI: 0,
+      exchangeReserves: 0
     };
   }
   
@@ -274,7 +332,7 @@ export class MacroAnalyzer {
   
   estimateRateCutProbability(fedRateData) {
     // Simple estimation based on current rate
-    const currentRate = parseFloat(fedRateData[0]?.value || 5.5);
+    const currentRate = parseFloat(fedRateData[0]?.value || 0);
     
     if (currentRate > 5) return 85;
     if (currentRate > 4) return 60;
@@ -317,33 +375,33 @@ export class MacroAnalyzer {
   
   getDefaultTraditionalMacro() {
     return {
-      fedRate: 5.5,
+      fedRate: 0,
       fedRateChange: 0,
-      nextFOMC: 'Mar 20',
-      rateCutProb: 50,
-      dxy: 103,
+      nextFOMC: 'Unknown',
+      rateCutProb: 0,
+      dxy: 0,
       dxyChange: 0,
-      vix: 15,
+      vix: 0,
       vixChange: 0,
-      cpi: 3.0,
-      cpiPrev: 3.2,
-      treasury10Y: 4.25
+      cpi: 0,
+      cpiPrev: 0,
+      treasury10Y: 0
     };
   }
   
   getDefaultCryptoMacro() {
     return {
-      fearGreed: 50,
-      fearGreedText: 'Neutral',
-      btcDominance: 52,
+      fearGreed: 0,
+      fearGreedText: 'Unknown',
+      btcDominance: 0,
       btcDomChange: 0,
-      stableMcap: 140,
+      stableMcap: 0,
       stableFlow: 0,
       stableFlowDirection: 'NEUTRAL',
-      totalCryptoMcap: 2.5,
-      defiTVL: 65,
-      fundingRate: 0.01,
-      openInterest: 18,
+      totalCryptoMcap: 0,
+      defiTVL: 0,
+      fundingRate: 0,
+      openInterest: 0,
       exchangeReserves: 0
     };
   }

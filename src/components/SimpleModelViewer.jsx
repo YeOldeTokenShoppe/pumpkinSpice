@@ -982,32 +982,72 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
   const isTablet = windowWidth > 768 && windowWidth <= 1024;
   const isTabletPortrait = isTablet && windowHeight > windowWidth;
   
-  // Load Google Fonts
+  // Load UnifrakturCook Font
   useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
+    // Create @font-face style for local font
+    const fontStyle = document.createElement('style');
+    fontStyle.textContent = `
+      @font-face {
+        font-family: 'UnifrakturCook';
+        src: url('/fonts/UnifrakturCook-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+        font-display: block;
+      }
+    `;
+    document.head.appendChild(fontStyle);
     
-    // Check if font is loaded
+    // Check if font is loaded using FontFaceSet API
     const checkFont = async () => {
       try {
-        await document.fonts.load('700 1em UnifrakturCook');
+        // Create a test element to force font loading
+        const testDiv = document.createElement('div');
+        testDiv.style.fontFamily = 'UnifrakturCook';
+        testDiv.style.fontSize = '1px';
+        testDiv.style.position = 'absolute';
+        testDiv.style.visibility = 'hidden';
+        testDiv.innerHTML = 'Test';
+        document.body.appendChild(testDiv);
+        
+        // Wait for fonts to be ready
+        if (document.fonts) {
+          await document.fonts.ready;
+          console.log('Document fonts ready');
+          
+          // Check if our specific font is loaded
+          const fontLoaded = document.fonts.check('700 1em UnifrakturCook');
+          console.log('UnifrakturCook font check:', fontLoaded);
+          
+          if (!fontLoaded) {
+            // Try to explicitly load the font
+            await document.fonts.load('700 1em UnifrakturCook');
+          }
+        }
+        
+        // Remove test element
+        document.body.removeChild(testDiv);
+        
+        console.log('UnifrakturCook font loaded successfully');
         setFontLoaded(true);
-        // Add fonts-loaded class to body to reveal font elements
         document.body.classList.add('fonts-loaded');
       } catch (e) {
-        // Font might not load, but don't block the page
+        console.error('Error during font loading:', e);
+        // Fallback: just show the heading after a delay
         setTimeout(() => {
+          console.log('Showing heading after timeout');
           setFontLoaded(true);
           document.body.classList.add('fonts-loaded');
-        }, 2000);
+        }, 1500);
       }
     };
+    
+    // Start font loading check
     checkFont();
     
     return () => {
-      document.head.removeChild(link);
+      if (fontStyle.parentNode) {
+        document.head.removeChild(fontStyle);
+      }
     };
   }, []);
   
@@ -1053,6 +1093,70 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         </div>
       )}
       
+      {/* Heading - Show immediately when font loads, independent of other loading */}
+      {(isDesktop || isTablet) && (
+        <div style={{
+          position: 'absolute',
+          left: '0',
+          top: '2rem',
+          width: '50%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '2rem',
+          zIndex: 10002,
+          pointerEvents: 'none',
+          backgroundColor: 'rgba(0, 0, 0, 0.3)', // Subtle black background
+          borderRadius: '10px' // Rounded corners
+        }}>
+          <h1 style={{ 
+            color: '#8e662b', // Golden brown color
+            fontFamily: 'Georgia, serif', // Georgia works reliably
+            textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
+            fontSize: '4rem',
+            fontWeight: 700,
+            lineHeight: 0.8,
+            transform: 'rotate(-8deg) skew(-15deg)',
+            margin: 0,
+            opacity: 1,
+            visibility: 'visible',
+            display: 'block',
+            position: 'relative',
+            zIndex: 10003
+          }}>The Scrolls <br/>of St. GR80</h1>
+        </div>
+      )}
+      
+      {/* Mobile Heading - Show immediately when font loads, independent of other loading */}
+      {windowWidth <= 768 && (
+        <div style={{
+          position: 'absolute',
+          top: '2rem',
+          left: '1rem',
+          right: '1rem',
+          zIndex: 10002,
+          textAlign: 'left',
+          pointerEvents: 'none',
+          backgroundColor: 'rgba(0, 0, 0, 0.3)', // Subtle black background
+          borderRadius: '10px', // Rounded corners
+          padding: '1rem',
+          maxWidth: 'fit-content'
+        }}>
+          <h1 style={{ 
+            color: '#8e662b',
+            fontFamily: 'Georgia, serif', // Georgia works reliably
+            textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
+            fontSize: windowWidth <= 480 ? '2.5rem' : '3rem',
+            fontWeight: 700,
+            lineHeight: 0.8,
+            transform: 'rotate(-8deg) skew(-15deg)',
+            margin: 0,
+            opacity: 1,
+            visibility: 'visible'
+          }}>The Scrolls <br/>of St. GR80</h1>
+        </div>
+      )}
+      
       {/* Main content - hidden while loading */}
       <div style={{
         width: '100%',
@@ -1069,10 +1173,10 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         position: 'relative'
       }}>
         
-        {/* Left Column Overlay - Heading and Scroll (Desktop and Tablet) */}
+        {/* Left Column Overlay - Intro text and Scroll (Desktop and Tablet) */}
         {(isDesktop || isTablet) && (
           <>
-            {/* Heading Section - positioned at top */}
+            {/* Intro text Section - positioned below heading */}
             <div style={{
               position: 'absolute',
               left: '0',
@@ -1084,26 +1188,17 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
               justifyContent: 'flex-start',
               alignItems: 'center',
               padding: '2rem',
-              paddingTop: '4rem',
+              paddingTop: '8rem',
               zIndex: 1000,
               pointerEvents: 'none'
             }}>
-              {/* Heading */}
+              {/* Heading placeholder - keep structure */}
               <div style={{
                 marginBottom: '2rem',
                 textAlign: 'center',
                 pointerEvents: 'none'
               }}>
-                <h1 style={{ 
-                  color: '#8e662b',
-                  fontFamily: '"UnifrakturCook", serif',
-                  textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
-                  fontSize: '4rem',
-                  fontWeight: 900,
-                  lineHeight: 0.8,
-                  transform: 'rotate(-8deg) skew(-15deg)',
-                  margin: 0
-                }}>The Scrolls <br/>of St. GR80</h1>
+                <div style={{ height: '4rem' }}></div>
                 
                 {/* Introduction text */}
                 <div style={{
@@ -1121,7 +1216,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 fontWeight: 400,
                 letterSpacing: '0.02em',
 
-                    lineHeight: 1.6,
+                    lineHeight: 1.3,
                     margin: 0,
                     textAlign: 'center',
                     textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
@@ -1300,11 +1395,11 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         {/* Mobile overlays - only show on mobile */}
         {windowWidth <= 768 && (
           <>
-            {/* Heading overlay for mobile - positioned at top left */}
+            {/* Introduction text for mobile - positioned at top left */}
             <div
               style={{
                 position: 'absolute',
-                top: '2rem',
+                top: '8rem',
                 left: '1rem',
                 right: '1rem',
                 zIndex: 1000,
@@ -1312,17 +1407,6 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 pointerEvents: 'none'
               }}
             >
-              <h1 style={{ 
-                color: '#8e662b',
-                fontFamily: '"UnifrakturCook", serif',
-                textShadow: '3px 3px 5px #000, -1px -1px 5px pink',
-                fontSize: windowWidth <= 480 ? '2.5rem' : '3rem',
-                fontWeight: 900,
-                lineHeight: 0.8,
-                transform: 'rotate(-8deg) skew(-15deg)',
-                margin: 0
-              }}>The Scrolls <br/>of St. GR80</h1>
-              
               {/* Introduction text for mobile - more compact */}
               <div style={{
                 marginTop: '0.8rem',

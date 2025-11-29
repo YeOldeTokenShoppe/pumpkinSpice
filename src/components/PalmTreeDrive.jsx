@@ -2792,9 +2792,9 @@ const PalmsScene = ({ onLoadingChange }) => {
               <MorphingSynthwaveText 
                 startText="REAL80"
                 shouldMorph={true}
-                morphDelay={3000}
+                morphDelay={1000}
                 fontSize={300}
-                scale={1.8}  // Make REAL80/RL80 larger
+                scale={isMobile ? 1.5 : 2.2}  // Increase scale to match "THIS" size
                 spacingX={6}
                 outsideColor="rgba(0, 255, 255, 0)"
                 insideColor="rgba(255, 0, 255, 1)"

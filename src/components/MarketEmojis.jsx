@@ -419,14 +419,14 @@ const MarketEmojis = ({ centerPosition = [1, 15, -9], onDataUpdate, manualFearGr
           }
         }
         
-        // Fallback to alternative.me API
-        const altResponse = await fetch('https://api.alternative.me/fng/?limit=1', {
+        // Fallback to our server-side API endpoint
+        const altResponse = await fetch('/api/fear-greed', {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
           }
         }).catch((err) => {
-          console.error('Alternative.me fetch error:', err);
+          console.error('Fear-greed API fetch error:', err);
           return null;
         });
         

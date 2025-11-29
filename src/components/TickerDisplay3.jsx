@@ -1,17 +1,16 @@
 import { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
 
-const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
+const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
   const meshRef = useRef();
   const canvasRef = useRef();
   const textureRef = useRef();
   const scrollPos = useRef(0);
   const [isInitialized, setIsInitialized] = useState(false);
-  const gltf = useGLTF("/models/alligatorStroll3.glb");
   const lastModelScale = useRef(1); // Track the last known model scale
   const isMountedRef = useRef(true); // Track if component is mounted
+  const hasCalledOnLoad = useRef(false); // Track if onLoad has been called
 
   // Get access to the main Three.js scene
   const threeContext = useThree();
@@ -56,23 +55,21 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
     }
   }, [threeContext, mainScene]);
 
-  // Fetch all data immediately on mount
+  // Fetch all data after a delay to not block initial render
   useEffect(() => {
-    // Fetch both market and crypto data immediately
-    const fetchAllData = async () => {
-      await Promise.all([
-        fetchYahooFinanceData(),
-        fetchCryptoData()
-      ]);
-    };
-    
-    fetchAllData();
+    // Defer API calls to allow smooth animation
+    const initTimer = setTimeout(() => {
+      // Fetch data without blocking - fire and forget
+      fetchYahooFinanceData().catch(err => console.error('Market data fetch error:', err));
+      fetchCryptoData().catch(err => console.error('Crypto data fetch error:', err));
+    }, 1500); // 1.5 second delay to let animations establish
     
     // Set up intervals for regular updates
     const marketDataInterval = setInterval(fetchYahooFinanceData, 300000); // 5 minutes
     const cryptoInterval = setInterval(fetchCryptoData, 300000); // 5 minutes
     
     return () => {
+      clearTimeout(initTimer);
       clearInterval(marketDataInterval);
       clearInterval(cryptoInterval);
     };
@@ -226,10 +223,17 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false }) => {
       meshRef.current = mesh;
 
       setIsInitialized(true);
+      
+      // Call onLoad callback if provided (only once)
+      if (onLoad && !hasCalledOnLoad.current) {
+        hasCalledOnLoad.current = true;
+        console.log('TickerDisplay3 loaded');
+        onLoad();
+      }
     } catch (error) {
       console.error("Failed to initialize ticker display:", error);
     }
-  }, [isReady, mainScene, tickerPosition, tickerRotation, tickerScale]);
+  }, [isReady, mainScene, tickerPosition, tickerRotation, tickerScale, onLoad]);
 
   // Animation loop
   useFrame(() => {

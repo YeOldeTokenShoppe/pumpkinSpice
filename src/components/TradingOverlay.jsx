@@ -52,185 +52,140 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
     return null;
   }, [firestoreResults, candleIndex]);
   
-  // Use passed data if available, otherwise use default mock data
-  const defaultData = {
+  // Initialize with minimal default data structure
+  const getDefaultData = () => ({
     // Model Info
-    modelName: 'RL80-v3.1',
-    modelVersion: 'Temple Edition',
-    rank: 1,
+    modelName: 'RL80-Lighter',
+    modelVersion: 'Initializing...',
+    rank: 0,
     totalModels: 1,
     
-    // Fund Stats
-    fundBalance: 11442.95,
-    initialBalance: 10000.00,
-    dailyPnl: 847.21,
-    dailyPnlPercent: 8.47,
-    totalPnl: 1442.95,
-    totalPnlPercent: 14.43,
+    // Fund Stats - all zeros until connected
+    fundBalance: 0,
+    initialBalance: 0,
+    dailyPnl: 0,
+    dailyPnlPercent: 0,
+    totalPnl: 0,
+    totalPnlPercent: 0,
     
-    // Performance Metrics
-    winRate: 74.8,
-    sharpeRatio: 2.3,
-    maxDrawdown: -8.9,
-    profitFactor: 1.8,
-    avgWin: 142.50,
-    avgLoss: -67.30,
+    // Performance Metrics - zeros until we have real data
+    winRate: 0,
+    sharpeRatio: 0,
+    maxDrawdown: 0,
+    profitFactor: 0,
+    avgWin: 0,
+    avgLoss: 0,
     
     // Strategy Evolution
-    iterationCount: 127,
-    lastImprovement: '2m ago',
-    strategyConfidence: 86.5,
-    learningRate: 0.001,
-    explorationRate: 0.15,
+    iterationCount: 0,
+    lastImprovement: 'Waiting...',
+    strategyConfidence: 0,
+    learningRate: 0,
+    explorationRate: 0,
     
     // AI Model Chat/Thoughts  
     modelThoughts: [
       {
-        timestamp: 'Nov 26, 11:26:48 PM',
-        type: 'trading',
-        message: "Holding BNB and SOL longs - uptrend remains supportive with stops at key support levels for risk management.",
-        consultant: 'market'
-      },
-      {
-        timestamp: 'Nov 26, 11:26:45 PM',
-        type: 'trading',
-        message: "Current positions performing well: BTC/USD long showing +2.13% with 6-hour trend intact. Maintaining long bias across portfolio.",
-        consultant: null
-      },
-      {
-        timestamp: 'Nov 26, 11:26:43 PM',
-        type: 'trading',
-        message: "Adjusted position sizing based on volatility metrics. Increased allocation to ETH given strong volume absorption and technical setup.",
-        consultant: 'market'
-      },
-      {
-        timestamp: 'Nov 26, 11:26:40 PM',
-        type: 'market',
-        message: "Market sentiment: Risk-on with VIX < 15. DXY weakness supporting crypto positions. Monitoring FOMC minutes for policy shifts.",
-        consultant: 'macro'
-      },
-      {
-        timestamp: 'Nov 26, 11:26:35 PM',
-        type: 'learning',
-        message: "Strategy iteration #127: Win rate improved to 74.8% after optimizing entry timing. Exploration rate at 15% for new pattern discovery.",
-        consultant: null
-      },
-      {
-        timestamp: 'Nov 26, 11:26:32 PM',
-        type: 'sentiment',
-        message: "Social sentiment bullish on SOL with 87% positive mentions. Whale accumulation detected on-chain. Retail FOMO indicators still moderate.",
-        consultant: 'sentiment'
+        timestamp: new Date().toLocaleString(),
+        type: 'system',
+        message: 'Waiting for market data...',
+        consultant: 'system'
       }
     ],
     
-    // Mini-Assistant Consultants
+    // Mini-Assistant Consultants - Initialize with inactive status
     consultants: {
       market: {
         name: 'Market Analyst',
         icon: '📊',
-        status: 'active',
-        confidence: 92,
-        lastSignal: 'BULLISH',
-        contribution: 35
+        status: 'inactive',
+        confidence: 0,
+        lastSignal: 'WAITING',
+        contribution: 0
       },
       macro: {
         name: 'Macro Specialist',
         icon: '🌍',
-        status: 'active',
-        confidence: 78,
-        lastSignal: 'RISK-ON',
-        contribution: 30
+        status: 'inactive',
+        confidence: 0,
+        lastSignal: 'WAITING',
+        contribution: 0
       },
       sentiment: {
         name: 'Sentiment Oracle',
         icon: '💭',
-        status: 'active',
-        confidence: 85,
-        lastSignal: 'GREED',
-        contribution: 35
+        status: 'inactive',
+        confidence: 0,
+        lastSignal: 'WAITING',
+        contribution: 0
       }
     },
     
-    // Community
-    stakersCount: 1337,
-    tvl: 888888.88,
-    apy: 69.42,
-    performanceScore: 8.9,
-    activePositions: [
-      { symbol: 'ETH/USDT', side: 'LONG', size: 2.5, entry: 3450.00, current: 3512.50, pnl: 156.25, pnlPercent: 1.81 },
-      { symbol: 'SOL/USDT', side: 'SHORT', size: 100, entry: 142.80, current: 141.20, pnl: 160.00, pnlPercent: 1.12 },
-      { symbol: 'BTC/USDT', side: 'LONG', size: 0.15, entry: 65800, current: 67200, pnl: 210.00, pnlPercent: 2.13 },
-    ],
-    recentTrades: [
-      { time: '17:42', symbol: 'DOGE', side: 'BUY', amount: '10K', price: 0.385, pnl: '+$142', status: 'exceptional' },
-      { time: '16:21', symbol: 'AVAX', side: 'SELL', amount: '50', price: 42.10, pnl: '+$89', status: 'profit' },
-      { time: '14:55', symbol: 'LINK', side: 'BUY', amount: '200', price: 18.95, pnl: '-$23', status: 'loss' },
-      { time: '13:12', symbol: 'ARB', side: 'BUY', amount: '1.5K', price: 1.82, pnl: '+$217', status: 'exceptional' },
-    ],
-    nextAnalysis: '00:14:32',
-    agentStatus: 'active', // active, analyzing, trading
-    microActions: [
-      { time: '12s ago', action: 'Adjusted BTC stop-loss to $96,200' },
-      { time: '45s ago', action: 'Monitoring SOL breakout pattern' },
-      { time: '2m ago', action: 'Risk check passed - positions within limits' },
-      { time: '3m ago', action: 'Tightened ETH trailing stop by 0.5%' }
-    ],
-    winStreak: 13,
-    profitMultiplier: 1.77,
-    // Macro Economic Data
+    // Community - zeros until connected
+    stakersCount: 0,
+    tvl: 0,
+    apy: 0,
+    performanceScore: 0,
+    activePositions: [],
+    recentTrades: [],
+    nextAnalysis: '--:--:--',
+    agentStatus: 'inactive',
+    microActions: [],
+    winStreak: 0,
+    profitMultiplier: 0,
+    
+    // Macro Economic Data - will be populated from API
     macroData: {
-      marketRegime: 'RISK_ON', // RISK_ON, RISK_OFF, NEUTRAL
-      riskScore: 72, // 0-100 scale
-      
-      // Traditional Macro
-      fedRate: 5.50,
-      fedRateChange: -0.25,
-      nextFOMC: 'Mar 20',
-      rateCutProb: 85,
-      
-      dxy: 103.42, // Dollar Index
-      dxyChange: -0.8,
-      vix: 14.2, // Volatility Index
-      vixChange: -2.1,
-      
-      cpi: 3.1,
-      cpiPrev: 3.4,
-      treasury10Y: 4.25,
-      
-      // Crypto Macro
-      btcDominance: 52.3,
-      btcDomChange: 1.2,
-      fearGreed: 72, // 0-100, current: Greed
-      fearGreedText: 'Greed',
-      
-      stableMcap: 140.2, // Billions
-      stableFlow: 2.8, // Billions 24h
-      stableFlowDirection: 'IN',
-      
-      totalCryptoMcap: 2.68, // Trillions
-      defiTVL: 68.5, // Billions
-      
-      // Exchange Metrics
-      fundingRate: 0.012, // Perpetual funding
-      openInterest: 18.7, // Billions
-      exchangeReserves: -2.3, // % change (negative = outflows)
-      
-      // Risk Indicators
-      riskMultiplier: 1.2, // Position sizing multiplier
-      signals: ['Fed Dovish', 'DXY Weak', 'Stables Flowing In']
+      marketRegime: 'LOADING',
+      riskScore: 0,
+      fedRate: 0,
+      fedRateChange: 0,
+      nextFOMC: 'Loading...',
+      rateCutProb: 0,
+      dxy: 0,
+      dxyChange: 0,
+      vix: 0,
+      vixChange: 0,
+      cpi: 0,
+      cpiPrev: 0,
+      treasury10Y: 0,
+      btcDominance: 0,
+      btcDomChange: 0,
+      fearGreed: 0,
+      fearGreedText: 'Loading',
+      stableMcap: 0,
+      stableFlow: 0,
+      stableFlowDirection: 'NEUTRAL',
+      totalCryptoMcap: 0,
+      defiTVL: 0,
+      fundingRate: 0,
+      openInterest: 0,
+      exchangeReserves: 0,
+      riskMultiplier: 1.0,
+      signals: ['Loading...']
     }
-  };
+  });
   
-  const [tradingData, setTradingData] = useState(defaultData);
+  const [tradingData, setTradingData] = useState(getDefaultData());
 
   // Update trading data when props change
   useEffect(() => {
     if (data && isConnected) {
-      // Use real data from paper trading bot when connected
-      setTradingData(data);
-    } else {
-      // Use default paper trading simulation data
-      setTradingData(defaultData);
+      // Merge real data from Lighter API with any missing fields
+      setTradingData(prevData => ({
+        ...prevData,
+        ...data,
+        // Ensure consultants are properly formatted if they exist in data
+        consultants: data.consultants || prevData.consultants,
+        // Ensure macro data is properly merged
+        macroData: {
+          ...prevData.macroData,
+          ...(data.macroData || {})
+        }
+      }));
+    } else if (!isConnected) {
+      // Reset to default when disconnected
+      setTradingData(getDefaultData());
     }
   }, [data, isConnected]);
 
@@ -248,25 +203,51 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
     return () => window.removeEventListener('resize', checkViewport);
   }, []);
 
+  // Load chat history on mount
   useEffect(() => {
-    if (!show) return;
-    
-    const updateData = () => {
-      setTradingData(prev => ({
-        ...prev,
-        fundBalance: prev.fundBalance + (Math.random() - 0.3) * 100,
-        dailyPnl: prev.dailyPnl + (Math.random() - 0.5) * 50,
-        activePositions: prev.activePositions.map(pos => ({
-          ...pos,
-          current: pos.current * (1 + (Math.random() - 0.5) * 0.002),
-          pnl: pos.pnl + (Math.random() - 0.5) * 10
-        }))
-      }));
+    const loadChatHistory = async () => {
+      try {
+        const response = await fetch('/api/team-chat-history?limit=20');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.messages && data.messages.length > 0) {
+            console.log(`Loaded ${data.messages.length} historical chat messages`);
+            
+            // Convert historical messages to the format expected by modelThoughts
+            const historicalThoughts = data.messages.map(msg => ({
+              id: msg.id,
+              agent: msg.agent,
+              type: msg.agent,
+              consultant: msg.agent,
+              message: msg.message,
+              timestamp: new Date(msg.createdAt || msg.timestamp).toLocaleTimeString(),
+              icon: msg.agent === 'rl80' ? '🤖' : 
+                    msg.agent === 'sentiment' ? '📊' :
+                    msg.agent === 'market' ? '📈' :
+                    msg.agent === 'macro' ? '🌍' : '💬',
+              color: msg.agent === 'rl80' ? '#00ff00' :
+                     msg.agent === 'sentiment' ? '#ff9800' :
+                     msg.agent === 'market' ? '#2196f3' :
+                     msg.agent === 'macro' ? '#9c27b0' : '#888'
+            }));
+            
+            // Update the trading data with historical messages
+            setTradingData(prev => ({
+              ...prev,
+              modelThoughts: [...historicalThoughts, ...prev.modelThoughts]
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      }
     };
     
-    const interval = setInterval(updateData, 3000);
-    return () => clearInterval(interval);
-  }, [show]);
+    loadChatHistory();
+  }, []);
+
+  // Remove the random data update effect - data should only come from API
+  // Real-time updates will come from the Lighter API websocket connection
 
   if (!show) return null;
 
@@ -1076,7 +1057,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ color: '#888', fontSize: '10px' }}>BTC Dominance</span>
                     <span style={{ color: '#fff', fontSize: '11px' }}>
-                      {tradingData.macroData.btcDominance}%
+                      {tradingData.macroData.btcDominance?.toFixed(1) || '0.0'}%
                       <span style={{
                         color: tradingData.macroData.btcDomChange > 0 ? '#ffdd00' : '#00ff00',
                         fontSize: '10px',
@@ -1095,7 +1076,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                       fontSize: '11px',
                       fontWeight: 'bold'
                     }}>
-                      {tradingData.macroData.stableFlowDirection === 'IN' ? '+' : '-'}${tradingData.macroData.stableFlow}B
+                      {tradingData.macroData.stableFlowDirection === 'IN' ? '+' : '-'}${tradingData.macroData.stableFlow?.toFixed(2) || '0.00'}B
                     </span>
                   </div>
 
@@ -1319,8 +1300,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         width: 'min(320px, 25vw)',
         minWidth: '260px',
         maxWidth: '340px',
+        // Dynamic height: from top (120px) to just above bottom panel (20px + bottom panel height)
+        // Bottom panel starts at bottom: 20px and we want at least 20px gap
+        height: 'calc(100vh - 120px - 40vh - 60px)', // Full height minus top, bottom panel, and gaps
+        maxHeight: 'calc(100vh - 480px)', // Ensure minimum space for bottom panel
+        minHeight: '200px', // Minimum usable height
         boxShadow: '0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 255, 0, 0.05)',
-        backdropFilter: 'blur(10px)'
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
         {/* Tab Navigation */}
         <div style={{
@@ -1386,12 +1374,12 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         
         {/* Tab Content Container */}
         <div className="custom-scrollbar" style={{ 
-          maxHeight: 'calc(100vh - 600px)', 
-          minHeight: '200px',
+          flex: 1,
           overflowY: 'auto',
           position: 'relative',
           scrollbarWidth: 'thin',
-          scrollbarColor: '#00ff00 rgba(0, 255, 0, 0.1)'
+          scrollbarColor: '#00ff00 rgba(0, 255, 0, 0.1)',
+          minHeight: '150px'
         }}>
         
         {/* Summary Tab */}
@@ -2008,8 +1996,14 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           width: 'min(320px, 25vw)',
           minWidth: '260px',
           maxWidth: '340px',
+          // Dynamic height: use up to 40% of viewport or available space
+          height: 'min(40vh, calc(100vh - 120px - 200px - 60px))', // 40% or remaining space
+          minHeight: '320px', // Minimum for candle display
+          maxHeight: '450px', // Cap for very tall screens
           boxShadow: '0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 255, 0, 0.05)',
-          backdropFilter: 'blur(10px)'
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
         {/* Header */}
         <div style={{
@@ -2095,9 +2089,14 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           width: 'min(320px, 25vw)',
           minWidth: '260px',
           maxWidth: '340px',
-          maxHeight: '350px',
+          // Match bottom left panel height
+          height: 'min(40vh, calc(100vh - 120px - 200px - 60px))',
+          minHeight: '250px', // Minimum for chat display
+          maxHeight: '450px',
           boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)',
-          backdropFilter: 'blur(10px)'
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
           {/* Chat Header */}
           <div style={{
@@ -2108,8 +2107,16 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             paddingBottom: '10px',
             borderBottom: '2px solid rgba(0, 255, 0, 0.4)'
           }}>
-            <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '13px' }}>
-              🧠 RL80 THOUGHTS
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '13px' }}>
+                💬 TRADING TEAM CHAT
+              </div>
+              <div style={{ display: 'flex', gap: '8px', fontSize: '9px', color: '#666' }}>
+                <span title="RL80 - Lead Trader">🤖</span>
+                <span title="Sentiment Oracle">🔮</span>
+                <span title="Market Analyst">📊</span>
+                <span title="Macro Specialist">🌍</span>
+              </div>
             </div>
             <div style={{
               display: 'flex',
@@ -2129,80 +2136,126 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           
           {/* Chat Messages */}
           <div style={{
+            flex: 1,
             overflowY: 'auto',
-            maxHeight: '280px',
-            paddingRight: '5px'
+            paddingRight: '5px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
           }}>
-            {tradingData.modelThoughts.map((thought, idx) => (
-              <div key={idx} style={{
-                marginBottom: '12px',
-                padding: '10px',
-                background: thought.type === 'learning' ? 'rgba(255, 221, 0, 0.05)' :
-                           thought.type === 'trading' ? 'rgba(0, 255, 0, 0.05)' :
-                           thought.type === 'market' ? 'rgba(0, 150, 255, 0.05)' :
-                           thought.type === 'sentiment' ? 'rgba(255, 0, 255, 0.05)' :
-                           'rgba(255, 255, 255, 0.02)',
-                borderLeft: `2px solid ${
-                  thought.type === 'learning' ? '#ffdd00' :
-                  thought.type === 'trading' ? '#00ff00' :
-                  thought.type === 'market' ? '#0096ff' :
-                  thought.type === 'sentiment' ? '#ff00ff' :
-                  '#888'
-                }`,
-                borderRadius: '3px'
-              }}>
-                <div style={{
+            {tradingData.modelThoughts.map((thought, idx) => {
+              // Determine sender based on consultant field or type
+              const sender = thought.consultant || 
+                           (thought.type === 'sentiment' ? 'sentiment' :
+                            thought.type === 'market' ? 'market' :
+                            thought.type === 'macro' ? 'macro' : 'rl80');
+              
+              const isRL80 = sender === 'rl80' || (!thought.consultant && thought.type === 'trading');
+              
+              // Character configs
+              const characters = {
+                rl80: { name: 'RL80', icon: '🤖', color: '#00ff00', align: 'right' },
+                sentiment: { name: 'Sentiment', icon: '🔮', color: '#ff00ff', align: 'left' },
+                market: { name: 'Market', icon: '📊', color: '#0096ff', align: 'left' },
+                macro: { name: 'Macro', icon: '🌍', color: '#ffdd00', align: 'left' },
+                system: { name: 'System', icon: '⚙️', color: '#888', align: 'center' }
+              };
+              
+              const char = characters[sender] || characters.rl80;
+              
+              return (
+                <div key={idx} style={{
                   display: 'flex',
-                  justifyContent: 'space-between',
+                  justifyContent: char.align === 'right' ? 'flex-end' : 
+                                 char.align === 'center' ? 'center' : 'flex-start',
                   marginBottom: '4px'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{
-                      color: thought.type === 'learning' ? '#ffdd00' :
-                             thought.type === 'trading' ? '#00ff00' :
-                             thought.type === 'market' ? '#0096ff' :
-                             thought.type === 'sentiment' ? '#ff00ff' :
-                             '#888',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase'
-                    }}>
-                      {thought.type === 'learning' ? '🧠 LEARNING' :
-                       thought.type === 'trading' ? '📈 TRADING' :
-                       thought.type === 'market' ? '🌍 MARKET' :
-                       thought.type === 'sentiment' ? '💭 SENTIMENT' : '💡 INSIGHT'}
-                    </span>
-                    {thought.consultant && (
-                      <span style={{
-                        padding: '1px 4px',
-                        background: 'rgba(255, 221, 0, 0.2)',
-                        border: '1px solid rgba(255, 221, 0, 0.4)',
-                        borderRadius: '2px',
-                        fontSize: '8px',
-                        color: '#ffdd00'
-                      }}>
-                        via {thought.consultant === 'market' ? '📊' : 
-                             thought.consultant === 'macro' ? '🌍' : 
-                             thought.consultant === 'sentiment' ? '💭' : ''}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{
-                    color: '#666',
-                    fontSize: '9px'
+                  <div style={{
+                    maxWidth: '85%',
+                    display: 'flex',
+                    flexDirection: char.align === 'right' ? 'row-reverse' : 'row',
+                    gap: '6px',
+                    alignItems: 'flex-start'
                   }}>
-                    {thought.timestamp}
-                  </span>
+                    {/* Avatar */}
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${char.color}22 0%, ${char.color}44 100%)`,
+                      border: `1px solid ${char.color}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      flexShrink: 0
+                    }}>
+                      {char.icon}
+                    </div>
+                    
+                    {/* Message Bubble */}
+                    <div style={{
+                      background: char.align === 'right' ? 
+                                `linear-gradient(135deg, ${char.color}15 0%, ${char.color}08 100%)` :
+                                'rgba(0, 0, 0, 0.3)',
+                      border: `1px solid ${char.color}33`,
+                      borderRadius: char.align === 'right' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                      padding: '8px 10px',
+                      position: 'relative'
+                    }}>
+                      {/* Sender Name & Time */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '4px',
+                        gap: '12px'
+                      }}>
+                        <span style={{
+                          color: char.color,
+                          fontSize: '9px',
+                          fontWeight: 'bold',
+                          textTransform: 'uppercase'
+                        }}>
+                          {char.name}
+                        </span>
+                        <span style={{
+                          color: '#555',
+                          fontSize: '8px'
+                        }}>
+                          {thought.timestamp}
+                        </span>
+                      </div>
+                      
+                      {/* Message Content */}
+                      <div style={{
+                        color: '#ddd',
+                        fontSize: '11px',
+                        lineHeight: '1.4'
+                      }}>
+                        {thought.message}
+                      </div>
+                      
+                      {/* Message Type Badge */}
+                      {thought.type && thought.type !== 'trading' && (
+                        <div style={{
+                          marginTop: '4px',
+                          display: 'inline-block',
+                          padding: '2px 5px',
+                          background: 'rgba(0, 0, 0, 0.5)',
+                          borderRadius: '3px',
+                          fontSize: '8px',
+                          color: '#666',
+                          textTransform: 'uppercase'
+                        }}>
+                          {thought.type}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div style={{
-                  color: '#ddd',
-                  fontSize: '11px',
-                  lineHeight: '1.5'
-                }}>
-                  {thought.message}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -2221,8 +2274,14 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         width: 'min(320px, 25vw)',
         minWidth: '260px',
         maxWidth: '340px',
+        // Match left panel height calculation
+        height: 'calc(100vh - 120px - 40vh - 60px)',
+        maxHeight: 'calc(100vh - 480px)',
+        minHeight: '200px',
         boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)',
-        backdropFilter: 'blur(10px)'
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
         {/* Tab Navigation */}
         <div style={{
@@ -2286,6 +2345,16 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           </button>
         </div>
         
+        {/* Tab Content Container with Scrolling */}
+        <div className="custom-scrollbar" style={{
+          flex: 1,
+          overflowY: 'auto',
+          position: 'relative',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#00ff00 rgba(0, 255, 0, 0.1)',
+          minHeight: '150px'
+        }}>
+        
         {/* Market Analyst Tab */}
         {rightTopTab === 'market' && (
           <>
@@ -2320,9 +2389,87 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         {rightTopTab === 'macro' && (
           <>
         {/* Risk Score Bar */}
-        <div style={{ marginBottom: '15px' }}>
+        <div style={{ marginBottom: '15px', position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-            <span style={{ color: '#888', fontSize: '11px' }}>MARKET RISK APPETITE</span>
+            <span style={{ 
+              color: '#888', 
+              fontSize: '11px',
+              cursor: 'help',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              position: 'relative'
+            }}
+            title="Click for details"
+            onMouseEnter={(e) => {
+              const tooltip = e.currentTarget.querySelector('.risk-tooltip');
+              if (tooltip) tooltip.style.display = 'block';
+            }}
+            onMouseLeave={(e) => {
+              const tooltip = e.currentTarget.querySelector('.risk-tooltip');
+              if (tooltip) tooltip.style.display = 'none';
+            }}>
+              MARKET RISK APPETITE
+              <span style={{ fontSize: '9px', opacity: 0.6 }}>ⓘ</span>
+              
+              {/* Tooltip */}
+              <div className="risk-tooltip" style={{
+                display: 'none',
+                position: 'absolute',
+                top: '20px',
+                left: '0',
+                width: '280px',
+                background: 'rgba(0, 0, 0, 0.95)',
+                border: '1px solid #00ff00',
+                borderRadius: '6px',
+                padding: '12px',
+                fontSize: '10px',
+                lineHeight: '1.5',
+                zIndex: 10000,
+                boxShadow: '0 4px 12px rgba(0, 255, 0, 0.2)',
+                color: '#ddd'
+              }}>
+                <div style={{ marginBottom: '8px', color: '#00ff00', fontWeight: 'bold', fontSize: '11px' }}>
+                  📊 Live Risk Calculation
+                </div>
+                
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>Components:</strong>
+                </div>
+                <div style={{ marginLeft: '8px', marginBottom: '8px', fontSize: '9px' }}>
+                  • <span style={{ color: '#00ff00' }}>Price Action (20%)</span> - BTC/ETH momentum<br/>
+                  • <span style={{ color: '#00ff00' }}>Sentiment (25%)</span> - Fear & Greed Index<br/>
+                  • <span style={{ color: '#00ff00' }}>Capital Flows (20%)</span> - Stablecoin in/out<br/>
+                  • <span style={{ color: '#00ff00' }}>Volatility (15%)</span> - VIX levels<br/>
+                  • <span style={{ color: '#00ff00' }}>Structure (10%)</span> - Funding, OI, dominance<br/>
+                  • <span style={{ color: '#00ff00' }}>Macro (10%)</span> - Dollar, traditional markets
+                </div>
+                
+                <div style={{ marginBottom: '6px', borderTop: '1px solid rgba(0, 255, 0, 0.2)', paddingTop: '6px' }}>
+                  <strong>Score Ranges:</strong>
+                </div>
+                <div style={{ fontSize: '9px', lineHeight: '1.6' }}>
+                  <span style={{ color: '#ff3333' }}>80-100</span>: Extreme Greed (take profits)<br/>
+                  <span style={{ color: '#ff9500' }}>65-79</span>: Greed (stay cautious)<br/>
+                  <span style={{ color: '#00ff00' }}>55-64</span>: Risk On (favorable)<br/>
+                  <span style={{ color: '#888' }}>45-54</span>: Neutral (wait)<br/>
+                  <span style={{ color: '#ffdd00' }}>35-44</span>: Risk Off (reduce)<br/>
+                  <span style={{ color: '#ff9500' }}>20-34</span>: Fear (contrarian)<br/>
+                  <span style={{ color: '#ff3333' }}>0-19</span>: Extreme Fear (potential bottom)
+                </div>
+                
+                <div style={{ 
+                  marginTop: '8px', 
+                  paddingTop: '6px', 
+                  borderTop: '1px solid rgba(0, 255, 0, 0.2)',
+                  fontSize: '9px',
+                  color: '#666',
+                  fontStyle: 'italic'
+                }}>
+                  Updates every 15 minutes with live market data
+                </div>
+              </div>
+            </span>
             <span style={{ 
               color: tradingData.macroData.riskScore > 70 ? '#00ff00' :
                     tradingData.macroData.riskScore > 30 ? '#ffdd00' : '#ff3333',
@@ -2357,7 +2504,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             <div style={{ fontSize: '11px' }}>
               <div style={{ marginBottom: '4px' }}>
                 <span style={{ color: '#888' }}>FED: </span>
-                <span style={{ color: '#fff' }}>{tradingData.macroData.fedRate}%</span>
+                <span style={{ color: '#fff' }}>{tradingData.macroData.fedRate?.toFixed(2) || '0.00'}%</span>
                 <span style={{
                   color: tradingData.macroData.fedRateChange < 0 ? '#00ff00' : '#ff3333',
                   marginLeft: '4px'
@@ -2405,15 +2552,31 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               </div>
               <div style={{ marginBottom: '4px' }}>
                 <span style={{ color: '#888' }}>BTC.D: </span>
-                <span style={{ color: '#fff' }}>{tradingData.macroData.btcDominance}%</span>
+                <span style={{ color: '#fff' }}>{tradingData.macroData.btcDominance?.toFixed(1) || '0.0'}%</span>
               </div>
-              <div>
+              <div style={{ marginBottom: '4px' }}>
                 <span style={{ color: '#888' }}>Funding: </span>
                 <span style={{
                   color: Math.abs(tradingData.macroData.fundingRate) > 0.01 ? '#ffdd00' : '#00ff00'
                 }}>
                   {(tradingData.macroData.fundingRate * 100).toFixed(3)}%
                 </span>
+              </div>
+              <div>
+                <span style={{ color: '#888' }}>Open Int: </span>
+                <span style={{ color: '#fff' }}>
+                  ${tradingData.macroData.openInterest?.toFixed(1) || '0.0'}B
+                </span>
+                {tradingData.macroData.openInterestChange !== 0 && (
+                  <span style={{
+                    color: tradingData.macroData.openInterestChange > 0 ? '#00ff00' : '#ff3333',
+                    fontSize: '9px',
+                    marginLeft: '4px'
+                  }}>
+                    {tradingData.macroData.openInterestChange > 0 ? '+' : ''}
+                    {tradingData.macroData.openInterestChange?.toFixed(1) || '0.0'}%
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -2437,7 +2600,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 fontSize: '16px',
                 fontWeight: 'bold'
               }}>
-                {tradingData.macroData.stableFlowDirection === 'IN' ? '+' : '-'}${tradingData.macroData.stableFlow}B
+                {tradingData.macroData.stableFlowDirection === 'IN' ? '+' : '-'}${tradingData.macroData.stableFlow?.toFixed(2) || '0.00'}B
               </div>
             </div>
             <div style={{
@@ -2567,6 +2730,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             </div>
           </>
         )}
+        </div>{/* End of scrollable tab content container */}
       </div>
 
     </>
