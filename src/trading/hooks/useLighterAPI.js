@@ -10,7 +10,7 @@ export function useLighterAPI(config = {}) {
   const [positions, setPositions] = useState([]);
   const [orders, setOrders] = useState([]);
   const [performance, setPerformance] = useState(null);
-  const [agentThoughts, setAgentThoughts] = useState([]); // Start empty, will load from Firestore
+  const [agentThoughts, setAgentThoughts] = useState([]);
   const [marketData, setMarketData] = useState({});
   
   // Rate limiting for Grok API - track last call time
@@ -325,7 +325,7 @@ export function useLighterAPI(config = {}) {
   useEffect(() => {
     const loadRecentChatHistory = async () => {
       try {
-        const response = await fetch('/api/team-chat-history?action=recent&limit=5'); // Just load last 5 messages
+        const response = await fetch('/api/team-chat-history?action=recent&limit=10');
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.messages && result.messages.length > 0) {
@@ -364,11 +364,9 @@ export function useLighterAPI(config = {}) {
 
   // Format data for TradingOverlay
   const generateTeamChat = async () => {
-    // Check if agents are enabled via environment variables
-    if (process.env.NEXT_PUBLIC_AGENTS_ENABLED === 'false') {
-      console.log('[Agent Control] All agents disabled via NEXT_PUBLIC_AGENTS_ENABLED');
-      return;
-    }
+    // TEMPORARILY DISABLED - No agent calls this evening
+    console.log('Agent calls temporarily disabled for the evening');
+    return;
     
     try {
       // Check if we should exclude Grok (sentiment) due to rate limiting
@@ -376,33 +374,15 @@ export function useLighterAPI(config = {}) {
       const now = Date.now();
       const canCallGrok = !lastGrokCall || (now - lastGrokCall) > ONE_HOUR;
       
-      // Build agent list based on environment settings and rate limits
-      let availableAgents = [];
-      
-      // Check each agent's individual enable setting
-      if (process.env.NEXT_PUBLIC_AGENT_MARKET !== 'false') {
-        availableAgents.push('market');
-      }
-      if (process.env.NEXT_PUBLIC_AGENT_MACRO !== 'false') {
-        availableAgents.push('macro');
-      }
-      if (process.env.NEXT_PUBLIC_AGENT_RL80 !== 'false') {
-        availableAgents.push('rl80');
-      }
-      if (process.env.NEXT_PUBLIC_AGENT_SENTIMENT !== 'false' && canCallGrok) {
+      // Build agent list based on rate limits
+      let availableAgents = ['market', 'macro', 'rl80'];
+      if (canCallGrok) {
         availableAgents.push('sentiment');
-      } else if (process.env.NEXT_PUBLIC_AGENT_SENTIMENT !== 'false' && !canCallGrok) {
+      } else {
         console.log(`Grok rate limited. Last call was ${Math.round((now - lastGrokCall) / 1000 / 60)} minutes ago. Waiting for 1 hour cooldown.`);
       }
       
-      // Check if any agents are available
-      if (availableAgents.length === 0) {
-        console.log('[Agent Control] No agents available or all are disabled');
-        return;
-      }
-      
       const currentAgent = availableAgents[Math.floor(Math.random() * availableAgents.length)];
-      console.log('[Agent Control] Available agents:', availableAgents, 'Selected:', currentAgent);
       
       // Create context from current market data - NO HARDCODED VALUES
       console.log('Building context - fearGreedIndex:', fearGreedIndex);
@@ -560,8 +540,15 @@ export function useLighterAPI(config = {}) {
       learningRate: positions.length > 0 ? positions[0]?.size || 0.01 : 0.01, // Avg position size
       explorationRate: (orders.length / 10) || 0, // Order activity (0-1 scale)
       
-      // AI Model Chat/Thoughts - Just show what's in Firestore, no loading messages
-      modelThoughts: agentThoughts,
+      // AI Model Chat/Thoughts - Use real agent thoughts or fallback
+      modelThoughts: agentThoughts.length > 0 ? agentThoughts : [
+        {
+          timestamp: new Date().toLocaleString(),
+          type: 'system',
+          message: isConnected ? 'AI Agent active. Analyzing markets...' : 'Initializing AI agent...',
+          consultant: 'system'
+        }
+      ],
       
       // Current State
       positions: positions || [],

@@ -13,7 +13,7 @@ import { collection, query, getDocs, limit, orderBy, onSnapshot } from 'firebase
 import { m } from 'framer-motion'
 
 
-function HandsModel({ mousePosition, scrollY, onLoad, hasReachedSection }) {
+function HandsModel({ mousePosition, scrollY, onLoad, hasReachedSection, isInView }) {
   const gltf = useGLTF('/models/hands2.glb')
   const hasReportedLoad = useRef(false)
   const rightHandRef = useRef()
@@ -45,6 +45,9 @@ function HandsModel({ mousePosition, scrollY, onLoad, hasReachedSection }) {
   const canvasPoolRef = useRef([]) // Pool of canvas elements to reuse
   const materialPoolRef = useRef([]) // Pool of materials to reuse
   const { camera } = useThree()
+  const [swivelRotation, setSwivelRotation] = useState(0) // Track swivel rotation progress
+  const swivelDirection = useRef('forward') // Track animation direction
+  const animationStartTime2 = useRef(null) // Track animation start time
 
   // COMMENTED OUT: Image advance functionality for memory testing
   // const handleImageAdvance = useCallback(() => {
@@ -420,159 +423,19 @@ function HandsModel({ mousePosition, scrollY, onLoad, hasReachedSection }) {
   }, [randomUserImages])
 
   // COMMENTED OUT: Complex texture management
-  /*
-    const imageData = randomUserImages[currentImageIndex]
-    
-    // Add comprehensive null checking
-    if (!imageData) {
-      console.error('Image data is null at index:', currentImageIndex)
-      return
-    }
-    
-    if (!imageData.image) {
-      console.error('Image data has no image property:', imageData)
-      return
-    }
-    
-    // console.log('Applying image to candle Label2:', imageData)
-    
-    // Store reference to previous material (don't dispose immediately)
-    const previousMaterial = candleLabel2Ref.current.material
-    
-    // AGGRESSIVE: Clear pools if too large
-    if (texturePoolRef.current.length > 5) {
-      texturePoolRef.current.forEach(disposeTexture)
-      texturePoolRef.current = []
-    }
-    if (canvasPoolRef.current.length > 3) {
-      canvasPoolRef.current.forEach(canvas => {
-        canvas.width = 1
-        canvas.height = 1
-      })
-      canvasPoolRef.current = []
-    }
-    if (materialPoolRef.current.length > 3) {
-      materialPoolRef.current.forEach(disposeMaterial)
-      materialPoolRef.current = []
-    }
-    
-    // Use even smaller canvas to reduce memory usage
-    const canvas = document.createElement('canvas')
-    canvas.width = 128 // Further reduced
-    canvas.height = 128 // Further reduced
-    const ctx = canvas.getContext('2d')
-    
-    if (imageData && imageData.image) {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      
-      img.onload = () => {
-        // Draw image normally (no rotation/flip)
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-        
-        // Add username overlay if available
-        if (imageData.username) {
-          // Add semi-transparent background for text at bottom
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-          ctx.fillRect(0, canvas.height - 25, canvas.width, 25)
-          
-          // Draw username with smaller font for 128px canvas
-          ctx.fillStyle = '#ffffff'
-          ctx.font = 'bold 12px Arial' // Much smaller for 128px canvas
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'middle'
-          
-          // Add text shadow for better readability
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
-          ctx.shadowBlur = 2
-          ctx.shadowOffsetX = 1
-          ctx.shadowOffsetY = 1
-          
-          ctx.fillText(imageData.username, canvas.width / 2, canvas.height - 12)
-        }
-        
-        // AGGRESSIVE: Create minimal texture
-        const texture = new THREE.CanvasTexture(canvas)
-        texture.needsUpdate = true
-        texture.generateMipmaps = false
-        texture.minFilter = THREE.NearestFilter // Even less memory
-        texture.magFilter = THREE.NearestFilter
-        texture.wrapS = THREE.ClampToEdgeWrapping
-        texture.wrapT = THREE.ClampToEdgeWrapping
-        texture.flipY = false // Reduce processing
-        
-        // Add to texture pool for tracking
-        texturePoolRef.current.push(texture)
-        
-        // AGGRESSIVE: Use basic material to reduce memory
-        const newMaterial = new THREE.MeshBasicMaterial({
-          map: texture,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: imageTransition ? 0.8 : 1.0
-        })
-        
-        candleLabel2Ref.current.material = newMaterial
-        candleLabel2Ref.current.material.needsUpdate = true
-        
-        // SAFER: Queue disposal instead of immediate disposal
-        if (previousMaterial && previousMaterial !== newMaterial) {
-          // Add to disposal queue with longer delay
-          setTimeout(() => {
-            try {
-              if (previousMaterial && previousMaterial !== candleLabel2Ref.current?.material) {
-                disposeMaterial(previousMaterial)
-              }
-            } catch (error) {
-              console.warn('Error in delayed disposal:', error)
-            }
-          }, 1000) // Longer delay to ensure rendering is complete
-        }
-        
-        // FORCE WebGL cleanup
-        setTimeout(() => {
-          canvas.width = 1
-          canvas.height = 1
-          ctx.clearRect(0, 0, 1, 1)
-        }, 100)
-        
-        // console.log('Texture applied to candle Label2')
-      }
-      
-      img.onerror = () => {
-        console.error('Failed to load image for Label2:', imageData.image)
-        // Clean up canvas even on error
-        canvas.width = 1
-        canvas.height = 1
-        ctx.clearRect(0, 0, 1, 1)
-      }
-      
-      img.src = imageData.image
-    }
-    
-    // Aggressive cleanup function
-    return () => {
-      if (canvas) {
-        canvas.width = 1
-        canvas.height = 1
-        ctx.clearRect(0, 0, 1, 1)
-      }
-      // Force garbage collection hint
-      if (window.gc) window.gc()
-    }
-  */
-  // }, [currentImageIndex, randomUserImages, imageTransition]) - DISABLED
+  // const imageData = randomUserImages[currentImageIndex]
+  // ... rest of complex texture management code removed ...
 
-  // Trigger rotation animation when component comes into view
-  // useEffect(() => {
-  //   if (hasReachedSection && !animationStartTime.current) {
-  //     console.log('🔄 Starting rotation animation now!')
-  //     // Start animation after 2 second delay
-  //     setTimeout(() => {
-  //       animationStartTime.current = Date.now()
-  //     }, 3500)
-  //   }
-  // }, [hasReachedSection])
+  // Trigger swivel animation based on view state
+  useEffect(() => {
+    if (isInView && swivelDirection.current === 'forward') {
+      console.log('🔄 Starting forward swivel animation!')
+      animationStartTime2.current = Date.now()
+    } else if (!isInView && swivelDirection.current === 'reverse') {
+      console.log('🔄 Starting reverse swivel animation!')
+      animationStartTime2.current = Date.now()
+    }
+  }, [isInView])
 
   // // Memoized rotation calculation
   // const calculateRotation = useMemo(() => {
@@ -589,17 +452,35 @@ function HandsModel({ mousePosition, scrollY, onLoad, hasReachedSection }) {
   //   return rotation
   // }, [rotationProgress])
 
-// MINIMAL: Only rotation animation useFrame
-// useFrame(() => {
-//   // Only animate rotation progress when triggered
-//   if (animationStartTime.current) {
-//     const elapsed = Date.now() - animationStartTime.current
-//     const duration = 2000
-//     const progress = Math.min(elapsed / duration, 1)
-//     const easedProgress = 1 - Math.pow(1 - progress, 3)
-//     setRotationProgress(easedProgress)
-//   }
-// })
+// Swivel animation useFrame
+useFrame(() => {
+  if (animationStartTime2.current) {
+    const elapsed = Date.now() - animationStartTime2.current
+    const duration = 2000 // 2 seconds for full rotation
+    const progress = Math.min(elapsed / duration, 1)
+    
+    // Use easeInOutCubic for smooth animation
+    const easedProgress = progress < 0.5
+      ? 4 * progress * progress * progress
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2
+    
+    if (isInView) {
+      // Forward animation (0 to PI)
+      setSwivelRotation(easedProgress * Math.PI)
+      if (progress === 1) {
+        swivelDirection.current = 'reverse'
+        animationStartTime2.current = null
+      }
+    } else {
+      // Reverse animation (PI to 0)
+      setSwivelRotation((1 - easedProgress) * Math.PI)
+      if (progress === 1) {
+        swivelDirection.current = 'forward'
+        animationStartTime2.current = null
+      }
+    }
+  }
+})
 
 
 // Removed duplicate useFrame and useEffect - functionality merged into main useFrame above
@@ -678,13 +559,13 @@ useEffect(() => {
   }
 }, [disposeTexture, disposeMaterial])
 
-// Replace this part in your return statement
+// Return with swivel animation applied
 return (
   <>
     <primitive 
       object={gltf.scene} 
       scale={[0.5, 0.5, 0.5]} 
-      rotation={[0, Math.PI, 0]}
+      rotation={[0, Math.PI + swivelRotation, 0]} // Start at Math.PI (180°) and add swivel
       onClick={handleClick}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
@@ -721,6 +602,7 @@ export default function HandsGLTFScene({ onLoadComplete }) {
   const [modelLoaded, setModelLoaded] = useState(false)
   const containerRef = useRef(null)
   const [hasReachedSection, setHasReachedSection] = useState(false)
+  const [isInView, setIsInView] = useState(false) // Track if currently in view
   
   // Track when component comes into view using Intersection Observer
   useEffect(() => {
@@ -730,12 +612,13 @@ export default function HandsGLTFScene({ onLoadComplete }) {
       ([entry]) => {
         console.log('Intersection Observer triggered:', {
           isIntersecting: entry.isIntersecting,
-          intersectionRatio: entry.intersectionRatio,
-          hasReachedSection
+          intersectionRatio: entry.intersectionRatio
         })
         
+        setIsInView(entry.isIntersecting)
+        
         if (entry.isIntersecting && !hasReachedSection) {
-          console.log('🎯 HandsGLTFScene entered viewport! Starting 2-second delay...')
+          console.log('🎯 HandsGLTFScene entered viewport!')
           setHasReachedSection(true)
         }
       },
@@ -827,7 +710,8 @@ export default function HandsGLTFScene({ onLoadComplete }) {
           <HandsModel 
             mousePosition={mousePosition} 
             scrollY={scrollY}
-            // hasReachedSection={hasReachedSection}
+            hasReachedSection={hasReachedSection}
+            isInView={isInView}
             onLoad={() => {
               setModelLoaded(true);
               if (onLoadComplete) onLoadComplete();
@@ -840,7 +724,7 @@ export default function HandsGLTFScene({ onLoadComplete }) {
         
         <OrbitControls 
           enableZoom={false}
-          autoRotate
+          // autoRotate
           autoRotateSpeed={0.8}
           enablePan={false}
           maxPolarAngle={0}

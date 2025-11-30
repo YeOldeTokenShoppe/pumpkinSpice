@@ -1093,8 +1093,8 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         </div>
       )}
       
-      {/* Heading - Show immediately when font loads, independent of other loading */}
-      {(isDesktop || isTablet) && (
+      {/* Heading - Show only after loading is complete */}
+      {(isDesktop || isTablet) && !isLoading && (
         <div style={{
           position: 'absolute',
           left: '0',
@@ -1127,8 +1127,8 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         </div>
       )}
       
-      {/* Mobile Heading - Show immediately when font loads, independent of other loading */}
-      {windowWidth <= 768 && (
+      {/* Mobile Heading - Show only after loading is complete */}
+      {windowWidth <= 768 && !isLoading && (
         <div style={{
           position: 'absolute',
           top: '2rem',

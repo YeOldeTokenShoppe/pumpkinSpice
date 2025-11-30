@@ -6,7 +6,11 @@ import {
   addDoc, 
   doc, 
   serverTimestamp, 
-  writeBatch 
+  writeBatch,
+  query,
+  where,
+  orderBy,
+  limit 
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -52,5 +56,9 @@ export {
   addDoc, 
   doc, 
   serverTimestamp, 
-  writeBatch 
+  writeBatch,
+  query,
+  where,
+  orderBy,
+  limit 
 };

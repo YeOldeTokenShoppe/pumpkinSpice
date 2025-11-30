@@ -16,7 +16,7 @@ import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
 import SimpleTextLoader from '@/components/SimpleTextLoader';
 import MemoryMonitor from '@/components/MemoryMonitor';
-import TradingOverlay from '@/components/TradingOverlay';
+import { TradingOverlay } from '@/trading';
 // import { useLighterTrading } from '@/hooks/useLighterTrading'; // Direct Lighter integration
 import { useLighterAPI } from '@/hooks/useLighterAPI'; // API-based Lighter integration
 // import PolaroidSnapshot from '@/components/PolaroidSnapshot';

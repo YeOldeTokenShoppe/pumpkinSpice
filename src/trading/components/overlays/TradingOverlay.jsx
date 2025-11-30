@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic';
 import { useFirestoreResults } from '@/utilities/useFirestoreResults';
 
 // Dynamically import SingleCandleDisplay to avoid SSR issues with Three.js
-const SingleCandleDisplay = dynamic(() => import('./SingleCandleDisplay'), {
+const SingleCandleDisplay = dynamic(() => import('../displays/SingleCandleDisplay'), {
   ssr: false,
   loading: () => (
     <div style={{ 
@@ -83,15 +83,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
     learningRate: 0,
     explorationRate: 0,
     
-    // AI Model Chat/Thoughts  
-    modelThoughts: [
-      {
-        timestamp: new Date().toLocaleString(),
-        type: 'system',
-        message: 'Waiting for market data...',
-        consultant: 'system'
-      }
-    ],
+    // AI Model Chat/Thoughts - Start empty, will load from Firestore
+    modelThoughts: [],
     
     // Mini-Assistant Consultants - Initialize with inactive status
     consultants: {
@@ -2028,7 +2021,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               animation: 'pulse 2s infinite',
               boxShadow: '0 0 6px #00ff00'
             }} />
-            🕯️ PERFORMANCE CANDLE
+             PETITION
           </div>
           <div style={{ color: '#888', fontSize: '9px', marginTop: '4px' }}>
             Firestore Results Visualization
@@ -2040,7 +2033,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           id="candle-visualization-container"
           style={{
             width: '100%',
-            height: '280px',
+            height: '100%',
             background: 'rgba(0, 0, 0, 0.5)',
             borderRadius: '4px',
             border: '1px solid rgba(0, 255, 0, 0.2)',
@@ -2053,8 +2046,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           />
         </div>
 
-        {/* Compact Status */}
-        <div style={{
+        {/* Compact Status - Moved to user overlay */}
+        {/* <div style={{
           marginTop: '8px',
           padding: '4px 6px',
           background: 'rgba(0, 255, 0, 0.05)',
@@ -2071,7 +2064,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             <span><span style={{ color: '#00ff00', fontSize: '7px' }}>●</span> Live</span>
             <span style={{ color: '#666' }}>Cycling Users</span>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Model Chat Panel - Bottom Right - Always Visible */}
