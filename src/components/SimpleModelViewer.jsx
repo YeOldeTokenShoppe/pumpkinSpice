@@ -1106,7 +1106,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           padding: '2rem',
           zIndex: 10002,
           pointerEvents: 'none',
-          backgroundColor: 'rgba(0, 0, 0, 0.3)', // Subtle black background
+          // backgroundColor: 'rgba(0, 0, 0, 0.3)', // Subtle black background
           borderRadius: '10px' // Rounded corners
         }}>
           <h1 style={{ 
@@ -1137,7 +1137,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           zIndex: 10002,
           textAlign: 'left',
           pointerEvents: 'none',
-          backgroundColor: 'rgba(0, 0, 0, 0.3)', // Subtle black background
+          // backgroundColor: 'rgba(0, 0, 0, 0.3)', // Subtle black background
           borderRadius: '10px', // Rounded corners
           padding: '1rem',
           maxWidth: 'fit-content'
@@ -1202,13 +1202,13 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                 
                 {/* Introduction text */}
                 <div style={{
-                  marginTop: isTablet ? '3rem' : '1.5rem',
+                  marginTop: isTablet ? '3rem' : '1rem',
                   padding: '1rem',
                   backgroundColor: 'rgba(142, 102, 43, 0.1)',
                   border: '2px solid #8e662b',
                   borderRadius: '8px',
-                  maxWidth: '400px',
-                  margin: `${isTablet ? '3rem' : '1.5rem'} auto 0`
+                  maxWidth: '450px',
+                  margin: `${isTablet ? '3rem' : '-1rem'} auto 0`
                 }}>
                   <p style={{
                     color: '#d4af37',

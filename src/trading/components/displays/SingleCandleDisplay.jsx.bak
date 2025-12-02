@@ -55,7 +55,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       setTimeout(() => {
         // Now update the textures while curtain is closed
         updateCandleTextures(firestoreData);
-      }, 800); // Delay slightly more to ensure curtain is fully closed
+      }, 700); // Apply when curtain is fully closed
       
       // End transition after curtain animation completes
       transitionTimeoutRef.current = setTimeout(() => {
@@ -77,8 +77,9 @@ function CandleScene({ firestoreData, onDoubleClick }) {
   
   // Store pending firestore data during transition
   const [pendingFirestoreData, setPendingFirestoreData] = useState(null);
+  const [currentDisplayData, setCurrentDisplayData] = useState(null);
   
-  // Function to update textures without re-cloning the scene
+  // Function to update candle textures without re-cloning
   const updateCandleTextures = (newData) => {
     if (!candleRef.current || !candleRef.current.children[0]) return;
     
@@ -88,7 +89,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
     if (isVotiveCandle && newData) {
       const imageUrl = newData.image || newData.profileImage || '/defaultAvatar.png';
       
-      // Update Label2 with new user image
+      // Create and apply new texture for Label2
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
@@ -124,24 +125,31 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       
       img.src = imageUrl;
     }
+    
+    // Update current display data
+    setCurrentDisplayData(newData);
   };
   
-  // Clone and setup the candle
+  // Clone and setup the candle (only on initial load or after transition)
   useEffect(() => {
-    // Skip entirely if transitioning - the updateCandleTextures will handle it
-    if (isTransitioning) return;
+    // Skip if transitioning or no scene
+    if (!scene || !candleRef.current || isTransitioning) return;
     
-    // Only clone if scene is ready and we have a ref
-    if (scene && candleRef.current) {
-      const clonedCandle = scene.clone();
-      
-      // Delay background loading if transitioning
-      const backgroundDelay = isTransitioning ? 700 : 0;
-      
-      setTimeout(() => {
-        // Load custom texture while preserving UV mapping
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load(
+    // Use pending data if available (after transition), otherwise use firestore data
+    const dataToUse = pendingFirestoreData || firestoreData;
+    
+    // Skip if we already have this data displayed
+    if (currentDisplayData?.id === dataToUse?.id) return;
+    
+    const clonedCandle = scene.clone();
+    
+    // Delay background loading if transitioning
+    const backgroundDelay = isTransitioning ? 700 : 0;
+    
+    setTimeout(() => {
+      // Load custom texture while preserving UV mapping
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(
           '/EquirectangularSky.jpg',
           (texture) => {
             console.log('Texture loaded successfully');
@@ -186,28 +194,28 @@ function CandleScene({ firestoreData, onDoubleClick }) {
             console.error('Error loading texture:', error);
           }
         );
-      }, backgroundDelay);
+    }, backgroundDelay);
+    
+    // Setup animations for the cloned scene
+    if (animations && animations.length > 0) {
+      mixerRef.current = new THREE.AnimationMixer(clonedCandle);
       
-      // Setup animations for the cloned scene
-      if (animations && animations.length > 0) {
-        mixerRef.current = new THREE.AnimationMixer(clonedCandle);
-        
-        // Find and play the 'Animation' clip specifically
-        animations.forEach(clip => {
-          console.log('Found animation clip:', clip.name);
-          const action = mixerRef.current.clipAction(clip);
-          action.play();
-        });
-      }
-      
-      // Scale up for better visibility
-      clonedCandle.scale.set(1, 1, 1);
-      clonedCandle.position.set(0, 0, 0);
-      
-      // Check if this is a votive candle (no melting required)
-      const isVotiveCandle = scene.name?.includes('Votive') || 
-                           animations?.some(a => a.name?.includes('Votive')) ||
-                           clonedCandle.getObjectByName('Label2') !== undefined;
+      // Find and play the 'Animation' clip specifically
+      animations.forEach(clip => {
+        console.log('Found animation clip:', clip.name);
+        const action = mixerRef.current.clipAction(clip);
+        action.play();
+      });
+    }
+    
+    // Scale up for better visibility
+    clonedCandle.scale.set(1, 1, 1);
+    clonedCandle.position.set(0, 0, 0);
+    
+    // Check if this is a votive candle (no melting required)
+    const isVotiveCandle = scene.name?.includes('Votive') || 
+                         animations?.some(a => a.name?.includes('Votive')) ||
+                         clonedCandle.getObjectByName('Label2') !== undefined;
       
       console.log('Is votive candle:', isVotiveCandle);
       
@@ -325,11 +333,11 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       });
       
       // Special handling for votive candle - apply user image to Label2 and message to Label1
-      if (isVotiveCandle && firestoreData) {
+      if (isVotiveCandle && dataToUse) {
         console.log('Applying user data to votive candle labels');
         
-        const imageUrl = firestoreData.image || firestoreData.profileImage || '/defaultAvatar.png';
-        const message = firestoreData.message || firestoreData.prayer || 'May the gains be with you 🚀';
+        const imageUrl = dataToUse.image || dataToUse.profileImage || '/defaultAvatar.png';
+        const message = dataToUse.message || dataToUse.prayer || 'May the gains be with you 🚀';
         
         // Create message texture for Label1 (same as FloatingCandleViewer)
         const createVotiveLabel1Texture = () => {
@@ -448,27 +456,25 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         img.crossOrigin = 'anonymous';
         
         img.onload = () => {
-          // Don't apply texture immediately if we're transitioning
-          if (!isTransitioning) {
-            setTimeout(() => {
-              const label2Texture = createVotiveLabel2Texture(img);
-              
-              // Find and update Label2
-              clonedCandle.traverse((child) => {
-                if (child.name === 'Label2' && child.isMesh) {
-                  if (child.material) {
-                    // Clone and update existing material instead of replacing
-                    child.material = child.material.clone();
-                    child.material.map = label2Texture;
-                    child.material.metalness = 0;
-                    child.material.roughness = 1;
-                    child.material.needsUpdate = true;
-                    console.log('Applied texture to votive Label2');
-                  }
+          // Wait for curtain to fully close before applying new texture
+          setTimeout(() => {
+            const label2Texture = createVotiveLabel2Texture(img);
+            
+            // Find and update Label2
+            clonedCandle.traverse((child) => {
+              if (child.name === 'Label2' && child.isMesh) {
+                if (child.material) {
+                  // Clone and update existing material instead of replacing
+                  child.material = child.material.clone();
+                  child.material.map = label2Texture;
+                  child.material.metalness = 0;
+                  child.material.roughness = 1;
+                  child.material.needsUpdate = true;
+                  console.log('Applied texture to votive Label2');
                 }
-              });
-            }, 100); // Small delay for initial load
-          }
+              }
+            });
+          }, isTransitioning ? 700 : 100); // Wait longer for curtain to fully close
         };
         
         img.onerror = () => {
@@ -694,6 +700,9 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         candleRef.current.remove(candleRef.current.children[0]);
       }
       candleRef.current.add(clonedCandle);
+      
+      // Mark data as displayed
+      setCurrentDisplayData(dataToUse);
     }
     
     // Cleanup on unmount or when dependencies change
@@ -703,7 +712,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         mixerRef.current = null;
       }
     };
-  }, [scene, firestoreData, animations, isTransitioning]);
+  }, [scene, animations, isTransitioning, pendingFirestoreData, firestoreData, currentDisplayData]);
   
   // Animation loop
   useFrame((state, delta) => {

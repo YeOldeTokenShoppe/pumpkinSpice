@@ -97,10 +97,7 @@ export default function CyborgTemple() {
     setLoadingProgress(20);
     setLoadingMessage("Initializing Trading Environment");
     
-    // Delay TickerDisplay3 slightly
-    setTimeout(() => {
-      setTickerReady(true);
-    }, 300);
+    // Don't set tickerReady here - wait for model to load first
     
     return () => {
       if (typeof window !== 'undefined') {
@@ -143,16 +140,20 @@ export default function CyborgTemple() {
 
   // Handle model loading completion
   const handleSceneLoad = () => {
-    console.log('CyborgTempleScene loaded');
+    console.log('🎨 CyborgTempleScene loaded - GLB model ready');
     console.log('ModelRef current:', modelRef.current);
     setModelLoaded(true);
     setLoadingProgress(70);
     setLoadingMessage("Loading trading data");
+    
+    // Now that the model is loaded, we can start loading TickerDisplay3
+    console.log('🎯 Enabling TickerDisplay3 rendering');
+    setTickerReady(true);
   };
 
   // Handle ticker loading completion
   const handleTickerLoad = () => {
-    console.log('TickerDisplay3 loaded');
+    console.log('📊 TickerDisplay3 loaded');
     setTickerLoaded(true);
     setLoadingProgress(90);
     setLoadingMessage("Almost ready");
@@ -160,20 +161,39 @@ export default function CyborgTemple() {
 
   // Comprehensive loading coordination
   useEffect(() => {
+    console.log('🔄 Loading state check:', {
+      fontLoaded,
+      mounted,
+      modelLoaded,
+      tickerReady,
+      tickerLoaded
+    });
+    
     // Only hide loading when everything is ready
-    // Don't wait for ticker if it hasn't started loading yet
-    const tickerCondition = tickerReady ? tickerLoaded : true;
+    // Model MUST be loaded before proceeding
+    if (!modelLoaded) {
+      console.log('⏳ Waiting for model to load...');
+      return; // Don't proceed until model is loaded
+    }
+    
+    // Check ticker condition only after model is loaded
+    const tickerCondition = !tickerReady || (tickerReady && tickerLoaded);
+    
+    console.log('📋 Ticker condition:', tickerCondition, 'tickerReady:', tickerReady, 'tickerLoaded:', tickerLoaded);
     
     if (fontLoaded && mounted && modelLoaded && tickerCondition) {
+      console.log('✅ All conditions met! Starting scene reveal sequence...');
       setLoadingProgress(100);
       setLoadingMessage("Ready!");
       // Add extra delay to ensure all components are rendered
       const timer = setTimeout(() => {
+        console.log('🚀 Setting scene ready!');
         setSceneReady(true);
         setTimeout(() => {
+          console.log('🎬 Hiding loading screen!');
           setIsSceneLoading(false);
         }, 500); // Brief additional delay for smooth transition
-      }, 800); // Slightly shorter wait since loader is lightweight
+      }, 1000); // Increased delay to ensure everything is rendered
       
       return () => clearTimeout(timer);
     }
@@ -187,7 +207,7 @@ export default function CyborgTemple() {
         setSceneReady(true);
         setIsSceneLoading(false);
       }
-    }, 8000); // 8 second max loading time
+    }, 20000); // 20 second max loading time - increased to ensure model loads
 
     return () => clearTimeout(fallbackTimer);
   }, [isSceneLoading]);
@@ -332,7 +352,7 @@ export default function CyborgTemple() {
             (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1)
           }
           performance={{ min: 0.5 }}
-          frameloop={isSceneLoading ? "demand" : "always"}
+          frameloop="always"
           style={{ 
             background: 'transparent', 
             position: 'absolute',
@@ -357,6 +377,7 @@ export default function CyborgTemple() {
             
             {/* MaryTraderScene with grid */}
             <CyborgTempleScene
+              ref={modelRef}
               position={[0, -2, 0]}
               scale={[1, 1, 1]}
               rotation={[0, 0, 0]}

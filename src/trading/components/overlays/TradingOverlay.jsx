@@ -28,6 +28,9 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [leftPanelTab, setLeftPanelTab] = useState('summary'); // tabs for left panel
   const [rightTopTab, setRightTopTab] = useState('macro'); // tabs for top right panel
   const [showMobileMenu, setShowMobileMenu] = useState(false); // for mobile menu display
+  const [candleTab, setCandleTab] = useState('community'); // 'mine' or 'community'
+  const [userCandle, setUserCandle] = useState(null); // User's own candle data
+  const [showAddCandleModal, setShowAddCandleModal] = useState(false); // Modal for adding user's candle
   
   // Get Firestore results for candle display
   const firestoreResults = useFirestoreResults('burnedAmount'); // Get top burners
@@ -332,6 +335,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               </div>
               
               {[
+                { key: 'candle', icon: '🕯️', label: 'TEMPLE CANDLE', color: '#00ff88' },
                 { key: 'stats', icon: '⚡', label: 'FUND STATS', color: '#00ff00' },
                 { key: 'thoughts', icon: '🧠', label: 'AI THOUGHTS', color: '#ff00ff' },
                 { key: 'macro', icon: '🌍', label: 'MACRO ANALYSIS', color: '#00ddff' },
@@ -1230,6 +1234,160 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               ))}
             </>
           )}
+          
+          {/* Candle Tab - Mobile View */}
+          {activeTab === 'candle' && (
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              height: 'calc(100vh - 180px)',
+              minHeight: '400px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                marginBottom: '12px',
+                paddingBottom: '8px',
+                borderBottom: '1px solid rgba(0, 255, 0, 0.3)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '8px'
+                }}>
+                  <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '13px' }}>
+                    🕯️ TEMPLE CANDLES
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px'
+                  }}>
+                    <div style={{
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, #ffff00, #ff8800)',
+                      boxShadow: '0 0 8px #ff8800',
+                      animation: 'pulse 2s infinite'
+                    }}/>
+                    <span style={{ color: 'rgba(0, 255, 136, 0.7)', fontSize: '9px' }}>
+                      {candleTab === 'mine' ? 'My Offering' : 'Community'}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Tab Selector for Mobile */}
+                <div style={{
+                  display: 'flex',
+                  gap: '4px'
+                }}>
+                  <button
+                    onClick={() => setCandleTab('mine')}
+                    style={{
+                      flex: 1,
+                      padding: '6px 10px',
+                      background: candleTab === 'mine' 
+                        ? 'linear-gradient(90deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 255, 136, 0.1) 100%)'
+                        : 'rgba(0, 255, 136, 0.05)',
+                      border: `1px solid ${candleTab === 'mine' ? '#00ff88' : 'rgba(0, 255, 136, 0.2)'}`,
+                      borderRadius: '4px',
+                      color: candleTab === 'mine' ? '#00ff88' : '#888',
+                      fontSize: '11px',
+                      fontWeight: candleTab === 'mine' ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    My Candle
+                  </button>
+                  <button
+                    onClick={() => setCandleTab('community')}
+                    style={{
+                      flex: 1,
+                      padding: '6px 10px',
+                      background: candleTab === 'community' 
+                        ? 'linear-gradient(90deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 255, 136, 0.1) 100%)'
+                        : 'rgba(0, 255, 136, 0.05)',
+                      border: `1px solid ${candleTab === 'community' ? '#00ff88' : 'rgba(0, 255, 136, 0.2)'}`,
+                      borderRadius: '4px',
+                      color: candleTab === 'community' ? '#00ff88' : '#888',
+                      fontSize: '11px',
+                      fontWeight: candleTab === 'community' ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    Community
+                  </button>
+                </div>
+              </div>
+              
+              <div style={{
+                flex: 1,
+                position: 'relative',
+                minHeight: 0
+              }}>
+                {candleTab === 'mine' ? (
+                  userCandle ? (
+                    <SingleCandleDisplay 
+                      firestoreData={userCandle}
+                      isUserCandle={true}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '20px',
+                      padding: '20px'
+                    }}>
+                      <div style={{
+                        fontSize: '50px',
+                        opacity: 0.3
+                      }}>🕯️</div>
+                      <div style={{
+                        color: '#888',
+                        fontSize: '12px',
+                        textAlign: 'center',
+                        lineHeight: '1.5'
+                      }}>
+                        You haven't lit a candle yet
+                      </div>
+                      <button
+                        onClick={() => setShowAddCandleModal(true)}
+                        style={{
+                          padding: '10px 20px',
+                          background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%)',
+                          border: '1px solid #00ff88',
+                          borderRadius: '8px',
+                          color: '#00ff88',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          fontFamily: 'monospace'
+                        }}
+                      >
+                        Light Your Candle
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <SingleCandleDisplay 
+                    firestoreData={randomFirestoreData}
+                    isUserCandle={false}
+                  />
+                )}
+              </div>
+            </div>
+          )}
             </div>
           </>
         )}
@@ -2021,10 +2179,55 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               animation: 'pulse 2s infinite',
               boxShadow: '0 0 6px #00ff00'
             }} />
-             PETITION
+            🕯️ TEMPLE CANDLES
           </div>
-          <div style={{ color: '#888', fontSize: '9px', marginTop: '4px' }}>
-            Firestore Results Visualization
+          
+          {/* Tab Selector */}
+          <div style={{
+            display: 'flex',
+            gap: '4px',
+            marginTop: '8px'
+          }}>
+            <button
+              onClick={() => setCandleTab('mine')}
+              style={{
+                flex: 1,
+                padding: '4px 8px',
+                background: candleTab === 'mine' 
+                  ? 'linear-gradient(90deg, rgba(0, 255, 0, 0.3) 0%, rgba(0, 255, 0, 0.1) 100%)'
+                  : 'rgba(0, 255, 0, 0.05)',
+                border: `1px solid ${candleTab === 'mine' ? '#00ff00' : 'rgba(0, 255, 0, 0.2)'}`,
+                borderRadius: '4px',
+                color: candleTab === 'mine' ? '#00ff00' : '#888',
+                fontSize: '10px',
+                fontWeight: candleTab === 'mine' ? 'bold' : 'normal',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontFamily: 'monospace'
+              }}
+            >
+              My Candle
+            </button>
+            <button
+              onClick={() => setCandleTab('community')}
+              style={{
+                flex: 1,
+                padding: '4px 8px',
+                background: candleTab === 'community' 
+                  ? 'linear-gradient(90deg, rgba(0, 255, 0, 0.3) 0%, rgba(0, 255, 0, 0.1) 100%)'
+                  : 'rgba(0, 255, 0, 0.05)',
+                border: `1px solid ${candleTab === 'community' ? '#00ff00' : 'rgba(0, 255, 0, 0.2)'}`,
+                borderRadius: '4px',
+                color: candleTab === 'community' ? '#00ff00' : '#888',
+                fontSize: '10px',
+                fontWeight: candleTab === 'community' ? 'bold' : 'normal',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontFamily: 'monospace'
+              }}
+            >
+              All Candles
+            </button>
           </div>
         </div>
 
@@ -2041,9 +2244,68 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             position: 'relative'
           }}
         >
-          <SingleCandleDisplay 
-            firestoreData={randomFirestoreData}
-          />
+          {candleTab === 'mine' ? (
+            userCandle ? (
+              <SingleCandleDisplay 
+                firestoreData={userCandle}
+                isUserCandle={true}
+              />
+            ) : (
+              <div style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '20px',
+                padding: '20px'
+              }}>
+                <div style={{
+                  fontSize: '40px',
+                  opacity: 0.3
+                }}>🕯️</div>
+                <div style={{
+                  color: '#888',
+                  fontSize: '11px',
+                  textAlign: 'center',
+                  lineHeight: '1.4'
+                }}>
+                  You haven't lit a candle yet
+                </div>
+                <button
+                  onClick={() => setShowAddCandleModal(true)}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 255, 0, 0.1) 100%)',
+                    border: '1px solid #00ff00',
+                    borderRadius: '6px',
+                    color: '#00ff00',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    fontFamily: 'monospace'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'linear-gradient(135deg, rgba(0, 255, 0, 0.3) 0%, rgba(0, 255, 0, 0.2) 100%)';
+                    e.target.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'linear-gradient(135deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 255, 0, 0.1) 100%)';
+                    e.target.style.transform = 'scale(1)';
+                  }}
+                >
+                  Light Your Candle
+                </button>
+              </div>
+            )
+          ) : (
+            <SingleCandleDisplay 
+              firestoreData={randomFirestoreData}
+              isUserCandle={false}
+            />
+          )}
         </div>
 
         {/* Compact Status - Moved to user overlay */}
@@ -2616,21 +2878,31 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             🤖 AI MARKET SIGNALS
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-            {tradingData.macroData.signals.map((signal, idx) => (
-              <span key={idx} style={{
-                padding: '4px 8px',
-                background: 'rgba(0, 255, 0, 0.2)',
-                border: '1px solid rgba(0, 255, 0, 0.4)',
-                borderRadius: '4px',
-                color: '#00ff00',
-                fontSize: '10px',
-                display: 'inline-flex',
-                alignItems: 'center'
-              }}>
-                <span style={{ marginRight: '4px' }}>•</span>
-                {signal}
-              </span>
-            ))}
+            {tradingData.macroData.signals.map((signal, idx) => {
+              // Check if signal is bearish/negative
+              const isBearish = signal.toLowerCase().includes('bearish') || 
+                               signal.toLowerCase().includes('weakness') || 
+                               signal.toLowerCase().includes('outflow') || 
+                               signal.toLowerCase().includes('weak') ||
+                               signal.toLowerCase().includes('caution') ||
+                               signal.toLowerCase().includes('fear');
+              
+              return (
+                <span key={idx} style={{
+                  padding: '4px 8px',
+                  background: isBearish ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 255, 0, 0.2)',
+                  border: isBearish ? '1px solid rgba(255, 0, 0, 0.4)' : '1px solid rgba(0, 255, 0, 0.4)',
+                  borderRadius: '4px',
+                  color: isBearish ? '#ff3333' : '#00ff00',
+                  fontSize: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center'
+                }}>
+                  <span style={{ marginRight: '4px' }}>•</span>
+                  {signal}
+                </span>
+              );
+            })}
           </div>
           <div style={{
             marginTop: '8px',
@@ -2725,6 +2997,94 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         )}
         </div>{/* End of scrollable tab content container */}
       </div>
+
+      {/* Add Candle Modal */}
+      {showAddCandleModal && (
+        <>
+          {/* Background Overlay */}
+          <div
+            onClick={() => setShowAddCandleModal(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.8)',
+              zIndex: 10000,
+              backdropFilter: 'blur(5px)'
+            }}
+          />
+          
+          {/* Modal Content */}
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+            border: '2px solid #00ff88',
+            borderRadius: '12px',
+            padding: '30px',
+            width: '90%',
+            maxWidth: '400px',
+            boxShadow: '0 0 40px rgba(0, 255, 136, 0.4)',
+            zIndex: 10001
+          }}>
+            <h3 style={{
+              margin: '0 0 20px 0',
+              color: '#00ff88',
+              fontSize: '18px',
+              fontFamily: 'monospace',
+              textAlign: 'center'
+            }}>
+              🕯️ Light Your Temple Candle
+            </h3>
+            
+            <p style={{
+              color: '#888',
+              fontSize: '12px',
+              lineHeight: '1.5',
+              marginBottom: '20px',
+              textAlign: 'center',
+              fontFamily: 'monospace'
+            }}>
+              Your candle will be added to the temple.<br/>
+              Feature coming soon!
+            </p>
+            
+            <div style={{
+              display: 'flex',
+              gap: '10px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => setShowAddCandleModal(false)}
+                style={{
+                  padding: '10px 20px',
+                  background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%)',
+                  border: '1px solid #00ff88',
+                  borderRadius: '6px',
+                  color: '#00ff88',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontFamily: 'monospace',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 255, 136, 0.2) 100%)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%)';
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
     </>
   );

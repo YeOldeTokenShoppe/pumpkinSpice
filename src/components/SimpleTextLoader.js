@@ -39,7 +39,7 @@ const SimpleTextLoader = ({ loading = true, progress = 0, message = "Loading" })
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 10001,
-      fontFamily: "'Courier New', monospace"
+      fontFamily: 'Orbitron, sans-serif',
     },
     content: {
       textAlign: 'center',
@@ -50,14 +50,14 @@ const SimpleTextLoader = ({ loading = true, progress = 0, message = "Loading" })
       fontSize: '4rem',
       marginBottom: '2rem',
       letterSpacing: '0.1em',
-      fontFamily: 'Georgia, serif',
+      fontFamily: 'Orbitron, sans-serif',
       color: '#00ff41',
       textShadow: '0 0 20px #00ff41, 0 0 40px #00ff41',
       fontWeight: 'bold',
       lineHeight: 1
     },
     text: {
-      fontSize: '1.5rem',
+      fontSize: '1rem',
       marginBottom: '2rem',
       color: '#00ff41',
       minHeight: '2rem'
@@ -87,7 +87,7 @@ const SimpleTextLoader = ({ loading = true, progress = 0, message = "Loading" })
     progressText: {
       fontSize: '1rem',
       color: '#00ff41',
-      fontFamily: "'Courier New', monospace"
+      fontFamily: 'Orbitron, sans-serif',
     }
   };
 

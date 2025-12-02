@@ -6,9 +6,9 @@ import { useFrame, useThree } from "@react-three/fiber";
 
 function HolographicStatue3({ 
   onLoad, 
-  position = [-0.3, 2.3, -0.2],  // Default position if not provided
-  rotation = [0, Math.PI / 180, 0],  // Default rotation if not provided
-  scale = [18, 18, 18],  // Default scale if not provided
+  position = [0.2, 2.5, -0.5],  // Default position if not provided
+  rotation = [0, 0, 0],  // Default rotation if not provided
+  scale = [17, 17, 17],  // Default scale if not provided
   hover = false,  // Disable hover animation by default
   rotate = true  // Disable rotation animation by default
 }) {
@@ -22,6 +22,7 @@ function HolographicStatue3({
   const mixerRef = useRef();
   const hasLoadedRef = useRef(false);
   const animatedMaterialsRef = useRef([]); // Cache materials that need animation
+  const haloMasterRef = useRef(); // Track the HaloMaster object
 
   // Use useMemo to prevent recreating the loader on every render
   const loader = useMemo(() => {
@@ -313,7 +314,7 @@ function HolographicStatue3({
 
     let isCurrentInstance = true; // Flag to track if this effect instance is current
 
-    loader.load("/models/CyberpunkMaryHeartRed.glb", (gltf) => {
+    loader.load("/models/CyberpunkMaryHeartRed2.glb", (gltf) => {
       if (!isCurrentInstance) return; // Don't proceed if this effect is stale
 
       const statue = gltf.scene;
@@ -376,6 +377,27 @@ function HolographicStatue3({
 
       // Clear previous animated materials
       animatedMaterialsRef.current = [];
+      
+      // Find and store reference to HaloMaster object
+      statue.traverse((child) => {
+        if (child.name === 'HaloMaster' || child.name.toLowerCase() === 'halomaster') {
+          console.log("Found HaloMaster object:", child.name);
+          console.log("HaloMaster position:", child.position);
+          console.log("HaloMaster rotation:", child.rotation);
+          console.log("HaloMaster children count:", child.children.length);
+          
+          // Store direct reference to the HaloMaster object
+          // We'll just rotate it as-is and let it rotate around its pivot
+          haloMasterRef.current = child;
+          
+          // Log children names for debugging
+          child.traverse((subChild) => {
+            if (subChild !== child) {
+              console.log("HaloMaster child found:", subChild.name, "type:", subChild.type);
+            }
+          });
+        }
+      });
       
       statue.traverse((child) => {
         if (child.isMesh) {
@@ -517,11 +539,20 @@ function HolographicStatue3({
       mixerRef.current.update(delta);
     }
 
+    // Rotate the HaloMaster object around its own center
+    if (haloMasterRef.current) {
+      // Simple rotation around local Y axis (vertical)
+      haloMasterRef.current.rotation.y += delta * 0.1; // 0.5 radians per second
+      
+      // Or try rotation around Z axis if preferred
+      // haloMasterRef.current.rotation.z += delta * 0.5;
+    }
+
     if (statueRef.current && groupRef.current) {
       // Apply hover animation to the anchor group only if hover is enabled
       if (hover) {
         groupRef.current.anchor.position.y =
-          initialY.current + Math.sin(state.clock.elapsedTime * 0.5) * 0.01;
+          initialY.current + Math.sin(state.clock.elapsedTime * 0.1) * 0.01;
       }
 
       // Apply rotation to the rotation group only if rotate is enabled
