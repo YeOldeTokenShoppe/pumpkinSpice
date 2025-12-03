@@ -191,24 +191,51 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Word wrap for message
-        const words = message.split(' ');
+        // Word wrap for message - handle CJK characters properly
         const maxWidth = 700;
         const lineHeight = 60;
         let lines = [];
-        let currentLine = '';
         
-        words.forEach((word) => {
-          const testLine = currentLine + word + ' ';
-          const metrics = ctx.measureText(testLine);
-          if (metrics.width > maxWidth && currentLine) {
-            lines.push(currentLine);
-            currentLine = word + ' ';
-          } else {
-            currentLine = testLine;
+        // Check if text contains CJK characters
+        const hasCJK = /[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(message);
+        
+        if (hasCJK) {
+          // Character-based wrapping for CJK text
+          let currentLine = '';
+          for (let i = 0; i < message.length; i++) {
+            const char = message[i];
+            const testLine = currentLine + char;
+            const metrics = ctx.measureText(testLine);
+            
+            if (metrics.width > maxWidth && currentLine) {
+              lines.push(currentLine);
+              currentLine = char;
+            } else {
+              currentLine = testLine;
+            }
           }
-        });
-        lines.push(currentLine);
+          if (currentLine) {
+            lines.push(currentLine);
+          }
+        } else {
+          // Word-based wrapping for non-CJK text
+          const words = message.split(' ');
+          let currentLine = '';
+          
+          words.forEach((word) => {
+            const testLine = currentLine + word + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && currentLine) {
+              lines.push(currentLine);
+              currentLine = word + ' ';
+            } else {
+              currentLine = testLine;
+            }
+          });
+          if (currentLine) {
+            lines.push(currentLine);
+          }
+        }
         
         const startY = (canvas.height - lines.length * lineHeight) / 2 + lineHeight / 2;
         lines.forEach((line, index) => {
@@ -557,24 +584,51 @@ function CandleScene({ firestoreData, onDoubleClick }) {
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           
-          // Word wrap for message
-          const words = message.split(' ');
+          // Word wrap for message - handle CJK characters properly
           const maxWidth = 700;  // Slightly smaller width
           const lineHeight = 60;  // Smaller line height
           let lines = [];
-          let currentLine = '';
           
-          words.forEach((word) => {
-            const testLine = currentLine + word + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && currentLine) {
-              lines.push(currentLine);
-              currentLine = word + ' ';
-            } else {
-              currentLine = testLine;
+          // Check if text contains CJK characters
+          const hasCJK = /[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(message);
+          
+          if (hasCJK) {
+            // Character-based wrapping for CJK text
+            let currentLine = '';
+            for (let i = 0; i < message.length; i++) {
+              const char = message[i];
+              const testLine = currentLine + char;
+              const metrics = ctx.measureText(testLine);
+              
+              if (metrics.width > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = char;
+              } else {
+                currentLine = testLine;
+              }
             }
-          });
-          lines.push(currentLine);
+            if (currentLine) {
+              lines.push(currentLine);
+            }
+          } else {
+            // Word-based wrapping for non-CJK text
+            const words = message.split(' ');
+            let currentLine = '';
+            
+            words.forEach((word) => {
+              const testLine = currentLine + word + ' ';
+              const metrics = ctx.measureText(testLine);
+              if (metrics.width > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word + ' ';
+              } else {
+                currentLine = testLine;
+              }
+            });
+            if (currentLine) {
+              lines.push(currentLine);
+            }
+          }
           
           // Draw text centered
           const startY = (canvas.height - lines.length * lineHeight) / 2 + lineHeight / 2;
@@ -739,24 +793,51 @@ function CandleScene({ firestoreData, onDoubleClick }) {
           ctx.font = 'bold 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial';
           ctx.textAlign = "center";
           
-          // Word wrap for message
-          const words = message.split(' ');
+          // Word wrap for message - handle CJK characters properly
           const maxWidth = 600;
           const lineHeight = 70;
           let lines = [];
-          let currentLine = '';
           
-          words.forEach((word) => {
-            const testLine = currentLine + word + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && currentLine) {
-              lines.push(currentLine);
-              currentLine = word + ' ';
-            } else {
-              currentLine = testLine;
+          // Check if text contains CJK characters
+          const hasCJK = /[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(message);
+          
+          if (hasCJK) {
+            // Character-based wrapping for CJK text
+            let currentLine = '';
+            for (let i = 0; i < message.length; i++) {
+              const char = message[i];
+              const testLine = currentLine + char;
+              const metrics = ctx.measureText(testLine);
+              
+              if (metrics.width > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = char;
+              } else {
+                currentLine = testLine;
+              }
             }
-          });
-          lines.push(currentLine);
+            if (currentLine) {
+              lines.push(currentLine);
+            }
+          } else {
+            // Word-based wrapping for non-CJK text
+            const words = message.split(' ');
+            let currentLine = '';
+            
+            words.forEach((word) => {
+              const testLine = currentLine + word + ' ';
+              const metrics = ctx.measureText(testLine);
+              if (metrics.width > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word + ' ';
+              } else {
+                currentLine = testLine;
+              }
+            });
+            if (currentLine) {
+              lines.push(currentLine);
+            }
+          }
           
           const startY = 200 + ((canvas.height - 200) - lines.length * lineHeight) / 2;
           lines.forEach((line, index) => {
