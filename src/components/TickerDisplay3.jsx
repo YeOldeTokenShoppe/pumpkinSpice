@@ -241,7 +241,7 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
       updateCanvas();
 
       // Check if modelRef exists and update ticker geometry based on model scale
-      if (modelRef && modelRef.current) {
+      if (modelRef && modelRef.current && modelRef.current.scale) {
         const modelScale = modelRef.current.scale.x;
         updateTickerGeometry(modelScale);
       }

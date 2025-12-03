@@ -4,9 +4,57 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 
+// Available skybox textures configuration
+const SKYBOX_TEXTURES = [
+  { id: 'cyberpunk', path: '/cyberpunk.webp', name: 'Cyberpunk' },
+  { id: 'synthwave', path: '/synthwave.webp', name: 'Synthwave' },
+  { id: 'gothicTokyo', path: '/gothicTokyo.webp', name: 'Gothic Tokyo' },
+  { id: 'neoTokyo', path: '/neoTokyo.webp', name: 'Neo Tokyo' },
+  { id: 'aurora', path: '/aurora.webp', name: 'Aurora' },
+  { id: 'templeScene', path: '/templeScene.webp', name: 'Temple Scene' }
+];
+
+// Function to get texture based on user data
+const getTextureForUser = (userData) => {
+  // Check if user has a specific skybox texture assigned
+  if (userData?.skyboxTexture) {
+    const texture = SKYBOX_TEXTURES.find(t => t.id === userData.skyboxTexture);
+    if (texture) return texture;
+  }
+  
+  // Check if user has a collection-based texture assignment
+  if (userData?.collection) {
+    // Map collections to specific textures
+    const collectionMap = {
+      'cyberpunk': 'cyberpunk',
+      'synthwave': 'synthwave',
+      'gothic': 'gothicTokyo',
+      'neo': 'neoTokyo',
+      'aurora': 'aurora',
+      'temple': 'templeScene'
+    };
+    
+    const textureId = collectionMap[userData.collection.toLowerCase()];
+    if (textureId) {
+      const texture = SKYBOX_TEXTURES.find(t => t.id === textureId);
+      if (texture) return texture;
+    }
+  }
+  
+  // Fallback to deterministic selection based on user ID
+  const userId = userData?.id || userData?.userId;
+  if (!userId) return SKYBOX_TEXTURES[0]; // Default to first texture
+  
+  // Use user ID to deterministically select a texture
+  const hash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const index = hash % SKYBOX_TEXTURES.length;
+  return SKYBOX_TEXTURES[index];
+};
+
 
 // Scene content that loads the candle model directly
 function CandleScene({ firestoreData, onDoubleClick }) {
+  // Use the base model - either Cyberpunk or regular votive
   const { scene, animations } = useGLTF("/models/XCandleAnimatedFlameVotive.glb");
   const candleRef = useRef();
   const mixerRef = useRef(null);
@@ -18,6 +66,8 @@ function CandleScene({ firestoreData, onDoubleClick }) {
   const curtainRef = useRef(null);
   const curtainProgressRef = useRef(0);
   const previousUserIdRef = useRef(null);
+  const currentTextureRef = useRef(null);
+  const justTransitionedRef = useRef(false);
   
   // Add error checking for scene
   useEffect(() => {
@@ -55,14 +105,21 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       setTimeout(() => {
         // Now update the textures while curtain is closed
         updateCandleTextures(firestoreData);
-      }, 800); // Delay slightly more to ensure curtain is fully closed
+        // Update the previous user reference after applying changes
+        previousUserIdRef.current = currentUserId;
+      }, 1200); // Wait longer for curtain to be fully closed
       
       // End transition after curtain animation completes
       transitionTimeoutRef.current = setTimeout(() => {
         console.log('Curtain transition complete');
+        justTransitionedRef.current = true; // Mark that we just completed a transition
         setIsTransitioning(false);
         setPendingFirestoreData(null);
-      }, 2000); // Increased total time for slower, smoother transition
+        // Clear the flag after a brief delay
+        setTimeout(() => {
+          justTransitionedRef.current = false;
+        }, 100);
+      }, 2400); // Longer total transition time
     } else if (!hasUserChanged) {
       // Initial load - update immediately
       previousUserIdRef.current = currentUserId;
@@ -77,31 +134,87 @@ function CandleScene({ firestoreData, onDoubleClick }) {
   
   // Store pending firestore data during transition
   const [pendingFirestoreData, setPendingFirestoreData] = useState(null);
+  const textureLoadingRef = useRef(false);
   
-  // Function to update textures without re-cloning the scene
-  const updateCandleTextures = (newData) => {
+  // Function to update all textures in a coordinated way
+  const updateCandleTextures = async (newData) => {
     if (!candleRef.current || !candleRef.current.children[0]) return;
+    if (textureLoadingRef.current) return; // Prevent multiple simultaneous updates
     
+    textureLoadingRef.current = true;
     const clonedCandle = candleRef.current.children[0];
     const isVotiveCandle = clonedCandle.getObjectByName('Label2') !== undefined;
     
+    // Create promises for all texture loads
+    const texturePromises = [];
+    
+    // 1. Load skybox texture
+    const newSkyboxTexture = getTextureForUser(newData);
+    if (!currentTextureRef.current || currentTextureRef.current.id !== newSkyboxTexture.id) {
+      const skyboxPromise = new Promise((resolve) => {
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(
+          newSkyboxTexture.path,
+          (texture) => {
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.flipY = false;
+            texture.needsUpdate = true;
+            resolve({ type: 'skybox', texture, newTexture: newSkyboxTexture });
+          },
+          undefined,
+          () => resolve(null)
+        );
+      });
+      texturePromises.push(skyboxPromise);
+    }
+    
+    // 2. Load Label1 and Label2 if votive
     if (isVotiveCandle && newData) {
-      const imageUrl = newData.image || newData.profileImage || '/defaultAvatar.png';
-      
-      // Update Label2 with new user image
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = () => {
+      // Label1 - Message texture
+      const message = newData.message || newData.prayer || 'May the gains be with you 🚀';
+      const label1Promise = new Promise((resolve) => {
         const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 512;
+        canvas.width = 1024;
+        canvas.height = 1024;
         const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         ctx.save();
         ctx.translate(0, canvas.height);
         ctx.scale(1, -1);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Word wrap for message
+        const words = message.split(' ');
+        const maxWidth = 700;
+        const lineHeight = 60;
+        let lines = [];
+        let currentLine = '';
+        
+        words.forEach((word) => {
+          const testLine = currentLine + word + ' ';
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word + ' ';
+          } else {
+            currentLine = testLine;
+          }
+        });
+        lines.push(currentLine);
+        
+        const startY = (canvas.height - lines.length * lineHeight) / 2 + lineHeight / 2;
+        lines.forEach((line, index) => {
+          ctx.fillText(line.trim(), canvas.width / 2, startY + index * lineHeight);
+        });
+        
         ctx.restore();
         
         const texture = new THREE.CanvasTexture(canvas);
@@ -113,17 +226,95 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         texture.magFilter = THREE.LinearFilter;
         texture.needsUpdate = true;
         
-        // Apply to Label2
+        resolve({ type: 'label1', texture });
+      });
+      texturePromises.push(label1Promise);
+      
+      // Label2 - User image
+      const imageUrl = newData.image || newData.profileImage || '/defaultAvatar.png';
+      const label2Promise = new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 512;
+          canvas.height = 512;
+          const ctx = canvas.getContext('2d');
+          
+          ctx.save();
+          ctx.translate(0, canvas.height);
+          ctx.scale(1, -1);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          ctx.restore();
+          
+          const texture = new THREE.CanvasTexture(canvas);
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          texture.anisotropy = 16;
+          texture.encoding = THREE.sRGBEncoding;
+          texture.minFilter = THREE.LinearMipmapLinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.needsUpdate = true;
+          
+          resolve({ type: 'label2', texture });
+        };
+        
+        img.onerror = () => resolve(null);
+        img.src = imageUrl;
+      });
+      texturePromises.push(label2Promise);
+    }
+    
+    // Wait for all textures to load
+    const loadedTextures = await Promise.all(texturePromises);
+    
+    // Apply all textures at once
+    loadedTextures.forEach(result => {
+      if (!result) return;
+      
+      if (result.type === 'skybox') {
         clonedCandle.traverse((child) => {
-          if (child.name === 'Label2' && child.isMesh && child.material) {
-            child.material.map = texture;
+          if (child.name === 'Room' && child.isMesh) {
+            child.visible = true;
+            child.material = new THREE.MeshBasicMaterial({
+              map: result.texture,
+              side: THREE.DoubleSide,
+              color: 0x808080,
+              transparent: false,
+              opacity: 1,
+              depthWrite: false
+            });
+            child.renderOrder = -1000;
+            child.frustumCulled = false;
             child.material.needsUpdate = true;
           }
         });
-      };
-      
-      img.src = imageUrl;
-    }
+        currentTextureRef.current = result.newTexture;
+      } else if (result.type === 'label1') {
+        clonedCandle.traverse((child) => {
+          if (child.name === 'Label1' && child.isMesh && child.material) {
+            child.material = child.material.clone();
+            child.material.map = result.texture;
+            child.material.metalness = 0;
+            child.material.roughness = 1;
+            child.material.needsUpdate = true;
+          }
+        });
+      } else if (result.type === 'label2') {
+        clonedCandle.traverse((child) => {
+          if (child.name === 'Label2' && child.isMesh && child.material) {
+            child.material = child.material.clone();
+            child.material.map = result.texture;
+            child.material.metalness = 0;
+            child.material.roughness = 1;
+            child.material.needsUpdate = true;
+          }
+        });
+      }
+    });
+    
+    textureLoadingRef.current = false;
   };
   
   // Clone and setup the candle
@@ -131,24 +322,36 @@ function CandleScene({ firestoreData, onDoubleClick }) {
     // Skip entirely if transitioning - the updateCandleTextures will handle it
     if (isTransitioning) return;
     
+    // Skip if we just finished a transition (prevents re-render flash)
+    if (justTransitionedRef.current) return;
+    
+    // Also skip if we're about to transition (prevents flash before curtain)
+    const currentUserId = firestoreData?.id || firestoreData?.userId;
+    const willTransition = previousUserIdRef.current !== null && 
+                          previousUserIdRef.current !== currentUserId;
+    if (willTransition) return;
+    
     // Only clone if scene is ready and we have a ref
     if (scene && candleRef.current) {
       const clonedCandle = scene.clone();
       
-      // Delay background loading if transitioning
-      const backgroundDelay = isTransitioning ? 700 : 0;
-      
-      setTimeout(() => {
-        // Load custom texture while preserving UV mapping
+      // Skip background loading if transitioning - will be handled by updateCandleTextures
+      if (!isTransitioning) {
+        // Load dynamic skybox texture based on user
+        const selectedTexture = getTextureForUser(firestoreData);
+        console.log('Loading skybox texture:', selectedTexture.name, selectedTexture.path);
+        
         const textureLoader = new THREE.TextureLoader();
         textureLoader.load(
-          '/EquirectangularSky.jpg',
+          selectedTexture.path,
           (texture) => {
-            console.log('Texture loaded successfully');
+            console.log('Texture loaded successfully:', selectedTexture.name);
+            currentTextureRef.current = selectedTexture;
             
-            // Don't change the mapping - use the UVs from the model
+            // Flip the texture vertically to match UV coordinates
             texture.wrapS = THREE.ClampToEdgeWrapping;
             texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.flipY = false; // This flips the texture vertically
             texture.needsUpdate = true;
             
             // Find and update the Room object's texture only
@@ -160,17 +363,15 @@ function CandleScene({ firestoreData, onDoubleClick }) {
                 // Make sure the Room is visible
                 child.visible = true;
                 
-                // Clone the existing material to preserve all settings
-                const originalMaterial = child.material;
-                child.material = originalMaterial.clone();
-                
-                // Update only the texture map, keeping all other properties
-                child.material.map = texture;
-                child.material.side = THREE.DoubleSide;
-                child.material.depthWrite = false;
-                child.material.transparent = false; // Ensure it's not transparent
-                child.material.opacity = 1; // Full opacity
-                child.material.needsUpdate = true;
+                // Replace with a simple MeshBasicMaterial to avoid shader conflicts
+                child.material = new THREE.MeshBasicMaterial({
+                  map: texture,
+                  side: THREE.DoubleSide,
+                  color: 0x808080, // Darken the texture (adjust as needed)
+                  transparent: false,
+                  opacity: 1,
+                  depthWrite: false
+                });
                 
                 child.renderOrder = -1000; // Ensure it renders behind everything else
                 child.frustumCulled = false; // Prevent culling issues
@@ -186,7 +387,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
             console.error('Error loading texture:', error);
           }
         );
-      }, backgroundDelay);
+      }
       
       // Setup animations for the cloned scene
       if (animations && animations.length > 0) {
@@ -325,7 +526,8 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       });
       
       // Special handling for votive candle - apply user image to Label2 and message to Label1
-      if (isVotiveCandle && firestoreData) {
+      // Skip if transitioning - will be handled by updateCandleTextures
+      if (isVotiveCandle && firestoreData && !isTransitioning) {
         console.log('Applying user data to votive candle labels');
         
         const imageUrl = firestoreData.image || firestoreData.profileImage || '/defaultAvatar.png';
@@ -448,27 +650,23 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         img.crossOrigin = 'anonymous';
         
         img.onload = () => {
-          // Don't apply texture immediately if we're transitioning
-          if (!isTransitioning) {
-            setTimeout(() => {
-              const label2Texture = createVotiveLabel2Texture(img);
-              
-              // Find and update Label2
-              clonedCandle.traverse((child) => {
-                if (child.name === 'Label2' && child.isMesh) {
-                  if (child.material) {
-                    // Clone and update existing material instead of replacing
-                    child.material = child.material.clone();
-                    child.material.map = label2Texture;
-                    child.material.metalness = 0;
-                    child.material.roughness = 1;
-                    child.material.needsUpdate = true;
-                    console.log('Applied texture to votive Label2');
-                  }
-                }
-              });
-            }, 100); // Small delay for initial load
-          }
+          // Apply texture immediately - no delay needed
+          const label2Texture = createVotiveLabel2Texture(img);
+          
+          // Find and update Label2
+          clonedCandle.traverse((child) => {
+            if (child.name === 'Label2' && child.isMesh) {
+              if (child.material) {
+                // Clone and update existing material instead of replacing
+                child.material = child.material.clone();
+                child.material.map = label2Texture;
+                child.material.metalness = 0;
+                child.material.roughness = 1;
+                child.material.needsUpdate = true;
+                console.log('Applied texture to votive Label2');
+              }
+            }
+          });
         };
         
         img.onerror = () => {
@@ -713,8 +911,8 @@ function CandleScene({ firestoreData, onDoubleClick }) {
     
     // Handle curtain transition animation
     if (curtainRef.current) {
-      const CURTAIN_SPEED = 1.5; // Slower speed for smoother transition
-      const CURTAIN_HOLD = 0.4; // Slightly longer hold while scene changes
+      const CURTAIN_SPEED = 0.8; // Slower speed for longer, smoother transition
+      const CURTAIN_HOLD = 0.8; // Hold curtain closed longer while textures swap
       
       if (isTransitioning) {
         // Update curtain progress
@@ -724,14 +922,15 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         const progress = curtainProgressRef.current;
         
         if (progress < 1) {
-          // Closing curtain (0 to 1 progress = 0 to 1 opacity)
-          curtainOpacity = progress;
+          // Closing curtain (0 to 1 progress = 0 to 1 opacity) - ease in
+          curtainOpacity = Math.sin((progress * Math.PI) / 2);
         } else if (progress < 1 + CURTAIN_HOLD) {
           // Holding curtain closed
           curtainOpacity = 1;
         } else if (progress < 2 + CURTAIN_HOLD) {
-          // Opening curtain (1+hold to 2+hold progress = 1 to 0 opacity)
-          curtainOpacity = Math.max(0, 2 + CURTAIN_HOLD - progress);
+          // Opening curtain (1+hold to 2+hold progress = 1 to 0 opacity) - ease out
+          const openProgress = (progress - 1 - CURTAIN_HOLD);
+          curtainOpacity = Math.max(0, Math.cos((openProgress * Math.PI) / 2));
         }
         
         // Apply curtain opacity and ensure visibility
@@ -1140,9 +1339,9 @@ function CameraAnimator({ entered, isFullscreen = false }) {
       targetFov = 35;
       setInitialAnimationComplete(false); // Reset so we can animate
     } else {
-      // Regular view - default position
-      targetPos = { x: 0, y: 0, z: 7 };
-      targetFov = 45;
+      // Regular view - default position (adjust these values to change main view)
+      targetPos = { x: 0, y: 0, z: 5 };  // Changed from z: 7
+      targetFov = 35;  // Changed from 45
     }
     
     // Animate camera
@@ -1176,6 +1375,7 @@ export default function SingleCandleDisplay({ firestoreData }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [messageExpanded, setMessageExpanded] = useState(false);
+  const [displayedUserData, setDisplayedUserData] = useState(firestoreData);
   const containerRef = useRef();
   
   useEffect(() => {
@@ -1186,6 +1386,23 @@ export default function SingleCandleDisplay({ firestoreData }) {
     
     return () => clearTimeout(timer);
   }, []);
+  
+  // Sync the displayed user data with the transition
+  useEffect(() => {
+    // Check if user is actually changing
+    const currentId = firestoreData?.id || firestoreData?.userId;
+    const displayedId = displayedUserData?.id || displayedUserData?.userId;
+    
+    if (currentId !== displayedId && displayedId !== undefined) {
+      // Delay the user info update to match the curtain transition
+      setTimeout(() => {
+        setDisplayedUserData(firestoreData);
+      }, 1200); // Match the texture swap timing
+    } else if (displayedId === undefined) {
+      // Initial load - set immediately
+      setDisplayedUserData(firestoreData);
+    }
+  }, [firestoreData]);
   
   // Handle window resize
   useEffect(() => {
@@ -1254,7 +1471,7 @@ export default function SingleCandleDisplay({ firestoreData }) {
             position: 'relative'
           }}>
             <Canvas
-            camera={{ position: [0, 0, 7], fov: 45 }}
+            camera={{ position: [0, 0, 6], fov: 35 }}
             style={{ width: '100%', height: '100%', background: 'black' }}
             shadows
             gl={{ 
@@ -1290,7 +1507,7 @@ export default function SingleCandleDisplay({ firestoreData }) {
           </div>
           
           {/* User info panel */}
-          {firestoreData && (
+          {displayedUserData && (
             <div style={{
               width: isMobile ? '100%' : '320px',
               height: isMobile ? 'auto' : '100%',
@@ -1318,8 +1535,8 @@ export default function SingleCandleDisplay({ firestoreData }) {
                 background: 'rgba(0,255,0,0.1)'
               }}>
                 <img 
-                  src={firestoreData.image || firestoreData.profileImage || '/defaultAvatar.png'}
-                  alt={firestoreData.username || 'User'}
+                  src={displayedUserData.image || displayedUserData.profileImage || '/defaultAvatar.png'}
+                  alt={displayedUserData.username || 'User'}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -1348,7 +1565,7 @@ export default function SingleCandleDisplay({ firestoreData }) {
                   textShadow: '0 0 20px rgba(0,255,0,0.5)',
                   letterSpacing: '1px'
                 }}>
-                  {firestoreData.username || firestoreData.userName || firestoreData.name || 'Anonymous Trader'}
+                  {displayedUserData.username || displayedUserData.userName || displayedUserData.name || 'Anonymous Trader'}
                 </h2>
                 
                 {/* Prayer/Message Box - more compact on mobile */}
@@ -1389,10 +1606,10 @@ export default function SingleCandleDisplay({ firestoreData }) {
                       cursor: isMobile ? 'pointer' : 'default',
                       position: 'relative'
                     }}>
-                    "{firestoreData.message || firestoreData.prayer || 'May the gains be with you 🚀'}"
+                    "{displayedUserData.message || displayedUserData.prayer || 'May the gains be with you 🚀'}"
                   </p>
                   {/* Show more/less indicator for mobile */}
-                  {isMobile && (firestoreData.message || firestoreData.prayer || '').length > 80 && (
+                  {isMobile && (displayedUserData.message || displayedUserData.prayer || '').length > 80 && (
                     <div 
                       onClick={() => setMessageExpanded(!messageExpanded)}
                       style={{
@@ -1410,7 +1627,7 @@ export default function SingleCandleDisplay({ firestoreData }) {
               </div>
               
               {/* Performance indicator if available - hide on mobile */}
-              {!isMobile && (firestoreData.performance || firestoreData.burnedAmount) && (
+              {!isMobile && (displayedUserData.performance || displayedUserData.burnedAmount) && (
                 <div style={{
                   background: 'rgba(0,255,0,0.1)',
                   border: '1px solid rgba(0,255,0,0.3)',
@@ -1430,7 +1647,7 @@ export default function SingleCandleDisplay({ firestoreData }) {
                     fontSize: '20px',
                     fontWeight: 'bold'
                   }}>
-                    {(firestoreData.performance || firestoreData.burnedAmount || 0).toLocaleString()} RL80
+                    {(displayedUserData.performance || displayedUserData.burnedAmount || 0).toLocaleString()} RL80
                   </div>
                 </div>
               )}
@@ -1519,12 +1736,52 @@ export default function SingleCandleDisplay({ firestoreData }) {
             color: '#00ff00',
             fontSize: '12px'
           }}>
-            Loading candle...
+            Loading ...
+          </div>
+        )}
+        
+        {/* Click to Enter Portal Indicator */}
+        {isCanvasReady && (
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            left: '60%',
+            transform: 'translateX(-50%)',
+            padding: '4px 4px',
+            background: 'rgba(0, 0, 0, 0.6)',
+            border: '1px solid rgba(0, 255, 0, 0.25)',
+            borderRadius: '15px',
+            color: '#00ff00',
+            fontSize: '10px',
+            fontWeight: '500',
+            letterSpacing: '0.3px',
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            pointerEvents: 'none',
+            animation: 'pulse 2s infinite',
+            zIndex: 5,
+            boxShadow: '0 1px 6px rgba(0, 255, 0, 0.15)'
+          }}>
+            Click candle to <br/>enter portal
           </div>
         )}
         
         {/* User Info Overlay - only show when not fullscreen */}
-        <UserInfoOverlay userData={firestoreData} />
+        <UserInfoOverlay userData={displayedUserData} />
+        
+        {/* Add pulse animation styles */}
+        <style jsx>{`
+          @keyframes pulse {
+            0%, 100% { 
+              opacity: 0.7; 
+              transform: translateX(-50%) scale(1);
+            }
+            50% { 
+              opacity: 1; 
+              transform: translateX(-50%) scale(1.05);
+            }
+          }
+        `}</style>
       </div>
       )}
     </>

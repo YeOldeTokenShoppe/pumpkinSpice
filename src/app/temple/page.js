@@ -387,7 +387,7 @@ export default function CyborgTemple() {
               is80sMode={is80sMode}
             />
 
-            {tickerReady && <TickerDisplay3 onLoad={handleTickerLoad} />}
+            {tickerReady && <TickerDisplay3 modelRef={modelRef} onLoad={handleTickerLoad} />}
 
             
             {/* Constellation */}
@@ -478,8 +478,10 @@ export default function CyborgTemple() {
                 <div
                   style={{
                     display: "flex",
-                    alignItems: "center",
+                    alignItems: isMobileView ? "flex-end" : "center",
+                    flexDirection: isMobileView ? "column" : "row",
                     gap: "0.5rem",
+                    position: "relative",
                   }}
                 >
                   <div
@@ -503,68 +505,84 @@ export default function CyborgTemple() {
                     title={contextIsPlaying ? "Pause Music" : "Play Music"}
                   />
                   
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (nextTrack) {
-                        nextTrack();
-                      }
-                    }}
+                  {/* Additional controls container - positioned differently on mobile */}
+                  <div
                     style={{
-                      width: isMobileView ? "2rem" : "2.5rem",
-                      height: isMobileView ? "2rem" : "2.5rem",
-                      borderRadius: "0.25rem",
-                      backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
-                      border: is80sMode ? "1px solid #D946EF" : "1px solid rgba(255, 255, 255, 0.2)",
-                      color: is80sMode ? "#67e8f9" : "#ffffff",
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      backdropFilter: "blur(10px)",
-                      boxShadow: "0 0.125rem 0.375rem rgba(0, 0, 0, 0.3)",
+                      flexDirection: "row",
+                      gap: "0.25rem",
+                      position: isMobileView ? "absolute" : "relative",
+                      top: isMobileView ? "0" : "auto",
+                      right: isMobileView ? "3rem" : "auto",
+                      background: isMobileView ? "rgba(0, 0, 0, 0.8)" : "transparent",
+                      padding: isMobileView ? "0.25rem" : "0",
+                      borderRadius: isMobileView ? "0.5rem" : "0",
+                      backdropFilter: isMobileView ? "blur(10px)" : "none",
                     }}
-                    title="Next Track"
                   >
-                    <svg width={isMobileView ? "12" : "16"} height={isMobileView ? "12" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="5 4 15 12 5 20 5 4"/>
-                      <line x1="19" y1="5" x2="19" y2="19"/>
-                    </svg>
-                  </button>
-                  
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowMusicControls(false);
-                      if (pause) {
-                        pause();
-                      }
-                    }}
-                    style={{
-                      width: isMobileView ? "2rem" : "2.5rem",
-                      height: isMobileView ? "2rem" : "2.5rem",
-                      borderRadius: "0.25rem",
-                      backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
-                      border: is80sMode ? "1px solid #D946EF" : "1px solid rgba(255, 255, 255, 0.2)",
-                      color: is80sMode ? "#67e8f9" : "#ffffff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      backdropFilter: "blur(10px)",
-                      boxShadow: "0 0.125rem 0.375rem rgba(0, 0, 0, 0.3)",
-                    }}
-                    title="Close Music"
-                  >
-                    <svg width={isMobileView ? "12" : "16"} height={isMobileView ? "12" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (nextTrack) {
+                          nextTrack();
+                        }
+                      }}
+                      style={{
+                        width: isMobileView ? "2rem" : "2.5rem",
+                        height: isMobileView ? "2rem" : "2.5rem",
+                        borderRadius: "0.25rem",
+                        backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
+                        border: is80sMode ? "1px solid #D946EF" : "1px solid rgba(255, 255, 255, 0.2)",
+                        color: is80sMode ? "#67e8f9" : "#ffffff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        backdropFilter: "blur(10px)",
+                        boxShadow: "0 0.125rem 0.375rem rgba(0, 0, 0, 0.3)",
+                      }}
+                      title="Next Track"
+                    >
+                      <svg width={isMobileView ? "12" : "16"} height={isMobileView ? "12" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="5 4 15 12 5 20 5 4"/>
+                        <line x1="19" y1="5" x2="19" y2="19"/>
+                      </svg>
+                    </button>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowMusicControls(false);
+                        if (pause) {
+                          pause();
+                        }
+                      }}
+                      style={{
+                        width: isMobileView ? "2rem" : "2.5rem",
+                        height: isMobileView ? "2rem" : "2.5rem",
+                        borderRadius: "0.25rem",
+                        backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
+                        border: is80sMode ? "1px solid #D946EF" : "1px solid rgba(255, 255, 255, 0.2)",
+                        color: is80sMode ? "#67e8f9" : "#ffffff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        backdropFilter: "blur(10px)",
+                        boxShadow: "0 0.125rem 0.375rem rgba(0, 0, 0, 0.3)",
+                      }}
+                      title="Close Music"
+                    >
+                      <svg width={isMobileView ? "12" : "16"} height={isMobileView ? "12" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

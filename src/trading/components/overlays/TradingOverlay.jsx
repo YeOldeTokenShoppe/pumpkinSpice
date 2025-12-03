@@ -36,12 +36,12 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const firestoreResults = useFirestoreResults('burnedAmount'); // Get top burners
   const [candleIndex, setCandleIndex] = useState(0);
   
-  // Rotate through different candles every 30 seconds
+  // Rotate through different candles more frequently
   useEffect(() => {
     if (firestoreResults && firestoreResults.length > 0) {
       const interval = setInterval(() => {
         setCandleIndex(prev => (prev + 1) % firestoreResults.length);
-      }, 30000); // Change every 30 seconds
+      }, 10000); // Change every 10 seconds
       
       return () => clearInterval(interval);
     }
@@ -1451,10 +1451,9 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         width: 'min(320px, 25vw)',
         minWidth: '260px',
         maxWidth: '340px',
-        // Dynamic height: from top (120px) to just above bottom panel (20px + bottom panel height)
-        // Bottom panel starts at bottom: 20px and we want at least 20px gap
-        height: 'calc(100vh - 120px - 40vh - 60px)', // Full height minus top, bottom panel, and gaps
-        maxHeight: 'calc(100vh - 480px)', // Ensure minimum space for bottom panel
+        // Improved height calculation to prevent overlap
+        height: 'calc(50vh - 140px)', // Use 50% of viewport minus top offset and gap
+        maxHeight: '400px', // Maximum height to ensure space for bottom panels
         minHeight: '200px', // Minimum usable height
         boxShadow: '0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 255, 0, 0.05)',
         backdropFilter: 'blur(10px)',
@@ -2135,7 +2134,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
       {/* Candle Visualization Panel - Bottom Left */}
       <div style={{
           position: 'fixed',
-          bottom: '20px',
+          top: 'calc(50vh + 40px)', // Position below top panel with gap
           left: '20px',
           background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
           border: '2px solid #00ff00',
@@ -2147,10 +2146,10 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           width: 'min(320px, 25vw)',
           minWidth: '260px',
           maxWidth: '340px',
-          // Dynamic height: use up to 40% of viewport or available space
-          height: 'min(40vh, calc(100vh - 120px - 200px - 60px))', // 40% or remaining space
+          // Adjusted height calculation
+          height: 'calc(50vh - 80px)', // Use remaining 50% of viewport minus gap and bottom margin
           minHeight: '320px', // Minimum for candle display
-          maxHeight: '450px', // Cap for very tall screens
+          maxHeight: '400px', // Reduced cap to prevent overlap
           boxShadow: '0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 255, 0, 0.05)',
           backdropFilter: 'blur(10px)',
           display: 'flex',
@@ -2332,7 +2331,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
       {/* Model Chat Panel - Bottom Right - Always Visible */}
       <div style={{
           position: 'fixed',
-          bottom: '20px',
+          top: 'calc(50vh + 40px)', // Position below top panel with gap
           right: '20px',
           background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
           border: '2px solid #00ff00',
@@ -2344,10 +2343,10 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           width: 'min(320px, 25vw)',
           minWidth: '260px',
           maxWidth: '340px',
-          // Match bottom left panel height
-          height: 'min(40vh, calc(100vh - 120px - 200px - 60px))',
+          // Match left bottom panel height
+          height: 'calc(50vh - 80px)', // Use remaining 50% of viewport minus gap and bottom margin
           minHeight: '250px', // Minimum for chat display
-          maxHeight: '450px',
+          maxHeight: '400px',
           boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)',
           backdropFilter: 'blur(10px)',
           display: 'flex',
@@ -2529,9 +2528,9 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         width: 'min(320px, 25vw)',
         minWidth: '260px',
         maxWidth: '340px',
-        // Match left panel height calculation
-        height: 'calc(100vh - 120px - 40vh - 60px)',
-        maxHeight: 'calc(100vh - 480px)',
+        // Match left panel height calculation to prevent overlap
+        height: 'calc(50vh - 140px)', // Use 50% of viewport minus top offset and gap
+        maxHeight: '400px', // Maximum height to ensure space for bottom panels
         minHeight: '200px',
         boxShadow: '0 0 20px rgba(0, 255, 0, 0.3)',
         backdropFilter: 'blur(10px)',
