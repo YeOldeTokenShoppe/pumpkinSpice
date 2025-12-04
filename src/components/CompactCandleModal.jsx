@@ -1,4 +1,5 @@
 import React, { useState, Suspense, useRef, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useTexture } from '@react-three/drei';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -294,8 +295,8 @@ function loadHandsImage(callback) {
 }
 
 // 3D Candle Component
-function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'en', template = null, templatePosition = { x: 50, y: 50 }, templateScale = 100, templateRotation = 0, skinToneAdjustment = 0, userImagePosition = { x: 50, y: 50 }, userImageScale = 100, userImageRotation = 0 }) {
-  const { scene, animations } = useGLTF('/models/singleCandleAnimatedFlame.glb');
+function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'en', template = null, templatePosition = { x: 50, y: 50 }, templateScale = 100, templateRotation = 0, skinToneAdjustment = 0, userImagePosition = { x: 50, y: 50 }, userImageScale = 100, userImageRotation = 0, candleModel = '/models/singleCandleAnimatedFlame.glb' }) {
+  const { scene, animations } = useGLTF(candleModel);
   const candleRef = useRef();
   const clonedSceneRef = useRef(null);
   const defaultTexture = useTexture('/defaultAvatar.png');
@@ -1101,7 +1102,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
           ref={candleRef}
           object={clonedSceneRef.current} 
           scale={[2, 2, 2]}
-          position={[0, -2, 0]}
+          position={[0, -1, 0]}
         />
       )}
       <OrbitControls 
@@ -1109,8 +1110,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
         enableZoom={false}
         minPolarAngle={Math.PI / 3}
         maxPolarAngle={Math.PI / 2}
-        autoRotate={true}
-        autoRotateSpeed={0.5}
+        autoRotate={false}
       />
     </>
   );
@@ -1119,7 +1119,21 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
 // Preload the candle model
 useGLTF.preload('/models/singleCandleAnimatedFlame.glb');
 
+// Available background textures
+const BACKGROUND_TEXTURES = [
+  { id: 'cyberpunk', path: '/cyberpunk.webp', name: 'Cyberpunk' },
+  { id: 'synthwave', path: '/synthwave.webp', name: 'Synthwave' },
+  { id: 'gothicTokyo', path: '/gothicTokyo.webp', name: 'Gothic Tokyo' },
+  { id: 'neoTokyo', path: '/neoTokyo.webp', name: 'Neo Tokyo' },
+  { id: 'aurora', path: '/aurora.webp', name: 'Aurora' },
+  { id: 'templeScene', path: '/templeScene.webp', name: 'Temple Scene' }
+];
+
 export default function CompactCandleModal({ isOpen, onClose, onCandleCreated }) {
+  // Step tracking for multi-step flow (now 6 steps with background)
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 6; // Step 1: Candle, Step 2: Message Type, Step 3: Image, Step 4: Message, Step 5: Background, Step 6: Review
+  
   // Get top burners for Illumin80 qualification
   const topBurners = useFirestoreResults("burnedAmount");
   
@@ -1216,10 +1230,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [selectedPrayer, setSelectedPrayer] = useState(null);
   const [currentLanguage, setCurrentLanguage] = useState(getUserLanguage());
   const [formData, setFormData] = useState({
+    messageType: '', // 'petition', 'confession', or 'praise'
+    candleType: 'votive', // 'ecclesiastical', 'japanese', or 'votive' - default to votive
     username: '',
     message: '',
     burnedAmount: '',
     allowLikes: false, // Default to not allowing likes
+    background: 'synthwave', // Default background
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -1241,9 +1258,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [scrambledDisplay, setScrambledDisplay] = useState('');
   const [canvasKey, setCanvasKey] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showExitConfirmDialog, setShowExitConfirmDialog] = useState(false); // For exit confirmation
   // Removed isBurning state - no longer using burning effect
   const [showRotateTooltip, setShowRotateTooltip] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState(''); // For custom toast messages
   const [candleWasCreated, setCandleWasCreated] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [showCandleSnapshot, setShowCandleSnapshot] = useState(false);
@@ -1299,6 +1318,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
   
+  // Debug exit dialog state
+  useEffect(() => {
+    console.log('showExitConfirmDialog state changed to:', showExitConfirmDialog);
+  }, [showExitConfirmDialog]);
+
   // Reset form when modal opens and prepopulate with Clerk user data
   useEffect(() => {
     if (isOpen) {
@@ -1345,11 +1369,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       console.log('Final clerkImageUrl:', clerkImageUrl);
       
       setFormData({
+        messageType: '',
+        candleType: 'votive', // Reset to default votive
         username: '',
         message: '',
         burnedAmount: '',
         allowLikes: false,
       });
+      setCurrentStep(1);
       setSelectedPrayer(null);
       // Don't clear imageFile if we already have one (preserve across template changes)
       if (!imageFile && !imagePreview) {
@@ -1898,7 +1925,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           // Open Instagram post or provide share link
           if (data.postUrl) {
             window.open(data.postUrl, '_blank');
-            alert('Posted to @yourappname! You can now share it to your story or repost it.');
+            setToastMessage('📷 Posted to @yourappname! You can now share it to your story or repost it.');
+            setShowSuccessToast(true);
+            setTimeout(() => setShowSuccessToast(false), 5000);
           }
         }
       } catch (error) {
@@ -1908,17 +1937,21 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         link.download = `candle-${formData.username.replace(/\s+/g, '-')}.png`;
         link.href = capturedImage;
         link.click();
-        alert('Image downloaded! Share it on Instagram.');
+        setToastMessage('📸 Image downloaded! Share it on Instagram.');
+        setShowSuccessToast(true);
+        setTimeout(() => setShowSuccessToast(false), 5000);
       }
     }
   };
 
   const handleSubmit = (e) => {
+    console.log('handleSubmit called');
     e.preventDefault();
     e.stopPropagation();
     
     // Don't submit if we're showing other dialogs
     if (showPasswordDialog) {
+      console.log('Password dialog is showing, returning');
       return;
     }
     
@@ -1931,6 +1964,16 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       trimmedMessage = truncateToBytes(trimmedMessage, 500);
       // Update form data to reflect truncation
       setFormData(prev => ({ ...prev, message: trimmedMessage }));
+    }
+    
+    if (!formData.messageType) {
+      setError('Please select a message type');
+      return;
+    }
+    
+    if (!formData.candleType) {
+      setError('Please select a candle type');
+      return;
     }
     
     if (!trimmedUsername) {
@@ -1963,16 +2006,31 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     captureCandle();
     
     // Show confirmation dialog instead of immediately saving
+    console.log('Setting showConfirmDialog to true');
     setShowConfirmDialog(true);
+    console.log('showConfirmDialog state will be:', true);
   };
   
-  const handleConfirmedSave = async () => {
+  const handleConfirmedSave = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    console.log('handleConfirmedSave called');
+    
+    // Capture the candle image first
+    captureCandle();
+    
+    // Small delay to ensure image is captured
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     setShowConfirmDialog(false);
-    setCapturedImage(null); // Clear captured image until after save
     
     // Get sanitized values
     const trimmedUsername = formData.username.trim();
     const trimmedMessage = formData.message.trim();
+    console.log('Form data:', { trimmedUsername, trimmedMessage, formData });
     
     // No burning effect - proceed directly to saving
 
@@ -1980,8 +2038,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     setError('');
 
     try {
+      console.log('Starting save process...');
       // Upload image or use Clerk profile image
       const imageUrl = await uploadImage();
+      console.log('Image uploaded:', imageUrl);
 
       let docData;
       
@@ -1989,6 +2049,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         // Encrypt the message before saving
         const encryptedData = await encryptMessage(trimmedMessage, encryptionPassword);
         docData = {
+          messageType: formData.messageType,
+          candleType: formData.candleType,
           username: trimmedUsername,
           encrypted: encryptedData.encrypted,
           salt: encryptedData.salt,
@@ -1996,6 +2058,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           isEncrypted: true,
           burnedAmount: parseInt(formData.burnedAmount) || 1000,
           image: imageUrl,
+          background: formData.background || 'synthwave',
           staked: false,
           allowLikes: formData.allowLikes || false,
           likes: 0, // Initialize likes counter
@@ -2004,10 +2067,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       } else {
         // Save unencrypted message
         docData = {
+          messageType: formData.messageType,
+          candleType: formData.candleType,
           username: trimmedUsername,
           message: trimmedMessage,
           burnedAmount: parseInt(formData.burnedAmount) || 1000,
           image: imageUrl,
+          background: formData.background || 'synthwave',
           staked: false,
           allowLikes: formData.allowLikes || false,
           likes: 0, // Initialize likes counter
@@ -2015,10 +2081,17 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         };
       }
 
-      const docRef = await addDoc(collection(db, 'results'), docData);
+      console.log('Attempting to save to Firestore with data:', docData);
+      const docRef = await addDoc(collection(db, 'candles'), docData);
+      console.log('Candle saved successfully with ID:', docRef.id);
 
       // Mark that candle was successfully created
       setCandleWasCreated(true);
+      
+      // Show success feedback
+      setToastMessage('🕯️ Your candle has been lit successfully! ✨');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
       
       // Save candle data for snapshot BEFORE clearing form
       setSavedCandleData({
@@ -2030,11 +2103,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       
       // Clear the form immediately after saving data
       setFormData({
+        messageType: '',
+        candleType: 'votive', // Reset to default votive
         username: '',
         message: '',
         burnedAmount: 1000,
         allowLikes: false,
       });
+      setCurrentStep(1);
       setImageFile(null);
       setImagePreview(null);
       setSelectedTemplate(null);
@@ -2056,15 +2132,970 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       // Candle successfully created and snapshot will be shown
     } catch (err) {
       console.error('Error creating candle:', err);
-      setError('Failed to create candle. Please try again.');
+      console.error('Error details:', err.message, err.code);
+      setError(`Failed to create candle: ${err.message || 'Please try again.'}`);
       setCandleWasCreated(false);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Function to render step content
+  const renderStepContent = () => {
+    switch(currentStep) {
+      case 1: // Candle Type Selection
+        return (
+          <div style={{
+            padding: '20px',
+            textAlign: 'center'
+          }}>
+            <h2 style={{
+              fontSize: '24px',
+              marginBottom: '10px',
+              color: '#ffd700',
+              fontWeight: 'bold'
+            }}>Choose Your Candle</h2>
+            <p style={{
+              fontSize: '14px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              marginBottom: '30px'
+            }}>Select the style for your offering</p>
+            
+            <div style={{
+              display: 'flex',
+              gap: '20px',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              maxWidth: '800px',
+              margin: '0 auto'
+            }}>
+              {[
+                { 
+                  value: 'votive', 
+                  label: 'Votive', 
+                  description: 'Classic prayer candle',
+                  image: '/votiveCandlePreview.webp'
+                },
+                { 
+                  value: 'japanese', 
+                  label: 'Japanese', 
+                  description: 'Minimalist zen style',
+                  image: '/japaneseCandlePreview.webp'
+                },
+                { 
+                  value: 'ecclesiastical', 
+                  label: 'Ecclesiastical', 
+                  description: 'Traditional church candle',
+                  image: '/ecclesiasticalCandlePreview.webp'
+                }
+              ].map((type) => (
+                <button
+                  key={type.value}
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, candleType: type.value }));
+                    // Don't auto-advance - let user click Next when ready
+                  }}
+                  style={{
+                    padding: '20px',
+                    width: '200px',
+                    background: formData.candleType === type.value 
+                      ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))'
+                      : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                    border: formData.candleType === type.value 
+                      ? '2px solid #ffd700'
+                      : '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '15px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)';
+                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(255, 215, 0, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {/* Image Preview */}
+                  <div style={{
+                    width: '160px',
+                    height: '120px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                  }}>
+                    <img 
+                      src={type.image}
+                      alt={type.label}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain'
+                      }}
+                    />
+                  </div>
+                  
+                  <div>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '5px' }}>
+                      {type.label}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                      {type.description}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+        
+      case 2: // Message Type Selection
+        return (
+          <div style={{
+            padding: '20px',
+            textAlign: 'center'
+          }}>
+            <h2 style={{
+              fontSize: '24px',
+              marginBottom: '10px',
+              color: '#ffd700',
+              fontWeight: 'bold'
+            }}>What type of message?</h2>
+            <p style={{
+              fontSize: '14px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              marginBottom: '30px'
+            }}>Choose the intention for your candle</p>
+            
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '15px',
+              maxWidth: '400px',
+              margin: '0 auto'
+            }}>
+              {[
+                { value: 'petition', label: '🙏 Petition', description: 'Ask for divine intercession' },
+                { value: 'confession', label: '💭 Confession', description: 'Unburden your heart' },
+                { value: 'praise', label: '✨ Thanks', description: 'Show your appreciation' }
+              ].map((type) => (
+                <button
+                  key={type.value}
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, messageType: type.value }));
+                    // Don't auto-advance - let user click Next when ready
+                  }}
+                  style={{
+                    padding: '20px',
+                    background: formData.messageType === type.value 
+                      ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))'
+                      : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                    border: formData.messageType === type.value 
+                      ? '2px solid #ffd700'
+                      : '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 5px 20px rgba(255, 215, 0, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '5px' }}>
+                    {type.label}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    {type.description}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+        
+      case 3: // Image customization for votive
+        return (
+          <div style={{ padding: '20px' }}>
+            <h3 style={{
+              fontSize: '20px',
+              marginBottom: '20px',
+              color: '#ffd700',
+              textAlign: 'center'
+            }}>Personalize Your Candle</h3>
+            
+            {/* Show image upload option for votive candles */}
+            {formData.candleType === 'votive' ? (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  fontSize: '14px',
+                  color: 'rgba(255, 255, 255, 0.8)'
+                }}>
+                  Personalize Your Candle (Optional)
+                </label>
+                <label style={{
+                  display: 'block',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleImageChange}
+                    style={{ display: 'none' }}
+                  />
+                  <span style={{ 
+                    color: imageFile ? '#00ff00' : 'rgba(255, 215, 0, 0.8)',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}>
+                    {imageFile ? (
+                      <>✅ Image Uploaded</>
+                    ) : (
+                      <>📷 Add Your Image</>
+                    )}
+                  </span>
+                </label>
+                
+                {/* Show preview if image uploaded */}
+                {imagePreview && (
+                  <div style={{
+                    marginTop: '10px',
+                    textAlign: 'center'
+                  }}>
+                    <img 
+                      src={imagePreview}
+                      alt="Preview"
+                      style={{
+                        maxWidth: '100px',
+                        maxHeight: '100px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 215, 0, 0.3)'
+                      }}
+                    />
+                  </div>
+                )}
+                
+                {/* Template Gallery - Show if image selected */}
+                {imagePreview && (
+                  <div style={{
+                    marginTop: '15px',
+                    marginBottom: '10px'
+                  }}>
+                    <div style={{
+                      color: 'rgba(255, 215, 0, 0.9)',
+                      fontSize: '12px',
+                      marginBottom: '8px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px'
+                    }}>
+                      Choose Template:
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      gap: '10px',
+                      overflowX: 'auto',
+                      padding: '10px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '12px',
+                      WebkitOverflowScrolling: 'touch',
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'rgba(255, 215, 0, 0.3) transparent'
+                    }}>
+                      {templates.map((template) => (
+                        <button
+                          key={template.id || 'none'}
+                          type="button"
+                          onClick={() => selectTemplate(template)}
+                          style={{
+                            minWidth: '80px',
+                            height: '80px',
+                            padding: '8px',
+                            backgroundColor: selectedTemplate === template.id ? 
+                              'rgba(255, 102, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)',
+                            border: selectedTemplate === template.id ? 
+                              '3px solid #ff6600' : '2px solid rgba(255, 215, 0, 0.2)',
+                            borderRadius: '12px',
+                            color: selectedTemplate === template.id ? 
+                              '#ff6600' : 'rgba(255, 255, 255, 0.9)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px',
+                            transition: 'all 0.3s ease',
+                            flexShrink: 0,
+                            transform: selectedTemplate === template.id ? 'scale(1.05)' : 'scale(1)',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (selectedTemplate !== template.id) {
+                              e.target.style.transform = 'scale(1.05)';
+                              e.target.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedTemplate !== template.id) {
+                              e.target.style.transform = 'scale(1)';
+                              e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                            }
+                          }}
+                        >
+                          {template.id ? (
+                            <img 
+                              src={template.id} 
+                              alt={template.name}
+                              style={{
+                                width: '50px',
+                                height: '50px',
+                                objectFit: 'cover',
+                                borderRadius: '8px',
+                                marginBottom: '4px'
+                              }}
+                            />
+                          ) : (
+                            <div style={{ fontSize: '28px', marginBottom: '4px' }}>{template.preview}</div>
+                          )}
+                          <div style={{ 
+                            fontSize: '11px', 
+                            fontWeight: selectedTemplate === template.id ? 'bold' : 'normal',
+                            opacity: selectedTemplate === template.id ? 1 : 0.8
+                          }}>
+                            {template.name}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Position Controls - Show if template selected */}
+                {imagePreview && selectedTemplate && (
+                  <div style={{
+                    marginTop: '10px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 102, 0, 0.2)'
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowPositionControls(!showPositionControls)}
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: 'rgba(255, 102, 0, 0.8)',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {showPositionControls ? '▼' : '▶'} Adjust Your Image
+                    </button>
+                    
+                    {showPositionControls && (
+                      <>
+                        <div style={{
+                          marginTop: '8px',
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '8px',
+                          padding: '8px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                          borderRadius: '6px'
+                        }}>
+                          <div>
+                            <label style={{
+                              fontSize: '11px',
+                              color: 'rgba(255, 255, 255, 0.6)',
+                              marginBottom: '2px',
+                              display: 'block'
+                            }}>
+                              X: {userImagePosition.x.toFixed(0)}%
+                            </label>
+                            <input
+                              type="range"
+                              min="25"
+                              max="75"
+                              value={userImagePosition.x}
+                              onChange={(e) => setUserImagePosition({ ...userImagePosition, x: parseFloat(e.target.value) })}
+                              style={{
+                                width: '100%',
+                                height: '16px',
+                                accentColor: '#ff6600'
+                              }}
+                            />
+                          </div>
+                          
+                          <div>
+                            <label style={{
+                              fontSize: '11px',
+                              color: 'rgba(255, 255, 255, 0.6)',
+                              marginBottom: '2px',
+                              display: 'block'
+                            }}>
+                              Y: {userImagePosition.y.toFixed(0)}%
+                            </label>
+                            <input
+                              type="range"
+                              min="25"
+                              max="75"
+                              value={userImagePosition.y}
+                              onChange={(e) => setUserImagePosition({ ...userImagePosition, y: parseFloat(e.target.value) })}
+                              style={{
+                                width: '100%',
+                                height: '16px',
+                                accentColor: '#ff6600'
+                              }}
+                            />
+                          </div>
+                          
+                          <div>
+                            <label style={{
+                              fontSize: '11px',
+                              color: 'rgba(255, 255, 255, 0.6)',
+                              marginBottom: '2px',
+                              display: 'block'
+                            }}>
+                              Size: {userImageScale}%
+                            </label>
+                            <input
+                              type="range"
+                              min="50"
+                              max="150"
+                              value={userImageScale}
+                              onChange={(e) => setUserImageScale(parseFloat(e.target.value))}
+                              style={{
+                                width: '100%',
+                                height: '16px',
+                                accentColor: '#ff6600'
+                              }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Skin Tone Adjustment - Only for Virgin Mary template */}
+                        {selectedTemplate === '/images/face2.png' && (
+                          <div style={{ 
+                            marginTop: '8px',
+                            padding: '8px',
+                            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                            borderRadius: '6px'
+                          }}>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '11px',
+                              color: 'rgba(255, 255, 255, 0.6)',
+                              marginBottom: '4px'
+                            }}>
+                              Skin Tone
+                            </label>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px'
+                            }}>
+                              <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Light</span>
+                              <input
+                                type="range"
+                                min="-100"
+                                max="100"
+                                value={skinToneAdjustment}
+                                onChange={(e) => setSkinToneAdjustment(parseFloat(e.target.value))}
+                                style={{
+                                  flex: 1,
+                                  height: '16px',
+                                  accentColor: '#ff6600'
+                                }}
+                              />
+                              <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Dark</span>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Message for non-votive candles
+              <div style={{
+                padding: '40px',
+                textAlign: 'center',
+                color: 'rgba(255, 255, 255, 0.7)'
+              }}>
+                <div style={{
+                  fontSize: '48px',
+                  marginBottom: '20px'
+                }}>
+                  {formData.candleType === 'ecclesiastical' ? '⛪' : '🏮'}
+                </div>
+                <p style={{
+                  fontSize: '16px',
+                  lineHeight: '1.6'
+                }}>
+                  {formData.candleType === 'ecclesiastical' 
+                    ? 'Ecclesiastical candles represent tradition and reverence'
+                    : 'Japanese candles embody minimalism and tranquility'}
+                </p>
+                <p style={{
+                  fontSize: '14px',
+                  marginTop: '20px',
+                  color: 'rgba(255, 255, 255, 0.5)'
+                }}>
+                  Click Next to continue with your offering
+                </p>
+              </div>
+            )}
+          </div>
+        );
+        
+      case 4: // Message/Prayer
+        return (
+          <div style={{ padding: '20px' }}>
+            <h3 style={{
+              fontSize: '20px',
+              marginBottom: '20px',
+              color: '#ffd700',
+              textAlign: 'center'
+            }}>
+              {formData.messageType === 'petition' && '🙏 Your Petition'}
+              {formData.messageType === 'confession' && '💭 Your Confession'}
+              {formData.messageType === 'praise' && '✨ Your Praise'}
+            </h3>
+            
+            {/* Name field */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontSize: '14px',
+                color: 'rgba(255, 255, 255, 0.8)'
+              }}>
+                Dedication Name
+              </label>
+              <input
+                type="text"
+                value={formData.username}
+                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                placeholder="On behalf of..."
+                maxLength={50}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                  color: '#fff',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+            
+            {/* Amount field */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontSize: '14px',
+                color: 'rgba(255, 255, 255, 0.8)'
+              }}>
+                Candle Offering (RL80)
+              </label>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentValue = parseInt(formData.burnedAmount) || 0;
+                    const newValue = Math.max(0, currentValue - 1000);
+                    setFormData(prev => ({ ...prev, burnedAmount: newValue || '' }));
+                  }}
+                  style={{
+                    background: 'rgba(255, 215, 0, 0.2)',
+                    border: 'none',
+                    borderRadius: '4px',
+                    color: 'rgba(255, 215, 0, 0.8)',
+                    cursor: 'pointer',
+                    padding: '8px 12px',
+                    fontSize: '18px'
+                  }}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  value={formData.burnedAmount}
+                  onChange={(e) => setFormData(prev => ({ ...prev, burnedAmount: e.target.value }))}
+                  placeholder="1000"
+                  min="0"
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    color: '#fff',
+                    fontSize: '14px',
+                    textAlign: 'center'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentValue = parseInt(formData.burnedAmount) || 0;
+                    const newValue = currentValue + 1000;
+                    setFormData(prev => ({ ...prev, burnedAmount: newValue }));
+                  }}
+                  style={{
+                    background: 'rgba(255, 215, 0, 0.2)',
+                    border: 'none',
+                    borderRadius: '4px',
+                    color: 'rgba(255, 215, 0, 0.8)',
+                    cursor: 'pointer',
+                    padding: '8px 12px',
+                    fontSize: '18px'
+                  }}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            
+            <textarea
+              ref={textareaRef}
+              value={scrambledDisplay || formData.message}
+              onChange={(e) => {
+                if (!isEncrypted) {
+                  setFormData(prev => ({ ...prev, message: e.target.value }));
+                }
+              }}
+              placeholder={
+                formData.messageType === 'petition' ? 'What do you seek...' :
+                formData.messageType === 'confession' ? 'What weighs on your heart...' :
+                'What are you grateful for...'
+              }
+              maxLength={500}
+              style={{
+                width: '100%',
+                minHeight: '150px',
+                padding: '12px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                color: '#fff',
+                fontSize: '14px',
+                resize: 'vertical'
+              }}
+            />
+            <div style={{
+              marginTop: '10px',
+              fontSize: '12px',
+              color: 'rgba(255, 255, 255, 0.5)',
+              textAlign: 'right'
+            }}>
+              {formData.message.length}/500 characters
+            </div>
+          </div>
+        );
+        
+      case 5: // Background Selection
+        return (
+          <div style={{ padding: '20px' }}>
+            <h3 style={{
+              fontSize: '20px',
+              marginBottom: '20px',
+              color: '#ffd700',
+              textAlign: 'center'
+            }}>Choose Your Sacred Space</h3>
+            
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '15px',
+              marginTop: '20px'
+            }}>
+              {BACKGROUND_TEXTURES.map((bg) => (
+                <button
+                  key={bg.id}
+                  onClick={() => setFormData(prev => ({ ...prev, background: bg.id }))}
+                  style={{
+                    position: 'relative',
+                    padding: '0',
+                    background: 'none',
+                    border: formData.background === bg.id 
+                      ? '3px solid #ffd700' 
+                      : '2px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    overflow: 'hidden',
+                    aspectRatio: '16/9',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <img 
+                    src={bg.path}
+                    alt={bg.name}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      opacity: formData.background === bg.id ? 1 : 0.7
+                    }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '0',
+                    left: '0',
+                    right: '0',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)',
+                    padding: '10px',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                  }}>
+                    {bg.name}
+                    {formData.background === bg.id && (
+                      <span style={{
+                        display: 'block',
+                        marginTop: '5px',
+                        color: '#ffd700',
+                        fontSize: '12px'
+                      }}>✓ Selected</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+        
+      case 6: // Review & Submit
+        return (
+          <div style={{ padding: '20px' }}>
+            <h3 style={{
+              fontSize: '20px',
+              marginBottom: '20px',
+              color: '#ffd700',
+              textAlign: 'center'
+            }}>Review Your Candle</h3>
+            
+            <div style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Message Type</label>
+                <div style={{ color: '#fff', fontSize: '16px', marginTop: '5px' }}>
+                  {formData.messageType === 'petition' && '🙏 Petition'}
+                  {formData.messageType === 'confession' && '💭 Confession'}
+                  {formData.messageType === 'praise' && '✨ Praise'}
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Candle Style</label>
+                <div style={{ color: '#fff', fontSize: '16px', marginTop: '5px' }}>
+                  {formData.candleType === 'ecclesiastical' && '⛪ Ecclesiastical'}
+                  {formData.candleType === 'japanese' && '🏮 Japanese'}
+                  {formData.candleType === 'votive' && '🕯️ Votive'}
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>For</label>
+                <div style={{ color: '#fff', fontSize: '16px', marginTop: '5px' }}>
+                  {formData.username || 'Anonymous'}
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Offering</label>
+                <div style={{ color: '#ffd700', fontSize: '16px', marginTop: '5px' }}>
+                  {(parseInt(formData.burnedAmount) || 1000).toLocaleString()} RL80
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Background</label>
+                <div style={{ color: '#fff', fontSize: '16px', marginTop: '5px' }}>
+                  {BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.name || 'Synthwave'}
+                </div>
+              </div>
+              
+              <div>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Message</label>
+                <div style={{ 
+                  color: '#fff', 
+                  fontSize: '14px', 
+                  marginTop: '5px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}>
+                  {formData.message || 'No message'}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  // Navigation handlers
+  const handleNext = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+  
+  const handlePrev = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Create portal for exit dialog
+  const ExitDialog = () => {
+    if (!showExitConfirmDialog) return null;
+    
+    return ReactDOM.createPortal(
+      <div style={{
+        position: 'fixed',
+        top: '0px',
+        left: '0px',
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        zIndex: 999999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+          border: '2px solid rgba(255, 102, 0, 0.5)',
+          borderRadius: '16px',
+          padding: '32px',
+          width: '90%',
+          maxWidth: '420px',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8)',
+          color: 'white'
+        }}>
+          <h3 style={{
+            color: '#ff6600',
+            margin: '0 0 20px 0',
+            fontSize: '24px',
+            textAlign: 'center'
+          }}>
+            ⚠️ Unsaved Changes
+          </h3>
+          
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.9)',
+            fontSize: '15px',
+            lineHeight: '1.6',
+            marginBottom: '24px',
+            textAlign: 'center'
+          }}>
+            You have unsaved changes. Are you sure you want to close without saving your candle?
+          </p>
+          
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            justifyContent: 'center'
+          }}>
+            <button 
+              onClick={() => {
+                console.log('Continue editing clicked');
+                setShowExitConfirmDialog(false);
+              }}
+              style={{
+                padding: '12px 24px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                flex: 1
+              }}
+            >
+              Continue Editing
+            </button>
+            <button 
+              onClick={() => {
+                console.log('Discard clicked');
+                setShowExitConfirmDialog(false);
+                onClose();
+              }}
+              style={{
+                padding: '12px 24px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '8px',
+                color: 'rgba(255, 255, 255, 0.8)',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                flex: 1
+              }}
+            >
+              Discard Changes
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
   return (
     <>
+      <ExitDialog />
+      
       {/* Preload Candle Renderer - Hidden, always rendering */}
       {preloadCandleData && !showCandleSnapshot && (
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
@@ -2124,18 +3155,17 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               fontSize: '16px',
               fontWeight: '500'
             }}>
-              <span style={{ fontSize: '24px' }}>🕯️</span>
-              <span>Your candle has been lit successfully!</span>
-              <span style={{ fontSize: '20px' }}>✨</span>
+              <span>{toastMessage || '🕯️ Your candle has been lit successfully! ✨'}</span>
             </div>
             
-            {/* Share buttons */}
-            <div style={{
-              display: 'flex',
-              gap: '10px',
-              width: '100%',
-              justifyContent: 'center'
-            }}>
+            {/* Share buttons - only show for candle success */}
+            {candleWasCreated && (
+              <div style={{
+                display: 'flex',
+                gap: '10px',
+                width: '100%',
+                justifyContent: 'center'
+              }}>
               <button
                 onClick={shareToX}
                 style={{
@@ -2197,7 +3227,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               >
                 Close
               </button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2246,6 +3277,15 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         .rotate-hand {
           animation: rotateHand 2s ease-in-out infinite;
         }
+        
+        @keyframes subtle-glow {
+          0%, 100% {
+            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.5)) brightness(1);
+          }
+          50% {
+            filter: drop-shadow(0 25px 50px rgba(255, 170, 0, 0.3)) brightness(1.1);
+          }
+        }
       `}</style>
       
       <div className="compact-modal-overlay" 
@@ -2280,10 +3320,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             // Check if user has entered any data
             const hasUnsavedData = formData.username.trim() || formData.message.trim() || imageFile;
             if (hasUnsavedData) {
-              // Show confirmation before closing with unsaved data
-              if (window.confirm('You have unsaved changes. Are you sure you want to close without saving your candle?')) {
-                onClose();
-              }
+              // Show custom confirmation dialog
+              setShowExitConfirmDialog(true);
             } else {
               // No data entered, just close
               onClose();
@@ -2293,17 +3331,21 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       }}>
       <div className="compact-modal-content" ref={modalContentRef} onClick={e => e.stopPropagation()}>
         <button className="compact-modal-close" onClick={() => {
+          console.log('Close button clicked');
+          console.log('candleWasCreated:', candleWasCreated);
+          console.log('formData:', formData);
+          
           // Check if candle was created
           if (candleWasCreated) {
             onClose();
           } else {
             // Check if user has entered any data
             const hasUnsavedData = formData.username.trim() || formData.message.trim() || imageFile;
+            console.log('hasUnsavedData:', hasUnsavedData);
             if (hasUnsavedData) {
-              // Show confirmation before closing with unsaved data
-              if (window.confirm('You have unsaved changes. Are you sure you want to close without saving your candle?')) {
-                onClose();
-              }
+              // Show custom confirmation dialog
+              console.log('Setting showExitConfirmDialog to true');
+              setShowExitConfirmDialog(true);
             } else {
               // No data entered, just close
               onClose();
@@ -2315,92 +3357,139 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           {/* Left side - 3D Preview */}
           <div className="compact-candle-preview">
             <div className="preview-label">Your Candle Preview</div>
-            <div className="canvas-container" style={{ position: 'relative' }}>
-              {/* Rotate Tooltip */}
-              {showRotateTooltip && (
-                <div 
-                  onClick={() => setShowRotateTooltip(false)}
-                  className="rotate-tooltip"
-                  style={{
+            {/* Conditionally show Canvas for votive (with overlay) or static image for others */}
+            <div style={{
+              width: '100%',
+              height: 'calc(100% - 40px)', // Account for the preview-label height
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: currentStep >= 5 ? 'none' : 'radial-gradient(circle at center, rgba(255, 170, 0, 0.03), transparent)',
+              borderRadius: '12px',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Background Image - shows in steps 5 and 6 */}
+              {currentStep >= 5 && formData.background && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 0,
+                }}>
+                  <img 
+                    src={BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.path || '/synthwave.webp'}
+                    alt="Background"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      opacity: 0.4
+                    }}
+                  />
+                  <div style={{
                     position: 'absolute',
-                    bottom: '40%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '15px 20px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    zIndex: 10,
-                    pointerEvents: 'auto'
-                  }}
-                >
-                  <div className="rotate-hand" style={{
-                    fontSize: '3rem',
-                    transformOrigin: 'center bottom'
-                  }}>
-                    👆
-                  </div>
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'radial-gradient(circle at center, transparent 20%, rgba(0,0,0,0.6) 100%)',
+                    pointerEvents: 'none'
+                  }} />
                 </div>
               )}
-              <Canvas
-                key={canvasKey}
-                camera={{ position: [0, 2, 5], fov: 45 }}
-                style={{ background: 'transparent' }}
-                dpr={[1, 2]} // Higher pixel ratio for better quality
-                gl={{
-                  antialias: true,
-                  alpha: true,
-                  powerPreference: "high-performance",
-                  preserveDrawingBuffer: true,
-                }}
-                onPointerDown={handleCanvasInteraction}
-                onWheel={handleCanvasInteraction}
-              >
-                <ambientLight intensity={0.6} />
-                <directionalLight 
-                  position={[5, 5, 5]} 
-                  intensity={0.8} 
-                  castShadow 
-                />
-                <pointLight position={[0, 3, 2]} intensity={0.5} color="#ffaa00" />
-                <spotLight
-                  position={[-5, 10, 5]}
-                  angle={0.3}
-                  penumbra={1}
-                  intensity={0.5}
-                  castShadow
-                />
-                <Suspense fallback={null}>
-                  <CandlePreview 
-                    imageUrl={imagePreview || '/defaultAvatar.png'} 
-                    message={isEncrypted ? scrambledDisplay : formData.message}
-                    isEncrypted={isEncrypted}
-                    username={formData.username}
-                    language={currentLanguage}
-                    template={selectedTemplate}
-                    templatePosition={templatePosition}
-                    templateScale={templateScale}
-                    templateRotation={templateRotation}
-                    skinToneAdjustment={skinToneAdjustment}
-                    userImagePosition={userImagePosition}
-                    userImageScale={userImageScale}
-                    userImageRotation={userImageRotation}
+              {formData.candleType === 'votive' && (currentStep === 3 || imagePreview) ? (
+                // Show 3D Canvas for votive when in Step 3 or when image is uploaded
+                <Canvas
+                  camera={{ position: [0, 2, 7], fov: 45 }}
+                  style={{ background: 'transparent', position: 'relative', zIndex: 1 }}
+                  dpr={1}
+                  gl={{
+                    antialias: false,
+                    alpha: true,
+                    powerPreference: "low-power",
+                    preserveDrawingBuffer: false,
+                  }}
+                >
+                  <ambientLight intensity={1} />
+                  <directionalLight 
+                    position={[0, 5, 3]} 
+                    intensity={3.8} 
+                    castShadow 
                   />
-                </Suspense>
-                <OrbitControls
-                  enablePan={false}
-                  enableZoom={true}
-                  minPolarAngle={Math.PI / 3}
-                  maxPolarAngle={Math.PI / 2}
-                  autoRotate={false}
-                  // zoomToCursor={true}
+                  <pointLight position={[0, 3, 2]} intensity={0.5} color="#ffaa00" />
+                  <Suspense fallback={null}>
+                    <CandlePreview 
+                      imageUrl={imagePreview || '/defaultAvatar.png'} 
+                      message={formData.message}
+                      isEncrypted={false}
+                      username={formData.username}
+                      language={currentLanguage}
+                      template={selectedTemplate}
+                      templatePosition={templatePosition}
+                      templateScale={templateScale}
+                      templateRotation={templateRotation}
+                      skinToneAdjustment={skinToneAdjustment}
+                      userImagePosition={userImagePosition}
+                      userImageScale={userImageScale}
+                      userImageRotation={userImageRotation}
+                      candleModel='/models/singleCandleAnimatedFlame.glb'
+                    />
+                  </Suspense>
+                  <OrbitControls
+                    enablePan={false}
+                    enableZoom={false}
+                    // autoRotate={true}
+                    // autoRotateSpeed={1}
+                  />
+                </Canvas>
+              ) : (
+                // Show static image for Japanese and Ecclesiastical
+                <img 
+                  src={
+                    formData.candleType === 'ecclesiastical' ? '/ecclesiasticalCandlePreview.webp' :
+                    formData.candleType === 'japanese' ? '/japaneseCandlePreview.webp' :
+                    '/votiveCandlePreview.webp'
+                  }
+                  alt={`${formData.candleType} candle`}
+                  style={{
+                    width: 'auto',
+                    height: '100%',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.5))',
+                    animation: 'subtle-glow 3s ease-in-out infinite',
+                    transform: 'scale(1.4)'
+                  }}
                 />
-              </Canvas>
-            </div>
+              )}
+                
+                {/* Optional: Add candle info overlay */}
+                {formData.username && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    textAlign: 'center',
+                    color: '#ffd700',
+                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
+                  }}>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                      {formData.username}
+                    </div>
+                    {formData.messageType && (
+                      <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.8 }}>
+                        {formData.messageType === 'petition' && '🙏 Petition'}
+                        {formData.messageType === 'confession' && '💭 Confession'}
+                        {formData.messageType === 'praise' && '✨ Praise'}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
           </div>
 
           {/* Right side - Form */}
@@ -2443,7 +3532,103 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               </select>
             </div>
             
-            <form onSubmit={handleSubmit}>
+            {/* Step Progress Indicator */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: '20px',
+              gap: '8px'
+            }}>
+              {[1, 2, 3, 4, 5].map((step) => (
+                <div
+                  key={step}
+                  style={{
+                    width: '40px',
+                    height: '4px',
+                    backgroundColor: currentStep >= step 
+                      ? '#ffd700' 
+                      : 'rgba(255, 215, 0, 0.2)',
+                    borderRadius: '2px',
+                    transition: 'background-color 0.3s ease'
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Step Content */}
+            {renderStepContent()}
+            
+            {/* Navigation Buttons */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '20px',
+              borderTop: '1px solid rgba(255, 215, 0, 0.2)'
+            }}>
+              <button
+                onClick={handlePrev}
+                style={{
+                  padding: '10px 20px',
+                  background: currentStep === 1 ? 'transparent' : 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '8px',
+                  color: currentStep === 1 ? 'rgba(255, 255, 255, 0.3)' : '#fff',
+                  cursor: currentStep === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  opacity: currentStep === 1 ? 0.5 : 1
+                }}
+                disabled={currentStep === 1}
+              >
+                Back
+              </button>
+              
+              {currentStep < 6 ? (
+                <button
+                  onClick={handleNext}
+                  style={{
+                    padding: '10px 30px',
+                    background: 'linear-gradient(135deg, #ffd700, #ffed4e)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#000',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)'
+                  }}
+                  disabled={
+                    (currentStep === 1 && !formData.candleType) ||
+                    (currentStep === 2 && !formData.messageType) ||
+                    (currentStep === 4 && !formData.username.trim())
+                  }
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  onClick={handleConfirmedSave}
+                  style={{
+                    padding: '10px 30px',
+                    background: 'linear-gradient(135deg, #ff6b35, #ff9558)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 15px rgba(255, 107, 53, 0.4)'
+                  }}
+                  disabled={isSubmitting || !formData.messageType || !formData.candleType || !formData.username.trim()}
+                >
+                  {isSubmitting ? 'Lighting...' : 'Light Candle 🔥'}
+                </button>
+              )}
+            </div>
+            
+            {error && <div className="compact-error">{error}</div>}
+            
+            <form onSubmit={handleSubmit} style={{ display: 'none' }}>
               {/* Row 1: Username and Amount */}
               <div className="compact-form-group" style={{
                 display: 'flex',
@@ -3264,8 +4449,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                           </label>
                           <input
                             type="range"
-                            min="0"
-                            max="100"
+                            min="25"
+                            max="75"
                             value={userImagePosition.y}
                             onChange={(e) => setUserImagePosition({ ...userImagePosition, y: parseFloat(e.target.value) })}
                             style={{
@@ -3287,8 +4472,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                           </label>
                           <input
                             type="range"
-                            min="20"
-                            max="300"
+                            min="50"
+                            max="150"
                             value={userImageScale}
                             onChange={(e) => setUserImageScale(parseFloat(e.target.value))}
                             style={{
@@ -3396,285 +4581,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               </div>
 
 
-              {/* Confirmation Dialog - shown only when user clicks submit */}
-              {showConfirmDialog && (
-                <div className="confirmation-dialog-overlay" onClick={(e) => e.stopPropagation()}>
-                  <div className="confirmation-dialog">
-                    <h3> <span style={{
-          display: 'inline-block',
-          position: 'relative',
-          width: '20px',
-          height: '40px',
-          marginLeft: '15px',
-          marginRight: '15px',
-          verticalAlign: 'middle'
-        }}>
-          {/* Top wick */}
-          <span style={{
-            position: 'absolute',
-            left: '50%',
-            top: '0',
-            width: '2px',
-            height: '10px',
-            backgroundColor: '#00ff00',
-            transform: 'translateX(-50%)'
-          }}></span>
-          {/* Candle body */}
-          <span style={{
-            position: 'absolute',
-            left: '50%',
-            top: '10px',
-            width: '12px',
-            height: '20px',
-            backgroundColor: '#00ff00',
-            transform: 'translateX(-50%)'
-          }}></span>
-          {/* Bottom wick */}
-          <span style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: '0',
-            width: '2px',
-            height: '10px',
-            backgroundColor: '#00ff00',
-            transform: 'translateX(-50%)'
-          }}></span>
-        </span> Ready to Light Your Candle?</h3>
-                    <div className="confirmation-details">
-                      {/* Image Section with Thumbnail and Label */}
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        marginBottom: '8px'
-                      }}>
-                        <p style={{ 
-                          margin: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          color: (imageFile || imagePreview) ? 'inherit' : '#ff6600',
-                          fontWeight: (imageFile || imagePreview) ? 'normal' : 'bold'
-                        }}>
-                          <strong>Image:</strong> 
-                          <span style={{ 
-                            fontWeight: 'normal',
-                            visibility: (imageFile || imagePreview) ? 'hidden' : 'visible'
-                          }}>
-                            {imageFile ? '✓ Custom image' : 
-                             (imagePreview && !imageFile) ? '✓ Profile picture' :
-                             '⚠️ Using default'}
-                          </span>
-                        </p>
-                        <div style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: imageFile ? '4px' : '50%', // Square for custom, round for profile
-                          overflow: 'hidden',
-                          border: '2px solid rgba(255, 255, 255, 0.2)',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                          flexShrink: 0
-                        }}>
-                          <img 
-                            src={imagePreview || '/defaultAvatar.png'}
-                            alt="Candle image preview"
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover'
-                            }}
-                          />
-                        </div>
-                      </div>
-                      
-                      <p><strong>Name:</strong> {formData.username}</p>
-                      <p><strong>Amount:</strong> {formData.burnedAmount ? formatNumberWithCommas(formData.burnedAmount) : '0'}</p>
-                      <p><strong>Message:</strong> {formData.message.substring(0, 50)}{formData.message.length > 50 ? '...' : ''}</p>
-                      
-                      {/* Illumin80 Qualification Status */}
-                      {(() => {
-                        const threshold = getIllumin80Threshold();
-                        const currentAmount = parseInt(formData.burnedAmount) || 0;
-                        
-                        if (!threshold || currentAmount === 0) return null;
-                        
-                        const wouldQualify = currentAmount >= threshold;
-                        const needsMore = threshold - currentAmount;
-                        
-                        if (wouldQualify) {
-                          return (
-                            <div style={{
-                              marginTop: '15px',
-                              padding: '12px',
-                              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                              border: '1px solid rgba(16, 185, 129, 0.3)',
-                              borderRadius: '8px',
-                              color: '#10b981'
-                            }}>
-                              <p style={{ margin: 0, fontWeight: 'bold', fontSize: '14px' }}>
-                                👑 <strong>Illumin80 Qualified!</strong>
-                              </p>
-                              <p style={{ margin: '5px 0 0 0', fontSize: '12px', opacity: 0.9 }}>
-                                Your burn qualifies you for exclusive Illumin80 status - the top 8 burners with special privileges and recognition in our community!
-                              </p>
-                            </div>
-                          );
-                        } else if (needsMore > 0 && needsMore <= currentAmount * 2) {
-                          // Only show suggestion if they're reasonably close (within 2x their current amount)
-                          return (
-                            <div style={{
-                              marginTop: '15px',
-                              padding: '12px',
-                              backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                              border: '1px solid rgba(245, 158, 11, 0.3)',
-                              borderRadius: '8px',
-                              color: '#f59e0b'
-                            }}>
-                              <p style={{ margin: 0, fontWeight: 'bold', fontSize: '14px' }}>
-                                💡 <strong>Almost Illumin80!</strong>
-                              </p>
-                              <p style={{ margin: '5px 0', fontSize: '12px', opacity: 0.9 }}>
-                                Burn {needsMore.toLocaleString()} more RL80 to join the exclusive Illumin80 - the top 8 burners with special privileges and community recognition.
-                              </p>
-                              <button
-                                onClick={() => {
-                                  setFormData(prev => ({ ...prev, burnedAmount: threshold }));
-                                  setCurrentStep('form'); // Go back to form to see the updated amount
-                                }}
-                                style={{
-                                  background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
-                                  color: '#000',
-                                  border: 'none',
-                                  padding: '6px 12px',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  fontWeight: 'bold',
-                                  cursor: 'pointer',
-                                  marginTop: '8px',
-                                  transition: 'transform 0.2s ease'
-                                }}
-                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                              >
-                                Update to {threshold.toLocaleString()} RL80
-                              </button>
-                            </div>
-                          );
-                        }
-                        
-                        return null;
-                      })()}
-                    </div>
-                    
-                    {/* Removed social sharing - will show after successful save */}
-                    {false && capturedImage && (
-                      <div style={{
-                        marginTop: '20px',
-                        padding: '15px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(255, 255, 255, 0.1)'
-                      }}>
-                        {/* Preview of captured candle */}
-                        <div style={{
-                          marginBottom: '15px',
-                          textAlign: 'center'
-                        }}>
-                          <img 
-                            src={capturedImage}
-                            alt="Your candle"
-                            style={{
-                              width: '150px',
-                              height: '150px',
-                              borderRadius: '8px',
-                              border: '2px solid rgba(255, 102, 0, 0.3)',
-                              objectFit: 'cover',
-                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-                            }}
-                          />
-                        </div>
-                        <p style={{
-                          fontSize: '13px',
-                          color: 'rgba(255, 255, 255, 0.7)',
-                          marginBottom: '12px',
-                          textAlign: 'center'
-                        }}>
-                          Share your candle on social media
-                        </p>
-                        <div style={{
-                          display: 'flex',
-                          gap: '12px',
-                          justifyContent: 'center'
-                        }}>
-                          <button
-                            type="button"
-                            onClick={shareToX}
-                            style={{
-                              padding: '10px 20px',
-                              backgroundColor: '#000000',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              fontWeight: 'bold',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              transition: 'transform 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                          >
-                            <span style={{ fontSize: '16px' }}>𝕏</span> Share on X
-                          </button>
-                          <button
-                            type="button"
-                            onClick={shareToInstagram}
-                            style={{
-                              padding: '10px 20px',
-                              background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              fontWeight: 'bold',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              transition: 'transform 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                          >
-                            📷 Instagram
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <p className="confirmation-warning">Once lit, your candle cannot be changed or removed.</p>
-                    <div className="confirmation-actions">
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmDialog(false)}
-                        className="confirm-cancel"
-                      >
-                        Review More
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleConfirmedSave}
-                        className="confirm-save"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? 'Lighting...' : 'Light Candle 🔥'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Confirmation Dialog moved outside - see end of component */}
 
               {error && <div className="compact-error">{error}</div>}
 

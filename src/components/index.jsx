@@ -10,7 +10,7 @@ import * as THREE from "three";
 import Model from "@/components/Model";
 import MobileCandleOrbital from "@/components/MobileCandleOrbital";
 
-import { useFirestoreResults } from "/src/utilities/useFirestoreResults";
+import { useFirestoreResults } from "@/utilities/useFirestoreResults";
 
 
 

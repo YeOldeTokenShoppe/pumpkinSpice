@@ -248,7 +248,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.anisotropy = 16;
-        texture.encoding = THREE.sRGBEncoding;
+        texture.colorSpace = THREE.SRGBColorSpace;
         texture.minFilter = THREE.LinearMipmapLinearFilter;
         texture.magFilter = THREE.LinearFilter;
         texture.needsUpdate = true;
@@ -279,7 +279,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
           texture.wrapS = THREE.RepeatWrapping;
           texture.wrapT = THREE.RepeatWrapping;
           texture.anisotropy = 16;
-          texture.encoding = THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace;
           texture.minFilter = THREE.LinearMipmapLinearFilter;
           texture.magFilter = THREE.LinearFilter;
           texture.needsUpdate = true;
@@ -643,7 +643,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
           texture.wrapS = THREE.RepeatWrapping;
           texture.wrapT = THREE.RepeatWrapping;
           texture.anisotropy = 16; // Max anisotropy for better quality
-          texture.encoding = THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace;
           texture.minFilter = THREE.LinearMipmapLinearFilter;
           texture.magFilter = THREE.LinearFilter;
           texture.needsUpdate = true;
@@ -691,7 +691,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
           texture.wrapS = THREE.RepeatWrapping;
           texture.wrapT = THREE.RepeatWrapping;
           texture.anisotropy = 16; // Max anisotropy for better quality
-          texture.encoding = THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace;
           texture.minFilter = THREE.LinearMipmapLinearFilter;
           texture.magFilter = THREE.LinearFilter;
           texture.needsUpdate = true;

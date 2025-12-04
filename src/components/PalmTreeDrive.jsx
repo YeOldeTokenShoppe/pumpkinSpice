@@ -7,11 +7,11 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useMusic } from '/src/components/MusicContext';
+import { useMusic } from './MusicContext';
 // import { IconButton, div } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
-import SynthwaveText from '/src/components/SynthwaveText';
-import MorphingSynthwaveText from '/src/components/MorphingSynthwaveText';
+import SynthwaveText from './SynthwaveText';
+import MorphingSynthwaveText from './MorphingSynthwaveText';
 
 
 // MusicPlayer3 removed - using global instance from _app.jsx
@@ -57,9 +57,9 @@ const textBlocks = [
 // Define SynthwaveText words for each stage
 const synthwaveWords = [
   "THIS",
-  "COULD BE",
+  "COULD",
+  "BE",
   "YOUR",
-  "NEW",
   "REAL80"
 ];
 
@@ -2793,9 +2793,9 @@ const PalmsScene = ({ onLoadingChange }) => {
                 startText="REAL80"
                 shouldMorph={true}
                 morphDelay={1000}
-                fontSize={300}
-                scale={isMobile ? 1.5 : 2.2}  // Increase scale to match "THIS" size
-                spacingX={6}
+                fontSize={400}
+                scale={isMobile ? 4 : 2.2}  // Bigger on mobile
+                // spacingX={isMobile ? 4 : 4}
                 outsideColor="rgba(0, 255, 255, 0)"
                 insideColor="rgba(255, 0, 255, 1)"
                 backgroundColor="rgba(0, 100, 255, 0.4)"
@@ -2805,9 +2805,9 @@ const PalmsScene = ({ onLoadingChange }) => {
             ) : (
               <SynthwaveText 
                 text={synthwaveWords[currentCameraStage] || "DRIFT"}
-                fontSize={300}
-                scale={currentCameraStage === 1 ? (isMobile ? 1.0 : 1.5) : (isMobile ? 0.8 : 1.2)}
-                spacingX={6}
+                fontSize={400}
+                scale={currentCameraStage === 1 ? (isMobile ? 1.5 : 1.5) : (isMobile ? 1.5 : 1.2)}
+                spacingX={4}
                 outsideColor="rgba(0, 255, 255, 0)"
                 insideColor="rgba(255, 0, 255, 1)"
                 backgroundColor="rgba(0, 100, 255, 0.4)"
@@ -2822,6 +2822,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             justifyContent: 'center',
             position: 'relative',
             marginTop: isMobile ? '-2rem' : '-3rem',
+            
 
           }}>
             <p 

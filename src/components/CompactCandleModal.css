@@ -581,7 +581,7 @@
 
 /* Confirmation Dialog Styles */
 .confirmation-dialog-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -590,7 +590,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 300;
+  z-index: 10000;
   backdrop-filter: blur(8px);
   animation: fadeIn 0.2s ease;
 }

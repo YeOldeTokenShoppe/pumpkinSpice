@@ -8,9 +8,9 @@ const MorphingSynthwaveText = ({
   startText = "REAL80",
   shouldMorph = false,
   morphDelay = 1000,
-  fontSize = 300,
-  scale = 1,
-  spacingX = 8,
+  fontSize = 400,
+  scale = 4.5,
+  spacingX = 4,
   outsideColor = "rgba(0, 255, 255, 0)",
   insideColor = "rgba(255, 0, 255, 1)",
   backgroundColor = "rgba(0, 100, 255, 0.4)",
@@ -35,8 +35,9 @@ const MorphingSynthwaveText = ({
         const eWidth = eRef.current.getBoundingClientRect().width;
         const aWidth = aRef.current.getBoundingClientRect().width;
         // Add extra movement to close the gaps (accounting for spacing between letters)
-        const halfWidth = (eWidth + aWidth) / 2;
-        const extraClosing = 0; // Additional pixels to close gaps
+        const actualGap = isMobile ? 2 : 0; // Match the actual gap from the flex container
+        const totalWidthToClose = eWidth + aWidth + (actualGap * 2); // E + A + gaps on both sides
+        const halfMovement = totalWidthToClose / 2;
         
         // Create timeline for the animation
         const tl = gsap.timeline();
@@ -48,19 +49,19 @@ const MorphingSynthwaveText = ({
           duration: 1.1,
           ease: "power2.in"
         })
-        // Move R to the right and L to the left, with 80 moving even more left to close gap
+        // Move R to the right and L to the left to close the gap
         .to(rRef.current, {
-          x: halfWidth + extraClosing, // Move right by half the width of E and A plus extra
+          x: halfMovement + 15, // Move right by half the total width to close
           duration: 1.3,
           ease: "power2.inOut"
         }, "-=0")
         .to(lRef.current, {
-          x: -(halfWidth + extraClosing), // Move left by half the width of E and A plus extra
+          x: -halfMovement, // Move left by half the total width to close
           duration: 1.3,
           ease: "power2.inOut"
         }, "<") // Start at the same time as R movement
         .to([eightRef.current, zeroRef.current], {
-          x: -(halfWidth + extraClosing) - 2, // Move 8 and 0 left together
+          x: -halfMovement, // Move 8 and 0 left together with L
           duration: 1.3,
           ease: "power2.inOut"
         }, "<"); // Start at the same time as other movements
@@ -85,7 +86,14 @@ const MorphingSynthwaveText = ({
         alignItems: 'center'
       }}
     >
-      <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', gap: '0' }}>
+      <div style={{ 
+        position: 'absolute', 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: isMobile ? '12px' : '0',
+        transform: `scale(${isMobile ? 1.2 : 1})`,
+        transformOrigin: 'center'
+      }}>
         {/* R */}
         <div 
           ref={rRef}

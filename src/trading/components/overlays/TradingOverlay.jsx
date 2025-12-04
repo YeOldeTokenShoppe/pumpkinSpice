@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useFirestoreResults } from '@/utilities/useFirestoreResults';
+import CompactCandleModal from '@/components/CompactCandleModal';
 
 // Dynamically import SingleCandleDisplay to avoid SSR issues with Three.js
 const SingleCandleDisplay = dynamic(() => import('../displays/SingleCandleDisplay'), {
@@ -31,6 +32,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [candleTab, setCandleTab] = useState('community'); // 'mine' or 'community'
   const [userCandle, setUserCandle] = useState(null); // User's own candle data
   const [showAddCandleModal, setShowAddCandleModal] = useState(false); // Modal for adding user's candle
+  const [showCompactCandleModal, setShowCompactCandleModal] = useState(false); // Modal for CompactCandleModal
   
   // Get Firestore results for candle display
   const firestoreResults = useFirestoreResults('burnedAmount'); // Get top burners
@@ -1361,7 +1363,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                         You haven't lit a candle yet
                       </div>
                       <button
-                        onClick={() => setShowAddCandleModal(true)}
+                        onClick={() => setShowCompactCandleModal(true)}
                         style={{
                           padding: '10px 20px',
                           background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%)',
@@ -2273,7 +2275,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   You haven't lit a candle yet
                 </div>
                 <button
-                  onClick={() => setShowAddCandleModal(true)}
+                  onClick={() => setShowCompactCandleModal(true)}
                   style={{
                     padding: '8px 16px',
                     background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 255, 0, 0.1) 100%)',
@@ -3085,6 +3087,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         </>
       )}
 
+      {/* Compact Candle Modal */}
+      <CompactCandleModal
+        isOpen={showCompactCandleModal}
+        onClose={() => setShowCompactCandleModal(false)}
+        onCandleCreated={() => {
+          setShowCompactCandleModal(false);
+          // Optionally refresh or update any candle-related state here
+        }}
+      />
     </>
   );
 };

@@ -588,3 +588,7 @@
 //     </>
 //   );
 // }
+
+export default function CarouselPage() {
+  return <div>Carousel page is under construction</div>;
+}
