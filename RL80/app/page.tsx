@@ -23,6 +23,13 @@ import { Button } from "./components/DemoComponents";
 import { Icon } from "./components/DemoComponents";
 import { Home } from "./components/DemoComponents";
 import { Features } from "./components/DemoComponents";
+import { Carousel } from "./components/Carousel";
+import {
+  WatchlistSlide,
+  Illumin80Slide,
+  TradingDeskSlide,
+  TokenomicsSlide,
+} from "./components/FeatureSlides";
 
 export default function App() {
   const { setFrameReady, isFrameReady, context } = useMiniKit();
@@ -96,7 +103,34 @@ export default function App() {
         </header>
 
         <main className="flex-1">
-          {activeTab === "home" && <Home setActiveTab={setActiveTab} />}
+          {activeTab === "home" && (
+            <div className="space-y-6">
+              <Home setActiveTab={setActiveTab} />
+              
+              <div className="mt-8">
+                <div className="text-center mb-4">
+                  <h2 className="text-2xl font-bold text-[var(--app-foreground)] mb-2">
+                    Explore Features
+                  </h2>
+                  <p className="text-sm text-[var(--app-foreground-muted)]">
+                    Swipe through our key features
+                  </p>
+                </div>
+                
+                <Carousel
+                  slides={[
+                    <WatchlistSlide key="watchlist" />,
+                    <Illumin80Slide key="illumin80" />,
+                    <TradingDeskSlide key="trading" />,
+                    <TokenomicsSlide key="tokenomics" />,
+                  ]}
+                  autoRotate={true}
+                  rotationInterval={7000}
+                  className="mb-6"
+                />
+              </div>
+            </div>
+          )}
           {activeTab === "features" && <Features setActiveTab={setActiveTab} />}
         </main>
 

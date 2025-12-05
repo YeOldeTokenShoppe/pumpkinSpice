@@ -452,8 +452,9 @@ function HandsModel({ mousePosition, scrollY, onLoad, hasReachedSection, isInVie
   //   return rotation
   // }, [rotationProgress])
 
-// Swivel animation useFrame
-useFrame(() => {
+// Combined animations useFrame
+useFrame((state) => {
+  // Swivel animation
   if (animationStartTime2.current) {
     const elapsed = Date.now() - animationStartTime2.current
     const duration = 2000 // 2 seconds for full rotation
@@ -479,6 +480,150 @@ useFrame(() => {
         animationStartTime2.current = null
       }
     }
+  }
+
+  // Floating animations for emojis and icons
+  const time = state.clock.getElapsedTime()
+  
+  // Animate emojis with more dynamic floating motion
+  if (emoji1Ref.current) {
+    if (!emoji1Ref.current.userData.initialY) {
+      emoji1Ref.current.userData.initialY = emoji1Ref.current.position.y
+      emoji1Ref.current.userData.initialX = emoji1Ref.current.position.x
+      emoji1Ref.current.userData.initialZ = emoji1Ref.current.position.z
+    }
+    emoji1Ref.current.position.y = emoji1Ref.current.userData.initialY + Math.sin(time * 1.5) * 0.6
+    emoji1Ref.current.position.x = emoji1Ref.current.userData.initialX + Math.cos(time * 1.2) * 0.4
+    emoji1Ref.current.position.z = emoji1Ref.current.userData.initialZ + Math.sin(time * 1.0) * 0.3
+    emoji1Ref.current.rotation.z = Math.sin(time * 1.5) * 0.2
+    emoji1Ref.current.rotation.y = Math.cos(time * 1.8) * 0.15
+  }
+  
+  if (emoji2Ref.current) {
+    if (!emoji2Ref.current.userData.initialY) {
+      emoji2Ref.current.userData.initialY = emoji2Ref.current.position.y
+      emoji2Ref.current.userData.initialX = emoji2Ref.current.position.x
+      emoji2Ref.current.userData.initialZ = emoji2Ref.current.position.z
+    }
+    emoji2Ref.current.position.y = emoji2Ref.current.userData.initialY + Math.sin(time * 1.8 + 1) * 0.5
+    emoji2Ref.current.position.x = emoji2Ref.current.userData.initialX + Math.cos(time * 1.4 + 1) * 0.35
+    emoji2Ref.current.position.z = emoji2Ref.current.userData.initialZ + Math.sin(time * 1.2 + 1) * 0.25
+    emoji2Ref.current.rotation.z = Math.sin(time * 1.8 + 1) * 0.18
+    emoji2Ref.current.rotation.x = Math.cos(time * 2.0 + 1) * 0.12
+  }
+  
+  if (emoji3Ref.current) {
+    if (!emoji3Ref.current.userData.initialY) {
+      emoji3Ref.current.userData.initialY = emoji3Ref.current.position.y
+      emoji3Ref.current.userData.initialX = emoji3Ref.current.position.x
+      emoji3Ref.current.userData.initialZ = emoji3Ref.current.position.z
+    }
+    emoji3Ref.current.position.y = emoji3Ref.current.userData.initialY + Math.sin(time * 1.6 + 2) * 0.7
+    emoji3Ref.current.position.x = emoji3Ref.current.userData.initialX + Math.cos(time * 1.3 + 2) * 0.45
+    emoji3Ref.current.position.z = emoji3Ref.current.userData.initialZ + Math.sin(time * 1.1 + 2) * 0.35
+    emoji3Ref.current.rotation.z = Math.sin(time * 2.0 + 2) * 0.25
+    emoji3Ref.current.rotation.y = Math.cos(time * 1.7 + 2) * 0.2
+  }
+  
+  if (emoji4Ref.current) {
+    if (!emoji4Ref.current.userData.initialY) {
+      emoji4Ref.current.userData.initialY = emoji4Ref.current.position.y
+      emoji4Ref.current.userData.initialX = emoji4Ref.current.position.x
+      emoji4Ref.current.userData.initialZ = emoji4Ref.current.position.z
+    }
+    emoji4Ref.current.position.y = emoji4Ref.current.userData.initialY + Math.sin(time * 1.7 + 3) * 0.55
+    emoji4Ref.current.position.x = emoji4Ref.current.userData.initialX + Math.cos(time * 1.5 + 3) * 0.38
+    emoji4Ref.current.position.z = emoji4Ref.current.userData.initialZ + Math.sin(time * 1.3 + 3) * 0.28
+    emoji4Ref.current.rotation.z = Math.sin(time * 1.9 + 3) * 0.22
+    emoji4Ref.current.rotation.x = Math.cos(time * 1.6 + 3) * 0.14
+  }
+  
+  if (emoji5Ref.current) {
+    if (!emoji5Ref.current.userData.initialY) {
+      emoji5Ref.current.userData.initialY = emoji5Ref.current.position.y
+      emoji5Ref.current.userData.initialX = emoji5Ref.current.position.x
+      emoji5Ref.current.userData.initialZ = emoji5Ref.current.position.z
+    }
+    emoji5Ref.current.position.y = emoji5Ref.current.userData.initialY + Math.sin(time * 1.4 + 4) * 0.65
+    emoji5Ref.current.position.x = emoji5Ref.current.userData.initialX + Math.cos(time * 1.6 + 4) * 0.42
+    emoji5Ref.current.position.z = emoji5Ref.current.userData.initialZ + Math.sin(time * 1.4 + 4) * 0.32
+    emoji5Ref.current.rotation.z = Math.sin(time * 1.7 + 4) * 0.23
+    emoji5Ref.current.rotation.y = Math.cos(time * 2.1 + 4) * 0.18
+  }
+  
+  // Animate icons with more noticeable floating motion
+  if (iconLikeRef.current) {
+    if (!iconLikeRef.current.userData.initialY) {
+      iconLikeRef.current.userData.initialY = iconLikeRef.current.position.y
+      iconLikeRef.current.userData.initialX = iconLikeRef.current.position.x
+      iconLikeRef.current.userData.initialZ = iconLikeRef.current.position.z
+    }
+    iconLikeRef.current.position.y = iconLikeRef.current.userData.initialY + Math.sin(time * 2.0 + 5) * 0.4
+    iconLikeRef.current.position.x = iconLikeRef.current.userData.initialX + Math.cos(time * 1.7 + 5) * 0.25
+    iconLikeRef.current.position.z = iconLikeRef.current.userData.initialZ + Math.sin(time * 1.5 + 5) * 0.2
+    iconLikeRef.current.rotation.z = Math.sin(time * 2.2 + 5) * 0.15
+  }
+  
+  if (iconLoveRef.current) {
+    if (!iconLoveRef.current.userData.initialY) {
+      iconLoveRef.current.userData.initialY = iconLoveRef.current.position.y
+      iconLoveRef.current.userData.initialX = iconLoveRef.current.position.x
+      iconLoveRef.current.userData.initialZ = iconLoveRef.current.position.z
+    }
+    iconLoveRef.current.position.y = iconLoveRef.current.userData.initialY + Math.sin(time * 1.9 + 6) * 0.45
+    iconLoveRef.current.position.x = iconLoveRef.current.userData.initialX + Math.cos(time * 1.6 + 6) * 0.3
+    iconLoveRef.current.position.z = iconLoveRef.current.userData.initialZ + Math.sin(time * 1.4 + 6) * 0.22
+    iconLoveRef.current.rotation.z = Math.sin(time * 2.1 + 6) * 0.14
+    iconLoveRef.current.rotation.y = Math.cos(time * 1.8 + 6) * 0.12
+  }
+  
+  if (iconText1Ref.current) {
+    if (!iconText1Ref.current.userData.initialY) {
+      iconText1Ref.current.userData.initialY = iconText1Ref.current.position.y
+      iconText1Ref.current.userData.initialX = iconText1Ref.current.position.x
+      iconText1Ref.current.userData.initialZ = iconText1Ref.current.position.z
+    }
+    iconText1Ref.current.position.y = iconText1Ref.current.userData.initialY + Math.sin(time * 1.7 + 7) * 0.5
+    iconText1Ref.current.position.x = iconText1Ref.current.userData.initialX + Math.cos(time * 1.9 + 7) * 0.28
+    iconText1Ref.current.position.z = iconText1Ref.current.userData.initialZ + Math.sin(time * 1.3 + 7) * 0.24
+    iconText1Ref.current.rotation.z = Math.sin(time * 1.8 + 7) * 0.18
+  }
+  
+  if (iconText2Ref.current) {
+    if (!iconText2Ref.current.userData.initialY) {
+      iconText2Ref.current.userData.initialY = iconText2Ref.current.position.y
+      iconText2Ref.current.userData.initialX = iconText2Ref.current.position.x
+      iconText2Ref.current.userData.initialZ = iconText2Ref.current.position.z
+    }
+    iconText2Ref.current.position.y = iconText2Ref.current.userData.initialY + Math.sin(time * 2.1 + 8) * 0.38
+    iconText2Ref.current.position.x = iconText2Ref.current.userData.initialX + Math.cos(time * 1.8 + 8) * 0.22
+    iconText2Ref.current.position.z = iconText2Ref.current.userData.initialZ + Math.sin(time * 1.6 + 8) * 0.18
+    iconText2Ref.current.rotation.z = Math.sin(time * 2.3 + 8) * 0.13
+  }
+  
+  if (iconPlayRef.current) {
+    if (!iconPlayRef.current.userData.initialY) {
+      iconPlayRef.current.userData.initialY = iconPlayRef.current.position.y
+      iconPlayRef.current.userData.initialX = iconPlayRef.current.position.x
+      iconPlayRef.current.userData.initialZ = iconPlayRef.current.position.z
+    }
+    iconPlayRef.current.position.y = iconPlayRef.current.userData.initialY + Math.sin(time * 2.2 + 9) * 0.42
+    iconPlayRef.current.position.x = iconPlayRef.current.userData.initialX + Math.cos(time * 2.0 + 9) * 0.26
+    iconPlayRef.current.position.z = iconPlayRef.current.userData.initialZ + Math.sin(time * 1.7 + 9) * 0.2
+    iconPlayRef.current.rotation.z = Math.sin(time * 2.0 + 9) * 0.16
+  }
+  
+  if (iconStarRef.current) {
+    if (!iconStarRef.current.userData.initialY) {
+      iconStarRef.current.userData.initialY = iconStarRef.current.position.y
+      iconStarRef.current.userData.initialX = iconStarRef.current.position.x
+      iconStarRef.current.userData.initialZ = iconStarRef.current.position.z
+    }
+    iconStarRef.current.position.y = iconStarRef.current.userData.initialY + Math.sin(time * 1.8 + 10) * 0.52
+    iconStarRef.current.position.x = iconStarRef.current.userData.initialX + Math.cos(time * 2.1 + 10) * 0.32
+    iconStarRef.current.position.z = iconStarRef.current.userData.initialZ + Math.sin(time * 1.5 + 10) * 0.25
+    iconStarRef.current.rotation.z = Math.sin(time * 2.4 + 10) * 0.2
+    iconStarRef.current.rotation.y = Math.cos(time * 1.9 + 10) * 0.15
   }
 })
 
@@ -745,21 +890,7 @@ export default function HandsGLTFScene({ onLoadComplete }) {
         )}
       </Canvas>
       
-      {/* Frame Overlay */}
-      {/* <img 
-        src="/frame3.png" 
-        alt="Decorative frame"
-        style={{
-          position: 'absolute',
-          top: '-9%',
-          left: '-5%',
-          width: '115%',
-          height: '122%',
-          objectFit: 'contain',
-          pointerEvents: 'none',
-          zIndex: 10,
-        }}
-      /> */}
+
       
       {/* CSS for animations */}
       <style jsx>{`

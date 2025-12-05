@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Usage Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        #stats {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            min-width: 300px;
+            z-index: 1000;
+        }
+        .stat-line {
+            margin: 5px 0;
+        }
+        iframe {
+            width: 100%;
+            height: 80vh;
+            border: 2px solid #0f0;
+            margin-top: 20px;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0a0;
+        }
+    </style>
+</head>
+<body>
+    <div id="stats">
+        <h3>Memory Monitor</h3>
+        <div class="stat-line">Status: <span id="status">Not loaded</span></div>
+        <div class="stat-line">Used JS Heap: <span id="usedHeap">--</span> MB</div>
+        <div class="stat-line">Total JS Heap: <span id="totalHeap">--</span> MB</div>
+        <div class="stat-line">Heap Limit: <span id="heapLimit">--</span> MB</div>
+        <div class="stat-line">FPS: <span id="fps">--</span></div>
+        <div class="stat-line">Load Time: <span id="loadTime">--</span> ms</div>
+        <div class="stat-line">Three.js Load: <span id="threeLoad">--</span> MB</div>
+        <hr>
+        <button onclick="loadShader()">Load Shader</button>
+        <button onclick="unloadShader()">Unload</button>
+        <button onclick="forceGC()">Force GC</button>
+    </div>
+    
+    <div id="iframeContainer"></div>
+
+    <script>
+        let iframe = null;
+        let memoryInterval = null;
+        let fpsInterval = null;
+        let lastTime = performance.now();
+        let frames = 0;
+        let loadStartTime = 0;
+        let baselineMemory = 0;
+
+        function formatBytes(bytes) {
+            return (bytes / (1024 * 1024)).toFixed(2);
+        }
+
+        function updateMemoryStats() {
+            if (performance.memory) {
+                const used = formatBytes(performance.memory.usedJSHeapSize);
+                const total = formatBytes(performance.memory.totalJSHeapSize);
+                const limit = formatBytes(performance.memory.jsHeapSizeLimit);
+                
+                document.getElementById('usedHeap').textContent = used;
+                document.getElementById('totalHeap').textContent = total;
+                document.getElementById('heapLimit').textContent = limit;
+                
+                if (iframe) {
+                    const currentMem = performance.memory.usedJSHeapSize;
+                    const threeMem = currentMem - baselineMemory;
+                    document.getElementById('threeLoad').textContent = formatBytes(threeMem);
+                }
+            } else {
+                document.getElementById('usedHeap').textContent = 'N/A (performance.memory not available)';
+            }
+        }
+
+        function updateFPS() {
+            frames++;
+            const currentTime = performance.now();
+            if (currentTime >= lastTime + 1000) {
+                const fps = Math.round(frames * 1000 / (currentTime - lastTime));
+                document.getElementById('fps').textContent = fps;
+                frames = 0;
+                lastTime = currentTime;
+            }
+            if (iframe) {
+                requestAnimationFrame(updateFPS);
+            }
+        }
+
+        function loadShader() {
+            // Record baseline memory before loading
+            if (performance.memory) {
+                baselineMemory = performance.memory.usedJSHeapSize;
+            }
+            
+            loadStartTime = performance.now();
+            document.getElementById('status').textContent = 'Loading...';
+            
+            // Create iframe
+            const container = document.getElementById('iframeContainer');
+            container.innerHTML = '';
+            iframe = document.createElement('iframe');
+            iframe.src = 'singularity-shader.html';
+            iframe.onload = () => {
+                const loadTime = performance.now() - loadStartTime;
+                document.getElementById('loadTime').textContent = loadTime.toFixed(0);
+                document.getElementById('status').textContent = 'Loaded';
+                
+                // Start monitoring
+                memoryInterval = setInterval(updateMemoryStats, 500);
+                requestAnimationFrame(updateFPS);
+            };
+            container.appendChild(iframe);
+        }
+
+        function unloadShader() {
+            if (iframe) {
+                iframe.remove();
+                iframe = null;
+            }
+            clearInterval(memoryInterval);
+            document.getElementById('status').textContent = 'Unloaded';
+            document.getElementById('fps').textContent = '--';
+            document.getElementById('threeLoad').textContent = '--';
+            
+            // Update memory after unload
+            setTimeout(updateMemoryStats, 100);
+        }
+
+        function forceGC() {
+            if (window.gc) {
+                window.gc();
+                console.log('Garbage collection triggered');
+                setTimeout(updateMemoryStats, 100);
+            } else {
+                alert('Garbage collection not available. Run Chrome with --expose-gc flag');
+            }
+        }
+
+        // Initial memory reading
+        updateMemoryStats();
+        
+        // Check for performance.memory API
+        if (!performance.memory) {
+            alert('Memory monitoring requires Chrome/Chromium. For full features, run with:\nchrome --enable-precise-memory-info --expose-gc');
+        }
+    </script>
+</body>
+</html>

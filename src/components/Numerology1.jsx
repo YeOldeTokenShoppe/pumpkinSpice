@@ -381,44 +381,7 @@ const Numerology1 = ({ isMobile = false }) => {
 
   return (
     <>
-      <GlobalStyles />
-      <style>{levitateStyle}</style>
-      {/* The fluid background and magic 80 ball combination */}
-      <svg width="0" height="0" aria-hidden="true" style={{ position: 'fixed' }}>
-                      <filter id="smoke" colorInterpolationFilters="sRGB">
-                        <feTurbulence baseFrequency="0.00713" result="t" />
-                        <feComponentTransfer>
-                          <feFuncA type="discrete" tableValues="1" />
-                        </feComponentTransfer>
-                        <feGaussianBlur stdDeviation="5" result="i" />
-                        <feBlend in="SourceGraphic" in2="t" mode="exclusion" />
-                        <feDisplacementMap
-                          in="i"
-                          scale="180"
-                          xChannelSelector="R"
-                          yChannelSelector="G"
-                        />
-                      </filter>
-      </svg>
-      <div
-                      style={{
-                        position: "relative",
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'flex-end',
-                        margin: '0 auto',
-                        // paddingTop: '30px',
 
-                        width: '100%',
-                        // maxWidth: '600px',
-                        // height: effectiveIsMobile ? '60vh' : '60vh',
-                        // minHeight: effectiveIsMobile ? '40rem' : '40rem',
-                        borderRadius: '1em',
-                        transform: 'scale(1.3)',
-                        transformOrigin: 'center center',
-                        overflow: 'visible',
-                      }}
-                    >
                       
                       {/* Matrix rain background effect using Canvas */}
                       {/* <canvas 
@@ -471,20 +434,7 @@ const Numerology1 = ({ isMobile = false }) => {
                       </div> */}
 
                       {/* Holy Grail 3D Model */}
-                      <div
-                        // style={{
-                        //   position: "relative",
-                        //   width: effectiveIsMobile ? "100%" : "100%",
-                        //   maxWidth: effectiveIsMobile ? "380px" : "750px",
-                        //   height: effectiveIsMobile ? "100%" : "100%",
-                        //   // maxHeight: effectiveIsMobile ? "550px" : "450px",
-                        //   display: "flex",
-                        //   justifyContent: "center",
-                        //   alignItems: "center",
-                        //   zIndex: "2",
-                        //   marginBottom: effectiveIsMobile ? '0px' : '0px',
-                        // }}
-                      >
+            
                         {clientSideReady && (
                           <Canvas
                             camera={{ position: [0, 1.5, 6], fov: effectiveIsMobile ? 50 : 60 }}
@@ -528,26 +478,8 @@ const Numerology1 = ({ isMobile = false }) => {
                             </EffectComposer>
                           </Canvas>
                         )}
-                      </div>
+    
 
-                      {/* Candle on the right */}
-                      {/* <div 
-                        className="candle-holder"
-                        style={{
-                          right: effectiveIsMobile ? '5%' : '10%',
-                          bottom: effectiveIsMobile ? '10px' : '30px',
-                          transform: effectiveIsMobile ? 'scale(0.45)' : 'scale(0.5)',
-                          transformOrigin: 'bottom center',
-                        }}
-                      >
-                        <div className="candle">
-                          <div className="blinking-glow"></div>
-                          <div className="thread"></div>
-                          <div className="glow"></div>
-                          <div className="flame"></div>
-                        </div>
-                      </div> */}
-                    </div>
                     </>
   ); 
                           }

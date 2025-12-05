@@ -150,7 +150,7 @@ Response time: < 2 hours during US market hours`,
         position: 'relative',
         margin: '4rem auto',
         marginBottom: isMobile ? '4rem' : '12rem',
-        width: isMobile ? '95%' : '90%',
+        // width: isMobile ? '95%' : '90%',
         maxWidth: '1200px',
         zIndex: 1,
         pointerEvents: 'auto'

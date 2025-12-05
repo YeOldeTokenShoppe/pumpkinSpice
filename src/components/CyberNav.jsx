@@ -19,11 +19,40 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Reset hover state when menu closes
+  // Reset hover state when menu closes and handle body scroll
   React.useEffect(() => {
     if (!isMenuOpen) {
       setHoveredItemPath(null);
+      // Re-enable body scroll
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      // Restore scroll position
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    } else {
+      // Disable body scroll when menu is open
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
     }
+    
+    // Cleanup on unmount
+    return () => {
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    };
   }, [isMenuOpen]);
 
   const navItems = [
@@ -33,6 +62,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
     { id: '03', date: 'PRAYER & PROBABIL80', title: 'TRADING DESK', path: '/temple', thumbnail: '/lightning.png' },
     { id: '04', date: 'ETHICS & MORAL80', title: 'SCROLLS OF ST. GR80', path: '/model-viewer', thumbnail: '/stgr81.png' },
     { id: '05', date: 'CHAR80 & LIQUID80', title: 'COIN FOUNTAIN', path: '/fountain', thumbnail: '/fountain2.png' },
+    { id: '06', date: 'QUANT80 & CURIOS80', title: 'TOKENOMICS & FAQ', path: '/tokenomics', thumbnail: '/coinFront.png' },
 
   ];
 
@@ -44,7 +74,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
             position: position === "relative" ? "relative" : position,
             top: position === "relative" ? "0" : (position === "absolute" ? "10px" : "20px"),
             right: position === "relative" ? "0" : "20px",
-            zIndex: position === "relative" ? 1 : 99999998,
+            zIndex: position === "relative" ? 1 : 2147483646,
             color: is80sMode ? "#D946EF" : "#ffffff",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             backdropFilter: "blur(10px)",
@@ -55,8 +85,8 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: isMobile ? "40px" : "60px",
-            height: isMobile ? "40px" : "60px",
+            width: isMobile ? "2.5rem" : "3.75rem",
+            height: isMobile ? "2.5rem" : "3.75rem",
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
           }}
           aria-label="Menu"
@@ -90,15 +120,19 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
               left: "0",
               right: "0",
               bottom: "0",
+              width: "100vw",
+              height: "100vh",
               backgroundColor: "rgba(0, 0, 0, 0.95)",
               backdropFilter: "blur(20px)",
-              zIndex: 99999999,
+              WebkitBackdropFilter: "blur(20px)",
+              zIndex: 2147483647,
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
               gap: "20px",
-              padding: "20px"
+              padding: "20px",
+              isolation: "isolate"
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
@@ -118,7 +152,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                 cursor: "pointer",
                 padding: "10px",
                 fontSize: "24px",
-                zIndex: 100000000
+                zIndex: 2147483648
               }}
               onClick={() => setIsMenuOpen(false)}
               aria-label="Close menu"
