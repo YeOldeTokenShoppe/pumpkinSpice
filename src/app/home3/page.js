@@ -101,6 +101,25 @@ function Model({ scrollY, isMobile, onLoad }) {
     }
   }, [scene, onLoad]);
   
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup GLTF resources if needed
+      if (scene) {
+        scene.traverse((object) => {
+          if (object.geometry) object.geometry.dispose();
+          if (object.material) {
+            if (Array.isArray(object.material)) {
+              object.material.forEach(material => material.dispose());
+            } else {
+              object.material.dispose();
+            }
+          }
+        });
+      }
+    };
+  }, [scene]);
+  
   // Animate based on scroll (from Simple3DScene)
   useFrame(() => {
     if (groupRef.current) {
@@ -264,6 +283,7 @@ const GradientSkyMaterial = shaderMaterial(
 );
 
 extend({ GradientSkyMaterial });
+extend({ ChromaticAberrationMaterial });
 
 // Hemisphere Light Component
 function HemisphereLightComponent() {
@@ -515,6 +535,7 @@ const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
   const textRefs = useRef([]);
   const curveRef = useRef();
   const groupRef = useRef();
+  const frameId = useRef();
   
   const firestoreResults = useFirestoreResults();
   
@@ -612,9 +633,10 @@ const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
   
   // Cleanup geometry on unmount
   useEffect(() => {
+    const currentGeometry = ribbonGeometry;
     return () => {
-      if (ribbonGeometry) {
-        ribbonGeometry.dispose();
+      if (currentGeometry) {
+        currentGeometry.dispose();
       }
     };
   }, [ribbonGeometry]);
@@ -734,6 +756,7 @@ export default function Home3() {
 
   // Font loading effect
   useEffect(() => {
+    let timeoutId;
     const checkFont = async () => {
       try {
         await document.fonts.load("1em 'UnifrakturCook'");
@@ -742,13 +765,19 @@ export default function Home3() {
         setFontLoaded(true);
         document.body.classList.add('fonts-loaded');
       } catch (e) {
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           setFontLoaded(true);
           document.body.classList.add('fonts-loaded');
         }, 1000);
       }
     };
     checkFont();
+    
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   // Update loading state when both font and model are loaded
@@ -814,6 +843,9 @@ export default function Home3() {
     document.addEventListener('scroll', handleScroll, { passive: true });
     document.body.addEventListener('scroll', handleScroll, { passive: true });
     
+    // Track dynamically added listeners for cleanup
+    const addedListeners = [];
+    
     // Also check for scrolling on the main app container
     const checkForScrollContainer = () => {
       // Find all elements that might be scrolling
@@ -822,18 +854,24 @@ export default function Home3() {
         if (container.scrollHeight > container.clientHeight) {
           // console.log('Found scrollable container:', container.className || container.id || container.tagName);
           container.addEventListener('scroll', handleScroll, { passive: true });
+          addedListeners.push(container);
         }
       });
     };
     
     // Delay to ensure DOM is ready
-    setTimeout(checkForScrollContainer, 100);
+    const timeoutId = setTimeout(checkForScrollContainer, 100);
     
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('resize', checkDevice);
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('scroll', handleScroll);
       document.body.removeEventListener('scroll', handleScroll);
+      // Remove dynamically added listeners
+      addedListeners.forEach(container => {
+        container.removeEventListener('scroll', handleScroll);
+      });
     };
   }, []);
 
@@ -901,6 +939,7 @@ export default function Home3() {
   useEffect(() => {
     if (!secondTitleRef.current) return;
 
+    const targetElement = secondTitleRef.current;
     const observer = new IntersectionObserver(
       ([entry]) => {
         console.log('Second title intersection:', {
@@ -922,10 +961,13 @@ export default function Home3() {
       }
     );
 
-    observer.observe(secondTitleRef.current);
+    observer.observe(targetElement);
     console.log('Intersection Observer set up for second title');
 
     return () => {
+      if (targetElement) {
+        observer.unobserve(targetElement);
+      }
       observer.disconnect();
     };
   }, []); // Remove dependency to avoid re-creating observer
