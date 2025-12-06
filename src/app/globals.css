@@ -2123,7 +2123,7 @@ s.box .shimmer {
 } */
 
 /* Statistical Displays */
-.box {
+/* .box {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2131,7 +2131,7 @@ s.box .shimmer {
   min-width: 300px;
   min-height: 600px;
   padding: 2em, 0, 0, 0;
-}
+} */
 
 .text-box {
   background-color: transparent;

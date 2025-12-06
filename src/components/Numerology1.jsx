@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, Suspense } from "react";
 import styled, { keyframes, createGlobalStyle } from "styled-components";
 import Coin from "./Coin";
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
 import { EffectComposer, DepthOfField, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -236,11 +236,117 @@ const FluidBackground = styled.div`
 
 
 
-// 3D Model Component
+// 3D Model Component with Coin Hover Animations
 function Model({ url, scale = 1, position = [0, 0, 0], rotation = [0, 0, 0] }) {
   const { scene } = useGLTF(url);
   const meshRef = useRef();
+  const coinRefs = useRef({});
+  const [hoveredCoin, setHoveredCoin] = useState(null);
+  const initialStates = useRef({});
   
+  // Set up coin references once
+  useEffect(() => {
+    if (!scene) return;
+    
+    // Find all coin objects in the scene
+    scene.traverse((child) => {
+      // Check for coins by name pattern
+      if (child.name && child.name.match(/Coin\d+/)) {
+        console.log('Found coin:', child.name);
+        coinRefs.current[child.name] = child;
+        
+        // Store initial transforms
+        initialStates.current[child.name] = {
+          position: child.position.clone(),
+          rotation: child.rotation.clone(),
+          scale: child.scale.clone()
+        };
+      }
+    });
+    console.log('Total coins found:', Object.keys(coinRefs.current).length);
+  }, [scene]);
+  
+  // Animate coins every frame
+  useFrame((state) => {
+    const time = state.clock.getElapsedTime();
+    
+    Object.entries(coinRefs.current).forEach(([name, coin]) => {
+      const initial = initialStates.current[name];
+      if (!initial) return;
+      
+      if (hoveredCoin === name) {
+        // Hover animation - MORE INTENSE float up and rotate
+        coin.position.y = initial.position.y + Math.sin(time * 6) * 0.15 + 0.3;
+        coin.rotation.y = initial.rotation.y + time * 4;
+        coin.rotation.x = initial.rotation.x + Math.sin(time * 3) * 0.3;
+        coin.scale.set(
+          initial.scale.x * 1.3,
+          initial.scale.y * 1.3,
+          initial.scale.z * 1.3
+        );
+        
+        // Add glow effect if material supports it
+        if (coin.material) {
+          if (coin.material.emissive) {
+            coin.material.emissive = new THREE.Color(0xffd700);
+            coin.material.emissiveIntensity = 0.8;
+          }
+          // Also try to modify standard material properties
+          if (coin.material.color) {
+            coin.material.color = new THREE.Color(0xffee00);
+          }
+        }
+      } else {
+        // MORE NOTICEABLE idle animation for non-hovered coins
+        const coinIndex = parseInt(name.match(/\d+/)[0]);
+        coin.position.y = initial.position.y + Math.sin(time * 2 + coinIndex * 0.5) * 0.08;
+        coin.rotation.y = initial.rotation.y + Math.sin(time * 1 + coinIndex * 0.3) * 0.25;
+        
+        // Smoothly return to original scale
+        coin.scale.x = THREE.MathUtils.lerp(coin.scale.x, initial.scale.x, 0.1);
+        coin.scale.y = THREE.MathUtils.lerp(coin.scale.y, initial.scale.y, 0.1);
+        coin.scale.z = THREE.MathUtils.lerp(coin.scale.z, initial.scale.z, 0.1);
+        
+        // Reset material properties
+        if (coin.material) {
+          if (coin.material.emissive) {
+            coin.material.emissive = new THREE.Color(0x000000);
+            coin.material.emissiveIntensity = 0;
+          }
+          // Reset standard material color
+          if (coin.material.color && coin.material.userData?.originalColor) {
+            coin.material.color = coin.material.userData.originalColor;
+          }
+        }
+      }
+    });
+  });
+  
+  // Handle pointer events
+  const handlePointerOver = (e) => {
+    e.stopPropagation();
+    // Check if the hovered object is a coin
+    if (e.object.name && e.object.name.match(/Coin\d+/)) {
+      console.log('Hovering over:', e.object.name);
+      setHoveredCoin(e.object.name);
+      document.body.style.cursor = 'pointer';
+      
+      // Store original color if not stored
+      if (e.object.material && e.object.material.color && !e.object.material.userData?.originalColor) {
+        e.object.material.userData = e.object.material.userData || {};
+        e.object.material.userData.originalColor = e.object.material.color.clone();
+      }
+    }
+  };
+  
+  const handlePointerOut = (e) => {
+    e.stopPropagation();
+    if (e.object.name && e.object.name.match(/Coin\d+/)) {
+      console.log('Hover out:', e.object.name);
+      setHoveredCoin(null);
+      document.body.style.cursor = 'default';
+    }
+  };
   
   return (
     <primitive 
@@ -249,6 +355,8 @@ function Model({ url, scale = 1, position = [0, 0, 0], rotation = [0, 0, 0] }) {
       scale={scale}
       position={position}
       rotation={rotation}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
     />
   );
 }

@@ -97,6 +97,7 @@ function VideoScreens() {
       let screen5Found = false;
 
       scene.traverse((child) => {
+        // Option 1: Target by object name (existing approach)
         if (child.isMesh && child.name === 'Screen1' && !screen1Found) {
           // console.log('[VideoScreens] Found Screen1:', child);
           
@@ -168,6 +169,31 @@ function VideoScreens() {
           child.material = material;
           screen5Found = true;
           video5.play().catch(e => {});
+        }
+        
+        // Option 2: Target by material name (Material.001)
+        if (child.isMesh && child.material) {
+          // Handle both single material and array of materials
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          
+          materials.forEach((mat, index) => {
+            // Apply video to material named 'Material.001'
+            if (mat.name === 'Material.001' && !screen1Found) {
+              const newMaterial = new THREE.MeshBasicMaterial({
+                map: texture1,
+                side: THREE.FrontSide,
+                toneMapped: false,
+              });
+              
+              if (Array.isArray(child.material)) {
+                child.material[index] = newMaterial;
+              } else {
+                child.material = newMaterial;
+              }
+              screen1Found = true;
+              video1.play().catch(() => {});
+            }
+          });
         }
       });
 

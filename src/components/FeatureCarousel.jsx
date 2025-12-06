@@ -110,7 +110,7 @@ const FeatureCarousel = ({ slides, autoRotate = true, rotationInterval = 6000 })
               style={{
                 width: "100%",
                 flexShrink: 0,
-                minHeight: "600px",
+             maxHeight: "80vh",
                 display: "flex",
                 alignItems: "center",
               }}
@@ -139,25 +139,25 @@ const FeatureCarousel = ({ slides, autoRotate = true, rotationInterval = 6000 })
               width: "60px",
               height: "60px",
               borderRadius: "50%",
-              background: "rgba(0, 255, 157, 0.15)",
-              border: "2px solid rgba(0, 255, 157, 0.5)",
-              color: "#00ff9d",
+              background: "rgba(5, 217, 232, 0.15)",
+              border: "2px solid rgba(5, 217, 232, 0.5)",
+              color: "rgba(5, 217, 232)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
               transition: "all 0.3s ease",
               zIndex: 20,
-              boxShadow: "0 0 20px rgba(0, 255, 157, 0.3)",
+              boxShadow: "0 0 20px rgba(5, 217, 232, 0.3)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(0, 255, 157, 0.2)";
-              e.currentTarget.style.borderColor = "rgba(0, 255, 157, 0.5)";
+              e.currentTarget.style.background = "rgba(5, 217, 232, 0.2)";
+              e.currentTarget.style.borderColor = "rgba(5, 217, 232, 0.5)";
               e.currentTarget.style.transform = "translateY(-50%) scale(1.1)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(0, 255, 157, 0.1)";
-              e.currentTarget.style.borderColor = "rgba(0, 255, 157, 0.3)";
+              e.currentTarget.style.background = "rgba(5, 217, 232, 0.1)";
+              e.currentTarget.style.borderColor = "rgba(5, 217, 232, 0.3)";
               e.currentTarget.style.transform = "translateY(-50%) scale(1)";
             }}
           >
@@ -186,25 +186,25 @@ const FeatureCarousel = ({ slides, autoRotate = true, rotationInterval = 6000 })
               width: "60px",
               height: "60px",
               borderRadius: "50%",
-              background: "rgba(0, 255, 157, 0.15)",
-              border: "2px solid rgba(0, 255, 157, 0.5)",
-              color: "#00ff9d",
+              background: "rgba(5, 217, 232, 0.15)",
+           border: "2px solid rgba(5, 217, 232, 0.5)",
+          color: "rgba(5, 217, 232)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
               transition: "all 0.3s ease",
               zIndex: 20,
-              boxShadow: "0 0 20px rgba(0, 255, 157, 0.3)",
+           boxShadow: "0 0 20px rgba(5, 217, 232, 0.3)",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "rgba(0, 255, 157, 0.2)";
-              e.currentTarget.style.borderColor = "rgba(0, 255, 157, 0.5)";
+              e.currentTarget.style.borderColor = "rgba(5, 217, 232, 0.5)";
               e.currentTarget.style.transform = "translateY(-50%) scale(1.1)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "rgba(0, 255, 157, 0.1)";
-              e.currentTarget.style.borderColor = "rgba(0, 255, 157, 0.3)";
+              e.currentTarget.style.borderColor = "rgba(5, 217, 232, 0.3)";
               e.currentTarget.style.transform = "translateY(-50%) scale(1)";
             }}
           >
@@ -251,7 +251,6 @@ const FeatureCarousel = ({ slides, autoRotate = true, rotationInterval = 6000 })
                 width: currentSlide === index ? "32px" : "8px",
                 height: "8px",
                 borderRadius: "4px",
-                background: currentSlide === index ? "#00ff9d" : "rgba(255, 255, 255, 0.3)",
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.3s ease",
