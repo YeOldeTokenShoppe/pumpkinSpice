@@ -36,93 +36,64 @@ export const WatchlistSlide = () => {
       return () => window.removeEventListener('resize', checkMobile);
     }, []);
   return (
-       <div style={{
+    <div style={{
       width: "100%",
-      maxHeight: isMobile ? "auto" : "auto",
+      height: "80vh",
+      maxHeight: "80vh",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: isMobile ? "1rem" : "1rem",
-      // background: "linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 70, 229, 0.05) 100%)",
+      padding: isMobile ? "0" : "3rem 2rem",
       position: "relative",
+      overflow: "hidden",
     }}>
-               
-               {/* Grid pattern overlay */}
-               {/* <div style={{
-                 position: 'absolute',
-                 top: 0,
-                 left: 0,
-                 right: 0,
-                 bottom: 0,
-                 backgroundImage: `
-                   repeating-linear-gradient(
-                     0deg,
-                     transparent,
-                     transparent 2px,
-                     rgba(0, 255, 0, 0.02) 2px,
-                     rgba(0, 255, 0, 0.02) 4px
-                   ),
-                   repeating-linear-gradient(
-                     90deg,
-                     transparent,
-                     transparent 2px,
-                     rgba(0, 255, 0, 0.02) 2px,
-                     rgba(0, 255, 0, 0.02) 4px
-                   )
-                 `,
-                 pointerEvents: 'none',
-               }} /> */}
-   
-               {/* Glow effect */}
-               {/* <div style={{
-                 content: '',
-                 position: 'absolute',
-                 top: '-50%',
-                 left: '-50%',
-                 width: '200%',
-                 height: '200%',
-                 background: 'radial-gradient(circle, rgba(0, 255, 0, 0.05) 0%, transparent 70%)',
-                 animation: 'handsRotate 30s linear infinite',
-                 zIndex: 0
-               }} /> */}
-   
-               <div style={{
-                 position: "relative",
-                 display: "grid",
-                 gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 1.55fr) minmax(0, 1.45fr)",
-                 gap: isMobile ? "0.5rem" : "1.5rem",
-                 alignItems: isMobile ? "flex-start" : "center",
-                 color: '#ffffff',
-                 zIndex: 1,
-                 height: "80vh",
-                 overflow: isMobile ? "hidden" : "visible",
-                 padding: isMobile ? "1rem" : "1rem 2rem"
-               }}>
-                                  
-                                 <div style={{
-                             height: isMobile ? '200px' : '90%',
-                             minHeight: isMobile ? '200px' : '400px',
-                             display: 'block',
-                             order: isMobile ? 0 : 0
-                           }}>
-                             <HandsGLTFScene />
-                           </div>
-                                  {/* Right Column - Text Content */}
-                      <div style={{
-                 padding: isMobile ? '0' : '0.5rem 1rem',
-                 color: '#ffffff',
-                //  height: isMobile ? 'calc(75vh - 220px)' : 'auto',
-                 display: 'flex',
-                 flexDirection: 'column',
-                 justifyContent: isMobile ? 'flex-start' : 'center',
-                 alignItems: 'center',
-                 width: '100%',
-                 boxSizing: 'border-box',
-                 overflow: isMobile ? 'auto' : 'visible',
-                 position: 'relative',
-                 marginTop: isMobile ? '0' : '0',
-                 order: isMobile ? 1 : 1
-               }}>
+
+      {/* 3D Canvas Background for mobile */}
+      {isMobile && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '280px',
+          zIndex: 1,
+        }}>
+          <HandsGLTFScene />
+        </div>
+      )}
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "1.55fr 1.45fr",
+        gap: isMobile ? "0" : "3rem",
+        maxWidth: "1400px",
+        width: "100%",
+        alignItems: "center",
+        position: "relative",
+        zIndex: 2,
+        height: "100%",
+      }}>
+        {/* Left side - 3D Canvas (desktop only) */}
+        {!isMobile && (
+          <div style={{
+            height: "100%",
+            minHeight: "500px",
+            position: "relative",
+          }}>
+            <HandsGLTFScene />
+          </div>
+        )}
+
+        {/* Right Column - Text Content */}
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: isMobile ? "center" : "flex-start",
+          marginTop: isMobile ? "240px" : "0",
+          padding: isMobile ? "0 1rem" : "0",
+          height: isMobile ? "calc(75vh - 240px)" : "auto",
+          overflowY: isMobile ? "auto" : "visible",
+        }}>
 
           {/* Decorative eye */}
           {/* <div style={{ marginBottom: isMobile ? '0.25rem' : '1rem', opacity: 0.9, display: 'flex', justifyContent: 'center', width: '100%' }}>
@@ -131,25 +102,31 @@ export const WatchlistSlide = () => {
         
             
         
-                 <SkewedHeading 
-       lines={["GET ON HER", "WATCHLIST"]}
-   fontSize={isMobile ? "1.75rem" : "4rem"}
-          color="#00ff9d"
-          skewAngle={-2}
-          shadowColor="#000"
-          style={{ marginBottom: isMobile ? "0.75rem" : "2rem" }}
-     />
-                 <div style={{
-                   lineHeight: 1.5,
-                   opacity: 0.9,
-                   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                   fontWeight: 400,
-                   letterSpacing: '0.02em',
-                   fontSize: isMobile ? '1.2rem' : '1.4rem',
-                   textAlign: 'center',
-                   width: '100%',
-                   // maxWidth: '600px',
-                 }}>
+          <SkewedHeading 
+            lines={["GET ON HER", "WATCHLIST"]}
+            fontSize={isMobile ? "2rem" : "4rem"}
+            color="#00ff9d"
+            skewAngle={-2}
+            shadowColor="#000"
+            style={{ 
+              marginBottom: isMobile ? "0.75rem" : "2rem",
+              width: '100%',
+              position: isMobile ? 'relative' : 'static',
+              zIndex: isMobile ? 3 : 'auto',
+              textShadow: isMobile ? '2px 2px 4px rgba(0,0,0,0.8)' : undefined
+            }}
+          />
+          
+          <div style={{
+            lineHeight: 1.5,
+            opacity: 0.9,
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            fontWeight: 400,
+            letterSpacing: '0.02em',
+            fontSize: isMobile ? '1rem' : '1.25rem',
+            textAlign: isMobile ? 'center' : 'center',
+            width: '100%',
+          }}>
                        {/* <span style={{               fontFamily: "'Fjalla One', sans-serif",
    fontSize: isMobile ? '0.95rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: isMobile ? '0.25rem' : '0.5rem', lineHeight: '1.2' }}>
                    Light a Green Candle for Luck
@@ -287,27 +264,27 @@ export const WatchlistSlide = () => {
                    </div>
                  </div>
    
-             </div>
+          </div>
+          
           <div style={{
-                             marginTop: isMobile ? '0.5rem' : '1.5rem',
-                             marginBottom: isMobile ? '0' : '1rem',
-                             zIndex: 102,
-                             flexShrink: 0,
-                             display: 'flex',
-                             justifyContent: 'center',
-                           }}>
-                           <NeonBorderButton
-                             onClick={handleOpenModal}
-                             isMobile={isMobile}
-                             variant="secondary"
-                           >
-                             Get Lit
-                           </NeonBorderButton>
-                         </div>
-                  
-              
-                       </div>
-               </div>
+            marginTop: isMobile ? '0.5rem' : '1.5rem',
+            marginBottom: isMobile ? '0' : '1rem',
+            zIndex: 102,
+            flexShrink: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            width: '100%',
+          }}>
+            <NeonBorderButton
+              onClick={handleOpenModal}
+              isMobile={isMobile}
+              variant="secondary"
+            >
+              Get Lit
+            </NeonBorderButton>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
