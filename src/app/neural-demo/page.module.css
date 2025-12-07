@@ -1,0 +1,131 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 100%);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.fullSection {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+}
+
+.title {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 2rem;
+  font-weight: 600;
+  text-align: center;
+  z-index: 30;
+  background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fullContainer {
+  width: 100%;
+  height: 100%;
+}
+
+.transparentSection {
+  padding: 80px 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.sectionTitle {
+  color: white;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.description {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 40px;
+}
+
+.transparentContainer {
+  width: 100%;
+  height: 500px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 5;
+  color: white;
+  padding: 40px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+}
+
+.content p {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.minimalSection {
+  padding: 80px 40px;
+  background: #0a0a0f;
+}
+
+.minimalContainer {
+  width: 100%;
+  max-width: 800px;
+  height: 400px;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 1.5rem;
+    padding: 0 20px;
+  }
+  
+  .transparentSection,
+  .minimalSection {
+    padding: 40px 20px;
+  }
+  
+  .sectionTitle {
+    font-size: 1.4rem;
+  }
+  
+  .description {
+    font-size: 1rem;
+  }
+  
+  .transparentContainer {
+    height: 400px;
+  }
+  
+  .minimalContainer {
+    height: 300px;
+  }
+}

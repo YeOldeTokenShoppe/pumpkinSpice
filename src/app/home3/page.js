@@ -43,6 +43,9 @@ import FeatureCarousel from "@/components/FeatureCarousel";
 import { WatchlistSlide, Illumin80Slide, TradingDeskSlide, TokenomicsSlide } from "@/components/FeatureSlides";
 import Footer from "@/components/Footer";
 import AnnunciationIntro from '@/components/AnnunciationIntro';
+import VideoScreens from "@/components/VideoScreens";
+import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
+
 
 
 
@@ -960,9 +963,19 @@ export default function Home3() {
               intensity={1.5}
             />
             <Model scrollY={scrollY} isMobile={isMobile} onLoad={() => setModelLoaded(true)} />
-            
+            <VideoScreens />
             {/* Breath that follows the same scroll animation as the bull */}
             <ScrollingBreath scrollY={scrollY} isMobile={isMobile} />
+            
+            {/* Neural Network Visualization */}
+            {/* <NeuralNetworkR3F 
+              theme={0}
+              formation={0}
+              density={70}
+              position={[0, -10, -10]}
+              scale={0.5}
+              enableInteraction={true}
+            /> */}
             
             <ScrollClouds scrollY={scrollY} onLoad={() => setCloudsLoaded(true)} />
             {/* Additional point lights for desktop only */}
@@ -1366,8 +1379,7 @@ export default function Home3() {
               Swipe through our key features and discover the power of RL80
             </p>
           </div> */}
-          
-          <FeatureCarousel
+          {/* <FeatureCarousel
             slides={[
               <WatchlistSlide key="watchlist" />,
               <Illumin80Slide key="illumin80" />,
@@ -1376,7 +1388,7 @@ export default function Home3() {
             ]}
             autoRotate={true}
             rotationInterval={7000}
-          />
+          /> */}
         </div>
 
 
