@@ -2,9 +2,9 @@
 
 import { Canvas, useFrame, extend } from "@react-three/fiber";
 import { Suspense, useRef, useMemo, useEffect, useState } from "react";
-import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper } from "@react-three/drei";
+import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper, Stats } from "@react-three/drei";
 import * as THREE from "three";
-import { Leva } from "leva";
+// import { Leva } from "leva";
 import DarkClouds from "../../components/Clouds";
 import PostProcessingEffects from "../../components/PostProcessingEffects";
 import { useFirestoreResults } from '../../utilities/useFirestoreResults';
@@ -12,110 +12,125 @@ import { useMusic } from '../../components/MusicContext';
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { Illumin80ClerkButton } from "../../components/Illumin80Display";
 import CyberNav from '../../components/CyberNav';
-import SocialBar from '../../components/SocialBar';
+// import SocialBar from '../../components/SocialBar';
 import EnhancedVolumetricLight from '@/components/EnhancedVolumetricLight';
 import DropInTitle from '../../components/DropInTitle';
-import Coin from '../../components/Coin';
-import Link from 'next/link';
+// import Coin from '../../components/Coin';
+// import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
-import RotatingText from '@/components/RotatingText';
+// import RotatingText from '@/components/RotatingText';
 import '@/components/RotatingText.css';
-import HandsGLTFScene from "@/components/HandsGLTFScene";
+// import HandsGLTFScene from "@/components/HandsGLTFScene";
 import CompactCandleModal from '@/components/CompactCandleModal';
-import CyberFAQSection from '@/components/CyberFAQSection';
+// import CyberFAQSection from '@/components/CyberFAQSection';
 import CoinLoader from '@/components/CoinLoader';
 import CyberFloatingBar from '@/components/CyberFloatingBar';
-import TokenomicsSection from '@/components/TokenomicsSection';
-import CyberStatsSection from '@/components/CyberStatsSection';
-import CyberTokenomicsSection from '@/components/CyberTokenomicsSection';
-import CyberButton from '@/components/CyberButton';
-import CyberCTACard from '@/components/CyberCTACard';
-import Illumin80Bouncer from '@/components/Illumin80Bouncer';
-import Numerology1 from '@/components/Numerology1';
-import TubesCursor from '@/components/TubesCursor';
-import CarouselWrapper from '@/components/CarouselWrapper';
+// import TokenomicsSection from '@/components/TokenomicsSection';
+// import CyberStatsSection from '@/components/CyberStatsSection';
+// import CyberTokenomicsSection from '@/components/CyberTokenomicsSection';
+// import CyberButton from '@/components/CyberButton';
+// import CyberCTACard from '@/components/CyberCTACard';
+// import Illumin80Bouncer from '@/components/Illumin80Bouncer';
+// import Numerology1 from '@/components/Numerology1';
+// import TubesCursor from '@/components/TubesCursor';
+// import CarouselWrapper from '@/components/CarouselWrapper';
 import BreathSmoke from "@/components/BreathSmoke";
 import SkewedHeading from "@/components/SkewedHeading";
 import AngelOfCurrencies from "@/components/AngelOfCurrencies";
-import SlidingNav from "@/components/SlidingNav";
-import CircularCTA from "@/components/CircularCTA";
-import FeatureCarousel from "@/components/FeatureCarousel";
-import { WatchlistSlide, Illumin80Slide, TradingDeskSlide, TokenomicsSlide } from "@/components/FeatureSlides";
+// import SlidingNav from "@/components/SlidingNav";
+// import CircularCTA from "@/components/CircularCTA";
+// import FeatureCarousel from "@/components/FeatureCarousel";
+// import { WatchlistSlide, Illumin80Slide, TradingDeskSlide, TokenomicsSlide } from "@/components/FeatureSlides";
 import Footer from "@/components/Footer";
 import AnnunciationIntro from '@/components/AnnunciationIntro';
-import VideoScreens from "@/components/VideoScreens";
-import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
+// import VideoScreens from "@/components/VideoScreens";
+// import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
 
 
 
 
 // Animated counter component
-const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2 }) => {
-  const [count, setCount] = useState(0);
-  const countRef = useRef(null);
-  const isInView = useInView(countRef, { once: true });
+// const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2 }) => {
+//   const [count, setCount] = useState(0);
+//   const countRef = useRef(null);
+//   const isInView = useInView(countRef, { once: true });
   
   
   
-  useEffect(() => {
-    if (!isInView) return;
+//   useEffect(() => {
+//     if (!isInView) return;
     
-    let startTime;
-    let animationId;
+//     let startTime;
+//     let animationId;
     
-    const animate = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = (timestamp - startTime) / (duration * 1000);
+//     const animate = (timestamp) => {
+//       if (!startTime) startTime = timestamp;
+//       const progress = (timestamp - startTime) / (duration * 1000);
       
-      if (progress < 1) {
-        setCount(Math.floor(target * progress));
-        animationId = requestAnimationFrame(animate);
-      } else {
-        setCount(target);
-      }
-    };
+//       if (progress < 1) {
+//         setCount(Math.floor(target * progress));
+//         animationId = requestAnimationFrame(animate);
+//       } else {
+//         setCount(target);
+//       }
+//     };
     
-    animationId = requestAnimationFrame(animate);
+//     animationId = requestAnimationFrame(animate);
     
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, [isInView, target, duration]);
+//     return () => {
+//       if (animationId) {
+//         cancelAnimationFrame(animationId);
+//       }
+//     };
+//   }, [isInView, target, duration]);
 
-  return (
-    <span ref={countRef}>
-      {prefix}{count}{suffix}
-    </span>
-  );
-};
+//   return (
+//     <span ref={countRef}>
+//       {prefix}{count}{suffix}
+//     </span>
+//   );
+// };
 
 // Scroll-responsive Model component with Ticker
 function Model({ scrollY, isMobile, onLoad }) {
   const { scene } = useGLTF('/models/ourlady_rider7.glb');
   const groupRef = useRef();
   const staticBreathRef = useRef();
+  const hasLoadedRef = useRef(false);
 
-  // Call onLoad when model is ready
+  // Call onLoad when model is ready (prevent duplicate calls)
   useEffect(() => {
-    if (scene && onLoad) {
+    if (scene && onLoad && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       onLoad();
     }
   }, [scene, onLoad]);
   
-  // Cleanup on unmount
+  // Cleanup on unmount with proper texture disposal
   useEffect(() => {
+    const currentScene = scene;
     return () => {
-      // Cleanup GLTF resources if needed
-      if (scene) {
-        scene.traverse((object) => {
-          if (object.geometry) object.geometry.dispose();
+      if (currentScene) {
+        currentScene.traverse((object) => {
+          if (object.geometry) {
+            object.geometry.dispose();
+          }
           if (object.material) {
+            const disposeMaterial = (material) => {
+              // Dispose textures
+              if (material.map) material.map.dispose();
+              if (material.normalMap) material.normalMap.dispose();
+              if (material.roughnessMap) material.roughnessMap.dispose();
+              if (material.metalnessMap) material.metalnessMap.dispose();
+              if (material.aoMap) material.aoMap.dispose();
+              if (material.emissiveMap) material.emissiveMap.dispose();
+              material.dispose();
+            };
+            
             if (Array.isArray(object.material)) {
-              object.material.forEach(material => material.dispose());
+              object.material.forEach(disposeMaterial);
             } else {
-              object.material.dispose();
+              disposeMaterial(object.material);
             }
           }
         });
@@ -127,7 +142,8 @@ function Model({ scrollY, isMobile, onLoad }) {
   useFrame(() => {
     if (groupRef.current) {
       const baseY = isMobile ? -15 : -15;
-      groupRef.current.position.y = baseY + scrollY * 0.015;
+      // Further increased scroll range for 6x page length
+      groupRef.current.position.y = baseY + scrollY * 0.035;
     }
   });
   
@@ -157,7 +173,8 @@ function ScrollingBreath({ scrollY, isMobile }) {
   useFrame(() => {
     if (breathGroupRef.current) {
       const baseY = isMobile ? -15 : -15;
-      breathGroupRef.current.position.y = baseY + scrollY * 0.015;
+      // Match Model's increased scroll speed
+      breathGroupRef.current.position.y = baseY + scrollY * 0.035;
     }
   });
   
@@ -188,7 +205,8 @@ function ScrollClouds({ scrollY, onLoad }) {
   useFrame(() => {
     if (cloudGroupRef.current) {
       // Clouds move slightly slower than model for parallax effect
-      cloudGroupRef.current.position.y = scrollY * 0.012;
+      // Further increased for 6x page length
+      cloudGroupRef.current.position.y = scrollY * 0.03;
     }
   });
   
@@ -444,7 +462,6 @@ const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
   const textRefs = useRef([]);
   const curveRef = useRef();
   const groupRef = useRef();
-  const frameId = useRef();
   
   const firestoreResults = useFirestoreResults();
   
@@ -540,13 +557,21 @@ const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
     return geometry;
   }, [curve]);
   
-  // Cleanup geometry on unmount
+  // Cleanup geometry and text materials on unmount
   useEffect(() => {
     const currentGeometry = ribbonGeometry;
     return () => {
       if (currentGeometry) {
         currentGeometry.dispose();
       }
+      // Clean up text refs to prevent memory leaks
+      textRefs.current.forEach(ref => {
+        if (ref) {
+          if (ref.geometry) ref.geometry.dispose();
+          if (ref.material) ref.material.dispose();
+        }
+      });
+      textRefs.current = [];
     };
   }, [ribbonGeometry]);
   
@@ -628,7 +653,7 @@ export default function Home3() {
   const ctasRef = useRef(null);
   
   // useInView hooks
-  const ctasInView = useInView(ctasRef, { threshold: 0.3, once: true });
+  // const ctasInView = useInView(ctasRef, { threshold: 0.3, once: true });
   const secondTitleInView = useInView(secondTitleRef, { 
     threshold: 0.1,  // Trigger when 10% visible (earlier trigger)
     triggerOnce: false,  // Allow re-triggering when scrolling up/down
@@ -700,14 +725,14 @@ export default function Home3() {
   }, [fontLoaded, modelLoaded, cloudsLoaded]);
 
   // Load Pirata One font
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Pirata+One&display=swap';
-    link.rel = 'stylesheet';
-    if (!document.querySelector('link[href*="Pirata+One"]')) {
-      document.head.appendChild(link);
-    }
-  }, []);
+  // useEffect(() => {
+  //   const link = document.createElement('link');
+  //   link.href = 'https://fonts.googleapis.com/css2?family=Pirata+One&display=swap';
+  //   link.rel = 'stylesheet';
+  //   if (!document.querySelector('link[href*="Pirata+One"]')) {
+  //     document.head.appendChild(link);
+  //   }
+  // }, []);
 
   // Initialize state
   useEffect(() => {
@@ -718,7 +743,7 @@ export default function Home3() {
       const isMobileValue = width <= 768; // 768px breakpoint for isMobile
       setIsMobile(isMobileValue);
       setIsMobileDevice(mobile);
-      console.log('Mobile detection:', { width, mobile, isMobileValue }); // Debug log
+      // Mobile detection: width, mobile, isMobileValue
     };
     
     // Handle scroll events - check all possible scroll sources
@@ -737,9 +762,7 @@ export default function Home3() {
         currentScroll = scrollingElement.scrollTop || window.scrollY || window.pageYOffset || 0;
       }
       
-      // if (currentScroll > 0) {
-      //   console.log('Scroll detected:', currentScroll);
-      // }
+      // Scroll detected: currentScroll
       
       setScrollY(currentScroll);
     };
@@ -762,7 +785,7 @@ export default function Home3() {
       const possibleContainers = document.querySelectorAll('div, main, section');
       possibleContainers.forEach(container => {
         if (container.scrollHeight > container.clientHeight) {
-          // console.log('Found scrollable container:', container.className || container.id || container.tagName);
+          // Found scrollable container
           container.addEventListener('scroll', handleScroll, { passive: true });
           addedListeners.push(container);
         }
@@ -852,18 +875,8 @@ export default function Home3() {
     const targetElement = secondTitleRef.current;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        console.log('Second title intersection:', {
-          isIntersecting: entry.isIntersecting,
-          intersectionRatio: entry.intersectionRatio
-        });
-        
-        if (entry.isIntersecting) {
-          console.log('🎯 Second title entered viewport!');
-          // secondTitleInView is managed by useInView hook
-        } else {
-          console.log('🎯 Second title left viewport!');
-          // secondTitleInView is managed by useInView hook
-        }
+        // Second title intersection tracking
+        // secondTitleInView is managed by useInView hook
       },
       {
         threshold: 0.3, // Trigger when 30% of title is visible
@@ -872,7 +885,7 @@ export default function Home3() {
     );
 
     observer.observe(targetElement);
-    console.log('Intersection Observer set up for second title');
+    // Intersection Observer set up for second title
 
     return () => {
       if (targetElement) {
@@ -912,17 +925,14 @@ export default function Home3() {
           gl={{
             antialias: false,
             powerPreference: 'high-performance',
-            preserveDrawingBuffer: true,
+            preserveDrawingBuffer: false, // Memory optimization
             alpha: true,
             premultipliedAlpha: false,
+            stencil: false, // Disable stencil buffer if not needed
+            depth: true,
           }}
-          // onCreated={({ gl, scene }) => {
-          //   gl.toneMapping = THREE.ACESFilmicToneMapping;
-          //   gl.toneMappingExposure = 1.1;
-          //   scene.background = new THREE.Color(0x2b1a26);
-          // }}
-          frameloop="always"
-          dpr={1}
+          frameloop="always" // Keep for scroll animations
+          dpr={[1, 1.5]} // Limit max DPR for performance
           style={{
             width: '100%',
             height: '100%',
@@ -941,29 +951,19 @@ export default function Home3() {
             intensity={1.5}
             castShadow={false}
           />
-          {/* <pointLight position={[0, -20, -30]} color="#ff50eec7" intensity={2} distance={100} />
-          <pointLight position={[-40, 0, -20]} color="#ff50eec7" intensity={1.5} distance={80} />
-          <pointLight position={[40, -10, -25]} color="#ff50eec7" intensity={1.8} distance={90} /> */}
-          
-          {/* Orbit Controls for debugging */}
-          {/* <OrbitControls 
-            enablePan={true}
-            enableZoom={true}
-            enableRotate={true}
-            makeDefault
-          /> */}
+
           
           <Suspense fallback={null}>
             <GradientSkySphere />
             {/* <LayeredClouds scrollY={scrollY} /> */}
             <EnhancedVolumetricLight 
-              position={[0, 50 + scrollY * 0.015, 0]} 
-              target={[3, -50 + scrollY * 0.015, -5]}
+              position={[0, 50 + scrollY * 0.035, 0]} 
+              target={[3, -50 + scrollY * 0.035, -5]}
               color="#ffffee"
               intensity={1.5}
             />
             <Model scrollY={scrollY} isMobile={isMobile} onLoad={() => setModelLoaded(true)} />
-            <VideoScreens />
+            {/* <VideoScreens /> */}
             {/* Breath that follows the same scroll animation as the bull */}
             <ScrollingBreath scrollY={scrollY} isMobile={isMobile} />
             
@@ -979,14 +979,11 @@ export default function Home3() {
             
             <ScrollClouds scrollY={scrollY} onLoad={() => setCloudsLoaded(true)} />
             {/* Additional point lights for desktop only */}
-            {!isMobile && (
-              <>
-                {/* <pointLight position={[0, 5, 10]} intensity={3} />
-                <pointLight position={[-10, 0, 10]} intensity={2} /> */}
-              </>
-            )}
+ 
             <PostProcessingEffects />
           </Suspense>
+          {/* Performance Monitor - Shows FPS, MS, MB */}
+          <Stats className="perf-monitor" />
         </Canvas>
       </div>
 
@@ -1076,21 +1073,7 @@ export default function Home3() {
               </span>
               <span className="title-line" style={{ display: 'block', marginLeft: isMobile ? "2rem" : "6rem", position: 'relative' }}>Profit</span>
             </h1>
-{/* {!isMobile && (
-              <div style={{position: "relative", left: "-22%",}}>
-                <div className="purse">
-                  <div className="coin">
-                    <div className="front"></div>
-                    <div className="back"></div>
-                    <div className="side">
-                      {[...Array(16)].map((_, index) => (
-                        <div key={index} className="spoke"></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )} */}
+
         </div>
         
       </div>
@@ -1250,8 +1233,8 @@ export default function Home3() {
             <SignInButton mode="modal" forceRedirectUrl="/home3">
               <button
                 style={{
-                  width: isMobileDevice ? "2.5rem" : "3.75rem",
-                  height: isMobileDevice ? "2.5rem" : "3.75rem",
+            width: isMobile ? "2.5rem" : "3.75rem",
+                height: isMobile ? "2.5rem" : "3.75rem",
                   borderRadius: "0.5rem",
                   backgroundColor: "rgba(0, 0, 0, 0.7)",
                   border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -1324,7 +1307,7 @@ export default function Home3() {
           marginTop: isMobile ? "100vh" : 0,
           left: 0,
           right: 0,
-          minHeight: "100vh",
+          minHeight: "600vh", // 6x original height for extended scrolling
           // background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.8), rgba(0,0,0,0.9))",
           zIndex: 1,
         }}
@@ -1352,6 +1335,14 @@ export default function Home3() {
 
         
 
+        {/* Extended scroll space for longer page */}
+        <div style={{
+          position: 'relative',
+          height: '250vh',
+          width: '100%',
+          zIndex: 1,
+        }} />
+        
         {/* Feature Carousel Section - Hybrid Approach */}
         <div style={{
           position: 'relative',
@@ -1394,7 +1385,7 @@ export default function Home3() {
 
        
 
-                        <div style={{position: 'relative', zIndex: 1, marginTop: '2rem', marginBottom: '1rem'}}>
+                        <div style={{position: 'relative', zIndex: 1, marginTop: '150vh', marginBottom: '1rem'}}>
                          <div ref={secondTitleRef} style={{
                                   textAlign: 'center',
                                   padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
@@ -1420,6 +1411,14 @@ export default function Home3() {
      
 
         
+        {/* Additional scroll space before footer */}
+        <div style={{
+          position: 'relative',
+          height: '150vh',
+          width: '100%',
+          zIndex: 1,
+        }} />
+        
         {/* Footer - at the bottom of all content */}
         <Footer isMobile={isMobile} />
 
@@ -1428,6 +1427,17 @@ export default function Home3() {
 
       Add spinning record CSS and fonts
       <style jsx global>{`
+        /* Performance Monitor Styling */
+        .perf-monitor {
+          position: fixed !important;
+          top: 10px !important;
+          left: 10px !important;
+          z-index: 10000 !important;
+          transform: scale(0.5) !important;
+          transform-origin: top left !important;
+          opacity: 0.8 !important;
+        }
+        
         * {
           margin: 0;
           padding: 0;
@@ -1736,7 +1746,7 @@ export default function Home3() {
       />
       
       {/* Floating Action Bar - Only show after scrolling past halfway point */}
-      {scrollY > (isMobile ? 600 : 800) && (
+      {scrollY > (isMobile ? 1800 : 2400) && (
         <CyberFloatingBar isMobile={isMobile} />
       )}
     </div>

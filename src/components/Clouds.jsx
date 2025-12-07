@@ -467,7 +467,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 frustumCulled={false}
               />
               
-              {/* <Cloud 
+              <Cloud 
                 seed={8}
                 segments={8}
                 volume={16}
@@ -476,7 +476,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 growth={4}
                 speed={0.03}
                 bounds={[10, 8, 5]}
-                color={whiteCloudColor}
+                // color={whiteCloudColor}
                 position={[-50, -70, 5]}
                 texture={cloudTexture}
                 frustumCulled={false}
@@ -491,13 +491,12 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 growth={5}
                 speed={0.025}
                 bounds={[14, 15, 7]}
-                color={whiteCloudColor}
+                // color={whiteCloudColor}
                 position={[20, 5, 20]}
                 texture={cloudTexture}
                 frustumCulled={false}
               />
-               */}
-              {/* <Cloud 
+              <Cloud 
                 seed={10}
                 segments={9}
                 volume={14}
@@ -506,13 +505,13 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 growth={4}
                 speed={0.035}
                 bounds={[12, 10, 5]}
-                color={whiteCloudColor}
+                // color={whiteCloudColor}
                 position={[-35, -50, -15]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              /> */}
+              />
               
-              {/* <Cloud 
+              <Cloud 
                 seed={11}
                 segments={11}
                 volume={25}
@@ -521,11 +520,11 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 growth={6}
                 speed={0.02}
                 bounds={[16, 18, 8]}
-                color={whiteCloudColor}
+                // color={whiteCloudColor}
                 position={[35, -35, -25]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              /> */}
+              />
               
               {/* Tall vertical cloud formations */}
               {/* <Cloud 
@@ -591,7 +590,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 frustumCulled={false}
               />
               
-              {/* <Cloud 
+              <Cloud 
                 seed={16}
                 segments={8}
                 volume={18}
@@ -603,9 +602,9 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 position={[35, -150, -5]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              /> */}
+              />
               
-              {/* <Cloud 
+              <Cloud 
                 seed={17}
                 segments={12}
                 volume={20}
@@ -617,9 +616,9 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 position={[10, -160, 10]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              /> */}
+              />
               
-              {/* <Cloud 
+              <Cloud 
                 seed={18}
                 segments={9}
                 volume={16}
@@ -631,9 +630,9 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 position={[-20, -170, 0]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              /> */}
+              />
               
-              {/* <Cloud 
+              <Cloud 
                 seed={19}
                 segments={11}
                 volume={24}
@@ -645,9 +644,9 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 position={[50, -180, -10]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              /> */}
+              />
               
-              {/* <Cloud 
+              <Cloud 
                 seed={20}
                 segments={10}
                 volume={19}
@@ -659,7 +658,249 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 position={[-35, -190, 8]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              /> */}
+              />
+              
+              {/* Additional clouds for extended page */}
+              <Cloud 
+                seed={21}
+                segments={14}
+                volume={26}
+                opacity={0.8}
+                fade={1}
+                growth={6}
+                speed={0.02}
+                bounds={[22, 14, 8]}
+                position={[25, -120, 5]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={22}
+                segments={12}
+                volume={20}
+                opacity={0.75}
+                fade={1}
+                growth={5}
+                speed={0.025}
+                bounds={[16, 10, 6]}
+                position={[-45, -140, -8]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={23}
+                segments={10}
+                volume={22}
+                opacity={0.7}
+                fade={1}
+                growth={5}
+                speed={0.03}
+                bounds={[18, 12, 7]}
+                position={[15, -200, 12]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={24}
+                segments={8}
+                volume={18}
+                opacity={0.65}
+                fade={1}
+                growth={4}
+                speed={0.02}
+                bounds={[14, 8, 5]}
+                position={[-30, -250, 0]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={25}
+                segments={11}
+                volume={24}
+                opacity={0.8}
+                fade={1}
+                growth={6}
+                speed={0.025}
+                bounds={[20, 15, 8]}
+                position={[40, -300, -15]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              {/* Even more clouds for extended page */}
+              <Cloud 
+                seed={26}
+                segments={9}
+                volume={20}
+                opacity={0.75}
+                fade={1}
+                growth={5}
+                speed={0.02}
+                bounds={[16, 12, 6]}
+                position={[-20, -350, 8]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={27}
+                segments={13}
+                volume={24}
+                opacity={0.7}
+                fade={1}
+                growth={6}
+                speed={0.025}
+                bounds={[18, 14, 7]}
+                position={[30, -400, -5]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={28}
+                segments={10}
+                volume={18}
+                opacity={0.8}
+                fade={1}
+                growth={4}
+                speed={0.03}
+                bounds={[14, 10, 5]}
+                position={[-35, -450, 10]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={29}
+                segments={12}
+                volume={22}
+                opacity={0.65}
+                fade={1}
+                growth={5}
+                speed={0.02}
+                bounds={[20, 12, 8]}
+                position={[25, -500, 0]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              {/* Additional clouds for 50% longer page */}
+              <Cloud 
+                seed={30}
+                segments={14}
+                volume={25}
+                opacity={0.75}
+                fade={1}
+                growth={6}
+                speed={0.025}
+                bounds={[22, 15, 8]}
+                position={[-40, -550, 12]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={31}
+                segments={10}
+                volume={20}
+                opacity={0.7}
+                fade={1}
+                growth={5}
+                speed={0.02}
+                bounds={[18, 12, 6]}
+                position={[35, -600, -8]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={32}
+                segments={12}
+                volume={23}
+                opacity={0.8}
+                fade={1}
+                growth={5}
+                speed={0.03}
+                bounds={[20, 14, 7]}
+                position={[-25, -650, 5]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={33}
+                segments={9}
+                volume={18}
+                opacity={0.65}
+                fade={1}
+                growth={4}
+                speed={0.025}
+                bounds={[16, 10, 5]}
+                position={[20, -700, -10]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={34}
+                segments={13}
+                volume={26}
+                opacity={0.75}
+                fade={1}
+                growth={6}
+                speed={0.02}
+                bounds={[24, 16, 8]}
+                position={[-35, -750, 8]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={35}
+                segments={11}
+                volume={21}
+                opacity={0.7}
+                fade={1}
+                growth={5}
+                speed={0.028}
+                bounds={[19, 13, 6]}
+                position={[30, -800, 0]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              {/* Sparse distant clouds for depth */}
+              <Cloud 
+                seed={36}
+                segments={8}
+                volume={28}
+                opacity={0.5}
+                fade={1}
+                growth={7}
+                speed={0.015}
+                bounds={[30, 20, 10]}
+                position={[50, -580, -25]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
+              
+              <Cloud 
+                seed={37}
+                segments={7}
+                volume={30}
+                opacity={0.45}
+                fade={1}
+                growth={8}
+                speed={0.012}
+                bounds={[35, 22, 12]}
+                position={[-60, -680, -30]}
+                texture={cloudTexture}
+                frustumCulled={false}
+              />
               
               {/* Hidden light sources for glow effects */}
               {/* <pointLight
