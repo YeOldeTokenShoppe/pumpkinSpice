@@ -1,0 +1,231 @@
+/* WebGL Text Page Specific Styles */
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: #0a0a0a;
+  color: #ffffff;
+  font-family: 'Humane', sans-serif;
+}
+
+/* Font Definitions */
+@font-face {
+  font-family: 'Humane';
+  src: url('/fonts/Humane-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Humane';
+  src: url('/fonts/Humane-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Humane';
+  src: url('/fonts/Humane-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Humane';
+  src: url('/fonts/Humane-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Humane';
+  src: url('/fonts/Humane-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Humane';
+  src: url('/fonts/Humane-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Humane';
+  src: url('/fonts/Humane-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Humane';
+  src: url('/fonts/Humane-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Humane';
+  src: url('/fonts/Humane-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Canvas styles - full screen behind content */
+#webgl-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Main wrapper for text content */
+.webgl-text-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  padding: 100px 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.webgl-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
+  width: 100%;
+}
+
+/* Section styles */
+.section__heading {
+  margin-bottom: 80px;
+}
+
+.section__heading h3 {
+  font-family: 'Humane', sans-serif !important;
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.section__heading h2 {
+  font-family: 'Humane', sans-serif !important;
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #ffffff !important;
+}
+
+.section__main__content {
+  margin-bottom: 100px;
+}
+
+.section__main__content p {
+  font-family: 'Humane', sans-serif !important;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 400;
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+  margin-bottom: 40px;
+  max-width: 800px;
+  color: #ffffff !important;
+  text-align: left !important;
+}
+
+.section__footer {
+  margin-top: 80px;
+}
+
+.section__footer p {
+  font-family: 'Humane', sans-serif !important;
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4) !important;
+  text-align: left !important;
+}
+
+/* Text weight classes for WebGL text elements */
+.text__1 {
+  font-weight: 700;
+}
+
+.text__2 {
+  font-weight: 400;
+}
+
+.text__3 {
+  font-weight: 300;
+}
+
+/* Elements with WebGL animation data attribute */
+[data-animation="webgl-text"] {
+  /* These styles are important for WebGL to read */
+  /* The actual text will be transparent once WebGL takes over */
+  display: block;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .webgl-text-wrapper {
+    padding: 60px 0;
+  }
+  
+  .webgl-container {
+    padding: 0 20px;
+  }
+  
+  .section__heading {
+    margin-bottom: 50px;
+  }
+  
+  .section__heading h3 {
+    font-size: 12px;
+  }
+  
+  .section__main__content {
+    margin-bottom: 60px;
+  }
+  
+  .section__main__content p {
+    margin-bottom: 30px;
+  }
+  
+  .section__footer {
+    margin-top: 50px;
+  }
+}

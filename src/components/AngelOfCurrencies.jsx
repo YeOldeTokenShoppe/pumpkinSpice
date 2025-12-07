@@ -164,7 +164,7 @@ function AngelOfCurrencies({
       top: isMobile ? '-1rem' : '20%',
       transform: 'translateY(-50%)',
       width: isMobile ? '100%' : '60%',
-      height: isMobile ? '14rem' : '400px',
+      height: isMobile ? '18rem' : '400px',
       pointerEvents: 'none',
       zIndex: 5,
       ...style

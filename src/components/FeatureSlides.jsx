@@ -6,8 +6,8 @@ import Numerology1 from './Numerology1';
 import { Canvas } from '@react-three/fiber';
 import Link from 'next/link';
 import { useGLTF, OrbitControls, Environment, useAnimations } from '@react-three/drei';
-import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
+// import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';
+// import { BlendFunction } from 'postprocessing';
 import VideoScreens from "@/components/VideoScreens";
 
 
@@ -88,7 +88,7 @@ export const WatchlistSlide = () => {
         <div style={{
           display: "flex",
           flexDirection: "column",
-          alignItems: isMobile ? "center" : "flex-start",
+          alignItems: "center",
           marginTop: isMobile ? "240px" : "0",
           padding: isMobile ? "0 1rem" : "0",
           height: isMobile ? "calc(75vh - 240px)" : "auto",
@@ -124,8 +124,11 @@ export const WatchlistSlide = () => {
             fontWeight: 400,
             letterSpacing: '0.02em',
             fontSize: isMobile ? '1rem' : '1.25rem',
-            textAlign: isMobile ? 'center' : 'center',
+            textAlign: 'center',
             width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
           }}>
                        {/* <span style={{               fontFamily: "'Fjalla One', sans-serif",
    fontSize: isMobile ? '0.95rem' : '1.8rem', fontWeight: '600', display: 'block', marginBottom: isMobile ? '0.25rem' : '0.5rem', lineHeight: '1.2' }}>
@@ -143,7 +146,7 @@ export const WatchlistSlide = () => {
    
                  {/* Top Burners Leaderboard */}
                  <div style={{
-                   margin: isMobile ? '0.5rem 0' : '1.5rem 0',
+                   margin: isMobile ? '0.5rem auto' : '1.5rem auto',
                    padding: isMobile ? '0.5rem' : '1rem',
                    background: 'rgba(0, 0, 0, 0.4)',
                    backdropFilter: 'blur(20px)',
@@ -278,7 +281,7 @@ export const WatchlistSlide = () => {
             <NeonBorderButton
               onClick={handleOpenModal}
               isMobile={isMobile}
-              variant="secondary"
+              variant="primary"
             >
               Get Lit
             </NeonBorderButton>
@@ -825,7 +828,7 @@ const GlowButton = ({ children, variant = 'primary', onClick, isMobile }) => {
       style={{
         background: s.background,
         backgroundSize: s.backgroundSize,
-        color: variant === 'secondary' ? '#000' : '#fff',
+        color: variant === 'secondary' ? '#000' : '#ffffffff',
         border: 'none',
         padding: isMobile ? '8px 16px' : '14px 36px',
         fontSize: isMobile ? '0.75rem' : '0.95rem',
@@ -1071,7 +1074,7 @@ export const Illumin80Slide = () => {
 export default Illumin80Slide;
 // Trading Desk 3D Model Component
 function TradingDeskModel() {
-  const { scene, animations } = useGLTF('/models/tradingDesk3.glb');
+  const { scene, animations } = useGLTF('/models/geometric1.glb');
   const { actions } = useAnimations(animations, scene);
   
   useEffect(() => {
@@ -1085,7 +1088,7 @@ function TradingDeskModel() {
     <primitive 
       object={scene} 
       scale={[0.9, 0.9, 0.9]}
-      position={[0, -0.7, 0]}
+      position={[0, 0, 0]}
       rotation={[0, 0, 0]}
     />
   );
@@ -1142,7 +1145,7 @@ export const TradingDeskSlide = () => {
               maxPolarAngle={Math.PI / 2.2}
               minPolarAngle={Math.PI / 3.5}
             />
-            <EffectComposer>
+            {/* <EffectComposer>
               <Bloom 
                 intensity={1.5}
                 luminanceThreshold={0.6}
@@ -1154,7 +1157,7 @@ export const TradingDeskSlide = () => {
                 offset={[0.0005, 0.0005]}
                 radialModulation={false}
               />
-            </EffectComposer>
+            </EffectComposer> */}
           </Canvas>
         </div>
       )}
@@ -1282,7 +1285,7 @@ export const TradingDeskSlide = () => {
                 maxPolarAngle={Math.PI / 2.2}
                 minPolarAngle={Math.PI / 3.5}
               />
-              <EffectComposer>
+              {/* <EffectComposer>
                 <Bloom 
                   intensity={1.5}
                   luminanceThreshold={0.6}
@@ -1294,7 +1297,7 @@ export const TradingDeskSlide = () => {
                   offset={[0.0005, 0.0005]}
                   radialModulation={false}
                 />
-              </EffectComposer>
+              </EffectComposer> */}
             </Canvas>
           </div>
         )}
@@ -1303,8 +1306,23 @@ export const TradingDeskSlide = () => {
   );
 };
 
-// Preload the trading desk model
-useGLTF.preload('/models/tradingDesk.glb');
+// Preload the 3D models
+useGLTF.preload('/models/geometric1.glb');
+useGLTF.preload('/models/data_chart.glb');
+
+// Data Chart 3D Model Component
+function DataChartModel() {
+  const { scene } = useGLTF('/models/data_chart.glb');
+  
+  return (
+    <primitive 
+      object={scene} 
+      scale={[1, 1, 1]}
+      position={[0, 0, 0]}
+      rotation={[0, Math.PI / 1.2, 0]}
+    />
+  );
+}
 
 export const TokenomicsSlide = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -1319,115 +1337,434 @@ export const TokenomicsSlide = () => {
   return (
     <div style={{
       width: "100%",
-      minHeight: isMobile ? "auto" : "auto",
+      height: "80vh",
+      maxHeight: "80vh",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: isMobile ? "1.5rem 1rem" : "3rem 2rem",
-      // background: "linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%)",
+      padding: isMobile ? "0" : "3rem 2rem",
       position: "relative",
+      overflow: "hidden",
     }}>
+      
+      {/* 3D Canvas Background for mobile */}
+      {isMobile && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '280px',
+          zIndex: 1,
+        }}>
+          <Canvas
+            camera={{ position: [0, 2, 6], fov: 45 }}
+            style={{ width: "100%", height: "100%" }}
+          >
+            <ambientLight intensity={0.6} />
+            <pointLight position={[-10, 10, 5]} intensity={0.8} color="#00ff9d" />
+            <spotLight position={[10, 10, 10]} angle={0.3} penumbra={0.5} intensity={1} color="#ffd700" />
+            <Suspense fallback={null}>
+              <DataChartModel />
+              <Environment preset="city" />
+            </Suspense>
+            <OrbitControls 
+              enableZoom={false}
+              enablePan={false}
+              // autoRotate
+              // autoRotateSpeed={0.5}
+              maxPolarAngle={Math.PI / 2.2}
+              minPolarAngle={Math.PI / 3.5}
+            />
+          </Canvas>
+        </div>
+      )}
+
       <div style={{
-        maxWidth: "1000px",
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+        gap: isMobile ? "0" : "3rem",
+        maxWidth: "1400px",
         width: "100%",
+        alignItems: "center",
+        position: "relative",
+        zIndex: 2,
+        height: "100%",
       }}>
-        <SkewedHeading
-          lines={["TOKENOMICS"]}
-          fontSize={isMobile ? "2.5rem" : "3.5rem"}
-          color="#00ff9d"
-          skewAngle={-2}
-          shadowColor="#000"
-          style={{ marginBottom: "2rem", textAlign: "center" }}
-        />
+        {/* Left side - Content */}
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          marginTop: isMobile ? "180px" : "0",
+          padding: isMobile ? "0 1rem" : "0",
+          height: isMobile ? "calc(80vh - 180px)" : "auto",
+          overflowY: isMobile ? "auto" : "visible",
+        }}>
+          <SkewedHeading
+            lines={["TOKENOMICS"]}
+            fontSize={isMobile ? "2rem" : "4rem"}
+            color="#00ff9d"
+            skewAngle={-2}
+            shadowColor="#000"
+            style={{ 
+              marginBottom: isMobile ? "0.75rem" : "2rem", 
+              textAlign: "center",
+              position: isMobile ? 'relative' : 'static',
+              zIndex: isMobile ? 3 : 'auto',
+              textShadow: isMobile ? '2px 2px 4px rgba(0,0,0,0.8)' : undefined
+            }}
+          />
         
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: isMobile ? "1rem" : "1.5rem",
-          marginBottom: isMobile ? "1.5rem" : "2rem",
+          gridTemplateColumns: "1fr",
+          gap: isMobile ? "1rem" : "2rem",
+          marginBottom: isMobile ? "1rem" : "2rem",
+          width: '100%',
         }}>
+          {/* Cyber-style Supply Distribution Card */}
           <div style={{
-            background: "rgba(0, 0, 0, 0.4)",
-            backdropFilter: "blur(10px)",
-            borderRadius: "12px",
-            padding: isMobile ? "1.25rem" : "1.5rem",
-            border: "1px solid rgba(0, 255, 157, 0.2)",
+            position: 'relative',
+            background: 'linear-gradient(135deg, rgba(3, 233, 244, 0.05) 0%, rgba(0, 0, 0, 0.9) 100%)',
+            border: '2px solid rgba(3, 233, 244, 0.4)',
+            borderRadius: '0',
+            padding: isMobile ? '1rem' : '2rem',
+            overflow: 'hidden',
+            boxShadow: '0 0 40px rgba(3, 233, 244, 0.3), inset 0 0 30px rgba(3, 233, 244, 0.05)',
           }}>
-            <h3 style={{ color: "#fff", marginBottom: "1rem", fontSize: isMobile ? "1.1rem" : "1.2rem" }}>Supply Distribution</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "rgba(255, 255, 255, 0.7)" }}>Total Supply:</span>
-                <span style={{ color: "#00ff9d", fontFamily: "monospace" }}>1,000,000,000</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "rgba(255, 255, 255, 0.7)" }}>Circulating:</span>
-                <span style={{ color: "#fbbf24", fontFamily: "monospace" }}>800,000,000</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "rgba(255, 255, 255, 0.7)" }}>Burned:</span>
-                <span style={{ color: "#ef4444", fontFamily: "monospace" }}>50,000,000</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "rgba(255, 255, 255, 0.7)" }}>Staked:</span>
-                <span style={{ color: "#3b82f6", fontFamily: "monospace" }}>150,000,000</span>
-              </div>
-            </div>
-          </div>
-          
-          <div style={{
-            background: "rgba(0, 0, 0, 0.4)",
-            backdropFilter: "blur(10px)",
-            borderRadius: "12px",
-            padding: isMobile ? "1.25rem" : "1.5rem",
-            border: "1px solid rgba(0, 255, 157, 0.2)",
-          }}>
-            <h3 style={{ color: "#fff", marginBottom: "1rem", fontSize: isMobile ? "1.1rem" : "1.2rem" }}>Rewards System</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <span style={{ fontSize: "1.5rem" }}>🔥</span>
-                <div>
-                  <div style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "0.9rem" }}>Burn Rewards</div>
-                  <div style={{ color: "#00ff9d", fontSize: "0.75rem" }}>2x multiplier on luck</div>
+            {/* Animated glow background */}
+            <div style={{
+              position: 'absolute',
+              top: '-50%',
+              left: '-50%',
+              width: '200%',
+              height: '200%',
+              background: 'radial-gradient(circle, rgba(3, 233, 244, 0.15) 0%, transparent 70%)',
+              animation: 'pulse 3s ease-in-out infinite',
+            }} />
+            
+            {/* Grid pattern overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(3, 233, 244, 0.02) 2px,
+                  rgba(3, 233, 244, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(3, 233, 244, 0.02) 2px,
+                  rgba(3, 233, 244, 0.02) 4px
+                )
+              `,
+              pointerEvents: 'none',
+            }} />
+            
+            {/* Corner decorations */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '30px',
+              height: '30px',
+              borderTop: '2px solid rgb(3, 233, 244)',
+              borderLeft: '2px solid rgb(3, 233, 244)',
+            }} />
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '30px',
+              height: '30px',
+              borderTop: '2px solid rgb(3, 233, 244)',
+              borderRight: '2px solid rgb(3, 233, 244)',
+            }} />
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              width: '30px',
+              height: '30px',
+              borderBottom: '2px solid rgb(3, 233, 244)',
+              borderLeft: '2px solid rgb(3, 233, 244)',
+            }} />
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              width: '30px',
+              height: '30px',
+              borderBottom: '2px solid rgb(3, 233, 244)',
+              borderRight: '2px solid rgb(3, 233, 244)',
+            }} />
+            
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              {/* <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '1.5rem',
+                gap: '0.75rem'
+              }}>
+                <span style={{ fontSize: '2rem' }}>💎</span>
+                <h3 style={{ 
+                  color: 'rgb(3, 233, 244)', 
+                  fontSize: isMobile ? '1.2rem' : '1.5rem',
+                  fontFamily: "'Orbitron', monospace !important",
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  margin: 0,
+                  textShadow: '0 0 20px rgba(3, 233, 244, 0.8)',
+                }}>SUMMARY STATS</h3>
+              </div> */}
+              
+              <div style={{ 
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gap: isMobile ? '0.75rem' : '1.5rem',
+              }}>
+                {/* Supply Stats */}
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  padding: isMobile ? '0.75rem' : '1.25rem',
+                  border: '1px solid rgba(3, 233, 244, 0.2)',
+                  borderRadius: '8px',
+                }}>
+                  <h4 style={{
+                    color: '#00ff9d',
+                    fontSize: isMobile ? '0.8rem' : '0.9rem',
+                    fontFamily: "'Blackletter', monospace !important",
+                    letterSpacing: '0.1em',
+                    marginBottom: isMobile ? '0.5rem' : '1rem',
+                    textTransform: 'uppercase',
+                  }}>SUPPLY DISTRIBUTION</h4>
+                  
+                  <div style={{ display: 'grid', gap: isMobile ? '0.5rem' : '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: isMobile ? '0.75rem' : '0.85rem', textTransform: 'uppercase' }}>Total Supply</span>
+                      <span style={{ 
+                        color: 'rgb(3, 233, 244)', 
+                        fontFamily: "'Orbitron', monospace",
+                        fontSize: isMobile ? '0.9rem' : '1.1rem',
+                        fontWeight: 'bold',
+                        textShadow: '0 0 10px rgba(3, 233, 244, 0.5)',
+                      }}>1B</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: isMobile ? '0.75rem' : '0.85rem', textTransform: 'uppercase' }}>Circulating</span>
+                      <span style={{ 
+                        color: '#fbbf24', 
+                        fontFamily: "'Orbitron', monospace",
+                        fontSize: isMobile ? '0.9rem' : '1.1rem',
+                        fontWeight: 'bold',
+                        textShadow: '0 0 10px rgba(251, 191, 36, 0.5)',
+                      }}>800M</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: isMobile ? '0.75rem' : '0.85rem', textTransform: 'uppercase' }}>Burned 🔥</span>
+                      <span style={{ 
+                        color: '#ef4444', 
+                        fontFamily: "'Orbitron', monospace",
+                        fontSize: isMobile ? '0.9rem' : '1.1rem',
+                        fontWeight: 'bold',
+                        textShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
+                      }}>50M</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: isMobile ? '0.75rem' : '0.85rem', textTransform: 'uppercase' }}>Staked 💎</span>
+                      <span style={{ 
+                        color: '#3b82f6', 
+                        fontFamily: "'Orbitron', monospace",
+                        fontSize: isMobile ? '0.9rem' : '1.1rem',
+                        fontWeight: 'bold',
+                        textShadow: '0 0 10px rgba(59, 130, 246, 0.5)',
+                      }}>150M</span>
+                    </div>
+                  </div>
                 </div>
+                
+                {/* Rewards System */}
+                {/* <div style={{
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  padding: '1.25rem',
+                  border: '1px solid rgba(3, 233, 244, 0.2)',
+                  borderRadius: '8px',
+                }}>
+                  <h4 style={{
+                    color: '#ffd700',
+                    fontSize: '0.9rem',
+                    fontFamily: "'Blackletter', monospace !important",
+                    letterSpacing: '0.1em',
+                    marginBottom: '1rem',
+                    textTransform: 'uppercase',
+                  }}>REWARD PROTOCOLS</h4>
+                  
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontSize: '1.25rem' }}>🔥</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ 
+                          color: '#ffd700', 
+                          fontSize: '0.85rem',
+                          fontFamily: "'Orbitron', monospace",
+                        }}>BURN MULTIPLIER</div>
+                        <div style={{ 
+                          color: 'rgba(255, 255, 255, 0.5)', 
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                        }}>2X LUCK BOOST</div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontSize: '1.25rem' }}>💎</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ 
+                          color: '#ffd700', 
+                          fontSize: '0.85rem',
+                          fontFamily: "'Orbitron', monospace",
+                        }}>STAKE YIELD</div>
+                        <div style={{ 
+                          color: 'rgba(255, 255, 255, 0.5)', 
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                        }}>5% APY + BONUSES</div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontSize: '1.25rem' }}>🎁</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ 
+                          color: '#ffd700', 
+                          fontSize: '0.85rem',
+                          fontFamily: "'Orbitron', monospace",
+                        }}>HOLDER PERKS</div>
+                        <div style={{ 
+                          color: 'rgba(255, 255, 255, 0.5)', 
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                        }}>EXCLUSIVE ACCESS</div>
+                      </div>
+                    </div>
+                  </div>
+                </div> */}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <span style={{ fontSize: "1.5rem" }}>💎</span>
-                <div>
-                  <div style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "0.9rem" }}>Stake Rewards</div>
-                  <div style={{ color: "#00ff9d", fontSize: "0.75rem" }}>5% APY + bonuses</div>
+              
+              {/* Status indicators */}
+              <div style={{
+                marginTop: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderTop: '1px solid rgba(3, 233, 244, 0.2)',
+                paddingTop: '1rem',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: '#00ff9d',
+                    boxShadow: '0 0 10px #00ff9d',
+                    animation: 'pulse 2s infinite',
+                  }} />
+                  <span style={{
+                    color: '#00ff9d',
+                    fontSize: '0.75rem',
+                    fontFamily: "'Orbitron', monospace",
+                    letterSpacing: '0.1em',
+                  }}>SYSTEM OPERATIONAL</span>
                 </div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <span style={{ fontSize: "1.5rem" }}>🎁</span>
-                <div>
-                  <div style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "0.9rem" }}>Holder Benefits</div>
-                  <div style={{ color: "#00ff9d", fontSize: "0.75rem" }}>Airdrops & access</div>
+                
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: '#ffd700',
+                    boxShadow: '0 0 10px #ffd700',
+                    animation: 'pulse 2s infinite',
+                  }} />
+                  <span style={{
+                    color: '#ffd700',
+                    fontSize: '0.75rem',
+                    fontFamily: "'Orbitron', monospace'",
+                    letterSpacing: '0.1em',
+                  }}>REWARDS ACTIVE</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
         
-        <div style={{ textAlign: "center" }}>
-          {/* <p style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: isMobile ? '1rem' : '1.25rem',
-            color: 'rgba(255, 255, 255, 0.85)',
-            marginBottom: isMobile ? '1rem' : '0',
-            lineHeight: isMobile ? 1.5 : 1.5,
-            fontWeight: 400,
-          }}>       Join the cult of RL80!
-          </p> */}
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+          @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        `}</style>
+        
+        <div style={{ textAlign: "center", alignContent: "center", width: isMobile ? "100%" : "auto" }}>
           <Link href="/tokenomics" style={{ textDecoration: 'none', display: 'inline-block' }}>
             <NeonBorderButton
               isMobile={isMobile}
-              variant="secondary"
+              variant="primary"
             >
               VIEW TOKENOMICS
             </NeonBorderButton>
           </Link>
         </div>
       </div>
+
+      {/* Right side - 3D Canvas (desktop only) */}
+      {!isMobile && (
+        <div style={{
+          height: "100%",
+          minHeight: "500px",
+          position: "relative",
+        }}>
+          <Canvas
+            camera={{ position: [0, 2, 6], fov: 45 }}
+            style={{ width: "100%", height: "100%" }}
+          >
+            <ambientLight intensity={0.6} />
+            <pointLight position={[-10, 10, 5]} intensity={0.8} color="#00ff9d" />
+            <spotLight position={[10, 10, 10]} angle={0.3} penumbra={0.5} intensity={1} color="#ffd700" />
+            <Suspense fallback={null}>
+              <DataChartModel />
+              <Environment preset="city" />
+            </Suspense>
+            <OrbitControls 
+              enableZoom={false}
+              enablePan={false}
+              // autoRotate
+              // autoRotateSpeed={0.5}
+              maxPolarAngle={Math.PI / 2.2}
+              minPolarAngle={Math.PI / 3.5}
+            />
+          </Canvas>
+        </div>
+      )}
+    </div>
     </div>
   );
 };

@@ -90,9 +90,10 @@ const FeatureCarousel = ({ slides, autoRotate = true, rotationInterval = 6000 })
           position: "relative",
           overflow: "hidden",
           borderRadius: "1rem",
-          background: "rgba(0, 0, 0, 0.4)",
+          background: "linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))",
           backdropFilter: "blur(10px)",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
+          border: "2px solid rgb(3, 233, 244)",
+          boxShadow: "0 0 40px rgba(3, 233, 244, 0.3), inset 0 0 40px rgba(3, 233, 244, 0.05)",
         }}
       >
         <div
@@ -110,7 +111,7 @@ const FeatureCarousel = ({ slides, autoRotate = true, rotationInterval = 6000 })
               style={{
                 width: "100%",
                 flexShrink: 0,
-             maxHeight: "80vh",
+             maxHeight: "85vh",
                 display: "flex",
                 alignItems: "center",
               }}
@@ -252,17 +253,18 @@ const FeatureCarousel = ({ slides, autoRotate = true, rotationInterval = 6000 })
                 height: "8px",
                 borderRadius: "4px",
                 border: "none",
+                background: currentSlide === index ? "rgb(3, 233, 244)" : "rgba(3, 233, 244, 0.5)",
                 cursor: "pointer",
                 transition: "all 0.3s ease",
               }}
               onMouseEnter={(e) => {
                 if (currentSlide !== index) {
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.5)";
+                  e.currentTarget.style.background = "rgba(3, 233, 244, 0.9)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (currentSlide !== index) {
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.3)";
+                  e.currentTarget.style.background = "rgba(3, 233, 244, 0.5)";
                 }
               }}
             />

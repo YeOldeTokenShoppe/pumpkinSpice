@@ -10,8 +10,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useMusic } from './MusicContext';
 // import { IconButton, div } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
-import SynthwaveText from './SynthwaveText';
-import MorphingSynthwaveText from './MorphingSynthwaveText';
+// import SynthwaveText from './SynthwaveText';
+// import MorphingSynthwaveText from './MorphingSynthwaveText';
+import WebGLStandaloneText from './WebGLStandaloneText';
 
 
 // MusicPlayer3 removed - using global instance from _app.jsx
@@ -49,19 +50,19 @@ const textBlocks = [
     "the road ahead:",
     "one thousand holders",
     "five thousand, ten..",
-    "you're not alone",
-    "on this dream ride"
+    "you're never alone",
+    // "on this dream ride"
   ]
 ];
 
-// Define SynthwaveText words for each stage
-const synthwaveWords = [
-  "THIS",
-  "COULD",
-  "BE",
-  "YOUR",
-  "REAL80"
-];
+// Define SynthwaveText words for each stage (keeping for potential future use)
+// const synthwaveWords = [
+//   "THIS",
+//   "COULD",
+//   "BE",
+//   "YOUR",
+//   "REAL80"
+// ];
 
 // Wavy shader effect shaders
 const wavyVertexShader = `
@@ -2787,35 +2788,19 @@ const PalmsScene = ({ onLoadingChange }) => {
             overflow: 'visible',
           }}
         >
-          <div style={{ marginBottom: isMobile ? '-20px' : '0', position: 'relative' }}>
-            {currentCameraStage === 4 ? (
-              <MorphingSynthwaveText 
-                startText="REAL80"
-                shouldMorph={true}
-                morphDelay={1000}
-                fontSize={400}
-                scale={isMobile ? 4 : 2.2}  // Bigger on mobile
-                // spacingX={isMobile ? 4 : 4}
-                outsideColor="rgba(0, 255, 255, 0)"
-                insideColor="rgba(255, 0, 255, 1)"
-                backgroundColor="rgba(0, 100, 255, 0.4)"
-                className="mb-4"
-                isMobile={isMobile}
-              />
-            ) : (
-              <SynthwaveText 
-                text={synthwaveWords[currentCameraStage] || "DRIFT"}
-                fontSize={400}
-                scale={currentCameraStage === 1 ? (isMobile ? 1.5 : 1.5) : (isMobile ? 1.5 : 1.2)}
-                spacingX={4}
-                outsideColor="rgba(0, 255, 255, 0)"
-                insideColor="rgba(255, 0, 255, 1)"
-                backgroundColor="rgba(0, 100, 255, 0.4)"
-                className="mb-4"
-              />
-            )}
+          <div style={{ marginBottom: isMobile ? '-20px' : '0', position: 'relative', height: '400px' }}>
+            {/* Using WebGL Standalone Text with textBlocks array */}
+            <WebGLStandaloneText 
+              textArray={textBlocks[currentCameraStage] || ["DRIFT"]}
+              fontSize={isMobile ? 0.8 : 1.4}
+              lineHeight={isMobile ? 1 : 1.4}
+              color="#ff00ff"
+              id={`palmtree-stage-${currentCameraStage}`}
+              className="mb-4"
+            />
           </div>
-          <div style={{
+          {/* Old text display - commented out in favor of WebGL text */}
+          {/* <div style={{
             minHeight: isMobile ? '220px' : '320px', // Fixed height for text container
             display: 'flex',
             alignItems: 'center',
@@ -2847,7 +2832,7 @@ const PalmsScene = ({ onLoadingChange }) => {
                 </React.Fragment>
               ))}
             </p>
-          </div>
+          </div> */}
           
           {/* Progress indicators */}
           <div 
@@ -2913,7 +2898,7 @@ const PalmsScene = ({ onLoadingChange }) => {
           position: 'fixed',
           right: isMobile ? '20px' : '15%',
           top: '55%',
-          transform: 'translateY(calc(-50% + 120px))', // Position below the text section
+          transform: 'translateY(calc(-50% + 150px))', // Position below the text section
           width: isMobile ? '60%' : '40%',
           maxWidth: '600px',
           display: 'flex',

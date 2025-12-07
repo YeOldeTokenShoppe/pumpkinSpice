@@ -39,14 +39,14 @@ const Footer = ({ isMobile = false }) => {
             display: 'flex',
             justifyContent: 'center',
           }}>
-            <CircularCTA
+            {/* <CircularCTA
               text="• PREME EMERE • CLICK TO BUY • PREME EMERE • CLICK TO BUY • PREME EMERE • CLICK TO BUY"
               href="/temple"
               accentColor="#00ff00"
               bgColor="none"
               size={200}
               textSize={isMobile ? 7 : 7}
-            />
+            /> */}
           </div>
                      <h1 className='custom-title footer-title'
               id="main-title"

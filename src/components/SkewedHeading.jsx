@@ -3,12 +3,12 @@ import React, { useEffect, useState } from 'react';
 
 export default function SkewedHeading({ 
   lines = ['DEFAULT', 'HEADING'], 
-  colors = ['#fff', '#ffd700', '#00ff00'],
+  colors = ['#fff', '#ffd700', '#00fffbff'],
   fontSize = { mobile: '2.5rem', desktop: '4rem' },
   isMobile = false,
   fontFamily = "'Fjalla One', sans-serif",
   useGradient = false,
-  gradientColors = ['#ffd700', '#00ff00'],
+  gradientColors = ['#ffd700', '#00fffbff'],
   textAlign = 'center'
 }) {
   // Create a stable ID for unique CSS class names

@@ -42,7 +42,7 @@ import CircularCTA from "@/components/CircularCTA";
 import FeatureCarousel from "@/components/FeatureCarousel";
 import { WatchlistSlide, Illumin80Slide, TradingDeskSlide, TokenomicsSlide } from "@/components/FeatureSlides";
 import Footer from "@/components/Footer";
-
+import AnnunciationIntro from '@/components/AnnunciationIntro';
 
 
 
@@ -178,7 +178,7 @@ function ScrollingBreath({ scrollY, isMobile }) {
 }
 
 // Scroll-responsive Clouds component wrapper
-function ScrollClouds({ scrollY }) {
+function ScrollClouds({ scrollY, onLoad }) {
   const cloudGroupRef = useRef();
   
   // Animate clouds with scroll (from Simple3DScene)
@@ -191,7 +191,7 @@ function ScrollClouds({ scrollY }) {
   
   return (
     <group ref={cloudGroupRef}>
-      <DarkClouds />
+      <DarkClouds onLoad={onLoad} />
     </group>
   );
 }
@@ -414,113 +414,19 @@ function ScrollTriggeredTitle({ isMobile }) {
     <div ref={titleRef}>
       <DropInTitle
         lines={["BEHOLD!", "OUR LADY!", "HOLD RL80!"]}
-        colors={["#d4af37", "#f4e4c1", "#00ff00"]}
+        colors={["#d4af37", "#f4e4c1", "#00fffbff"]}
         fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
         isMobile={isMobile}
         triggerAnimation={titleInView}
         instanceId="welcome-title"
       />
       
-      {/* Introduction Section */}
-      <div style={{
-    maxWidth: '1200px',
-        margin: '15rem auto 0 auto',
-        padding: isMobile ? '30px 0' : '40px 0',
-            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4))',
-        borderRadius: '0',
-        border: '2px solid #00ff00',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 0 40px rgba(0, 255, 0, 0.3), inset 0 0 40px rgba(0, 255, 0, 0.05)',
-        textAlign: 'center',
-        opacity: titleInView ? 1 : 0,
-        transform: titleInView ? 'translateY(0)' : 'translateY(20px)',
-        transition: 'all 0.5s ease-out 0.5s',
-        position: 'relative',
-    width: '100%',
-
-        zIndex: 10,
-   
-      }}>
-        
-        {/* Grid pattern overlay */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: `
-            repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 2px,
-              rgba(0, 255, 0, 0.02) 2px,
-              rgba(0, 255, 0, 0.02) 4px
-            ),
-            repeating-linear-gradient(
-              90deg,
-              transparent,
-              transparent 2px,
-              rgba(0, 255, 0, 0.02) 2px,
-              rgba(0, 255, 0, 0.02) 4px
-            )
-          `,
-          pointerEvents: 'none',
-        }} />
-
-               {/* The Annunciation Heading */}
-              <SkewedHeading 
-    lines={["THE", "ANNUNCIATION"]}
-    colors={["#d4af37", "#f4e4c1", "#ffd700"]}
-        // colors={["rgba(0, 255, 0, 1)"]}
-    fontSize={{ mobile: "1.8rem", desktop: "3rem" }}
-    isMobile={isMobile}
-    textAlign="left"
-  />
-        <div style={{
-          fontSize: isMobile ? '1.8rem' : '2.8rem',
-          color: '#ffffff',
-          fontFamily: "'scotland', sans-serif",
-          marginBottom: '0',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
-          lineHeight: '1.1',
-
-          width: '100%',
-          padding: isMobile ? '0 20px' : '0 80px',
-          position: 'relative'
-        }}>
- 
-        
-        {/* Angel of Currencies presenting the introduction */}
-        <AngelOfCurrencies 
-          isMobile={isMobile}
-          onLoad={() => console.log('Angel of Currencies loaded for intro')}
-        />
-       
-        
-        <span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem',}}>D</span>escending from the cloud servers comes the digital manifestation of the icon of intercession - the virtual mary in the virtual machine, guardian of good times, patron saint of portfolios, aider to traders, fren to degens - here to light the way through the dark realm of <span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem'}}>D</span>e<span style={{fontFamily: "Blackletter",  fontSize: isMobile ? '1.5rem' : '2.5rem'}}>F</span>i. <br/><br/>
-
-        </div>
- 
-        {/* Circular CTA positioned in bottom right */}
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          right: '20px',
-          width: isMobile ? '80px' : '150px',
-          height: isMobile ? '75px' : '150px',
-          zIndex: 20,
-        }}>
-                <CircularCTA
-    text="• PREME EMERE • CLICK TO BUY • PREME EMERE • CLICK TO BUY • PREME EMERE"
-    href="/temple"
-    accentColor="#00ff00"
-    bgColor="none"
-            size={isMobile ? 100 : 150}
-            textSize={isMobile ? 7 : 8}
-          />
-        </div>
-      </div>
+      <AnnunciationIntro 
+  isMobile={isMobile}
+  titleInView={titleInView}
+  SkewedHeading={SkewedHeading}
+  AngelOfCurrencies={AngelOfCurrencies}
+/>
      
     </div>
   );
@@ -707,6 +613,7 @@ export default function Home3() {
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [cloudsLoaded, setCloudsLoaded] = useState(false);
   const [showMusicControls, setShowMusicControls] = useState(false);
   const [emoji, setEmoji] = useState("😇");
   const [scrollY, setScrollY] = useState(0);
@@ -780,14 +687,14 @@ export default function Home3() {
     };
   }, []);
 
-  // Update loading state when both font and model are loaded
+  // Update loading state when font, model, and clouds are loaded
   useEffect(() => {
-    if (fontLoaded && modelLoaded) {
+    if (fontLoaded && modelLoaded && cloudsLoaded) {
       setTimeout(() => {
         setIsSceneLoading(false);
       }, 500); // Small delay for smooth transition
     }
-  }, [fontLoaded, modelLoaded]);
+  }, [fontLoaded, modelLoaded, cloudsLoaded]);
 
   // Load Pirata One font
   useEffect(() => {
@@ -1057,7 +964,7 @@ export default function Home3() {
             {/* Breath that follows the same scroll animation as the bull */}
             <ScrollingBreath scrollY={scrollY} isMobile={isMobile} />
             
-            <ScrollClouds scrollY={scrollY} />
+            <ScrollClouds scrollY={scrollY} onLoad={() => setCloudsLoaded(true)} />
             {/* Additional point lights for desktop only */}
             {!isMobile && (
               <>
@@ -1440,7 +1347,7 @@ export default function Home3() {
           zIndex: 10,
           pointerEvents: 'auto',
         }}>
-          <div style={{
+          {/* <div style={{
             textAlign: 'center',
             marginBottom: '3rem',
           }}>
@@ -1458,7 +1365,7 @@ export default function Home3() {
             }}>
               Swipe through our key features and discover the power of RL80
             </p>
-          </div>
+          </div> */}
           
           <FeatureCarousel
             slides={[

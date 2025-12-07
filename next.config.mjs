@@ -1,11 +1,32 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {},
+  turbopack: {
+    rules: {
+      '*.vert': {
+        loaders: ['raw-loader'],
+        as: '*.js',
+      },
+      '*.frag': {
+        loaders: ['raw-loader'],
+        as: '*.js',
+      },
+      '*.glsl': {
+        loaders: ['raw-loader'],
+        as: '*.js',
+      },
+    },
+  },
   webpack: (config, { isServer }) => {
     // Handle WASM files
     config.module.rules.push({
       test: /\.wasm$/,
       type: 'asset/resource',
+    });
+    
+    // Handle shader files (.vert, .frag, .glsl)
+    config.module.rules.push({
+      test: /\.(vert|frag|glsl)$/,
+      type: 'asset/source',
     });
     
     // Resolve fallbacks for client-side
