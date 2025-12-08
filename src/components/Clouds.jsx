@@ -115,6 +115,7 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
   const cloud3 = useRef();
   const cloud4 = useRef();
   const cloud5 = useRef();
+  const cloudTest = useRef();
   
   // Target ref for spotlights
   const targetRef = useRef();
@@ -366,6 +367,21 @@ const DarkCloudsComponent = React.forwardRef(({ fearGreedValue = 50, shakeRef, o
                 texture={cloudTexture}
                 frustumCulled={false}
               />
+  <Cloud
+    seed={99}  // Different seed for different shape
+    segments={20}  // More segments for visibility
+    volume={50}  // Much larger
+    opacity={1.0}  // Full opacity
+    fade={1}
+    growth={10}  // Bigger growth
+    speed={0.00}
+    bounds={[30, 40, 30]}  // Much larger bounds
+    // color={'#ff00f0'}
+    position={[0, -270, 10]}  // Centered, higher up, forward
+    texture={cloudTexture}  // No texture to ensure color shows
+    frustumCulled={false}
+  />
+                           
              
  
           

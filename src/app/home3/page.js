@@ -1,9 +1,10 @@
 "use client";
 
 import { Canvas, useFrame, extend } from "@react-three/fiber";
-import { Suspense, useRef, useMemo, useEffect, useState } from "react";
+import React, { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper, Stats } from "@react-three/drei";
 import * as THREE from "three";
+
 // import { Leva } from "leva";
 import DarkClouds from "../../components/Clouds";
 import PostProcessingEffects from "../../components/PostProcessingEffects";
@@ -91,8 +92,11 @@ import AnnunciationIntro from '@/components/AnnunciationIntro';
 //   );
 // };
 
+// Preload the model
+useGLTF.preload('/models/ourlady_rider7.glb');
+
 // Scroll-responsive Model component with Ticker
-function Model({ scrollY, isMobile, onLoad }) {
+const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
   const { scene } = useGLTF('/models/ourlady_rider7.glb');
   const groupRef = useRef();
   const staticBreathRef = useRef();
@@ -138,17 +142,76 @@ function Model({ scrollY, isMobile, onLoad }) {
     };
   }, [scene]);
   
+  // Track when we've reached the bottom (scroll drops from high to low)
+  const scrollDroppedRef = useRef(false);
+  const prevScrollRef = useRef(0);
+  const [hideAtBottom, setHideAtBottom] = React.useState(false);
+  
+  React.useEffect(() => {
+    // Detect any large scroll drop (more than 7000px drop to under 100)
+    if (prevScrollRef.current > 7000 && scrollY < 100) {
+      console.log('Scroll drop detected - at bottom:', prevScrollRef.current, '->', scrollY);
+      scrollDroppedRef.current = true;
+      setHideAtBottom(true);
+    } 
+    // Only clear when we're clearly scrolling up from a reasonable position
+    else if (scrollY > 500 && scrollY < 7000 && !scrollDroppedRef.current) {
+      // We're in the middle of the page, safe to show
+      setHideAtBottom(false);
+    }
+    // If we're still seeing high scroll values, we might still be at bottom
+    else if (scrollY > 7500) {
+      // Keep hidden if we previously detected a drop
+      if (scrollDroppedRef.current) {
+        setHideAtBottom(true);
+      }
+    }
+    
+    // Clear the ref when we're clearly not at bottom
+    if (scrollY > 500 && scrollY < 3000) {
+      scrollDroppedRef.current = false;
+    }
+    
+    prevScrollRef.current = scrollY;
+  }, [scrollY]);
+  
+  // Hide when scrolled far OR when at bottom
+  const shouldHide = scrollY > 3500 || hideAtBottom;
+  
+  // Debug logging
+  useEffect(() => {
+    if (scrollY > 3000 || scrollY <= 20 || hideAtBottom) {
+      console.log('Scroll:', scrollY, 'shouldHide:', shouldHide, 'hideAtBottom:', hideAtBottom);
+    }
+  }, [scrollY, shouldHide, hideAtBottom]);
+  
   // Animate based on scroll (from Simple3DScene)
   useFrame(() => {
     if (groupRef.current) {
-      const baseY = isMobile ? -15 : -15;
-      // Further increased scroll range for 6x page length
-      groupRef.current.position.y = baseY + scrollY * 0.035;
+      // Check for bottom condition right in the render loop
+      // This catches the scroll drop immediately without waiting for state updates
+      const isAtBottomNow = scrollDroppedRef.current || 
+                           (prevScrollRef.current > 7000 && scrollY < 100);
+      
+      // Hide model if scrolled far OR at bottom
+      if (shouldHide || isAtBottomNow) {
+        groupRef.current.visible = false;
+      } else {
+        groupRef.current.visible = true;
+        const baseY = isMobile ? -15 : -15;
+        // Clamp Y position to prevent model from going too high
+        const maxY = 50;
+        const calculatedY = baseY + scrollY * 0.035;
+        groupRef.current.position.y = Math.min(calculatedY, maxY);
+      }
     }
   });
   
   return (
-    <group ref={groupRef} position={isMobile ? [2, -8, -10] : [2, 8, -11]}>
+    <group 
+      ref={groupRef} 
+      position={isMobile ? [2, -8, -10] : [2, 8, -11]}
+    >
       <primitive 
         object={scene} 
         scale={isMobile ? [10, 10, 10] : [12, 12, 12]} 
@@ -163,18 +226,59 @@ function Model({ scrollY, isMobile, onLoad }) {
       
     </group>
   );
-}
+});
 
 // Breath component that follows the same scroll animation as the Model
 function ScrollingBreath({ scrollY, isMobile }) {
   const breathGroupRef = useRef();
   
+  // Track when we've reached the bottom (same logic as Model)
+  const scrollDroppedRef = useRef(false);
+  const prevScrollRef = useRef(0);
+  const [hideAtBottom, setHideAtBottom] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (prevScrollRef.current > 7000 && scrollY < 100) {
+      scrollDroppedRef.current = true;
+      setHideAtBottom(true);
+    } 
+    else if (scrollY > 500 && scrollY < 7000 && !scrollDroppedRef.current) {
+      setHideAtBottom(false);
+    }
+    else if (scrollY > 7500) {
+      if (scrollDroppedRef.current) {
+        setHideAtBottom(true);
+      }
+    }
+    
+    if (scrollY > 500 && scrollY < 3000) {
+      scrollDroppedRef.current = false;
+    }
+    
+    prevScrollRef.current = scrollY;
+  }, [scrollY]);
+  
+  // Same hide logic as model
+  const shouldHide = scrollY > 3500 || hideAtBottom;
+  
   // Match the exact same animation as the Model component
   useFrame(() => {
     if (breathGroupRef.current) {
+      // Check for bottom condition right in the render loop
+      const isAtBottomNow = scrollDroppedRef.current || 
+                           (prevScrollRef.current > 7000 && scrollY < 100);
+      
+      if (shouldHide || isAtBottomNow) {
+        breathGroupRef.current.visible = false;
+        return;
+      }
+      
       const baseY = isMobile ? -15 : -15;
-      // Match Model's increased scroll speed
-      breathGroupRef.current.position.y = baseY + scrollY * 0.035;
+      // Match Model's increased scroll speed with same clamping
+      const maxY = 40; // Same max as model
+      const calculatedY = baseY + scrollY * 0.035;
+      breathGroupRef.current.position.y = Math.min(calculatedY, maxY);
+      breathGroupRef.current.visible = true;
     }
   });
   
@@ -762,7 +866,10 @@ export default function Home3() {
         currentScroll = scrollingElement.scrollTop || window.scrollY || window.pageYOffset || 0;
       }
       
-      // Scroll detected: currentScroll
+      // Debug high scroll values
+      if (currentScroll > 9000) {
+        console.log('High scroll detected:', currentScroll);
+      }
       
       setScrollY(currentScroll);
     };
@@ -957,8 +1064,8 @@ export default function Home3() {
             <GradientSkySphere />
             {/* <LayeredClouds scrollY={scrollY} /> */}
             <EnhancedVolumetricLight 
-              position={[0, 50 + scrollY * 0.035, 0]} 
-              target={[3, -50 + scrollY * 0.035, -5]}
+              position={[0, Math.min(50 + scrollY * 0.035, 150), 0]} 
+              target={[3, Math.min(-50 + scrollY * 0.035, 50), -5]}
               color="#ffffee"
               intensity={1.5}
             />
@@ -1746,9 +1853,9 @@ export default function Home3() {
       />
       
       {/* Floating Action Bar - Only show after scrolling past halfway point */}
-      {scrollY > (isMobile ? 1800 : 2400) && (
+      {/* {scrollY > (isMobile ? 1800 : 2400) && (
         <CyberFloatingBar isMobile={isMobile} />
-      )}
+      )} */}
     </div>
     </>
   );
