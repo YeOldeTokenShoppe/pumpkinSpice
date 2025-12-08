@@ -35,7 +35,7 @@ export function useFirestoreResults(sortBy = "burnedAmount") {
         createdAt: doc.data().createdAt?.toDate() || new Date(), // Include createdAt timestamp
       }));
 
-      console.log("🔥 Firestore results fetched:", fetchedResults); // ✅ Log results
+      // console.log("🔥 Firestore results fetched:", fetchedResults); // ✅ Log results
 
       setResults((prev) => {
         if (JSON.stringify(prev) === JSON.stringify(fetchedResults))

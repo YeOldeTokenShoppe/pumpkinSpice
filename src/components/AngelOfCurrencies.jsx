@@ -27,10 +27,10 @@ function AngelModel({
     dracoLoader.setDecoderPath("/draco/");
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    console.log('Loading angelOfCurrencies.glb...');
+    // console.log('Loading angelOfCurrencies.glb...');
     
     gltfLoader.load("/models/angelOfCurrencies.glb", (gltf) => {
-      console.log('✓ angelOfCurrencies.glb loaded successfully');
+      // console.log('✓ angelOfCurrencies.glb loaded successfully');
       
       const angelScene = gltf.scene;
       
@@ -59,11 +59,11 @@ function AngelModel({
               animName.toLowerCase().includes('float') ||
               animName.toLowerCase().includes('hover')) {
             action.play();
-            console.log(`Playing angel animation: ${animation.name}`);
+            // console.log(`Playing angel animation: ${animation.name}`);
           }
         });
         
-        console.log('Angel animations available:', gltf.animations.map(a => a.name));
+        // console.log('Angel animations available:', gltf.animations.map(a => a.name));
       }
       
       // Add the anchor group to the scene
@@ -82,7 +82,7 @@ function AngelModel({
       }
     }, 
     (progress) => {
-      console.log('Angel loading progress:', (progress.loaded / progress.total * 100) + '%');
+      // console.log('Angel loading progress:', (progress.loaded / progress.total * 100) + '%');
     },
     (error) => {
       console.error('Error loading angelOfCurrencies.glb:', error);
@@ -152,7 +152,7 @@ function AngelOfCurrencies({
   const [modelLoaded, setModelLoaded] = useState(false);
 
   const handleModelLoad = () => {
-    console.log('✅ Angel model loaded successfully!');
+    // console.log('✅ Angel model loaded successfully!');
     setModelLoaded(true);
     if (onLoad) onLoad();
   };
@@ -197,7 +197,7 @@ function AngelOfCurrencies({
         />
         <directionalLight 
           position={[-20, 10, -10]} 
-          color="#ff50eec7" 
+          color="#ff50ee" 
           intensity={1.5}
         />
         <spotLight 

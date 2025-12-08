@@ -32,17 +32,11 @@ const BreathSmoke = ({
     
     // Fire gradient colors from hot (white/yellow) to cool (red/orange)
     const fireColors = [
-      
-   
-     
-
-
-
       '#994422',  // Dark red
-            '#cc4400', // Red-orange
-                  // '#ff6b00', // Deep orange
-                     '#e5e0d9ff', // Orange
-                     '#ffffff', // Hot white
+      '#cc4400',  // Red-orange
+      // '#ff6b00', // Deep orange
+      '#e5e0d9',  // Light beige (removed 'ff' alpha channel)
+      '#ffffff',  // Hot white
     ];
     
     for (let i = 0; i < particleCount; i++) {

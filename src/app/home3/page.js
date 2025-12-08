@@ -150,7 +150,7 @@ const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
   React.useEffect(() => {
     // Detect any large scroll drop (more than 7000px drop to under 100)
     if (prevScrollRef.current > 7000 && scrollY < 100) {
-      console.log('Scroll drop detected - at bottom:', prevScrollRef.current, '->', scrollY);
+      // console.log('Scroll drop detected - at bottom:', prevScrollRef.current, '->', scrollY);
       scrollDroppedRef.current = true;
       setHideAtBottom(true);
     } 
@@ -179,11 +179,11 @@ const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
   const shouldHide = scrollY > 3500 || hideAtBottom;
   
   // Debug logging
-  useEffect(() => {
-    if (scrollY > 3000 || scrollY <= 20 || hideAtBottom) {
-      console.log('Scroll:', scrollY, 'shouldHide:', shouldHide, 'hideAtBottom:', hideAtBottom);
-    }
-  }, [scrollY, shouldHide, hideAtBottom]);
+  // useEffect(() => {
+  //   if (scrollY > 3000 || scrollY <= 20 || hideAtBottom) {
+  //     console.log('Scroll:', scrollY, 'shouldHide:', shouldHide, 'hideAtBottom:', hideAtBottom);
+  //   }
+  // }, [scrollY, shouldHide, hideAtBottom]);
   
   // Animate based on scroll (from Simple3DScene)
   useFrame(() => {
@@ -867,9 +867,9 @@ export default function Home3() {
       }
       
       // Debug high scroll values
-      if (currentScroll > 9000) {
-        console.log('High scroll detected:', currentScroll);
-      }
+      // if (currentScroll > 9000) {
+      //   console.log('High scroll detected:', currentScroll);
+      // }
       
       setScrollY(currentScroll);
     };
@@ -1054,7 +1054,7 @@ export default function Home3() {
           <HemisphereLightComponent />
           <directionalLight 
             position={[-20, 10, -10]} 
-            color="#ff50eec7" 
+            color="#ff50ee" 
             intensity={1.5}
             castShadow={false}
           />
@@ -1064,10 +1064,10 @@ export default function Home3() {
             <GradientSkySphere />
             {/* <LayeredClouds scrollY={scrollY} /> */}
             <EnhancedVolumetricLight 
-              position={[0, Math.min(50 + scrollY * 0.035, 150), 0]} 
-              target={[3, Math.min(-50 + scrollY * 0.035, 50), -5]}
-              color="#ffffee"
-              intensity={1.5}
+              // position={[0, Math.min(50 + scrollY * 0.035, 150), 0]} 
+              // target={[3, Math.min(-50 + scrollY * 0.035, 50), -5]}
+              // color="#d89d12ff"
+              // intensity={1.5}
             />
             <Model scrollY={scrollY} isMobile={isMobile} onLoad={() => setModelLoaded(true)} />
             {/* <VideoScreens /> */}
@@ -1848,7 +1848,7 @@ export default function Home3() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCandleCreated={() => {
-          console.log('Candle created successfully');
+          // console.log('Candle created successfully');
         }}
       />
       

@@ -328,7 +328,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
     }
     
     if (imageUrl && imageUrl !== '/defaultAvatar.png') {
-      console.log('Loading user texture from:', imageUrl.substring(0, 50) + '...');
+      // console.log('Loading user texture from:', imageUrl.substring(0, 50) + '...');
       const loader = new THREE.TextureLoader();
       
       // Don't add timestamp to data URLs (base64 images)
@@ -356,7 +356,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
           texture.needsUpdate = true;
           
           setUserTexture(texture);
-          console.log('User texture loaded successfully with high quality settings');
+          // console.log('User texture loaded successfully with high quality settings');
         },
         undefined,
         (error) => {
@@ -372,7 +372,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
             texture.offset.set(0, 1);
             texture.needsUpdate = true;
             setUserTexture(texture);
-            console.log('User texture loaded via Image fallback');
+            // console.log('User texture loaded via Image fallback');
           };
           img.onerror = () => {
             console.error('Failed to load image even with fallback');
@@ -433,13 +433,13 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
         if (child.isMesh) {
           if (child.name === 'Label1' || child.name.includes('Label1')) {
             label1MeshRef.current = child;
-            console.log('Found Label1 mesh in cloned scene:', child.name, child.scale, child.visible);
+            // console.log('Found Label1 mesh in cloned scene:', child.name, child.scale, child.visible);
             // Make sure it's visible
             child.visible = true;
           }
           if (child.name === 'Label2' || child.name.includes('Label2')) {
             label2MeshRef.current = child;
-            console.log('Found Label2 mesh in cloned scene:', child.name);
+            // console.log('Found Label2 mesh in cloned scene:', child.name);
           }
         }
       });
@@ -645,7 +645,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
   // Apply text texture to Label1
   useEffect(() => {
     if (label1MeshRef.current && textTexture) {
-      console.log('Applying text to Label1', label1MeshRef.current);
+      // console.log('Applying text to Label1', label1MeshRef.current);
       
       // Simply apply the texture without modifying geometry
       label1MeshRef.current.material = new THREE.MeshStandardMaterial({
@@ -672,7 +672,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       // Set active flag
       effectActive.current = true;
       
-      console.log('Effect starting for template:', template === '/images/face.png' ? 'Virgin Mary' : 'Other', 'effectId:', effectId);
+      // console.log('Effect starting for template:', template === '/images/face.png' ? 'Virgin Mary' : 'Other', 'effectId:', effectId);
     
     // Use the current imageUrl if available, otherwise use the last successful one
     const currentImageUrl = imageUrl || lastSuccessfulImageUrl.current;
@@ -694,24 +694,24 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       // Function to draw image with template overlay if selected
       const drawImageWithTemplate = (img, templateImg = null, handsImg = null) => {
         const drawId = Math.random().toString(36).substr(2, 9);
-        console.log('drawImageWithTemplate called:', {
-          drawId,
-          effectId,
-          hasImg: !!img,
-          imgSize: img ? {w: img.width, h: img.height} : null,
-          hasTemplate: !!templateImg, 
-          hasHands: !!handsImg,
-          template,
-          effectActive: effectActive.current
-        });
+        // console.log('drawImageWithTemplate called:', {
+        //   drawId,
+        //   effectId,
+        //   hasImg: !!img,
+        //   imgSize: img ? {w: img.width, h: img.height} : null,
+        //   hasTemplate: !!templateImg, 
+        //   hasHands: !!handsImg,
+        //   template,
+        //   effectActive: effectActive.current
+        // });
         // Check if this is likely a Clerk letter avatar (small dimensions)
         const isLetterAvatar = img.width <= 200 && img.height <= 200;
-        console.log('isLetterAvatar:', isLetterAvatar, 'img dimensions:', img.width, 'x', img.height);
+        // console.log('isLetterAvatar:', isLetterAvatar, 'img dimensions:', img.width, 'x', img.height);
         
         // Draw the image (leave space at bottom for name)
         const imageHeight = username ? canvas.height * 0.9 : canvas.height;
         
-        console.log('Template check - templateImg:', !!templateImg);
+        // console.log('Template check - templateImg:', !!templateImg);
         if (templateImg) {
           // When template is used, apply positioning
           
@@ -729,7 +729,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
           const scaleFactor = userImageScale / 100;
           const baseSize = Math.min(canvas.width, canvas.height) * 0.4;
           
-          console.log('User image dimensions:', {width: img.width, height: img.height, src: img.src?.substring(0, 50)});
+          // console.log('User image dimensions:', {width: img.width, height: img.height, src: img.src?.substring(0, 50)});
           
           // Fix for tiny images
           const actualWidth = img.width <= 10 ? 200 : img.width;
@@ -798,7 +798,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
           
           // THIRD: Draw hands/feet overlay if provided (on top)
           if (handsImg && handsImg.complete) {
-            console.log('Drawing hands overlay');
+            // console.log('Drawing hands overlay');
             // Save the current composite operation
             const prevComposite = ctx.globalCompositeOperation;
             // Use source-over to preserve transparency
@@ -863,8 +863,8 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
           }
         } else {
           // No template - always draw full size to fill the canvas
-          console.log('No template path - drawing image to fill canvas');
-          console.log('Drawing non-template image to fill canvas:', canvas.width, 'x', canvas.height);
+          // console.log('No template path - drawing image to fill canvas');
+          // console.log('Drawing non-template image to fill canvas:', canvas.width, 'x', canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
         
@@ -909,16 +909,16 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
         texture.needsUpdate = true;
         
         // Apply texture to Label2
-        console.log('Applying texture to Label2, effectActive:', effectActive.current);
+        // console.log('Applying texture to Label2, effectActive:', effectActive.current);
         if (label2MeshRef.current && label2MeshRef.current.material) {
           // Don't dispose textures - just replace
           label2MeshRef.current.material.map = texture;
           label2MeshRef.current.material.needsUpdate = true;
           // Save this texture as the last successful one
           lastTexture.current = texture;
-          console.log('Texture applied successfully');
+          // console.log('Texture applied successfully');
         } else if (label2MeshRef.current) {
-          console.log('Creating new material with texture');
+          // console.log('Creating new material with texture');
           label2MeshRef.current.material = new THREE.MeshStandardMaterial({
             map: texture,
             emissive: new THREE.Color(0xff6600),
@@ -937,13 +937,13 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       
       // Handle template loading if one is selected
       if (template) {
-        console.log('Starting template load:', template === '/images/face2.png' ? 'Virgin Mary' : template);
+        // console.log('Starting template load:', template === '/images/face2.png' ? 'Virgin Mary' : template);
         const templateImg = new Image();
         templateImg.crossOrigin = 'anonymous';
         
         // Load the main template first
         templateImg.onload = () => {
-          console.log('Template loaded, loading user image next');
+          // console.log('Template loaded, loading user image next');
           // Set up the user image loading
           img.onload = () => {
             if (!effectActive.current) return;
@@ -1052,7 +1052,7 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       
       // Handle non-template path
       if (!template) {
-        console.log('Non-template path');
+        // console.log('Non-template path');
         img.onload = () => {
           if (effectActive.current) {
             drawImageWithTemplate(img, null, null);
@@ -1064,16 +1064,16 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
         };
         
         if (currentImageUrl && currentImageUrl !== '/defaultAvatar.png') {
-          console.log('Non-template path: using imageUrl:', currentImageUrl);
+          // console.log('Non-template path: using imageUrl:', currentImageUrl);
           img.src = currentImageUrl;
         } else if (userTexture) {
-          console.log('Non-template path: using userTexture');
+          // console.log('Non-template path: using userTexture');
           img.src = userTexture.image.src;
         } else if (defaultTexture) {
-          console.log('Non-template path: using defaultTexture');
+          // console.log('Non-template path: using defaultTexture');
           img.src = defaultTexture.image.src;
         } else {
-          console.log('Non-template path: no image available, using default');
+          // console.log('Non-template path: no image available, using default');
           img.src = '/defaultAvatar.png';
         }
       }
@@ -1319,41 +1319,41 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   };
   
   // Debug exit dialog state
-  useEffect(() => {
-    console.log('showExitConfirmDialog state changed to:', showExitConfirmDialog);
-  }, [showExitConfirmDialog]);
+  // useEffect(() => {
+  //   console.log('showExitConfirmDialog state changed to:', showExitConfirmDialog);
+  // }, [showExitConfirmDialog]);
 
   // Reset form when modal opens and prepopulate with Clerk user data
   useEffect(() => {
     if (isOpen) {
       // Debug: Log the entire Clerk user object to see Discord avatar info
-      console.log('Clerk user object:', user);
-      console.log('User imageUrl:', user?.imageUrl);
-      console.log('User hasImage:', user?.hasImage);
-      console.log('External accounts:', user?.externalAccounts);
+      // console.log('Clerk user object:', user);
+      // console.log('User imageUrl:', user?.imageUrl);
+      // console.log('User hasImage:', user?.hasImage);
+      // console.log('External accounts:', user?.externalAccounts);
       
       // Get Clerk user image
       let clerkImageUrl = null;
       
       // Check if user has a valid image (not the default avatar)
       if (user?.hasImage && user?.imageUrl) {
-        console.log('User has custom image from OAuth or upload');
+        // console.log('User has custom image from OAuth or upload');
         clerkImageUrl = user.imageUrl;
       } else if (user?.imageUrl && !user?.imageUrl.includes('gravatar')) {
         // Sometimes Clerk uses gravatar for default avatars
-        console.log('Using user imageUrl (non-gravatar)');
+        // console.log('Using user imageUrl (non-gravatar)');
         clerkImageUrl = user.imageUrl;
       }
       
       // If still no image, try to get from external accounts
       if (!clerkImageUrl && user?.externalAccounts && user.externalAccounts.length > 0) {
-        console.log('Checking external accounts for avatar...');
+        // console.log('Checking external accounts for avatar...');
         const discordAccount = user.externalAccounts.find(account => 
           account.provider === 'discord' || account.provider === 'oauth_discord'
         );
         
         if (discordAccount) {
-          console.log('Discord account found:', discordAccount);
+          // console.log('Discord account found:', discordAccount);
           // Try different possible properties
           clerkImageUrl = discordAccount.imageUrl || 
                          discordAccount.avatarUrl || 
@@ -1361,12 +1361,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                          discordAccount.avatar_url ||
                          null;
           if (clerkImageUrl) {
-            console.log('Using Discord avatar:', clerkImageUrl);
+            // console.log('Using Discord avatar:', clerkImageUrl);
           }
         }
       }
       
-      console.log('Final clerkImageUrl:', clerkImageUrl);
+      // console.log('Final clerkImageUrl:', clerkImageUrl);
       
       setFormData({
         messageType: '',
@@ -1793,7 +1793,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       
       if (result.fromCache) {
         // Optional: show that it came from cache
-        console.log('Prayer served from cache');
+        // console.log('Prayer served from cache');
       }
       
       // Close AI panel after successful generation
@@ -1879,7 +1879,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       if (canvas) {
         try {
           const imageData = canvas.toDataURL('image/png');
-          console.log('Captured image data:', imageData ? 'Success' : 'Failed');
+          // console.log('Captured image data:', imageData ? 'Success' : 'Failed');
           setCapturedImage(imageData);
         } catch (error) {
           console.error('Failed to capture canvas:', error);
@@ -1945,13 +1945,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   };
 
   const handleSubmit = (e) => {
-    console.log('handleSubmit called');
+    // console.log('handleSubmit called');
     e.preventDefault();
     e.stopPropagation();
     
     // Don't submit if we're showing other dialogs
     if (showPasswordDialog) {
-      console.log('Password dialog is showing, returning');
+      // console.log('Password dialog is showing, returning');
       return;
     }
     
@@ -2006,9 +2006,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     captureCandle();
     
     // Show confirmation dialog instead of immediately saving
-    console.log('Setting showConfirmDialog to true');
+    // console.log('Setting showConfirmDialog to true');
     setShowConfirmDialog(true);
-    console.log('showConfirmDialog state will be:', true);
+    // console.log('showConfirmDialog state will be:', true);
   };
   
   const handleConfirmedSave = async (e) => {
@@ -2017,7 +2017,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       e.stopPropagation();
     }
     
-    console.log('handleConfirmedSave called');
+    // console.log('handleConfirmedSave called');
     
     // Capture the candle image first
     captureCandle();
@@ -2030,7 +2030,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     // Get sanitized values
     const trimmedUsername = formData.username.trim();
     const trimmedMessage = formData.message.trim();
-    console.log('Form data:', { trimmedUsername, trimmedMessage, formData });
+    // console.log('Form data:', { trimmedUsername, trimmedMessage, formData });
     
     // No burning effect - proceed directly to saving
 
@@ -2038,10 +2038,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     setError('');
 
     try {
-      console.log('Starting save process...');
+      // console.log('Starting save process...');
       // Upload image or use Clerk profile image
       const imageUrl = await uploadImage();
-      console.log('Image uploaded:', imageUrl);
+      // console.log('Image uploaded:', imageUrl);
 
       let docData;
       
@@ -2081,9 +2081,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         };
       }
 
-      console.log('Attempting to save to Firestore with data:', docData);
+      // console.log('Attempting to save to Firestore with data:', docData);
       const docRef = await addDoc(collection(db, 'candles'), docData);
-      console.log('Candle saved successfully with ID:', docRef.id);
+      // console.log('Candle saved successfully with ID:', docRef.id);
 
       // Mark that candle was successfully created
       setCandleWasCreated(true);
@@ -3048,7 +3048,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           }}>
             <button 
               onClick={() => {
-                console.log('Continue editing clicked');
+                // console.log('Continue editing clicked');
                 setShowExitConfirmDialog(false);
               }}
               style={{
@@ -3067,7 +3067,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             </button>
             <button 
               onClick={() => {
-                console.log('Discard clicked');
+                // console.log('Discard clicked');
                 setShowExitConfirmDialog(false);
                 onClose();
               }}
@@ -3117,7 +3117,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             instantCapture={readyToCapture}
             onComplete={(imageData) => {
               // Keep the snapshot visible, let user close manually
-              console.log('Snapshot captured successfully, image length:', imageData?.length);
+              // console.log('Snapshot captured successfully, image length:', imageData?.length);
               setReadyToCapture(false);
             }}
           />
@@ -3331,9 +3331,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       }}>
       <div className="compact-modal-content" ref={modalContentRef} onClick={e => e.stopPropagation()}>
         <button className="compact-modal-close" onClick={() => {
-          console.log('Close button clicked');
-          console.log('candleWasCreated:', candleWasCreated);
-          console.log('formData:', formData);
+          // console.log('Close button clicked');
+          // console.log('candleWasCreated:', candleWasCreated);
+          // console.log('formData:', formData);
           
           // Check if candle was created
           if (candleWasCreated) {
@@ -3341,10 +3341,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           } else {
             // Check if user has entered any data
             const hasUnsavedData = formData.username.trim() || formData.message.trim() || imageFile;
-            console.log('hasUnsavedData:', hasUnsavedData);
+            // console.log('hasUnsavedData:', hasUnsavedData);
             if (hasUnsavedData) {
               // Show custom confirmation dialog
-              console.log('Setting showExitConfirmDialog to true');
+              // console.log('Setting showExitConfirmDialog to true');
               setShowExitConfirmDialog(true);
             } else {
               // No data entered, just close

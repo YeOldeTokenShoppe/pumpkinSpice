@@ -212,7 +212,7 @@ const AnnunciationIntro = ({ isMobile, titleInView, SkewedHeading, AngelOfCurren
         {/* Angel of Currencies presenting the introduction */}
         <AngelOfCurrencies 
           isMobile={isMobile}
-          onLoad={() => console.log('Angel of Currencies loaded for intro')}
+         
         />
         
         {/* Animated text content */}

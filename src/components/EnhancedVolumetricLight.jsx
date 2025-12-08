@@ -4,8 +4,8 @@ import * as THREE from 'three';
 
 const EnhancedVolumetricLight = ({ 
   position = [-5, 100, 3], 
-  target = [0, -10, 0],
-  color = '#ffffff',
+  target = [3, -10, -25],
+  color = '#0af9dd',
   intensity = 1,
   rayCount = 20,
   spread = 10,
@@ -49,7 +49,7 @@ const EnhancedVolumetricLight = ({
         const rayStart = lightPos.clone().add(new THREE.Vector3(x, 0, z)).add(randomOffset);
         // Keep rays more parallel by maintaining similar spread at bottom
         const rayEnd = targetPos.clone().add(new THREE.Vector3(x * 0.8, 10, z * 0.8)); // Stop above model, maintain spread
-        const rayLength = rayStart.distanceTo(rayEnd) * 0.8; // Shorten rays
+        const rayLength = rayStart.distanceTo(rayEnd) * 1.3; // Shorten rays
         const rayDirection = rayEnd.clone().sub(rayStart).normalize();
         
         // Thinner, more defined cone width for godray effect
@@ -130,7 +130,7 @@ const EnhancedVolumetricLight = ({
       ))}
       
       {/* Central bright core ray - better aligned */}
-      {/* <mesh
+      <mesh
         position={[
           (position[0] + target[0]) / 2,  // Center between light and target
           (position[1] + target[1]) / 2,  // Center vertically
@@ -138,19 +138,19 @@ const EnhancedVolumetricLight = ({
         ]}
         rotation={[Math.PI, 0, 0]}
       >
-        <cylinderGeometry args={[2, 8, Math.abs(position[1] - target[1]) * 0.5, 18, 1, true]} />
-        <meshBasicMaterial
+        {/* <cylinderGeometry args={[2, 8, Math.abs(position[1] - target[1]) * 0.5, 18, 1, true]} /> */}
+        {/* <meshBasicMaterial
           color={color}
           transparent
           opacity={opacity * 2.5}  // More intense core
           side={THREE.DoubleSide}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
-        />
-      </mesh> */}
+        /> */}
+      </mesh>
       
       {/* Atmospheric glow at the source - commented out to hide sphere */}
-      {/* <mesh position={position}>
+      <mesh position={position}>
         <sphereGeometry args={[20, 16, 16]} />
         <meshBasicMaterial
           color={color}
@@ -159,7 +159,7 @@ const EnhancedVolumetricLight = ({
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
-      </mesh> */}
+      </mesh>
     </group>
   );
 };
