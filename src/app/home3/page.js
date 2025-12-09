@@ -5,8 +5,8 @@ import CleanCanvas from "../../components/CleanCanvas";
 import React, { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper, Stats, Html } from "@react-three/drei";
 import * as THREE from "three";
-import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer";
-import DroneScreenCSS3D from "../../components/DroneScreenCSS3D";
+// import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer"; // No longer needed
+// import DroneScreenCSS3D from "../../components/DroneScreenCSS3D"; // Replaced with video texture
 
 // import { Leva } from "leva";
 import DarkClouds from "../../components/Clouds";
@@ -98,8 +98,7 @@ import AnnunciationIntro from '@/components/AnnunciationIntro';
 
 // Preload the models
 useGLTF.preload('/models/ourlady_rider7.glb');
-useGLTF.preload('/models/drone.glb');
-useGLTF.preload('/models/drone_mobile.glb');
+// Note: Drone models are conditionally loaded in DroneModel component
 
 // Scroll-responsive Model component with Ticker
 const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
@@ -428,51 +427,61 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
           // console.log('Screen1 position:', object.position);
           // console.log('Screen1 scale:', object.scale);
           
-          // Set up screen for HTML content
+          // Set up video texture for Screen1
           if (object.isMesh) {
-            setScreenMesh(object);
-            // Store globally for CSS3D renderer
-            window.globalScreenMesh = object;
-            // console.log('Set window.globalScreenMesh:', window.globalScreenMesh);
+            console.log('Setting up video on Screen1:', object.name);
             
-            // Also store the drone group with a longer delay
-            setTimeout(() => {
-              if (groupRef.current) {
-                window.globalDroneGroup = groupRef.current;
-                // console.log('Set window.globalDroneGroup (from Screen1 setup):', groupRef.current);
-                // Force trigger CSS3D init if it's waiting
-                window.dispatchEvent(new CustomEvent('droneReady'));
+            // Create video element
+            const video = document.createElement('video');
+            video.src = '/videos/23.mp4';
+            video.loop = true;
+            video.muted = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.crossOrigin = 'anonymous';
+            
+            // Debug video loading
+            video.addEventListener('loadstart', () => console.log('Video loading started'));
+            video.addEventListener('canplay', () => console.log('Video can play'));
+            video.addEventListener('playing', () => console.log('Video is playing'));
+            video.addEventListener('error', (e) => console.error('Video error:', e));
+            
+            // Start playing when loaded
+            video.addEventListener('loadeddata', () => {
+              console.log('Video data loaded, attempting to play');
+              video.play().catch(console.error);
+            });
+            
+            // Create video texture
+            const videoTexture = new THREE.VideoTexture(video);
+            videoTexture.minFilter = THREE.LinearFilter;
+            videoTexture.magFilter = THREE.LinearFilter;
+            videoTexture.format = THREE.RGBFormat;
+            // Rotate texture 90 degrees counter-clockwise
+            videoTexture.center.set(0.5, 0.5);
+            videoTexture.rotation = -Math.PI / 2;
+            
+            // Apply video texture to screen material
+            const material = new THREE.MeshBasicMaterial({
+              map: videoTexture,
+              color: 0xffffff, // White to show video properly
+              transparent: false,
+              opacity: 1.0
+            });
+            
+            object.material = material;
+            console.log('Applied video texture to Screen1 material');
+            
+            // Force material and texture updates in render loop
+            object.userData.updateTexture = () => {
+              if (videoTexture && video.readyState >= video.HAVE_CURRENT_DATA) {
+                videoTexture.needsUpdate = true;
               }
-            }, 500); // Increased delay to ensure group is ready
+            };
             
-            // Get screen dimensions
-            if (object.geometry) {
-              object.geometry.computeBoundingBox();
-              const box = object.geometry.boundingBox;
-              if (box) {
-                const size = new THREE.Vector3();
-                box.getSize(size);
-                // console.log('Screen1 geometry size:', size);
-                // console.log('Screen1 bounding box:', box);
-              }
-            }
-            
-            // Keep original material - texture will be applied by DroneScreenTexture
-            // No need for cutout material when using texture approach
-            // console.log('✅ Screen1 ready for texture rendering');
-            
-            // Store screen size for CSS3D component to use
-            if (object.geometry) {
-              object.geometry.computeBoundingBox();
-              const box = object.geometry.boundingBox;
-              const size = new THREE.Vector3();
-              box.getSize(size);
-              object.userData.screenSize = size;
-              // console.log('Screen1 size stored:', size.x.toFixed(2), 'x', size.y.toFixed(2));
-            }
-            
-            // Ensure proper render order
-            object.renderOrder = -1; // Render before other objects
+            // Store video reference for cleanup
+            object.userData.video = video;
+            object.userData.videoTexture = videoTexture;
           }
         }
         // Disable shadows
@@ -544,6 +553,15 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
           if (object.userData.screenInterval) {
             clearInterval(object.userData.screenInterval);
           }
+          // Clean up video elements
+          if (object.userData.video) {
+            object.userData.video.pause();
+            object.userData.video.removeAttribute('src');
+            object.userData.video.load();
+          }
+          if (object.userData.videoTexture) {
+            object.userData.videoTexture.dispose();
+          }
           if (object.geometry) object.geometry.dispose();
           if (object.material) {
             const materials = Array.isArray(object.material) 
@@ -567,6 +585,11 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
   useFrame((state, delta) => {
     if (mixerRef.current) {
       mixerRef.current.update(delta);
+    }
+    
+    // Update video texture
+    if (screenRef.current && screenRef.current.userData.updateTexture) {
+      screenRef.current.userData.updateTexture();
     }
     
     if (groupRef.current) {
@@ -1614,8 +1637,7 @@ export default function Home3() {
               isMobile={isMobile}
             />
             
-            {/* CSS3D Screen - Must be inside Canvas to access R3F hooks */}
-            <DroneScreenCSS3D isMobile={isMobile} />
+            {/* CSS3D Screen replaced with video texture on Screen1 mesh */}
             
             {/* Neural Network Visualization */}
             {/* <NeuralNetworkR3F 
@@ -1637,7 +1659,7 @@ export default function Home3() {
         </CleanCanvas>
       </div>
       
-      {/* CSS3D is now handled inside the Canvas by DroneScreenCSS3D component */}
+      {/* Screen now uses video texture directly on the 3D mesh */}
 
       {/* Leva Controls Panel - positioned middle right */}
       {/* <Leva
@@ -2392,7 +2414,10 @@ export default function Home3() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCandleCreated={() => {
-          // console.log('Candle created successfully');
+          // Monitor real memory usage
+          if (performance.memory) {
+            console.log('Memory:', (performance.memory.usedJSHeapSize / 1048576).toFixed(1) + 'MB');
+          }
         }}
       />
       
