@@ -605,14 +605,14 @@ function SimpleScene({ isMobileView, is80sMode, enableCandles = false, enableSta
           />
         </Suspense>
       )}
-            <NeuralNetworkR3F 
+            {/* <NeuralNetworkR3F 
               theme={2}
               formation={0}
               density={300}
               position={[0, 3, 0]}
               scale={0.05}
               enableInteraction={true}
-            />
+            /> */}
       {/* Pyramid Effects - positioned at model center */}
       {/* <PyramidEffects 
         position={[0, 0, 0]} 

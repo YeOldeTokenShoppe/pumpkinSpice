@@ -2223,8 +2223,8 @@ const PalmsScene = ({ onLoadingChange }) => {
       // Log the first few timeline tweens to verify they exist
       const children = tl.getChildren();
       if (children.length > 0) {
-        console.log('First tween targets:', children[0].targets());
-        console.log('First tween vars:', children[0].vars);
+        // console.log('First tween targets:', children[0].targets());
+        // console.log('First tween vars:', children[0].vars);
       }
       
       // Force timeline to start at beginning
@@ -2773,9 +2773,9 @@ const PalmsScene = ({ onLoadingChange }) => {
           style={{
             position: 'fixed',
             right: isMobile ? '20px' : '15%',
-            top: '50%',
+            top: isMobile ? '40%' : '50%',
             transform: 'translateY(-50%)',
-            width: isMobile ? '60%' : '40%',
+            width: isMobile ? '75%' : '50%',
             maxWidth: '600px',
             pointerEvents: 'none',
             zIndex: "1000",
@@ -2788,12 +2788,12 @@ const PalmsScene = ({ onLoadingChange }) => {
             overflow: 'visible',
           }}
         >
-          <div style={{ marginBottom: isMobile ? '-20px' : '0', position: 'relative', height: '400px' }}>
+          <div style={{ marginBottom: isMobile ? '0' : '0', position: 'relative', height: '400px' }}>
             {/* Using WebGL Standalone Text with textBlocks array */}
             <WebGLStandaloneText 
               textArray={textBlocks[currentCameraStage] || ["DRIFT"]}
-              fontSize={isMobile ? 0.8 : 1.4}
-              lineHeight={isMobile ? 1 : 1.4}
+              fontSize={isMobile ? 1.2 : 1.8}
+              lineHeight={isMobile ? 1 : 1}
               color="#ff00ff"
               id={`palmtree-stage-${currentCameraStage}`}
               className="mb-4"

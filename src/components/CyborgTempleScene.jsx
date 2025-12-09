@@ -34,7 +34,7 @@ const CyborgTempleScene = forwardRef(({
   // Define annotation points - adjust positions based on your temple scene
   const annotations = [
     {
-      position: [0, 0, 0], // Near the main altar/center
+      position: [0, 0.3, 0], // Near the main altar/center
       text: "RL80 Trades 24/7 - A virgin trader and autonomous agent with one purpose: learn to trade on a perp exhange and maximize profits for her investors.",
       customCamera: {
         position: [2, -0.8, -0.3], // Camera moved right and lower
@@ -59,11 +59,11 @@ const CyborgTempleScene = forwardRef(({
     //   annotationOffset: [20, 150] // [x, y] offset in pixels from center
     // },
     {
-      position: [-2, -0.99, 0.3], // Left side
+      position: [-2, -0.7, 0.35], // Left side
       text: "The 3 Wise Mechs",
       // Special camera settings for viewing characters from center
       customCamera: {
-        position: [2, -1.3, -0.5], // Camera moved right and lower
+        position: [-0.2, -1.3, -0.5], // Camera moved right and lower
         lookAt: [-3, -1, 0.5], // Look outward toward the characters
         distance: 2.9 // Slightly increased distance for better framing
       },

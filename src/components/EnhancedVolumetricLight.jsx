@@ -103,10 +103,7 @@ const EnhancedVolumetricLight = ({
         penumbra={0.8}
         intensity={intensity * 0.5}
         color={color}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-near={0.1}
-        shadow-camera-far={500}
+        castShadow={false}
       /> 
       
       {/* Volumetric ray meshes */}
@@ -149,8 +146,8 @@ const EnhancedVolumetricLight = ({
         /> */}
       </mesh>
       
-      {/* Atmospheric glow at the source - commented out to hide sphere */}
-      <mesh position={position}>
+      {/* Atmospheric glow at the source - disabled to prevent shadow */}
+      {/* <mesh position={position}>
         <sphereGeometry args={[20, 16, 16]} />
         <meshBasicMaterial
           color={color}
@@ -159,7 +156,7 @@ const EnhancedVolumetricLight = ({
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
-      </mesh>
+      </mesh> */}
     </group>
   );
 };

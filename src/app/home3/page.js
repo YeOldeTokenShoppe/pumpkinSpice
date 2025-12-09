@@ -1,9 +1,12 @@
 "use client";
 
-import { Canvas, useFrame, extend } from "@react-three/fiber";
+import { useFrame, extend, useThree } from "@react-three/fiber";
+import CleanCanvas from "../../components/CleanCanvas";
 import React, { Suspense, useRef, useMemo, useEffect, useState } from "react";
-import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper, Stats } from "@react-three/drei";
+import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper, Stats, Html } from "@react-three/drei";
 import * as THREE from "three";
+import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer";
+import DroneScreenCSS3D from "../../components/DroneScreenCSS3D";
 
 // import { Leva } from "leva";
 import DarkClouds from "../../components/Clouds";
@@ -46,6 +49,7 @@ import Footer from "@/components/Footer";
 import AnnunciationIntro from '@/components/AnnunciationIntro';
 // import VideoScreens from "@/components/VideoScreens";
 // import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
+// import { CubeWithWorkingCSS3D } from '@/components/CubeWithWorkingCSS3D';
 
 
 
@@ -92,8 +96,10 @@ import AnnunciationIntro from '@/components/AnnunciationIntro';
 //   );
 // };
 
-// Preload the model
+// Preload the models
 useGLTF.preload('/models/ourlady_rider7.glb');
+useGLTF.preload('/models/drone.glb');
+useGLTF.preload('/models/drone_mobile.glb');
 
 // Scroll-responsive Model component with Ticker
 const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
@@ -106,6 +112,13 @@ const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
   useEffect(() => {
     if (scene && onLoad && !hasLoadedRef.current) {
       hasLoadedRef.current = true;
+      // Disable shadows on the model
+      scene.traverse((object) => {
+        if (object.isMesh) {
+          object.castShadow = false;
+          object.receiveShadow = false;
+        }
+      });
       onLoad();
     }
   }, [scene, onLoad]);
@@ -175,8 +188,8 @@ const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
     prevScrollRef.current = scrollY;
   }, [scrollY]);
   
-  // Hide when scrolled far OR when at bottom
-  const shouldHide = scrollY > 3500 || hideAtBottom;
+  // Hide when scrolled far OR when at bottom (adjusted for longer page)
+  const shouldHide = scrollY > 9500 || hideAtBottom;
   
   // Debug logging
   // useEffect(() => {
@@ -199,9 +212,26 @@ const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
       } else {
         groupRef.current.visible = true;
         const baseY = isMobile ? -15 : -15;
+        
+        // Check if we're in drone approach phase
+        const droneAppearThreshold = 3500; // Appears halfway down the extended page
+        const droneApproachDuration = 4000;
+        const droneApproachEnd = droneAppearThreshold + droneApproachDuration;
+        
+        let effectiveScrollY = scrollY;
+        
+        // During drone approach, lock the model at the appearance position
+        if (scrollY >= droneAppearThreshold - 200 && scrollY < droneApproachEnd) {
+          // Lock model at the position it was when drone started appearing
+          effectiveScrollY = droneAppearThreshold - 200;
+        } else if (scrollY >= droneApproachEnd) {
+          // After drone approach, subtract the approach duration to continue smoothly
+          effectiveScrollY = scrollY - droneApproachDuration;
+        }
+        
         // Clamp Y position to prevent model from going too high
         const maxY = 50;
-        const calculatedY = baseY + scrollY * 0.035;
+        const calculatedY = baseY + effectiveScrollY * 0.035;
         groupRef.current.position.y = Math.min(calculatedY, maxY);
       }
     }
@@ -224,6 +254,462 @@ const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
         position={[0, 2, 8]} // Position relative to model - moved up
       />
       
+    </group>
+  );
+});
+
+// OLD CSS3D Implementation - DISABLED (replaced by DroneScreenCSS3D component)
+/*
+const CSS3DScreen = ({ droneGroup, screenMesh }) => {
+  const { gl, camera, scene } = useThree();
+  
+  useEffect(() => {
+    if (!screenMesh || !droneGroup) return;
+    
+    // Create CSS3D renderer
+    const css3DRenderer = new CSS3DRenderer();
+    css3DRenderer.setSize(window.innerWidth, window.innerHeight);
+    css3DRenderer.domElement.style.position = 'absolute';
+    css3DRenderer.domElement.style.top = '0';
+    css3DRenderer.domElement.style.pointerEvents = 'none';
+    document.body.appendChild(css3DRenderer.domElement);
+    
+    // Create iframe
+    const iframe = document.createElement('iframe');
+    iframe.src = '/test-screen';
+    iframe.style.width = '800px';
+    iframe.style.height = '540px';
+    iframe.style.border = 'none';
+    iframe.style.pointerEvents = 'auto';
+    
+    // Create CSS3D object
+    const css3DObject = new CSS3DObject(iframe);
+    scene.add(css3DObject);
+    
+    // Update function
+    const updatePosition = () => {
+      if (droneGroup && screenMesh) {
+        // Force update matrices
+        droneGroup.updateMatrixWorld(true);
+        screenMesh.updateMatrixWorld(true);
+        
+        // Get screen world position
+        const pos = new THREE.Vector3();
+        const quat = new THREE.Quaternion();
+        screenMesh.getWorldPosition(pos);
+        screenMesh.getWorldQuaternion(quat);
+        
+        // Apply to CSS3D object
+        css3DObject.position.copy(pos);
+        css3DObject.quaternion.copy(quat);
+        
+        // Scale to fit screen (7.9 x 5.4 units)
+        const targetWidth = 8; // World units
+        const iframeWidth = 800; // Pixels
+        const scale = targetWidth / iframeWidth;
+        css3DObject.scale.set(scale, scale, scale);
+      }
+      
+      // Render CSS3D
+      css3DRenderer.render(scene, camera);
+      requestAnimationFrame(updatePosition);
+    };
+    
+    updatePosition();
+    
+    // Handle resize
+    const handleResize = () => {
+      css3DRenderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      scene.remove(css3DObject);
+      window.removeEventListener('resize', handleResize);
+      if (css3DRenderer.domElement.parentNode) {
+        css3DRenderer.domElement.parentNode.removeChild(css3DRenderer.domElement);
+      }
+    };
+  }, [screenMesh, droneGroup, scene, camera]);
+  
+  return null;
+};
+*/
+
+// Component to attach HTML to Screen1 mesh
+const ScreenContent = ({ screenMesh }) => {
+  if (!screenMesh) return null;
+  
+  return (
+    <Html
+      // Attach directly to the screen mesh object
+      transform
+      occlude
+      position={[0, 0, 0.1]} // Slightly in front of screen surface
+      scale={[2, 2, 1]} // Scale to match screen size
+      style={{
+        width: '400px',
+        height: '270px',
+      }}
+    >
+      <iframe
+        src="/test-screen"
+        style={{
+          width: '400px',
+          height: '270px',
+          border: '2px solid #00ff41',
+          background: '#000',
+          borderRadius: '4px',
+        }}
+        title="Drone Screen"
+      />
+    </Html>
+  );
+};
+
+// Global store for screen mesh
+let globalScreenMesh = null;
+let globalDroneGroup = null;
+
+// Manager component for CSS3D screen - DISABLED
+// Using DroneScreenCSS3D component instead
+const CSS3DScreenManager = () => {
+  // Disabled - using standalone DroneScreenCSS3D instead
+  return null;
+};
+
+// Drone component with built-in hover animation and scroll-based appearance
+const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrollY, isMobile = false }) {
+  const modelPath = isMobile ? '/models/drone_mobile.glb' : '/models/drone.glb';
+  const { scene, animations } = useGLTF(modelPath);
+  const groupRef = useRef();
+  const mixerRef = useRef();
+  const screenRef = useRef();
+  const hasAppearedRef = useRef(false);
+  const [screenMesh, setScreenMesh] = useState(null);
+  const [screenReady, setScreenReady] = useState(false);
+  
+  // No longer needed - we'll handle iframe in the texture setup
+  // Removed video/iframe creation here
+  
+  // Set global drone group reference when scene is loaded
+  useEffect(() => {
+    if (scene) {
+      // Set drone group immediately when scene is available
+      const timer = setTimeout(() => {
+        if (groupRef.current) {
+          window.globalDroneGroup = groupRef.current;
+          // console.log('DroneModel: Set global drone group:', groupRef.current);
+          // Force trigger CSS3D init if it's waiting
+          window.dispatchEvent(new CustomEvent('droneReady'));
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [scene]);
+  
+  // Set up animations and find Screen1 object
+  useEffect(() => {
+    if (scene) {
+      // Find the Screen1 object
+      let screenFound = false;
+      scene.traverse((object) => {
+        // Log all object names to help debug
+        // if (object.name) {
+        //   console.log('Drone object found:', object.name, object.type);
+        // }
+        
+        if (object.name === 'Screen1' || object.name.includes('Screen')) {
+          screenFound = true;
+          screenRef.current = object;
+          // console.log('✅ Found Screen1 on drone:', object);
+          // console.log('Screen1 type:', object.type);
+          // console.log('Screen1 parent:', object.parent?.name);
+          // console.log('Screen1 position:', object.position);
+          // console.log('Screen1 scale:', object.scale);
+          
+          // Set up screen for HTML content
+          if (object.isMesh) {
+            setScreenMesh(object);
+            // Store globally for CSS3D renderer
+            window.globalScreenMesh = object;
+            // console.log('Set window.globalScreenMesh:', window.globalScreenMesh);
+            
+            // Also store the drone group with a longer delay
+            setTimeout(() => {
+              if (groupRef.current) {
+                window.globalDroneGroup = groupRef.current;
+                // console.log('Set window.globalDroneGroup (from Screen1 setup):', groupRef.current);
+                // Force trigger CSS3D init if it's waiting
+                window.dispatchEvent(new CustomEvent('droneReady'));
+              }
+            }, 500); // Increased delay to ensure group is ready
+            
+            // Get screen dimensions
+            if (object.geometry) {
+              object.geometry.computeBoundingBox();
+              const box = object.geometry.boundingBox;
+              if (box) {
+                const size = new THREE.Vector3();
+                box.getSize(size);
+                // console.log('Screen1 geometry size:', size);
+                // console.log('Screen1 bounding box:', box);
+              }
+            }
+            
+            // Keep original material - texture will be applied by DroneScreenTexture
+            // No need for cutout material when using texture approach
+            // console.log('✅ Screen1 ready for texture rendering');
+            
+            // Store screen size for CSS3D component to use
+            if (object.geometry) {
+              object.geometry.computeBoundingBox();
+              const box = object.geometry.boundingBox;
+              const size = new THREE.Vector3();
+              box.getSize(size);
+              object.userData.screenSize = size;
+              // console.log('Screen1 size stored:', size.x.toFixed(2), 'x', size.y.toFixed(2));
+            }
+            
+            // Ensure proper render order
+            object.renderOrder = -1; // Render before other objects
+          }
+        }
+        // Disable shadows
+        if (object.isMesh) {
+          object.castShadow = false;
+          object.receiveShadow = false;
+        }
+      });
+      
+      if (!screenFound) {
+        // console.log('⚠️ Screen1 not found in drone model!');
+        // console.log('Looking for any mesh that could be a screen...');
+        scene.traverse((object) => {
+          if (object.isMesh && (object.name.toLowerCase().includes('screen') || 
+                                object.name.toLowerCase().includes('display') ||
+                                object.name.toLowerCase().includes('panel'))) {
+            // console.log('Possible screen mesh:', object.name);
+            // Use this as fallback
+            screenRef.current = object;
+            window.globalScreenMesh = object;
+            if (groupRef.current) {
+              window.globalDroneGroup = groupRef.current;
+            }
+          }
+        });
+      }
+      
+      // Set up hover animation
+      if (animations && animations.length > 0) {
+        // console.log('Drone animations:', animations.map(clip => clip.name));
+        mixerRef.current = new THREE.AnimationMixer(scene);
+        
+        // Find the hover animation
+        const hoverAnimation = animations.find(clip => 
+          clip.name === 'hover' || 
+          clip.name.toLowerCase().includes('hover')
+        );
+        
+        if (hoverAnimation) {
+          // console.log('Playing drone hover animation:', hoverAnimation.name);
+          const action = mixerRef.current.clipAction(hoverAnimation);
+          action.reset();
+          action.play();
+          action.setLoop(THREE.LoopRepeat);
+        } else if (animations.length > 0) {
+          // Play first animation if hover not found
+          // console.log('Playing first drone animation');
+          const action = mixerRef.current.clipAction(animations[0]);
+          action.reset();
+          action.play();
+          action.setLoop(THREE.LoopRepeat);
+        }
+      }
+    }
+  }, [scene, animations]);
+  
+  // Cleanup
+  useEffect(() => {
+    const currentScene = scene;
+    const currentMixer = mixerRef.current;
+    return () => {
+      if (currentMixer) {
+        currentMixer.stopAllAction();
+        currentMixer.uncacheRoot(currentScene);
+      }
+      if (currentScene) {
+        currentScene.traverse((object) => {
+          // Clear screen interval if exists
+          if (object.userData.screenInterval) {
+            clearInterval(object.userData.screenInterval);
+          }
+          if (object.geometry) object.geometry.dispose();
+          if (object.material) {
+            const materials = Array.isArray(object.material) 
+              ? object.material : [object.material];
+            materials.forEach(mat => {
+              if (mat.map) mat.map.dispose();
+              if (mat.normalMap) mat.normalMap.dispose();
+              if (mat.roughnessMap) mat.roughnessMap.dispose();
+              if (mat.metalnessMap) mat.metalnessMap.dispose();
+              if (mat.aoMap) mat.aoMap.dispose();
+              if (mat.emissiveMap) mat.emissiveMap.dispose();
+              mat.dispose();
+            });
+          }
+        });
+      }
+    };
+  }, [scene]);
+  
+  // Update animation and handle scroll-based appearance
+  useFrame((state, delta) => {
+    if (mixerRef.current) {
+      mixerRef.current.update(delta);
+    }
+    
+    if (groupRef.current) {
+      const appearThreshold = 3500; // Drone appears halfway down the page
+      const approachDuration = 2000; // Extended approach over 2000 scroll units for dramatic effect
+      
+      if (scrollY < appearThreshold - 200) {
+        // Hide drone well before threshold to prepare for approach
+        groupRef.current.visible = false;
+        hasAppearedRef.current = false;
+      } else {
+        // Start showing drone a bit before the threshold for smooth approach
+        groupRef.current.visible = true;
+        
+        // Calculate raw approach progress
+        const rawProgress = (scrollY - (appearThreshold - 200)) / approachDuration;
+        
+        // Split the animation into two phases:
+        // Phase 1 (0-0.3): Vertical rise from below
+        // Phase 2 (0.3-1.0): Forward approach
+        const risePhaseEnd = 0.3; // First 30% is vertical rise
+        
+        // Apply dramatic slowdown effect during drone approach
+        // This makes it feel like scrolling through thick air/resistance
+        let approachProgress;
+        if (rawProgress < 0.3) {
+          // Initial phase: very slow progress (heavy resistance)
+          approachProgress = rawProgress * 0.5; // Moves at 50% speed
+        } else if (rawProgress < 0.6) {
+          // Middle phase: slightly faster but still slow
+          approachProgress = 0.15 + (rawProgress - 0.3) * 1.5; // Gradually speeds up
+        } else if (rawProgress < 0.9) {
+          // Approaching phase: normal speed
+          approachProgress = 0.6 + (rawProgress - 0.6) * 1.2;
+        } else {
+          // Final approach: slight slowdown for dramatic finish
+          approachProgress = 0.96 + (rawProgress - 0.9) * 0.4;
+        }
+        
+        // Clamp to 0-1 range
+        approachProgress = Math.min(Math.max(approachProgress, 0), 1);
+        
+        // Calculate progress for each phase
+        const riseProgress = Math.min(approachProgress / risePhaseEnd, 1);
+        const forwardProgress = Math.max((approachProgress - risePhaseEnd) / (1 - risePhaseEnd), 0);
+        
+        // Smooth easing for each phase
+        const easedRiseProgress = 1 - Math.pow(1 - riseProgress, 3); // Cubic ease-out for rise
+        const easedForwardProgress = 1 - Math.pow(1 - forwardProgress, 3); // Cubic ease-out for forward approach
+        
+        // During approach, drone stays centered in viewport
+        // Only after fully approached does it move with the scene
+        let scrolledY;
+        const finalDroneY = 5; // Higher up in viewport for better centering
+        
+        if (approachProgress < 1) {
+          // During approach: drone approaches its final viewport position
+          scrolledY = finalDroneY; // Approach to higher position
+        } else {
+          // After approach: move with the scene normally
+          // Calculate the position the drone should be at when it starts moving with the scene
+          // This should match where it was at the end of the approach
+          const scrollAtApproachEnd = appearThreshold - 200 + approachDuration;
+          const baseY = finalDroneY - (scrollAtApproachEnd * 0.035);
+          scrolledY = baseY + scrollY * 0.035;
+        }
+        
+        // Debug log to see where it is
+        // if (scrollY > 1400 && scrollY < 1600) {
+        //   console.log('Drone position calc:', {
+        //     baseY,
+        //     scrolledY,
+        //     scrollY,
+        //     approachProgress,
+        //     easedProgress,
+        //     visible: groupRef.current.visible
+        //   });
+        // }
+        
+        // Approach animation with two phases: vertical rise, then forward approach
+        
+        // Z position: gradually moves back during rise, then comes forward during approach
+        const endZ = position[2] || -5; // Final Z position (close)
+        const farZ = -30; // Far position to approach from
+        
+        // Smoothly transition Z position through both phases
+        // During rise: gradually move from close to far
+        // During forward: move from far back to close
+        const currentZ = riseProgress < 1
+          ? endZ + (farZ - endZ) * easedRiseProgress  // Move away during rise
+          : farZ + (endZ - farZ) * easedForwardProgress; // Come back during approach
+        
+        // Y position: rises from below, then maintains height during forward approach
+        const startYOffset = -25; // Starts 25 units below viewport
+        const yRiseOffset = startYOffset * (1 - easedRiseProgress); // Rise animation
+        const yApproachOffset = 0; // No additional Y movement during forward approach
+        const totalYOffset = yRiseOffset + yApproachOffset;
+        
+        // Scale: continuously grows through both phases
+        // Start small, reach medium size at end of rise, then grow to full size during approach
+        const baseScale = 0.3; // Starting scale
+        const midScale = 0.6;  // Scale at transition between rise and approach
+        const finalScale = 1.7; // Final scale
+        
+        const approachScale = riseProgress < 1 
+          ? baseScale + (midScale - baseScale) * easedRiseProgress  // Rise: 0.3 to 0.6
+          : midScale + (finalScale - midScale) * easedForwardProgress; // Approach: 0.6 to 1.7
+        
+        // Final Y position with floating
+        const time = state.clock.getElapsedTime();
+        if (approachProgress >= 1) {
+          // Fully appeared - add floating animation
+          groupRef.current.position.y = scrolledY + Math.sin(time * 0.5) * 0.3;
+          groupRef.current.rotation.y = Math.sin(time * 0.3) * 0.1;
+          groupRef.current.position.z = endZ;
+          groupRef.current.scale.setScalar(2); // Reset to normal scale
+        } else {
+          // During approach (both rise and forward phases)
+          groupRef.current.position.y = scrolledY + totalYOffset;
+          groupRef.current.rotation.y = 0;
+          groupRef.current.position.z = currentZ;
+          groupRef.current.scale.setScalar(approachScale);
+        }
+        
+        // Keep X position fixed with slight sway during approach
+        if (approachProgress < 1) {
+          // Add subtle horizontal sway during approach
+          groupRef.current.position.x = position[0] + Math.sin(approachProgress * Math.PI * 2) * 2;
+        } else {
+          groupRef.current.position.x = position[0];
+        }
+      }
+    }
+  });
+  
+  
+  return (
+    <group ref={groupRef} position={position}>
+      <primitive 
+        object={scene} 
+        scale={[2, 2, 2]}
+        rotation={[0, Math.PI, 0]}
+      />
     </group>
   );
 });
@@ -259,7 +745,7 @@ function ScrollingBreath({ scrollY, isMobile }) {
   }, [scrollY]);
   
   // Same hide logic as model
-  const shouldHide = scrollY > 3500 || hideAtBottom;
+  const shouldHide = scrollY > 9500 || hideAtBottom;
   
   // Match the exact same animation as the Model component
   useFrame(() => {
@@ -274,9 +760,26 @@ function ScrollingBreath({ scrollY, isMobile }) {
       }
       
       const baseY = isMobile ? -15 : -15;
+      
+      // Check if we're in drone approach phase
+      const droneAppearThreshold = 9500; // Matches model threshold
+      const droneApproachDuration = 2000;
+      const droneApproachEnd = droneAppearThreshold + droneApproachDuration;
+      
+      let effectiveScrollY = scrollY;
+      
+      // During drone approach, lock the breath at the appearance position
+      if (scrollY >= droneAppearThreshold - 200 && scrollY < droneApproachEnd) {
+        // Lock breath at the position it was when drone started appearing
+        effectiveScrollY = droneAppearThreshold - 200;
+      } else if (scrollY >= droneApproachEnd) {
+        // After drone approach, subtract the approach duration to continue smoothly
+        effectiveScrollY = scrollY - droneApproachDuration;
+      }
+      
       // Match Model's increased scroll speed with same clamping
       const maxY = 40; // Same max as model
-      const calculatedY = baseY + scrollY * 0.035;
+      const calculatedY = baseY + effectiveScrollY * 0.035;
       breathGroupRef.current.position.y = Math.min(calculatedY, maxY);
       breathGroupRef.current.visible = true;
     }
@@ -308,9 +811,24 @@ function ScrollClouds({ scrollY, onLoad }) {
   // Animate clouds with scroll (from Simple3DScene)
   useFrame(() => {
     if (cloudGroupRef.current) {
+      // Check if we're in drone approach phase
+      const droneAppearThreshold = 9500; // Matches model threshold
+      const droneApproachDuration = 2000;
+      const droneApproachEnd = droneAppearThreshold + droneApproachDuration;
+      
+      let effectiveScrollY = scrollY;
+      
+      // During drone approach, lock the clouds at the appearance position
+      if (scrollY >= droneAppearThreshold - 200 && scrollY < droneApproachEnd) {
+        // Lock clouds at the position they were when drone started appearing
+        effectiveScrollY = droneAppearThreshold - 200;
+      } else if (scrollY >= droneApproachEnd) {
+        // After drone approach, subtract the approach duration to continue smoothly
+        effectiveScrollY = scrollY - droneApproachDuration;
+      }
+      
       // Clouds move slightly slower than model for parallax effect
-      // Further increased for 6x page length
-      cloudGroupRef.current.position.y = scrollY * 0.03;
+      cloudGroupRef.current.position.y = effectiveScrollY * 0.03;
     }
   });
   
@@ -508,6 +1026,7 @@ function SpotlightComponent() {
       distance={lightingValues.distance} 
       penumbra={lightingValues.penumbra} 
       intensity={lightingValues.intensity}
+      castShadow={false}
     />
   );
 }
@@ -531,27 +1050,32 @@ function GradientSkySphere() {
 function ScrollTriggeredTitle({ isMobile }) {
   const titleRef = useRef(null);
   const titleInView = useInView(titleRef, { 
-    threshold: 0.3, 
-    triggerOnce: false  // Allow re-triggering when scrolling up/down
+    threshold: 0.01, // Very low threshold - just 1% visible
+    triggerOnce: false,  // Allow re-triggering for replay
+    rootMargin: '200px 0px' // Trigger 200px before entering viewport
   });
 
   return (
-    <div ref={titleRef}>
+    <div ref={titleRef} style={{ 
+      minHeight: '200px',
+      position: 'relative',
+      zIndex: 100
+    }}>
       <DropInTitle
         lines={["BEHOLD!", "OUR LADY!", "HOLD RL80!"]}
         colors={["#d4af37", "#f4e4c1", "#00fffbff"]}
         fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
         isMobile={isMobile}
-        triggerAnimation={titleInView}
+        triggerAnimation={titleInView} // Will trigger whenever in view
         instanceId="welcome-title"
       />
       
-      <AnnunciationIntro 
+      {/* <AnnunciationIntro 
   isMobile={isMobile}
   titleInView={titleInView}
   SkewedHeading={SkewedHeading}
   AngelOfCurrencies={AngelOfCurrencies}
-/>
+/> */}
      
     </div>
   );
@@ -751,6 +1275,7 @@ export default function Home3() {
   const [scrollY, setScrollY] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showNumerology, setShowNumerology] = useState(false);
+  const [showDroneScreen, setShowDroneScreen] = useState(false);
 
   // Refs
   const secondTitleRef = useRef(null);
@@ -1006,8 +1531,7 @@ export default function Home3() {
     <>
       {/* Loading Screen */}
       <CoinLoader loading={isSceneLoading} />
-
-          
+      
       <div style={{ 
         width: '100vw', 
         background: 'transparent', 
@@ -1023,11 +1547,11 @@ export default function Home3() {
         left: 0,
         width: '100vw',
         height: '100vh', // Keep canvas at viewport height
-        zIndex: 0,
-        pointerEvents: 'none',
+        zIndex: 1,
+        pointerEvents: 'none', // WebGL canvas doesn't receive pointer events
         background: 'linear-gradient(to bottom, #87CEEB, #98D8E8, #B0E0E6)', // Sky gradient
       }}>
-        <Canvas
+        <CleanCanvas
           camera={{ position: [0, -10, 40], fov: 40, near: 0.1, far: 300 }}
           gl={{
             antialias: false,
@@ -1037,6 +1561,8 @@ export default function Home3() {
             premultipliedAlpha: false,
             stencil: false, // Disable stencil buffer if not needed
             depth: true,
+            // clearColor: 0x000000,
+            clearAlpha: 0,
           }}
           frameloop="always" // Keep for scroll animations
           dpr={[1, 1.5]} // Limit max DPR for performance
@@ -1046,9 +1572,16 @@ export default function Home3() {
             display: 'block',
           }}
         >
-             <color attach="background" args={['#87CEEB']} />
-                     <SpotlightComponent />
+             {/* Removed background color to allow CSS3D to show through */}
+                     {/* <SpotlightComponent /> */}
 
+          {/* TEMPORARY: OrbitControls for inspection */}
+          {/* <OrbitControls 
+            enableDamping={true}
+            dampingFactor={0.05}
+            makeDefault
+          /> */}
+          
           <ambientLight intensity={0.5} />
           {/* Sunset glow lighting */}
           <HemisphereLightComponent />
@@ -1074,6 +1607,16 @@ export default function Home3() {
             {/* Breath that follows the same scroll animation as the bull */}
             <ScrollingBreath scrollY={scrollY} isMobile={isMobile} />
             
+            {/* Drone with Screen1 display with interactive CSS3D screen */}
+            <DroneModel 
+              position={[0, 5, -5]} 
+              scrollY={scrollY}
+              isMobile={isMobile}
+            />
+            
+            {/* CSS3D Screen - Must be inside Canvas to access R3F hooks */}
+            <DroneScreenCSS3D isMobile={isMobile} />
+            
             {/* Neural Network Visualization */}
             {/* <NeuralNetworkR3F 
               theme={0}
@@ -1091,8 +1634,10 @@ export default function Home3() {
           </Suspense>
           {/* Performance Monitor - Shows FPS, MS, MB */}
           <Stats className="perf-monitor" />
-        </Canvas>
+        </CleanCanvas>
       </div>
+      
+      {/* CSS3D is now handled inside the Canvas by DroneScreenCSS3D component */}
 
       {/* Leva Controls Panel - positioned middle right */}
       {/* <Leva
@@ -1407,19 +1952,20 @@ export default function Home3() {
       )}
 
       {/* Welcome Section with DropInTitle */}
-      <motion.div
+      {/* <motion.div
         style={{
           position: isMobile ? "relative" : "absolute",
           top: isMobile ? 0 : "100vh",
           marginTop: isMobile ? "100vh" : 0,
           left: 0,
           right: 0,
-          minHeight: "600vh", // 6x original height for extended scrolling
+          minHeight: "1200vh", // Extended for longer cloud descent
           // background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.8), rgba(0,0,0,0.9))",
           zIndex: 1,
+          pointerEvents: "auto", // Keep auto to allow scrolling
         }}
         className="welcome-banner"
-      >
+      > */}
         <div 
           ref={(el) => { 
             if (el) el.titleRef = el; 
@@ -1445,9 +1991,10 @@ export default function Home3() {
         {/* Extended scroll space for longer page */}
         <div style={{
           position: 'relative',
-          height: '250vh',
+          height: '500vh',
           width: '100%',
           zIndex: 1,
+          pointerEvents: 'none', // Don't block interactions
         }} />
         
         {/* Feature Carousel Section - Hybrid Approach */}
@@ -1492,7 +2039,7 @@ export default function Home3() {
 
        
 
-                        <div style={{position: 'relative', zIndex: 1, marginTop: '150vh', marginBottom: '1rem'}}>
+                        <div style={{position: 'relative', zIndex: 1, marginTop: '250vh', marginBottom: '1rem'}}>
                          <div ref={secondTitleRef} style={{
                                   textAlign: 'center',
                                   padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
@@ -1521,7 +2068,7 @@ export default function Home3() {
         {/* Additional scroll space before footer */}
         <div style={{
           position: 'relative',
-          height: '150vh',
+          height: '200vh',
           width: '100%',
           zIndex: 1,
         }} />
@@ -1530,7 +2077,7 @@ export default function Home3() {
         <Footer isMobile={isMobile} />
 
 
-      </motion.div>
+      {/* </motion.div> */}
 
       Add spinning record CSS and fonts
       <style jsx global>{`
@@ -1838,10 +2385,7 @@ export default function Home3() {
           z-index: 10000 !important;
         }
         
-        /* Make sure canvas doesn't interfere with GUI interactions */
-        canvas {
-          pointer-events: none !important;
-        }
+        /* Canvas pointer events handled inline */
       `}</style>
       
       <CompactCandleModal 
@@ -1856,6 +2400,7 @@ export default function Home3() {
       {/* {scrollY > (isMobile ? 1800 : 2400) && (
         <CyberFloatingBar isMobile={isMobile} />
       )} */}
+      
     </div>
     </>
   );

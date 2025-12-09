@@ -78,7 +78,7 @@ html, body {
 /* Commented out to allow scrolling on root page
 body > div:first-child {
   width: 100vw !important;
-  height: 100vh !important;
+  min-height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
 }

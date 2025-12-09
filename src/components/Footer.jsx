@@ -14,11 +14,12 @@ const Footer = ({ isMobile = false }) => {
   return (
     <footer style={{
       marginTop: '8rem',
-      padding: '8rem 2rem 2rem',
+      padding: '8rem 2rem 2rem 2rem',
       background: 'linear-gradient(to bottom, rgba(234, 124, 14, 0.0), rgba(14, 84, 234, 0.6))',
       color: '#ffffff',
       textAlign: 'center',
       position: 'relative',
+      bottom: '-1.2rem',
       zIndex: 1
     }}>
       <div style={{

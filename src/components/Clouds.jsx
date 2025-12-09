@@ -119,6 +119,18 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
   const cloud4 = useRef();
   const cloud5 = useRef();
   
+  // Disable shadows on all cloud meshes after mount
+  useEffect(() => {
+    if (cloudsGroupRef.current) {
+      cloudsGroupRef.current.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = false;
+          child.receiveShadow = false;
+        }
+      });
+    }
+  }, [cloudTexture]); // Run when texture loads
+  
   // Target ref for spotlights
   // const targetRef = useRef();
   
@@ -240,10 +252,12 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
             {/* Hemisphere Light with Helper for Clouds */}
   <HemisphereLightComponent />
 
-            <Clouds material={THREE.MeshStandardMaterial} limit={400} frustumCulled={false}>
+            <Clouds material={THREE.MeshStandardMaterial} limit={400} frustumCulled={false} receiveShadow={false} castShadow={false}>
               {/* Main large white cloud  that is DIRECTLY under the bull */}
               <Cloud 
                 ref={cloud0}
+                receiveShadow={false}
+                castShadow={false}
                 seed={1}
                 segments={10}
                 volume={25}
@@ -609,7 +623,7 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 frustumCulled={false}
               />
               
-              <Cloud 
+              {/* <Cloud 
                 seed={24}
                 segments={8}
                 volume={18}
@@ -621,9 +635,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[-30, -250, 0]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={25}
                 segments={11}
                 volume={24}
@@ -635,10 +649,10 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[40, -300, -15]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
               {/* Even more clouds for extended page */}
-              <Cloud 
+              {/* <Cloud 
                 seed={26}
                 segments={9}
                 volume={20}
@@ -650,9 +664,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[-20, -350, 8]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={27}
                 segments={13}
                 volume={24}
@@ -664,9 +678,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[30, -400, -5]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={28}
                 segments={10}
                 volume={18}
@@ -678,9 +692,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[-35, -450, 10]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={29}
                 segments={12}
                 volume={22}
@@ -692,10 +706,10 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[25, -500, 0]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
               {/* Additional clouds for 50% longer page */}
-              <Cloud 
+              {/* <Cloud 
                 seed={30}
                 segments={14}
                 volume={25}
@@ -707,9 +721,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[-40, -550, 12]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={31}
                 segments={10}
                 volume={20}
@@ -721,9 +735,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[35, -600, -8]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={32}
                 segments={12}
                 volume={23}
@@ -735,9 +749,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[-25, -650, 5]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={33}
                 segments={9}
                 volume={18}
@@ -749,9 +763,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[20, -700, -10]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={34}
                 segments={13}
                 volume={26}
@@ -763,9 +777,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[-35, -750, 8]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={35}
                 segments={11}
                 volume={21}
@@ -777,10 +791,10 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[30, -800, 0]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
               {/* Sparse distant clouds for depth */}
-              <Cloud 
+              {/* <Cloud 
                 seed={36}
                 segments={8}
                 volume={28}
@@ -792,9 +806,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 position={[50, -580, -25]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={37}
                 segments={7}
                 volume={30}
@@ -803,10 +817,10 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={8}
                 speed={0.012}
                 bounds={[35, 22, 12]}
-                position={[-60, -680, -30]}
+                position={[-60, -610, -30]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
               {/* Hidden light sources for glow effects */}
               {/* <pointLight
