@@ -594,7 +594,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
     
     if (groupRef.current) {
       const appearThreshold = 3500; // Drone appears halfway down the page
-      const approachDuration = 2000; // Extended approach over 2000 scroll units for dramatic effect
+      const approachDuration = 3000; // Extended approach over 2000 scroll units for dramatic effect
       
       if (scrollY < appearThreshold - 200) {
         // Hide drone well before threshold to prepare for approach

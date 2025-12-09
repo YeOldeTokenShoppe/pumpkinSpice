@@ -172,7 +172,7 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
     if (cloud3.current) {
       cloud3.current.rotation.y += delta * 0.012;
       cloud3.current.position.z = -20 + Math.sin(time * 0.09) * 2;
-      cloud3.current.position.y = -13 + Math.cos(time * 0.11) * 1;
+      cloud3.current.position.y = -30 + Math.cos(time * 0.11) * 1;
     }
     
     if (cloud4.current) {
@@ -271,7 +271,7 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 texture={cloudTexture}
                 frustumCulled={false}
               />
-  <Cloud
+  {/* <Cloud
     seed={99}  // Different seed for different shape
     segments={20}  // More segments for visibility
     volume={50}  // Much larger
@@ -280,11 +280,11 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
     growth={10}  // Bigger growth
     speed={0.00}
     bounds={[30, 40, 30]}  // Much larger bounds
-    // color={'#ff00f0'}
+    color={'#ff00f0'}
     position={[0, -270, 10]}  // Centered, higher up, forward
     texture={cloudTexture}  // No texture to ensure color shows
     frustumCulled={false}
-  />
+  /> */}
                            
              
  
@@ -300,7 +300,7 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={6}
                 speed={0.03}
                 bounds={[15, 8, 6]}
-                // color={whiteCloudColor}
+
                 position={[30, -25, 0]}
                 texture={cloudTexture}
               />
@@ -326,15 +326,15 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
               <Cloud 
                 ref={cloud3}
                 seed={14}
-                segments={6}
-                volume={15}
+                segments={25}
+                volume={25}
                 opacity={0.6}
                 fade={1}    
                 growth={5}
                 speed={0.02}
-                bounds={[14, 5, 5]}
-                // color={whiteCloudColor}
-                position={[0, -5, -20]}
+                bounds={[14, 15, 5]}
+
+                position={[0, -8, -20]}
                 texture={cloudTexture}
                 frustumCulled={false}
               />
@@ -366,13 +366,13 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={5}
                 speed={0.025}
                 bounds={[12, 10, 5]}
-                // color={whiteCloudColor}
+
                 position={[-20, -40, 10]}
                 texture={cloudTexture}
                 frustumCulled={false}
               />
               
-              <Cloud 
+              {/* <Cloud 
                 seed={7}
                 segments={12}
                 volume={22}
@@ -381,13 +381,13 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={6}
                 speed={0.02}
                 bounds={[15, 12, 6]}
-                // color={whiteCloudColor}
+                 color={'#ff00f0'}
                 position={[45, -10, -10]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
-              <Cloud 
+              {/* <Cloud 
                 seed={8}
                 segments={8}
                 volume={16}
@@ -396,11 +396,11 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={4}
                 speed={0.03}
                 bounds={[10, 8, 5]}
-                // color={whiteCloudColor}
+                color={'#ff00f0'}
                 position={[-50, -70, 5]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
               <Cloud 
                 seed={9}
@@ -411,12 +411,12 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={5}
                 speed={0.025}
                 bounds={[14, 15, 7]}
-                // color={whiteCloudColor}
+     
                 position={[20, 5, 20]}
                 texture={cloudTexture}
                 frustumCulled={false}
               />
-              <Cloud 
+              {/* <Cloud 
                 seed={10}
                 segments={9}
                 volume={14}
@@ -425,11 +425,11 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={4}
                 speed={0.035}
                 bounds={[12, 10, 5]}
-                // color={whiteCloudColor}
+                              color={'#ff00f0'}
                 position={[-35, -50, -15]}
                 texture={cloudTexture}
                 frustumCulled={false}
-              />
+              /> */}
               
               <Cloud 
                 seed={11}
@@ -512,29 +512,30 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
               
               <Cloud 
                 seed={16}
-                segments={8}
-                volume={18}
+                segments={18}
+                volume={38}
                 opacity={0.7}
                 fade={1}
                 growth={4}
                 speed={0.025}
-                bounds={[14, 7, 5]}
-                position={[35, -150, -5]}
-                texture={cloudTexture}
+                bounds={[-5, 10, 9]}
+                position={[-15, -110, -20]}
+                
                 frustumCulled={false}
               />
+              */above cloud is where the drone starts to appear /*
               
               <Cloud 
                 seed={17}
                 segments={12}
-                volume={20}
+                volume={30}
                 opacity={0.65}
                 fade={1}
                 growth={6}
                 speed={0.015}
-                bounds={[18, 10, 6]}
-                position={[10, -160, 10]}
-                texture={cloudTexture}
+                bounds={[18, 10, -6]}
+                position={[20, -160, -20]}
+        
                 frustumCulled={false}
               />
               
@@ -546,13 +547,13 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 fade={1}
                 growth={5}
                 speed={0.03}
-                bounds={[12, 6, 5]}
-                position={[-20, -170, 0]}
-                texture={cloudTexture}
+                bounds={[12, 6, -5]}
+                position={[-20, -170, -15]}
+                // color={'#ff00f0'}
                 frustumCulled={false}
               />
               
-              <Cloud 
+              {/* <Cloud 
                 seed={19}
                 segments={11}
                 volume={24}
@@ -562,9 +563,9 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 speed={0.02}
                 bounds={[20, 12, 7]}
                 position={[50, -180, -10]}
-                texture={cloudTexture}
+              color={'#ff00f0'}
                 frustumCulled={false}
-              />
+              /> */}
               
               <Cloud 
                 seed={20}
@@ -576,7 +577,7 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 speed={0.025}
                 bounds={[15, 9, 6]}
                 position={[-35, -190, 8]}
-                texture={cloudTexture}
+            // color={'#ff00f0'}
                 frustumCulled={false}
               />
               
@@ -605,39 +606,39 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 speed={0.025}
                 bounds={[16, 10, 6]}
                 position={[-45, -140, -8]}
-                texture={cloudTexture}
+                //  color={'#ff00f0'}
                 frustumCulled={false}
               />
               
               <Cloud 
                 seed={23}
-                segments={10}
-                volume={22}
+                segments={20}
+                volume={32}
                 opacity={0.7}
                 fade={1}
                 growth={5}
                 speed={0.03}
-                bounds={[18, 12, 7]}
-                position={[15, -200, 12]}
-                texture={cloudTexture}
+                bounds={[25, 12, 7]}
+                position={[15, -200, -22]}
+
                 frustumCulled={false}
               />
               
-              {/* <Cloud 
+              <Cloud 
                 seed={24}
                 segments={8}
-                volume={18}
+                volume={28}
                 opacity={0.65}
                 fade={1}
                 growth={4}
                 speed={0.02}
                 bounds={[14, 8, 5]}
-                position={[-30, -250, 0]}
-                texture={cloudTexture}
+                position={[-10, -250, 0]}
+                // color={'#ff00f0'}
                 frustumCulled={false}
-              /> */}
+              />
               
-              {/* <Cloud 
+              <Cloud 
                 seed={25}
                 segments={11}
                 volume={24}
@@ -646,10 +647,10 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={6}
                 speed={0.025}
                 bounds={[20, 15, 8]}
-                position={[40, -300, -15]}
-                texture={cloudTexture}
+                position={[30, -320, -15]}
+            // color={'#ff00f0'}
                 frustumCulled={false}
-              /> */}
+              />
               
               {/* Even more clouds for extended page */}
               {/* <Cloud 
@@ -661,8 +662,8 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={5}
                 speed={0.02}
                 bounds={[16, 12, 6]}
-                position={[-20, -350, 8]}
-                texture={cloudTexture}
+                position={[20, -370, 8]}
+                 color={'#ff00f0'}
                 frustumCulled={false}
               /> */}
               
@@ -675,8 +676,8 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={6}
                 speed={0.025}
                 bounds={[18, 14, 7]}
-                position={[30, -400, -5]}
-                texture={cloudTexture}
+                position={[20, -390, 5]}
+          color={'#ff00f0'}
                 frustumCulled={false}
               /> */}
               
@@ -689,8 +690,8 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={4}
                 speed={0.03}
                 bounds={[14, 10, 5]}
-                position={[-35, -450, 10]}
-                texture={cloudTexture}
+                position={[5, -400, 10]}
+                      color={'#ff00f0'}
                 frustumCulled={false}
               /> */}
               
@@ -704,24 +705,25 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 speed={0.02}
                 bounds={[20, 12, 8]}
                 position={[25, -500, 0]}
-                texture={cloudTexture}
+            color={'#ff00f0'}
                 frustumCulled={false}
               /> */}
               
               {/* Additional clouds for 50% longer page */}
-              {/* <Cloud 
+              <Cloud 
                 seed={30}
-                segments={14}
+                segments={24}
                 volume={25}
                 opacity={0.75}
                 fade={1}
                 growth={6}
                 speed={0.025}
                 bounds={[22, 15, 8]}
-                position={[-40, -550, 12]}
-                texture={cloudTexture}
+                position={[-15, -300, 12]}
+              // color={'#ff00f0'}
                 frustumCulled={false}
-              /> */}
+              />
+              */ bottom cloud /*
               
               {/* <Cloud 
                 seed={31}
