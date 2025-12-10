@@ -2899,10 +2899,11 @@ const PalmsScene = ({ onLoadingChange }) => {
           right: isMobile ? '20px' : '15%',
           top: '55%',
           transform: 'translateY(calc(-50% + 150px))', // Position below the text section
-          width: isMobile ? '60%' : '40%',
+          width: isMobile ? '75%' : '50%',
           maxWidth: '600px',
           display: 'flex',
           justifyContent: 'center',
+          alignItems: 'center',
           zIndex: 999999,
           pointerEvents: 'auto',
         }}>

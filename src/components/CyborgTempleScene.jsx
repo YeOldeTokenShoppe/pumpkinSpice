@@ -7,6 +7,7 @@ import AnnotationSystem from "@/components/AnnotationSystem";
 
 
 
+
 const CyborgTempleScene = forwardRef(({ 
   onLoad, 
   position = [0, -4, 0],
@@ -48,16 +49,16 @@ const CyborgTempleScene = forwardRef(({
     //   text: "Digital Offering Station\nPlace virtual candles here"
     // },
 
-    // {
-    //   position: [0.3, -1.6, 2], 
-    //   text: "Neural Chandelier\nSyncs with collective thoughts",
-    //   customCamera: {
-    //     position: [0, -1.8, 1.8], // Camera moved right and lower
-    //     lookAt: [0, -1.6, 1.6], // Look outward toward the characters
-    //     distance: 2 // Slightly increased distance for better framing
-    //   },
-    //   annotationOffset: [20, 150] // [x, y] offset in pixels from center
-    // },
+ {
+      position: [0.6, -0.45, 0.4], // Near the main altar/center
+      text: "RL80 Holder Neural Network - live display of holders online right now.",
+      customCamera: {
+        position: [2, -0.7, -1], // Camera moved right and lower
+        lookAt: [0.2, -0.7, 0.9], // Look outward toward the characters
+        distance: 1.2 // Slightly increased distance for better framing
+      },
+      annotationOffset: [-10, 170] // [x, y] offset in pixels from center
+    },
     {
       position: [-2, -0.7, 0.35], // Left side
       text: "The 3 Wise Mechs",

@@ -1132,7 +1132,7 @@ const BACKGROUND_TEXTURES = [
 export default function CompactCandleModal({ isOpen, onClose, onCandleCreated }) {
   // Step tracking for multi-step flow (now 6 steps with background)
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 6; // Step 1: Candle, Step 2: Message Type, Step 3: Image, Step 4: Message, Step 5: Background, Step 6: Review
+  const totalSteps = 6; // Step 1: Candle, Step 2: Size/Image, Step 3: Message Type, Step 4: Message, Step 5: Background, Step 6: Review
   
   // Get top burners for Illumin80 qualification
   const topBurners = useFirestoreResults("burnedAmount");
@@ -1232,6 +1232,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const [formData, setFormData] = useState({
     messageType: '', // 'petition', 'confession', or 'praise'
     candleType: 'votive', // 'ecclesiastical', 'japanese', or 'votive' - default to votive
+    candleHeight: 'medium', // 'short', 'medium', 'tall' - for ecclesiastical candles
     username: '',
     message: '',
     burnedAmount: '',
@@ -1808,12 +1809,15 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   };
   
   const uploadImage = async () => {
+    console.log('uploadImage called - user:', user);
+    console.log('imageFile:', imageFile);
+    console.log('imagePreview:', imagePreview);
     let finalImageUrl = null;
     
     // Get base image URL
     if (imageFile) {
-      // If template is selected, apply it before uploading
-      if (selectedTemplate) {
+      // Only apply templates for votive candles
+      if (selectedTemplate && formData.candleType === 'votive') {
         const compositeImage = await applyTemplate(imagePreview, selectedTemplate);
         // Convert data URL to blob for upload
         const response = await fetch(compositeImage);
@@ -1836,7 +1840,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       }
     } else if (imagePreview && imagePreview.startsWith('http')) {
       // If using Clerk image (or any external URL)
-      if (selectedTemplate) {
+      if (selectedTemplate && formData.candleType === 'votive') {
         const compositeImage = await applyTemplate(imagePreview, selectedTemplate);
         const response = await fetch(compositeImage);
         const blob = await response.blob();
@@ -1868,6 +1872,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       }
     }
     
+    // If no image was processed but we have a Clerk image, use it
+    if (!finalImageUrl && user?.imageUrl) {
+      console.log('Using Clerk user image as fallback:', user.imageUrl);
+      finalImageUrl = user.imageUrl;
+    }
+    
+    console.log('uploadImage returning:', finalImageUrl);
     return finalImageUrl;
   };
 
@@ -2051,7 +2062,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         docData = {
           messageType: formData.messageType,
           candleType: formData.candleType,
-          username: trimmedUsername,
+          candleHeight: formData.candleHeight || 'medium',
+          username: trimmedUsername, // Who the candle is dedicated to
+          createdBy: user?.id, // Who actually created the candle
+          createdByUsername: user?.username || user?.firstName || user?.fullName,
           encrypted: encryptedData.encrypted,
           salt: encryptedData.salt,
           iv: encryptedData.iv,
@@ -2060,8 +2074,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           image: imageUrl,
           background: formData.background || 'synthwave',
           staked: false,
-          allowLikes: formData.allowLikes || false,
-          likes: 0, // Initialize likes counter
           createdAt: serverTimestamp()
         };
       } else {
@@ -2069,14 +2081,15 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         docData = {
           messageType: formData.messageType,
           candleType: formData.candleType,
-          username: trimmedUsername,
+          candleHeight: formData.candleHeight || 'medium',
+          username: trimmedUsername, // Who the candle is dedicated to
+          createdBy: user?.id, // Who actually created the candle
+          createdByUsername: user?.username || user?.firstName || user?.fullName,
           message: trimmedMessage,
           burnedAmount: parseInt(formData.burnedAmount) || 1000,
           image: imageUrl,
           background: formData.background || 'synthwave',
           staked: false,
-          allowLikes: formData.allowLikes || false,
-          likes: 0, // Initialize likes counter
           createdAt: serverTimestamp()
         };
       }
@@ -2186,7 +2199,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   value: 'ecclesiastical', 
                   label: 'Ecclesiastical', 
                   description: 'Traditional church candle',
-                  image: '/ecclesiasticalCandlePreview.webp'
+                  image: '/EcclesiasticalMediumPreview.webp'
                 }
               ].map((type) => (
                 <button
@@ -2237,8 +2250,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       src={type.image}
                       alt={type.label}
                       style={{
-                        width: '100%',
-                        height: '100%',
+                        width: type.value === 'ecclesiastical' || type.value === 'japanese' ? '120%' : '100%',
+                        height: type.value === 'ecclesiastical' || type.value === 'japanese' ? '120%' : '100%',
                         objectFit: 'contain'
                       }}
                     />
@@ -2258,78 +2271,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           </div>
         );
         
-      case 2: // Message Type Selection
-        return (
-          <div style={{
-            padding: '20px',
-            textAlign: 'center'
-          }}>
-            <h2 style={{
-              fontSize: '24px',
-              marginBottom: '10px',
-              color: '#ffd700',
-              fontWeight: 'bold'
-            }}>What type of message?</h2>
-            <p style={{
-              fontSize: '14px',
-              color: 'rgba(255, 255, 255, 0.7)',
-              marginBottom: '30px'
-            }}>Choose the intention for your candle</p>
-            
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '15px',
-              maxWidth: '400px',
-              margin: '0 auto'
-            }}>
-              {[
-                { value: 'petition', label: '🙏 Petition', description: 'Ask for divine intercession' },
-                { value: 'confession', label: '💭 Confession', description: 'Unburden your heart' },
-                { value: 'praise', label: '✨ Thanks', description: 'Show your appreciation' }
-              ].map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => {
-                    setFormData(prev => ({ ...prev, messageType: type.value }));
-                    // Don't auto-advance - let user click Next when ready
-                  }}
-                  style={{
-                    padding: '20px',
-                    background: formData.messageType === type.value 
-                      ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))'
-                      : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
-                    border: formData.messageType === type.value 
-                      ? '2px solid #ffd700'
-                      : '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '12px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    textAlign: 'left'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 5px 20px rgba(255, 215, 0, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '5px' }}>
-                    {type.label}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)' }}>
-                    {type.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-        
-      case 3: // Image customization for votive
+      case 2: // Size/Image Customization
+        console.log('Rendering case 2');
         return (
           <div style={{ padding: '20px' }}>
             <h3 style={{
@@ -2401,288 +2344,307 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     />
                   </div>
                 )}
-                
-                {/* Template Gallery - Show if image selected */}
-                {imagePreview && (
-                  <div style={{
-                    marginTop: '15px',
-                    marginBottom: '10px'
-                  }}>
-                    <div style={{
-                      color: 'rgba(255, 215, 0, 0.9)',
-                      fontSize: '12px',
-                      marginBottom: '8px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px'
-                    }}>
-                      Choose Template:
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      gap: '10px',
-                      overflowX: 'auto',
-                      padding: '10px',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      borderRadius: '12px',
-                      WebkitOverflowScrolling: 'touch',
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: 'rgba(255, 215, 0, 0.3) transparent'
-                    }}>
-                      {templates.map((template) => (
-                        <button
-                          key={template.id || 'none'}
-                          type="button"
-                          onClick={() => selectTemplate(template)}
-                          style={{
-                            minWidth: '80px',
-                            height: '80px',
-                            padding: '8px',
-                            backgroundColor: selectedTemplate === template.id ? 
-                              'rgba(255, 102, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)',
-                            border: selectedTemplate === template.id ? 
-                              '3px solid #ff6600' : '2px solid rgba(255, 215, 0, 0.2)',
-                            borderRadius: '12px',
-                            color: selectedTemplate === template.id ? 
-                              '#ff6600' : 'rgba(255, 255, 255, 0.9)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            transition: 'all 0.3s ease',
-                            flexShrink: 0,
-                            transform: selectedTemplate === template.id ? 'scale(1.05)' : 'scale(1)',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (selectedTemplate !== template.id) {
-                              e.target.style.transform = 'scale(1.05)';
-                              e.target.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (selectedTemplate !== template.id) {
-                              e.target.style.transform = 'scale(1)';
-                              e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-                            }
-                          }}
-                        >
-                          {template.id ? (
-                            <img 
-                              src={template.id} 
-                              alt={template.name}
-                              style={{
-                                width: '50px',
-                                height: '50px',
-                                objectFit: 'cover',
-                                borderRadius: '8px',
-                                marginBottom: '4px'
-                              }}
-                            />
-                          ) : (
-                            <div style={{ fontSize: '28px', marginBottom: '4px' }}>{template.preview}</div>
-                          )}
-                          <div style={{ 
-                            fontSize: '11px', 
-                            fontWeight: selectedTemplate === template.id ? 'bold' : 'normal',
-                            opacity: selectedTemplate === template.id ? 1 : 0.8
-                          }}>
-                            {template.name}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Position Controls - Show if template selected */}
-                {imagePreview && selectedTemplate && (
-                  <div style={{
-                    marginTop: '10px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 102, 0, 0.2)'
-                  }}>
-                    <button
-                      type="button"
-                      onClick={() => setShowPositionControls(!showPositionControls)}
-                      style={{
-                        width: '100%',
-                        padding: '8px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: 'rgba(255, 102, 0, 0.8)',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      {showPositionControls ? '▼' : '▶'} Adjust Your Image
-                    </button>
-                    
-                    {showPositionControls && (
-                      <>
-                        <div style={{
-                          marginTop: '8px',
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '8px',
-                          padding: '8px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                          borderRadius: '6px'
-                        }}>
-                          <div>
-                            <label style={{
-                              fontSize: '11px',
-                              color: 'rgba(255, 255, 255, 0.6)',
-                              marginBottom: '2px',
-                              display: 'block'
-                            }}>
-                              X: {userImagePosition.x.toFixed(0)}%
-                            </label>
-                            <input
-                              type="range"
-                              min="25"
-                              max="75"
-                              value={userImagePosition.x}
-                              onChange={(e) => setUserImagePosition({ ...userImagePosition, x: parseFloat(e.target.value) })}
-                              style={{
-                                width: '100%',
-                                height: '16px',
-                                accentColor: '#ff6600'
-                              }}
-                            />
-                          </div>
-                          
-                          <div>
-                            <label style={{
-                              fontSize: '11px',
-                              color: 'rgba(255, 255, 255, 0.6)',
-                              marginBottom: '2px',
-                              display: 'block'
-                            }}>
-                              Y: {userImagePosition.y.toFixed(0)}%
-                            </label>
-                            <input
-                              type="range"
-                              min="25"
-                              max="75"
-                              value={userImagePosition.y}
-                              onChange={(e) => setUserImagePosition({ ...userImagePosition, y: parseFloat(e.target.value) })}
-                              style={{
-                                width: '100%',
-                                height: '16px',
-                                accentColor: '#ff6600'
-                              }}
-                            />
-                          </div>
-                          
-                          <div>
-                            <label style={{
-                              fontSize: '11px',
-                              color: 'rgba(255, 255, 255, 0.6)',
-                              marginBottom: '2px',
-                              display: 'block'
-                            }}>
-                              Size: {userImageScale}%
-                            </label>
-                            <input
-                              type="range"
-                              min="50"
-                              max="150"
-                              value={userImageScale}
-                              onChange={(e) => setUserImageScale(parseFloat(e.target.value))}
-                              style={{
-                                width: '100%',
-                                height: '16px',
-                                accentColor: '#ff6600'
-                              }}
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* Skin Tone Adjustment - Only for Virgin Mary template */}
-                        {selectedTemplate === '/images/face2.png' && (
-                          <div style={{ 
-                            marginTop: '8px',
-                            padding: '8px',
-                            backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                            borderRadius: '6px'
-                          }}>
-                            <label style={{
-                              display: 'block',
-                              fontSize: '11px',
-                              color: 'rgba(255, 255, 255, 0.6)',
-                              marginBottom: '4px'
-                            }}>
-                              Skin Tone
-                            </label>
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px'
-                            }}>
-                              <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Light</span>
-                              <input
-                                type="range"
-                                min="-100"
-                                max="100"
-                                value={skinToneAdjustment}
-                                onChange={(e) => setSkinToneAdjustment(parseFloat(e.target.value))}
-                                style={{
-                                  flex: 1,
-                                  height: '16px',
-                                  accentColor: '#ff6600'
-                                }}
-                              />
-                              <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>Dark</span>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
               </div>
-            ) : (
-              // Message for non-votive candles
-              <div style={{
-                padding: '40px',
-                textAlign: 'center',
-                color: 'rgba(255, 255, 255, 0.7)'
-              }}>
+            ) : formData.candleType === 'ecclesiastical' ? (
+              // Height selection for ecclesiastical candles
+              <div>
                 <div style={{
-                  fontSize: '48px',
                   marginBottom: '20px'
                 }}>
-                  {formData.candleType === 'ecclesiastical' ? '⛪' : '🏮'}
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '15px',
+                    fontSize: '16px',
+                    color: 'rgba(255, 215, 0, 0.9)',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                  }}>
+                    Choose Candle Height
+                  </label>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                    gap: '12px',
+                    padding: '0 10px',
+                    maxWidth: '100%',
+                    margin: '0 auto'
+                  }}>
+                    {[
+                      { 
+                        value: 'short', 
+                        label: 'Short', 
+                        description: 'Compact and intimate',
+                        image: '/EcclesiasticalShortPreview.webp'
+                      },
+                      { 
+                        value: 'medium', 
+                        label: 'Medium', 
+                        description: 'Classic proportions',
+                        image: '/EcclesiasticalMediumPreview.webp'
+                      },
+                      { 
+                        value: 'tall', 
+                        label: 'Tall', 
+                        description: 'Grand and stately',
+                        image: '/EcclesiasticalTallPreview.webp'
+                      }
+                    ].map((height) => (
+                      <button
+                        key={height.value}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, candleHeight: height.value }));
+                        }}
+                        style={{
+                          padding: '15px',
+                          background: formData.candleHeight === height.value 
+                            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))'
+                            : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                          border: formData.candleHeight === height.value 
+                            ? '2px solid #ffd700'
+                            : '1px solid rgba(255, 215, 0, 0.3)',
+                          borderRadius: '12px',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '10px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px)';
+                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 215, 0, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
+                      >
+                        {/* Image Preview */}
+                        <div style={{
+                          width: '100%',
+                          height: '80px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                        }}>
+                          <img 
+                            src={height.image}
+                            alt={height.label}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain'
+                            }}
+                          />
+                        </div>
+                        
+                        <div>
+                          <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '3px' }}>
+                            {height.label}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                            {height.description}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <p style={{
-                  fontSize: '16px',
-                  lineHeight: '1.6'
+              </div>
+            ) : (
+              // Height selection for Japanese candles
+              <div>
+                <div style={{
+                  marginBottom: '20px'
                 }}>
-                  {formData.candleType === 'ecclesiastical' 
-                    ? 'Ecclesiastical candles represent tradition and reverence'
-                    : 'Japanese candles embody minimalism and tranquility'}
-                </p>
-                <p style={{
-                  fontSize: '14px',
-                  marginTop: '20px',
-                  color: 'rgba(255, 255, 255, 0.5)'
-                }}>
-                  Click Next to continue with your offering
-                </p>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '15px',
+                    fontSize: '16px',
+                    color: 'rgba(255, 215, 0, 0.9)',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                  }}>
+                    Choose Candle Height
+                  </label>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                    gap: '12px',
+                    padding: '0 10px',
+                    maxWidth: '100%',
+                    margin: '0 auto'
+                  }}>
+                    {[
+                      { 
+                        value: 'short', 
+                        label: 'Short', 
+                        description: 'Intimate minimalism',
+                        image: '/JapaneseShortPreview.webp'
+                      },
+                      { 
+                        value: 'medium', 
+                        label: 'Medium', 
+                        description: 'Balanced harmony',
+                        image: '/JapaneseMediumPreview.webp'
+                      },
+                      { 
+                        value: 'tall', 
+                        label: 'Tall', 
+                        description: 'Zen elegance',
+                        image: '/JapaneseTallPreview.webp'
+                      }
+                    ].map((height) => (
+                      <button
+                        key={height.value}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, candleHeight: height.value }));
+                        }}
+                        style={{
+                          padding: '15px',
+                          background: formData.candleHeight === height.value 
+                            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))'
+                            : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                          border: formData.candleHeight === height.value 
+                            ? '2px solid #ffd700'
+                            : '1px solid rgba(255, 215, 0, 0.3)',
+                          borderRadius: '12px',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '10px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px)';
+                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 215, 0, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
+                      >
+                        {/* Image Preview */}
+                        <div style={{
+                          width: '100%',
+                          height: '80px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                        }}>
+                          <img 
+                            src={height.image}
+                            alt={height.label}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain'
+                            }}
+                          />
+                        </div>
+                        
+                        <div>
+                          <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '3px' }}>
+                            {height.label}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                            {height.description}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
         );
         
+        
+      case 3: // Message Type Selection
+        return (
+          <div style={{
+            padding: '20px',
+            textAlign: 'center'
+          }}>
+            <h2 style={{
+              fontSize: '24px',
+              marginBottom: '10px',
+              color: '#ffd700',
+              fontWeight: 'bold'
+            }}>What type of message?</h2>
+            <p style={{
+              fontSize: '14px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              marginBottom: '30px'
+            }}>Choose the intention for your candle</p>
+            
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '15px',
+              maxWidth: '400px',
+              margin: '0 auto'
+            }}>
+              {[
+                { value: 'petition', label: '🙏 Petition', description: 'Ask for divine intercession' },
+                { value: 'confession', label: '💭 Confession', description: 'Unburden your heart' },
+                { value: 'praise', label: '✨ Thanks', description: 'Show your appreciation' }
+              ].map((type) => (
+                <button
+                  key={type.value}
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, messageType: type.value }));
+                    // Don't auto-advance - let user click Next when ready
+                  }}
+                  style={{
+                    padding: '20px',
+                    background: formData.messageType === type.value 
+                      ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))'
+                      : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                    border: formData.messageType === type.value 
+                      ? '2px solid #ffd700'
+                      : '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 5px 20px rgba(255, 215, 0, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '5px' }}>
+                    {type.label}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    {type.description}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+        
       case 4: // Message/Prayer
+        console.log('Rendering case 4');
         return (
           <div style={{ padding: '20px' }}>
             <h3 style={{
@@ -2797,16 +2759,120 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               </div>
             </div>
             
+            {/* Language Selection - Only show for petitions */}
+            {formData.messageType === 'petition' && (
+            <>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontSize: '14px',
+                color: 'rgba(255, 255, 255, 0.8)'
+              }}>
+                Prayer Language
+              </label>
+              <select 
+                value={currentLanguage}
+                onChange={(e) => {
+                  setCurrentLanguage(e.target.value);
+                  setSelectedPrayer(null); // Reset selected prayer when language changes
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                  color: '#fff',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
+                <option value="fr">Français</option>
+                <option value="zh">中文</option>
+                <option value="hi">हिंदी</option>
+                <option value="it">Italiano</option>
+              </select>
+            </div>
+
+            {/* Pre-set Prayer Selection */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontSize: '14px',
+                color: 'rgba(255, 255, 255, 0.8)'
+              }}>
+                Choose a Pre-set Prayer (Optional)
+              </label>
+              <select
+                value={selectedPrayer || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '') {
+                    setSelectedPrayer(null);
+                    // Don't clear message when deselecting
+                  } else {
+                    const prayers = PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
+                    const prayer = prayers.find(p => p.id === value);
+                    if (prayer) {
+                      setSelectedPrayer(value);
+                      setFormData(prev => ({ ...prev, message: prayer.text }));
+                    }
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                  color: '#fff',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'rgba(255,215,0,0.8)\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 10px center',
+                  backgroundSize: '18px',
+                  appearance: 'none',
+                  paddingRight: '35px'
+                }}
+              >
+                <option value="">Select a prayer template...</option>
+                {(PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers).map((prayer) => (
+                  <option key={prayer.id} value={prayer.id}>
+                    {prayer.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            </>
+            )}
+
             <textarea
               ref={textareaRef}
               value={scrambledDisplay || formData.message}
               onChange={(e) => {
                 if (!isEncrypted) {
-                  setFormData(prev => ({ ...prev, message: e.target.value }));
+                  const newValue = e.target.value;
+                  setFormData(prev => ({ ...prev, message: newValue }));
+                  
+                  // If user edits a pre-selected prayer, deselect it
+                  if (selectedPrayer) {
+                    const currentPrayers = PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
+                    const selectedPrayerText = currentPrayers.find(p => p.id === selectedPrayer)?.text;
+                    if (selectedPrayerText && newValue !== selectedPrayerText) {
+                      setSelectedPrayer(null);
+                    }
+                  }
                 }
               }}
               placeholder={
-                formData.messageType === 'petition' ? 'What do you seek...' :
+                selectedPrayer ? 'Edit the selected prayer or write your own...' :
+                formData.messageType === 'petition' ? 'What do you seek... or select a prayer above' :
                 formData.messageType === 'confession' ? 'What weighs on your heart...' :
                 'What are you grateful for...'
               }
@@ -2941,7 +3007,71 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               </div>
               
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>For</label>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Creator (You)</label>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  marginTop: '5px' 
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    border: '2px solid rgba(255, 215, 0, 0.5)',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    background: 'rgba(255, 215, 0, 0.1)'
+                  }}>
+                    <img 
+                      src={imagePreview || user?.imageUrl || '/defaultAvatar.png'}
+                      alt="Profile"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                      onError={(e) => {
+                        e.target.src = '/defaultAvatar.png';
+                      }}
+                    />
+                  </div>
+                  <div style={{ color: '#fff', fontSize: '16px' }}>
+                    {user?.username || user?.firstName || user?.fullName || 'You'}
+                  </div>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginTop: '5px'
+                }}>
+                  <div style={{ 
+                    fontSize: '11px', 
+                    color: 'rgba(255, 255, 255, 0.5)'
+                  }}>
+                    This is how you'll appear as the candle creator
+                  </div>
+                  <label style={{
+                    fontSize: '11px',
+                    color: 'rgba(255, 215, 0, 0.8)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handleImageChange}
+                      style={{ display: 'none' }}
+                    />
+                    Change Image
+                  </label>
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Dedicated To</label>
                 <div style={{ color: '#fff', fontSize: '16px', marginTop: '5px' }}>
                   {formData.username || 'Anonymous'}
                 </div>
@@ -3246,7 +3376,63 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         }
       `}</style>
       
-      {!isOpen ? null : (
+      {!isOpen ? null : !isSignedIn ? (
+        <div style={{
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+            border: '2px solid rgba(255, 102, 0, 0.5)',
+            borderRadius: '16px',
+            padding: '32px',
+            width: '90%',
+            maxWidth: '420px',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            textAlign: 'center'
+          }}>
+            <h3 style={{
+              color: '#ff6600',
+              fontSize: '24px',
+              marginBottom: '20px'
+            }}>
+              🕯️ Sign In Required
+            </h3>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '16px',
+              lineHeight: '1.5',
+              marginBottom: '20px'
+            }}>
+              Please sign in to create and light your candle. Your profile will be used to identify your candle in the display.
+            </p>
+            <button
+              onClick={onClose}
+              style={{
+                padding: '12px 24px',
+                background: 'linear-gradient(135deg, #ff6600 0%, #ff3300 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : (
         <>
           <style>{`
         @keyframes tooltipFadeIn {
@@ -3400,8 +3586,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   }} />
                 </div>
               )}
-              {formData.candleType === 'votive' && (currentStep === 3 || imagePreview) ? (
-                // Show 3D Canvas for votive when in Step 3 or when image is uploaded
+              {formData.candleType === 'votive' && (currentStep === 2 || imagePreview) ? (
+                // Show 3D Canvas for votive when in Step 2 or when image is uploaded
                 <Canvas
                   camera={{ position: [0, 2, 7], fov: 45 }}
                   style={{ background: 'transparent', position: 'relative', zIndex: 1 }}
@@ -3449,8 +3635,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 // Show static image for Japanese and Ecclesiastical
                 <img 
                   src={
-                    formData.candleType === 'ecclesiastical' ? '/ecclesiasticalCandlePreview.webp' :
-                    formData.candleType === 'japanese' ? '/japaneseCandlePreview.webp' :
+                    formData.candleType === 'ecclesiastical' ? 
+                      (formData.candleHeight === 'short' ? '/EcclesiasticalShortPreview.webp' :
+                       formData.candleHeight === 'tall' ? '/EcclesiasticalTallPreview.webp' :
+                       '/EcclesiasticalMediumPreview.webp') :
+                    formData.candleType === 'japanese' ? 
+                      (formData.candleHeight === 'short' ? '/JapaneseShortPreview.webp' :
+                       formData.candleHeight === 'tall' ? '/JapaneseTallPreview.webp' :
+                       '/JapaneseMediumPreview.webp') :
                     '/votiveCandlePreview.webp'
                   }
                   alt={`${formData.candleType} candle`}
@@ -3506,30 +3698,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 filter: 'drop-shadow(0 0 20px rgba(255, 102, 0, 0.5))',
                 fontWeight: 'bold'
               }}>Get Lit with RL80</h2>
-              <select 
-                value={currentLanguage}
-                onChange={(e) => {
-                  setCurrentLanguage(e.target.value);
-                  setSelectedPrayer(null); // Reset selected prayer when language changes
-                }}
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: '4px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  color: '#fff',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="en">English</option>
-                <option value="es">Español</option>
-                <option value="pt">Português</option>
-                <option value="fr">Français</option>
-                <option value="it">Italiano</option>
-                <option value="zh">中文</option>
-                <option value="hi">हिन्दी</option>
-              </select>
             </div>
             
             {/* Step Progress Indicator */}
@@ -3599,7 +3767,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   }}
                   disabled={
                     (currentStep === 1 && !formData.candleType) ||
-                    (currentStep === 2 && !formData.messageType) ||
+                    (currentStep === 3 && !formData.messageType) ||
                     (currentStep === 4 && !formData.username.trim())
                   }
                 >

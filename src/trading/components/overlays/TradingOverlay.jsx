@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useFirestoreResults } from '@/utilities/useFirestoreResults';
 import CompactCandleModal from '@/components/CompactCandleModal';
+import { useUser } from '@clerk/nextjs';
 
 // Dynamically import SingleCandleDisplay to avoid SSR issues with Three.js
 const SingleCandleDisplay = dynamic(() => import('../displays/SingleCandleDisplay'), {
@@ -34,9 +35,56 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [showAddCandleModal, setShowAddCandleModal] = useState(false); // Modal for adding user's candle
   const [showCompactCandleModal, setShowCompactCandleModal] = useState(false); // Modal for CompactCandleModal
   
+  // Get user info from Clerk
+  const { user, isSignedIn } = useUser();
+  
   // Get Firestore results for candle display
-  const firestoreResults = useFirestoreResults('burnedAmount'); // Get top burners
+  const firestoreResults = useFirestoreResults('candles'); // Get candles from candles collection
+  console.log('TradingOverlay firestoreResults from candles collection:', firestoreResults);
   const [candleIndex, setCandleIndex] = useState(0);
+  const [userCandleIndex, setUserCandleIndex] = useState(0);
+  
+  // Filter user's candles
+  const userCandles = useMemo(() => {
+    console.log('userCandles useMemo called');
+    console.log('isSignedIn:', isSignedIn);
+    console.log('user:', user);
+    console.log('firestoreResults length:', firestoreResults?.length);
+    
+    if (!isSignedIn || !user || !firestoreResults) {
+      console.log('Returning empty array - missing requirements');
+      return [];
+    }
+    
+    console.log('Filtering user candles...');
+    console.log('Current user:', user);
+    console.log('All firestore candles:', firestoreResults);
+    
+    // Find candles that belong to the current user
+    return firestoreResults.filter(candle => {
+      // First try to match by createdBy ID (most reliable)
+      if (candle.createdBy && user.id) {
+        const match = candle.createdBy === user.id;
+        console.log('ID match check:', candle.createdBy, '===', user.id, '=', match);
+        return match;
+      }
+      
+      // Fallback: match by username (for older candles without createdBy)
+      const candleUsername = candle.userName || candle.username;
+      const userDisplayName = user.username || user.firstName || user.fullName;
+      
+      console.log('Username fallback check:', candleUsername, 'vs', userDisplayName);
+      
+      return candleUsername && userDisplayName && 
+             candleUsername.toLowerCase() === userDisplayName.toLowerCase();
+    });
+  }, [firestoreResults, user, isSignedIn]);
+  
+  // Current user candle for display
+  const currentUserCandle = useMemo(() => {
+    if (userCandles.length === 0) return null;
+    return userCandles[userCandleIndex % userCandles.length];
+  }, [userCandles, userCandleIndex]);
   
   // Rotate through different candles more frequently
   useEffect(() => {
@@ -1259,7 +1307,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   marginBottom: '8px'
                 }}>
                   <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '13px' }}>
-                    🕯️ TEMPLE CANDLES
+                    🕯️ {(() => {
+                      const currentCandle = candleTab === 'mine' ? currentUserCandle : randomFirestoreData;
+                      const messageType = currentCandle?.messageType;
+                      if (messageType) {
+                        const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
+                        return `User Message: ${displayType}`;
+                      }
+                      return 'TEMPLE CANDLES';
+                    })()}
                   </div>
                   <div style={{
                     display: 'flex',
@@ -1334,11 +1390,102 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 minHeight: 0
               }}>
                 {candleTab === 'mine' ? (
-                  userCandle ? (
-                    <SingleCandleDisplay 
-                      firestoreData={userCandle}
-                      isUserCandle={true}
-                    />
+                  currentUserCandle ? (
+                    <>
+                      <SingleCandleDisplay 
+                        firestoreData={currentUserCandle}
+                        isUserCandle={true}
+                      />
+                      {/* Navigation controls when user has multiple candles */}
+                      {userCandles.length > 1 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '50px',
+                          right: '15px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          alignItems: 'center',
+                          background: 'rgba(0, 0, 0, 0.9)',
+                          borderRadius: '12px',
+                          padding: '12px',
+                          border: '2px solid #00ff88',
+                          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.8)',
+                          zIndex: 1000
+                        }}>
+                          <button
+                            onClick={() => {
+                              console.log('Previous button clicked');
+                              setUserCandleIndex(prev => (prev - 1 + userCandles.length) % userCandles.length);
+                            }}
+                            style={{
+                              background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
+                              border: '1px solid #00ff88',
+                              borderRadius: '6px',
+                              color: '#000',
+                              padding: '6px 10px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              minWidth: '50px'
+                            }}
+                          >
+                            ↑ Prev
+                          </button>
+                          <div style={{
+                            color: '#00ff88',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            textShadow: '0 0 5px #00ff88',
+                            textAlign: 'center'
+                          }}>
+                            {userCandleIndex + 1} of {userCandles.length}
+                          </div>
+                          <button
+                            onClick={() => {
+                              console.log('Next button clicked');
+                              setUserCandleIndex(prev => (prev + 1) % userCandles.length);
+                            }}
+                            style={{
+                              background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
+                              border: '1px solid #00ff88',
+                              borderRadius: '6px',
+                              color: '#000',
+                              padding: '6px 10px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              minWidth: '50px'
+                            }}
+                          >
+                            Next ↓
+                          </button>
+                        </div>
+                      )}
+                      {/* Create additional candle button */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '15px'
+                      }}>
+                        <button
+                          onClick={() => setShowCompactCandleModal(true)}
+                          style={{
+                            background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
+                            border: '1px solid #00ff88',
+                            borderRadius: '6px',
+                            color: '#000',
+                            padding: '6px 10px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            minWidth: '70px'
+                          }}
+                        >
+                          + Create
+                        </button>
+                      </div>
+                    </>
                   ) : (
                     <div style={{
                       width: '100%',
@@ -1360,10 +1507,11 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                         textAlign: 'center',
                         lineHeight: '1.5'
                       }}>
-                        You haven't lit a candle yet
+                        {!isSignedIn ? 'Sign in to view your candles' : 'You haven\'t lit a candle yet'}
                       </div>
-                      <button
-                        onClick={() => setShowCompactCandleModal(true)}
+                      {isSignedIn && (
+                        <button
+                          onClick={() => setShowCompactCandleModal(true)}
                         style={{
                           padding: '10px 20px',
                           background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%)',
@@ -1379,13 +1527,82 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                       >
                         Light Your Candle
                       </button>
+                      )}
                     </div>
                   )
                 ) : (
-                  <SingleCandleDisplay 
-                    firestoreData={randomFirestoreData}
-                    isUserCandle={false}
-                  />
+                  <>
+                    <SingleCandleDisplay 
+                      firestoreData={randomFirestoreData}
+                      isUserCandle={false}
+                    />
+                    {/* Navigation controls for community candles */}
+                    {firestoreResults && firestoreResults.length > 1 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '50px',
+                        right: '15px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        alignItems: 'center',
+                        background: 'rgba(0, 0, 0, 0.9)',
+                        borderRadius: '12px',
+                        padding: '12px',
+                        border: '2px solid #00ff88',
+                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.8)',
+                        zIndex: 1000
+                      }}>
+                        <button
+                          onClick={() => {
+                            console.log('Community Previous button clicked');
+                            setCandleIndex(prev => (prev - 1 + firestoreResults.length) % firestoreResults.length);
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
+                            border: '1px solid #00ff88',
+                            borderRadius: '6px',
+                            color: '#000',
+                            padding: '6px 10px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            minWidth: '50px'
+                          }}
+                        >
+                          ↑ Prev
+                        </button>
+                        <div style={{
+                          color: '#00ff88',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          textShadow: '0 0 5px #00ff88',
+                          textAlign: 'center'
+                        }}>
+                          {candleIndex + 1} of {firestoreResults.length}
+                        </div>
+                        <button
+                          onClick={() => {
+                            console.log('Community Next button clicked');
+                            setCandleIndex(prev => (prev + 1) % firestoreResults.length);
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
+                            border: '1px solid #00ff88',
+                            borderRadius: '6px',
+                            color: '#000',
+                            padding: '6px 10px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            minWidth: '50px'
+                          }}
+                        >
+                          Next ↓
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -2180,7 +2397,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               animation: 'pulse 2s infinite',
               boxShadow: '0 0 6px #00ff00'
             }} />
-            🕯️ TEMPLE CANDLES
+            🕯️ {(() => {
+              const currentCandle = candleTab === 'mine' ? currentUserCandle : randomFirestoreData;
+              const messageType = currentCandle?.messageType;
+              if (messageType) {
+                const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
+                return `User Message: ${displayType}`;
+              }
+              return 'TEMPLE CANDLES';
+            })()}
           </div>
           
           {/* Tab Selector */}
@@ -2246,11 +2471,102 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           }}
         >
           {candleTab === 'mine' ? (
-            userCandle ? (
-              <SingleCandleDisplay 
-                firestoreData={userCandle}
-                isUserCandle={true}
-              />
+            currentUserCandle ? (
+              <>
+                <SingleCandleDisplay 
+                  firestoreData={currentUserCandle}
+                  isUserCandle={true}
+                />
+                {/* Navigation controls for multiple candles */}
+                {userCandles.length > 1 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '40px',
+                    right: '10px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    alignItems: 'center',
+                    background: 'rgba(0, 0, 0, 0.9)',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    border: '2px solid #00ff00',
+                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.8)',
+                    zIndex: 1000
+                  }}>
+                    <button
+                      onClick={() => {
+                        console.log('Desktop Previous button clicked');
+                        setUserCandleIndex(prev => (prev - 1 + userCandles.length) % userCandles.length);
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, #00ff00 0%, #00dd00 100%)',
+                        border: '1px solid #00ff00',
+                        borderRadius: '4px',
+                        color: '#000',
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        minWidth: '40px'
+                      }}
+                    >
+                      ↑ Prev
+                    </button>
+                    <div style={{
+                      color: '#00ff00',
+                      fontSize: '9px',
+                      fontWeight: 'bold',
+                      textShadow: '0 0 5px #00ff00',
+                      textAlign: 'center'
+                    }}>
+                      {userCandleIndex + 1} / {userCandles.length}
+                    </div>
+                    <button
+                      onClick={() => {
+                        console.log('Desktop Next button clicked');
+                        setUserCandleIndex(prev => (prev + 1) % userCandles.length);
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, #00ff00 0%, #00dd00 100%)',
+                        border: '1px solid #00ff00',
+                        borderRadius: '4px',
+                        color: '#000',
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        minWidth: '40px'
+                      }}
+                    >
+                      Next ↓
+                    </button>
+                  </div>
+                )}
+                {/* Create additional candle button */}
+                <div style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '10px'
+                }}>
+                  <button
+                    onClick={() => setShowCompactCandleModal(true)}
+                    style={{
+                      background: 'linear-gradient(135deg, #00ff00 0%, #00dd00 100%)',
+                      border: '1px solid #00ff00',
+                      borderRadius: '4px',
+                      color: '#000',
+                      padding: '4px 8px',
+                      cursor: 'pointer',
+                      fontSize: '9px',
+                      fontWeight: 'bold',
+                      minWidth: '50px'
+                    }}
+                  >
+                    + Create
+                  </button>
+                </div>
+              </>
             ) : (
               <div style={{
                 width: '100%',
@@ -2272,10 +2588,11 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   textAlign: 'center',
                   lineHeight: '1.4'
                 }}>
-                  You haven't lit a candle yet
+                  {!isSignedIn ? 'Sign in to view your candles' : 'You haven\'t lit a candle yet'}
                 </div>
-                <button
-                  onClick={() => setShowCompactCandleModal(true)}
+                {isSignedIn && (
+                  <button
+                    onClick={() => setShowCompactCandleModal(true)}
                   style={{
                     padding: '8px 16px',
                     background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 255, 0, 0.1) 100%)',
@@ -2299,13 +2616,82 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 >
                   Light Your Candle
                 </button>
+                )}
               </div>
             )
           ) : (
-            <SingleCandleDisplay 
-              firestoreData={randomFirestoreData}
-              isUserCandle={false}
-            />
+            <>
+              <SingleCandleDisplay 
+                firestoreData={randomFirestoreData}
+                isUserCandle={false}
+              />
+              {/* Navigation controls for community candles */}
+              {firestoreResults && firestoreResults.length > 1 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '40px',
+                  right: '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  alignItems: 'center',
+                  background: 'rgba(0, 0, 0, 0.9)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  border: '2px solid #00ff00',
+                  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.8)',
+                  zIndex: 1000
+                }}>
+                  <button
+                    onClick={() => {
+                      console.log('Desktop Community Previous button clicked');
+                      setCandleIndex(prev => (prev - 1 + firestoreResults.length) % firestoreResults.length);
+                    }}
+                    style={{
+                      background: 'linear-gradient(135deg, #00ff00 0%, #00dd00 100%)',
+                      border: '1px solid #00ff00',
+                      borderRadius: '4px',
+                      color: '#000',
+                      padding: '4px 8px',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      minWidth: '40px'
+                    }}
+                  >
+                    ↑ Prev
+                  </button>
+                  <div style={{
+                    color: '#00ff00',
+                    fontSize: '9px',
+                    fontWeight: 'bold',
+                    textShadow: '0 0 5px #00ff00',
+                    textAlign: 'center'
+                  }}>
+                    {candleIndex + 1} / {firestoreResults.length}
+                  </div>
+                  <button
+                    onClick={() => {
+                      console.log('Desktop Community Next button clicked');
+                      setCandleIndex(prev => (prev + 1) % firestoreResults.length);
+                    }}
+                    style={{
+                      background: 'linear-gradient(135deg, #00ff00 0%, #00dd00 100%)',
+                      border: '1px solid #00ff00',
+                      borderRadius: '4px',
+                      color: '#000',
+                      padding: '4px 8px',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      minWidth: '40px'
+                    }}
+                  >
+                    Next ↓
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

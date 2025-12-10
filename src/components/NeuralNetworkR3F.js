@@ -385,7 +385,10 @@ const NeuralNetworkR3F = ({
   density = 70,
   position = [0, 0, 0],
   scale = 1,
-  enableInteraction = true
+  enableInteraction = true,
+  opacity = 1.0,
+  useNormalBlending = false,
+  nodeSize = 1.0
 }) => {
   const groupRef = useRef()
   const nodesRef = useRef()
@@ -497,6 +500,7 @@ const NeuralNetworkR3F = ({
     
     if (nodesRef.current) {
       nodesRef.current.material.uniforms.uTime.value = t
+      nodesRef.current.material.uniforms.uBaseNodeSize.value = 0.6 * nodeSize
       nodesRef.current.rotation.y = Math.sin(t * 0.04) * 0.05
     }
     
@@ -542,7 +546,8 @@ const NeuralNetworkR3F = ({
         <nodeMaterial 
           transparent 
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={useNormalBlending ? THREE.NormalBlending : THREE.AdditiveBlending}
+          opacity={opacity}
         />
       </points>
       
@@ -553,7 +558,8 @@ const NeuralNetworkR3F = ({
         <connectionMaterial 
           transparent
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={useNormalBlending ? THREE.NormalBlending : THREE.AdditiveBlending}
+          opacity={opacity}
         />
       </lineSegments>
     </group>

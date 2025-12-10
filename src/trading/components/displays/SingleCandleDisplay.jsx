@@ -22,6 +22,12 @@ const getTextureForUser = (userData) => {
     if (texture) return texture;
   }
   
+  // Check if user has a background field (from candles collection)
+  if (userData?.background) {
+    const texture = SKYBOX_TEXTURES.find(t => t.id === userData.background);
+    if (texture) return texture;
+  }
+  
   // Check if user has a collection-based texture assignment
   if (userData?.collection) {
     // Map collections to specific textures
@@ -54,8 +60,23 @@ const getTextureForUser = (userData) => {
 
 // Scene content that loads the candle model directly
 function CandleScene({ firestoreData, onDoubleClick }) {
-  // Use the base model - either Cyberpunk or regular votive
-  const { scene, animations } = useGLTF("/models/XCandleAnimatedFlameVotive.glb");
+  // Determine candle model based on firestoreData
+  const candleType = firestoreData?.candleType || 'votive';
+  const candleHeight = firestoreData?.candleHeight || 'medium';
+  
+  let modelPath = "/models/XCandleAnimatedFlameVotive.glb"; // Default
+  
+  if (candleType === 'japanese') {
+    modelPath = "/models/XCandleAnimatedFlameJapanese.glb";
+  } else if (candleType === 'ecclesiastical') {
+    if (candleHeight === 'short') modelPath = "/models/XCandleAnimatedFlameShort.glb";
+    else if (candleHeight === 'tall') modelPath = "/models/XCandleAnimatedFlameTall.glb";
+    else modelPath = "/models/XCandleAnimatedFlameMedium.glb";
+  }
+  
+  console.log('Full firestore data:', firestoreData);
+  console.log('Loading candle model:', modelPath, 'for type:', candleType);
+  const { scene, animations } = useGLTF(modelPath);
   const candleRef = useRef();
   const mixerRef = useRef(null);
   const [hovered, setHovered] = useState(false);
@@ -1033,7 +1054,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
     // Handle candle melting entirely in useFrame to avoid re-renders
     if (candlePartsRef.current && candlePartsRef.current.meltingObject) {
       const MIN_SCALE = 0.1;
-      const meltingRate = 1 / 30; // 30 seconds to fully melt
+      const meltingRate = 1 / 300; // 5 min
       
       // Update melting progress using ref
       const prevProgress = meltingProgressRef.current;
@@ -1421,7 +1442,7 @@ function CameraAnimator({ entered, isFullscreen = false }) {
       setInitialAnimationComplete(false); // Reset so we can animate
     } else {
       // Regular view - default position (adjust these values to change main view)
-      targetPos = { x: 0, y: 0, z: 5 };  // Changed from z: 7
+      targetPos = { x: 0, y: 0, z: 9 };  // Pulled back for better view
       targetFov = 35;  // Changed from 45
     }
     
@@ -1450,7 +1471,7 @@ function CameraAnimator({ entered, isFullscreen = false }) {
 }
 
 // Main component for single candle display
-export default function SingleCandleDisplay({ firestoreData }) {
+export default function SingleCandleDisplay({ firestoreData, isUserCandle = false }) {
   const [isCanvasReady, setIsCanvasReady] = useState(false);
   const [portalEntered, setPortalEntered] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1552,7 +1573,7 @@ export default function SingleCandleDisplay({ firestoreData }) {
             position: 'relative'
           }}>
             <Canvas
-            camera={{ position: [0, 0, 6], fov: 35 }}
+            camera={{ position: [0, 0, 12], fov: 35 }}
             style={{ width: '100%', height: '100%', background: 'black' }}
             shadows
             gl={{ 
@@ -1821,8 +1842,8 @@ export default function SingleCandleDisplay({ firestoreData }) {
           </div>
         )}
         
-        {/* Click to Enter Portal Indicator */}
-        {isCanvasReady && (
+        {/* Click to Enter Portal Indicator - only show for community candles */}
+        {isCanvasReady && !isUserCandle && (
           <div style={{
             position: 'absolute',
             top: '10px',
@@ -1869,5 +1890,9 @@ export default function SingleCandleDisplay({ firestoreData }) {
   );
 }
 
-// Preload the model
+// Preload the models
 useGLTF.preload("/models/XCandleAnimatedFlameVotive.glb");
+useGLTF.preload("/models/XCandleAnimatedFlameJapanese.glb");
+useGLTF.preload("/models/XCandleAnimatedFlameShort.glb");
+useGLTF.preload("/models/XCandleAnimatedFlameMedium.glb");
+useGLTF.preload("/models/XCandleAnimatedFlameTall.glb");

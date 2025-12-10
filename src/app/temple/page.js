@@ -20,6 +20,7 @@ import { TradingOverlay } from '@/trading';
 // import { useLighterTrading } from '@/hooks/useLighterTrading'; // Direct Lighter integration
 import { useLighterAPI } from '@/hooks/useLighterAPI'; // API-based Lighter integration
 // import PolaroidSnapshot from '@/components/PolaroidSnapshot';
+import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
 
 
 export default function CyborgTemple() {
@@ -398,6 +399,18 @@ export default function CyborgTemple() {
             />
 
             <VideoScreens />
+
+              <NeuralNetworkR3F 
+              theme={2}
+              opacity={0.8}            // Slightly dimmed
+              useNormalBlending={true}
+              formation={0}
+              density={30}
+              position={[0.64, -0.72, 0.37]}
+              scale={0.005}
+              enableInteraction={true}
+              nodeSize={0.06}  
+            />
             
             <OrbitControls 
               makeDefault
