@@ -3,7 +3,7 @@
 import { useFrame, extend, useThree } from "@react-three/fiber";
 import CleanCanvas from "../../components/CleanCanvas";
 import React, { Suspense, useRef, useMemo, useEffect, useState } from "react";
-import { useGLTF, Text, shaderMaterial, OrbitControls, useHelper, Stats, Html } from "@react-three/drei";
+import { useGLTF, useAnimations, Text, shaderMaterial, OrbitControls, useHelper, Stats, Html } from "@react-three/drei";
 import * as THREE from "three";
 // import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer"; // No longer needed
 // import DroneScreenCSS3D from "../../components/DroneScreenCSS3D"; // Replaced with video texture
@@ -98,7 +98,71 @@ import AnnunciationIntro from '@/components/AnnunciationIntro';
 
 // Preload the models
 useGLTF.preload('/models/ourlady_rider7.glb');
+useGLTF.preload('/models/angel2.glb');
+useGLTF.preload('/models/devil2.glb');
 // Note: Drone models are conditionally loaded in DroneModel component
+
+// Manual click handler component
+const ClickHandler = () => {
+  const { camera, scene, gl } = useThree();
+  
+  useEffect(() => {
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    
+    const handleClick = (event) => {
+      console.log('Manual click handler triggered');
+      
+      // Calculate mouse position in normalized device coordinates
+      const rect = gl.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      console.log('Mouse coords:', mouse.x, mouse.y);
+      
+      // Update raycaster
+      raycaster.setFromCamera(mouse, camera);
+      
+      // Calculate intersections
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      console.log('Manual intersections found:', intersects.length);
+      
+      intersects.forEach((intersect, index) => {
+        console.log(`Manual intersection ${index}:`, intersect.object.name, intersect.object.type);
+      });
+      
+      if (intersects.length > 0) {
+        // Look for Screen1 specifically in the intersections
+        const screen1Intersect = intersects.find(intersect => intersect.object.name === 'Screen1');
+        
+        if (screen1Intersect && screen1Intersect.object.userData.handleClick) {
+          console.log('Manual: Found Screen1 with click handler');
+          const uv = screen1Intersect.uv;
+          if (uv) {
+            // Account for texture rotation (-90 degrees)
+            // Original texture rotation transforms coordinates differently
+            const screenX = uv.y * 512;
+            const screenY = (1 - uv.x) * 512;
+            console.log('Manual: Screen clicked at UV:', uv.x, uv.y, '-> Screen coords:', screenX, screenY);
+            screen1Intersect.object.userData.handleClick(screenX, screenY);
+          } else {
+            console.log('Manual: No UV coordinates found for Screen1');
+          }
+        } else {
+          console.log('Manual: No Screen1 found in intersections');
+        }
+      }
+    };
+    
+    gl.domElement.addEventListener('click', handleClick);
+    
+    return () => {
+      gl.domElement.removeEventListener('click', handleClick);
+    };
+  }, [camera, scene, gl]);
+  
+  return null;
+};
 
 // Scroll-responsive Model component with Ticker
 const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
@@ -427,61 +491,338 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
           // console.log('Screen1 position:', object.position);
           // console.log('Screen1 scale:', object.scale);
           
-          // Set up video texture for Screen1
+          // Set up interactive navigation/video system for Screen1
           if (object.isMesh) {
-            console.log('Setting up video on Screen1:', object.name);
+            console.log('Setting up interactive screen on Screen1:', object.name);
             
-            // Create video element
-            const video = document.createElement('video');
-            video.src = '/videos/23.mp4';
-            video.loop = true;
-            video.muted = true;
-            video.autoplay = true;
-            video.playsInline = true;
-            video.crossOrigin = 'anonymous';
+            // CRT Terminal system (instead of video)
+            let crtTerminal = null;
+            let terminalAnimation = null;
             
-            // Debug video loading
-            video.addEventListener('loadstart', () => console.log('Video loading started'));
-            video.addEventListener('canplay', () => console.log('Video can play'));
-            video.addEventListener('playing', () => console.log('Video is playing'));
-            video.addEventListener('error', (e) => console.error('Video error:', e));
+            // CRT Terminal messages
+            const terminalMessages = [
+              { text: "INITIALIZING DRONE SYSTEM...", delay: 0.5 },
+              { text: "CONNECTING TO NEURAL NETWORK...", delay: 1.0 },
+              { text: "AUTHENTICATION SUCCESSFUL", delay: 0.8 },
+              { text: "", delay: 0.5 }, // Empty line
+              { text: "WELCOME TO PUMPKIN SPICE", delay: 1.2 },
+              { text: "DIGITAL SANCTUARY", delay: 1.0 },
+              { text: "", delay: 0.5 },
+              { text: "PREPARING NAVIGATION MATRIX...", delay: 1.0 },
+              { text: "SYSTEM READY", delay: 1.5 }
+            ];
             
-            // Start playing when loaded
-            video.addEventListener('loadeddata', () => {
-              console.log('Video data loaded, attempting to play');
-              video.play().catch(console.error);
-            });
+            let currentMessageIndex = 0;
+            let currentText = '';
+            let isTyping = false;
             
-            // Create video texture
-            const videoTexture = new THREE.VideoTexture(video);
-            videoTexture.minFilter = THREE.LinearFilter;
-            videoTexture.magFilter = THREE.LinearFilter;
-            videoTexture.format = THREE.RGBFormat;
+            // Create canvas for custom UI
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // Create texture from canvas
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
             // Rotate texture 90 degrees counter-clockwise
-            videoTexture.center.set(0.5, 0.5);
-            videoTexture.rotation = -Math.PI / 2;
+            texture.center.set(0.5, 0.5);
+            texture.rotation = -Math.PI / 2;
             
-            // Apply video texture to screen material
+            // Screen states
+            let screenMode = 'navigation'; // 'navigation', 'crt-terminal', 'post-video'
+            let clickAreas = [];
+            
+            // CRT Terminal drawing function
+            const drawCRTTerminal = () => {
+              // Clear canvas with black background
+              ctx.fillStyle = '#000000';
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Draw CRT border effect
+              ctx.strokeStyle = '#333333';
+              ctx.lineWidth = 4;
+              ctx.strokeRect(10, 10, 492, 492);
+              
+              // CRT glow effect
+              const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
+              gradient.addColorStop(0, 'rgba(0, 255, 65, 0.1)');
+              gradient.addColorStop(1, 'rgba(0, 255, 65, 0)');
+              ctx.fillStyle = gradient;
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Set up text styling
+              ctx.font = '16px Courier New, monospace';
+              ctx.fillStyle = '#00ff41';
+              ctx.textBaseline = 'top';
+              ctx.shadowColor = '#00ff41';
+              ctx.shadowBlur = 5;
+              
+              // Header text - centered and properly positioned
+              let y = 60;
+              const centerX = 256; // Center of 512px canvas
+              
+              // Center the header text
+              ctx.textAlign = 'center';
+              ctx.fillText('DRONE_TERMINAL_v2.1', centerX, y);
+              y += 25;
+              ctx.fillText('> SYSTEM_BOOT_SEQUENCE', centerX, y);
+              y += 25;
+              ctx.fillText('> _________________', centerX, y);
+              y += 50;
+              
+              // Switch to left align for message content
+              ctx.textAlign = 'left';
+              const leftMargin = 40;
+              
+              // Current message text
+              if (currentText) {
+                const lines = currentText.split('\n');
+                lines.forEach(line => {
+                  ctx.fillText('> ' + line, leftMargin, y);
+                  y += 25;
+                });
+              }
+              
+              // Blinking cursor
+              if (isTyping || Math.floor(Date.now() / 500) % 2 === 0) {
+                const cursorX = leftMargin + (currentText.length > 0 ? ctx.measureText('> ' + currentText.split('\n').pop()).width : 20);
+                ctx.fillText('█', cursorX, y - 25);
+              }
+              
+              // Scanlines effect
+              for (let i = 0; i < 512; i += 4) {
+                ctx.fillStyle = 'rgba(0, 255, 65, 0.02)';
+                ctx.fillRect(0, i, 512, 2);
+              }
+              
+              texture.needsUpdate = true;
+            };
+            
+            // CRT Terminal typing animation
+            const startCRTTerminal = () => {
+              currentMessageIndex = 0;
+              currentText = '';
+              isTyping = false;
+              
+              const typeNextMessage = () => {
+                if (currentMessageIndex >= terminalMessages.length) {
+                  // Animation complete
+                  setTimeout(() => {
+                    console.log('CRT Terminal complete, showing navigation');
+                    screenMode = 'post-video';
+                    drawPostVideoScreen();
+                  }, 2000);
+                  return;
+                }
+                
+                const message = terminalMessages[currentMessageIndex];
+                
+                // Add delay before typing
+                setTimeout(() => {
+                  if (message.text === '') {
+                    // Empty line
+                    currentText += '\n';
+                    currentMessageIndex++;
+                    typeNextMessage();
+                    return;
+                  }
+                  
+                  // Type character by character
+                  isTyping = true;
+                  let charIndex = 0;
+                  const typeChar = () => {
+                    if (charIndex < message.text.length) {
+                      currentText += message.text[charIndex];
+                      charIndex++;
+                      drawCRTTerminal();
+                      
+                      // Variable typing speed for realism
+                      setTimeout(typeChar, 50 + Math.random() * 100);
+                    } else {
+                      // Message complete
+                      isTyping = false;
+                      currentText += '\n';
+                      currentMessageIndex++;
+                      drawCRTTerminal();
+                      
+                      // Move to next message
+                      setTimeout(typeNextMessage, 800);
+                    }
+                  };
+                  typeChar();
+                }, (message.delay || 0.5) * 1000);
+              };
+              
+              typeNextMessage();
+            };
+            
+            // Draw initial navigation screen
+            const drawNavigationScreen = () => {
+              ctx.fillStyle = '#0a0a0a';
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Title
+              ctx.fillStyle = '#00ff41';
+              ctx.font = 'bold 28px Courier New';
+              ctx.textAlign = 'center';
+              ctx.fillText('DRONE SYSTEM', 256, 80);
+              
+              // Welcome terminal button
+              ctx.fillStyle = '#ff6600';
+              ctx.fillRect(56, 150, 400, 60);
+              ctx.fillStyle = '#000';
+              ctx.font = 'bold 20px Courier New';
+              ctx.fillText('▶ ACTIVATE TERMINAL', 256, 185);
+              
+              // Navigation buttons
+              const buttons = [
+                { text: '🏠 HOME', y: 250 },
+                { text: '💰 TOKENOMICS', y: 310 },
+                { text: '🖼️ GALLERY', y: 370 },
+                { text: '🌙 MOON ROOM', y: 430 }
+              ];
+              
+              clickAreas = [
+                { x: 56, y: 150, width: 400, height: 60, action: 'activateTerminal' }
+              ];
+              
+              buttons.forEach((btn, index) => {
+                ctx.fillStyle = '#00ff41';
+                ctx.fillRect(56, btn.y, 400, 50);
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 18px Courier New';
+                ctx.fillText(btn.text, 256, btn.y + 30);
+                
+                clickAreas.push({
+                  x: 56, y: btn.y, width: 400, height: 50,
+                  action: 'navigate',
+                  url: index === 0 ? '/' : `/${btn.text.split(' ')[1].toLowerCase()}`
+                });
+              });
+              
+              texture.needsUpdate = true;
+            };
+            
+            // Draw post-video navigation
+            const drawPostVideoScreen = () => {
+              ctx.fillStyle = '#0a0a0a';
+              ctx.fillRect(0, 0, 512, 512);
+              
+              ctx.fillStyle = '#00ff41';
+              ctx.font = 'bold 24px Courier New';
+              ctx.textAlign = 'center';
+              ctx.fillText('TERMINAL COMPLETE', 256, 80);
+              
+              ctx.font = '16px Courier New';
+              ctx.fillText('Choose your destination:', 256, 120);
+              
+              const buttons = [
+                { text: '🏠 MAIN SITE', url: '/' },
+                { text: '💰 TOKENOMICS', url: '/tokenomics' },
+                { text: '🖼️ GALLERY', url: '/gallery' },
+                { text: '🌙 MOON ROOM', url: '/moonroom' },
+                { text: '🎮 GAME', url: '/game' },
+                { text: '🔄 REPLAY TERMINAL', action: 'replay' }
+              ];
+              
+              clickAreas = [];
+              
+              buttons.forEach((btn, index) => {
+                const y = 160 + (index * 55);
+                ctx.fillStyle = index === buttons.length - 1 ? '#ff6600' : '#00ff41';
+                ctx.fillRect(56, y, 400, 45);
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 16px Courier New';
+                ctx.fillText(btn.text, 256, y + 28);
+                
+                clickAreas.push({
+                  x: 56, y: y, width: 400, height: 45,
+                  action: btn.action || 'navigate',
+                  url: btn.url
+                });
+              });
+              
+              texture.needsUpdate = true;
+            };
+            
+            // Handle screen clicks
+            const handleScreenClick = (x, y) => {
+              console.log('Screen click at:', x, y);
+              console.log('Available click areas:', clickAreas.length);
+              
+              // Check terminal button first (highest priority)
+              const terminalArea = clickAreas.find(area => area.action === 'activateTerminal');
+              if (terminalArea && 
+                  x >= terminalArea.x && x <= terminalArea.x + terminalArea.width && 
+                  y >= terminalArea.y && y <= terminalArea.y + terminalArea.height) {
+                
+                console.log('Clicked TERMINAL button area:', terminalArea);
+                console.log('Activating CRT Terminal');
+                screenMode = 'crt-terminal';
+                startCRTTerminal();
+                return; // Exit early
+              }
+              
+              // Check other areas
+              for (const area of clickAreas) {
+                console.log('Checking area:', area);
+                if (x >= area.x && x <= area.x + area.width && 
+                    y >= area.y && y <= area.y + area.height) {
+                  
+                  console.log('Clicked area action:', area.action, area.url);
+                  
+                  if (area.action === 'navigate' && area.url) {
+                    console.log('Navigating to:', area.url);
+                    window.location.href = area.url;
+                  } else if (area.action === 'replay') {
+                    console.log('Replaying CRT terminal');
+                    screenMode = 'crt-terminal';
+                    startCRTTerminal();
+                  }
+                  break;
+                }
+              }
+            };
+            
+            // No video event listeners needed for CRT terminal
+            
+            // Apply canvas texture to screen material
             const material = new THREE.MeshBasicMaterial({
-              map: videoTexture,
-              color: 0xffffff, // White to show video properly
+              map: texture,
+              color: 0xffffff,
               transparent: false,
               opacity: 1.0
             });
             
             object.material = material;
-            console.log('Applied video texture to Screen1 material');
             
-            // Force material and texture updates in render loop
+            // Ensure object is raycastable
+            object.raycast = THREE.Mesh.prototype.raycast;
+            object.visible = true;
+            
+            console.log('Applied interactive screen material to Screen1');
+            console.log('Screen1 setup complete - name:', object.name, 'visible:', object.visible, 'geometry:', !!object.geometry);
+            
+            // Update texture in render loop
             object.userData.updateTexture = () => {
-              if (videoTexture && video.readyState >= video.HAVE_CURRENT_DATA) {
-                videoTexture.needsUpdate = true;
+              if (screenMode === 'crt-terminal') {
+                // CRT terminal draws directly to canvas, just ensure texture updates
+                drawCRTTerminal();
               }
             };
             
-            // Store video reference for cleanup
-            object.userData.video = video;
-            object.userData.videoTexture = videoTexture;
+            // Store click handler
+            object.userData.handleClick = handleScreenClick;
+            
+            // Store references for cleanup
+            object.userData.texture = texture;
+            object.userData.canvas = canvas;
+            object.userData.terminalAnimation = terminalAnimation;
+            
+            // Draw initial screen
+            drawNavigationScreen();
           }
         }
         // Disable shadows
@@ -553,14 +894,17 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
           if (object.userData.screenInterval) {
             clearInterval(object.userData.screenInterval);
           }
-          // Clean up video elements
-          if (object.userData.video) {
-            object.userData.video.pause();
-            object.userData.video.removeAttribute('src');
-            object.userData.video.load();
+          // Clean up terminal animation
+          if (object.userData.terminalAnimation) {
+            clearTimeout(object.userData.terminalAnimation);
           }
-          if (object.userData.videoTexture) {
-            object.userData.videoTexture.dispose();
+          // Clean up canvas texture
+          if (object.userData.texture) {
+            object.userData.texture.dispose();
+          }
+          if (object.userData.canvas) {
+            object.userData.canvas.width = 0;
+            object.userData.canvas.height = 0;
           }
           if (object.geometry) object.geometry.dispose();
           if (object.material) {
@@ -705,7 +1049,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
           groupRef.current.position.y = scrolledY + Math.sin(time * 0.5) * 0.3;
           groupRef.current.rotation.y = Math.sin(time * 0.3) * 0.1;
           groupRef.current.position.z = endZ;
-          groupRef.current.scale.setScalar(2); // Reset to normal scale
+          groupRef.current.scale.setScalar(finalScale); // Use final approach scale to avoid jump
         } else {
           // During approach (both rise and forward phases)
           groupRef.current.position.y = scrolledY + totalYOffset;
@@ -732,6 +1076,435 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
         object={scene} 
         scale={[2, 2, 2]}
         rotation={[0, Math.PI, 0]}
+      />
+    </group>
+  );
+});
+
+// Angel Model component with scroll-based swoop animation
+const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrollY, isMobile = false }) {
+  const { scene, animations } = useGLTF('/models/angel2.glb');
+  const groupRef = useRef();
+  const mixerRef = useRef();
+
+  // Create animation mixer
+  useEffect(() => {
+    if (animations && animations.length > 0) {
+      mixerRef.current = new THREE.AnimationMixer(scene);
+      
+      // Find and play both animations on loop
+      const idleAnimation = animations.find(clip => clip.name === 'Armature|Idle');
+      const sceneAnimation = animations.find(clip => clip.name === 'Scene');
+      
+      if (idleAnimation) {
+        const idleAction = mixerRef.current.clipAction(idleAnimation);
+        idleAction.setLoop(THREE.LoopRepeat);
+        idleAction.play();
+      }
+      
+      if (sceneAnimation) {
+        const sceneAction = mixerRef.current.clipAction(sceneAnimation);
+        sceneAction.setLoop(THREE.LoopRepeat);
+        sceneAction.play();
+      }
+    }
+
+    return () => {
+      if (mixerRef.current) {
+        mixerRef.current.stopAllAction();
+        mixerRef.current = null;
+      }
+    };
+  }, [animations, scene]);
+
+  // Animation constants - multi-stage flight path
+  const appearThreshold = 1000;
+  const exitThreshold = 3000;
+  const totalDuration = exitThreshold - appearThreshold; // 2000 scroll units
+  
+  // Second appearance for chase sequence
+  const chaseAppearThreshold = 9000; // Appears during devil's pause phase
+  const chaseExitThreshold = 10000;   // Chases devil off screen
+  const chaseDuration = chaseExitThreshold - chaseAppearThreshold;
+  
+  // Flight stages (as percentage of total scroll duration)
+  const swoopInDuration = 0.25;    // 25% - swoop in from right
+  const flyAcrossDuration = 0.3;   // 30% - fly across to left side  
+  const spinDuration = 0.2;        // 20% - spin 180 degrees
+  const pauseDuration = 0.15;      // 15% - brief pause
+  const swoopOutDuration = 0.1;    // 10% - swoop out toward viewer
+  
+  // Update animation mixer and handle scroll-based movement
+  useFrame((state, delta) => {
+    if (mixerRef.current) {
+      mixerRef.current.update(delta);
+    }
+    
+    if (groupRef.current) {
+      const time = state.clock.elapsedTime;
+      
+      // Calculate scroll-based visibility and movement
+      const inFirstSequence = scrollY >= appearThreshold && scrollY <= exitThreshold;
+      const inChaseSequence = scrollY >= chaseAppearThreshold && scrollY <= chaseExitThreshold;
+      
+      if (!inFirstSequence && !inChaseSequence) {
+        groupRef.current.visible = false;
+        return;
+      }
+      
+      groupRef.current.visible = true;
+      
+      // Determine which sequence we're in and calculate progress
+      let overallProgress;
+      let isChasing = false;
+      
+      if (inChaseSequence) {
+        // Chase sequence - angel chases devil
+        isChasing = true;
+        overallProgress = (scrollY - chaseAppearThreshold) / chaseDuration;
+      } else {
+        // Original sequence
+        overallProgress = (scrollY - appearThreshold) / totalDuration;
+      }
+      
+      // Determine which flight stage we're in
+      let stage, stageProgress;
+      let baseX, baseY, baseZ, rotationY, rotationX, scale;
+      
+      if (isChasing) {
+        // Chase sequence animation
+        if (overallProgress < 0.3) {
+          // Stage 1: Angel swoops in from left, pauses when seeing devil
+          stage = 'chaseEntry';
+          stageProgress = overallProgress / 0.3;
+          const easedProgress = 1 - Math.pow(1 - stageProgress, 2);
+          
+          const startX = isMobile ? -10 : -15;
+          const startY = isMobile ? 6 : 8;
+          const startZ = 6;
+          const endX = isMobile ? -3 : -5;
+          const endY = isMobile ? 5 : 7;
+          const endZ = 3;
+          
+          baseX = startX + (endX - startX) * easedProgress;
+          baseY = startY + (endY - startY) * easedProgress;
+          baseZ = startZ + (endZ - startZ) * easedProgress;
+          rotationY = Math.PI * 0.3; // Looking toward devil
+          rotationX = 0; // No lean during entry
+          scale = isMobile ? 2 : 2;
+          
+        } else if (overallProgress < 0.5) {
+          // Stage 2: Brief pause, looking at devil with surprise
+          stage = 'chasePause';
+          stageProgress = (overallProgress - 0.3) / 0.2;
+          
+          baseX = isMobile ? -3 : -5;
+          baseY = (isMobile ? 5 : 7) + Math.sin(time * 4) * 0.15; // Agitated hovering
+          baseZ = 3;
+          rotationY = Math.PI * 0.4 + Math.sin(time * 3) * 0.1; // Looking at devil with slight head movement
+          rotationX = Math.PI * 0.05; // Slight forward lean as it prepares to chase
+          scale = isMobile ? 2 : 2;
+          
+        } else {
+          // Stage 3: Chase the devil off screen to the right
+          stage = 'chaseChase';
+          stageProgress = (overallProgress - 0.5) / 0.5;
+          const easedProgress = Math.pow(stageProgress, 1.5); // Accelerating chase
+          
+          const startX = isMobile ? -3 : -5;
+          const startY = isMobile ? 5 : 7;
+          const startZ = 3;
+          const endX = isMobile ? 28 : 30;
+          const endY = isMobile ? 4 : 6;
+          const endZ = -2; // Slight toward viewer like devil
+          
+          baseX = startX + (endX - startX) * easedProgress;
+          baseY = startY + (endY - startY) * easedProgress + Math.sin(time * 3) * 0.3; // Wing beat
+          baseZ = startZ + (endZ - startZ) * easedProgress;
+          rotationY = Math.PI * 0.1 + Math.sin(time * 2) * 0.15; // Determined chase angle
+          rotationX = Math.PI * 0.15 * (1 + easedProgress * 0.5); // Forward lean that increases with speed
+          scale = (isMobile ? 2 : 2) * (1 + easedProgress * 0.8); // Getting bigger as it approaches viewer
+        }
+        
+      } else if (overallProgress < swoopInDuration) {
+        // Stage 1: Swoop in from right side
+        stage = 'swoopIn';
+        stageProgress = overallProgress / swoopInDuration;
+        const easedProgress = 1 - Math.pow(1 - stageProgress, 3); // Ease-out cubic
+        
+        const startX = isMobile ? 8 : 12;
+        const startY = isMobile ? 6 : 8;
+        const startZ = 6;
+        const endX = isMobile ? 2 : 4;
+        const endY = isMobile ? 4 : 6;
+        const endZ = 2;
+        
+        // Arc motion during swoop
+        const arcHeight = 1.5;
+        const yOffset = Math.sin(stageProgress * Math.PI) * arcHeight;
+        
+        baseX = startX + (endX - startX) * easedProgress;
+        baseY = startY + (endY - startY) * easedProgress + yOffset;
+        baseZ = startZ + (endZ - startZ) * easedProgress;
+        rotationY = -Math.PI * 0.3; // Slight angle toward center
+        rotationX = 0; // No lean during original sequence
+        scale = isMobile ? 2 : 2;
+        
+      } else if (overallProgress < swoopInDuration + flyAcrossDuration) {
+        // Stage 2: Fly across to left side
+        stage = 'flyAcross';
+        stageProgress = (overallProgress - swoopInDuration) / flyAcrossDuration;
+        const easedProgress = stageProgress; // Linear movement for crossing
+        
+        const startX = isMobile ? 2 : 4;
+        const startY = isMobile ? 4 : 6;
+        const endX = isMobile ? -4 : -6;
+        const endY = isMobile ? 5 : 7;
+        
+        baseX = startX + (endX - startX) * easedProgress;
+        baseY = startY + (endY - startY) * easedProgress + Math.sin(time * 2) * 0.3; // Wing flutter
+        baseZ = 2 + Math.sin(easedProgress * Math.PI * 2) * 0.5; // Gentle depth wave
+        rotationY = -Math.PI * 0.2 + Math.sin(time * 1.5) * 0.1; // Flight banking
+        rotationX = 0; // No lean during original sequence
+        scale = isMobile ? 2 : 2;
+        
+      } else if (overallProgress < swoopInDuration + flyAcrossDuration + spinDuration) {
+        // Stage 3: Spin 1.5 rotations (540 degrees)
+        stage = 'spin';
+        stageProgress = (overallProgress - swoopInDuration - flyAcrossDuration) / spinDuration;
+        const easedSpin = stageProgress < 0.5 ? 
+          2 * stageProgress * stageProgress : 
+          -1 + (4 - 2 * stageProgress) * stageProgress; // Ease in-out
+        
+        baseX = isMobile ? -4 : -6;
+        baseY = isMobile ? 5 : 7;
+        baseZ = 2;
+        rotationY = -Math.PI * 0.2 + (Math.PI * 2.5 * easedSpin); // 1.25 rotations, ends facing viewer
+        rotationX = 0; // No lean during original sequence
+        scale = isMobile ? 2 : 2;
+        
+      } else if (overallProgress < swoopInDuration + flyAcrossDuration + spinDuration + pauseDuration) {
+        // Stage 4: Brief pause
+        stage = 'pause';
+        stageProgress = (overallProgress - swoopInDuration - flyAcrossDuration - spinDuration) / pauseDuration;
+        
+        baseX = isMobile ? -4 : -6;
+        baseY = isMobile ? 5 : 7 + Math.sin(time * 3) * 0.2; // Gentle hover
+        baseZ = 2;
+        rotationY = Math.PI * 0.3 + Math.sin(time * 2) * 0.05; // Facing viewer with slight hover rotation
+        rotationX = 0; // No lean during original sequence
+        scale = isMobile ? 2 : 2;
+        
+      } else {
+        // Stage 5: Swoop out toward viewer
+        stage = 'swoopOut';
+        stageProgress = (overallProgress - swoopInDuration - flyAcrossDuration - spinDuration - pauseDuration) / swoopOutDuration;
+        const easedOut = Math.pow(stageProgress, 2); // Ease-in for acceleration
+        
+        const startX = isMobile ? -4 : -6;
+        const startY = isMobile ? 5 : 7;
+        const startZ = 2;
+        const endX = isMobile ? 2 : 22;
+        const endY = isMobile ? 3 : 4;
+        const endZ = -3; // Move toward viewer
+        
+        baseX = startX + (endX - startX) * easedOut;
+        baseY = startY + (endY - startY) * easedOut;
+        baseZ = startZ + (endZ - startZ) * easedOut;
+        rotationY = Math.PI * 0.8 + (Math.PI * 0.4 * easedOut); // Continue turning toward viewer
+        rotationX = 0; // No lean during original sequence
+        scale = (isMobile ? 2 : 2) * (1 + easedOut * 1.5); // Get bigger as it approaches
+      }
+      
+      // Apply position, rotation, and scale
+      groupRef.current.position.set(baseX, baseY, baseZ);
+      groupRef.current.rotation.x = rotationX; // Forward lean for chase
+      groupRef.current.rotation.y = rotationY;
+      groupRef.current.rotation.z = Math.sin(time * 0.8) * 0.1; // Wing tilt
+      groupRef.current.scale.setScalar(scale);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={position}>
+      <primitive 
+        object={scene} 
+        scale={isMobile ? [1.5, 1.5, 1.5] : [1.5, 1.5, 1.5]}
+      />
+    </group>
+  );
+});
+
+// Devil Model component with scroll-based swoop animation (appears at end of page)
+const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrollY, isMobile = false }) {
+  const { scene, animations } = useGLTF('/models/devil2.glb');
+  const groupRef = useRef();
+  const mixerRef = useRef();
+
+  // Create animation mixer
+  useEffect(() => {
+    if (animations && animations.length > 0) {
+      mixerRef.current = new THREE.AnimationMixer(scene);
+      
+      // Find and play both animations on loop
+      const idleAnimation = animations.find(clip => clip.name === 'Armature|Idle');
+      const sceneAnimation = animations.find(clip => clip.name === 'Scene');
+      
+      if (idleAnimation) {
+        const idleAction = mixerRef.current.clipAction(idleAnimation);
+        idleAction.setLoop(THREE.LoopRepeat);
+        idleAction.play();
+      }
+      
+      if (sceneAnimation) {
+        const sceneAction = mixerRef.current.clipAction(sceneAnimation);
+        sceneAction.setLoop(THREE.LoopRepeat);
+        sceneAction.play();
+      }
+    }
+
+    return () => {
+      if (mixerRef.current) {
+        mixerRef.current.stopAllAction();
+        mixerRef.current = null;
+      }
+    };
+  }, [animations, scene]);
+
+  // Animation constants - multi-stage flight path (appears at end of page)
+  const appearThreshold = 8500; // Appears near end of page
+  const exitThreshold = 9500;   // Exits after page end
+  const totalDuration = exitThreshold - appearThreshold; // 2000 scroll units
+  
+  // Flight stages (as percentage of total scroll duration)
+  const swoopInDuration = 0.25;    // 25% - swoop in from left 
+  const flyAcrossDuration = 0.3;   // 30% - fly across to right side  
+  const spinDuration = 0.2;        // 20% - spin 180 degrees
+  const pauseDuration = 0.15;      // 15% - brief pause
+  const swoopOutDuration = 0.1;    // 10% - swoop out toward viewer
+  
+  // Update animation mixer and handle scroll-based movement
+  useFrame((state, delta) => {
+    if (mixerRef.current) {
+      mixerRef.current.update(delta);
+    }
+    
+    if (groupRef.current) {
+      const time = state.clock.elapsedTime;
+      
+      // Calculate scroll-based visibility and movement
+      if (scrollY < appearThreshold || scrollY > exitThreshold) {
+        groupRef.current.visible = false;
+        return;
+      }
+      
+      groupRef.current.visible = true;
+      
+      // Calculate overall progress (0 to 1) through the flight sequence
+      const overallProgress = (scrollY - appearThreshold) / totalDuration;
+      
+      // Determine which flight stage we're in
+      let stage, stageProgress;
+      let baseX, baseY, baseZ, rotationY, scale;
+      
+      if (overallProgress < swoopInDuration) {
+        // Stage 1: Swoop in from left side (opposite of angel)
+        stage = 'swoopIn';
+        stageProgress = overallProgress / swoopInDuration;
+        const easedProgress = 1 - Math.pow(1 - stageProgress, 3); // Ease-out cubic
+        
+        const startX = isMobile ? -8 : -12;  // Start from left (opposite of angel)
+        const startY = isMobile ? 6 : 8;
+        const startZ = 6;
+        const endX = isMobile ? -2 : -4;
+        const endY = isMobile ? 4 : 6;
+        const endZ = 2;
+        
+        // Arc motion during swoop
+        const arcHeight = 1.5;
+        const yOffset = Math.sin(stageProgress * Math.PI) * arcHeight;
+        
+        baseX = startX + (endX - startX) * easedProgress;
+        baseY = startY + (endY - startY) * easedProgress + yOffset;
+        baseZ = startZ + (endZ - startZ) * easedProgress;
+        rotationY = Math.PI * 0.3; // Slight angle toward center (opposite of angel)
+        scale = isMobile ? 2 : 2;
+        
+      } else if (overallProgress < swoopInDuration + flyAcrossDuration) {
+        // Stage 2: Fly across to right side
+        stage = 'flyAcross';
+        stageProgress = (overallProgress - swoopInDuration) / flyAcrossDuration;
+        const easedProgress = stageProgress; // Linear movement for crossing
+        
+        const startX = isMobile ? -2 : -4;
+        const startY = isMobile ? 4 : 6;
+        const endX = isMobile ? 4 : 6;    // End on right (opposite of angel)
+        const endY = isMobile ? 5 : 7;
+        
+        baseX = startX + (endX - startX) * easedProgress;
+        baseY = startY + (endY - startY) * easedProgress + Math.sin(time * 2) * 0.3; // Wing flutter
+        baseZ = 2 + Math.sin(easedProgress * Math.PI * 2) * 0.5; // Gentle depth wave
+        rotationY = Math.PI * 0.4 + Math.sin(time * 1.5) * 0.1; // Flight banking
+        scale = isMobile ? 2 : 2;
+        
+      } else if (overallProgress < swoopInDuration + flyAcrossDuration + spinDuration) {
+        // Stage 3: Spin 1.5 rotations (540 degrees)
+        stage = 'spin';
+        stageProgress = (overallProgress - swoopInDuration - flyAcrossDuration) / spinDuration;
+        const easedSpin = stageProgress < 0.5 ? 
+          2 * stageProgress * stageProgress : 
+          -1 + (4 - 2 * stageProgress) * stageProgress; // Ease in-out
+        
+        baseX = isMobile ? 4 : 6;
+        baseY = isMobile ? 5 : 7;
+        baseZ = 2;
+        rotationY = Math.PI * 0.2 + (Math.PI * 2.5 * easedSpin); // 1.25 rotations, ends facing viewer
+        scale = isMobile ? 2 : 2;
+        
+      } else if (overallProgress < swoopInDuration + flyAcrossDuration + spinDuration + pauseDuration) {
+        // Stage 4: Brief pause
+        stage = 'pause';
+        stageProgress = (overallProgress - swoopInDuration - flyAcrossDuration - spinDuration) / pauseDuration;
+        
+        baseX = isMobile ? 4 : 6;
+        baseY = isMobile ? 5 : 7 + Math.sin(time * 3) * 0.2; // Gentle hover
+        baseZ = 2;
+        rotationY = -Math.PI * 0.3 + Math.sin(time * 2) * 0.05; // Facing viewer with slight hover rotation
+        scale = isMobile ? 2 : 2;
+        
+      } else {
+        // Stage 5: Swoop out toward viewer and slightly right
+        stage = 'swoopOut';
+        stageProgress = (overallProgress - swoopInDuration - flyAcrossDuration - spinDuration - pauseDuration) / swoopOutDuration;
+        const easedOut = Math.pow(stageProgress, 2); // Ease-in for acceleration
+        
+        const startX = isMobile ? 4 : 6;
+        const startY = isMobile ? 5 : 7;
+        const startZ = 2;
+        const endX = isMobile ? 8 : 22;   // Exit slightly to the right 
+        const endY = isMobile ? 3 : 4;
+        const endZ = -3; // Move toward viewer
+        
+        baseX = startX + (endX - startX) * easedOut;
+        baseY = startY + (endY - startY) * easedOut;
+        baseZ = startZ + (endZ - startZ) * easedOut;
+        rotationY = -Math.PI * 0.8 + (-Math.PI * 0.4 * easedOut); // Continue turning toward viewer
+        scale = (isMobile ? 2 : 2) * (1 + easedOut * 1.5); // Get bigger as it approaches
+      }
+      
+      // Apply position, rotation, and scale
+      groupRef.current.position.set(baseX, baseY, baseZ);
+      groupRef.current.rotation.y = rotationY;
+      groupRef.current.rotation.z = Math.sin(time * 0.8) * 0.1; // Wing tilt
+      groupRef.current.scale.setScalar(scale);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={position}>
+      <primitive 
+        object={scene} 
+        scale={isMobile ? [1.5, 1.5, 1.5] : [1.5, 1.5, 1.5]}
       />
     </group>
   );
@@ -1346,15 +2119,40 @@ export default function Home3() {
     let timeoutId;
     const checkFont = async () => {
       try {
+        console.log('Attempting to load fonts...');
         await document.fonts.load("1em 'UnifrakturCook'");
+        console.log('UnifrakturCook loaded');
         await document.fonts.load("1em 'UnifrakturMaguntia'");
+        console.log('UnifrakturMaguntia loaded');
         await document.fonts.load("1em 'Fjalla One'");
+        console.log('Fjalla One loaded');
+        
+        // Check if fonts are actually ready
+        console.log('Available fonts:', [...document.fonts].map(f => f.family));
+        console.log('Font status:', document.fonts.status);
+        
         setFontLoaded(true);
         document.body.classList.add('fonts-loaded');
+        document.documentElement.classList.add('fonts-loaded');
+        console.log('Fonts loaded, classes added');
+        
+        // Check if the fonts-loaded class is actually added
+        console.log('HTML classes:', document.documentElement.className);
+        console.log('Body classes:', document.body.className);
+        
+        // Check if the main title element exists
+        const titleElement = document.getElementById('main-title');
+        console.log('Title element found:', titleElement);
+        if (titleElement) {
+          console.log('Title element classes:', titleElement.className);
+          console.log('Title element computed style:', window.getComputedStyle(titleElement));
+          console.log('Title element innerHTML:', titleElement.innerHTML);
+        }
       } catch (e) {
         timeoutId = setTimeout(() => {
           setFontLoaded(true);
           document.body.classList.add('fonts-loaded');
+          document.documentElement.classList.add('fonts-loaded');
         }, 1000);
       }
     };
@@ -1523,32 +2321,6 @@ export default function Home3() {
     }
   }, [contextIsPlaying, showMusicControls]);
 
-  // Intersection Observer for second title animation
-  useEffect(() => {
-    if (!secondTitleRef.current) return;
-
-    const targetElement = secondTitleRef.current;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Second title intersection tracking
-        // secondTitleInView is managed by useInView hook
-      },
-      {
-        threshold: 0.3, // Trigger when 30% of title is visible
-        rootMargin: '0px 0px -10% 0px' // Start slightly before fully in view
-      }
-    );
-
-    observer.observe(targetElement);
-    // Intersection Observer set up for second title
-
-    return () => {
-      if (targetElement) {
-        observer.unobserve(targetElement);
-      }
-      observer.disconnect();
-    };
-  }, []); // Remove dependency to avoid re-creating observer
 
   return (
     <>
@@ -1570,8 +2342,8 @@ export default function Home3() {
         left: 0,
         width: '100vw',
         height: '100vh', // Keep canvas at viewport height
-        zIndex: 1,
-        pointerEvents: 'none', // WebGL canvas doesn't receive pointer events
+        zIndex: 5, // Medium z-index
+        pointerEvents: 'auto', // Enable pointer events for drone screen interaction
         background: 'linear-gradient(to bottom, #87CEEB, #98D8E8, #B0E0E6)', // Sky gradient
       }}>
         <CleanCanvas
@@ -1630,12 +2402,27 @@ export default function Home3() {
             {/* Breath that follows the same scroll animation as the bull */}
             <ScrollingBreath scrollY={scrollY} isMobile={isMobile} />
             
-            {/* Drone with Screen1 display with interactive CSS3D screen */}
+            {/* Drone with Screen1 display with interactive screen */}
             <DroneModel 
               position={[0, 5, -5]} 
               scrollY={scrollY}
               isMobile={isMobile}
             />
+            
+            {/* Angel Model with playful swoop animation */}
+            <AngelModel 
+              scrollY={scrollY}
+              isMobile={isMobile}
+            />
+            
+            {/* Devil Model with playful swoop animation (appears at end) */}
+            <DevilModel 
+              scrollY={scrollY}
+              isMobile={isMobile}
+            />
+            
+            {/* Manual click handler component */}
+            <ClickHandler />
             
             {/* CSS3D Screen replaced with video texture on Screen1 mesh */}
             
@@ -1696,8 +2483,8 @@ export default function Home3() {
         }}
       /> */}
 
-      {/* Scrollable Overlay Content - Exact structure from home3/page */}
-      <div style={{
+      {/* Scrollable Overlay Content - Allow clicks to pass through to 3D canvas */}
+ <div style={{
           position: 'relative',
           width: '100%',
           minHeight: '100vh',
@@ -1751,6 +2538,7 @@ export default function Home3() {
         </div>
         
       </div>
+
 
       {/* Top Controls Container - Music, User, and Nav (from home3/page) */}
       {mounted && !isSceneLoading && (
@@ -1900,7 +2688,7 @@ export default function Home3() {
         </div>
         
         {/* User Account */}
-        <div style={{ order: isMobileDevice ? 1 : 1 }}>
+        <div style={{ order: isMobileDevice ? 1 : 1, pointerEvents: 'auto', zIndex: 10, position: 'relative' }}>
           {isSignedIn ? (
             <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
           ) : (
@@ -1929,7 +2717,7 @@ export default function Home3() {
         </div>
         
         {/* CyberNav Menu */}
-        <div style={{ order: isMobileDevice ? 0 : 2 }}>
+        <div style={{ order: isMobileDevice ? 0 : 2, pointerEvents: 'auto', zIndex: 10, position: 'relative' }}>
           <CyberNav is80sMode={is80sMode} position="relative" />
         </div>
         
@@ -2061,7 +2849,7 @@ export default function Home3() {
 
        
 
-                        <div style={{position: 'relative', zIndex: 1, marginTop: '250vh', marginBottom: '1rem'}}>
+                        <div style={{position: 'relative', zIndex: 10, pointerEvents: 'auto', marginTop: '300vh', marginBottom: '1rem'}}>
                          <div ref={secondTitleRef} style={{
                                   textAlign: 'center',
                                   padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
@@ -2096,7 +2884,9 @@ export default function Home3() {
         }} />
         
         {/* Footer - at the bottom of all content */}
-        <Footer isMobile={isMobile} />
+        <div style={{ pointerEvents: 'auto', position: 'relative', zIndex: 10 }}>
+          <Footer isMobile={isMobile} />
+        </div>
 
 
       {/* </motion.div> */}
@@ -2362,8 +3152,7 @@ export default function Home3() {
           75% { transform: rotateY(1080deg); }
           100% { transform: rotateY(1080deg); }
         }
-        
-        /* Override the font hiding rule for our title */
+       /* Override the font hiding rule for our title */
         .custom-title {
           font-family: 'UnifrakturCook', 'UnifrakturMaguntia', serif !important;
           visibility: visible !important;
@@ -2381,6 +3170,7 @@ export default function Home3() {
           visibility: visible !important;
           opacity: 1 !important;
         }
+        
         
         /* Custom scrollbar for leaderboard */
         .leaderboard-scroll::-webkit-scrollbar {

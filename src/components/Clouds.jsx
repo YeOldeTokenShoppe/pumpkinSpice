@@ -539,7 +539,7 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 frustumCulled={false}
               />
               
-              <Cloud 
+              {/* <Cloud 
                 seed={18}
                 segments={9}
                 volume={16}
@@ -547,11 +547,11 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 fade={1}
                 growth={5}
                 speed={0.03}
-                bounds={[12, 6, -5]}
-                position={[-20, -170, -15]}
-                // color={'#ff00f0'}
+                bounds={[17, 6, -5]}
+                position={[-32, -170, -28]}
+                color={'#ff00f0'}
                 frustumCulled={false}
-              />
+              /> */}
               
               {/* <Cloud 
                 seed={19}
@@ -653,7 +653,7 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
               />
               
               {/* Even more clouds for extended page */}
-              {/* <Cloud 
+              <Cloud 
                 seed={26}
                 segments={9}
                 volume={20}
@@ -662,10 +662,10 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={5}
                 speed={0.02}
                 bounds={[16, 12, 6]}
-                position={[20, -370, 8]}
+                position={[2, -420, 8]}
                  color={'#ff00f0'}
                 frustumCulled={false}
-              /> */}
+              />
               
               {/* <Cloud 
                 seed={27}
@@ -719,11 +719,25 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={6}
                 speed={0.025}
                 bounds={[22, 15, 8]}
-                position={[-15, -300, 12]}
+                position={[-5, -290, 12]}
               // color={'#ff00f0'}
                 frustumCulled={false}
               />
               */ bottom cloud /*
+
+                            <Cloud 
+                seed={30}
+                segments={24}
+                volume={25}
+                opacity={0.75}
+                fade={1}
+                growth={6}
+                speed={0.025}
+                bounds={[22, 15, 8]}
+                position={[-5, -380, 12]}
+              // color={'#ff00f0'}
+                frustumCulled={false}
+              />
               
               {/* <Cloud 
                 seed={31}
