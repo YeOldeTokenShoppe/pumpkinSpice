@@ -2115,44 +2115,21 @@ export default function Home3() {
   };
 
   // Font loading effect
+  
+  // Font loading effect
   useEffect(() => {
     let timeoutId;
     const checkFont = async () => {
       try {
-        console.log('Attempting to load fonts...');
         await document.fonts.load("1em 'UnifrakturCook'");
-        console.log('UnifrakturCook loaded');
         await document.fonts.load("1em 'UnifrakturMaguntia'");
-        console.log('UnifrakturMaguntia loaded');
         await document.fonts.load("1em 'Fjalla One'");
-        console.log('Fjalla One loaded');
-        
-        // Check if fonts are actually ready
-        console.log('Available fonts:', [...document.fonts].map(f => f.family));
-        console.log('Font status:', document.fonts.status);
-        
         setFontLoaded(true);
         document.body.classList.add('fonts-loaded');
-        document.documentElement.classList.add('fonts-loaded');
-        console.log('Fonts loaded, classes added');
-        
-        // Check if the fonts-loaded class is actually added
-        console.log('HTML classes:', document.documentElement.className);
-        console.log('Body classes:', document.body.className);
-        
-        // Check if the main title element exists
-        const titleElement = document.getElementById('main-title');
-        console.log('Title element found:', titleElement);
-        if (titleElement) {
-          console.log('Title element classes:', titleElement.className);
-          console.log('Title element computed style:', window.getComputedStyle(titleElement));
-          console.log('Title element innerHTML:', titleElement.innerHTML);
-        }
       } catch (e) {
         timeoutId = setTimeout(() => {
           setFontLoaded(true);
           document.body.classList.add('fonts-loaded');
-          document.documentElement.classList.add('fonts-loaded');
         }, 1000);
       }
     };
@@ -2173,6 +2150,7 @@ export default function Home3() {
       }, 500); // Small delay for smooth transition
     }
   }, [fontLoaded, modelLoaded, cloudsLoaded]);
+
 
   // Load Pirata One font
   // useEffect(() => {
@@ -2229,6 +2207,43 @@ export default function Home3() {
     document.addEventListener('scroll', handleScroll, { passive: true });
     document.body.addEventListener('scroll', handleScroll, { passive: true });
     
+    // Add touch event handling for tablet scroll support
+    let touchStartY = 0;
+    let isScrolling = false;
+    
+    const handleTouchStart = (e) => {
+      touchStartY = e.touches[0].clientY;
+      isScrolling = false;
+    };
+    
+    const handleTouchMove = (e) => {
+      if (!isScrolling) {
+        const touchY = e.touches[0].clientY;
+        const deltaY = touchStartY - touchY;
+        
+        // If significant vertical movement, treat as scroll
+        if (Math.abs(deltaY) > 5) {
+          isScrolling = true;
+          
+          // Simulate scroll by updating scroll position
+          const currentScroll = window.scrollY || document.documentElement.scrollTop || 0;
+          const newScroll = Math.max(0, currentScroll + deltaY * 2); // Multiply for sensitivity
+          
+          window.scrollTo(0, newScroll);
+          handleScroll(); // Update our scroll state
+        }
+      }
+    };
+    
+    const handleTouchEnd = () => {
+      isScrolling = false;
+    };
+    
+    // Add touch event listeners for tablet support
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
     // Track dynamically added listeners for cleanup
     const addedListeners = [];
     
@@ -2254,6 +2269,12 @@ export default function Home3() {
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('scroll', handleScroll);
       document.body.removeEventListener('scroll', handleScroll);
+      
+      // Remove touch event listeners
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      
       // Remove dynamically added listeners
       addedListeners.forEach(container => {
         container.removeEventListener('scroll', handleScroll);
@@ -2391,7 +2412,7 @@ export default function Home3() {
           <Suspense fallback={null}>
             <GradientSkySphere />
             {/* <LayeredClouds scrollY={scrollY} /> */}
-            <EnhancedVolumetricLight 
+            <EnhancedVolumetricLight scrollY={scrollY}
               // position={[0, Math.min(50 + scrollY * 0.035, 150), 0]} 
               // target={[3, Math.min(-50 + scrollY * 0.035, 50), -5]}
               // color="#d89d12ff"
@@ -2919,6 +2940,7 @@ export default function Home3() {
           overflow-y: auto;
           box-sizing: border-box;
           scroll-behavior: auto;
+          touch-action: pan-y; /* Allow vertical scrolling on touch devices */
         }
         
         body {
@@ -2929,6 +2951,7 @@ export default function Home3() {
           overflow-x: hidden;
           overflow-y: visible;
           box-sizing: border-box;
+          touch-action: pan-y; /* Allow vertical scrolling on touch devices */
         }
         
         body > div:first-child {

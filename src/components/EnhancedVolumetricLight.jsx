@@ -3,13 +3,14 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const EnhancedVolumetricLight = ({ 
-  position = [-5, 100, 3], 
-  target = [3, -10, -25],
+  position = [-5, 100, 0], 
+  target = [3, -10, -45],
   color = '#0af9dd',
   intensity = 1,
   rayCount = 20,
-  spread = 10,
-  opacity = 0.01
+  spread = 12,
+  opacity = 0.015,
+  scrollY = 0
 }) => {
   const groupRef = useRef();
   const time = useRef(0);
@@ -49,7 +50,7 @@ const EnhancedVolumetricLight = ({
         const rayStart = lightPos.clone().add(new THREE.Vector3(x, 0, z)).add(randomOffset);
         // Keep rays more parallel by maintaining similar spread at bottom
         const rayEnd = targetPos.clone().add(new THREE.Vector3(x * 0.8, 10, z * 0.8)); // Stop above model, maintain spread
-        const rayLength = rayStart.distanceTo(rayEnd) * 1.3; // Shorten rays
+        const rayLength = rayStart.distanceTo(rayEnd) * 2.2; // Shorten rays
         const rayDirection = rayEnd.clone().sub(rayStart).normalize();
         
         // Thinner, more defined cone width for godray effect
@@ -74,13 +75,56 @@ const EnhancedVolumetricLight = ({
     return raysArray;
   }, [position, target, rayCount, spread, opacity]);
   
-  // Animate the rays
+  // Animate the rays with scroll-based movement
   useFrame((state) => {
     time.current = state.clock.getElapsedTime();
     
     if (groupRef.current) {
       // Very subtle rotation - reduced to prevent vibration
       groupRef.current.rotation.y = Math.sin(time.current * 0.05) * 0.01;
+      
+      // Scroll-based positioning similar to other models
+      // Follow the camera/scene movement based on scroll
+      const baseY = position[1]; // Use original Y position as base
+      
+      // Check if we're in drone approach phase (same logic as Model component)
+      const droneAppearThreshold = 3500;
+      const droneApproachDuration = 4000;
+      const droneApproachEnd = droneAppearThreshold + droneApproachDuration;
+      
+      let effectiveScrollY = scrollY;
+      
+      // During drone approach, maintain consistent lighting position
+      if (scrollY >= droneAppearThreshold - 200 && scrollY < droneApproachEnd) {
+        effectiveScrollY = droneAppearThreshold - 200;
+      } else if (scrollY >= droneApproachEnd) {
+        effectiveScrollY = scrollY - droneApproachDuration;
+      }
+      
+      // Move the light source with scroll to maintain illumination on models
+      const scrollInfluence = effectiveScrollY * 0.035; // Same scroll speed as models
+      const newY = baseY + scrollInfluence;
+      
+      // Update position while maintaining relative positioning
+      groupRef.current.position.set(
+        position[0], 
+        newY, 
+        position[2]
+      );
+      
+      // Visibility control - fade out when scrolled very far to match other models
+      const shouldFade = scrollY > 9000; // Start fading before complete disappearance
+      const fadeProgress = Math.max(0, 1 - (scrollY - 9000) / 500); // Fade over 500 scroll units
+      groupRef.current.visible = scrollY <= 9500; // Complete disappearance threshold
+      
+      // Apply opacity fade to all children if fading
+      if (shouldFade && groupRef.current.visible) {
+        groupRef.current.traverse((child) => {
+          if (child.material && child.material.transparent) {
+            child.material.opacity = child.material.opacity * fadeProgress;
+          }
+        });
+      }
     }
   });
   
@@ -146,8 +190,8 @@ const EnhancedVolumetricLight = ({
         /> */}
       </mesh>
       
-      {/* Atmospheric glow at the source - disabled to prevent shadow */}
-      {/* <mesh position={position}>
+      {/* Atmospheric glow at the source - commented out to hide sphere */}
+      <mesh position={position}>
         <sphereGeometry args={[20, 16, 16]} />
         <meshBasicMaterial
           color={color}
@@ -156,7 +200,7 @@ const EnhancedVolumetricLight = ({
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
-      </mesh> */}
+      </mesh>
     </group>
   );
 };
