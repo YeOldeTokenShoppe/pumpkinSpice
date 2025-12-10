@@ -19,7 +19,23 @@ function AnnotationMarker({
   const { camera, invalidate } = useThree();
   const [hovered, setHovered] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth <= 768);
+      }
+    };
+    
+    checkMobile();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }
+  }, []);
+
   // Force initial render of HTML elements
   useEffect(() => {
     // Force a re-render after mount to ensure HTML elements appear
@@ -48,6 +64,10 @@ function AnnotationMarker({
 
   const markerColor = hovered ? hoverColor : color;
   const effectiveTextScale = textScale !== null ? textScale : scale;
+  
+  // Responsive scaling factors
+  const responsiveScale = isMobile ? 0.7 : 1;
+  const finalTextScale = effectiveTextScale * responsiveScale;
 
   return (
     <group 
@@ -127,7 +147,7 @@ function AnnotationMarker({
         <Html
           position={[0, 0.4 * scale, 0]}
           center={!annotationOffset}
-          distanceFactor={3}
+          distanceFactor={isMobile ? 4 : 3}
           style={{
             pointerEvents: 'none',
             transition: 'opacity 0.3s ease-in-out',
@@ -144,24 +164,25 @@ function AnnotationMarker({
           <div
             style={{
               background: 'rgba(0, 0, 0, 0.9)',
-              border: `${Math.max(1, effectiveTextScale)}px solid ${color}`,
-              borderRadius: `${4 * effectiveTextScale}px`,
-              padding: `${12 * effectiveTextScale}px ${16 * effectiveTextScale}px`,
+              border: `${Math.max(1, finalTextScale)}px solid ${color}`,
+              borderRadius: `${3 * finalTextScale}px`,
+              padding: `${8 * finalTextScale}px ${12 * finalTextScale}px`,
               color: '#ffffff',
-              width: "15rem",
-              fontSize: `${14 * effectiveTextScale}px`,
+              width: isMobile ? "10rem" : "12rem",
+              fontSize: `${11 * finalTextScale}px`,
               fontFamily: 'Arial, sans-serif',
-              maxWidth: `${200 * effectiveTextScale}px`,
-              boxShadow: `0 0 ${10 * effectiveTextScale}px ${color}40`,
+              maxWidth: isMobile ? `${150 * finalTextScale}px` : `${180 * finalTextScale}px`,
+              boxShadow: `0 0 ${6 * finalTextScale}px ${color}40`,
               whiteSpace: 'pre-wrap',
+              lineHeight: '1.3',
             }}
           >
             {text}
             <div
               style={{
-                fontSize: `${12 * effectiveTextScale}px`,
-                marginTop: `${10 * effectiveTextScale}px`,
-                opacity: 0.7,
+                fontSize: `${9 * finalTextScale}px`,
+                marginTop: `${6 * finalTextScale}px`,
+                opacity: 0.6,
                 fontStyle: 'italic',
               }}
             >

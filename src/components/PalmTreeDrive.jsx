@@ -118,11 +118,12 @@ const PalmsScene = ({ onLoadingChange }) => {
   // Cinematic states removed for production
   const [isSceneLoadingInternal, setIsSceneLoadingInternal] = useState(true); // Loading state
   const [modelsLoadState, setModelsLoadState] = useState({
-    palm: false,
-    sign: false,
-    sun: false,
-    car: false
+    palm: 'loading', // 'loading', 'loaded', 'error'
+    sign: 'loading',
+    sun: 'loading', 
+    car: 'loading'
   });
+
   
   // Wrapper to update both internal state and parent
   const setIsSceneLoading = useCallback((loading) => {
@@ -134,14 +135,22 @@ const PalmsScene = ({ onLoadingChange }) => {
   
   const isSceneLoading = isSceneLoadingInternal; // Use internal state for reading
   
-  // Check if all models are loaded
+  // Check if all models are loaded or have errors
   useEffect(() => {
-    const allLoaded = modelsLoadState.palm && modelsLoadState.sign && 
-                      modelsLoadState.sun && modelsLoadState.car;
+    const allResolved = Object.values(modelsLoadState).every(state => 
+      state === 'loaded' || state === 'error'
+    );
+    const anyLoaded = Object.values(modelsLoadState).some(state => 
+      state === 'loaded'
+    );
     
-    if (allLoaded) {
-      console.log('[PalmTreeDrive] All 4 models loaded, hiding loader');
+    if (allResolved && anyLoaded) {
+      console.log('[PalmTreeDrive] All models resolved (loaded or errored), hiding loader');
+      console.log('Final model states:', modelsLoadState);
       setIsSceneLoading(false);
+    } else if (allResolved && !anyLoaded) {
+      console.error('[PalmTreeDrive] All models failed to load:', modelsLoadState);
+      setIsSceneLoading(false); // Show scene anyway to avoid infinite loader
     }
   }, [modelsLoadState, setIsSceneLoading]);
   // Cinematic reverse removed
@@ -904,7 +913,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       
       // Mark palm model as loaded
       console.log('[PalmTreeDrive] Palm model loaded');
-      setModelsLoadState(prev => ({ ...prev, palm: true }));
+      setModelsLoadState(prev => ({ ...prev, palm: 'loaded' }));
       
       // Debug: Log model structure
       // console.log('=== Palm Tree Model Debug ===');
@@ -1068,6 +1077,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     },
     (error) => {
       console.error('Error loading palm tree model:', error);
+      setModelsLoadState(prev => ({ ...prev, palm: 'error' }));
       
       // Fallback to procedural palms if GLB fails to load
       // Original procedural palm code would go here as fallback
@@ -1079,7 +1089,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       
       // Mark sign model as loaded
       console.log('[PalmTreeDrive] Sign model loaded');
-      setModelsLoadState(prev => ({ ...prev, sign: true }));
+      setModelsLoadState(prev => ({ ...prev, sign: 'loaded' }));
       
       // Find the first mesh in the sign model
       let signMesh = null;
@@ -1200,6 +1210,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     },
     (error) => {
       console.error('Error loading road sign model:', error);
+      setModelsLoadState(prev => ({ ...prev, sign: 'error' }));
     });
 
     // Load Synthwave Sun model
@@ -1208,7 +1219,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       
       // Mark sun model as loaded
       console.log('[PalmTreeDrive] Sun model loaded');
-      setModelsLoadState(prev => ({ ...prev, sun: true }));
+      setModelsLoadState(prev => ({ ...prev, sun: 'loaded' }));
       
       // Position and scale the sun
       sun.position.set(190, -110, 100);
@@ -1231,6 +1242,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     },
     (error) => {
       console.error('Error loading sun model:', error);
+      setModelsLoadState(prev => ({ ...prev, sun: 'error' }));
       
       // Fallback to simple sun if model fails to load
       const sunGeom = new THREE.CircleGeometry(200, 64);
@@ -1267,7 +1279,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       
       // Mark car model as loaded
       console.log('[PalmTreeDrive] Car/UFO model loaded');
-      setModelsLoadState(prev => ({ ...prev, car: true }));
+      setModelsLoadState(prev => ({ ...prev, car: 'loaded' }));
       
       // Enhanced logging for model contents
       // console.log('=== Model Loading Debug ===');
@@ -1575,6 +1587,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     // Error callback
     (error) => {
       console.error('Error loading car model:', error);
+      setModelsLoadState(prev => ({ ...prev, car: 'error' }));
     });
     
 

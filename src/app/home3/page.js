@@ -278,7 +278,7 @@ const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
         
         // Check if we're in drone approach phase
         const droneAppearThreshold = 3500; // Appears halfway down the extended page
-        const droneApproachDuration = 4000;
+        const droneApproachDuration = 3000; // Matches actual drone duration
         const droneApproachEnd = droneAppearThreshold + droneApproachDuration;
         
         let effectiveScrollY = scrollY;
@@ -1123,8 +1123,8 @@ const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrol
   const totalDuration = exitThreshold - appearThreshold; // 2000 scroll units
   
   // Second appearance for chase sequence
-  const chaseAppearThreshold = 9000; // Appears during devil's pause phase
-  const chaseExitThreshold = 10000;   // Chases devil off screen
+  const chaseAppearThreshold = isMobile ? 9500 : 10500; // Appears during devil's pause phase
+  const chaseExitThreshold = isMobile ? 10500 : 11500;   // Chases devil off screen
   const chaseDuration = chaseExitThreshold - chaseAppearThreshold;
   
   // Flight stages (as percentage of total scroll duration)
@@ -1372,8 +1372,8 @@ const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrol
   }, [animations, scene]);
 
   // Animation constants - multi-stage flight path (appears at end of page)
-  const appearThreshold = 8500; // Appears near end of page
-  const exitThreshold = 9500;   // Exits after page end
+  const appearThreshold = isMobile ? 8500 : 10000; // Appears near end of page
+  const exitThreshold = isMobile ? 9500 : 11000;   // Exits after page end
   const totalDuration = exitThreshold - appearThreshold; // 2000 scroll units
   
   // Flight stages (as percentage of total scroll duration)
@@ -1558,8 +1558,8 @@ function ScrollingBreath({ scrollY, isMobile }) {
       const baseY = isMobile ? -15 : -15;
       
       // Check if we're in drone approach phase
-      const droneAppearThreshold = 9500; // Matches model threshold
-      const droneApproachDuration = 2000;
+      const droneAppearThreshold = 3500; // Matches actual drone threshold
+      const droneApproachDuration = 3000; // Matches actual drone duration
       const droneApproachEnd = droneAppearThreshold + droneApproachDuration;
       
       let effectiveScrollY = scrollY;
@@ -1608,8 +1608,8 @@ function ScrollClouds({ scrollY, onLoad }) {
   useFrame(() => {
     if (cloudGroupRef.current) {
       // Check if we're in drone approach phase
-      const droneAppearThreshold = 9500; // Matches model threshold
-      const droneApproachDuration = 2000;
+      const droneAppearThreshold = 3500; // Matches actual drone threshold
+      const droneApproachDuration = 3000; // Matches actual drone duration
       const droneApproachEnd = droneAppearThreshold + droneApproachDuration;
       
       let effectiveScrollY = scrollY;
@@ -2069,6 +2069,7 @@ export default function Home3() {
   const [showMusicControls, setShowMusicControls] = useState(false);
   const [emoji, setEmoji] = useState("😇");
   const [scrollY, setScrollY] = useState(0);
+  const [isClient, setIsClient] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showNumerology, setShowNumerology] = useState(false);
   const [showDroneScreen, setShowDroneScreen] = useState(false);
@@ -2080,9 +2081,9 @@ export default function Home3() {
   // useInView hooks
   // const ctasInView = useInView(ctasRef, { threshold: 0.3, once: true });
   const secondTitleInView = useInView(secondTitleRef, { 
-    threshold: 0.1,  // Trigger when 10% visible (earlier trigger)
-    triggerOnce: false,  // Allow re-triggering when scrolling up/down
-    rootMargin: '0px 0px -20% 0px'  // Trigger 20% before element fully enters viewport
+    threshold: 0.01, // Very low threshold - just 1% visible (matches working first title)
+    triggerOnce: false,  // Allow re-triggering for replay
+    rootMargin: '200px 0px' // Trigger 200px before entering viewport (matches working first title)
   });
 
   // Auth state
@@ -2335,6 +2336,11 @@ export default function Home3() {
   //   console.log('All lighting values copied to clipboard');
   // };
 
+  // Client-side hydration check
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Sync showMusicControls with playing state
   useEffect(() => {
     if (contextIsPlaying && !showMusicControls) {
@@ -2347,6 +2353,34 @@ export default function Home3() {
     <>
       {/* Loading Screen */}
       <CoinLoader loading={isSceneLoading} />
+      
+      {/* Scroll Position Indicator */}
+      {/* <div style={{
+        position: 'fixed',
+        top: '80px',
+        right: '20px',
+        zIndex: 9999,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        color: '#00FFFF',
+        padding: '15px 20px',
+        borderRadius: '10px',
+        fontFamily: 'monospace',
+        fontSize: '14px',
+        border: '2px solid #FFD700',
+        boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)',
+        backdropFilter: 'blur(10px)',
+        minWidth: '220px'
+      }}>
+        <div style={{ marginBottom: '8px', color: '#FFD700', fontWeight: 'bold' }}>SCROLL POSITION</div>
+        <div>Y: {Math.round(scrollY)}px</div>
+        <div>Viewport: {isClient ? Math.round((scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100) : 0}%</div>
+        <div style={{ marginTop: '8px', fontSize: '12px', color: '#888' }}>
+          Total Height: {isClient ? document.documentElement.scrollHeight : 0}px
+        </div>
+        <div style={{ fontSize: '12px', color: '#888' }}>
+          Sections: Hero(100vh) → Clouds(1800vh) → Content(800vh) → Footer(300vh)
+        </div>
+      </div>  */}
       
       <div style={{ 
         width: '100vw', 
@@ -2790,7 +2824,7 @@ export default function Home3() {
           marginTop: isMobile ? "100vh" : 0,
           left: 0,
           right: 0,
-          minHeight: "1200vh", // Extended for longer cloud descent
+          minHeight: "1800vh", // Extended for longer cloud descent and more animation room
           // background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.8), rgba(0,0,0,0.9))",
           zIndex: 1,
           pointerEvents: "auto", // Keep auto to allow scrolling
@@ -2822,11 +2856,22 @@ export default function Home3() {
         {/* Extended scroll space for longer page */}
         <div style={{
           position: 'relative',
-          height: '500vh',
+          height: '800vh', // Extended for more content and animation space
           width: '100%',
           zIndex: 1,
           pointerEvents: 'none', // Don't block interactions
         }} />
+
+        {/* Additional mobile spacer for more runway after drone */}
+        {isMobile && (
+          <div style={{
+            position: 'relative',
+            height: '400vh', // Extra space on mobile for animations
+            width: '100%',
+            zIndex: 1,
+            pointerEvents: 'none',
+          }} />
+        )}
         
         {/* Feature Carousel Section - Hybrid Approach */}
         <div style={{
@@ -2870,7 +2915,7 @@ export default function Home3() {
 
        
 
-                        <div style={{position: 'relative', zIndex: 10, pointerEvents: 'auto', marginTop: '300vh', marginBottom: '1rem'}}>
+                        <div style={{position: 'relative', zIndex: 10, pointerEvents: 'auto', marginTop: isMobile ? '-350vh' : '-150vh', marginBottom: '1rem'}}>
                          <div ref={secondTitleRef} style={{
                                   textAlign: 'center',
                                   padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',
@@ -2884,7 +2929,12 @@ export default function Home3() {
                                     fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
                                     isMobile={isMobile}
                                     triggerAnimation={secondTitleInView}
+                                    key={`dropintitle-${isMobile ? 'mobile' : 'desktop'}`}
                                   />
+                                  {/* Debug info - remove after testing */}
+                                  {/* <div style={{color: '#fff', fontSize: '12px', marginTop: '10px'}}>
+                                    Debug: {secondTitleInView ? 'IN VIEW' : 'NOT IN VIEW'}
+                                  </div> */}
                         </div>
                                  </div>
 {/* Combined Token Information Section */}
@@ -2899,7 +2949,7 @@ export default function Home3() {
         {/* Additional scroll space before footer */}
         <div style={{
           position: 'relative',
-          height: '200vh',
+          height: '300vh', // Extended footer area for additional content if needed
           width: '100%',
           zIndex: 1,
         }} />
@@ -2951,7 +3001,6 @@ export default function Home3() {
           overflow-x: hidden;
           overflow-y: visible;
           box-sizing: border-box;
-          touch-action: pan-y; /* Allow vertical scrolling on touch devices */
         }
         
         body > div:first-child {

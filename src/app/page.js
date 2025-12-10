@@ -14,7 +14,6 @@ export default function Home() {
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   
   // Get music context functions
@@ -84,21 +83,6 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Add loading timeout - force show scene after 15 seconds on mobile, 30 seconds on desktop
-  useEffect(() => {
-    const isMobile = window.innerWidth <= 768;
-    const timeoutDuration = isMobile ? 15000 : 30000; // 15s for mobile, 30s for desktop
-    
-    const timer = setTimeout(() => {
-      if (isSceneLoading) {
-        console.log('Loading timeout reached, forcing scene display');
-        setLoadingTimeout(true);
-        setIsSceneLoading(false);
-      }
-    }, timeoutDuration);
-    
-    return () => clearTimeout(timer);
-  }, [isSceneLoading]);
   
   // Debug logging
   useEffect(() => {

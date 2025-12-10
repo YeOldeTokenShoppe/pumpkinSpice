@@ -40,9 +40,9 @@ const CyborgTempleScene = forwardRef(({
       customCamera: {
         position: [2, -0.8, -0.3], // Camera moved right and lower
         lookAt: [0, -0.5, 0], // Look outward toward the characters
-        distance: 2 // Slightly increased distance for better framing
+        distance: 1 // Slightly increased distance for better framing
       },
-      annotationOffset: [20, 150] // [x, y] offset in pixels from center
+      annotationOffset: [20, 350] // [x, y] offset in pixels from center
     },
     // {
     //   position: [2, 0, -2], // Right side
@@ -53,11 +53,11 @@ const CyborgTempleScene = forwardRef(({
       position: [0.6, -0.45, 0.4], // Near the main altar/center
       text: "RL80 Holder Neural Network - live display of holders online right now.",
       customCamera: {
-        position: [2, -0.7, -1], // Camera moved right and lower
-        lookAt: [0.2, -0.7, 0.9], // Look outward toward the characters
+        position: [-2, -0.7, 3.3], // Camera moved right and lower
+        lookAt: [1, -0.7, -0.1], // Look outward toward the characters
         distance: 1.2 // Slightly increased distance for better framing
       },
-      annotationOffset: [-10, 170] // [x, y] offset in pixels from center
+      annotationOffset: [-10, 220] // [x, y] offset in pixels from center
     },
     {
       position: [-2, -0.7, 0.35], // Left side
@@ -66,7 +66,7 @@ const CyborgTempleScene = forwardRef(({
       customCamera: {
         position: [-0.2, -1.3, -0.5], // Camera moved right and lower
         lookAt: [-3, -1, 0.5], // Look outward toward the characters
-        distance: 2.9 // Slightly increased distance for better framing
+        distance: 2.5 // Slightly increased distance for better framing
       },
       // Custom annotation position for this view (in screen space)
       annotationOffset: [50, 150] // [x, y] offset in pixels from center

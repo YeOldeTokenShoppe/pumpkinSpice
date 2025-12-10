@@ -346,8 +346,8 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
       <SignInButton mode="modal" forceRedirectUrl={currentPath}>
         <button
           style={{
-            width: isMobile ? "40px" : "60px",
-            height: isMobile ? "40px" : "60px",
+            width: isMobile ? "2.5rem" : "3.75rem",
+            height: isMobile ? "2.5rem" : "3.75rem",
             borderRadius: "8px",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -377,8 +377,8 @@ export function Illumin80ClerkButton({ afterSignOutUrl = "/", isMobileDevice }) 
           <div style={{
             position: 'absolute',
             // left: isMobile ? '-1.2rem' : '-1.8rem',
-                    width: isMobileDevice ? "40px" : "60px",
-              height: isMobileDevice ? "40px" : "60px",
+            width: isMobile ? "2.5rem" : "3.75rem",
+            height: isMobile ? "2.5rem" : "3.75rem",
             left: '70%',
             top: '100%',
             transform: 'translateY(-50%) scaleX(1)',
