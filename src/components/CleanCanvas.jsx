@@ -36,8 +36,9 @@ const CleanCanvas = forwardRef(function CleanCanvas({ children, onCreated, ...pr
       // Defer cleanup to ensure React has finished unmounting
       cleanupTimeoutRef.current = setTimeout(() => {
         // Dispose of scene objects
-        if (sceneRef.current && typeof sceneRef.current.traverse === 'function') {
-          sceneRef.current.traverse((child) => {
+        try {
+          if (sceneRef.current && sceneRef.current.traverse && typeof sceneRef.current.traverse === 'function') {
+            sceneRef.current.traverse((child) => {
             // Dispose geometry
             if (child.geometry) {
               child.geometry.dispose();
@@ -118,6 +119,9 @@ const CleanCanvas = forwardRef(function CleanCanvas({ children, onCreated, ...pr
         // Suggest garbage collection (browser may ignore)
         if (typeof window !== 'undefined' && window.gc) {
           window.gc();
+        }
+        } catch (error) {
+          console.warn('CleanCanvas cleanup error:', error);
         }
       }, 0);
     };

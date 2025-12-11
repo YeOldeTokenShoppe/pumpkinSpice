@@ -1,7 +1,7 @@
 "use client";
 import React, { Suspense, useState, useEffect, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import CleanCanvas from '@/components/CleanCanvas';
+import { OrbitControls, Stats } from '@react-three/drei';
 import ConstellationModel from '@/components/ConstellationModel';
 import StarField from '@/components/StarField';
 import Link from 'next/link';
@@ -266,6 +266,13 @@ export default function CyborgTemple() {
         .spinning-record {
           animation: spin 3s linear infinite;
         }
+        
+        .stats-monitor {
+          position: fixed !important;
+          top: 0 !important;
+          left: 100px !important;
+          right: auto !important;
+        }
       `}</style>
       
       <div style={{
@@ -337,7 +344,7 @@ export default function CyborgTemple() {
         />
         {/* Main Canvas - Delayed render for smoother loader animation */}
         {canvasReady && (
-        <Canvas
+        <CleanCanvas
           key="temple-canvas"
           camera={{ position: [0, 0, 7.5], fov: 50 }}
           gl={{ 
@@ -429,7 +436,8 @@ export default function CyborgTemple() {
               target={[0, 0, 0]}
             />
           </Suspense>
-        </Canvas>
+          <Stats className="stats-monitor" />
+        </CleanCanvas>
         )}
 
         {/* Top Controls Container - Music, User, and Nav */}
