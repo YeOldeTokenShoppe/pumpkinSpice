@@ -233,6 +233,9 @@ function AnnotationSystem({ annotations = [], is80sMode = false, scale = 1, text
           annotationOffset={annotation.annotationOffset}
           scale={scale}
           textScale={textScale}
+          attachTo={annotation.attachTo}
+          offset={annotation.offset}
+          textOffset={annotation.textOffset}
         />
       ))}
     </>

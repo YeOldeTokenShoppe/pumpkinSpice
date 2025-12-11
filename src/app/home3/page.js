@@ -47,6 +47,7 @@ import AngelOfCurrencies from "@/components/AngelOfCurrencies";
 // import { WatchlistSlide, Illumin80Slide, TradingDeskSlide, TokenomicsSlide } from "@/components/FeatureSlides";
 import Footer from "@/components/Footer";
 import AnnunciationIntro from '@/components/AnnunciationIntro';
+
 // import VideoScreens from "@/components/VideoScreens";
 // import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
 // import { CubeWithWorkingCSS3D } from '@/components/CubeWithWorkingCSS3D';
@@ -110,6 +111,46 @@ const ClickHandler = () => {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     
+    const handleMouseMove = (event) => {
+      // Calculate mouse position in normalized device coordinates
+      const rect = gl.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      // Update raycaster
+      raycaster.setFromCamera(mouse, camera);
+      
+      // Calculate intersections
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      
+      if (intersects.length > 0) {
+        // Look for Screen1 specifically in the intersections
+        const screen1Intersect = intersects.find(intersect => intersect.object.name === 'Screen1');
+        
+        if (screen1Intersect && screen1Intersect.object.userData.handleHover) {
+          const uv = screen1Intersect.uv;
+          if (uv) {
+            // Account for texture rotation (-90 degrees)
+            const screenX = uv.y * 512;
+            const screenY = (1 - uv.x) * 512;
+            screen1Intersect.object.userData.handleHover(screenX, screenY);
+          }
+        } else {
+          // Not hovering over screen - clear hover state
+          const screen1 = scene.getObjectByName('Screen1');
+          if (screen1 && screen1.userData.handleHover) {
+            screen1.userData.handleHover(-1, -1); // Clear hover
+          }
+        }
+      } else {
+        // Not hovering over anything - clear hover state
+        const screen1 = scene.getObjectByName('Screen1');
+        if (screen1 && screen1.userData.handleHover) {
+          screen1.userData.handleHover(-1, -1); // Clear hover
+        }
+      }
+    };
+    
     const handleClick = (event) => {
       console.log('Manual click handler triggered');
       
@@ -155,9 +196,11 @@ const ClickHandler = () => {
     };
     
     gl.domElement.addEventListener('click', handleClick);
+    gl.domElement.addEventListener('mousemove', handleMouseMove);
     
     return () => {
       gl.domElement.removeEventListener('click', handleClick);
+      gl.domElement.removeEventListener('mousemove', handleMouseMove);
     };
   }, [camera, scene, gl]);
   
@@ -499,22 +542,73 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
             let crtTerminal = null;
             let terminalAnimation = null;
             
-            // CRT Terminal messages
-            const terminalMessages = [
-              { text: "INITIALIZING DRONE SYSTEM...", delay: 0.5 },
-              { text: "CONNECTING TO NEURAL NETWORK...", delay: 1.0 },
-              { text: "AUTHENTICATION SUCCESSFUL", delay: 0.8 },
-              { text: "", delay: 0.5 }, // Empty line
-              { text: "WELCOME TO PUMPKIN SPICE", delay: 1.2 },
-              { text: "DIGITAL SANCTUARY", delay: 1.0 },
-              { text: "", delay: 0.5 },
-              { text: "PREPARING NAVIGATION MATRIX...", delay: 1.0 },
-              { text: "SYSTEM READY", delay: 1.5 }
+            // ASCII art skull (full version - 55 lines)
+            const asciiArt = [
+              "                                      000000                                     ",
+              "                                    010101000                                    ",
+              "                                   111 1001010                                   ",
+              "                                      000000010                                  ",
+              "                                  1     1110100                                  ",
+              "                                  1   110000110                                  ",
+              "                                  1     01010101                                 ",
+              "                                  1 1   10110100                                 ",
+              "                                 1 111  10010110                                 ",
+              "                                11010111000000000                                ",
+              "                               001000010000101000                                ",
+              "                               1001000000000000000                               ",
+              "                              001000001000000000000                              ",
+              "                             1100000000000010000000                              ",
+              "                             00101000000000000000000                             ",
+              "                            0101000010000001000000000                            ",
+              "                           10001001001001001000000000                            ",
+              "                          10010100001011001 0000000000                           ",
+              "                          01010100101101110 00000000000                          ",
+              "                        100010010000000000010000000000000                        ",
+              "                       10001010010010100001010000000000000                       ",
+              "                      0000000010001000001001100000000000001                      ",
+              "                     000000001010010010000011000000000100000                     ",
+              "                    01100000000100100100100101000000100001000                    ",
+              "                   10000 1000100101010100000111000000001101000                   ",
+              "                  001010         1100100001011 1100001   11  01                  ",
+              "                  1010011 11     11010101000011           10110                  ",
+              "                  000000110111   010010000000001        1101000                  ",
+              "                  000000010111  1110110010000001 1   1 10111010                  ",
+              "                  1000000101101 101001000000000011 1 1110101000                  ",
+              "                  1000000010101110110110001000001110101010101000                 ",
+              "                  10111000000011101001001000000010111011011   10                 ",
+              "                  111 1000001010101101100010000010101011011    1                 ",
+              "                   1110000000011110101000100000001001110000111                   ",
+              "                    10100000101010010110001010000011001100010                    ",
+              "                      100010001111010110010100001010111011100                    ",
+              "                     1   000001011010110011010000011011010000                    ",
+              "                     1111 00101111011110001110001010101100010                    ",
+              "                     101  1000101100101000101100010110001   1                    ",
+              "                      11  000011110111110010100100110001011                      ",
+              "                      111 1000101110101100010100101110001                        ",
+              "                       11 100101111011110001001001010101                         ",
+              "                          10001110101111000010010111000                          ",
+              "                           1000111110101000001000101101                          ",
+              "                           10101 11110 110000000011010                           ",
+              "                            1001 11 111110000101011011                           ",
+              "                             101  0  1111000000000 10                            ",
+              "                              11  1111101100000000011                            ",
+              "                                 101001111000000000                              ",
+              "                                10  10010 10000010                               ",
+              "                                     110   1000                                  ",
+              "                                           101                                   "
             ];
             
+            // CRT Terminal - just initializing then ASCII art
+            const terminalMessages = [
+              { text: "INITIALIZING...", delay: 0.5 }
+            ];
+            
+            // Track ASCII art animation
             let currentMessageIndex = 0;
             let currentText = '';
             let isTyping = false;
+            let asciiLineIndex = 0;
+            let showingAscii = false;
             
             // Create canvas for custom UI
             const canvas = document.createElement('canvas');
@@ -531,8 +625,24 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
             texture.rotation = -Math.PI / 2;
             
             // Screen states
-            let screenMode = 'navigation'; // 'navigation', 'crt-terminal', 'post-video'
+            let screenMode = 'navigation'; // 'navigation', 'crt-terminal', 'post-video', 'video'
             let clickAreas = [];
+            let hoveredButton = null;
+            let lastRedrawTime = 0;
+            const redrawThrottle = 16; // ~60fps
+            
+            // Initialize sound effects
+            const sounds = {
+              hover: new Audio('https://cdn.freesound.org/previews/657/657950_6142149-lq.mp3'),
+              accept: new Audio('https://cdn.freesound.org/previews/220/220166_4100837-lq.mp3'),
+              reject: new Audio('https://cdn.freesound.org/previews/657/657950_6142149-lq.mp3')
+            };
+            
+            // Configure sounds
+            Object.values(sounds).forEach(sound => {
+              sound.volume = 0.3; // Set reasonable volume
+              sound.preload = 'auto';
+            });
             
             // CRT Terminal drawing function
             const drawCRTTerminal = () => {
@@ -559,36 +669,56 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.shadowColor = '#00ff41';
               ctx.shadowBlur = 5;
               
-              // Header text - centered and properly positioned
+              // Header text
               let y = 60;
               const centerX = 256; // Center of 512px canvas
               
-              // Center the header text
               ctx.textAlign = 'center';
               ctx.fillText('DRONE_TERMINAL_v2.1', centerX, y);
-              y += 25;
-              ctx.fillText('> SYSTEM_BOOT_SEQUENCE', centerX, y);
-              y += 25;
-              ctx.fillText('> _________________', centerX, y);
-              y += 50;
+              y += 30;
               
               // Switch to left align for message content
               ctx.textAlign = 'left';
               const leftMargin = 40;
               
-              // Current message text
-              if (currentText) {
-                const lines = currentText.split('\n');
-                lines.forEach(line => {
-                  ctx.fillText('> ' + line, leftMargin, y);
-                  y += 25;
-                });
+              // Show text messages (INITIALIZING or TRANSMISSION COMPLETE)
+              if (currentText && currentText !== "TRANSMISSION COMPLETE") {
+                ctx.font = '14px Courier New, monospace';
+                ctx.fillText('> ' + currentText, leftMargin, y);
+                y += 30;
               }
               
-              // Blinking cursor
-              if (isTyping || Math.floor(Date.now() / 500) % 2 === 0) {
-                const cursorX = leftMargin + (currentText.length > 0 ? ctx.measureText('> ' + currentText.split('\n').pop()).width : 20);
-                ctx.fillText('█', cursorX, y - 25);
+              // Draw ASCII art line by line
+              if (showingAscii) {
+                ctx.font = '6px Courier New, monospace';  // Much smaller for 55 lines
+                ctx.textAlign = 'center';
+                ctx.shadowBlur = 2;
+                
+                let artY = y + 10;
+                for (let i = 0; i < Math.min(asciiLineIndex, asciiArt.length); i++) {
+                  ctx.fillStyle = `rgba(0, 255, 65, ${0.7 + Math.random() * 0.3})`; // Flicker effect
+                  ctx.fillText(asciiArt[i], centerX, artY);
+                  artY += 7;  // Smaller line spacing
+                }
+                
+                ctx.textAlign = 'left';
+                ctx.shadowBlur = 5;
+                
+                // Show "TRANSMISSION COMPLETE" below ASCII art
+                if (currentText === "TRANSMISSION COMPLETE") {
+                  ctx.textAlign = 'center';
+                  ctx.fillStyle = '#00ff41';
+                  ctx.shadowBlur = 10;
+                  ctx.font = 'bold 16px Courier New, monospace';
+                  ctx.fillText(currentText, centerX, artY + 20);
+                  ctx.textAlign = 'left';
+                }
+              }
+              
+              // Blinking cursor (only when typing, not during ASCII art)
+              if (!showingAscii && (isTyping || Math.floor(Date.now() / 500) % 2 === 0)) {
+                const cursorX = leftMargin + (currentText.length > 0 ? ctx.measureText('> ' + currentText).width : 20);
+                ctx.fillText('█', cursorX, y - 5);
               }
               
               // Scanlines effect
@@ -605,15 +735,48 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               currentMessageIndex = 0;
               currentText = '';
               isTyping = false;
+              asciiLineIndex = 0;
+              showingAscii = false;
               
               const typeNextMessage = () => {
                 if (currentMessageIndex >= terminalMessages.length) {
-                  // Animation complete
-                  setTimeout(() => {
-                    console.log('CRT Terminal complete, showing navigation');
-                    screenMode = 'post-video';
-                    drawPostVideoScreen();
-                  }, 2000);
+                  // Start showing ASCII art after "INITIALIZING..."
+                  if (!showingAscii) {
+                    showingAscii = true;
+                    asciiLineIndex = 0;
+                    
+                    // Animate ASCII art line by line
+                    const showNextAsciiLine = () => {
+                      if (asciiLineIndex < asciiArt.length) {
+                        asciiLineIndex++;
+                        drawCRTTerminal();
+                        
+                        setTimeout(showNextAsciiLine, 50); // Faster for more lines
+                      } else {
+                        // ASCII art complete, show final message
+                        console.log('ASCII art complete, lines shown:', asciiLineIndex);
+                        
+                        // Display "TRANSMISSION COMPLETE" after ASCII art
+                        setTimeout(() => {
+                          currentText = "TRANSMISSION COMPLETE";
+                          // Keep showingAscii true to display both
+                          drawCRTTerminal();
+                          
+                          // Play acceptance sound for completion
+                          sounds.accept.cloneNode(true).play().catch(() => {});
+                          
+                          // Then show navigation after a pause
+                          setTimeout(() => {
+                            console.log('CRT Terminal complete, showing navigation');
+                            screenMode = 'post-video';
+                            drawPostVideoScreen();
+                          }, 2000);
+                        }, 500);
+                      }
+                    };
+                    
+                    showNextAsciiLine();
+                  }
                   return;
                 }
                 
@@ -659,7 +822,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
             };
             
             // Draw initial navigation screen
-            const drawNavigationScreen = () => {
+            const drawNavigationScreen = (hoveredIndex = null) => {
               ctx.fillStyle = '#0a0a0a';
               ctx.fillRect(0, 0, 512, 512);
               
@@ -669,19 +832,69 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.textAlign = 'center';
               ctx.fillText('DRONE SYSTEM', 256, 80);
               
-              // Welcome terminal button
-              ctx.fillStyle = '#ff6600';
-              ctx.fillRect(56, 150, 400, 60);
-              ctx.fillStyle = '#000';
-              ctx.font = 'bold 20px Courier New';
-              ctx.fillText('▶ ACTIVATE TERMINAL', 256, 185);
+              // Welcome terminal button with cyberpunk style
+              const terminalBtnX = 56;
+              const terminalBtnY = 150;
+              const terminalBtnWidth = 400;
+              const terminalBtnHeight = 60;
+              const isTerminalHovered = hoveredIndex === 0;
               
-              // Navigation buttons
+              ctx.save();
+              
+              // Create clipping path for terminal button (larger corner cut)
+              ctx.beginPath();
+              ctx.moveTo(terminalBtnX, terminalBtnY);
+              ctx.lineTo(terminalBtnX + terminalBtnWidth, terminalBtnY);
+              ctx.lineTo(terminalBtnX + terminalBtnWidth, terminalBtnY + terminalBtnHeight - 15);
+              ctx.lineTo(terminalBtnX + terminalBtnWidth - 15, terminalBtnY + terminalBtnHeight);
+              ctx.lineTo(terminalBtnX, terminalBtnY + terminalBtnHeight);
+              ctx.closePath();
+              
+              // Fill with cyan/blue gradient when hovered (matching the codepen accent color)
+              if (isTerminalHovered) {
+                const gradient = ctx.createLinearGradient(terminalBtnX, terminalBtnY, terminalBtnX + terminalBtnWidth, terminalBtnY);
+                gradient.addColorStop(0, 'rgba(114, 191, 190, 0.3)');  // Cyber blue from codepen
+                gradient.addColorStop(0.5, 'rgba(114, 191, 190, 0.4)');
+                gradient.addColorStop(1, 'rgba(114, 191, 190, 0.3)');
+                ctx.fillStyle = gradient;
+                ctx.fill();
+              } else {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.fill();
+              }
+              
+              // Draw border with cyber blue
+              ctx.strokeStyle = isTerminalHovered ? '#72bfbe' : 'rgba(114, 191, 190, 0.8)';  // Cyber blue
+              ctx.lineWidth = isTerminalHovered ? 4 : 3;
+              ctx.stroke();
+              
+              // Draw accent elements with cyber blue
+              ctx.beginPath();
+              ctx.moveTo(terminalBtnX - 20, terminalBtnY + 10);
+              ctx.lineTo(terminalBtnX - 20, terminalBtnY + terminalBtnHeight - 10);
+              ctx.strokeStyle = '#72bfbe';  // Cyber blue
+              ctx.lineWidth = 4;
+              ctx.stroke();
+              
+              // Terminal button text with cyber blue glow
+              ctx.shadowColor = '#72bfbe';  // Cyber blue
+              ctx.shadowBlur = isTerminalHovered ? 25 : 15;
+              ctx.fillStyle = isTerminalHovered ? '#ffffff' : '#72bfbe';  // Cyber blue
+              ctx.font = 'bold 20px Courier New';
+              ctx.textAlign = 'center';
+              ctx.fillText('▶ ACTIVATE TERMINAL', terminalBtnX + terminalBtnWidth/2, terminalBtnY + terminalBtnHeight/2 + 7);
+              
+              ctx.shadowBlur = 0;
+              ctx.textAlign = 'left';
+              ctx.restore();
+              
+              // Navigation buttons - adjusted spacing for larger buttons
               const buttons = [
-                { text: '🏠 HOME', y: 250 },
-                { text: '💰 TOKENOMICS', y: 310 },
-                { text: '🖼️ GALLERY', y: 370 },
-                { text: '🌙 MOON ROOM', y: 430 }
+                // { text: '◆ HOME', y: 230, url: '/' },
+                { text: '▶ VIDEO MESSAGE', y: 230, action: 'playVideo', video: '/videos/23.mp4' },
+                { text: '▲ TRADING DESK', y: 300, url: '/temple' },
+                { text: '◈ ILLUMIN80', y: 370, url: '/gallery3' },
+                { text: '◉ TOKENOMICS', y: 440, url: '/tokenomics' }
               ];
               
               clickAreas = [
@@ -689,80 +902,196 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ];
               
               buttons.forEach((btn, index) => {
-                ctx.fillStyle = '#00ff41';
-                ctx.fillRect(56, btn.y, 400, 50);
-                ctx.fillStyle = '#000';
-                ctx.font = 'bold 18px Courier New';
-                ctx.fillText(btn.text, 256, btn.y + 30);
+                const btnX = 56;
+                const btnY = btn.y;
+                const btnWidth = 400;  // Same width as terminal button
+                const btnHeight = 60;  // Same height as terminal button
+                const cornerSize = 15;  // Same corner size as terminal button
+                const isHovered = hoveredIndex === index + 1; // +1 because terminal button is index 0
+                const isVideoBtn = btn.action === 'playVideo';
+                
+                // Draw cyberpunk-style button with cut corner
+                ctx.save();
+                
+                // Create clipping path for button shape (polygon with cut corner)
+                ctx.beginPath();
+                ctx.moveTo(btnX, btnY);
+                ctx.lineTo(btnX + btnWidth, btnY);
+                ctx.lineTo(btnX + btnWidth, btnY + btnHeight - cornerSize);
+                ctx.lineTo(btnX + btnWidth - cornerSize, btnY + btnHeight);
+                ctx.lineTo(btnX, btnY + btnHeight);
+                ctx.closePath();
+                
+                // Fill background - special color for video button
+                if (isHovered) {
+                  // Glitch effect for hovered state
+                  const glitchOffset = Math.random() * 2 - 1;
+                  if (isVideoBtn) {
+                    ctx.fillStyle = 'rgba(147, 51, 234, 0.3)'; // Purple for video
+                  } else {
+                    ctx.fillStyle = 'rgba(0, 255, 65, 0.2)';
+                  }
+                  ctx.fill();
+                  
+                  // Add glitch lines
+                  ctx.strokeStyle = isVideoBtn ? '#9333ea' : '#00ff41';
+                  ctx.lineWidth = 1;
+                  ctx.globalAlpha = 0.5;
+                  ctx.beginPath();
+                  ctx.moveTo(btnX + glitchOffset * 5, btnY + btnHeight * 0.3);
+                  ctx.lineTo(btnX + btnWidth + glitchOffset * 3, btnY + btnHeight * 0.3);
+                  ctx.stroke();
+                  ctx.beginPath();
+                  ctx.moveTo(btnX - glitchOffset * 3, btnY + btnHeight * 0.7);
+                  ctx.lineTo(btnX + btnWidth - glitchOffset * 5, btnY + btnHeight * 0.7);
+                  ctx.stroke();
+                  ctx.globalAlpha = 1;
+                } else {
+                  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                  ctx.fill();
+                }
+                
+                // Draw border - different color for video button
+                if (isVideoBtn) {
+                  ctx.strokeStyle = isHovered ? '#9333ea' : 'rgba(147, 51, 234, 0.8)';
+                } else {
+                  ctx.strokeStyle = isHovered ? '#00ff41' : 'rgba(0, 255, 65, 0.8)';
+                }
+                ctx.lineWidth = isHovered ? 3 : 2;
+                ctx.stroke();
+                
+                // Add accent line on the side - animated when hovered
+                ctx.beginPath();
+                const sideLineOffset = isHovered ? Math.sin(Date.now() * 0.01) * 2 : 0;
+                ctx.moveTo(btnX - 20 + sideLineOffset, btnY + 10);
+                ctx.lineTo(btnX - 20 + sideLineOffset, btnY + btnHeight - 10);
+                if (isVideoBtn) {
+                  ctx.strokeStyle = isHovered ? '#9333ea' : 'rgba(147, 51, 234, 0.6)';
+                } else {
+                  ctx.strokeStyle = isHovered ? '#00ff41' : 'rgba(0, 255, 65, 0.6)';
+                }
+                ctx.lineWidth = isHovered ? 4 : 3;
+                ctx.stroke();
+                
+                // No corner accent - matching terminal button style
+                
+                // Draw text with enhanced glow effect when hovered
+                ctx.shadowColor = isVideoBtn ? '#9333ea' : '#00ff41';
+                ctx.shadowBlur = isHovered ? 25 : 15;  // Match terminal button glow
+                if (isVideoBtn) {
+                  ctx.fillStyle = isHovered ? '#ffffff' : '#9333ea';
+                } else {
+                  ctx.fillStyle = isHovered ? '#ffffff' : '#00ff41';
+                }
+                ctx.font = 'bold 20px Courier New';  // Same font size as terminal button
+                ctx.textAlign = 'center';
+                
+                // Add glitch text effect when hovered
+                if (isHovered && Math.random() > 0.9) {
+                  // Occasional glitch displacement
+                  const glitchX = (Math.random() - 0.5) * 4;
+                  const glitchY = (Math.random() - 0.5) * 2;
+                  ctx.fillStyle = 'rgba(255, 0, 100, 0.5)';
+                  ctx.fillText(btn.text.toUpperCase(), btnX + btnWidth/2 + glitchX, btnY + btnHeight/2 + 7 + glitchY);
+                  ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+                  ctx.fillText(btn.text.toUpperCase(), btnX + btnWidth/2 - glitchX, btnY + btnHeight/2 + 7 - glitchY);
+                }
+                
+                if (isVideoBtn) {
+                  ctx.fillStyle = isHovered ? '#ffffff' : '#9333ea';
+                } else {
+                  ctx.fillStyle = isHovered ? '#ffffff' : '#00ff41';
+                }
+                ctx.fillText(btn.text.toUpperCase(), btnX + btnWidth/2, btnY + btnHeight/2 + 7);  // Adjusted for larger button
+                
+                // Reset shadow
+                ctx.shadowBlur = 0;
+                ctx.textAlign = 'left';
+                ctx.restore();
                 
                 clickAreas.push({
-                  x: 56, y: btn.y, width: 400, height: 50,
-                  action: 'navigate',
-                  url: index === 0 ? '/' : `/${btn.text.split(' ')[1].toLowerCase()}`
+                  x: btnX, y: btnY, width: btnWidth, height: btnHeight,
+                  action: btn.action || 'navigate',
+                  url: btn.url,
+                  video: btn.video,
+                  index: index + 1
                 });
               });
               
               texture.needsUpdate = true;
             };
             
-            // Draw post-video navigation
+            // Draw post-video navigation (same design as pre-CRT)
             const drawPostVideoScreen = () => {
-              ctx.fillStyle = '#0a0a0a';
-              ctx.fillRect(0, 0, 512, 512);
+              // Simply use the exact same navigation screen
+              // Users can click "ACTIVATE TERMINAL" again to replay
+              drawNavigationScreen();
+            };
+            
+            // Handle screen hover
+            const handleScreenHover = (x, y) => {
+              // Don't process hovers during CRT terminal animation
+              if (screenMode === 'crt-terminal') {
+                return;
+              }
               
-              ctx.fillStyle = '#00ff41';
-              ctx.font = 'bold 24px Courier New';
-              ctx.textAlign = 'center';
-              ctx.fillText('TERMINAL COMPLETE', 256, 80);
+              let newHoveredButton = null;
               
-              ctx.font = '16px Courier New';
-              ctx.fillText('Choose your destination:', 256, 120);
+              // Check which button is being hovered
+              for (const area of clickAreas) {
+                if (x >= area.x && x <= area.x + area.width && 
+                    y >= area.y && y <= area.y + area.height) {
+                  newHoveredButton = area.index !== undefined ? area.index : (area.action === 'activateTerminal' ? 0 : null);
+                  break;
+                }
+              }
               
-              const buttons = [
-                { text: '🏠 MAIN SITE', url: '/' },
-                { text: '💰 TOKENOMICS', url: '/tokenomics' },
-                { text: '🖼️ GALLERY', url: '/gallery' },
-                { text: '🌙 MOON ROOM', url: '/moonroom' },
-                { text: '🎮 GAME', url: '/game' },
-                { text: '🔄 REPLAY TERMINAL', action: 'replay' }
-              ];
-              
-              clickAreas = [];
-              
-              buttons.forEach((btn, index) => {
-                const y = 160 + (index * 55);
-                ctx.fillStyle = index === buttons.length - 1 ? '#ff6600' : '#00ff41';
-                ctx.fillRect(56, y, 400, 45);
-                ctx.fillStyle = '#000';
-                ctx.font = 'bold 16px Courier New';
-                ctx.fillText(btn.text, 256, y + 28);
+              // Only redraw if hover state changed
+              if (newHoveredButton !== hoveredButton) {
+                // Play hover sound when entering a button (but not during CRT animation)
+                if (newHoveredButton !== null && hoveredButton === null && screenMode !== 'crt-terminal') {
+                  // Clone and play to allow rapid hover sounds
+                  sounds.hover.cloneNode(true).play().catch(err => {
+                    console.log('Hover sound play failed:', err);
+                  });
+                }
                 
-                clickAreas.push({
-                  x: 56, y: y, width: 400, height: 45,
-                  action: btn.action || 'navigate',
-                  url: btn.url
-                });
-              });
-              
-              texture.needsUpdate = true;
+                hoveredButton = newHoveredButton;
+                const now = Date.now();
+                if (now - lastRedrawTime > redrawThrottle) {
+                  lastRedrawTime = now;
+                  if (screenMode === 'navigation' || screenMode === 'post-video') {
+                    drawNavigationScreen(hoveredButton);
+                  }
+                }
+              }
             };
             
             // Handle screen clicks
             const handleScreenClick = (x, y) => {
               console.log('Screen click at:', x, y);
+              console.log('Screen mode:', screenMode);
               console.log('Available click areas:', clickAreas.length);
               
-              // Check terminal button first (highest priority)
-              const terminalArea = clickAreas.find(area => area.action === 'activateTerminal');
-              if (terminalArea && 
-                  x >= terminalArea.x && x <= terminalArea.x + terminalArea.width && 
-                  y >= terminalArea.y && y <= terminalArea.y + terminalArea.height) {
-                
-                console.log('Clicked TERMINAL button area:', terminalArea);
-                console.log('Activating CRT Terminal');
-                screenMode = 'crt-terminal';
-                startCRTTerminal();
-                return; // Exit early
+              // Check terminal button in navigation or post-video mode (for replay)
+              if (screenMode === 'navigation' || screenMode === 'post-video') {
+                const terminalArea = clickAreas.find(area => area.action === 'activateTerminal');
+                if (terminalArea && 
+                    x >= terminalArea.x && x <= terminalArea.x + terminalArea.width && 
+                    y >= terminalArea.y && y <= terminalArea.y + terminalArea.height) {
+                  
+                  console.log('Clicked TERMINAL button area:', terminalArea);
+                  console.log('Activating CRT Terminal');
+                  
+                  // Play accept sound for terminal activation
+                  sounds.accept.cloneNode(true).play().catch(err => {
+                    console.log('Accept sound play failed:', err);
+                  });
+                  
+                  screenMode = 'crt-terminal';
+                  startCRTTerminal();
+                  return; // Exit early
+                }
               }
               
               // Check other areas
@@ -775,11 +1104,151 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                   
                   if (area.action === 'navigate' && area.url) {
                     console.log('Navigating to:', area.url);
-                    window.location.href = area.url;
+                    // Play accept sound for navigation
+                    sounds.accept.cloneNode(true).play().catch(err => {
+                      console.log('Accept sound play failed:', err);
+                    });
+                    // Small delay to let sound play before navigation
+                    setTimeout(() => {
+                      window.location.href = area.url;
+                    }, 200);
                   } else if (area.action === 'replay') {
                     console.log('Replaying CRT terminal');
+                    // Play accept sound for replay
+                    sounds.accept.cloneNode(true).play().catch(err => {
+                      console.log('Accept sound play failed:', err);
+                    });
                     screenMode = 'crt-terminal';
                     startCRTTerminal();
+                  } else if (area.action === 'stopVideo') {
+                    console.log('Stopping video, returning to navigation');
+                    // Play reject/back sound for stopping video
+                    sounds.reject.cloneNode(true).play().catch(err => {
+                      console.log('Reject sound play failed:', err);
+                    });
+                    // Clean up video if reference exists
+                    if (area.video) {
+                      area.video.pause();
+                      // Don't clear src as it causes an error, just pause is enough
+                      area.video.removeAttribute('src');
+                      area.video.load();
+                    }
+                    screenMode = 'navigation';
+                    drawNavigationScreen();
+                  } else if (area.action === 'playVideo' && area.video) {
+                    console.log('Playing video:', area.video);
+                    // Play special accept sound for video
+                    sounds.accept.cloneNode(true).play().catch(err => {
+                      console.log('Accept sound play failed:', err);
+                    });
+                    // Create and play video
+                    const video = document.createElement('video');
+                    video.src = area.video;
+                    video.autoplay = true;
+                    video.muted = true;
+                    video.playsInline = true;
+                    
+                    // Store video reference for cleanup
+                    let currentVideo = video;
+                    
+                    video.addEventListener('loadeddata', () => {
+                      console.log('Video loaded, playing on screen');
+                      screenMode = 'video';
+                      
+                      // Set click areas for video mode (back button in bottom area)
+                      // Place it at the bottom to test if rotation is the issue
+                      clickAreas = [
+                        { 
+                          x: 156,  // Center horizontally
+                          y: 400,  // Near bottom
+                          width: 200, 
+                          height: 80, 
+                          action: 'stopVideo',
+                          video: currentVideo  // Store reference for cleanup
+                        }
+                      ];
+                      
+                      // Draw video to canvas
+                      const drawVideo = () => {
+                        if (!currentVideo || currentVideo.paused || currentVideo.ended || screenMode !== 'video') {
+                          console.log('Video ended or stopped, returning to navigation');
+                          if (currentVideo) {
+                            currentVideo.pause();
+                            // Properly clean up video without causing errors
+                            currentVideo.removeAttribute('src');
+                            currentVideo.load();
+                            currentVideo = null;
+                          }
+                          screenMode = 'navigation';
+                          drawNavigationScreen();
+                          return;
+                        }
+                        
+                        // Draw video frame
+                        ctx.drawImage(video, 0, 0, 512, 512);
+                        
+                        // Draw back button overlay at bottom center
+                        ctx.save();
+                        
+                        // Button background with cyberpunk style - bottom center position
+                        const btnX = 156;
+                        const btnY = 400;
+                        const btnWidth = 200;
+                        const btnHeight = 80;
+                        const cornerSize = 10;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(btnX, btnY);
+                        ctx.lineTo(btnX + btnWidth, btnY);
+                        ctx.lineTo(btnX + btnWidth, btnY + btnHeight - cornerSize);
+                        ctx.lineTo(btnX + btnWidth - cornerSize, btnY + btnHeight);
+                        ctx.lineTo(btnX, btnY + btnHeight);
+                        ctx.closePath();
+                        
+                        // Semi-transparent background
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        ctx.fill();
+                        
+                        // Border
+                        ctx.strokeStyle = '#72bfbe';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        
+                        // Back arrow and text - larger
+                        ctx.fillStyle = '#72bfbe';
+                        ctx.font = 'bold 18px Courier New';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('◄ BACK', btnX + btnWidth/2, btnY + btnHeight/2 + 6);
+                        
+                        ctx.restore();
+                        
+                        texture.needsUpdate = true;
+                        
+                        if (screenMode === 'video') {
+                          requestAnimationFrame(drawVideo);
+                        }
+                      };
+                      
+                      video.play().then(() => {
+                        drawVideo();
+                      }).catch(err => {
+                        console.error('Video play error:', err);
+                        screenMode = 'navigation';
+                        drawNavigationScreen();
+                      });
+                    });
+                    
+                    video.addEventListener('error', (err) => {
+                      console.error('Video error:', err);
+                      screenMode = 'navigation';
+                      drawNavigationScreen();
+                    });
+                    
+                    video.addEventListener('ended', () => {
+                      console.log('Video playback complete');
+                      screenMode = 'navigation';
+                      drawNavigationScreen();
+                    });
                   }
                   break;
                 }
@@ -810,11 +1279,19 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               if (screenMode === 'crt-terminal') {
                 // CRT terminal draws directly to canvas, just ensure texture updates
                 drawCRTTerminal();
+              } else if (screenMode === 'navigation' && hoveredButton !== null) {
+                // Redraw with animation for hover effects
+                const now = Date.now();
+                if (now - lastRedrawTime > redrawThrottle) {
+                  lastRedrawTime = now;
+                  drawNavigationScreen(hoveredButton);
+                }
               }
             };
             
-            // Store click handler
+            // Store handlers
             object.userData.handleClick = handleScreenClick;
+            object.userData.handleHover = handleScreenHover;
             
             // Store references for cleanup
             object.userData.texture = texture;
@@ -1082,7 +1559,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
 });
 
 // Angel Model component with scroll-based swoop animation
-const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrollY, isMobile = false }) {
+const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrollY, isMobile = false, isTabletPortrait = false, isTabletLandscape = false }) {
   const { scene, animations } = useGLTF('/models/angel2.glb');
   const groupRef = useRef();
   const mixerRef = useRef();
@@ -1122,9 +1599,21 @@ const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrol
   const exitThreshold = 3000;
   const totalDuration = exitThreshold - appearThreshold; // 2000 scroll units
   
-  // Second appearance for chase sequence
-  const chaseAppearThreshold = isMobile ? 9500 : 10500; // Appears during devil's pause phase
-  const chaseExitThreshold = isMobile ? 10500 : 11500;   // Chases devil off screen
+  // Second appearance for chase sequence - with tablet support
+  const getChaseAppearThreshold = () => {
+    if (isMobile) return 9000;
+    if (isTabletPortrait) return 11300;
+    if (isTabletLandscape) return 9700;
+    return 9500; // Desktop
+  };
+  const getChaseExitThreshold = () => {
+    if (isMobile) return 10000;
+    if (isTabletPortrait) return 12300;
+    if (isTabletLandscape) return 10700;
+    return 10500; // Desktop
+  };
+  const chaseAppearThreshold = getChaseAppearThreshold();
+  const chaseExitThreshold = getChaseExitThreshold();
   const chaseDuration = chaseExitThreshold - chaseAppearThreshold;
   
   // Flight stages (as percentage of total scroll duration)
@@ -1336,7 +1825,7 @@ const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrol
 });
 
 // Devil Model component with scroll-based swoop animation (appears at end of page)
-const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrollY, isMobile = false }) {
+const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrollY, isMobile = false, isTabletPortrait = false, isTabletLandscape = false }) {
   const { scene, animations } = useGLTF('/models/devil2.glb');
   const groupRef = useRef();
   const mixerRef = useRef();
@@ -1371,9 +1860,21 @@ const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrol
     };
   }, [animations, scene]);
 
-  // Animation constants - multi-stage flight path (appears at end of page)
-  const appearThreshold = isMobile ? 8500 : 10000; // Appears near end of page
-  const exitThreshold = isMobile ? 9500 : 11000;   // Exits after page end
+  // Animation constants - multi-stage flight path (appears at end of page) - with tablet support
+  const getDevilAppearThreshold = () => {
+    if (isMobile) return 8000;
+    if (isTabletPortrait) return 10300;
+    if (isTabletLandscape) return 8700;
+    return 9000; // Desktop
+  };
+  const getDevilExitThreshold = () => {
+    if (isMobile) return 9000;
+    if (isTabletPortrait) return 11300;
+    if (isTabletLandscape) return 9700;
+    return 10000; // Desktop
+  };
+  const appearThreshold = getDevilAppearThreshold();
+  const exitThreshold = getDevilExitThreshold();
   const totalDuration = exitThreshold - appearThreshold; // 2000 scroll units
   
   // Flight stages (as percentage of total scroll duration)
@@ -2062,6 +2563,8 @@ export default function Home3() {
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isTabletPortrait, setIsTabletPortrait] = useState(false);
+  const [isTabletLandscape, setIsTabletLandscape] = useState(false);
   const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -2168,11 +2671,17 @@ export default function Home3() {
     setMounted(true);
     const checkDevice = () => {
       const width = window.innerWidth;
+      const height = window.innerHeight;
       const mobile = width <= 1024; // Increased breakpoint to catch more devices
-      const isMobileValue = width <= 768; // 768px breakpoint for isMobile
+      // iPad Mini portrait is 744px wide, so adjust the breakpoint  
+      const isMobileValue = width <= 480; // Smaller breakpoint for true mobile phones
+      const tabletPortrait = width >= 481 && width <= 1024 && height > width; // Captures iPad Mini portrait (744px)
+      const tabletLandscape = width >= 481 && width <= 1024 && width > height;
+      
       setIsMobile(isMobileValue);
       setIsMobileDevice(mobile);
-      // Mobile detection: width, mobile, isMobileValue
+      setIsTabletPortrait(tabletPortrait);
+      setIsTabletLandscape(tabletLandscape);
     };
     
     // Handle scroll events - check all possible scroll sources
@@ -2468,12 +2977,16 @@ export default function Home3() {
             <AngelModel 
               scrollY={scrollY}
               isMobile={isMobile}
+              isTabletPortrait={isTabletPortrait}
+              isTabletLandscape={isTabletLandscape}
             />
             
             {/* Devil Model with playful swoop animation (appears at end) */}
             <DevilModel 
               scrollY={scrollY}
               isMobile={isMobile}
+              isTabletPortrait={isTabletPortrait}
+              isTabletLandscape={isTabletLandscape}
             />
             
             {/* Manual click handler component */}
@@ -2866,7 +3379,7 @@ export default function Home3() {
         {isMobile && (
           <div style={{
             position: 'relative',
-            height: '400vh', // Extra space on mobile for animations
+            height: '200vh', // Moderate extra space on mobile for animations
             width: '100%',
             zIndex: 1,
             pointerEvents: 'none',
@@ -2915,7 +3428,12 @@ export default function Home3() {
 
        
 
-                        <div style={{position: 'relative', zIndex: 10, pointerEvents: 'auto', marginTop: isMobile ? '-350vh' : '-150vh', marginBottom: '1rem'}}>
+                        <div style={{position: 'relative', zIndex: 10, pointerEvents: 'auto', marginTop: (() => {
+                          if (isMobile) return '5vh';
+                          if (isTabletPortrait) return '-10rem';
+                          if (isTabletLandscape) return '80vh';
+                          return '5vh'; // Desktop
+                        })(), marginBottom: '1rem'}}>
                          <div ref={secondTitleRef} style={{
                                   textAlign: 'center',
                                   padding: isMobile ? '3rem 1.5rem' : '5rem 2rem',

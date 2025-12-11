@@ -519,8 +519,8 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={4}
                 speed={0.025}
                 bounds={[-5, 10, 9]}
-                position={[-15, -110, -20]}
-                
+                position={[-15, -110, -25]}
+                        //  color={'#ff00f0'}
                 frustumCulled={false}
               />
               */above cloud is where the drone starts to appear /*
@@ -591,8 +591,8 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 growth={6}
                 speed={0.02}
                 bounds={[22, 14, 8]}
-                position={[25, -120, 5]}
-                texture={cloudTexture}
+                position={[25, -120, -18]}
+                      // color={'#ff00f0'}
                 frustumCulled={false}
               />
               
@@ -663,7 +663,7 @@ const DarkCloudsComponent = React.forwardRef(({ onLoad, ...props }, ref) => {
                 speed={0.02}
                 bounds={[16, 12, 6]}
                 position={[2, -420, 8]}
-                 color={'#ff00f0'}
+                //  color={'#ff00f0'}
                 frustumCulled={false}
               />
               

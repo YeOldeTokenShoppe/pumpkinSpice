@@ -26,6 +26,9 @@ const CyborgTempleScene = forwardRef(({
   const danceTimeoutRef = useRef(null);
   const slowdownIntervalRef = useRef(null);
   const [loadedModel, setLoadedModel] = useState(null);
+  const cylinderMeshRef = useRef(); // Ref for the specific cylinder mesh
+  const object7MeshRef = useRef(); // Ref for Object_5 (was Object_7)
+  const cube010MeshRef = useRef(); // Ref for Cube010
   
   // Expose the loaded model through ref
   useImperativeHandle(ref, () => ({
@@ -35,14 +38,15 @@ const CyborgTempleScene = forwardRef(({
   // Define annotation points - adjust positions based on your temple scene
   const annotations = [
     {
-      position: [0, 0.3, 0], // Near the main altar/center
-      text: "RL80 Trades 24/7 - A virgin trader and autonomous agent with one purpose: learn to trade on a perp exhange and maximize profits for her investors.",
+      text: "RL80 Trades 24/7 - A virtuous and autonomous agent with one purpose: learn to trade perpetual contracts and maximize profits for her followers and token holders.",
+      attachTo: object7MeshRef, // Attach to Object_7 mesh
+      offset: [0, 1.9, 0], // Position slightly above the object center
+      textOffset: [0, 0.2, -0.5], // Position text panel above and back
       customCamera: {
-        position: [2, -0.8, -0.3], // Camera moved right and lower
+        position: [2, -0.8, -0.5], // Camera moved right and lower
         lookAt: [0, -0.5, 0], // Look outward toward the characters
-        distance: 1 // Slightly increased distance for better framing
-      },
-      annotationOffset: [20, 350] // [x, y] offset in pixels from center
+        distance: 1.5 // Slightly increased distance for better framing
+      }
     },
     // {
     //   position: [2, 0, -2], // Right side
@@ -50,26 +54,26 @@ const CyborgTempleScene = forwardRef(({
     // },
 
  {
-      position: [0.6, -0.45, 0.4], // Near the main altar/center
       text: "RL80 Holder Neural Network - live display of holders online right now.",
+      attachTo: cylinderMeshRef, // Attach to the cylinder mesh
+      offset: [0, 0.5, 0], // Position at cylinder center
+      textOffset: [0, 0.2, -1], // Position text panel 1.5 units up and 1 unit back
       customCamera: {
         position: [-2, -0.7, 3.3], // Camera moved right and lower
         lookAt: [1, -0.7, -0.1], // Look outward toward the characters
         distance: 1.2 // Slightly increased distance for better framing
-      },
-      annotationOffset: [-10, 220] // [x, y] offset in pixels from center
+      }
     },
     {
-      position: [-2, -0.7, 0.35], // Left side
-      text: "The 3 Wise Mechs",
-      // Special camera settings for viewing characters from center
+      text: "The 3 Wise Mechs - RL80's crypto council: Emo, Macro, and Tekno - specialists in market sentiment, macro trends, and technical analysis, respectively.",
+      attachTo: cube010MeshRef, // Attach to Cube010 mesh
+      offset: [-1.8, 1.1, 0.5], // Position above the cube center
+      textOffset: [0.1, 0, -0.4], // Position text panel above and back
       customCamera: {
-        position: [-0.2, -1.3, -0.5], // Camera moved right and lower
-        lookAt: [-3, -1, 0.5], // Look outward toward the characters
+        position: [0.2, -1.3, -0.3], // Camera moved right and lower
+        lookAt: [-2.7, -1, 0.3], // Look outward toward the characters
         distance: 2.5 // Slightly increased distance for better framing
-      },
-      // Custom annotation position for this view (in screen space)
-      annotationOffset: [50, 150] // [x, y] offset in pixels from center
+      }
     },
   ];
   
@@ -83,10 +87,10 @@ const CyborgTempleScene = forwardRef(({
     dracoLoader.setDecoderPath("/draco/");
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    console.log('Loading MaryTraderScene_extraClothes.glb...');
+    // console.log('Loading MaryTraderScene_extraClothes2.glb...');
     
-    gltfLoader.load("/models/MaryTraderScene_extraClothes.glb", (gltf) => {
-      console.log('✓ MaryTraderScene_extraClothes.glb loaded successfully');
+    gltfLoader.load("/models/MaryTraderScene_extraClothes2.glb", (gltf) => {
+      // console.log('✓ MaryTraderScene_extraClothes2.glb loaded successfully');
       
       const templeScene = gltf.scene;
       
@@ -163,6 +167,21 @@ const CyborgTempleScene = forwardRef(({
         groupRef.current = anchorGroup;
       }
       
+      // Find the specific meshes
+      templeScene.traverse((child) => {
+        if (child.name === 'Cylinder043_0') {
+          console.log('Found Cylinder043_0 mesh:', child);
+          cylinderMeshRef.current = child;
+        }
+        if (child.name === 'Object_5') {
+          console.log('Found Object_5 mesh:', child);
+          object7MeshRef.current = child;
+        }
+        if (child.name === 'Mike') {
+          console.log('Found Cube010 mesh:', child);
+          cube010MeshRef.current = child;
+        }
+      });
       
       // Call onLoad callback if provided
       if (onLoad) {
@@ -175,7 +194,7 @@ const CyborgTempleScene = forwardRef(({
       console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
     },
     (error) => {
-      console.error('Error loading MaryTraderScene_extraClothes.glb:', error);
+      console.error('Error loading MaryTraderScene_extraClothes2.glb:', error);
       // Still call onLoad even if there's an error, so the page doesn't hang
       if (onLoad) {
         setTimeout(() => {

@@ -405,7 +405,7 @@ export default function CyborgTemple() {
               opacity={0.8}            // Slightly dimmed
               useNormalBlending={true}
               formation={0}
-              density={30}
+              density={300}
               position={[0.64, -0.72, 0.37]}
               scale={0.005}
               enableInteraction={true}
@@ -460,7 +460,7 @@ export default function CyborgTemple() {
                     height: isMobileView ? "2.5rem" : "3.75rem",
                     borderRadius: "0.5rem",
                     backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
-                    border: is80sMode ? "1px solid #D946EF" : "1px solid rgba(255, 255, 255, 0.2)",
+                    border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
                     color: is80sMode ? "#67e8f9" : "#ffffff",
                     display: "flex",
                     alignItems: "center",
@@ -546,7 +546,7 @@ export default function CyborgTemple() {
                         height: isMobileView ? "2rem" : "2.5rem",
                         borderRadius: "0.25rem",
                         backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
-                        border: is80sMode ? "1px solid #D946EF" : "1px solid rgba(255, 255, 255, 0.2)",
+                        border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
                         color: is80sMode ? "#67e8f9" : "#ffffff",
                         display: "flex",
                         alignItems: "center",
@@ -638,7 +638,7 @@ export default function CyborgTemple() {
                   height: isMobileView ? "2.5rem" : "3.75rem",
                   borderRadius: "0.5rem",
                   backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
-                  border: is80sMode ? "1px solid #D946EF" : "1px solid rgba(255, 255, 255, 0.2)",
+                  border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
                   color: is80sMode ? "#67e8f9" : (showAnnotations ? "#ffff00" : "#ffffff"),
                   display: "flex",
                   alignItems: "center",
