@@ -385,7 +385,7 @@ function FloatingChart({ position, chartData, chartType = 'line', chartLabel = '
   );
 }
 
-function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
+function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick, onPyramidClick }) {
   const group = useRef();
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, group);
@@ -396,6 +396,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
   const scrollMeshesRef = useRef({});
   const ballMaterialRef = useRef(null);
   const ballMeshRef = useRef(null);
+  const pyramidMeshRef = useRef(null);
   const [userRotation, setUserRotation] = useState(0); // User-controlled rotation offset
   const [isDragging, setIsDragging] = useState(false);
   const [lastMouseX, setLastMouseX] = useState(0);
@@ -428,9 +429,9 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
       const neonMesh = scene.getObjectByName('Neon');
       if (neonMesh) {
         neonMesh.visible = is80sMode;
-        console.log(`Neon mesh visibility set to: ${is80sMode}`);
+        // console.log(`Neon mesh visibility set to: ${is80sMode}`);
       } else {
-        console.log('Neon mesh not found in the model');
+        // console.log('Neon mesh not found in the model');
       }
     }
   }, [scene, is80sMode]);
@@ -445,7 +446,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
       scrollObjects.forEach(scrollName => {
         const scrollMesh = scene.getObjectByName(scrollName);
         if (scrollMesh) {
-          console.log(`Found ${scrollName}, applying glow effect and click handler`);
+          // console.log(`Found ${scrollName}, applying glow effect and click handler`);
           
           // Store mesh reference for click handling
           scrollMeshesRef.current[scrollName] = scrollMesh;
@@ -453,11 +454,11 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
           // Add click handler
           const handleScrollClick = (event) => {
             event.stopPropagation();
-            console.log(`${scrollName} clicked!`);
-            if (onScrollClick) {
-              const scrollNumber = scrollName.toLowerCase().replace('scroll', '');
-              onScrollClick(`scroll${scrollNumber}.html`);
-            }
+            // console.log(`${scrollName} clicked!`);
+            // if (onScrollClick) {
+            //   const scrollNumber = scrollName.toLowerCase().replace('scroll', '');
+            //   onScrollClick(`scroll${scrollNumber}.html`);
+            // }
           };
           
           // Make the scroll clickable
@@ -487,12 +488,12 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
                 // Store reference for pulsing animation
                 scrollMaterialsRef.current.push(glowMaterial);
                 
-                console.log(`Applied glow material to ${scrollName}`);
+                // console.log(`Applied glow material to ${scrollName}`);
               }
             }
           });
         } else {
-          console.log(`${scrollName} not found in the model`);
+          // console.log(`${scrollName} not found in the model`);
         }
       });
     }
@@ -503,7 +504,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
     if (scene) {
       const ballMesh = scene.getObjectByName('ball');
       if (ballMesh) {
-        console.log('Found ball object, applying glow effect and click handler');
+        // console.log('Found ball object, applying glow effect and click handler');
         
         // Store mesh reference for click handling
         ballMeshRef.current = ballMesh;
@@ -511,7 +512,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
         // Add click handler
         const handleBallClick = (event) => {
           event.stopPropagation();
-          console.log('Ball clicked!');
+          // console.log('Ball clicked!');
           if (onBallClick) {
             onBallClick();
           }
@@ -549,10 +550,78 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
           }
         });
       } else {
-        console.log('Ball object not found in the model');
+        // console.log('Ball object not found in the model');
       }
     }
   }, [scene, onBallClick]);
+  
+  // Add interaction to Pyramid object
+  useEffect(() => {
+    if (scene) {
+      console.log('Searching for Pyramid mesh in scene...');
+      
+      // Find all pyramid-related meshes
+      let pyramidMeshes = [];
+      scene.traverse((child) => {
+        if (child.isMesh && child.name.toLowerCase().includes('pyramid')) {
+          pyramidMeshes.push(child);
+          console.log('Found pyramid mesh:', child.name, child);
+        }
+      });
+      
+      if (pyramidMeshes.length > 0) {
+        console.log(`Found ${pyramidMeshes.length} pyramid mesh(es)`);
+        
+        // Add click handler
+        const handlePyramidClick = (event) => {
+          event.stopPropagation();
+          console.log('Pyramid clicked!');
+          if (onPyramidClick) {
+            onPyramidClick();
+          }
+        };
+        
+        // Apply to all pyramid meshes
+        pyramidMeshes.forEach(pyramidMesh => {
+          console.log('Setting up pyramid mesh:', pyramidMesh.name);
+          
+          // Store first mesh reference
+          if (!pyramidMeshRef.current) {
+            pyramidMeshRef.current = pyramidMesh;
+          }
+          
+          // Make clickable
+          pyramidMesh.userData.clickable = true;
+          pyramidMesh.userData.pyramidObject = true;
+          pyramidMesh.userData.onClick = handlePyramidClick;
+          
+          if (pyramidMesh.material) {
+            console.log('Original material:', pyramidMesh.material);
+            
+            // Clone the material to add glow effect
+            const glowMaterial = pyramidMesh.material.clone();
+            
+            // Add emissive glow
+            glowMaterial.emissive = new THREE.Color(0x9d4edd); // Purple glow
+            glowMaterial.emissiveIntensity = 0.5; // Increased intensity more
+            
+            // Ensure the material can show emissive
+            if (glowMaterial.metalness !== undefined) {
+              glowMaterial.metalness = Math.min(glowMaterial.metalness, 0.5);
+            }
+            if (glowMaterial.roughness !== undefined) {
+              glowMaterial.roughness = Math.max(glowMaterial.roughness, 0.3);
+            }
+            
+            pyramidMesh.material = glowMaterial;
+            console.log('Applied glow material to', pyramidMesh.name);
+          }
+        });
+      } else {
+        console.log('No pyramid meshes found in scene');
+      }
+    }
+  }, [scene, onPyramidClick]);
   
   useEffect(() => {
     // Play multiple animations simultaneously
@@ -565,7 +634,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
           actions[animName].play();
           actions[animName].setLoop(THREE.LoopRepeat);
           actions[animName].timeScale = 1; // Adjust speed if needed
-          console.log(`Playing animation: ${animName}`);
+          // console.log(`Playing animation: ${animName}`);
         }
       });
       
@@ -574,14 +643,14 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
         const fallbackAnim = actions['Action'] || actions['Action.001'];
         fallbackAnim.play();
         fallbackAnim.setLoop(THREE.LoopRepeat);
-        console.log('Playing fallback animation');
+        // console.log('Playing fallback animation');
       }
       
       // Play writing animation on Armature.001 if it exists
       if (scene) {
         const armature001 = scene.getObjectByName('Armature.001');
         if (armature001 && actions['escrire']) {
-          console.log('Found Armature.001, playing writing animation');
+          // console.log('Found Armature.001, playing writing animation');
           actions['escrire'].play();
           actions['escrire'].setLoop(THREE.LoopRepeat);
           actions['escrire'].timeScale = 1;
@@ -590,7 +659,7 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
         // Play Animation on Flame object if it exists
         const flame = scene.getObjectByName('Flame');
         if (flame && actions['Animation']) {
-          console.log('Found Flame, playing Animation');
+          // console.log('Found Flame, playing Animation');
           actions['Animation'].play();
           actions['Animation'].setLoop(THREE.LoopRepeat);
           actions['Animation'].timeScale = 1;
@@ -650,9 +719,12 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick }) {
   // Handle clicks on scroll objects and ball
   const handleClick = (event) => {
     const intersects = event.intersections;
+    console.log('Click detected, intersections:', intersects.length);
     if (intersects.length > 0) {
       const clickedObject = intersects[0].object;
+      console.log('Clicked object:', clickedObject.name, 'userData:', clickedObject.userData);
       if (clickedObject.userData.clickable && clickedObject.userData.onClick) {
+        console.log('Executing click handler for:', clickedObject.name);
         clickedObject.userData.onClick(event);
       }
     }
@@ -827,7 +899,7 @@ function FlatCharts({ onChartClick }) {
             timestamps: dates,
             values: rsiValues
           });
-          console.log('RSI Data:', { timestamps: dates, values: rsiValues });
+          // console.log('RSI Data:', { timestamps: dates, values: rsiValues });
           
           // Calculate and set Moving Averages
           const ma7 = calculateMA(allPrices, 7).slice(-7);
@@ -839,7 +911,7 @@ function FlatCharts({ onChartClick }) {
             ma7: ma7,
             ma3: ma3
           });
-          console.log('MA Data:', { timestamps: dates, values: prices, ma7, ma3 });
+          // console.log('MA Data:', { timestamps: dates, values: prices, ma7, ma3 });
         }
         
         // Process market cap data (convert to billions)
@@ -858,7 +930,7 @@ function FlatCharts({ onChartClick }) {
             timestamps: dates,
             values: marketCaps
           });
-          console.log('Market Cap Data:', { timestamps: dates, values: marketCaps });
+          // console.log('Market Cap Data:', { timestamps: dates, values: marketCaps });
         }
       } catch (error) {
         console.error('Error fetching Ethereum data:', error);
@@ -901,12 +973,12 @@ function FlatCharts({ onChartClick }) {
       { data: maChartData, type: 'line', label: 'Moving Averages' }
     ];
     
-    console.log('Creating charts with data:', {
-      price: priceChartData,
-      marketCap: marketCapChartData,
-      rsi: rsiChartData,
-      ma: maChartData
-    });
+    // console.log('Creating charts with data:', {
+    //   price: priceChartData,
+    //   marketCap: marketCapChartData,
+    //   rsi: rsiChartData,
+    //   ma: maChartData
+    // });
     
     // Arrange charts in a 2x2 grid in front of the model
     const positions = [
@@ -926,7 +998,7 @@ function FlatCharts({ onChartClick }) {
         label: chartConfig.label
       });
     }
-    console.log('Charts created:', chartsArray.map(c => c.label));
+    // console.log('Charts created:', chartsArray.map(c => c.label));
     return chartsArray;
   }, [priceChartData, marketCapChartData, rsiChartData, maChartData]);
   
@@ -948,7 +1020,50 @@ function FlatCharts({ onChartClick }) {
 }
 
 
-export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb', onLoadingChange, is80sMode = false }) {
+// Component to load and display the pyramid model in examination view
+function PyramidModel() {
+  const { scene } = useGLTF('/models/pyramid.glb');
+  const meshRef = useRef();
+  
+  // Clone the scene to avoid modifying the original
+  const clonedScene = useMemo(() => scene.clone(), [scene]);
+  
+  // Apply enhanced material for examination view
+  useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child.isMesh) {
+        // Create a more dramatic material for examination
+        const material = child.material.clone();
+        material.emissive = new THREE.Color(0x9d4edd);
+        material.emissiveIntensity = 0.3;
+        material.metalness = 0.6;
+        material.roughness = 0.3;
+        child.material = material;
+      }
+    });
+  }, [clonedScene]);
+  
+  // Animate rotation
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y = state.clock.getElapsedTime() * 0.5;
+    }
+  });
+  
+  return (
+    <primitive 
+      ref={meshRef}
+      object={clonedScene} 
+      scale={[2, 2, 2]}
+      position={[0, 0, 0]}
+    />
+  );
+}
+
+// Preload the pyramid model
+useGLTF.preload('/models/pyramid.glb');
+
+export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.glb', onLoadingChange, is80sMode = false }) {
   const [selectedChart, setSelectedChart] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
@@ -961,6 +1076,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [nextScrollSrc, setNextScrollSrc] = useState(null);
   const [showMagnifiedScroll, setShowMagnifiedScroll] = useState(false);
+  const [examinedObject, setExaminedObject] = useState(null); // For examining the pyramid
   const scrollIframeRef = useRef(null);
   const mobileScrollIframeRef = useRef(null);
   
@@ -1012,11 +1128,11 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         // Wait for fonts to be ready
         if (document.fonts) {
           await document.fonts.ready;
-          console.log('Document fonts ready');
+          // console.log('Document fonts ready');
           
           // Check if our specific font is loaded
           const fontLoaded = document.fonts.check('700 1em UnifrakturCook');
-          console.log('UnifrakturCook font check:', fontLoaded);
+          // console.log('UnifrakturCook font check:', fontLoaded);
           
           if (!fontLoaded) {
             // Try to explicitly load the font
@@ -1027,14 +1143,14 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         // Remove test element
         document.body.removeChild(testDiv);
         
-        console.log('UnifrakturCook font loaded successfully');
+        // console.log('UnifrakturCook font loaded successfully');
         setFontLoaded(true);
         document.body.classList.add('fonts-loaded');
       } catch (e) {
         console.error('Error during font loading:', e);
         // Fallback: just show the heading after a delay
         setTimeout(() => {
-          console.log('Showing heading after timeout');
+          // console.log('Showing heading after timeout');
           setFontLoaded(true);
           document.body.classList.add('fonts-loaded');
         }, 1500);
@@ -1053,9 +1169,9 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
   
   // Hide loader only when everything is loaded
   useEffect(() => {
-    console.log('SimpleModelViewer loading status:', { modelLoaded, fontLoaded, iframeLoaded, isDesktop });
+    // console.log('SimpleModelViewer loading status:', { modelLoaded, fontLoaded, iframeLoaded, isDesktop });
     if (modelLoaded && fontLoaded && (iframeLoaded || !isDesktop)) {
-      console.log('All conditions met, hiding loader');
+      // console.log('All conditions met, hiding loader');
       // Add a small delay for smooth transition
       setTimeout(() => {
         setIsLoading(false);
@@ -1104,7 +1220,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           flexDirection: 'column',
           alignItems: 'center',
           padding: '2rem',
-          zIndex: 10002,
+          zIndex: 100,
           pointerEvents: 'none',
           // backgroundColor: 'rgba(0, 0, 0, 0.3)', // Subtle black background
           borderRadius: '10px' // Rounded corners
@@ -1122,7 +1238,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
             visibility: 'visible',
             display: 'block',
             position: 'relative',
-            zIndex: 10003
+            zIndex: 101
           }}>The Scrolls <br/>of St. GR80</h1>
         </div>
       )}
@@ -1134,7 +1250,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
           top: '2rem',
           left: '1rem',
           right: '1rem',
-          zIndex: 10002,
+          zIndex: 100,
           textAlign: 'left',
           pointerEvents: 'none',
           // backgroundColor: 'rgba(0, 0, 0, 0.3)', // Subtle black background
@@ -1349,6 +1465,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
               }
             }}
             onBallClick={() => setShowNumerology(true)}
+            onPyramidClick={() => setExaminedObject('pyramid')}
           />
           <Environment preset="night" />
           {/* <FlatCharts onChartClick={setSelectedChart} /> */}
@@ -1522,77 +1639,98 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
         }}
       />
       
-      {/* Numerology Modal Overlay */}
+      {/* Numerology Modal Overlay - Styled like Pyramid viewer */}
       {showNumerology && (
         <div 
-          onClick={() => setShowNumerology(false)}
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
+            background: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 10000,
             display: 'flex',
+            flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 10000,
-            backdropFilter: 'blur(5px)'
+            padding: '2rem'
           }}
         >
-          <div 
-            onClick={(e) => e.stopPropagation()}
+          {/* Close button */}
+          <button
+            onClick={() => setShowNumerology(false)}
             style={{
-              position: 'relative',
-              background: 'rgba(20, 20, 20, 0.95)',
-              borderRadius: '1rem',
-              border: '2px solid #8e662b',
-              padding: '2rem',
-              maxWidth: '90vw',
-              maxHeight: '90vh'
+              position: 'absolute',
+              top: '2rem',
+              right: '2rem',
+              background: 'rgba(212, 175, 55, 0.2)',
+              border: '2px solid #d4af37',
+              color: '#d4af37',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '1.2rem',
+              fontFamily: 'Georgia, serif',
+              transition: 'all 0.3s ease',
+              zIndex: 10001
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(212, 175, 55, 0.4)';
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(212, 175, 55, 0.2)';
+              e.target.style.transform = 'scale(1)';
             }}
           >
-            {/* Close button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowNumerology(false);
-              }}
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                color: '#d4af37',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                padding: '0.5rem',
-                borderRadius: '50%',
-                width: '3rem',
-                height: '3rem',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                transition: 'all 0.3s ease',
-                zIndex: 10001
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(212, 175, 55, 0.2)';
-                e.target.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'none';
-                e.target.style.transform = 'scale(1)';
-              }}
-            >
-              ×
-            </button>
-            
+            Close ✕
+          </button>
+          
+          {/* Title */}
+          <h2 style={{
+            color: '#d4af37',
+            fontFamily: 'Georgia, serif',
+            fontSize: '2.5rem',
+            marginBottom: '1rem',
+            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)',
+            textAlign: 'center'
+          }}>
+            The Oracle's Wisdom
+          </h2>
+          
+          {/* Content container with glow effect */}
+          <div 
+            style={{
+              position: 'relative',
+              width: windowWidth > 768 ? '600px' : '90%',
+              maxHeight: windowWidth > 768 ? '600px' : '70vh',
+              background: 'radial-gradient(ellipse at center, rgba(74, 144, 226, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%)',
+              borderRadius: '1rem',
+              border: '2px solid rgba(74, 144, 226, 0.5)',
+              boxShadow: '0 0 30px rgba(74, 144, 226, 0.3)',
+              padding: '2rem',
+              overflow: 'auto'
+            }}
+          >
             {/* Numerology component */}
             <Numerology isMobile={windowWidth <= 768} />
           </div>
+          
+          {/* Description */}
+          <p style={{
+            color: '#d4af37',
+            fontFamily: 'Georgia, serif',
+            fontSize: '1.1rem',
+            maxWidth: '600px',
+            textAlign: 'center',
+            marginTop: '1.5rem',
+            lineHeight: 1.6,
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
+          }}>
+            Consult the mystical 8-ball for divine numerological insights. 
+            The sacred sphere reveals wisdom through the ancient art of numbers.
+          </p>
         </div>
       )}
       
@@ -1742,7 +1880,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
                       e.target.contentDocument.body.style.lineHeight = '1.6';
                     }
                   } catch (err) {
-                    console.log('Could not access iframe content for zoom');
+                    // console.log('Could not access iframe content for zoom');
                   }
                 }, 100);
               }}
@@ -1757,6 +1895,114 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot.glb
               title="Magnified Scroll"
             />
           </div>
+        </div>
+      )}
+      
+      {/* Pyramid Examination Overlay */}
+      {examinedObject === 'pyramid' && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.95)',
+          zIndex: 10000,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '2rem'
+        }}>
+          {/* Close button */}
+          <button
+            onClick={() => setExaminedObject(null)}
+            style={{
+              position: 'absolute',
+              top: '2rem',
+              right: '2rem',
+              background: 'rgba(212, 175, 55, 0.2)',
+              border: '2px solid #d4af37',
+              color: '#d4af37',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '1.2rem',
+              fontFamily: 'Georgia, serif',
+              transition: 'all 0.3s ease',
+              zIndex: 10001
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(212, 175, 55, 0.4)';
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(212, 175, 55, 0.2)';
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            Close ✕
+          </button>
+          
+          {/* Title */}
+          <h2 style={{
+            color: '#d4af37',
+            fontFamily: 'Georgia, serif',
+            fontSize: '2.5rem',
+            marginBottom: '1rem',
+            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)',
+            textAlign: 'center'
+          }}>
+            The Sacred Pyramid
+          </h2>
+          
+          {/* 3D Canvas for examining the pyramid */}
+          <div style={{
+            width: windowWidth > 768 ? '600px' : '90%',
+            height: windowWidth > 768 ? '600px' : '400px',
+            background: 'radial-gradient(ellipse at center, rgba(157, 78, 221, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%)',
+            borderRadius: '1rem',
+            border: '2px solid rgba(157, 78, 221, 0.5)',
+            boxShadow: '0 0 30px rgba(157, 78, 221, 0.3)',
+            position: 'relative'
+          }}>
+            <Canvas
+              camera={{ position: [3, 3, 3], fov: 50 }}
+              style={{ borderRadius: '1rem' }}
+            >
+              <ambientLight intensity={0.5} />
+              <pointLight position={[10, 10, 10]} intensity={0.5} />
+              <pointLight position={[-10, -10, -10]} intensity={0.2} color="#9d4edd" />
+              
+              <Suspense fallback={null}>
+                {/* Load the actual pyramid GLB model */}
+                <PyramidModel />
+                <OrbitControls 
+                  enablePan={false}
+                  enableZoom={true}
+                  minDistance={1}
+                  maxDistance={5}
+                  autoRotate
+                  autoRotateSpeed={2}
+                />
+              </Suspense>
+            </Canvas>
+          </div>
+          
+          {/* Description */}
+          <p style={{
+            color: '#d4af37',
+            fontFamily: 'Georgia, serif',
+            fontSize: '1.1rem',
+            maxWidth: '600px',
+            textAlign: 'center',
+            marginTop: '1.5rem',
+            lineHeight: 1.6,
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
+          }}>
+            An ancient artifact of mysterious origin, this pyramid holds secrets of the digital realm.
+            Rotate to examine its mystical geometry and divine proportions.
+          </p>
         </div>
       )}
       
