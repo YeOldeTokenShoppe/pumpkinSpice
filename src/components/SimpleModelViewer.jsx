@@ -18,6 +18,7 @@ import '../app/globals.css';
 import CoinLoader from '@/components/CoinLoader';
 import Numerology from '@/components/Numerology';
 import ScrollTransition from '@/components/ScrollTransition';
+import CleanCanvas from '@/components/CleanCanvas';
 function createChartTexture(data, chartType = 'line', label = '') {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
@@ -1424,7 +1425,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.gl
             <source src="/videos/neon80s.mp4" type="video/mp4" />
           </video>
         )}
-        <Canvas
+        <CleanCanvas
           style={{ position: 'relative', zIndex: 1 }}
           camera={{ 
             position: isDesktop 
@@ -1507,7 +1508,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.gl
             />
           </EffectComposer>
         )}
-      </Canvas>
+      </CleanCanvas>
         
         {/* Mobile overlays - only show on mobile */}
         {windowWidth <= 768 && (

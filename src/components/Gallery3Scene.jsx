@@ -12,6 +12,7 @@ import LightningEffect from '@/components/LightningEffect';
 import { useChoirWheel } from "@/components/useChoirWheel";
 import CoinStream from "@/components/CoinStream";
 import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
+import CleanCanvas from './CleanCanvas';
 
 
 // Lazy load components
@@ -872,7 +873,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
     
   
     
-    <Canvas
+    <CleanCanvas
       camera={{ 
         position: isMobileView ? [0, 0, 20] : [0, 0, 80], // Match original gallery
         fov: isMobileView ? 60 : 35, // Match original gallery
@@ -955,7 +956,7 @@ export default function Gallery3Scene({ enabled = false, isMobileView = true, is
         onCoinsDispensed={onCoinsWon}
         // coinMesh={coinTemplate}
       />
-    </Canvas>
+    </CleanCanvas>
     {/* {showEffectButton && (
       <div style={{
         position: 'fixed',

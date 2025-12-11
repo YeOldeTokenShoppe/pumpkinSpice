@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame, extend, useThree } from "@react-three/fiber";
-import CleanCanvas from "../../components/CleanCanvas";
+import CleanCanvas from "@/components/CleanCanvas";
 import React, { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { useGLTF, useAnimations, Text, shaderMaterial, OrbitControls, useHelper, Stats, Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -485,7 +485,7 @@ const CSS3DScreenManager = () => {
 };
 
 // Drone component with built-in hover animation and scroll-based appearance
-const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrollY, isMobile = false }) {
+const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrollY, isMobile = false, isSignedIn = false }) {
   const modelPath = isMobile ? '/models/drone_mobile.glb' : '/models/drone.glb';
   const { scene, animations } = useGLTF(modelPath);
   const groupRef = useRef();
@@ -625,7 +625,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
             texture.rotation = -Math.PI / 2;
             
             // Screen states
-            let screenMode = 'navigation'; // 'navigation', 'crt-terminal', 'post-video', 'video'
+            let screenMode = 'navigation'; // 'navigation', 'crt-terminal', 'post-video', 'video', 'access-denied', 'verifying', 'access-granted'
             let clickAreas = [];
             let hoveredButton = null;
             let lastRedrawTime = 0;
@@ -633,7 +633,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
             
             // Initialize sound effects
             const sounds = {
-              hover: new Audio('https://cdn.freesound.org/previews/657/657950_6142149-lq.mp3'),
+              hover: new Audio('https://cdn.freesound.org/previews/367/367997_6512973-lq.mp3'),
               accept: new Audio('https://cdn.freesound.org/previews/220/220166_4100837-lq.mp3'),
               reject: new Audio('https://cdn.freesound.org/previews/657/657950_6142149-lq.mp3')
             };
@@ -823,6 +823,9 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
             
             // Draw initial navigation screen
             const drawNavigationScreen = (hoveredIndex = null) => {
+              // Reset any lingering canvas states
+              ctx.shadowColor = 'transparent';
+              ctx.shadowBlur = 0;
               ctx.fillStyle = '#0a0a0a';
               ctx.fillRect(0, 0, 512, 512);
               
@@ -893,7 +896,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 // { text: '◆ HOME', y: 230, url: '/' },
                 { text: '▶ VIDEO MESSAGE', y: 230, action: 'playVideo', video: '/videos/23.mp4' },
                 { text: '▲ TRADING DESK', y: 300, url: '/temple' },
-                { text: '◈ ILLUMIN80', y: 370, url: '/gallery3' },
+                { text: '🔒 ILLUMIN80 [RESTRICTED]', y: 370, action: 'checkAccess', url: '/gallery3' },
                 { text: '◉ TOKENOMICS', y: 440, url: '/tokenomics' }
               ];
               
@@ -909,6 +912,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 const cornerSize = 15;  // Same corner size as terminal button
                 const isHovered = hoveredIndex === index + 1; // +1 because terminal button is index 0
                 const isVideoBtn = btn.action === 'playVideo';
+                const isRestrictedBtn = btn.action === 'checkAccess';
                 
                 // Draw cyberpunk-style button with cut corner
                 ctx.save();
@@ -922,19 +926,21 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 ctx.lineTo(btnX, btnY + btnHeight);
                 ctx.closePath();
                 
-                // Fill background - special color for video button
+                // Fill background - special color for video button and restricted button
                 if (isHovered) {
                   // Glitch effect for hovered state
                   const glitchOffset = Math.random() * 2 - 1;
                   if (isVideoBtn) {
                     ctx.fillStyle = 'rgba(147, 51, 234, 0.3)'; // Purple for video
+                  } else if (isRestrictedBtn) {
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)'; // Red for restricted
                   } else {
                     ctx.fillStyle = 'rgba(0, 255, 65, 0.2)';
                   }
                   ctx.fill();
                   
                   // Add glitch lines
-                  ctx.strokeStyle = isVideoBtn ? '#9333ea' : '#00ff41';
+                  ctx.strokeStyle = isVideoBtn ? '#9333ea' : (isRestrictedBtn ? '#ff0000' : '#00ff41');
                   ctx.lineWidth = 1;
                   ctx.globalAlpha = 0.5;
                   ctx.beginPath();
@@ -951,9 +957,11 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                   ctx.fill();
                 }
                 
-                // Draw border - different color for video button
+                // Draw border - different color for video button and restricted button
                 if (isVideoBtn) {
                   ctx.strokeStyle = isHovered ? '#9333ea' : 'rgba(147, 51, 234, 0.8)';
+                } else if (isRestrictedBtn) {
+                  ctx.strokeStyle = isHovered ? '#ff0000' : 'rgba(255, 0, 0, 0.8)';
                 } else {
                   ctx.strokeStyle = isHovered ? '#00ff41' : 'rgba(0, 255, 65, 0.8)';
                 }
@@ -967,6 +975,8 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 ctx.lineTo(btnX - 20 + sideLineOffset, btnY + btnHeight - 10);
                 if (isVideoBtn) {
                   ctx.strokeStyle = isHovered ? '#9333ea' : 'rgba(147, 51, 234, 0.6)';
+                } else if (isRestrictedBtn) {
+                  ctx.strokeStyle = isHovered ? '#ff0000' : 'rgba(255, 0, 0, 0.6)';
                 } else {
                   ctx.strokeStyle = isHovered ? '#00ff41' : 'rgba(0, 255, 65, 0.6)';
                 }
@@ -976,10 +986,12 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 // No corner accent - matching terminal button style
                 
                 // Draw text with enhanced glow effect when hovered
-                ctx.shadowColor = isVideoBtn ? '#9333ea' : '#00ff41';
+                ctx.shadowColor = isVideoBtn ? '#9333ea' : (isRestrictedBtn ? '#ff0000' : '#00ff41');
                 ctx.shadowBlur = isHovered ? 25 : 15;  // Match terminal button glow
                 if (isVideoBtn) {
                   ctx.fillStyle = isHovered ? '#ffffff' : '#9333ea';
+                } else if (isRestrictedBtn) {
+                  ctx.fillStyle = isHovered ? '#ffffff' : '#ff0000';
                 } else {
                   ctx.fillStyle = isHovered ? '#ffffff' : '#00ff41';
                 }
@@ -1028,10 +1040,230 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               drawNavigationScreen();
             };
             
+            // Draw access denied CRT screen
+            const drawAccessDeniedScreen = () => {
+              // Clear canvas with black background
+              ctx.fillStyle = '#000000';
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Draw CRT border effect
+              ctx.strokeStyle = '#ff0000';
+              ctx.lineWidth = 4;
+              ctx.strokeRect(10, 10, 492, 492);
+              
+              // CRT glow effect with red tint
+              const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
+              gradient.addColorStop(0, 'rgba(255, 0, 0, 0.1)');
+              gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+              ctx.fillStyle = gradient;
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Draw warning symbol
+              ctx.font = '48px Courier New, monospace';
+              ctx.fillStyle = '#ff0000';
+              ctx.textAlign = 'center';
+              ctx.shadowColor = '#ff0000';
+              ctx.shadowBlur = 10;
+              ctx.fillText('⚠', 256, 120);
+              
+              // Access denied text
+              ctx.font = 'bold 24px Courier New, monospace';
+              ctx.fillText('ACCESS DENIED', 256, 180);
+              
+              ctx.font = '16px Courier New, monospace';
+              ctx.fillStyle = '#ff6600';
+              ctx.fillText('RESTRICTED AREA', 256, 220);
+              
+              // Error message
+              ctx.font = '14px Courier New, monospace';
+              ctx.fillStyle = '#00ff41';
+              ctx.fillText('AUTHENTICATION REQUIRED', 256, 280);
+              ctx.fillText('LEVEL 5 CLEARANCE NEEDED', 256, 310);
+              
+              // Instructions
+              ctx.font = '12px Courier New, monospace';
+              ctx.fillStyle = '#00ff41';
+              ctx.fillText('Please log in to access ILLUMIN80', 256, 360);
+              ctx.fillText('Contact admin for credentials', 256, 380);
+              
+              // Return button
+              const btnX = 156;
+              const btnY = 420;
+              const btnWidth = 200;
+              const btnHeight = 50;
+              
+              ctx.save();
+              ctx.strokeStyle = '#00ff41';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(btnX, btnY, btnWidth, btnHeight);
+              
+              ctx.font = 'bold 16px Courier New, monospace';
+              ctx.fillStyle = '#00ff41';
+              ctx.fillText('[ RETURN ]', 256, btnY + 30);
+              ctx.restore();
+              
+              // Set click area for return button
+              clickAreas = [
+                { x: btnX, y: btnY, width: btnWidth, height: btnHeight, action: 'returnToNav' }
+              ];
+              
+              // Scanlines effect
+              for (let i = 0; i < 512; i += 4) {
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.02)';
+                ctx.fillRect(0, i, 512, 2);
+              }
+              
+              texture.needsUpdate = true;
+            };
+            
+            // Draw verifying credentials CRT screen
+            const drawVerifyingScreen = () => {
+              // Clear canvas with black background
+              ctx.fillStyle = '#000000';
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Draw CRT border effect with amber
+              ctx.strokeStyle = '#ffa500';
+              ctx.lineWidth = 4;
+              ctx.strokeRect(10, 10, 492, 492);
+              
+              // CRT glow effect with amber tint
+              const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
+              gradient.addColorStop(0, 'rgba(255, 165, 0, 0.1)');
+              gradient.addColorStop(1, 'rgba(255, 165, 0, 0)');
+              ctx.fillStyle = gradient;
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Draw lock icon
+              ctx.font = '48px Courier New, monospace';
+              ctx.fillStyle = '#ffa500';
+              ctx.textAlign = 'center';
+              ctx.shadowColor = '#ffa500';
+              ctx.shadowBlur = 10;
+              ctx.fillText('🔐', 256, 140);
+              
+              // Verifying text
+              ctx.font = 'bold 24px Courier New, monospace';
+              ctx.fillText('VERIFYING CREDENTIALS', 256, 200);
+              
+              // Status messages
+              ctx.font = '14px Courier New, monospace';
+              ctx.fillStyle = '#00ff41';
+              const messages = [
+                'Checking authentication token...',
+                'Validating user permissions...',
+                'Accessing secure database...',
+                'Decrypting clearance level...'
+              ];
+              
+              // Animate typing effect for messages
+              const currentTime = Date.now();
+              const messageIndex = Math.floor((currentTime / 500) % messages.length);
+              
+              messages.forEach((msg, idx) => {
+                if (idx <= messageIndex) {
+                  ctx.fillText(msg, 256, 260 + (idx * 30));
+                }
+              });
+              
+              // Loading dots animation
+              const dots = '.'.repeat((Math.floor(currentTime / 300) % 4));
+              ctx.font = 'bold 20px Courier New, monospace';
+              ctx.fillStyle = '#ffa500';
+              ctx.fillText('Processing' + dots, 256, 420);
+              
+              // Scanlines effect
+              for (let i = 0; i < 512; i += 4) {
+                ctx.fillStyle = 'rgba(255, 165, 0, 0.02)';
+                ctx.fillRect(0, i, 512, 2);
+              }
+              
+              ctx.shadowBlur = 0;
+              texture.needsUpdate = true;
+              
+              // Request animation frame to keep animating
+              if (screenMode === 'verifying') {
+                requestAnimationFrame(drawVerifyingScreen);
+              }
+            };
+            
+            // Draw access granted CRT screen
+            const drawAccessGrantedScreen = () => {
+              // Clear canvas with black background
+              ctx.fillStyle = '#000000';
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Draw CRT border effect with green
+              ctx.strokeStyle = '#00ff41';
+              ctx.lineWidth = 4;
+              ctx.strokeRect(10, 10, 492, 492);
+              
+              // CRT glow effect with green tint
+              const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
+              gradient.addColorStop(0, 'rgba(0, 255, 65, 0.2)');
+              gradient.addColorStop(1, 'rgba(0, 255, 65, 0)');
+              ctx.fillStyle = gradient;
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Draw checkmark
+              ctx.font = '64px Courier New, monospace';
+              ctx.fillStyle = '#00ff41';
+              ctx.textAlign = 'center';
+              ctx.shadowColor = '#00ff41';
+              ctx.shadowBlur = 20;
+              ctx.fillText('✓', 256, 140);
+              
+              // Access granted text with glow
+              ctx.font = 'bold 28px Courier New, monospace';
+              ctx.shadowBlur = 15;
+              ctx.fillText('ACCESS GRANTED', 256, 200);
+              
+              ctx.font = '16px Courier New, monospace';
+              ctx.shadowBlur = 10;
+              ctx.fillStyle = '#00ff41';
+              ctx.fillText('LEVEL 5 CLEARANCE CONFIRMED', 256, 240);
+              
+              // Success messages
+              ctx.font = '14px Courier New, monospace';
+              ctx.shadowBlur = 5;
+              const messages = [
+                '> Authentication successful',
+                '> Security protocols passed',
+                '> ILLUMIN80 access authorized',
+                '> Redirecting to secure area...'
+              ];
+              
+              messages.forEach((msg, idx) => {
+                ctx.fillText(msg, 256, 300 + (idx * 25));
+              });
+              
+              // Flashing "WELCOME" text
+              if (Math.floor(Date.now() / 500) % 2 === 0) {
+                ctx.font = 'bold 20px Courier New, monospace';
+                ctx.fillStyle = '#00ff41';
+                ctx.shadowBlur = 20;
+                ctx.fillText('[ WELCOME ]', 256, 420);
+              }
+              
+              // Scanlines effect
+              for (let i = 0; i < 512; i += 4) {
+                ctx.fillStyle = 'rgba(0, 255, 65, 0.02)';
+                ctx.fillRect(0, i, 512, 2);
+              }
+              
+              ctx.shadowBlur = 0;
+              texture.needsUpdate = true;
+              
+              // Keep animating if still in access-granted mode
+              if (screenMode === 'access-granted') {
+                requestAnimationFrame(drawAccessGrantedScreen);
+              }
+            };
+            
             // Handle screen hover
             const handleScreenHover = (x, y) => {
-              // Don't process hovers during CRT terminal animation
-              if (screenMode === 'crt-terminal') {
+              // Don't process hovers during animations
+              if (screenMode === 'crt-terminal' || screenMode === 'verifying' || screenMode === 'access-granted') {
                 return;
               }
               
@@ -1112,6 +1344,44 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                     setTimeout(() => {
                       window.location.href = area.url;
                     }, 200);
+                  } else if (area.action === 'checkAccess') {
+                    console.log('Checking access for ILLUMIN80');
+                    // Check if user is authenticated
+                    const isAuthenticated = isSignedIn;
+                    
+                    if (isAuthenticated) {
+                      // User is logged in, show verifying screen then access granted
+                      sounds.accept.cloneNode(true).play().catch(() => {});
+                      screenMode = 'verifying';
+                      drawVerifyingScreen();
+                      
+                      // After 2 seconds, show access granted
+                      setTimeout(() => {
+                        screenMode = 'access-granted';
+                        drawAccessGrantedScreen();
+                        
+                        // After another 2 seconds, navigate to gallery
+                        setTimeout(() => {
+                          window.location.href = area.url;
+                        }, 2000);
+                      }, 2000);
+                    } else {
+                      // User is not logged in, show access denied
+                      sounds.reject.cloneNode(true).play().catch(() => {});
+                      screenMode = 'access-denied';
+                      drawAccessDeniedScreen();
+                    }
+                  } else if (area.action === 'returnToNav') {
+                    console.log('Returning to navigation');
+                    sounds.accept.cloneNode(true).play().catch(() => {});
+                    screenMode = 'navigation';
+                    hoveredButton = null; // Reset hover state when returning
+                    // Reset canvas context to clear any lingering styles
+                    ctx.save();
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.restore();
+                    drawNavigationScreen();
                   } else if (area.action === 'replay') {
                     console.log('Replaying CRT terminal');
                     // Play accept sound for replay
@@ -2971,6 +3241,7 @@ export default function Home3() {
               position={[0, 5, -5]} 
               scrollY={scrollY}
               isMobile={isMobile}
+              isSignedIn={isSignedIn}
             />
             
             {/* Angel Model with playful swoop animation */}

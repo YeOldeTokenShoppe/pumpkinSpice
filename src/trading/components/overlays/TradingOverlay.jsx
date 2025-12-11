@@ -1312,7 +1312,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                       const messageType = currentCandle?.messageType;
                       if (messageType) {
                         const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
-                        return `User Message: ${displayType}`;
+                        return `Msg Protocol: ${displayType}`;
                       }
                       return 'TEMPLE CANDLES';
                     })()}
@@ -2402,7 +2402,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               const messageType = currentCandle?.messageType;
               if (messageType) {
                 const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
-                return `User Message: ${displayType}`;
+                return `Msg Protocol: ${displayType}`;
               }
               return 'TEMPLE CANDLES';
             })()}
