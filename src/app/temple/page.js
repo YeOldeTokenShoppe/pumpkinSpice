@@ -254,6 +254,21 @@ export default function CyborgTemple() {
           font-family: 'UnifrakturMaguntia', serif !important;
         }
         
+        /* Force RL80 logo to always be visible */
+        .rl80-logo-container,
+        .rl80-logo-text,
+        .rl80-logo-container *,
+        .rl80-logo-text * {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+        
+        /* Override any extension rules targeting UnifrakturMaguntia */
+        [style*="UnifrakturMaguntia"] {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+        
         @keyframes spin {
           from {
             transform: rotate(0deg);

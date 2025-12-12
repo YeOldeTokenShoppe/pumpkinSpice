@@ -416,44 +416,33 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
     if (!ctx || !data || data.length === 0) return 2048; // Return default width for initial render
 
     let totalWidth = 0;
-    const basepadding = 80; // Match the basepadding in drawData
+    const basepadding = 40; // Match the basepadding in drawData
 
     // Calculate the exact same width as drawData produces
     combinedData.forEach((item, index) => {
-      // Add separator width
-      totalWidth += ctx.measureText(" ◆ ").width + basepadding;
+      // Add separator width (except for first item)
+      if (index > 0) {
+        totalWidth += ctx.measureText(" ◆ ").width + basepadding;
+      }
       
       if (item.isSentiment) {
-        // Fear & Greed - match the exact spacing from drawData
-        totalWidth += ctx.measureText("Fear & Greed:").width + 15; // Match the +15 adjustment
-        totalWidth += ctx.measureText(item.price.toString()).width + 70;
-        totalWidth += ctx.measureText(`(${item.classification})`).width + basepadding * 3.6;
+        // Fear & Greed
+        totalWidth += ctx.measureText("Fear & Greed:").width + 10;
+        totalWidth += ctx.measureText(item.price.toString()).width + 10;
+        totalWidth += ctx.measureText(`(${item.classification})`).width + basepadding;
       } else if (item.symbol) {
         // Market data
-        const priceText = item.symbol === "^VIX" ? 
+        const priceText = item.symbol === "^VIX" || item.symbol === "^TNX" ? 
           `${item.price.toFixed(2)}` : 
           `$${item.price.toFixed(2)}`;
         
-        // Use same spacing map as drawData
-        const spacingMap = {
-          "Gold": 32, "Oil": 32, "VIX": 32, "Dollar Index": 28,
-          "10Y Treasury Yield": 15, "Nasdaq": 25, "Dow Jones": 25,
-          "S&P 500": 25, "Bitcoin": 32, "Ethereum": 30
-        };
-        const nameSpacing = spacingMap[item.name] || 22;
-        
-        // Special handling for 10Y Treasury Yield
-        if (item.name === "10Y Treasury Yield") {
-          totalWidth += ctx.measureText(`${item.name}`).width + 20; // No colon
-          totalWidth += ctx.measureText(`: ${priceText}`).width + 25; // Colon with price
-        } else {
-          totalWidth += ctx.measureText(`${item.name}:`).width + nameSpacing;
-          totalWidth += ctx.measureText(priceText).width + 25;
-        }
-        
-        // Change width
+        // Name
+        totalWidth += ctx.measureText(`${item.name}:`).width + 10;
+        // Price
+        totalWidth += ctx.measureText(priceText).width + 10;
+        // Change
         const changeText = `${item.changePercent >= 0 ? "▲" : "▼"} ${Math.abs(item.changePercent).toFixed(2)}%`;
-        totalWidth += ctx.measureText(changeText).width + basepadding * 0.7;
+        totalWidth += ctx.measureText(changeText).width + basepadding;
       }
     });
 
@@ -516,75 +505,27 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
     // Enhanced drawing function with better styling and fixed spacing:
     const drawData = (startX) => {
       let xPos = startX;
-      const basepadding = 80; // Increased padding to prevent overlap
+      const basepadding = 40; // Consistent base padding
       const yPos = canvas.height / 2;
       
       // Add subtle separator line at the bottom
       ctx.fillStyle = "#222222";
       ctx.fillRect(0, canvas.height - 3, canvas.width, 1); // Thinner line for smaller canvas
 
-      // Initialize needSeparator to true to ensure all items get separators
-      let needSeparator = true;
-      let previousItemName = ""; // Track previous item to adjust separator spacing
-
       combinedData.forEach((item, index) => {
-        // Simplified separator spacing for fewer items
-        let separatorPadding = basepadding;
-        if (previousItemName === "Fear & Greed") {
-          separatorPadding = basepadding * 0.5; // Less space after Fear & Greed
+        // Draw separator before each item (except the first)
+        if (index > 0) {
+          ctx.fillStyle = is80sMode ? "#67e8f9" : "#666666";
+          ctx.font = "bold 14px Arial";
+          ctx.fillText(" ◆ ", xPos, yPos);
+          xPos += ctx.measureText(" ◆ ").width + basepadding;
         }
-
-        // Draw separator before this item (except the first one)
-        if (needSeparator || item.name === "10Y Treasury Yield") {
-          ctx.fillStyle = is80sMode ? "#67e8f9" : "#666666"; // Cyan in 80s mode, brighter color for better visibility
-          ctx.font = "bold 14px Arial"; // Added bold for better visibility
-          
-          // Add extra space before 10Y Treasury Yield
-          if (item.name === "10Y Treasury Yield") {
-            xPos += 60; // Increased from 35 to 60 for much more space before separator
-          } else if (item.isSentiment) {
-            xPos += 20; // Add extra space before Fear & Greed separator
-          }
-          
-          // Draw separator with custom position for Treasury Yield
-          if (item.name === "10Y Treasury Yield") {
-            // Draw separator slightly higher for Treasury Yield
-            ctx.fillText(" ◆ ", xPos, yPos - 2);
-          } else {
-            ctx.fillText(" ◆ ", xPos, yPos);
-          }
-          
-          // Simplified spacing after separators
-          let postSeparatorSpacing = separatorPadding;
-          
-          
-          xPos += ctx.measureText(" ◆ ").width + postSeparatorSpacing;
-        }
-        
-        // After first item, we'll need separators before all subsequent items
-        needSeparator = true;
-        previousItemName = item.name; // Store for next iteration
 
         let displayText = "";
         let changeColor = "#FFFFFF"; // default white
         let nameColor = is80sMode ? "#67e8f9" : "#DDDDDD"; // cyan in 80s mode, slightly dimmer for name in normal
         let priceColor = is80sMode ? "#00ff41" : "#FFFFFF"; // green numbers in 80s mode, bright for price in normal
         let changePercent = 0;
-        
-        // Special case - if this is 10Y Treasury Yield or Fear & Greed, we need to ensure it has enough space
-        if (item.name === "10Y Treasury Yield") {
-          // Force an extra separator for 10Y Treasury
-          ctx.fillStyle = "#AAAAAA"; // Bright color for visibility
-          ctx.font = "bold 14px Arial"; // Adjusted for smaller canvas
-          ctx.fillText(" ", xPos, yPos);
-          xPos += ctx.measureText(" ◆ ").width + 110;
-          
-          // Add extra padding for 10Y Treasury Yield
-          xPos += 25; // Extra space after the forced separator
-        } else if (item.isSentiment) {
-          // Add extra padding for Fear & Greed Index
-          xPos += 55; // Add space before Fear & Greed to ensure separator visibility
-        }
         
         if (item.isSentiment) {
           // Fear & Greed - using compact custom rendering
@@ -598,24 +539,23 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
           else if (value <= 75) sentimentColor = "#34C759"; // Greed - Green
           else sentimentColor = "#00C7BE"; // Extreme Greed - Teal
           
-          // Draw everything with precise control
-          // First the name with no spacing issues
+          // Draw name
           ctx.fillStyle = is80sMode ? "#67e8f9" : "#E5E5EA";
           ctx.font = "bold 14px Arial";
           ctx.fillText("Fear & Greed:", xPos, yPos);
-          xPos += ctx.measureText("Fear & Greed:").width + 15; // Changed from -90 to +15 for proper spacing
+          xPos += ctx.measureText("Fear & Greed:").width + 10;
           
-          // Value - with controlled space
+          // Draw value
           ctx.fillStyle = is80sMode ? "#00ff41" : "#FFFFFF";
           ctx.font = "bold 14px Arial";
           ctx.fillText(value, xPos, yPos);
-          xPos += ctx.measureText(value).width + 70;
+          xPos += ctx.measureText(value).width + 10;
           
-          // Classification in parentheses
+          // Draw classification
           ctx.fillStyle = sentimentColor;
           ctx.font = "bold 12px Arial";
           ctx.fillText(`(${item.classification})`, xPos, yPos);
-          xPos += ctx.measureText(`(${item.classification})`).width + basepadding * 3.6;
+          xPos += ctx.measureText(`(${item.classification})`).width + basepadding;
         } else if (item.symbol) {
           // Market data (indices, crypto, commodities, etc.)
           const price = item.price ? 
@@ -657,82 +597,24 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
           };
           nameColor = colorMap[item.name] || (is80sMode ? "#67e8f9" : "#DDDDDD");
           
-          // Spacing configuration
-          const spacingMap = {
-            "Gold": 32,
-            "Oil": 32,
-            "VIX": 32,
-            "Dollar Index": 28,
-            "10Y Treasury Yield": 15,
-            "Nasdaq": 25,
-            "Dow Jones": 25,
-            "S&P 500": 25,
-            "Bitcoin": 32,
-            "Ethereum": 30
-          };
-          const nameSpacing = spacingMap[item.name] || 22;
-          
           // Draw name
           ctx.fillStyle = nameColor;
           ctx.font = "bold 14px Arial";
-          
-          // Special handling for 10Y Treasury Yield name
-          if (item.name === "10Y Treasury Yield") {
-            // Draw name without colon to save space
-            ctx.fillText(`${item.name}`, xPos, yPos);
-            // Normal spacing for Treasury Yield
-            xPos += ctx.measureText(`${item.name}`).width + 20;
-          } else {
-            // Normal case for other items
-            ctx.fillText(`${item.name}:`, xPos, yPos);
-            xPos += ctx.measureText(`${item.name}:`).width + nameSpacing;
-          }
+          ctx.fillText(`${item.name}:`, xPos, yPos);
+          xPos += ctx.measureText(`${item.name}:`).width + 10;
           
           // Draw price
           ctx.fillStyle = priceColor;
           ctx.font = "bold 14px Arial";
-          
-          // Price spacing configuration
-          const priceSpacingMap = {
-            "VIX": 35,
-            "10Y Treasury Yield": 15,
-            "Dollar Index": 30,
-            "Oil": 28,
-            "Bitcoin": 25,
-            "Ethereum": 25
-          };
-          const priceSpacing = priceSpacingMap[item.name] || 25;
-          
-          // For 10Y Treasury Yield, add a colon and pack things tighter
-          if (item.name === "10Y Treasury Yield") {
-            ctx.fillText(`: ${price}`, xPos, yPos);
-            
-            // Normal spacing after 10Y Treasury price
-            xPos += ctx.measureText(`: ${price}`).width + 25;
-          } else {
-            ctx.fillText(`${price}`, xPos, yPos);
-            
-            // Regular price spacing for other items
-            xPos += ctx.measureText(`${price}`).width + priceSpacing;
-          }
+          ctx.fillText(price, xPos, yPos);
+          xPos += ctx.measureText(price).width + 10;
           
           // Draw change with arrow
-          const arrow = changePercent >= 0 ? "▲ " : "▼ ";
+          const arrow = changePercent >= 0 ? "▲" : "▼";
           ctx.fillStyle = changeColor;
           ctx.font = "bold 12px Arial";
-          ctx.fillText(`${arrow}${Math.abs(changePercent).toFixed(2)}%`, xPos, yPos);
-          
-          // Percent spacing configuration
-          const percentSpacingMap = {
-            "VIX": 0.9,
-            "10Y Treasury Yield": 0.7,
-            "Dollar Index": 0.8,
-            "Oil": 0.85,
-            "Gold": 1.0
-          };
-          const percentSpacing = basepadding * (percentSpacingMap[item.name] || 0.7);
-          
-          xPos += ctx.measureText(`${arrow}${Math.abs(changePercent).toFixed(2)}%`).width + percentSpacing;
+          ctx.fillText(`${arrow} ${Math.abs(changePercent).toFixed(2)}%`, xPos, yPos);
+          xPos += ctx.measureText(`${arrow} ${Math.abs(changePercent).toFixed(2)}%`).width + basepadding;
         }
       });
 
