@@ -22,7 +22,7 @@ export const useMusic = () => {
 const non80sTracks = [
   { name: "Lifetimes", path: "audio/192k/07-lifetimes.m4a", bpm: 135 },
   { name: "Magnetic - Tunde Adebimpe", path: "audio/320k/01-magnetic.m4a", bpm: 130 },
-  { name: "Rocket Man - Steven Drozd", path: "audio/320k/rocket-man---steven-drozd.m4a", bpm: 75 }
+  { name: "Rocket Man - Steven Drozd", path: "audio/320k/rocket-man---steven-drozd.m4a", bpm: 45 }
 ];
 
 const eightyTracks = [

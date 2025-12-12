@@ -12,6 +12,8 @@ const PolaroidSnapshot = ({
   const [isVisible, setIsVisible] = useState(false);
   const [imageUrl, setImageUrl] = useState(null);
   const [isBlurred, setIsBlurred] = useState(true);
+  const [polaroidImageUrl, setPolaroidImageUrl] = useState(null); // Cached polaroid capture
+  const [polaroidBlob, setPolaroidBlob] = useState(null); // Cached polaroid blob
   const polaroidRef = useRef(null);
 
   useEffect(() => {
@@ -24,10 +26,28 @@ const PolaroidSnapshot = ({
     // Double requestAnimationFrame to ensure render is complete
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        const canvas = document.querySelector('canvas');
+        // Only capture if we have the specific element ID
+        if (!captureElementId) {
+          console.error('No captureElementId provided for snapshot');
+          return;
+        }
         
-        if (canvas) {
-          try {
+        // Try to get the specific element
+        const element = document.getElementById(captureElementId);
+        if (!element) {
+          console.error(`Element with id "${captureElementId}" not found`);
+          return;
+        }
+        
+        // If it's a canvas, use it; otherwise look for canvas inside it
+        const canvas = element.tagName === 'CANVAS' ? element : element.querySelector('canvas');
+        
+        if (!canvas) {
+          console.error(`No canvas found in element with id "${captureElementId}"`);
+          return;
+        }
+        
+        try {
             // Create a new canvas that matches viewport aspect ratio
             const tempCanvas = document.createElement('canvas');
             const viewportRatio = window.innerHeight / window.innerWidth;
@@ -70,9 +90,6 @@ const PolaroidSnapshot = ({
             console.error('Direct canvas capture failed:', error);
             captureWithDelay();
           }
-        } else {
-          captureWithDelay();
-        }
       });
     });
   };
@@ -80,40 +97,52 @@ const PolaroidSnapshot = ({
   // Backup capture with a small delay to let scene render
   const captureWithDelay = () => {
     setTimeout(() => {
-      const canvas = document.querySelector('canvas');
-      if (canvas) {
-        // Force a render by scrolling 0 pixels (triggers reflow)
-        window.scrollTo(window.scrollX, window.scrollY);
-        
-        requestAnimationFrame(() => {
-          try {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(canvas, 0, 0);
-            
-            const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
-            setImageUrl(dataUrl);
-            setIsVisible(true);
-            
-            setTimeout(() => {
-              setIsBlurred(false);
-            }, 300);
-
-            if (onComplete) {
-              setTimeout(() => {
-                onComplete(dataUrl);
-              }, 2000);
-            }
-          } catch (e) {
-            // Last resort: use html2canvas
-            captureFromDOM(document.body);
-          }
-        });
-      } else {
-        captureFromDOM(document.body);
+      if (!captureElementId) {
+        console.error('No captureElementId provided for snapshot');
+        return;
       }
+      
+      const element = document.getElementById(captureElementId);
+      if (!element) {
+        console.error(`Element with id "${captureElementId}" not found in backup capture`);
+        return;
+      }
+      
+      const canvas = element.tagName === 'CANVAS' ? element : element.querySelector('canvas');
+      if (!canvas) {
+        console.error(`No canvas found in element with id "${captureElementId}" in backup capture`);
+        return;
+      }
+      
+      // Force a render by scrolling 0 pixels (triggers reflow)
+      window.scrollTo(window.scrollX, window.scrollY);
+      
+      requestAnimationFrame(() => {
+        try {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = canvas.height;
+          const tempCtx = tempCanvas.getContext('2d');
+          tempCtx.drawImage(canvas, 0, 0);
+          
+          const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
+          setImageUrl(dataUrl);
+          setIsVisible(true);
+          
+          setTimeout(() => {
+            setIsBlurred(false);
+          }, 300);
+
+          if (onComplete) {
+            setTimeout(() => {
+              onComplete(dataUrl);
+            }, 2000);
+          }
+        } catch (e) {
+          console.error('Failed to capture canvas in backup:', e);
+          // Don't fall back to DOM capture - just fail
+        }
+      });
     }, 100);
   };
 
@@ -219,6 +248,63 @@ const PolaroidSnapshot = ({
     });
   };
 
+  // Capture the polaroid once when it becomes visible
+  const capturePolaroid = async () => {
+    if (!polaroidRef.current || polaroidImageUrl) return; // Skip if already captured
+    
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      
+      // Hide buttons and shadow temporarily
+      const closeBtn = polaroidRef.current.querySelector('button[aria-label="Close polaroid"]');
+      const actionBtns = polaroidRef.current.querySelector(`.${styles.actionButtons}`);
+      const shadow = polaroidRef.current.querySelector(`.${styles.polaroidShadow}`);
+      
+      if (closeBtn) closeBtn.style.visibility = 'hidden';
+      if (actionBtns) actionBtns.style.visibility = 'hidden';
+      if (shadow) shadow.style.visibility = 'hidden';
+      
+      // Capture the polaroid with extra padding for rotation
+      const canvas = await html2canvas(polaroidRef.current, {
+        backgroundColor: 'transparent',
+        scale: 2, // High quality
+        logging: false,
+        useCORS: true,
+        allowTaint: false,
+        // Add extra padding to ensure the rotated element fits completely
+        width: polaroidRef.current.offsetWidth + 150,
+        height: polaroidRef.current.offsetHeight + 150,
+        x: -75,
+        y: -75
+      });
+      
+      // Restore buttons and shadow
+      if (closeBtn) closeBtn.style.visibility = '';
+      if (actionBtns) actionBtns.style.visibility = '';
+      if (shadow) shadow.style.visibility = '';
+      
+      // Store both data URL and blob for reuse
+      const dataUrl = canvas.toDataURL('image/png');
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      
+      setPolaroidImageUrl(dataUrl);
+      setPolaroidBlob(blob);
+    } catch (error) {
+      console.error('Failed to capture polaroid:', error);
+    }
+  };
+  
+  // Capture polaroid when it's fully visible and deblurred
+  useEffect(() => {
+    if (isVisible && !isBlurred && polaroidRef.current && !polaroidImageUrl) {
+      // Small delay to ensure animation is complete
+      const timer = setTimeout(() => {
+        capturePolaroid();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, isBlurred]);
+  
   const handleClick = (e) => {
     // Don't close if clicking on action buttons
     if (e.target.closest('.action-button')) {
@@ -228,37 +314,56 @@ const PolaroidSnapshot = ({
     setTimeout(() => {
       setImageUrl(null);
       setIsBlurred(true);
+      setPolaroidImageUrl(null);
+      setPolaroidBlob(null);
     }, 500);
   };
 
-  const handleDownload = () => {
-    if (!imageUrl) return;
+  const handleDownload = async () => {
+    // Ensure polaroid is captured first
+    if (!polaroidImageUrl) {
+      await capturePolaroid();
+    }
     
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `polaroid-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Use the cached polaroid image
+    if (polaroidImageUrl) {
+      const link = document.createElement('a');
+      link.href = polaroidImageUrl;
+      link.download = `polaroid-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // Fallback to original image if capture failed
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `polaroid-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const handleShare = async (platform) => {
-    const shareText = `Check out my capture from RL80! ${label} 🎮✨`;
+    // const shareText = `Check out my capture from RL80! ${label}`;
+        const shareText = `Get Lit With RL80! 🔥`;
     const shareUrl = window.location.href;
     
     switch(platform) {
       case 'twitter':
-        // First copy the image to clipboard
+        // Ensure polaroid is captured first
+        if (!polaroidBlob) {
+          await capturePolaroid();
+        }
+        
+        // Use the cached polaroid blob
         try {
-          const response = await fetch(imageUrl);
-          const blob = await response.blob();
-          
-          if (navigator.clipboard && window.ClipboardItem) {
-            const item = new ClipboardItem({ 'image/png': blob });
+          if (polaroidBlob && navigator.clipboard && window.ClipboardItem) {
+            const item = new ClipboardItem({ 'image/png': polaroidBlob });
             await navigator.clipboard.write([item]);
             
             // Show notification
-            showNotification('Image copied! You can paste it in your tweet 📋');
+            showNotification('Polaroid copied! You can paste it in your tweet 📋');
             
             // Open Twitter with text
             setTimeout(() => {
@@ -270,7 +375,22 @@ const PolaroidSnapshot = ({
             }, 1000);
           }
         } catch (err) {
-          // Fallback: just open Twitter
+          console.error('Failed to capture polaroid:', err);
+          // Fallback: copy original image
+          try {
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            
+            if (navigator.clipboard && window.ClipboardItem) {
+              const item = new ClipboardItem({ 'image/png': blob });
+              await navigator.clipboard.write([item]);
+              showNotification('Image copied! You can paste it in your tweet 📋');
+            }
+          } catch (fallbackErr) {
+            console.error('Fallback also failed:', fallbackErr);
+          }
+          
+          // Open Twitter anyway
           window.open(
             `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
             '_blank',
@@ -280,23 +400,35 @@ const PolaroidSnapshot = ({
         break;
         
       case 'copy':
+        // Ensure polaroid is captured first
+        if (!polaroidBlob) {
+          await capturePolaroid();
+        }
+        
+        // Use the cached polaroid blob
         try {
-          // Convert data URL to blob for clipboard
-          const response = await fetch(imageUrl);
-          const blob = await response.blob();
-          
-          if (navigator.clipboard && window.ClipboardItem) {
-            // Modern clipboard API
-            const item = new ClipboardItem({ 'image/png': blob });
+          if (polaroidBlob && navigator.clipboard && window.ClipboardItem) {
+            const item = new ClipboardItem({ 'image/png': polaroidBlob });
             await navigator.clipboard.write([item]);
-            
-            showNotification('Image copied to clipboard! 📋');
+            showNotification('Polaroid copied to clipboard! 📋');
           }
         } catch (err) {
-          console.error('Failed to copy image:', err);
-          // Fallback: copy the URL to clipboard
-          navigator.clipboard.writeText(shareUrl);
-          showNotification('Link copied to clipboard!');
+          console.error('Failed to copy polaroid:', err);
+          // Fallback: copy original image
+          try {
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            
+            if (navigator.clipboard && window.ClipboardItem) {
+              const item = new ClipboardItem({ 'image/png': blob });
+              await navigator.clipboard.write([item]);
+              showNotification('Image copied to clipboard! 📋');
+            }
+          } catch (fallbackErr) {
+            // Final fallback: copy URL
+            navigator.clipboard.writeText(shareUrl);
+            showNotification('Link copied to clipboard!');
+          }
         }
         break;
         
@@ -304,8 +436,13 @@ const PolaroidSnapshot = ({
         // Use Web Share API if available (mobile)
         if (navigator.share) {
           try {
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
+            // Ensure polaroid is captured first
+            if (!polaroidBlob) {
+              await capturePolaroid();
+            }
+            
+            // Use the cached polaroid blob or fallback to original
+            const blob = polaroidBlob || await fetch(imageUrl).then(r => r.blob());
             const file = new File([blob], 'polaroid.png', { type: 'image/png' });
             
             await navigator.share({
@@ -386,6 +523,44 @@ const PolaroidSnapshot = ({
         ref={polaroidRef}
         className={`${styles.polaroid} ${isVisible ? styles.dropped : ''}`}
       >
+        {/* Close button */}
+        <button
+          className={styles.closeButton}
+          onClick={handleClick}
+          title="Close"
+          aria-label="Close polaroid"
+          style={{
+            position: 'absolute',
+            top: '-15px',
+            right: '-15px',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: '#ff4444',
+            color: 'white',
+            border: '3px solid white',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            zIndex: 10,
+            transition: 'all 0.2s ease',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = '#ff6666';
+            e.currentTarget.style.transform = 'scale(1.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = '#ff4444';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          ✕
+        </button>
+        
         <div className={styles.polaroidInner}>
           <div className={styles.photoFrame}>
             <img 

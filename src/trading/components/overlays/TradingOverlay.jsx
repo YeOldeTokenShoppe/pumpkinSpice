@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { useFirestoreResults } from '@/utilities/useFirestoreResults';
+import { useRandomCandles } from '@/utilities/useRandomCandles';
 import CompactCandleModal from '@/components/CompactCandleModal';
 import { useUser } from '@clerk/nextjs';
 
@@ -35,49 +35,36 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [showAddCandleModal, setShowAddCandleModal] = useState(false); // Modal for adding user's candle
   const [showCompactCandleModal, setShowCompactCandleModal] = useState(false); // Modal for CompactCandleModal
   
+  // Debug initial state
+  console.log('TradingOverlay initial render, showCompactCandleModal:', showCompactCandleModal);
+  
   // Get user info from Clerk
   const { user, isSignedIn } = useUser();
   
-  // Get Firestore results for candle display
-  const firestoreResults = useFirestoreResults('candles'); // Get candles from candles collection
-  console.log('TradingOverlay firestoreResults from candles collection:', firestoreResults);
+  // Get random selection of candles (user's + random community candles)
+  const firestoreResults = useRandomCandles(25); // Get max 25 candles total
+  // // console.log('TradingOverlay firestoreResults from candles collection:', firestoreResults);
   const [candleIndex, setCandleIndex] = useState(0);
   const [userCandleIndex, setUserCandleIndex] = useState(0);
   
   // Filter user's candles
   const userCandles = useMemo(() => {
-    console.log('userCandles useMemo called');
-    console.log('isSignedIn:', isSignedIn);
-    console.log('user:', user);
-    console.log('firestoreResults length:', firestoreResults?.length);
+    // // console.log('userCandles useMemo called');
+    // // console.log('isSignedIn:', isSignedIn);
+    // // console.log('user:', user);
+    // // console.log('firestoreResults length:', firestoreResults?.length);
     
     if (!isSignedIn || !user || !firestoreResults) {
-      console.log('Returning empty array - missing requirements');
+      // // console.log('Returning empty array - missing requirements');
       return [];
     }
     
-    console.log('Filtering user candles...');
-    console.log('Current user:', user);
-    console.log('All firestore candles:', firestoreResults);
+    // // console.log('Filtering user candles...');
+    // // console.log('Current user:', user);
+    // // console.log('All firestore candles:', firestoreResults);
     
-    // Find candles that belong to the current user
-    return firestoreResults.filter(candle => {
-      // First try to match by createdBy ID (most reliable)
-      if (candle.createdBy && user.id) {
-        const match = candle.createdBy === user.id;
-        console.log('ID match check:', candle.createdBy, '===', user.id, '=', match);
-        return match;
-      }
-      
-      // Fallback: match by username (for older candles without createdBy)
-      const candleUsername = candle.userName || candle.username;
-      const userDisplayName = user.username || user.firstName || user.fullName;
-      
-      console.log('Username fallback check:', candleUsername, 'vs', userDisplayName);
-      
-      return candleUsername && userDisplayName && 
-             candleUsername.toLowerCase() === userDisplayName.toLowerCase();
-    });
+    // Simply filter by the isUserCandle flag already set by useRandomCandles
+    return firestoreResults.filter(candle => candle.isUserCandle === true);
   }, [firestoreResults, user, isSignedIn]);
   
   // Current user candle for display
@@ -96,6 +83,12 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
       return () => clearInterval(interval);
     }
   }, [firestoreResults]);
+
+  // Debug modal state changes
+  useEffect(() => {
+    console.log('CompactCandleModal state changed to:', showCompactCandleModal);
+    console.log('User signed in status:', isSignedIn);
+  }, [showCompactCandleModal, isSignedIn]);
   
   // Select user based on current index
   const randomFirestoreData = useMemo(() => {
@@ -257,7 +250,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.messages && data.messages.length > 0) {
-            console.log(`Loaded ${data.messages.length} historical chat messages`);
+            // console.log(`Loaded ${data.messages.length} historical chat messages`);
             
             // Convert historical messages to the format expected by modelThoughts
             const historicalThoughts = data.messages.map(msg => ({
@@ -494,7 +487,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               padding: '15px',
               backdropFilter: 'blur(15px)',
               boxShadow: '0 0 30px rgba(0, 0, 0, 0.5)',
-              zIndex: 999,
+              zIndex: 99999,
               overflowY: 'auto',
               fontFamily: 'monospace',
               fontSize: '11px',
@@ -1293,12 +1286,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               height: 'calc(100vh - 180px)',
               minHeight: '400px',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              isolation: 'isolate'
             }}>
               <div style={{
                 marginBottom: '12px',
                 paddingBottom: '8px',
-                borderBottom: '1px solid rgba(0, 255, 0, 0.3)'
+                borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
+                position: 'relative',
+                zIndex: 1
               }}>
                 <div style={{
                   display: 'flex',
@@ -1387,15 +1383,22 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               <div style={{
                 flex: 1,
                 position: 'relative',
-                minHeight: 0
+                minHeight: 0,
+                zIndex: 0
               }}>
                 {candleTab === 'mine' ? (
                   currentUserCandle ? (
                     <>
-                      <SingleCandleDisplay 
-                        firestoreData={currentUserCandle}
-                        isUserCandle={true}
-                      />
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 0
+                      }}>
+                        <SingleCandleDisplay 
+                          firestoreData={currentUserCandle}
+                          isUserCandle={true}
+                        />
+                      </div>
                       {/* Navigation controls when user has multiple candles */}
                       {userCandles.length > 1 && (
                         <div style={{
@@ -1415,7 +1418,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                         }}>
                           <button
                             onClick={() => {
-                              console.log('Previous button clicked');
+                              // console.log('Previous button clicked');
                               setUserCandleIndex(prev => (prev - 1 + userCandles.length) % userCandles.length);
                             }}
                             style={{
@@ -1443,7 +1446,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                           </div>
                           <button
                             onClick={() => {
-                              console.log('Next button clicked');
+                              // console.log('Next button clicked');
                               setUserCandleIndex(prev => (prev + 1) % userCandles.length);
                             }}
                             style={{
@@ -1466,10 +1469,41 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                       <div style={{
                         position: 'absolute',
                         top: '10px',
-                        right: '15px'
+                        right: '15px',
+                        zIndex: 10000,
+                        pointerEvents: 'none'
                       }}>
                         <button
-                          onClick={() => setShowCompactCandleModal(true)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('Create button clicked, current modal state:', showCompactCandleModal);
+                            // Toggle the modal to ensure it opens fresh
+                            setShowCompactCandleModal(false);
+                            setTimeout(() => {
+                              setShowCompactCandleModal(true);
+                              console.log('Modal state set to true after reset');
+                            }, 10);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            console.log('Create button touched');
+                          }}
+                          onTouchEnd={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Create button touch ended, current modal state:', showCompactCandleModal);
+                            // Toggle the modal to ensure it opens fresh
+                            setShowCompactCandleModal(false);
+                            setTimeout(() => {
+                              setShowCompactCandleModal(true);
+                              console.log('Modal state set to true after reset');
+                            }, 10);
+                          }}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            console.log('Create button pointer down, current modal state:', showCompactCandleModal);
+                            // Remove setShowCompactCandleModal from here to avoid duplicate calls
+                          }}
                           style={{
                             background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
                             border: '1px solid #00ff88',
@@ -1479,7 +1513,12 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                             cursor: 'pointer',
                             fontSize: '11px',
                             fontWeight: 'bold',
-                            minWidth: '70px'
+                            minWidth: '70px',
+                            WebkitTapHighlightColor: 'transparent',
+                            touchAction: 'manipulation',
+                            position: 'relative',
+                            zIndex: 10000,
+                            pointerEvents: 'auto'
                           }}
                         >
                           + Create
@@ -1512,6 +1551,10 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                       {isSignedIn && (
                         <button
                           onClick={() => setShowCompactCandleModal(true)}
+                          onTouchEnd={(e) => {
+                            e.preventDefault();
+                            setShowCompactCandleModal(true);
+                          }}
                         style={{
                           padding: '10px 20px',
                           background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%)',
@@ -1522,7 +1565,9 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                           fontWeight: 'bold',
                           cursor: 'pointer',
                           transition: 'all 0.3s ease',
-                          fontFamily: 'monospace'
+                          fontFamily: 'monospace',
+                          WebkitTapHighlightColor: 'transparent',
+                          touchAction: 'manipulation'
                         }}
                       >
                         Light Your Candle
@@ -1532,10 +1577,16 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   )
                 ) : (
                   <>
-                    <SingleCandleDisplay 
-                      firestoreData={randomFirestoreData}
-                      isUserCandle={false}
-                    />
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      zIndex: 0
+                    }}>
+                      <SingleCandleDisplay 
+                        firestoreData={randomFirestoreData}
+                        isUserCandle={false}
+                      />
+                    </div>
                     {/* Navigation controls for community candles */}
                     {firestoreResults && firestoreResults.length > 1 && (
                       <div style={{
@@ -1555,7 +1606,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                       }}>
                         <button
                           onClick={() => {
-                            console.log('Community Previous button clicked');
+                            // console.log('Community Previous button clicked');
                             setCandleIndex(prev => (prev - 1 + firestoreResults.length) % firestoreResults.length);
                           }}
                           style={{
@@ -1583,7 +1634,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                         </div>
                         <button
                           onClick={() => {
-                            console.log('Community Next button clicked');
+                            // console.log('Community Next button clicked');
                             setCandleIndex(prev => (prev + 1) % firestoreResults.length);
                           }}
                           style={{
@@ -1610,6 +1661,21 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             </div>
           </>
         )}
+        
+        {/* Compact Candle Modal - Must be rendered in mobile view too! */}
+        {console.log('Mobile: Rendering CompactCandleModal with isOpen:', showCompactCandleModal)}
+        <CompactCandleModal
+          isOpen={showCompactCandleModal}
+          onClose={() => {
+            console.log('Mobile: CompactCandleModal onClose called');
+            setShowCompactCandleModal(false);
+          }}
+          onCandleCreated={() => {
+            console.log('Mobile: CompactCandleModal onCandleCreated called');
+            setShowCompactCandleModal(false);
+            // Optionally refresh or update any candle-related state here
+          }}
+        />
       </>
     );
   }
@@ -2361,7 +2427,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           padding: '12px',
           fontFamily: 'monospace',
           fontSize: '11px',
-          zIndex: 9999,
+          zIndex: 999999,
           width: 'min(320px, 25vw)',
           minWidth: '260px',
           maxWidth: '340px',
@@ -2496,7 +2562,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   }}>
                     <button
                       onClick={() => {
-                        console.log('Desktop Previous button clicked');
+                        // console.log('Desktop Previous button clicked');
                         setUserCandleIndex(prev => (prev - 1 + userCandles.length) % userCandles.length);
                       }}
                       style={{
@@ -2524,7 +2590,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                     </div>
                     <button
                       onClick={() => {
-                        console.log('Desktop Next button clicked');
+                        // console.log('Desktop Next button clicked');
                         setUserCandleIndex(prev => (prev + 1) % userCandles.length);
                       }}
                       style={{
@@ -2551,6 +2617,10 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 }}>
                   <button
                     onClick={() => setShowCompactCandleModal(true)}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      setShowCompactCandleModal(true);
+                    }}
                     style={{
                       background: 'linear-gradient(135deg, #00ff00 0%, #00dd00 100%)',
                       border: '1px solid #00ff00',
@@ -2560,7 +2630,9 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                       cursor: 'pointer',
                       fontSize: '9px',
                       fontWeight: 'bold',
-                      minWidth: '50px'
+                      minWidth: '50px',
+                      WebkitTapHighlightColor: 'transparent',
+                      touchAction: 'manipulation'
                     }}
                   >
                     + Create
@@ -2593,6 +2665,10 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 {isSignedIn && (
                   <button
                     onClick={() => setShowCompactCandleModal(true)}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      setShowCompactCandleModal(true);
+                    }}
                   style={{
                     padding: '8px 16px',
                     background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 255, 0, 0.1) 100%)',
@@ -2603,7 +2679,9 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                     fontWeight: 'bold',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    fontFamily: 'monospace'
+                    fontFamily: 'monospace',
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation'
                   }}
                   onMouseEnter={(e) => {
                     e.target.style.background = 'linear-gradient(135deg, rgba(0, 255, 0, 0.3) 0%, rgba(0, 255, 0, 0.2) 100%)';
@@ -2644,7 +2722,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 }}>
                   <button
                     onClick={() => {
-                      console.log('Desktop Community Previous button clicked');
+                      // console.log('Desktop Community Previous button clicked');
                       setCandleIndex(prev => (prev - 1 + firestoreResults.length) % firestoreResults.length);
                     }}
                     style={{
@@ -2672,7 +2750,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   </div>
                   <button
                     onClick={() => {
-                      console.log('Desktop Community Next button clicked');
+                      // console.log('Desktop Community Next button clicked');
                       setCandleIndex(prev => (prev + 1) % firestoreResults.length);
                     }}
                     style={{
@@ -3474,10 +3552,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
       )}
 
       {/* Compact Candle Modal */}
+      {console.log('Rendering CompactCandleModal with isOpen:', showCompactCandleModal)}
       <CompactCandleModal
         isOpen={showCompactCandleModal}
-        onClose={() => setShowCompactCandleModal(false)}
+        onClose={() => {
+          console.log('CompactCandleModal onClose called');
+          setShowCompactCandleModal(false);
+        }}
         onCandleCreated={() => {
+          console.log('CompactCandleModal onCandleCreated called');
           setShowCompactCandleModal(false);
           // Optionally refresh or update any candle-related state here
         }}

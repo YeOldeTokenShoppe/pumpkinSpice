@@ -455,11 +455,11 @@ function Model({ modelPath, onLoaded, is80sMode, onScrollClick, onBallClick, onP
           // Add click handler
           const handleScrollClick = (event) => {
             event.stopPropagation();
-            // console.log(`${scrollName} clicked!`);
-            // if (onScrollClick) {
-            //   const scrollNumber = scrollName.toLowerCase().replace('scroll', '');
-            //   onScrollClick(`scroll${scrollNumber}.html`);
-            // }
+            console.log(`${scrollName} clicked!`);
+            if (onScrollClick) {
+              const scrollNumber = scrollName.toLowerCase().replace('scroll', '');
+              onScrollClick(`scroll${scrollNumber}.html`);
+            }
           };
           
           // Make the scroll clickable

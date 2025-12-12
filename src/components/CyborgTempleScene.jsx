@@ -14,6 +14,7 @@ const CyborgTempleScene = forwardRef(({
   rotation = [0, 0, 0],
   scale = [1, 1, 1],
   isPlaying = false, 
+  currentTrack = null,
   showAnnotations = true,
   is80sMode = false,
   onAnnotationClick = null, // Callback when annotation is clicked
@@ -25,10 +26,13 @@ const CyborgTempleScene = forwardRef(({
   const actionsRef = useRef({});
   const danceTimeoutRef = useRef(null);
   const slowdownIntervalRef = useRef(null);
+  const rampUpIntervalRef = useRef(null);
   const [loadedModel, setLoadedModel] = useState(null);
   const cylinderMeshRef = useRef(); // Ref for the specific cylinder mesh
   const object7MeshRef = useRef(); // Ref for Object_5 (was Object_7)
   const cube010MeshRef = useRef(); // Ref for Cube010
+  const previousTrackRef = useRef(null); // Track the previous track for detecting changes
+  const transitionTimeoutRef = useRef(null); // For handling track transition slowdowns
   
   // Expose the loaded model through ref
   useImperativeHandle(ref, () => ({
@@ -226,6 +230,47 @@ const CyborgTempleScene = forwardRef(({
     };
   }, [scene, position, rotation, scale, onLoad]);
 
+  // Detect track changes and trigger transition effect
+  useEffect(() => {
+    if (!actionsRef.current || Object.keys(actionsRef.current).length === 0) return;
+    
+    // Check if track has changed (not just on first load)
+    if (previousTrackRef.current && currentTrack && previousTrackRef.current.name !== currentTrack.name) {
+      console.log('[CyborgTempleScene] Track changed from', previousTrackRef.current.name, 'to', currentTrack.name);
+      
+      const actions = actionsRef.current;
+      
+      // Immediately slow down dancing during track transition
+      ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
+        if (actions[danceAnim] && actions[danceAnim].isRunning()) {
+          actions[danceAnim].timeScale = 0.2; // Slow to 20% speed during transition
+        }
+      });
+      
+      // Clear any existing transition timeout
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+      
+      // After a brief pause, restore the new track's BPM
+      transitionTimeoutRef.current = setTimeout(() => {
+        const referenceBPM = 100;
+        const trackBPM = currentTrack?.bpm || referenceBPM;
+        const speedMultiplier = trackBPM / referenceBPM;
+        
+        ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
+          if (actions[danceAnim] && actions[danceAnim].isRunning()) {
+            actions[danceAnim].timeScale = speedMultiplier;
+            console.log(`[CyborgTempleScene] Restored dance speed to ${speedMultiplier}x for ${currentTrack.name}`);
+          }
+        });
+      }, 800); // 0.8 second transition period
+    }
+    
+    // Update the previous track reference
+    previousTrackRef.current = currentTrack;
+  }, [currentTrack]);
+  
   // Handle dance animation switching based on music playing state
   useEffect(() => {
     if (!actionsRef.current || Object.keys(actionsRef.current).length === 0) return;
@@ -254,6 +299,10 @@ const CyborgTempleScene = forwardRef(({
         clearInterval(slowdownIntervalRef.current);
         slowdownIntervalRef.current = null;
       }
+      if (rampUpIntervalRef.current) {
+        clearInterval(rampUpIntervalRef.current);
+        rampUpIntervalRef.current = null;
+      }
       
       // Keep TYPE animation running for the first character
       if (actions['TYPE1'] && !actions['TYPE1'].isRunning()) {
@@ -271,11 +320,17 @@ const CyborgTempleScene = forwardRef(({
           }
         });
         
-        // Play dance animations with time offsets at normal speed
+        // Calculate dance speed based on track BPM
+        // Base reference BPM (can be adjusted for best visual effect)
+        const referenceBPM = 100; // This is the BPM the animations look good at normally
+        const trackBPM = currentTrack?.bpm || referenceBPM;
+        const targetSpeedMultiplier = trackBPM / referenceBPM;
+        
+        // Play dance animations starting slow and ramping up
         ['Dance.001', 'Dance.002', 'Dance.003'].forEach((danceAnim) => {
           if (actions[danceAnim]) {
             actions[danceAnim].reset();
-            actions[danceAnim].timeScale = 1.0; // Reset to normal speed
+            actions[danceAnim].timeScale = 0.1; // Start very slow
             
             // Set different starting times based on animation name
             if (danceAnim === 'Dance.001') {
@@ -287,9 +342,33 @@ const CyborgTempleScene = forwardRef(({
             }
             
             actions[danceAnim].play();
-            console.log(`✅ Playing dance animation: ${danceAnim} with offset ${actions[danceAnim].time}`);
+            console.log(`✅ Starting dance animation: ${danceAnim} - ramping up to ${targetSpeedMultiplier}x (${trackBPM} BPM)`);
           }
         });
+        
+        // Gradually ramp up to full speed
+        let currentSpeed = 0.1;
+        const rampDuration = 1500; // 1.5 seconds to reach full speed
+        const intervalTime = 50; // Update every 50ms
+        const speedIncrement = (targetSpeedMultiplier - 0.1) / (rampDuration / intervalTime);
+        
+        rampUpIntervalRef.current = setInterval(() => {
+          currentSpeed += speedIncrement;
+          
+          if (currentSpeed >= targetSpeedMultiplier) {
+            clearInterval(rampUpIntervalRef.current);
+            rampUpIntervalRef.current = null;
+            currentSpeed = targetSpeedMultiplier;
+            console.log(`[CyborgTempleScene] Dance animations reached target speed: ${targetSpeedMultiplier}x`);
+          }
+          
+          // Apply the current speed to all dance animations
+          ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
+            if (actions[danceAnim] && actions[danceAnim].isRunning()) {
+              actions[danceAnim].timeScale = currentSpeed;
+            }
+          });
+        }, intervalTime);
       }, 2000); // 2 second delay
       
     } else {
@@ -305,12 +384,21 @@ const CyborgTempleScene = forwardRef(({
         clearInterval(slowdownIntervalRef.current);
         slowdownIntervalRef.current = null;
       }
+      if (rampUpIntervalRef.current) {
+        clearInterval(rampUpIntervalRef.current);
+        rampUpIntervalRef.current = null;
+      }
       
       // Start the gradual slowdown process
-      let currentSpeed = 1.0;
+      // Calculate initial speed based on current track BPM
+      const referenceBPM = 100;
+      const trackBPM = currentTrack?.bpm || referenceBPM;
+      const initialSpeed = trackBPM / referenceBPM;
+      
+      let currentSpeed = initialSpeed;
       const slowdownDuration = 2000; // 2 seconds to slow down
       const intervalTime = 50; // Update every 50ms for smooth transition
-      const speedDecrement = 1.0 / (slowdownDuration / intervalTime); // Calculate how much to decrease each interval
+      const speedDecrement = initialSpeed / (slowdownDuration / intervalTime); // Calculate how much to decrease each interval
       
       slowdownIntervalRef.current = setInterval(() => {
         currentSpeed -= speedDecrement;
@@ -357,7 +445,16 @@ const CyborgTempleScene = forwardRef(({
         }
       }, intervalTime);
     }
-  }, [isPlaying]);
+  }, [isPlaying, currentTrack]);
+  
+  // Cleanup transition timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, []);
   
 
   // Animation loop

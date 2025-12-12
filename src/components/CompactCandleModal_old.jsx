@@ -2,9 +2,6 @@ import React, { useState, Suspense, useRef, useEffect, useCallback } from 'react
 import ReactDOM from 'react-dom';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useTexture } from '@react-three/drei';
-
-// Preload the candle model to improve performance
-useGLTF.preload('/models/singleCandleAnimatedFlamePreview.glb');
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/utilities/firebaseClient';
@@ -1133,8 +1130,6 @@ const BACKGROUND_TEXTURES = [
 ];
 
 export default function CompactCandleModal({ isOpen, onClose, onCandleCreated }) {
-  console.log('CompactCandleModal render - isOpen:', isOpen);
-  
   // Step tracking for multi-step flow (now 6 steps with background)
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6; // Step 1: Candle, Step 2: Size/Image, Step 3: Message Type, Step 4: Message, Step 5: Background, Step 6: Review
@@ -1186,7 +1181,40 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       userImageScale: 85,  // Doubled for new base size
       userImageRotation: 0
     },
- ];
+    // { 
+    //   id: '/images/heart-frame.png', 
+    //   name: 'Heart', 
+    //   preview: '❤️',
+    //   position: { x: 50, y: 50 },
+    //   scale: 35,
+    //   rotation: 0,
+    //   userImagePosition: { x: 50, y: 48 },  // Centered in heart
+    //   userImageScale: 140,  // Doubled for new base size
+    //   userImageRotation: 0
+    // },
+    // { 
+    //   id: '/images/golden-frame.png', 
+    //   name: 'Golden', 
+    //   preview: '✨',
+    //   position: { x: 50, y: 50 },
+    //   scale: 40,
+    //   rotation: 0,
+    //   userImagePosition: { x: 50, y: 50 },  // Perfectly centered for frame
+    //   userImageScale: 130,  // Doubled for new base size
+    //   userImageRotation: 0
+    // },
+    // { 
+    //   id: '/images/flower-frame.png', 
+    //   name: 'Flowers', 
+    //   preview: '🌸',
+    //   position: { x: 50, y: 50 },
+    //   scale: 35,
+    //   rotation: 0,
+    //   userImagePosition: { x: 50, y: 48 },  // Slightly up for flower frame
+    //   userImageScale: 140,  // Doubled for new base size
+    //   userImageRotation: 0
+    // }
+  ];
   
   // Apply default template (Virgin Mary) settings on component mount
   useEffect(() => {
@@ -2073,20 +2101,17 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       // Mark that candle was successfully created
       setCandleWasCreated(true);
       
-      // Skip the toaster - the polaroid will be the success feedback
-      // setToastMessage('🕯️ Your candle has been lit successfully! ✨');
-      // setShowSuccessToast(true);
-      // setTimeout(() => setShowSuccessToast(false), 3000);
+      // Show success feedback
+      setToastMessage('🕯️ Your candle has been lit successfully! ✨');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
       
       // Save candle data for snapshot BEFORE clearing form
       setSavedCandleData({
         username: formData.username || 'Anonymous',
         imageUrl: imageUrl,
         message: formData.message,
-        burnedAmount: docData.burnedAmount,
-        candleType: formData.candleType,
-        candleHeight: formData.candleHeight || 'medium',
-        background: formData.background || 'synthwave'
+        burnedAmount: docData.burnedAmount
       });
       
       // Clear the form immediately after saving data
@@ -2101,12 +2126,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       setCurrentStep(1);
       setImageFile(null);
       setImagePreview(null);
-      setSelectedTemplate('/images/face2.png'); // Reset to Virgin Mary default
+      setSelectedTemplate(null);
       
       // Show the candle snapshot
       setShowCandleSnapshot(true);
       
-      // Close the modal so the polaroid shows after
+      // Close the modal so the polaroid is visible
       onClose();
 
       if (onCandleCreated) {
@@ -2181,10 +2206,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   key={type.value}
                   onClick={() => {
                     setFormData(prev => ({ ...prev, candleType: type.value }));
-                    // Force Canvas remount when switching to votive
-                    if (type.value === 'votive') {
-                      setCanvasKey(prev => prev + 1);
-                    }
                     // Don't auto-advance - let user click Next when ready
                   }}
                   style={{
@@ -2321,241 +2342,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                         border: '1px solid rgba(255, 215, 0, 0.3)'
                       }}
                     />
-                  </div>
-                )}
-                
-                {/* Template Gallery for Votive */}
-                {(imageFile || imagePreview) && (
-                  <div style={{
-                    marginTop: '15px',
-                    marginBottom: '10px'
-                  }}>
-                    <div style={{
-                      color: 'rgba(255, 215, 0, 0.9)',
-                      fontSize: '12px',
-                      marginBottom: '8px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px'
-                    }}>
-                      Select Template Style
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      gap: '8px',
-                      overflowX: 'auto',
-                      padding: '5px 0',
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: 'rgba(255, 215, 0, 0.3) transparent'
-                    }}>
-                      {templates.map((template) => (
-                        <button
-                          key={template.id}
-                          type="button"
-                          onClick={() => selectTemplate(template)}
-                          style={{
-                            width: '80px',
-                            height: '80px',
-                            padding: '8px',
-                            backgroundColor: selectedTemplate === template.id ? 
-                              'rgba(255, 102, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)',
-                            border: selectedTemplate === template.id ? 
-                              '3px solid #ff6600' : '2px solid rgba(255, 215, 0, 0.2)',
-                            borderRadius: '12px',
-                            color: selectedTemplate === template.id ? 
-                              '#ff6600' : 'rgba(255, 255, 255, 0.9)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            transition: 'all 0.3s ease',
-                            flexShrink: 0,
-                            transform: selectedTemplate === template.id ? 'scale(1.05)' : 'scale(1)',
-                          }}
-                        >
-                          {template.id ? (
-                            <img 
-                              src={template.id} 
-                              alt={template.name}
-                              style={{
-                                width: '50px',
-                                height: '50px',
-                                objectFit: 'cover',
-                                borderRadius: '8px',
-                                marginBottom: '4px'
-                              }}
-                            />
-                          ) : (
-                            <div style={{ fontSize: '28px', marginBottom: '4px' }}>{template.preview}</div>
-                          )}
-                          <div style={{ 
-                            fontSize: '11px', 
-                            fontWeight: selectedTemplate === template.id ? 'bold' : 'normal',
-                            opacity: selectedTemplate === template.id ? 1 : 0.8
-                          }}>
-                            {template.name}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Image Position Controls */}
-                {(imageFile || imagePreview) && selectedTemplate && (
-                  <div style={{
-                    marginBottom: '12px',
-                    padding: '8px',
-                    backgroundColor: 'rgba(255, 102, 0, 0.05)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 102, 0, 0.2)'
-                  }}>
-                    <button
-                      type="button"
-                      onClick={() => setShowPositionControls(!showPositionControls)}
-                      style={{
-                        width: '100%',
-                        padding: '8px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: 'rgba(255, 102, 0, 0.8)',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      {showPositionControls ? '▼' : '▶'} Adjust Your Image
-                    </button>
-                    
-                    {showPositionControls && (
-                      <>
-                        <div style={{
-                          marginTop: '8px',
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '8px',
-                          padding: '8px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                          borderRadius: '6px'
-                        }}>
-                          {/* X Position */}
-                          <div>
-                            <label style={{
-                              fontSize: '11px',
-                              color: 'rgba(255, 255, 255, 0.6)',
-                              marginBottom: '2px',
-                              display: 'block'
-                            }}>
-                              X: {userImagePosition.x.toFixed(0)}%
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={userImagePosition.x}
-                              onChange={(e) => setUserImagePosition({ ...userImagePosition, x: parseFloat(e.target.value) })}
-                              style={{
-                                width: '100%',
-                                height: '4px',
-                                background: 'linear-gradient(to right, rgba(255, 102, 0, 0.3) 0%, #ff6600 100%)',
-                                outline: 'none',
-                                cursor: 'pointer'
-                              }}
-                            />
-                          </div>
-                          
-                          {/* Y Position */}
-                          <div>
-                            <label style={{
-                              fontSize: '11px',
-                              color: 'rgba(255, 255, 255, 0.6)',
-                              marginBottom: '2px',
-                              display: 'block'
-                            }}>
-                              Y: {userImagePosition.y.toFixed(0)}%
-                            </label>
-                            <input
-                              type="range"
-                              min="25"
-                              max="75"
-                              value={userImagePosition.y}
-                              onChange={(e) => setUserImagePosition({ ...userImagePosition, y: parseFloat(e.target.value) })}
-                              style={{
-                                width: '100%',
-                                height: '4px',
-                                background: 'linear-gradient(to right, rgba(255, 102, 0, 0.3) 0%, #ff6600 100%)',
-                                outline: 'none',
-                                cursor: 'pointer'
-                              }}
-                            />
-                          </div>
-                          
-                          {/* Size */}
-                          <div>
-                            <label style={{
-                              fontSize: '11px',
-                              color: 'rgba(255, 255, 255, 0.6)',
-                              marginBottom: '2px',
-                              display: 'block'
-                            }}>
-                              Size: {userImageScale}%
-                            </label>
-                            <input
-                              type="range"
-                              min="50"
-                              max="150"
-                              value={userImageScale}
-                              onChange={(e) => setUserImageScale(parseFloat(e.target.value))}
-                              style={{
-                                width: '100%',
-                                height: '4px',
-                                background: 'linear-gradient(to right, rgba(255, 102, 0, 0.3) 0%, #ff6600 100%)',
-                                outline: 'none',
-                                cursor: 'pointer'
-                              }}
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* Skin Tone Adjustment - Only for Virgin Mary */}
-                        {selectedTemplate === '/images/face2.png' && (
-                          <div style={{ 
-                            marginTop: '8px',
-                            padding: '8px',
-                            backgroundColor: 'rgba(255, 215, 0, 0.05)',
-                            borderRadius: '6px'
-                          }}>
-                            <label style={{
-                              fontSize: '11px',
-                              color: 'rgba(255, 255, 255, 0.6)',
-                              marginBottom: '2px',
-                              display: 'block'
-                            }}>
-                              Skin Tone: {skinToneAdjustment > 0 ? '+' : ''}{skinToneAdjustment}
-                            </label>
-                            <input
-                              type="range"
-                              min="-100"
-                              max="100"
-                              value={skinToneAdjustment}
-                              onChange={(e) => setSkinToneAdjustment(parseFloat(e.target.value))}
-                              style={{
-                                width: '100%',
-                                height: '4px',
-                                background: 'linear-gradient(to right, #663300 0%, #ffdbac 50%, #ffe0bd 100%)',
-                                outline: 'none',
-                                cursor: 'pointer'
-                              }}
-                            />
-                          </div>
-                        )}
-                      </>
-                    )}
                   </div>
                 )}
               </div>
@@ -3440,64 +3226,142 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     <>
       <ExitDialog />
       
-      {/* Hidden Preload Renderer - Start loading when user is on final steps */}
-      {isOpen && currentStep >= 5 && formData.candleType && formData.background && (
-        <div style={{ 
-          position: 'fixed', 
-          top: '-9999px', 
-          left: '-9999px',
-          width: '1px',
-          height: '1px',
-          pointerEvents: 'none',
-          visibility: 'hidden'
-        }}>
+      {/* Preload Candle Renderer - Hidden, always rendering */}
+      {preloadCandleData && !showCandleSnapshot && (
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <CandleSnapshotRenderer 
             isVisible={true}
-            userData={{
-              username: formData.username || 'Anonymous',
-              imageUrl: imagePreview,
-              candleType: formData.candleType,
-              candleHeight: formData.candleHeight || 'medium',
-              background: formData.background || 'synthwave'
-            }}
+            userData={preloadCandleData}
             preloadOnly={true}
+            onReady={() => setReadyToCapture(true)}
           />
         </div>
       )}
       
-      {/* Candle Snapshot Renderer - Shows polaroid AFTER modal closes */}
-      {!isOpen && showCandleSnapshot && savedCandleData && (
-        <div 
-          style={{ position: 'relative', zIndex: 100000 }}
-          onClick={(e) => {
-            // If user clicks outside the polaroid action buttons, dismiss
-            if (!e.target.closest('.action-button')) {
-              console.log('User dismissed polaroid');
-              setShowCandleSnapshot(false);
-              setSavedCandleData(null);
-            }
-          }}
-        >
-          {console.log('Rendering CandleSnapshotRenderer wrapper, isOpen:', isOpen, 'showCandleSnapshot:', showCandleSnapshot, 'savedCandleData:', savedCandleData)}
+      {/* Candle Snapshot Renderer - Shows polaroid of created candle */}
+      {showCandleSnapshot && savedCandleData && (
+        <div style={{ position: 'relative', zIndex: 100000 }}>
           <CandleSnapshotRenderer 
             isVisible={true}
             userData={savedCandleData}
-            instantCapture={false}
+            instantCapture={readyToCapture}
             onComplete={(imageData) => {
-              // Don't auto-hide - user will dismiss by clicking the polaroid
-              // Add a safety timeout in case user doesn't interact
-              const safetyTimeout = setTimeout(() => {
-                setShowCandleSnapshot(false);
-                setSavedCandleData(null);
-              }, 30000); // 30 seconds safety timeout
-              
-              console.log('Snapshot complete, will auto-dismiss after 30 seconds if not clicked');
+              // Keep the snapshot visible, let user close manually
+              // console.log('Snapshot captured successfully, image length:', imageData?.length);
+              setReadyToCapture(false);
             }}
           />
         </div>
       )}
       
-      {/* Success toaster removed - polaroid snapshot provides the success feedback */}
+      {/* Success Toast with Sharing Options - Outside modal so it stays visible */}
+      {showSuccessToast && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(30, 30, 30, 0.95)',
+          color: 'white',
+          padding: '20px',
+          borderRadius: '12px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          zIndex: 100000,
+          animation: 'slideDown 0.3s ease-out',
+          minWidth: '350px',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 102, 0, 0.3)'
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              fontSize: '16px',
+              fontWeight: '500'
+            }}>
+              <span>{toastMessage || '🕯️ Your candle has been lit successfully! ✨'}</span>
+            </div>
+            
+            {/* Share buttons - only show for candle success */}
+            {candleWasCreated && (
+              <div style={{
+                display: 'flex',
+                gap: '10px',
+                width: '100%',
+                justifyContent: 'center'
+              }}>
+              <button
+                onClick={shareToX}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#000000',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <span style={{ fontSize: '14px' }}>𝕏</span> Share
+              </button>
+              
+              <button
+                onClick={shareToInstagram}
+                style={{
+                  padding: '8px 16px',
+                  background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                📷 Share
+              </button>
+              
+              <button
+                onClick={() => setShowSuccessToast(false)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                Close
+              </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       <style>{`
         @keyframes slideDown {
@@ -3725,7 +3589,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               {formData.candleType === 'votive' && (currentStep === 2 || imagePreview) ? (
                 // Show 3D Canvas for votive when in Step 2 or when image is uploaded
                 <Canvas
-                  key={`votive-canvas-${canvasKey}`}
                   camera={{ position: [0, 2, 7], fov: 45 }}
                   style={{ background: 'transparent', position: 'relative', zIndex: 1 }}
                   dpr={1}
@@ -3758,7 +3621,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       userImagePosition={userImagePosition}
                       userImageScale={userImageScale}
                       userImageRotation={userImageRotation}
-                      candleModel='/models/singleCandleAnimatedFlamePreview.glb'
+                      candleModel='/models/singleCandleAnimatedFlame.glb'
                     />
                   </Suspense>
                   <OrbitControls
@@ -4585,8 +4448,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 
               </div>
 
-              {/* Template Gallery - Show if image selected and votive candle */}
-              {(imageFile || imagePreview) && formData.candleType === 'votive' && (
+              {/* Template Gallery - Show if image selected */}
+              {(imageFile || imagePreview) && (
                 <div style={{
                   marginTop: '15px',
                   marginBottom: '10px'
@@ -4680,7 +4543,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               )}
 
               {/* User Image Position Controls - Compact Version */}
-              {(imageFile || imagePreview) && selectedTemplate && formData.candleType === 'votive' && (
+              {(imageFile || imagePreview) && selectedTemplate && (
                 <div style={{
                   marginBottom: '12px',
                   padding: '8px',

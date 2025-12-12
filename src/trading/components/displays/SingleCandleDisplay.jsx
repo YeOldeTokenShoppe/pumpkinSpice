@@ -64,14 +64,20 @@ function CandleScene({ firestoreData, onDoubleClick }) {
   const candleType = firestoreData?.candleType || 'votive';
   const candleHeight = firestoreData?.candleHeight || 'medium';
   
-  let modelPath = "/models/XCandleAnimatedFlameVotive.glb"; // Default
+  let modelPath = "/models/votiveComplete.glb"; // Default votive with room
   
-  if (candleType === 'japanese') {
-    modelPath = "/models/XCandleAnimatedFlameJapanese.glb";
+  if (candleType === 'votive') {
+    modelPath = "/models/votiveComplete.glb"; // Votive with room for display
+  } else if (candleType === 'japanese') {
+    // Use Complete models for Japanese candles
+    if (candleHeight === 'short') modelPath = "/models/japaneseShortComplete.glb";
+    else if (candleHeight === 'tall') modelPath = "/models/japaneseTallComplete.glb";
+    else modelPath = "/models/japaneseMediumComplete.glb";
   } else if (candleType === 'ecclesiastical') {
-    if (candleHeight === 'short') modelPath = "/models/XCandleAnimatedFlameShort.glb";
-    else if (candleHeight === 'tall') modelPath = "/models/XCandleAnimatedFlameTall.glb";
-    else modelPath = "/models/XCandleAnimatedFlameMedium.glb";
+    // Use Complete models for Ecclesiastical candles  
+    if (candleHeight === 'short') modelPath = "/models/ecclesiasticalShortComplete.glb";
+    else if (candleHeight === 'tall') modelPath = "/models/ecclesiasticalTallComplete.glb";
+    else modelPath = "/models/ecclesiasticalMediumComplete.glb";
   }
   
   console.log('Full firestore data:', firestoreData);
@@ -478,14 +484,8 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       
       // Store reference to the melting part and check if it's Japanese candle
       if (xBaseToMelt) {
-        // Check if this is the Japanese candle by checking for multiple flames
-        let flameCount = 0;
-        xBaseToMelt.traverse((child) => {
-          if (child.name && child.name.startsWith('Flame')) {
-            flameCount++;
-          }
-        });
-        const isJapaneseCandle = flameCount > 1;
+        // Check if this is a Japanese candle from the firestoreData
+        const isJapaneseCandle = firestoreData?.candleType === 'japanese';
         
         // Find XCandle01 container for drop animation
         let xCandle01Container = null;
@@ -1601,6 +1601,7 @@ export default function SingleCandleDisplay({ firestoreData, isUserCandle = fals
               </mesh>
             }>
               <CandleScene 
+                key={`${firestoreData?.candleType}-${firestoreData?.candleHeight}-${firestoreData?.id}`}
                 firestoreData={firestoreData} 
                 onDoubleClick={handlePortalClick}
               />
@@ -1823,6 +1824,7 @@ export default function SingleCandleDisplay({ firestoreData, isUserCandle = fals
             </mesh>
           }>
             <CandleScene 
+              key={`${firestoreData?.candleType}-${firestoreData?.candleHeight}-${firestoreData?.id}`}
               firestoreData={firestoreData} 
               onDoubleClick={handlePortalClick}
             />
@@ -1891,8 +1893,10 @@ export default function SingleCandleDisplay({ firestoreData, isUserCandle = fals
 }
 
 // Preload the models
-useGLTF.preload("/models/XCandleAnimatedFlameVotive.glb");
-useGLTF.preload("/models/XCandleAnimatedFlameJapanese.glb");
-useGLTF.preload("/models/XCandleAnimatedFlameShort.glb");
-useGLTF.preload("/models/XCandleAnimatedFlameMedium.glb");
-useGLTF.preload("/models/XCandleAnimatedFlameTall.glb");
+useGLTF.preload("/models/votiveComplete.glb");
+useGLTF.preload("/models/japaneseShortComplete.glb");
+useGLTF.preload("/models/japaneseMediumComplete.glb");
+useGLTF.preload("/models/japaneseTallComplete.glb");
+useGLTF.preload("/models/ecclesiasticalShortComplete.glb");
+useGLTF.preload("/models/ecclesiasticalMediumComplete.glb");
+useGLTF.preload("/models/ecclesiasticalTallComplete.glb");
