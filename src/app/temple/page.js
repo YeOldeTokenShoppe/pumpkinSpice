@@ -57,7 +57,7 @@ export default function CyborgTemple() {
     if (!isConnected && mounted) {
       // Defer initialization to not block animations
       const timer = setTimeout(() => {
-        console.log('[Temple] Initializing market data...');
+        // console.log('[Temple] Initializing market data...');
         initialize();
       }, 2000); // 2 second delay
       
@@ -113,11 +113,11 @@ export default function CyborgTemple() {
       if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         try {
           await document.fonts.load("1em 'UnifrakturMaguntia'");
-          console.log('Font loaded successfully');
+          // console.log('Font loaded successfully');
           setFontLoaded(true);
           setLoadingProgress(prev => Math.min(prev + 10, 100));
         } catch (e) {
-          console.log('Font load failed, using fallback');
+          // console.log('Font load failed, using fallback');
           setTimeout(() => {
             setFontLoaded(true);
             setLoadingProgress(prev => Math.min(prev + 10, 100));
@@ -141,20 +141,20 @@ export default function CyborgTemple() {
 
   // Handle model loading completion
   const handleSceneLoad = () => {
-    console.log('🎨 CyborgTempleScene loaded - GLB model ready');
-    console.log('ModelRef current:', modelRef.current);
+    // console.log('🎨 CyborgTempleScene loaded - GLB model ready');
+    // console.log('ModelRef current:', modelRef.current);
     setModelLoaded(true);
     setLoadingProgress(70);
     setLoadingMessage("Loading trading data");
     
     // Now that the model is loaded, we can start loading TickerDisplay3
-    console.log('🎯 Enabling TickerDisplay3 rendering');
+    // console.log('🎯 Enabling TickerDisplay3 rendering');
     setTickerReady(true);
   };
 
   // Handle ticker loading completion
   const handleTickerLoad = () => {
-    console.log('📊 TickerDisplay3 loaded');
+    // console.log('📊 TickerDisplay3 loaded');
     setTickerLoaded(true);
     setLoadingProgress(90);
     setLoadingMessage("Almost ready");
@@ -162,36 +162,36 @@ export default function CyborgTemple() {
 
   // Comprehensive loading coordination
   useEffect(() => {
-    console.log('🔄 Loading state check:', {
-      fontLoaded,
-      mounted,
-      modelLoaded,
-      tickerReady,
-      tickerLoaded
-    });
+    // console.log('🔄 Loading state check:', {
+    //   fontLoaded,
+    //   mounted,
+    //   modelLoaded,
+    //   tickerReady,
+    //   tickerLoaded
+    // });
     
     // Only hide loading when everything is ready
     // Model MUST be loaded before proceeding
     if (!modelLoaded) {
-      console.log('⏳ Waiting for model to load...');
+      // console.log('⏳ Waiting for model to load...');
       return; // Don't proceed until model is loaded
     }
     
     // Check ticker condition only after model is loaded
     const tickerCondition = !tickerReady || (tickerReady && tickerLoaded);
     
-    console.log('📋 Ticker condition:', tickerCondition, 'tickerReady:', tickerReady, 'tickerLoaded:', tickerLoaded);
+    // console.log('📋 Ticker condition:', tickerCondition, 'tickerReady:', tickerReady, 'tickerLoaded:', tickerLoaded);
     
     if (fontLoaded && mounted && modelLoaded && tickerCondition) {
-      console.log('✅ All conditions met! Starting scene reveal sequence...');
+      // console.log('✅ All conditions met! Starting scene reveal sequence...');
       setLoadingProgress(100);
       setLoadingMessage("Ready!");
       // Add extra delay to ensure all components are rendered
       const timer = setTimeout(() => {
-        console.log('🚀 Setting scene ready!');
+        // console.log('🚀 Setting scene ready!');
         setSceneReady(true);
         setTimeout(() => {
-          console.log('🎬 Hiding loading screen!');
+          // console.log('🎬 Hiding loading screen!');
           setIsSceneLoading(false);
         }, 500); // Brief additional delay for smooth transition
       }, 1000); // Increased delay to ensure everything is rendered
@@ -204,7 +204,7 @@ export default function CyborgTemple() {
   useEffect(() => {
     const fallbackTimer = setTimeout(() => {
       if (isSceneLoading) {
-        console.log('Fallback timeout reached, forcing scene ready');
+        // console.log('Fallback timeout reached, forcing scene ready');
         setSceneReady(true);
         setIsSceneLoading(false);
       }

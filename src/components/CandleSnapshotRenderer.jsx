@@ -48,7 +48,7 @@ if (typeof window !== 'undefined') {
 // Candle scene component (similar to FloatingCandleViewer but optimized for snapshot)
 function CandleScene({ userData, onReady }) {
   const modelPath = getCandleModelPath(userData?.candleType, userData?.candleHeight);
-  console.log('Loading candle model:', modelPath, 'for type:', userData?.candleType, 'height:', userData?.candleHeight);
+  // console.log('Loading candle model:', modelPath, 'for type:', userData?.candleType, 'height:', userData?.candleHeight);
   
   let scene, animations;
   try {
@@ -74,12 +74,12 @@ function CandleScene({ userData, onReady }) {
     const clonedScene = scene.clone();
     
     // Debug: Log all meshes in the scene
-    console.log('=== Debugging CandleSnapshotRenderer ===');
-    console.log('UserData:', userData);
-    console.log('All meshes in scene:');
+    // console.log('=== Debugging CandleSnapshotRenderer ===');
+    // console.log('UserData:', userData);
+    // console.log('All meshes in scene:');
     clonedScene.traverse((child) => {
       if (child.isMesh) {
-        console.log('- Mesh name:', child.name, 'visible:', child.visible);
+        // console.log('- Mesh name:', child.name, 'visible:', child.visible);
       }
     });
     
@@ -95,7 +95,7 @@ function CandleScene({ userData, onReady }) {
       clonedScene.traverse((child) => {
         if (child.isMesh && child.name === 'Room') {
           roomMeshFound = true;
-          console.log('Found Room mesh! Loading background:', userData.background);
+          // console.log('Found Room mesh! Loading background:', userData.background);
           
           // Make Room visible and set initial properties
           child.visible = true;
@@ -106,10 +106,10 @@ function CandleScene({ userData, onReady }) {
       
       if (!roomMeshFound) {
         console.warn(`Room mesh not found in ${userData?.candleType} model! Using gradient fallback.`);
-        console.log('All meshes in scene:');
+        // console.log('All meshes in scene:');
         clonedScene.traverse((child) => {
           if (child.isMesh) {
-            console.log('- Mesh:', child.name);
+            // console.log('- Mesh:', child.name);
           }
         });
         
@@ -143,12 +143,12 @@ function CandleScene({ userData, onReady }) {
         // Load the texture immediately
         const textureLoader = new THREE.TextureLoader();
         const texturePath = SKYBOX_TEXTURES[userData.background];
-        console.log('Loading texture from:', texturePath);
+        // console.log('Loading texture from:', texturePath);
         
         textureLoader.load(
           texturePath,
           (texture) => {
-            console.log('Skybox texture loaded successfully');
+            // console.log('Skybox texture loaded successfully');
             
             // Configure texture exactly like SingleCandleDisplay
             texture.wrapS = THREE.ClampToEdgeWrapping;
@@ -159,8 +159,8 @@ function CandleScene({ userData, onReady }) {
             // Apply to Room mesh
             clonedScene.traverse((child) => {
               if (child.name === 'Room' && child.isMesh) {
-                console.log('Applying texture to Room mesh');
-                console.log('Original Room material:', child.material);
+                // console.log('Applying texture to Room mesh');
+                // console.log('Original Room material:', child.material);
                 
                 // Create new material exactly matching SingleCandleDisplay
                 const skyboxMaterial = new THREE.MeshBasicMaterial({
@@ -178,13 +178,13 @@ function CandleScene({ userData, onReady }) {
                 child.renderOrder = -1000;
                 child.frustumCulled = false;
                 
-                console.log('Room mesh updated:', {
-                  material: child.material,
-                  hasMap: !!child.material.map,
-                  mapImage: child.material.map?.image,
-                  visible: child.visible,
-                  renderOrder: child.renderOrder
-                });
+                // console.log('Room mesh updated:', {
+                //   material: child.material,
+                //   hasMap: !!child.material.map,
+                //   mapImage: child.material.map?.image,
+                //   visible: child.visible,
+                //   renderOrder: child.renderOrder
+                // });
               }
             });
             
@@ -431,14 +431,14 @@ export default function CandleSnapshotRenderer({
   const [showLoading, setShowLoading] = useState(!preloadOnly && !instantCapture);
   const canvasRef = useRef();
   
-  console.log('CandleSnapshotRenderer render:', { 
-    isVisible, 
-    userData, 
-    instantCapture, 
-    sceneReady, 
-    triggerSnapshot,
-    showLoading 
-  });
+  // console.log('CandleSnapshotRenderer render:', { 
+  //   isVisible, 
+  //   userData, 
+  //   instantCapture, 
+  //   sceneReady, 
+  //   triggerSnapshot,
+  //   showLoading 
+  // });
   
   // Trigger snapshot once scene is ready
   useEffect(() => {

@@ -100,7 +100,7 @@ const CyborgTempleScene = forwardRef(({
       
       // Store the loaded model in state for external access
       setLoadedModel(templeScene);
-      console.log('[CyborgTempleScene] Model loaded and stored:', templeScene);
+      // console.log('[CyborgTempleScene] Model loaded and stored:', templeScene);
       
       // Create an anchor group for positioning
       const anchorGroup = new THREE.Group();
@@ -133,11 +133,11 @@ const CyborgTempleScene = forwardRef(({
           if (animName === 'TYPE1') {
             // Play TYPE animation for the first character (no suffix)
             action.play();
-            console.log(`Playing TYPE animation: ${animation.name}`);
+            // console.log(`Playing TYPE animation: ${animation.name}`);
           } else if (animName === 'HaloRotation') {
             // Play HaloRotation animation
             action.play();
-            console.log(`Playing HaloRotation animation: ${animation.name}`);
+            // console.log(`Playing HaloRotation animation: ${animation.name}`);
           } else if (animName === 'Idle.001' || animName === 'Idle.002' || animName === 'Idle.003') {
             // Play idle animations with different time offsets
             
@@ -174,15 +174,15 @@ const CyborgTempleScene = forwardRef(({
       // Find the specific meshes
       templeScene.traverse((child) => {
         if (child.name === 'Cylinder043_0') {
-          console.log('Found Cylinder043_0 mesh:', child);
+          // console.log('Found Cylinder043_0 mesh:', child);
           cylinderMeshRef.current = child;
         }
         if (child.name === 'Object_5') {
-          console.log('Found Object_5 mesh:', child);
+          // console.log('Found Object_5 mesh:', child);
           object7MeshRef.current = child;
         }
         if (child.name === 'Mike') {
-          console.log('Found Cube010 mesh:', child);
+          // console.log('Found Cube010 mesh:', child);
           cube010MeshRef.current = child;
         }
       });
@@ -195,7 +195,7 @@ const CyborgTempleScene = forwardRef(({
       }
     }, 
     (progress) => {
-      console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
+      // console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
     },
     (error) => {
       console.error('Error loading MaryTraderScene_extraClothes2.glb:', error);
@@ -236,7 +236,7 @@ const CyborgTempleScene = forwardRef(({
     
     // Check if track has changed (not just on first load)
     if (previousTrackRef.current && currentTrack && previousTrackRef.current.name !== currentTrack.name) {
-      console.log('[CyborgTempleScene] Track changed from', previousTrackRef.current.name, 'to', currentTrack.name);
+      // console.log('[CyborgTempleScene] Track changed from', previousTrackRef.current.name, 'to', currentTrack.name);
       
       const actions = actionsRef.current;
       
@@ -261,7 +261,7 @@ const CyborgTempleScene = forwardRef(({
         ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
           if (actions[danceAnim] && actions[danceAnim].isRunning()) {
             actions[danceAnim].timeScale = speedMultiplier;
-            console.log(`[CyborgTempleScene] Restored dance speed to ${speedMultiplier}x for ${currentTrack.name}`);
+            // console.log(`[CyborgTempleScene] Restored dance speed to ${speedMultiplier}x for ${currentTrack.name}`);
           }
         });
       }, 800); // 0.8 second transition period
@@ -284,11 +284,11 @@ const CyborgTempleScene = forwardRef(({
     }
 
     // Log available animations to help identify dance animations
-    console.log('[CyborgTempleScene] Switching animations. isPlaying:', isPlaying);
-    console.log('[CyborgTempleScene] Available animations:', Object.keys(actions));
+    // console.log('[CyborgTempleScene] Switching animations. isPlaying:', isPlaying);
+    // console.log('[CyborgTempleScene] Available animations:', Object.keys(actions));
     
     if (isPlaying) {
-      console.log('[CyborgTempleScene] Music started, characters will start dancing in 2 seconds...');
+      // console.log('[CyborgTempleScene] Music started, characters will start dancing in 2 seconds...');
       
       // Clear any existing timeouts/intervals
       if (danceTimeoutRef.current) {
@@ -311,7 +311,7 @@ const CyborgTempleScene = forwardRef(({
       
       // Delay the dance animations by 2 seconds
       danceTimeoutRef.current = setTimeout(() => {
-        console.log('[CyborgTempleScene] Starting dance animations after delay...');
+        // console.log('[CyborgTempleScene] Starting dance animations after delay...');
         
         // Stop idle animations for characters that will dance
         ['Idle.001', 'Idle.002', 'Idle.003'].forEach(idleAnim => {
@@ -342,7 +342,7 @@ const CyborgTempleScene = forwardRef(({
             }
             
             actions[danceAnim].play();
-            console.log(`✅ Starting dance animation: ${danceAnim} - ramping up to ${targetSpeedMultiplier}x (${trackBPM} BPM)`);
+            // console.log(`✅ Starting dance animation: ${danceAnim} - ramping up to ${targetSpeedMultiplier}x (${trackBPM} BPM)`);
           }
         });
         
@@ -359,7 +359,7 @@ const CyborgTempleScene = forwardRef(({
             clearInterval(rampUpIntervalRef.current);
             rampUpIntervalRef.current = null;
             currentSpeed = targetSpeedMultiplier;
-            console.log(`[CyborgTempleScene] Dance animations reached target speed: ${targetSpeedMultiplier}x`);
+            // console.log(`[CyborgTempleScene] Dance animations reached target speed: ${targetSpeedMultiplier}x`);
           }
           
           // Apply the current speed to all dance animations
@@ -373,7 +373,7 @@ const CyborgTempleScene = forwardRef(({
       
     } else {
       // Gradually slow down and stop dance animations
-      console.log('[CyborgTempleScene] Music stopped, characters will gradually slow down dancing...');
+      // console.log('[CyborgTempleScene] Music stopped, characters will gradually slow down dancing...');
       
       // Clear any pending timeouts/intervals
       if (danceTimeoutRef.current) {
@@ -408,7 +408,7 @@ const CyborgTempleScene = forwardRef(({
           clearInterval(slowdownIntervalRef.current);
           slowdownIntervalRef.current = null;
           
-          console.log('[CyborgTempleScene] Dance animations fully stopped, switching to idle...');
+          // console.log('[CyborgTempleScene] Dance animations fully stopped, switching to idle...');
           
           // Stop dance animations
           ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
@@ -432,7 +432,7 @@ const CyborgTempleScene = forwardRef(({
               }
               
               actions[idleAnim].play();
-              console.log(`✅ Restarting idle animation: ${idleAnim} with offset ${actions[idleAnim].time}`);
+              // console.log(`✅ Restarting idle animation: ${idleAnim} with offset ${actions[idleAnim].time}`);
             }
           });
         } else {

@@ -29,8 +29,8 @@ function AnnotationSystem({ annotations = [], is80sMode = false, scale = 1, text
         originalAutoRotate.current = controls.autoRotate;
         hasStoredOriginal.current = true;
         
-        console.log('Stored original camera position:', camera.position.toArray());
-        console.log('Stored original target:', controls.target.toArray());
+        // console.log('Stored original camera position:', camera.position.toArray());
+        // console.log('Stored original target:', controls.target.toArray());
         
         // Ensure camera near plane is set properly
         if (camera.near > 0.1) {

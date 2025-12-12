@@ -36,7 +36,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [showCompactCandleModal, setShowCompactCandleModal] = useState(false); // Modal for CompactCandleModal
   
   // Debug initial state
-  console.log('TradingOverlay initial render, showCompactCandleModal:', showCompactCandleModal);
+  // console.log('TradingOverlay initial render, showCompactCandleModal:', showCompactCandleModal);
   
   // Get user info from Clerk
   const { user, isSignedIn } = useUser();
@@ -86,8 +86,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
 
   // Debug modal state changes
   useEffect(() => {
-    console.log('CompactCandleModal state changed to:', showCompactCandleModal);
-    console.log('User signed in status:', isSignedIn);
+    // console.log('CompactCandleModal state changed to:', showCompactCandleModal);
+    // console.log('User signed in status:', isSignedIn);
   }, [showCompactCandleModal, isSignedIn]);
   
   // Select user based on current index
@@ -1476,32 +1476,32 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            console.log('Create button clicked, current modal state:', showCompactCandleModal);
+                            // console.log('Create button clicked, current modal state:', showCompactCandleModal);
                             // Toggle the modal to ensure it opens fresh
                             setShowCompactCandleModal(false);
                             setTimeout(() => {
                               setShowCompactCandleModal(true);
-                              console.log('Modal state set to true after reset');
+                              // console.log('Modal state set to true after reset');
                             }, 10);
                           }}
                           onTouchStart={(e) => {
                             e.stopPropagation();
-                            console.log('Create button touched');
+                            // console.log('Create button touched');
                           }}
                           onTouchEnd={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            console.log('Create button touch ended, current modal state:', showCompactCandleModal);
+                            // console.log('Create button touch ended, current modal state:', showCompactCandleModal);
                             // Toggle the modal to ensure it opens fresh
                             setShowCompactCandleModal(false);
                             setTimeout(() => {
                               setShowCompactCandleModal(true);
-                              console.log('Modal state set to true after reset');
+                              // console.log('Modal state set to true after reset');
                             }, 10);
                           }}
                           onPointerDown={(e) => {
                             e.stopPropagation();
-                            console.log('Create button pointer down, current modal state:', showCompactCandleModal);
+                            // console.log('Create button pointer down, current modal state:', showCompactCandleModal);
                             // Remove setShowCompactCandleModal from here to avoid duplicate calls
                           }}
                           style={{
@@ -1663,15 +1663,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         )}
         
         {/* Compact Candle Modal - Must be rendered in mobile view too! */}
-        {console.log('Mobile: Rendering CompactCandleModal with isOpen:', showCompactCandleModal)}
+        {/* {console.log('Mobile: Rendering CompactCandleModal with isOpen:', showCompactCandleModal)} */}
         <CompactCandleModal
           isOpen={showCompactCandleModal}
           onClose={() => {
-            console.log('Mobile: CompactCandleModal onClose called');
+            // console.log('Mobile: CompactCandleModal onClose called');
             setShowCompactCandleModal(false);
           }}
           onCandleCreated={() => {
-            console.log('Mobile: CompactCandleModal onCandleCreated called');
+            // console.log('Mobile: CompactCandleModal onCandleCreated called');
             setShowCompactCandleModal(false);
             // Optionally refresh or update any candle-related state here
           }}
@@ -3552,15 +3552,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
       )}
 
       {/* Compact Candle Modal */}
-      {console.log('Rendering CompactCandleModal with isOpen:', showCompactCandleModal)}
+      {/* {console.log('Rendering CompactCandleModal with isOpen:', showCompactCandleModal)} */}
       <CompactCandleModal
         isOpen={showCompactCandleModal}
         onClose={() => {
-          console.log('CompactCandleModal onClose called');
+          // console.log('CompactCandleModal onClose called');
           setShowCompactCandleModal(false);
         }}
         onCandleCreated={() => {
-          console.log('CompactCandleModal onCandleCreated called');
+          // console.log('CompactCandleModal onCandleCreated called');
           setShowCompactCandleModal(false);
           // Optionally refresh or update any candle-related state here
         }}

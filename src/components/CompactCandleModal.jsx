@@ -1133,7 +1133,7 @@ const BACKGROUND_TEXTURES = [
 ];
 
 export default function CompactCandleModal({ isOpen, onClose, onCandleCreated }) {
-  console.log('CompactCandleModal render - isOpen:', isOpen);
+  // console.log('CompactCandleModal render - isOpen:', isOpen);
   
   // Step tracking for multi-step flow (now 6 steps with background)
   const [currentStep, setCurrentStep] = useState(1);
@@ -1781,9 +1781,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   };
   
   const uploadImage = async () => {
-    console.log('uploadImage called - user:', user);
-    console.log('imageFile:', imageFile);
-    console.log('imagePreview:', imagePreview);
+    // console.log('uploadImage called - user:', user);
+    // console.log('imageFile:', imageFile);
+    // console.log('imagePreview:', imagePreview);
     let finalImageUrl = null;
     
     // Get base image URL
@@ -1846,11 +1846,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     
     // If no image was processed but we have a Clerk image, use it
     if (!finalImageUrl && user?.imageUrl) {
-      console.log('Using Clerk user image as fallback:', user.imageUrl);
+      // console.log('Using Clerk user image as fallback:', user.imageUrl);
       finalImageUrl = user.imageUrl;
     }
     
-    console.log('uploadImage returning:', finalImageUrl);
+    // console.log('uploadImage returning:', finalImageUrl);
     return finalImageUrl;
   };
 
@@ -2251,7 +2251,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         );
         
       case 2: // Size/Image Customization
-        console.log('Rendering case 2');
+        // console.log('Rendering case 2');
         return (
           <div style={{ padding: '20px' }}>
             <h3 style={{
@@ -2858,7 +2858,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         );
         
       case 4: // Message/Prayer
-        console.log('Rendering case 4');
+        // console.log('Rendering case 4');
         return (
           <div style={{ padding: '20px' }}>
             <h3 style={{
@@ -3472,13 +3472,13 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           onClick={(e) => {
             // If user clicks outside the polaroid action buttons, dismiss
             if (!e.target.closest('.action-button')) {
-              console.log('User dismissed polaroid');
+              // console.log('User dismissed polaroid');
               setShowCandleSnapshot(false);
               setSavedCandleData(null);
             }
           }}
         >
-          {console.log('Rendering CandleSnapshotRenderer wrapper, isOpen:', isOpen, 'showCandleSnapshot:', showCandleSnapshot, 'savedCandleData:', savedCandleData)}
+          {/* {console.log('Rendering CandleSnapshotRenderer wrapper, isOpen:', isOpen, 'showCandleSnapshot:', showCandleSnapshot, 'savedCandleData:', savedCandleData)} */}
           <CandleSnapshotRenderer 
             isVisible={true}
             userData={savedCandleData}
@@ -3491,7 +3491,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 setSavedCandleData(null);
               }, 30000); // 30 seconds safety timeout
               
-              console.log('Snapshot complete, will auto-dismiss after 30 seconds if not clicked');
+              // console.log('Snapshot complete, will auto-dismiss after 30 seconds if not clicked');
             }}
           />
         </div>

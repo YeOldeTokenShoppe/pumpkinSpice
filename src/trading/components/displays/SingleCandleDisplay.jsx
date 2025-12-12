@@ -80,8 +80,8 @@ function CandleScene({ firestoreData, onDoubleClick }) {
     else modelPath = "/models/ecclesiasticalMediumComplete.glb";
   }
   
-  console.log('Full firestore data:', firestoreData);
-  console.log('Loading candle model:', modelPath, 'for type:', candleType);
+  // console.log('Full firestore data:', firestoreData);
+  // console.log('Loading candle model:', modelPath, 'for type:', candleType);
   const { scene, animations } = useGLTF(modelPath);
   const candleRef = useRef();
   const mixerRef = useRef(null);
@@ -101,7 +101,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
     if (!scene) {
       console.error('Scene not loaded from GLTF file');
     } else {
-      console.log('Scene loaded successfully:', scene);
+      // console.log('Scene loaded successfully:', scene);
     }
   }, [scene]);
   
@@ -115,7 +115,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
                           previousUserIdRef.current !== currentUserId;
     
     if (hasUserChanged && candleRef.current && candleRef.current.children.length > 0) {
-      console.log('User change detected:', previousUserIdRef.current, '->', currentUserId);
+      // console.log('User change detected:', previousUserIdRef.current, '->', currentUserId);
       // Store the new data to apply later
       setPendingFirestoreData(firestoreData);
       
@@ -138,7 +138,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       
       // End transition after curtain animation completes
       transitionTimeoutRef.current = setTimeout(() => {
-        console.log('Curtain transition complete');
+        // console.log('Curtain transition complete');
         justTransitionedRef.current = true; // Mark that we just completed a transition
         setIsTransitioning(false);
         setPendingFirestoreData(null);
@@ -393,13 +393,13 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       if (!isTransitioning) {
         // Load dynamic skybox texture based on user
         const selectedTexture = getTextureForUser(firestoreData);
-        console.log('Loading skybox texture:', selectedTexture.name, selectedTexture.path);
+        // console.log('Loading skybox texture:', selectedTexture.name, selectedTexture.path);
         
         const textureLoader = new THREE.TextureLoader();
         textureLoader.load(
           selectedTexture.path,
           (texture) => {
-            console.log('Texture loaded successfully:', selectedTexture.name);
+            // console.log('Texture loaded successfully:', selectedTexture.name);
             currentTextureRef.current = selectedTexture;
             
             // Flip the texture vertically to match UV coordinates
@@ -411,8 +411,8 @@ function CandleScene({ firestoreData, onDoubleClick }) {
             // Find and update the Room object's texture only
             clonedCandle.traverse((child) => {
               if (child.name === 'Room' && child.isMesh) {
-                console.log('Updating Room texture while preserving UVs');
-                console.log('Original material:', child.material);
+                // console.log('Updating Room texture while preserving UVs');
+                // console.log('Original material:', child.material);
                 
                 // Make sure the Room is visible
                 child.visible = true;
@@ -430,7 +430,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
                 child.renderOrder = -1000; // Ensure it renders behind everything else
                 child.frustumCulled = false; // Prevent culling issues
                 
-                console.log('Updated material with new texture');
+                // console.log('Updated material with new texture');
               }
             });
           },
@@ -449,7 +449,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         
         // Find and play the 'Animation' clip specifically
         animations.forEach(clip => {
-          console.log('Found animation clip:', clip.name);
+          // console.log('Found animation clip:', clip.name);
           const action = mixerRef.current.clipAction(clip);
           action.play();
         });
@@ -464,7 +464,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
                            animations?.some(a => a.name?.includes('Votive')) ||
                            clonedCandle.getObjectByName('Label2') !== undefined;
       
-      console.log('Is votive candle:', isVotiveCandle);
+      // console.log('Is votive candle:', isVotiveCandle);
       
       // Initialize melting properties (only for non-votive candles)
       const meltingRate = 1 / 30; // 30 seconds to fully melt for testing
@@ -477,7 +477,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
           // Look for XBase inside XCandle01
           if (child.name === 'XBase') {
             xBaseToMelt = child;
-            console.log('Found XBase to melt:', child);
+            // console.log('Found XBase to melt:', child);
           }
         });
       }
@@ -492,7 +492,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         clonedCandle.traverse((child) => {
           if (child.name === 'XCandle01') {
             xCandle01Container = child;
-            console.log('Found XCandle01 container for drop:', child);
+            // console.log('Found XCandle01 container for drop:', child);
           }
         });
         
@@ -505,10 +505,10 @@ function CandleScene({ firestoreData, onDoubleClick }) {
           dropProgress: 0
         };
         
-        console.log('Candle melting setup complete');
-        console.log('Is Japanese candle:', isJapaneseCandle);
-        console.log('XBase scale:', xBaseToMelt.scale);
-        console.log('XBase rotation:', xBaseToMelt.rotation);
+        // console.log('Candle melting setup complete');
+        // console.log('Is Japanese candle:', isJapaneseCandle);
+        // console.log('XBase scale:', xBaseToMelt.scale);
+        // console.log('XBase rotation:', xBaseToMelt.rotation);
       } else {
         console.warn('XBase not found in model');
       }
@@ -534,13 +534,13 @@ function CandleScene({ firestoreData, onDoubleClick }) {
           child.receiveShadow = true;
           
           // Log mesh names to identify objects
-          console.log('Mesh found:', child.name);
+          // console.log('Mesh found:', child.name);
           
           // Enhance materials for better lighting response
           if (child.material) {
             // Special treatment for the candle wax
             if (child.name === 'Candle2' || child.name.includes('Candle') || child.name === 'Candle000') {
-              console.log('Enhancing candle wax:', child.name);
+              // console.log('Enhancing candle wax:', child.name);
               const oldMaterial = child.material;
               child.material = new THREE.MeshStandardMaterial({
                 color: oldMaterial.color || new THREE.Color(0x2d5016),  // Green candle color
@@ -576,7 +576,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       // Special handling for votive candle - apply user image to Label2 and message to Label1
       // Skip if transitioning - will be handled by updateCandleTextures
       if (isVotiveCandle && firestoreData && !isTransitioning) {
-        console.log('Applying user data to votive candle labels');
+        // console.log('Applying user data to votive candle labels');
         
         const imageUrl = firestoreData.image || firestoreData.profileImage || '/defaultAvatar.png';
         const message = firestoreData.message || firestoreData.prayer || 'May the gains be with you 🚀';
@@ -683,7 +683,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
               child.material.metalness = 0;
               child.material.roughness = 1;
               child.material.needsUpdate = true;
-              console.log('Applied message to votive Label1');
+              // console.log('Applied message to votive Label1');
             }
           }
         });
@@ -738,7 +738,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
                 child.material.metalness = 0;
                 child.material.roughness = 1;
                 child.material.needsUpdate = true;
-                console.log('Applied texture to votive Label2');
+                // console.log('Applied texture to votive Label2');
               }
             }
           });
@@ -1042,7 +1042,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         
         // Debug log
         if (curtainOpacity > 0 && curtainOpacity < 0.1) {
-          console.log('Curtain transition:', curtainOpacity, 'visible:', curtainRef.current.visible);
+          // console.log('Curtain transition:', curtainOpacity, 'visible:', curtainRef.current.visible);
         }
       } else {
         // Ensure curtain is hidden when not transitioning
@@ -1062,9 +1062,9 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       const currentProgress = meltingProgressRef.current;
       
       // Log progress every 10%
-      if (Math.floor(currentProgress * 10) !== Math.floor(prevProgress * 10)) {
-        console.log(`Melting progress: ${(currentProgress * 100).toFixed(1)}%`);
-      }
+      // if (Math.floor(currentProgress * 10) !== Math.floor(prevProgress * 10)) {
+      //   console.log(`Melting progress: ${(currentProgress * 100).toFixed(1)}%`);
+      // }
       
       // Apply melting effect directly
       const percentageRemaining = Math.max(1 - currentProgress, MIN_SCALE);
@@ -1084,16 +1084,16 @@ function CandleScene({ firestoreData, onDoubleClick }) {
           // Check for any flame (Flame, Flame.001, Flame.002, Flame.003)
           if (child.name && child.name.startsWith('Flame')) {
             child.visible = false;
-            console.log('Hiding flame:', child.name);
+            // console.log('Hiding flame:', child.name);
           }
         });
         candlePartsRef.current.flameHidden = true;
-        console.log('Candle extinguished - all flames hidden!');
+        // console.log('Candle extinguished - all flames hidden!');
         
         // Start drop animation for Japanese candle
         if (candlePartsRef.current.isJapaneseCandle) {
           candlePartsRef.current.startDrop = true;
-          console.log('Starting drop animation for Japanese candle');
+          // console.log('Starting drop animation for Japanese candle');
         }
       }
       
@@ -1120,7 +1120,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         if (candlePartsRef.current.dropProgress >= DROP_DISTANCE && 
             !candlePartsRef.current.dropComplete) {
           candlePartsRef.current.dropComplete = true;
-          console.log('Japanese candle drop complete');
+          // console.log('Japanese candle drop complete');
         }
       }
     }
@@ -1533,7 +1533,7 @@ export default function SingleCandleDisplay({ firestoreData, isUserCandle = fals
     if (!isFullscreen) {
       setPortalEntered(true);
       setIsFullscreen(true);
-      console.log('Portal entered');
+      // console.log('Portal entered');
     }
     // Don't exit on click when in fullscreen - only via button
   };
@@ -1541,7 +1541,7 @@ export default function SingleCandleDisplay({ firestoreData, isUserCandle = fals
   const handlePortalExit = () => {
     setIsFullscreen(false);
     setPortalEntered(false);
-    console.log('Portal exited');
+    // console.log('Portal exited');
   };
 
   return (

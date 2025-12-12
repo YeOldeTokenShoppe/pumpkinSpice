@@ -80,12 +80,31 @@ const StarField = ({ count1 = 250, count2 = 150, is80sMode = false, radius = 200
   const { camera } = useThree();
 
   // Load textures with absolute URLs
-  const [starTextures, setStarTextures] = useState([null, null]);
+  const [starTextures, setStarTextures] = useState([]);
   
   useEffect(() => {
     const loader = new THREE.TextureLoader();
-    const textures = [loader.load("/sp1.png"), loader.load("/sp2.png")];
-    setStarTextures(textures);
+    // Load textures with proper error handling
+    Promise.all([
+      new Promise((resolve) => {
+        loader.load(
+          "/sp1.png",
+          (texture) => resolve(texture),
+          undefined,
+          () => resolve(null) // Return null if texture fails to load
+        );
+      }),
+      new Promise((resolve) => {
+        loader.load(
+          "/sp2.png",
+          (texture) => resolve(texture),
+          undefined,
+          () => resolve(null) // Return null if texture fails to load
+        );
+      })
+    ]).then((textures) => {
+      setStarTextures(textures);
+    });
   }, []);
 
   // Create the geometry on component mount
@@ -107,7 +126,7 @@ const StarField = ({ count1 = 250, count2 = 150, is80sMode = false, radius = 200
     return geo;
   });
 
-  // Define materials with star texture
+  // Define materials without textures initially
   const starMaterial1 = useRef(
     new THREE.PointsMaterial({
       size: 0.7,
@@ -119,7 +138,7 @@ const StarField = ({ count1 = 250, count2 = 150, is80sMode = false, radius = 200
       depthWrite: false,
       depthTest: true,
       blending: THREE.AdditiveBlending,
-      map: starTextures[0] || undefined, // Use the first loaded texture
+      // Don't set map initially - will be set when textures load
     })
   );
 
@@ -134,9 +153,23 @@ const StarField = ({ count1 = 250, count2 = 150, is80sMode = false, radius = 200
       depthWrite: false,
       depthTest: true,
       blending: THREE.AdditiveBlending,
-      map: starTextures[1] || undefined, // Use the second loaded texture
+      // Don't set map initially - will be set when textures load
     })
   );
+  
+  // Update materials when textures are loaded
+  useEffect(() => {
+    if (starTextures.length === 2) {
+      if (starTextures[0] && starMaterial1.current) {
+        starMaterial1.current.map = starTextures[0];
+        starMaterial1.current.needsUpdate = true;
+      }
+      if (starTextures[1] && starMaterial2.current) {
+        starMaterial2.current.map = starTextures[1];
+        starMaterial2.current.needsUpdate = true;
+      }
+    }
+  }, [starTextures]);
 
   // Update star colors when 80s mode changes
   useEffect(() => {

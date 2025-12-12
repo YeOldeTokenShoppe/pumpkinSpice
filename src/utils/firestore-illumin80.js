@@ -40,7 +40,7 @@ export async function getIllumin80Members() {
       top8PercentCount = Math.ceil(totalUsers * 0.08); // Top 8% for larger user bases
     }
     
-    console.log(`Illumin80: ${top8PercentCount} users qualify (top ${Math.round(top8PercentCount/totalUsers*100)}% of ${totalUsers} total users)`);
+    // console.log(`Illumin80: ${top8PercentCount} users qualify (top ${Math.round(top8PercentCount/totalUsers*100)}% of ${totalUsers} total users)`);
     
     // Take only the top 8% of users
     const illumin80Members = [];
@@ -81,7 +81,7 @@ export async function checkUserIllumin80Status(userIdentifier, isClerkUserId = f
       const member = illumin80.find(m => m.clerkUserId === userIdentifier);
       
       if (member) {
-        console.log('✅ Found Illumin80 member by secure Clerk ID:', member);
+        // console.log('✅ Found Illumin80 member by secure Clerk ID:', member);
       }
       
       return {
@@ -122,21 +122,21 @@ export async function checkUserIllumin80Status(userIdentifier, isClerkUserId = f
       );
     });
     
-    if (member) {
-      console.log('✅ Found Illumin80 member:', {
-        username: member.username,
-        rank: member.rank,
-        burnedAmount: member.burnedAmount,
-        title: member.title
-      });
-    } else {
-      console.log('❌ No match found for identifier:', userIdentifier, '\nIllumin80 members:', illumin80.map(m => ({
-        username: m.username || m.userName,
-        email: m.email || m.clerkEmail,
-        userId: m.userId,
-        clerkUserId: m.clerkUserId
-      })));
-    }
+    // if (member) {
+    //   console.log('✅ Found Illumin80 member:', {
+    //     username: member.username,
+    //     rank: member.rank,
+    //     burnedAmount: member.burnedAmount,
+    //     title: member.title
+    //   });
+    // } else {
+    //   console.log('❌ No match found for identifier:', userIdentifier, '\nIllumin80 members:', illumin80.map(m => ({
+    //     username: m.username || m.userName,
+    //     email: m.email || m.clerkEmail,
+    //     userId: m.userId,
+    //     clerkUserId: m.clerkUserId
+    //   })));
+    // }
     
     return {
       isIllumin80: !!member,
@@ -194,7 +194,7 @@ export async function syncIllumin80WithClerk() {
       }
     }
     
-    console.log(`✨ Synced ${illumin80Members.length} Illumin80 members`);
+    // console.log(`✨ Synced ${illumin80Members.length} Illumin80 members`);
     return illumin80Members;
   } catch (error) {
     console.error('Error syncing Illumin80 with Clerk:', error);
