@@ -163,10 +163,8 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
               </svg>
             </button>
             {navItems.map((item, index) => {
-              // Handle route matching
-              const isActive = pathname === item.path || 
-                (item.path === '/home' && pathname === '/') ||
-                (item.path === '/home2' && pathname === '/home2');
+              // Handle route matching - ensure exact match only
+              const isActive = pathname === item.path;
               
               const isHovered = hoveredItemPath === item.path;
               

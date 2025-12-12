@@ -63,6 +63,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
   // Determine candle model based on firestoreData
   const candleType = firestoreData?.candleType || 'votive';
   const candleHeight = firestoreData?.candleHeight || 'medium';
+  const controlsRef = useRef();
   
   let modelPath = "/models/votiveComplete.glb"; // Default votive with room
   
@@ -95,6 +96,30 @@ function CandleScene({ firestoreData, onDoubleClick }) {
   const previousUserIdRef = useRef(null);
   const currentTextureRef = useRef(null);
   const justTransitionedRef = useRef(false);
+  
+  // Fix passive event listeners for OrbitControls
+  useEffect(() => {
+    // Small delay to ensure OrbitControls has attached its listeners
+    const timer = setTimeout(() => {
+      if (controlsRef.current && controlsRef.current.domElement) {
+        const domElement = controlsRef.current.domElement;
+        
+        // Get all event listeners (this is a workaround)
+        // We'll re-add the wheel listener with passive flag
+        const originalAddEventListener = domElement.addEventListener;
+        domElement.addEventListener = function(type, listener, options) {
+          if (type === 'wheel') {
+            // Force passive: false for wheel events to suppress the warning
+            // OrbitControls needs preventDefault to work properly
+            options = { ...options, passive: false };
+          }
+          return originalAddEventListener.call(this, type, listener, options);
+        };
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // Add error checking for scene
   useEffect(() => {
@@ -510,7 +535,7 @@ function CandleScene({ firestoreData, onDoubleClick }) {
         // console.log('XBase scale:', xBaseToMelt.scale);
         // console.log('XBase rotation:', xBaseToMelt.rotation);
       } else {
-        console.warn('XBase not found in model');
+        // console.warn('XBase not found in model');
       }
       
       // Mark as a candle for cleanup later
@@ -1225,11 +1250,15 @@ function CandleScene({ firestoreData, onDoubleClick }) {
       
       {/* Camera controls - with zoom and manual rotation enabled */}
       <OrbitControls
+        ref={controlsRef}
         dampingFactor={0.2}
         enablePan={true}
         enableZoom={true}
         minDistance={2}
         maxDistance={10}
+        touchAction="none"
+        regress
+        enableDamping
       />
     </>
   );

@@ -65,7 +65,7 @@ const hasRequiredEnvironmentVariables = () => {
 try {
   // Skip Firebase initialization on the server
   if (!isBrowser) {
-    console.log("Skipping Firebase initialization on server");
+    // console.log("Skipping Firebase initialization on server");
     throw new Error('Firebase initialization skipped on server');
   }
   
@@ -91,13 +91,13 @@ try {
   storage = getStorage(app);
   rtdb = getDatabase(app);
   
-  console.log("Firebase initialized successfully", {
-    appInitialized: !!app,
-    dbInitialized: !!db,
-    authInitialized: !!auth,
-    storageInitialized: !!storage,
-    rtdbInitialized: !!rtdb
-  });
+  // console.log("Firebase initialized successfully", {
+  //   appInitialized: !!app,
+  //   dbInitialized: !!db,
+  //   authInitialized: !!auth,
+  //   storageInitialized: !!storage,
+  //   rtdbInitialized: !!rtdb
+  // });
 } catch (error) {
   console.error("Error initializing Firebase:", error);
   console.error("Firebase initialization details:", {
@@ -219,7 +219,7 @@ export { db, auth, storage, app, rtdb };
 // TEMPORARY: Wrapper for signInWithCustomToken to skip auth when testing
 const signInWithCustomTokenWrapper = async (authInstance, token) => {
   if (SKIP_FIREBASE_AUTH) {
-    console.log("Skipping Firebase authentication (TEMPORARY for MoonRoom testing)");
+    // console.log("Skipping Firebase authentication (TEMPORARY for MoonRoom testing)");
     return { user: { uid: 'test-user', email: 'test@example.com' } };
   }
   return signInWithCustomToken(authInstance, token);

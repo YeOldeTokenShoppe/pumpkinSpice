@@ -32,20 +32,20 @@ try {
   // Check if Firebase is already initialized
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
-    console.log("Firebase initialized successfully for server");
+    // console.log("Firebase initialized successfully for server");
   } else {
     app = getApps()[0];
-    console.log("Using existing Firebase app for server");
+    // console.log("Using existing Firebase app for server");
   }
   
   db = getFirestore(app);
-  console.log("Firestore initialized successfully for server");
+  // console.log("Firestore initialized successfully for server");
   
 } catch (error) {
   console.error("Error initializing Firebase for server:", error);
   
   // Create dummy implementations for development
-  console.log("Creating dummy Firebase implementations");
+  // console.log("Creating dummy Firebase implementations");
   db = null;
 }
 

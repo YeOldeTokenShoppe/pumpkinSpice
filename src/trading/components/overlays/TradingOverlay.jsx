@@ -2427,7 +2427,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
           padding: '12px',
           fontFamily: 'monospace',
           fontSize: '11px',
-          zIndex: 999999,
+          zIndex: 9999,
           width: 'min(320px, 25vw)',
           minWidth: '260px',
           maxWidth: '340px',

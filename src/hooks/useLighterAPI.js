@@ -329,7 +329,7 @@ export function useLighterAPI(config = {}) {
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.messages && result.messages.length > 0) {
-            console.log(`Loading ${result.messages.length} recent messages from Firestore`);
+            // console.log(`Loading ${result.messages.length} recent messages from Firestore`);
             
             // Transform Firestore messages to match the agentThoughts format
             const historicalThoughts = result.messages.map(msg => ({
@@ -343,7 +343,7 @@ export function useLighterAPI(config = {}) {
             
             // Set the historical messages as initial thoughts
             setAgentThoughts(historicalThoughts);
-            console.log('Loaded chat history:', historicalThoughts);
+            // console.log('Loaded chat history:', historicalThoughts);
           }
         }
       } catch (error) {
@@ -366,7 +366,7 @@ export function useLighterAPI(config = {}) {
   const generateTeamChat = async () => {
     // Check if agents are enabled via environment variables
     if (process.env.NEXT_PUBLIC_AGENTS_ENABLED === 'false') {
-      console.log('[Agent Control] All agents disabled via NEXT_PUBLIC_AGENTS_ENABLED');
+      // console.log('[Agent Control] All agents disabled via NEXT_PUBLIC_AGENTS_ENABLED');
       return;
     }
     
@@ -392,21 +392,21 @@ export function useLighterAPI(config = {}) {
       if (process.env.NEXT_PUBLIC_AGENT_SENTIMENT !== 'false' && canCallGrok) {
         availableAgents.push('sentiment');
       } else if (process.env.NEXT_PUBLIC_AGENT_SENTIMENT !== 'false' && !canCallGrok) {
-        console.log(`Grok rate limited. Last call was ${Math.round((now - lastGrokCall) / 1000 / 60)} minutes ago. Waiting for 1 hour cooldown.`);
+        // console.log(`Grok rate limited. Last call was ${Math.round((now - lastGrokCall) / 1000 / 60)} minutes ago. Waiting for 1 hour cooldown.`);
       }
       
       // Check if any agents are available
       if (availableAgents.length === 0) {
-        console.log('[Agent Control] No agents available or all are disabled');
+        // console.log('[Agent Control] No agents available or all are disabled');
         return;
       }
       
       const currentAgent = availableAgents[Math.floor(Math.random() * availableAgents.length)];
-      console.log('[Agent Control] Available agents:', availableAgents, 'Selected:', currentAgent);
+      // console.log('[Agent Control] Available agents:', availableAgents, 'Selected:', currentAgent);
       
       // Create context from current market data - NO HARDCODED VALUES
-      console.log('Building context - fearGreedIndex:', fearGreedIndex);
-      console.log('Building context - macroMetrics:', macroMetrics);
+      // console.log('Building context - fearGreedIndex:', fearGreedIndex);
+      // console.log('Building context - macroMetrics:', macroMetrics);
       
       const context = {
         marketData: {
@@ -421,7 +421,7 @@ export function useLighterAPI(config = {}) {
         lastMessages: agentThoughts.slice(-5) // Last 5 messages for context
       };
       
-      console.log('Final context being sent:', JSON.stringify(context.marketData, null, 2));
+      // console.log('Final context being sent:', JSON.stringify(context.marketData, null, 2));
       
       // Track when we call Grok for rate limiting
       if (currentAgent === 'sentiment') {
@@ -431,8 +431,8 @@ export function useLighterAPI(config = {}) {
         if (typeof window !== 'undefined') {
           localStorage.setItem('lastGrokCallTime', callTime.toString());
         }
-        console.log('Grok API called at:', new Date().toISOString());
-        console.log('Next Grok call allowed after:', new Date(callTime + 60 * 60 * 1000).toISOString());
+        // console.log('Grok API called at:', new Date().toISOString());
+        // console.log('Next Grok call allowed after:', new Date(callTime + 60 * 60 * 1000).toISOString());
       }
       
       const response = await fetch('/api/ai-chat', {
@@ -458,7 +458,7 @@ export function useLighterAPI(config = {}) {
       const data = await response.json();
       
       if (response.ok && data.success && data.message) {
-        console.log(`Team Chat - ${currentAgent}:`, data.message);
+        // console.log(`Team Chat - ${currentAgent}:`, data.message);
         
         const newThought = {
           id: Date.now(),
@@ -483,20 +483,20 @@ export function useLighterAPI(config = {}) {
               timestamp: new Date().toISOString()
             })
           });
-          console.log(`Saved ${currentAgent} message to Firestore`);
+          // console.log(`Saved ${currentAgent} message to Firestore`);
         } catch (error) {
           console.error('Failed to save to Firestore:', error);
         }
         
         setAgentThoughts(prev => {
-          console.log('Adding thought:', newThought);
+          // console.log('Adding thought:', newThought);
           // Keep only last 20 messages
           const updated = [...prev, newThought].slice(-20);
           return updated;
         });
       } else if (!data.success) {
         // API failed - stay quiet, no fallback messages
-        console.log(`Team Chat - ${currentAgent} API failed:`, data.error);
+        // console.log(`Team Chat - ${currentAgent} API failed:`, data.error);
       } else {
         console.error(`Team Chat - Unexpected response from ${currentAgent}:`, data);
       }
