@@ -62,30 +62,45 @@ function VideoScreens() {
     texture1.minFilter = THREE.LinearFilter;
     texture1.magFilter = THREE.LinearFilter;
     texture1.format = THREE.RGBFormat;
+    texture1.flipY = false; // Flip Y-axis
+    texture1.repeat.x = -1; // Flip X-axis
+    texture1.center.set(0.5, 0.5); // Set center for proper flipping
     texture1Ref.current = texture1;
 
     const texture2 = new THREE.VideoTexture(video2);
     texture2.minFilter = THREE.LinearFilter;
     texture2.magFilter = THREE.LinearFilter;
     texture2.format = THREE.RGBFormat;
+    texture2.flipY = false; // Flip Y-axis
+    texture2.repeat.x = -1; // Flip X-axis
+    texture2.center.set(0.5, 0.5); // Set center for proper flipping
     texture2Ref.current = texture2;
 
     const texture3 = new THREE.VideoTexture(video3);
     texture3.minFilter = THREE.LinearFilter;
     texture3.magFilter = THREE.LinearFilter;
     texture3.format = THREE.RGBFormat;
+    texture3.flipY = false; // Flip Y-axis
+    texture3.repeat.x = -1; // Flip X-axis
+    texture3.center.set(0.5, 0.5); // Set center for proper flipping
     texture3Ref.current = texture3;
 
     const texture4 = new THREE.VideoTexture(video4);
     texture4.minFilter = THREE.LinearFilter;
     texture4.magFilter = THREE.LinearFilter;
     texture4.format = THREE.RGBFormat;
+    texture4.flipY = true; // Flip Y-axis
+    texture4.repeat.x = -1; // Flip X-axis
+    texture4.center.set(0.5, 0.5); // Set center for proper flipping
     texture4Ref.current = texture4;
 
     const texture5 = new THREE.VideoTexture(video5);
     texture5.minFilter = THREE.LinearFilter;
     texture5.magFilter = THREE.LinearFilter;
     texture5.format = THREE.RGBFormat;
+    texture5.flipY = false; // Flip Y-axis
+    texture5.repeat.x = -1; // Flip X-axis
+    texture5.center.set(0.5, 0.5); // Set center for proper flipping
     texture5Ref.current = texture5;
 
     // Find screens and apply textures

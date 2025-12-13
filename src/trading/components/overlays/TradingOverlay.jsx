@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRandomCandles } from '@/utilities/useRandomCandles';
 import CompactCandleModal from '@/components/CompactCandleModal';
@@ -21,7 +22,7 @@ const SingleCandleDisplay = dynamic(() => import('../displays/SingleCandleDispla
   )
 });
 
-const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
+const TradingOverlay = ({ show = false, data = null, isConnected = false, onModalStateChange = null }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [activeTab, setActiveTab] = useState(null); // for mobile view - start with no tab selected
@@ -33,7 +34,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
   const [candleTab, setCandleTab] = useState('community'); // 'mine' or 'community'
   const [userCandle, setUserCandle] = useState(null); // User's own candle data
   const [showAddCandleModal, setShowAddCandleModal] = useState(false); // Modal for adding user's candle
-  const [showCompactCandleModal, setShowCompactCandleModal] = useState(false); // Modal for CompactCandleModal
+  const [showCompactCandleModal, setShowCompactCandleModal] = React.useState(false); // Modal for CompactCandleModal
   
   // Debug initial state
   // console.log('TradingOverlay initial render, showCompactCandleModal:', showCompactCandleModal);
@@ -84,11 +85,15 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
     }
   }, [firestoreResults]);
 
-  // Debug modal state changes
-  useEffect(() => {
-    // console.log('CompactCandleModal state changed to:', showCompactCandleModal);
-    // console.log('User signed in status:', isSignedIn);
-  }, [showCompactCandleModal, isSignedIn]);
+  // Notify parent component when modal state changes
+  // TEMPORARILY DISABLED: This causes canvas unmounting issues
+  // useEffect(() => {
+  //   // console.log('CompactCandleModal state changed to:', showCompactCandleModal);
+  //   // console.log('User signed in status:', isSignedIn);
+  //   if (onModalStateChange) {
+  //     onModalStateChange(showCompactCandleModal);
+  //   }
+  // }, [showCompactCandleModal, isSignedIn, onModalStateChange]);
   
   // Select user based on current index
   const randomFirestoreData = useMemo(() => {
@@ -242,6 +247,38 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
     return () => window.removeEventListener('resize', checkViewport);
   }, []);
 
+  // Listen for new agent messages from AgentCollaboration
+  useEffect(() => {
+    const handleTradingTeamMessage = (event) => {
+      const msg = event.detail;
+      const newThought = {
+        id: `msg_${Date.now()}_${msg.consultant}`,
+        agent: msg.consultant,
+        type: msg.type || msg.consultant,
+        consultant: msg.consultant,
+        message: msg.message?.replace('[MOCK] ', ''), // Remove mock prefix if present
+        timestamp: new Date(msg.timestamp).toLocaleTimeString(),
+        confidence: msg.confidence,
+        icon: msg.consultant === 'rl80' ? '🤖' : 
+              msg.consultant === 'sentiment' ? '🔮' :
+              msg.consultant === 'market' ? '📊' :
+              msg.consultant === 'macro' ? '🌍' : '💬',
+        color: msg.consultant === 'rl80' ? '#00ff00' :
+               msg.consultant === 'sentiment' ? '#ff00ff' :
+               msg.consultant === 'market' ? '#0096ff' :
+               msg.consultant === 'macro' ? '#ffdd00' : '#888'
+      };
+      
+      setTradingData(prev => ({
+        ...prev,
+        modelThoughts: [...prev.modelThoughts, newThought].slice(-50) // Keep last 50 messages
+      }));
+    };
+    
+    window.addEventListener('tradingTeamMessage', handleTradingTeamMessage);
+    return () => window.removeEventListener('tradingTeamMessage', handleTradingTeamMessage);
+  }, []);
+  
   // Load chat history on mount
   useEffect(() => {
     const loadChatHistory = async () => {
@@ -380,7 +417,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
               {[
                 { key: 'candle', icon: '🕯️', label: 'TEMPLE CANDLE', color: '#00ff88' },
                 { key: 'stats', icon: '⚡', label: 'FUND STATS', color: '#00ff00' },
-                { key: 'thoughts', icon: '🧠', label: 'AI THOUGHTS', color: '#ff00ff' },
+                { key: 'thoughts', icon: '💬', label: 'TEAM CHAT', color: '#ff00ff' },
                 { key: 'macro', icon: '🌍', label: 'MACRO ANALYSIS', color: '#00ddff' },
                 { key: 'positions', icon: '📈', label: 'ACTIVE POSITIONS', color: '#ffdd00' },
                 { key: 'trades', icon: '📜', label: 'COMPLETED TRADES', color: '#ff8800' }
@@ -864,7 +901,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                 alignItems: 'center'
               }}>
                 <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '13px' }}>
-                  🧠 RL80 AI THOUGHTS
+                  💬 4-AGENT TEAM CHAT
                 </div>
                 <div style={{
                   display: 'flex',
@@ -1278,65 +1315,153 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
             </>
           )}
           
-          {/* Candle Tab - Mobile View */}
-          {activeTab === 'candle' && (
+          {/* Candle Tab - Mobile View - Full Screen with Portal */}
+          {activeTab === 'candle' && typeof window !== 'undefined' && ReactDOM.createPortal(
             <div style={{
-              position: 'relative',
-              width: '100%',
-              height: 'calc(100vh - 180px)',
-              minHeight: '400px',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              backgroundColor: '#000000',
+              background: 'linear-gradient(135deg, #000000 0%, #0a1a0a 100%)',
               display: 'flex',
               flexDirection: 'column',
+              zIndex: 99999,
               isolation: 'isolate'
             }}>
               <div style={{
                 marginBottom: '12px',
-                paddingBottom: '8px',
+                padding: '40px 20px 16px 20px',
                 borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
                 position: 'relative',
-                zIndex: 1
+                zIndex: 1,
+                minHeight: '100px'
               }}>
+                {/* Header buttons */}
                 <div style={{
+                  position: 'absolute',
+                  top: '35px',
+                  right: '15px',
                   display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '8px'
+                  gap: '10px',
+                  zIndex: 2
                 }}>
-                  <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '13px' }}>
-                    🕯️ {(() => {
-                      const currentCandle = candleTab === 'mine' ? currentUserCandle : randomFirestoreData;
-                      const messageType = currentCandle?.messageType;
-                      if (messageType) {
-                        const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
-                        return `Msg Protocol: ${displayType}`;
-                      }
-                      return 'TEMPLE CANDLES';
-                    })()}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '3px'
-                  }}>
-                    <div style={{
-                      width: '5px',
-                      height: '5px',
-                      borderRadius: '50%',
-                      background: 'radial-gradient(circle, #ffff00, #ff8800)',
-                      boxShadow: '0 0 8px #ff8800',
-                      animation: 'pulse 2s infinite'
-                    }}/>
-                    <span style={{ color: 'rgba(0, 255, 136, 0.7)', fontSize: '9px' }}>
-                      {candleTab === 'mine' ? 'My Offering' : 'Community'}
-                    </span>
-                  </div>
+                  {/* Create button - moved to header */}
+                  {isSignedIn && candleTab === 'mine' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log('Create button clicked, closing candle view and opening modal');
+                        // Close the candle view first
+                        setActiveTab(null);
+                        setShowMobileMenu(true);
+                        // Then open the modal
+                        setTimeout(() => {
+                          setShowCompactCandleModal(true);
+                        }, 100);
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
+                        border: '1px solid #00ff88',
+                        borderRadius: '6px',
+                        color: '#000',
+                        padding: '6px 12px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      + Create
+                    </button>
+                  )}
+                  
+                  {/* Close Button */}
+                  <button
+                    onClick={() => {
+                      setActiveTab(null);
+                      setShowMobileMenu(true);
+                    }}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      background: 'rgba(255, 0, 0, 0.15)',
+                      border: '1px solid rgba(255, 0, 0, 0.3)',
+                      borderRadius: '6px',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s ease',
+                      backdropFilter: 'blur(10px)'
+                    }}
+                  >
+                    ✕
+                  </button>
                 </div>
                 
-                {/* Tab Selector for Mobile */}
+                {/* Title Section with more vertical space */}
                 <div style={{
-                  display: 'flex',
-                  gap: '4px'
+                  marginTop: '10px',
+                  marginBottom: '16px'
                 }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <div style={{ 
+                      color: '#00ff88', 
+                      fontWeight: 'bold', 
+                      fontSize: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      🕯️ 
+                      <span>
+                        {(() => {
+                          const currentCandle = candleTab === 'mine' ? currentUserCandle : randomFirestoreData;
+                          const messageType = currentCandle?.messageType;
+                          if (messageType) {
+                            const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
+                            return `Msg Protocol: ${displayType}`;
+                          }
+                          return 'TEMPLE CANDLES';
+                        })()}
+                      </span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <div style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle, #ffff00, #ff8800)',
+                        boxShadow: '0 0 10px #ff8800',
+                        animation: 'pulse 2s infinite'
+                      }}/>
+                      {/* <span style={{ color: 'rgba(0, 255, 136, 0.8)', fontSize: '11px', fontWeight: '500' }}>
+                        {candleTab === 'mine' ? 'My Offering' : 'Community'}
+                      </span> */}
+                    </div>
+                  </div>
+                  
+                  {/* Tab Selector for Mobile */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '6px'
+                  }}>
                   <button
                     onClick={() => setCandleTab('mine')}
                     style={{
@@ -1378,20 +1503,26 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                     Community
                   </button>
                 </div>
+                </div>
               </div>
               
               <div style={{
                 flex: 1,
                 position: 'relative',
                 minHeight: 0,
-                zIndex: 0
+                zIndex: 0,
+                padding: '20px',
+                paddingTop: '10px'
               }}>
                 {candleTab === 'mine' ? (
                   currentUserCandle ? (
                     <>
                       <div style={{
                         position: 'absolute',
-                        inset: 0,
+                        top: '10px',
+                        left: '20px',
+                        right: '20px',
+                        bottom: '20px',
                         zIndex: 0
                       }}>
                         <SingleCandleDisplay 
@@ -1465,65 +1596,6 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                           </button>
                         </div>
                       )}
-                      {/* Create additional candle button */}
-                      <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '15px',
-                        zIndex: 10000,
-                        pointerEvents: 'none'
-                      }}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // console.log('Create button clicked, current modal state:', showCompactCandleModal);
-                            // Toggle the modal to ensure it opens fresh
-                            setShowCompactCandleModal(false);
-                            setTimeout(() => {
-                              setShowCompactCandleModal(true);
-                              // console.log('Modal state set to true after reset');
-                            }, 10);
-                          }}
-                          onTouchStart={(e) => {
-                            e.stopPropagation();
-                            // console.log('Create button touched');
-                          }}
-                          onTouchEnd={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            // console.log('Create button touch ended, current modal state:', showCompactCandleModal);
-                            // Toggle the modal to ensure it opens fresh
-                            setShowCompactCandleModal(false);
-                            setTimeout(() => {
-                              setShowCompactCandleModal(true);
-                              // console.log('Modal state set to true after reset');
-                            }, 10);
-                          }}
-                          onPointerDown={(e) => {
-                            e.stopPropagation();
-                            // console.log('Create button pointer down, current modal state:', showCompactCandleModal);
-                            // Remove setShowCompactCandleModal from here to avoid duplicate calls
-                          }}
-                          style={{
-                            background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
-                            border: '1px solid #00ff88',
-                            borderRadius: '6px',
-                            color: '#000',
-                            padding: '6px 10px',
-                            cursor: 'pointer',
-                            fontSize: '11px',
-                            fontWeight: 'bold',
-                            minWidth: '70px',
-                            WebkitTapHighlightColor: 'transparent',
-                            touchAction: 'manipulation',
-                            position: 'relative',
-                            zIndex: 10000,
-                            pointerEvents: 'auto'
-                          }}
-                        >
-                          + Create
-                        </button>
-                      </div>
                     </>
                   ) : (
                     <div style={{
@@ -1579,7 +1651,10 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   <>
                     <div style={{
                       position: 'absolute',
-                      inset: 0,
+                      top: '10px',
+                      left: '20px',
+                      right: '20px',
+                      bottom: '20px',
                       zIndex: 0
                     }}>
                       <SingleCandleDisplay 
@@ -1656,24 +1731,21 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
                   </>
                 )}
               </div>
-            </div>
+            </div>,
+            document.body
           )}
             </div>
           </>
         )}
         
-        {/* Compact Candle Modal - Must be rendered in mobile view too! */}
-        {/* {console.log('Mobile: Rendering CompactCandleModal with isOpen:', showCompactCandleModal)} */}
+        {/* Compact Candle Modal for mobile */}
         <CompactCandleModal
           isOpen={showCompactCandleModal}
           onClose={() => {
-            // console.log('Mobile: CompactCandleModal onClose called');
             setShowCompactCandleModal(false);
           }}
           onCandleCreated={() => {
-            // console.log('Mobile: CompactCandleModal onCandleCreated called');
             setShowCompactCandleModal(false);
-            // Optionally refresh or update any candle-related state here
           }}
         />
       </>
@@ -3551,18 +3623,34 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false }) => {
         </>
       )}
 
-      {/* Compact Candle Modal */}
-      {/* {console.log('Rendering CompactCandleModal with isOpen:', showCompactCandleModal)} */}
+      {/* Compact Candle Modal - Renders on top when opened */}
+      {showCompactCandleModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0, 0, 0, 0.95)',
+          zIndex: 99999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '24px'
+        }}>
+          Loading Modal...
+        </div>
+      )}
       <CompactCandleModal
         isOpen={showCompactCandleModal}
         onClose={() => {
-          // console.log('CompactCandleModal onClose called');
           setShowCompactCandleModal(false);
         }}
         onCandleCreated={() => {
-          // console.log('CompactCandleModal onCandleCreated called');
           setShowCompactCandleModal(false);
-          // Optionally refresh or update any candle-related state here
         }}
       />
     </>

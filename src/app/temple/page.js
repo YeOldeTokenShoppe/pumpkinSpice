@@ -20,7 +20,10 @@ import { TradingOverlay } from '@/trading';
 // import { useLighterTrading } from '@/hooks/useLighterTrading'; // Direct Lighter integration
 import { useLighterAPI } from '@/hooks/useLighterAPI'; // API-based Lighter integration
 // import PolaroidSnapshot from '@/components/PolaroidSnapshot';
-import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
+// import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
+import DevModePanel from '@/components/DevModePanel';
+// import AgentChatDisplay from '@/components/AgentChatDisplay'; // Using existing Trading Team Chat instead
+// import MobileDevTabs from '@/components/MobileDevTabs';
 
 
 export default function CyborgTemple() {
@@ -41,6 +44,8 @@ export default function CyborgTemple() {
   const [tickerReady, setTickerReady] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("Initializing");
+  const [isCandleModalOpen, setIsCandleModalOpen] = useState(false);
+  const [shouldRenderCanvas, setShouldRenderCanvas] = useState(true);
   
   // Connect to Lighter trading API
   // Initial balance will be fetched from the actual account
@@ -65,6 +70,14 @@ export default function CyborgTemple() {
     }
   }, [mounted, isConnected]);
 
+    // Emoji animation
+    useEffect(() => {
+      const emojiInterval = setInterval(() => {
+        setEmoji((prevEmoji) => (prevEmoji === "😇" ? "😈" : "😇"));
+      }, 3000);
+      return () => clearInterval(emojiInterval);
+    }, []);
+
   // Get music context functions
   const {
     play,
@@ -78,6 +91,36 @@ export default function CyborgTemple() {
   // Get user context
   const { isSignedIn } = useUser();
 
+  // Suppress WebGL context lost warnings when modal is open
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const originalWarn = console.warn;
+      const originalError = console.error;
+      
+      console.warn = (...args) => {
+        // Suppress Three.js context lost warning
+        if (typeof args[0] === 'string' && args[0].includes('Context Lost')) {
+          console.log('🎨 3D scene paused for modal display');
+          return;
+        }
+        originalWarn.apply(console, args);
+      };
+      
+      console.error = (...args) => {
+        // Also suppress as error in case it comes that way
+        if (typeof args[0] === 'string' && args[0].includes('Context Lost')) {
+          return;
+        }
+        originalError.apply(console, args);
+      };
+      
+      return () => {
+        console.warn = originalWarn;
+        console.error = originalError;
+      };
+    }
+  }, []);
+
   // Check if mobile on mount
   useEffect(() => {
     const checkMobile = () => {
@@ -88,6 +131,19 @@ export default function CyborgTemple() {
     checkMobile();
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', checkMobile);
+      
+      // Suppress WebGL context lost errors when intentionally unmounting
+      const handleContextLost = (e) => {
+        if (isCandleModalOpen) {
+          e.preventDefault();
+          console.log('WebGL context disposed for memory optimization');
+        }
+      };
+      
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        canvas.addEventListener('webglcontextlost', handleContextLost);
+      }
     }
     setMounted(true);
     setLoadingProgress(10);
@@ -356,12 +412,23 @@ export default function CyborgTemple() {
           isConnected={isConnected}
           modelRef={modelRef}
           modelLoaded={modelLoaded}
+          onModalStateChange={(isOpen) => {
+            setIsCandleModalOpen(isOpen);
+            // Delay canvas unmounting slightly to avoid context loss error
+            if (isOpen) {
+              // When opening modal, immediately hide canvas
+              setShouldRenderCanvas(false);
+            } else {
+              // When closing modal, wait a bit before showing canvas again
+              setTimeout(() => setShouldRenderCanvas(true), 100);
+            }
+          }}
         />
-        {/* Main Canvas - Delayed render for smoother loader animation */}
-        {canvasReady && (
+        {/* Main Canvas - Unmounted when modal is open for memory optimization */}
+        {canvasReady && shouldRenderCanvas && !isCandleModalOpen && (
         <CleanCanvas
           key="temple-canvas"
-          camera={{ position: [0, 0, 7.5], fov: 50 }}
+          camera={{ position: [0, -5, 4.5], fov: 50 }}
           gl={{ 
             antialias: !isMobileView,
             alpha: true,
@@ -401,8 +468,8 @@ export default function CyborgTemple() {
             {/* MaryTraderScene with grid */}
             <CyborgTempleScene
               ref={modelRef}
-              position={[0, -2, 0]}
-              scale={[1, 1, 1]}
+              position={[0, -1.5, 0]}
+              scale={[1.2, 1.2, 1.2]}
               rotation={[0, 0, 0]}
               isPlaying={contextIsPlaying}
               onLoad={handleSceneLoad}
@@ -410,9 +477,9 @@ export default function CyborgTemple() {
               is80sMode={is80sMode}
             />
 
-            {tickerReady && <TickerDisplay3 modelRef={modelRef} onLoad={handleTickerLoad} />}
+            {tickerReady && !isCandleModalOpen && <TickerDisplay3 modelRef={modelRef} onLoad={handleTickerLoad} />}
 
-            
+          
             {/* Constellation */}
             <ConstellationModel  
               groupScale={[10, 10, 10]} 
@@ -422,7 +489,7 @@ export default function CyborgTemple() {
 
             <VideoScreens />
 
-              <NeuralNetworkR3F 
+              {/* <NeuralNetworkR3F 
               theme={2}
               opacity={0.8}            // Slightly dimmed
               useNormalBlending={true}
@@ -432,7 +499,7 @@ export default function CyborgTemple() {
               scale={0.005}
               enableInteraction={true}
               nodeSize={0.06}  
-            />
+            /> */}
             
             <OrbitControls 
               makeDefault
@@ -446,15 +513,16 @@ export default function CyborgTemple() {
               minPolarAngle={0}
               maxPolarAngle={Math.PI / 1.9}
               zoomToCursor={true}
-              autoRotate={true}
-              autoRotateSpeed={0.2}
+              // autoRotate={true}
+              // autoRotateSpeed={0.2}
               target={[0, 0, 0]}
             />
           </Suspense>
           <Stats className="stats-monitor" />
         </CleanCanvas>
         )}
-
+  {/* Dev Panel Only - Chat is in TradingOverlay */}
+  <DevModePanel show={true} />
         {/* Top Controls Container - Music, User, and Nav */}
         {mounted && (
           <div

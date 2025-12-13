@@ -97,9 +97,9 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
     }
 
     // Set a fixed position for the ticker instead of searching for it
-    setTickerPosition(new THREE.Vector3(0.05, 1.08, 0.05)); // Position at ground level
+    setTickerPosition(new THREE.Vector3(0.0, 1.18, 0.0)); // Position at ground level
     setTickerRotation(new THREE.Euler(0, 0, 0));
-    setTickerScale(new THREE.Vector3(2.12, 2.12, 2.12));
+    setTickerScale(new THREE.Vector3(1.6, 1.6, 1.6));
   }, [isReady]); // Only depend on isReady
 
   // Initialize canvas and texture when ticker position is found
@@ -155,7 +155,7 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
       // Original dimensions from logs: x: 2, y: 0.08228, z: 2
       // So radius = 1 (2/2), height = 0.08228
       const originalRadius = 1; // Half of x or z dimension
-      const originalHeight = 0.08228; // y dimension from logs
+      const originalHeight = 0.12; // y dimension from logs
       
       
       const geometry = new THREE.CylinderGeometry(
@@ -171,7 +171,7 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
       const material = new THREE.MeshBasicMaterial({
         map: texture,
         transparent: false,
-        side: THREE.FrontSide, // Only show front side
+        side: THREE.DoubleSide, // Only show front side
         color: 0xffffff,
         depthTest: true,
         depthWrite: true,
@@ -474,7 +474,7 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
     const newGeometry = new THREE.CylinderGeometry(
       newRadius,
       newRadius,
-      0.213 * modelScale, // Scale height proportionally
+      0.313 * modelScale, // Scale height proportionally
       128,
       1,
       true
@@ -508,7 +508,7 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Update scroll position for continuous scrolling (slower speed)
-    scrollPos.current = (scrollPos.current + 0.5) % canvas.width; // Reduced speed from 2 to 0.5
+    scrollPos.current = (scrollPos.current + 0.2) % canvas.width; // Reduced speed from 2 to 0.5
 
     // Draw text
     ctx.textBaseline = "middle";

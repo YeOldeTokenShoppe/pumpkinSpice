@@ -1110,7 +1110,9 @@ function CandlePreview({ imageUrl, message, isEncrypted, username, language = 'e
       )}
       <OrbitControls 
         enablePan={false}
-        enableZoom={false}
+        enableZoom={true}
+        minDistance={2}
+        maxDistance={8}
         minPolarAngle={Math.PI / 3}
         maxPolarAngle={Math.PI / 2}
         autoRotate={false}
@@ -1131,6 +1133,53 @@ const BACKGROUND_TEXTURES = [
   { id: 'aurora', path: '/aurora.webp', name: 'Aurora' },
   { id: 'templeScene', path: '/templeScene.webp', name: 'Temple Scene' }
 ];
+
+// Sanitization helper to prevent XSS attacks
+const sanitizeInput = (input, maxLength = 500) => {
+  if (!input) return '';
+  
+  // Convert to string and trim
+  let sanitized = String(input).trim();
+  
+  // Remove any HTML tags
+  sanitized = sanitized.replace(/<[^>]*>/g, '');
+  
+  // Remove any script tags and their content
+  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  
+  // Escape special HTML characters
+  sanitized = sanitized
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+  
+  // Remove any potential JavaScript protocols
+  sanitized = sanitized.replace(/javascript:/gi, '');
+  sanitized = sanitized.replace(/data:text\/html/gi, '');
+  sanitized = sanitized.replace(/vbscript:/gi, '');
+  
+  // Limit length
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength);
+  }
+  
+  return sanitized;
+};
+
+// Unescape for display (converts HTML entities back for safe display)
+const unescapeForDisplay = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/');
+};
 
 export default function CompactCandleModal({ isOpen, onClose, onCandleCreated }) {
   // console.log('CompactCandleModal render - isOpen:', isOpen);
@@ -1207,7 +1256,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     candleHeight: 'medium', // 'short', 'medium', 'tall' - for ecclesiastical candles
     username: '',
     message: '',
-    burnedAmount: '',
+    burnedAmount: '1000',
     allowLikes: false, // Default to not allowing likes
     background: 'synthwave', // Default background
   });
@@ -1346,7 +1395,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         candleType: 'votive', // Reset to default votive
         username: '',
         message: '',
-        burnedAmount: '',
+        burnedAmount: '1000',
         allowLikes: false,
       });
       setCurrentStep(1);
@@ -1939,8 +1988,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     }
     
     // Validate and sanitize fields
-    const trimmedUsername = formData.username.trim();
-    let trimmedMessage = formData.message.trim();
+    const trimmedUsername = sanitizeInput(formData.username, 50).trim();
+    let trimmedMessage = sanitizeInput(formData.message, 500).trim();
     
     // Ensure message doesn't exceed 500 bytes (fallback safety check)
     if (getByteLength(trimmedMessage) > 500) {
@@ -1980,9 +2029,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
       return;
     }
     
+    // Default burnedAmount to 1000 if not set
     if (!formData.burnedAmount || formData.burnedAmount === '0') {
-      setError('Please enter the amount of RL80 tokens to burn');
-      return;
+      formData.burnedAmount = '1000';
     }
     
     // Capture the candle image before showing dialog
@@ -2011,8 +2060,8 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
     setShowConfirmDialog(false);
     
     // Get sanitized values
-    const trimmedUsername = formData.username.trim();
-    const trimmedMessage = formData.message.trim();
+    const trimmedUsername = sanitizeInput(formData.username, 50).trim();
+    const trimmedMessage = sanitizeInput(formData.message, 500).trim();
     // console.log('Form data:', { trimmedUsername, trimmedMessage, formData });
     
     // No burning effect - proceed directly to saving
@@ -2149,7 +2198,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               marginBottom: '30px'
             }}>Select the style for your offering</p>
             
-            <div style={{
+            <div className="candle-selection-container" style={{
               display: 'flex',
               gap: '20px',
               justifyContent: 'center',
@@ -2172,13 +2221,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 },
                 { 
                   value: 'ecclesiastical', 
-                  label: 'Ecclesiastical', 
+                  label: 'Classic', 
                   description: 'Traditional church candle',
                   image: '/EcclesiasticalMediumPreview.webp'
                 }
               ].map((type) => (
                 <button
                   key={type.value}
+                  className="candle-type-button"
                   onClick={() => {
                     setFormData(prev => ({ ...prev, candleType: type.value }));
                     // Force Canvas remount when switching to votive
@@ -2266,14 +2316,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               <div style={{ marginBottom: '20px' }}>
                 <label style={{
                   display: 'block',
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  color: 'rgba(255, 255, 255, 0.8)'
-                }}>
-                  Personalize Your Candle (Optional)
-                </label>
-                <label style={{
-                  display: 'block',
                   padding: '12px',
                   borderRadius: '8px',
                   backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -2300,14 +2342,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     {imageFile ? (
                       <>✅ Image Uploaded</>
                     ) : (
-                      <>📷 Add Your Image</>
+                      <>📷 {imagePreview ? 'Change' : 'Add'} Your Image</>
                     )}
                   </span>
                 </label>
                 
                 {/* Show preview if image uploaded */}
                 {imagePreview && (
-                  <div style={{
+                  <div className="image-preview-container" style={{
                     marginTop: '10px',
                     textAlign: 'center'
                   }}>
@@ -2336,17 +2378,26 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       marginBottom: '8px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '1px'
+                      letterSpacing: '1px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
                     }}>
                       Select Template Style
+                      <span style={{
+                        fontSize: '10px',
+                        opacity: 0.7,
+                        fontWeight: 'normal'
+                      }}>← swipe →</span>
                     </div>
-                    <div style={{
+                    <div className="template-gallery" style={{
                       display: 'flex',
                       gap: '8px',
                       overflowX: 'auto',
-                      padding: '5px 0',
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: 'rgba(255, 215, 0, 0.3) transparent'
+                      padding: '8px 4px',
+                      WebkitOverflowScrolling: 'touch',
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
                     }}>
                       {templates.map((template) => (
                         <button
@@ -2354,25 +2405,26 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                           type="button"
                           onClick={() => selectTemplate(template)}
                           style={{
+                            minWidth: '80px',
                             width: '80px',
-                            height: '80px',
-                            padding: '8px',
+                            height: '90px',
+                            padding: '4px',
                             backgroundColor: selectedTemplate === template.id ? 
                               'rgba(255, 102, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)',
                             border: selectedTemplate === template.id ? 
-                              '3px solid #ff6600' : '2px solid rgba(255, 215, 0, 0.2)',
-                            borderRadius: '12px',
+                              '2px solid #ff6600' : '1px solid rgba(255, 215, 0, 0.2)',
+                            borderRadius: '8px',
                             color: selectedTemplate === template.id ? 
                               '#ff6600' : 'rgba(255, 255, 255, 0.9)',
                             cursor: 'pointer',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
+                            justifyContent: 'space-between',
+                            gap: '2px',
                             transition: 'all 0.3s ease',
                             flexShrink: 0,
-                            transform: selectedTemplate === template.id ? 'scale(1.05)' : 'scale(1)',
+                            transform: selectedTemplate === template.id ? 'scale(1.02)' : 'scale(1)',
                           }}
                         >
                           {template.id ? (
@@ -2380,20 +2432,34 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                               src={template.id} 
                               alt={template.name}
                               style={{
-                                width: '50px',
-                                height: '50px',
+                                width: '60px',
+                                height: '60px',
                                 objectFit: 'cover',
-                                borderRadius: '8px',
-                                marginBottom: '4px'
+                                borderRadius: '4px',
+                                marginTop: '2px'
                               }}
                             />
                           ) : (
-                            <div style={{ fontSize: '28px', marginBottom: '4px' }}>{template.preview}</div>
+                            <div style={{ 
+                              fontSize: '32px', 
+                              height: '60px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>{template.preview}</div>
                           )}
                           <div style={{ 
-                            fontSize: '11px', 
+                            fontSize: '10px', 
                             fontWeight: selectedTemplate === template.id ? 'bold' : 'normal',
-                            opacity: selectedTemplate === template.id ? 1 : 0.8
+                            opacity: selectedTemplate === template.id ? 1 : 0.8,
+                            lineHeight: '1.2',
+                            textAlign: 'center',
+                            padding: '0 2px',
+                            marginBottom: '2px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            width: '100%'
                           }}>
                             {template.name}
                           </div>
@@ -2403,45 +2469,48 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   </div>
                 )}
 
-                {/* Image Position Controls */}
+                {/* Image Position Controls - Collapsible Panel */}
                 {(imageFile || imagePreview) && selectedTemplate && (
-                  <div style={{
-                    marginBottom: '12px',
-                    padding: '8px',
-                    backgroundColor: 'rgba(255, 102, 0, 0.05)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 102, 0, 0.2)'
-                  }}>
+                  <>
                     <button
                       type="button"
                       onClick={() => setShowPositionControls(!showPositionControls)}
                       style={{
                         width: '100%',
                         padding: '8px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: 'rgba(255, 102, 0, 0.8)',
+                        marginTop: '10px',
+                        backgroundColor: showPositionControls ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 102, 0, 0.1)',
+                        border: '1px solid rgba(255, 102, 0, 0.4)',
+                        borderRadius: '6px',
+                        color: showPositionControls ? '#ff6600' : 'rgba(255, 255, 255, 0.8)',
                         cursor: 'pointer',
                         fontSize: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '4px'
+                        gap: '6px',
+                        transition: 'all 0.3s ease'
                       }}
                     >
-                      {showPositionControls ? '▼' : '▶'} Adjust Your Image
+                      {showPositionControls ? '▼' : '▶'} Adjust Image Position
                     </button>
                     
-                    {showPositionControls && (
-                      <>
+                    <div style={{
+                      maxHeight: showPositionControls ? '250px' : '0',
+                      overflow: 'hidden',
+                      transition: 'all 0.3s ease',
+                      marginTop: showPositionControls ? '10px' : '0'
+                    }}>
+                      <div style={{
+                        padding: '12px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid rgba(255, 102, 0, 0.2)',
+                        borderRadius: '8px'
+                      }}>
                         <div style={{
-                          marginTop: '8px',
                           display: 'grid',
                           gridTemplateColumns: '1fr 1fr',
-                          gap: '8px',
-                          padding: '8px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                          borderRadius: '6px'
+                          gap: '8px'
                         }}>
                           {/* X Position */}
                           <div>
@@ -2554,9 +2623,9 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                             />
                           </div>
                         )}
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             ) : formData.candleType === 'ecclesiastical' ? (
@@ -2861,17 +2930,6 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         // console.log('Rendering case 4');
         return (
           <div style={{ padding: '20px' }}>
-            <h3 style={{
-              fontSize: '20px',
-              marginBottom: '20px',
-              color: '#ffd700',
-              textAlign: 'center'
-            }}>
-              {formData.messageType === 'petition' && '🙏 Your Petition'}
-              {formData.messageType === 'confession' && '💭 Your Confession'}
-              {formData.messageType === 'praise' && '✨ Your Praise'}
-            </h3>
-            
             {/* Name field */}
             <div style={{ marginBottom: '20px' }}>
               <label style={{
@@ -2885,7 +2943,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               <input
                 type="text"
                 value={formData.username}
-                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                onChange={(e) => {
+                  const sanitized = sanitizeInput(e.target.value, 50);
+                  setFormData(prev => ({ ...prev, username: sanitized }));
+                }}
                 placeholder="On behalf of..."
                 maxLength={50}
                 style={{
@@ -2900,135 +2961,45 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
               />
             </div>
             
-            {/* Amount field */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: '14px',
-                color: 'rgba(255, 255, 255, 0.8)'
-              }}>
-                Candle Offering (RL80)
-              </label>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currentValue = parseInt(formData.burnedAmount) || 0;
-                    const newValue = Math.max(0, currentValue - 1000);
-                    setFormData(prev => ({ ...prev, burnedAmount: newValue || '' }));
-                  }}
-                  style={{
-                    background: 'rgba(255, 215, 0, 0.2)',
-                    border: 'none',
-                    borderRadius: '4px',
-                    color: 'rgba(255, 215, 0, 0.8)',
-                    cursor: 'pointer',
-                    padding: '8px 12px',
-                    fontSize: '18px'
-                  }}
-                >
-                  −
-                </button>
-                <input
-                  type="number"
-                  value={formData.burnedAmount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, burnedAmount: e.target.value }))}
-                  placeholder="1000"
-                  min="0"
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    color: '#fff',
-                    fontSize: '14px',
-                    textAlign: 'center'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currentValue = parseInt(formData.burnedAmount) || 0;
-                    const newValue = currentValue + 1000;
-                    setFormData(prev => ({ ...prev, burnedAmount: newValue }));
-                  }}
-                  style={{
-                    background: 'rgba(255, 215, 0, 0.2)',
-                    border: 'none',
-                    borderRadius: '4px',
-                    color: 'rgba(255, 215, 0, 0.8)',
-                    cursor: 'pointer',
-                    padding: '8px 12px',
-                    fontSize: '18px'
-                  }}
-                >
-                  +
-                </button>
-              </div>
-            </div>
             
-            {/* Language Selection - Only show for petitions */}
+            {/* Combined Language and Prayer Selection for Petitions */}
             {formData.messageType === 'petition' && (
-            <>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: '14px',
-                color: 'rgba(255, 255, 255, 0.8)'
-              }}>
-                Prayer Language
-              </label>
+            <div style={{ 
+              display: 'flex', 
+              gap: '8px', 
+              marginBottom: '10px' 
+            }}>
               <select 
                 value={currentLanguage}
                 onChange={(e) => {
                   setCurrentLanguage(e.target.value);
-                  setSelectedPrayer(null); // Reset selected prayer when language changes
+                  setSelectedPrayer(null);
                 }}
                 style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '8px',
+                  width: '80px',
+                  padding: '8px',
+                  borderRadius: '6px',
                   backgroundColor: 'rgba(0, 0, 0, 0.3)',
                   border: '1px solid rgba(255, 215, 0, 0.3)',
                   color: '#fff',
-                  fontSize: '14px',
+                  fontSize: '12px',
                   cursor: 'pointer'
                 }}
               >
-                <option value="en">English</option>
-                <option value="es">Español</option>
-                <option value="pt">Português</option>
-                <option value="fr">Français</option>
+                <option value="en">EN</option>
+                <option value="es">ES</option>
+                <option value="pt">PT</option>
+                <option value="fr">FR</option>
                 <option value="zh">中文</option>
-                <option value="hi">हिंदी</option>
-                <option value="it">Italiano</option>
+                <option value="hi">हिं</option>
+                <option value="it">IT</option>
               </select>
-            </div>
-
-            {/* Pre-set Prayer Selection */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: '14px',
-                color: 'rgba(255, 255, 255, 0.8)'
-              }}>
-                Choose a Pre-set Prayer (Optional)
-              </label>
               <select
                 value={selectedPrayer || ''}
                 onChange={(e) => {
                   const value = e.target.value;
                   if (value === '') {
                     setSelectedPrayer(null);
-                    // Don't clear message when deselecting
                   } else {
                     const prayers = PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
                     const prayer = prayers.find(p => p.id === value);
@@ -3039,23 +3010,17 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   }
                 }}
                 style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '8px',
+                  flex: 1,
+                  padding: '8px',
+                  borderRadius: '6px',
                   backgroundColor: 'rgba(0, 0, 0, 0.3)',
                   border: '1px solid rgba(255, 215, 0, 0.3)',
                   color: '#fff',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'rgba(255,215,0,0.8)\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 10px center',
-                  backgroundSize: '18px',
-                  appearance: 'none',
-                  paddingRight: '35px'
+                  fontSize: '12px',
+                  cursor: 'pointer'
                 }}
               >
-                <option value="">Select a prayer template...</option>
+                <option value="">Select prayer template (optional)...</option>
                 {(PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers).map((prayer) => (
                   <option key={prayer.id} value={prayer.id}>
                     {prayer.title}
@@ -3063,15 +3028,23 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 ))}
               </select>
             </div>
-            </>
             )}
 
-            <textarea
-              ref={textareaRef}
-              value={scrambledDisplay || formData.message}
-              onChange={(e) => {
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '5px',
+                fontSize: '12px',
+                color: 'rgba(255, 255, 255, 0.8)'
+              }}>
+                Your Message
+              </label>
+              <textarea
+                ref={textareaRef}
+                value={scrambledDisplay || formData.message}
+                onChange={(e) => {
                 if (!isEncrypted) {
-                  const newValue = e.target.value;
+                  const newValue = sanitizeInput(e.target.value, 500);
                   setFormData(prev => ({ ...prev, message: newValue }));
                   
                   // If user edits a pre-selected prayer, deselect it
@@ -3103,13 +3076,14 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 resize: 'vertical'
               }}
             />
-            <div style={{
-              marginTop: '10px',
-              fontSize: '12px',
-              color: 'rgba(255, 255, 255, 0.5)',
-              textAlign: 'right'
-            }}>
-              {formData.message.length}/500 characters
+              <div style={{
+                marginTop: '5px',
+                fontSize: '11px',
+                color: 'rgba(255, 255, 255, 0.5)',
+                textAlign: 'right'
+              }}>
+                {formData.message.length}/500 characters
+              </div>
             </div>
           </div>
         );
@@ -3188,51 +3162,51 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         
       case 6: // Review & Submit
         return (
-          <div style={{ padding: '20px' }}>
-            <h3 style={{
-              fontSize: '20px',
-              marginBottom: '20px',
-              color: '#ffd700',
-              textAlign: 'center'
-            }}>Review Your Candle</h3>
-            
+          <div style={{ padding: '12px' }}>
             <div style={{
               backgroundColor: 'rgba(0, 0, 0, 0.3)',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '20px'
+              borderRadius: '8px',
+              padding: '12px',
+              marginBottom: '10px'
             }}>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Message Type</label>
-                <div style={{ color: '#fff', fontSize: '16px', marginTop: '5px' }}>
-                  {formData.messageType === 'petition' && '🙏 Petition'}
-                  {formData.messageType === 'confession' && '💭 Confession'}
-                  {formData.messageType === 'praise' && '✨ Praise'}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr',
+                gap: '10px',
+                marginBottom: '10px' 
+              }}>
+                <div>
+                  <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '10px' }}>Type</label>
+                  <div style={{ color: '#fff', fontSize: '13px', marginTop: '2px' }}>
+                    {formData.messageType === 'petition' && '🙏 Petition'}
+                    {formData.messageType === 'confession' && '💭 Confession'}
+                    {formData.messageType === 'praise' && '✨ Praise'}
+                  </div>
+                </div>
+                
+                <div>
+                  <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '10px' }}>Style</label>
+                  <div style={{ color: '#fff', fontSize: '13px', marginTop: '2px' }}>
+                    {formData.candleType === 'ecclesiastical' && '⛪ Classic'}
+                    {formData.candleType === 'japanese' && '🏮 Japanese'}
+                    {formData.candleType === 'votive' && '🕯️ Votive'}
+                  </div>
                 </div>
               </div>
               
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Candle Style</label>
-                <div style={{ color: '#fff', fontSize: '16px', marginTop: '5px' }}>
-                  {formData.candleType === 'ecclesiastical' && '⛪ Ecclesiastical'}
-                  {formData.candleType === 'japanese' && '🏮 Japanese'}
-                  {formData.candleType === 'votive' && '🕯️ Votive'}
-                </div>
-              </div>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Creator (You)</label>
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '10px' }}>Creator</label>
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '10px',
-                  marginTop: '5px' 
+                  gap: '8px',
+                  marginTop: '3px' 
                 }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '30px',
+                    height: '30px',
                     borderRadius: '50%',
-                    border: '2px solid rgba(255, 215, 0, 0.5)',
+                    border: '1px solid rgba(255, 215, 0, 0.5)',
                     overflow: 'hidden',
                     flexShrink: 0,
                     background: 'rgba(255, 215, 0, 0.1)'
@@ -3250,24 +3224,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       }}
                     />
                   </div>
-                  <div style={{ color: '#fff', fontSize: '16px' }}>
+                  <div style={{ color: '#fff', fontSize: '13px' }}>
                     {user?.username || user?.firstName || user?.fullName || 'You'}
                   </div>
-                </div>
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  marginTop: '5px'
-                }}>
-                  <div style={{ 
-                    fontSize: '11px', 
-                    color: 'rgba(255, 255, 255, 0.5)'
-                  }}>
-                    This is how you'll appear as the candle creator
-                  </div>
                   <label style={{
-                    fontSize: '11px',
+                    marginLeft: 'auto',
+                    fontSize: '10px',
                     color: 'rgba(255, 215, 0, 0.8)',
                     cursor: 'pointer',
                     textDecoration: 'underline'
@@ -3279,42 +3241,136 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       onChange={handleImageChange}
                       style={{ display: 'none' }}
                     />
-                    Change Image
+                    Change
                   </label>
                 </div>
               </div>
               
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Dedicated To</label>
-                <div style={{ color: '#fff', fontSize: '16px', marginTop: '5px' }}>
-                  {formData.username || 'Anonymous'}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr',
+                gap: '10px',
+                marginBottom: '10px' 
+              }}>
+                <div>
+                  <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '10px' }}>Dedicated To</label>
+                  <div style={{ color: '#fff', fontSize: '13px', marginTop: '2px' }}>
+                    {unescapeForDisplay(formData.username) || 'Anonymous'}
+                  </div>
                 </div>
-              </div>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Offering</label>
-                <div style={{ color: '#ffd700', fontSize: '16px', marginTop: '5px' }}>
-                  {(parseInt(formData.burnedAmount) || 1000).toLocaleString()} RL80
-                </div>
-              </div>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Background</label>
-                <div style={{ color: '#fff', fontSize: '16px', marginTop: '5px' }}>
-                  {BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.name || 'Synthwave'}
+                
+                <div>
+                  <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '10px' }}>Background</label>
+                  <div style={{ color: '#fff', fontSize: '13px', marginTop: '2px' }}>
+                    {BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.name || 'Synthwave'}
+                  </div>
                 </div>
               </div>
               
               <div>
-                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Message</label>
+                <label style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '10px' }}>Message</label>
                 <div style={{ 
                   color: '#fff', 
-                  fontSize: '14px', 
-                  marginTop: '5px',
+                  fontSize: '12px', 
+                  marginTop: '3px',
                   whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word'
+                  wordBreak: 'break-word',
+                  maxHeight: '60px',
+                  overflowY: 'auto',
+                  padding: '4px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '4px'
                 }}>
-                  {formData.message || 'No message'}
+                  {unescapeForDisplay(formData.message) || 'No message'}
+                </div>
+              </div>
+              
+              {/* Offering Amount Input */}
+              <div style={{ marginTop: '10px' }}>
+                <label style={{ 
+                  color: 'rgba(255, 255, 255, 0.6)', 
+                  fontSize: '10px',
+                  display: 'block',
+                  marginBottom: '4px'
+                }}>Candle Offering (RL80)</label>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentValue = parseInt(formData.burnedAmount) || 0;
+                      const newValue = Math.max(1000, currentValue - 1000);
+                      setFormData(prev => ({ ...prev, burnedAmount: newValue.toString() }));
+                    }}
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      background: 'rgba(255, 215, 0, 0.2)',
+                      border: '1px solid rgba(255, 215, 0, 0.3)',
+                      borderRadius: '4px',
+                      color: 'rgba(255, 215, 0, 0.8)',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    value={formData.burnedAmount}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Only allow numbers
+                      const numericValue = value.replace(/\D/g, '');
+                      // Limit to reasonable max (1 trillion) and min (1000)
+                      if (numericValue === '') {
+                        setFormData(prev => ({ ...prev, burnedAmount: '1000' }));
+                      } else if (parseInt(numericValue) >= 1000 && parseInt(numericValue) <= 1000000000000) {
+                        setFormData(prev => ({ ...prev, burnedAmount: numericValue }));
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '6px',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 215, 0, 0.3)',
+                      color: '#ffd700',
+                      fontSize: '12px',
+                      textAlign: 'center',
+                      fontWeight: 'bold'
+                    }}
+                    min="1000"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentValue = parseInt(formData.burnedAmount) || 0;
+                      const newValue = currentValue + 1000;
+                      setFormData(prev => ({ ...prev, burnedAmount: newValue.toString() }));
+                    }}
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      background: 'rgba(255, 215, 0, 0.2)',
+                      border: '1px solid rgba(255, 215, 0, 0.3)',
+                      borderRadius: '4px',
+                      color: 'rgba(255, 215, 0, 0.8)',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    +
+                  </button>
                 </div>
               </div>
             </div>
@@ -3737,11 +3793,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   }}
                 >
                   <ambientLight intensity={1} />
-                  <directionalLight 
+                  {/* <directionalLight 
                     position={[0, 5, 3]} 
                     intensity={3.8} 
                     castShadow 
-                  />
+                  /> */}
                   <pointLight position={[0, 3, 2]} intensity={0.5} color="#ffaa00" />
                   <Suspense fallback={null}>
                     <CandlePreview 
@@ -3763,7 +3819,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   </Suspense>
                   <OrbitControls
                     enablePan={false}
-                    enableZoom={false}
+                    enableZoom={true}
+                    minDistance={2}
+                    maxDistance={8}
+                    minPolarAngle={Math.PI / 3}
+                    maxPolarAngle={Math.PI / 2}
                     // autoRotate={true}
                     // autoRotateSpeed={1}
                   />
@@ -3838,10 +3898,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             </div>
             
             {/* Step Progress Indicator */}
-            <div style={{
+            <div className="step-indicator" style={{
               display: 'flex',
               justifyContent: 'center',
-              marginBottom: '20px',
+              marginBottom: '10px',
               gap: '8px'
             }}>
               {[1, 2, 3, 4, 5].map((step) => (
@@ -3874,10 +3934,10 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                 onClick={handlePrev}
                 style={{
                   padding: '10px 20px',
-                  background: currentStep === 1 ? 'transparent' : 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  background: currentStep === 1 ? 'transparent' : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 237, 78, 0.2))',
+                  border: '1px solid rgba(255, 215, 0, 0.4)',
                   borderRadius: '8px',
-                  color: currentStep === 1 ? 'rgba(255, 255, 255, 0.3)' : '#fff',
+                  color: currentStep === 1 ? 'rgba(255, 255, 255, 0.3)' : '#ffd700',
                   cursor: currentStep === 1 ? 'not-allowed' : 'pointer',
                   fontSize: '14px',
                   fontWeight: 'bold',
@@ -3904,8 +3964,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   }}
                   disabled={
                     (currentStep === 1 && !formData.candleType) ||
-                    (currentStep === 3 && !formData.messageType) ||
-                    (currentStep === 4 && !formData.username.trim())
+                    (currentStep === 3 && !formData.messageType)
                   }
                 >
                   Next
@@ -4491,7 +4550,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       }
                     }}
                   placeholder={selectedPrayer ? "Edit the selected prayer or write your own..." : "Write your message, prayer, wish, or dedication (max 500 bytes)"}
-                  rows={3}
+                  rows={2}
                   maxLength={500}
                   required
                   disabled={isEncrypted}

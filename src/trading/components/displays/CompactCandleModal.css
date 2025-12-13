@@ -272,18 +272,30 @@
   
   .compact-modal-layout {
     flex-direction: column;
-    height: auto;
-    max-height: 80vh;
-    overflow-y: auto;
-    overflow-x: hidden;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
   }
   
   .compact-candle-preview {
     flex: none;
-    height: 200px;
+    height: 55vh;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
+  }
+  
+  /* Hide candle button images on mobile */
+  .candle-type-button img,
+  .candle-selection-container button img {
+    display: none !important;
+  }
+  
+  /* Compact candle buttons */
+  .candle-selection-container button {
+    height: auto !important;
+    max-height: 80px !important;
+    padding: 10px 8px !important;
   }
   
   .compact-form-section {

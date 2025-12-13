@@ -10,9 +10,9 @@ import AnnotationSystem from "@/components/AnnotationSystem";
 
 const CyborgTempleScene = forwardRef(({ 
   onLoad, 
-  position = [0, -4, 0],
+  position = [0, 0.9, 0],
   rotation = [0, 0, 0],
-  scale = [1, 1, 1],
+  scale = [1.2, 1.2, 1.2],
   isPlaying = false, 
   currentTrack = null,
   showAnnotations = true,
@@ -93,7 +93,7 @@ const CyborgTempleScene = forwardRef(({
 
     // console.log('Loading MaryTraderScene_extraClothes2.glb...');
     
-    gltfLoader.load("/models/MaryTraderScene_extraClothes2.glb", (gltf) => {
+    gltfLoader.load("/models/RL80_4anims.glb", (gltf) => {
       // console.log('✓ MaryTraderScene_extraClothes2.glb loaded successfully');
       
       const templeScene = gltf.scene;
@@ -130,8 +130,8 @@ const CyborgTempleScene = forwardRef(({
           const action = actionsRef.current[animName];
           
           // Check which character this animation belongs to based on suffix
-          if (animName === 'TYPE1') {
-            // Play TYPE animation for the first character (no suffix)
+          if (animName === 'Typing' || animName === 'TypingRobot2') {
+            // Play TYPE animations for characters
             action.play();
             // console.log(`Playing TYPE animation: ${animation.name}`);
           } else if (animName === 'HaloRotation') {
@@ -160,7 +160,7 @@ const CyborgTempleScene = forwardRef(({
       const gridHelper = new THREE.GridHelper(50, 50, 0x00ff41, 0x00ff41);
       gridHelper.material.opacity = 0.3;
       gridHelper.material.transparent = true;
-      gridHelper.position.y = 0; // Position the grid below the scene
+      gridHelper.position.y = -.06; // Position the grid below the scene
       anchorGroup.add(gridHelper);
       
       // Add the anchor group to the scene
@@ -304,9 +304,12 @@ const CyborgTempleScene = forwardRef(({
         rampUpIntervalRef.current = null;
       }
       
-      // Keep TYPE animation running for the first character
-      if (actions['TYPE1'] && !actions['TYPE1'].isRunning()) {
-        actions['TYPE1'].play();
+      // Keep TYPE animations running for characters
+      if (actions['Typing'] && !actions['Typing'].isRunning()) {
+        actions['Typing'].play();
+      }
+      if (actions['TypingRobot2'] && !actions['TypingRobot2'].isRunning()) {
+        actions['TypingRobot2'].play();
       }
       
       // Delay the dance animations by 2 seconds
@@ -469,15 +472,15 @@ const CyborgTempleScene = forwardRef(({
     return null;
   }
 
-  return (
-    <AnnotationSystem 
-      annotations={annotations} 
-      is80sMode={is80sMode} 
-      onAnnotationClick={onAnnotationClick}
-      scale={0.8}
-      textScale={0.8}
-    />
-  );
+  // return (
+  //   <AnnotationSystem 
+  //     annotations={annotations} 
+  //     is80sMode={is80sMode} 
+  //     onAnnotationClick={onAnnotationClick}
+  //     scale={0.8}
+  //     textScale={0.8}
+  //   />
+  // );
 });
 
 CyborgTempleScene.displayName = 'CyborgTempleScene';
