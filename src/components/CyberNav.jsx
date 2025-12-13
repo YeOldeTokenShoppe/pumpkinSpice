@@ -224,7 +224,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                         style={{
                           color: isActive ? '#000000' : (is80sMode ? "#D946EF" : '#ffffff'),
                           fontWeight: "700",
-                          fontSize: "14px",
+                          fontSize: isMobile ? "0.75rem" : "0.875rem",
                           fontFamily: "'Rajdhani', sans-serif",
                           textAlign: "left"
                         }}
@@ -234,7 +234,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                       <span
                         style={{
                           color: isActive ? '#000000' : (is80sMode ? "#D946EF" : '#ffff00'),
-                          fontSize: "24px",
+                          fontSize: isMobile ? "1.25rem" : "1.5rem",
                           fontWeight: "700",
                           fontFamily: "'Rajdhani', sans-serif"
                         }}

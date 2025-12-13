@@ -107,16 +107,20 @@ const CyborgTempleScene = forwardRef(({
     hasLoadedRef.current = true;
 
     const gltfLoader = new GLTFLoader();
+    
+    // Always use DRACO loader since both models may have compression
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath("/draco/");
     gltfLoader.setDRACOLoader(dracoLoader);
 
     // Determine which model to load based on device type
     const modelPath = isOnMobile ? "/models/MOBILE.glb" : "/models/RL80_4anims.glb";
-    console.log(`Loading model: ${modelPath} (Mobile: ${isOnMobile})`);
+    const startTime = performance.now();
+    console.log(`[CyborgTempleScene] Starting to load: ${modelPath} (Mobile: ${isOnMobile})`);
     
     gltfLoader.load(modelPath, (gltf) => {
-      // console.log('✓ MaryTraderScene_extraClothes2.glb loaded successfully');
+      const loadTime = performance.now() - startTime;
+      console.log(`[CyborgTempleScene] Model loaded in ${loadTime.toFixed(2)}ms`);
       
       const templeScene = gltf.scene;
       
@@ -226,7 +230,7 @@ const CyborgTempleScene = forwardRef(({
       // console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
     },
     (error) => {
-      console.error('Error loading MaryTraderScene_extraClothes2.glb:', error);
+      console.error(`Error loading model ${modelPath}:`, error);
       // Still call onLoad even if there's an error, so the page doesn't hang
       if (onLoad) {
         setTimeout(() => {

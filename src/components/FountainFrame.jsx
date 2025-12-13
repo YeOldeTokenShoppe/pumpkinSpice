@@ -10,7 +10,7 @@ const FountainFrame = forwardRef(({ is80sMode = false, onFullyLoaded }, ref) => 
     // Listen for messages from the iframe
     const handleMessage = (event) => {
       if (event.data?.type === 'fountainReady') {
-        console.log('Fountain fully loaded and ready');
+        // console.log('Fountain fully loaded and ready');
         if (onFullyLoaded) {
           onFullyLoaded();
         }
@@ -30,14 +30,14 @@ const FountainFrame = forwardRef(({ is80sMode = false, onFullyLoaded }, ref) => 
           '*'
         );
       } catch (e) {
-        console.log('Could not send message to iframe:', e);
+        // console.log('Could not send message to iframe:', e);
       }
     }
   }, [is80sMode, isLoaded]);
 
   const handleIframeLoad = () => {
     setIsLoaded(true);
-    console.log('Fountain iframe loaded');
+    // console.log('Fountain iframe loaded');
   };
 
   return (

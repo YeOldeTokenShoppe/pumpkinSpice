@@ -1078,6 +1078,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.gl
   const [nextScrollSrc, setNextScrollSrc] = useState(null);
   const [showMagnifiedScroll, setShowMagnifiedScroll] = useState(false);
   const [examinedObject, setExaminedObject] = useState(null); // For examining the pyramid
+  const [showIntroText, setShowIntroText] = useState(true); // Control intro text visibility
   const scrollIframeRef = useRef(null);
   const mobileScrollIframeRef = useRef(null);
   
@@ -1307,7 +1308,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.gl
               padding: '2rem',
               paddingTop: '8rem',
               zIndex: 1000,
-              pointerEvents: 'none'
+              pointerEvents: showIntroText ? 'auto' : 'none'  // Only allow pointer events when intro is shown
             }}>
               {/* Heading placeholder - keep structure */}
               <div style={{
@@ -1318,30 +1319,65 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.gl
                 <div style={{ height: '4rem' }}></div>
                 
                 {/* Introduction text */}
-                <div style={{
-                  marginTop: isTablet ? '3rem' : '1rem',
-                  padding: '1rem',
-                  backgroundColor: 'rgba(142, 102, 43, 0.1)',
-                  border: '2px solid #8e662b',
-                  borderRadius: '8px',
-                  maxWidth: '450px',
-                  margin: `${isTablet ? '3rem' : '-1rem'} auto 0`
-                }}>
-                  <p style={{
-                    color: '#d4af37',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                fontWeight: 400,
-                letterSpacing: '0.02em',
-
-                    lineHeight: 1.3,
-                    margin: 0,
-                    textAlign: 'center',
-                    textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
+                {showIntroText && (
+                  <div style={{
+                    marginTop: isTablet ? '3rem' : '1rem',
+                    padding: '1rem',
+                    backgroundColor: 'rgba(142, 102, 43, 0.1)',
+                    border: '2px solid #8e662b',
+                    borderRadius: '8px',
+                    maxWidth: '450px',
+                    margin: `${isTablet ? '3rem' : '-1rem'} auto 0`,
+                    position: 'relative',
+                    pointerEvents: 'auto'
                   }}>
-                  Here you can find the works of devout RL80 devotee, Saint GR80, the anachronistic android, mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
-      
-                  </p>
-                </div>
+                    {/* Close button */}
+                    <button
+                      onClick={() => setShowIntroText(false)}
+                      style={{
+                        position: 'absolute',
+                        top: '0.5rem',
+                        right: '0.5rem',
+                        background: 'transparent',
+                        border: '1px solid #8e662b',
+                        color: '#8e662b',
+                        width: '1.5rem',
+                        height: '1.5rem',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s ease',
+                        padding: 0
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = 'rgba(142, 102, 43, 0.2)';
+                        e.target.style.transform = 'scale(1.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'transparent';
+                        e.target.style.transform = 'scale(1)';
+                      }}
+                      aria-label="Close intro text"
+                    >
+                      ×
+                    </button>
+                    <p style={{
+                      color: '#d4af37',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                      fontWeight: 400,
+                      letterSpacing: '0.02em',
+                      lineHeight: 1.3,
+                      margin: 0,
+                      textAlign: 'center',
+                      textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
+                    }}>
+                      Here you can find the works of devout RL80 devotee, Saint GR80, the anachronistic android, mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -1470,6 +1506,23 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.gl
           />
           <Environment preset="night" />
           {/* <FlatCharts onChartClick={setSelectedChart} /> */}
+          <OrbitControls 
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            minDistance={3}
+            maxDistance={20}
+            minPolarAngle={Math.PI / 6}  // 30 degrees - prevent looking too far up
+            maxPolarAngle={Math.PI / 2.2}  // ~82 degrees - prevent looking too far down
+            minAzimuthAngle={-Math.PI / 3}  // -60 degrees horizontal rotation
+            maxAzimuthAngle={Math.PI / 3}   // 60 degrees horizontal rotation
+            panSpeed={0.8}
+            rotateSpeed={0.5}
+            zoomSpeed={0.8}
+            dampingFactor={0.05}
+            enableDamping={true}
+            target={[0, 0, 0]}  // Focus on center of scene
+          />
         </Suspense>
         {is80sMode ? (
           <EffectComposer>
@@ -1522,30 +1575,60 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.gl
                 right: '1rem',
                 zIndex: 1000,
                 textAlign: 'left',
-                pointerEvents: 'none'
+                pointerEvents: showIntroText ? 'auto' : 'none'  // Allow clicks when intro is visible
               }}
             >
               {/* Introduction text for mobile - more compact */}
-              <div style={{
-                marginTop: '0.8rem',
-                padding: '0.6rem',
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                border: '2px solid #8e662b',
-                borderRadius: '6px',
-                maxWidth: windowWidth <= 480 ? '260px' : '320px'
-              }}>
-                <p style={{
-                  color: '#d4af37',
-                  fontFamily: 'Georgia, serif',
-                  fontSize: windowWidth <= 480 ? '0.8rem' : '0.9rem',
-                  lineHeight: 1.4,
-                  margin: 0,
-                  textAlign: 'left',
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
-                }}>                  Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
-
-                </p>
-              </div>
+              {showIntroText && (
+                <div style={{
+                  marginTop: '0.8rem',
+                  padding: '0.6rem',
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  border: '2px solid #8e662b',
+                  borderRadius: '6px',
+                  maxWidth: windowWidth <= 480 ? '260px' : '320px',
+                  position: 'relative',
+                  pointerEvents: 'auto'  // Ensure this div can receive clicks
+                }}>
+                  {/* Close button for mobile */}
+                  <button
+                    onClick={() => setShowIntroText(false)}
+                    style={{
+                      position: 'absolute',
+                      top: '0.25rem',
+                      right: '0.25rem',
+                      background: 'transparent',
+                      border: '1px solid #8e662b',
+                      color: '#8e662b',
+                      width: '1.2rem',
+                      height: '1.2rem',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s ease',
+                      padding: 0
+                    }}
+                    aria-label="Close intro text"
+                  >
+                    ×
+                  </button>
+                  <p style={{
+                    color: '#d4af37',
+                    fontFamily: 'Georgia, serif',
+                    fontSize: windowWidth <= 480 ? '0.8rem' : '0.9rem',
+                    lineHeight: 1.4,
+                    margin: 0,
+                    textAlign: 'center',
+                    textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)',
+                    paddingRight: '1.5rem' // Make room for close button
+                  }}>
+                    Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
+                  </p>
+                </div>
+              )}
             </div>
             
             {/* Scroll overlay for mobile - repositioned and resized */}

@@ -1088,6 +1088,7 @@
 			// import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+			import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 			import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
 			import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 			import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
@@ -1955,8 +1956,63 @@
 					console.log('[Fountain] ✅ All assets loaded successfully, hiding loader and sending ready signal');
 					hideLoader();
 					hasCheckedModelLoading = true;
+					// Start cinematic camera animation
+					startCinematicIntro();
 				}
 				return allLoaded;
+			}
+			
+			function startCinematicIntro() {
+				console.log('[Fountain] Starting cinematic camera intro');
+				
+				// Initial camera position (far and high, looking down at fountain)
+				camera.position.set(6, 8, 10);
+				camera.lookAt(0, 0, 0);
+				
+				// Target positions for the camera animation (matching the default setup)
+				const startPos = { x: 6, y: 6, z: 18 };
+				const endPos = { x: 0, y: 0, z: 4 };  // Default camera position
+				const startLookAt = { x: 0, y: 3, z: 0 };
+				const endLookAt = { x: 0, y: 0, z: 0 };  // Default look-at target
+				
+				// Animation duration in milliseconds
+				const duration = 6000;
+				const startTime = Date.now();
+				
+				function animateCamera() {
+					const elapsed = Date.now() - startTime;
+					const progress = Math.min(elapsed / duration, 1);
+					
+					// Use easeInOutCubic for smooth acceleration/deceleration
+					const eased = progress < 0.5 
+						? 4 * progress * progress * progress 
+						: 1 - Math.pow(-2 * progress + 2, 3) / 2;
+					
+					// Interpolate camera position
+					camera.position.x = startPos.x + (endPos.x - startPos.x) * eased;
+					camera.position.y = startPos.y + (endPos.y - startPos.y) * eased;
+					camera.position.z = startPos.z + (endPos.z - startPos.z) * eased;
+					
+					// Interpolate look-at target
+					const lookX = startLookAt.x + (endLookAt.x - startLookAt.x) * eased;
+					const lookY = startLookAt.y + (endLookAt.y - startLookAt.y) * eased;
+					const lookZ = startLookAt.z + (endLookAt.z - startLookAt.z) * eased;
+					camera.lookAt(lookX, lookY, lookZ);
+					
+					// Update controls target to match
+					controls.target.set(lookX, lookY, lookZ);
+					
+					if (progress < 1) {
+						requestAnimationFrame(animateCamera);
+					} else {
+						// Animation complete, enable controls
+						console.log('[Fountain] Cinematic intro complete, enabling controls');
+						controls.enabled = true;
+						controls.update();
+					}
+				}
+				
+				animateCamera();
 			}
 
 			// Function to update loading progress
@@ -2353,8 +2409,8 @@
 				}
 
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
-				camera.position.set( 0, 0, 4 );
-				camera.lookAt( 0, 6, 0 );
+				camera.position.set( 0, 0, 5 );
+				camera.lookAt( 0, 0, 0 );
 
 				scene = new THREE.Scene();
 				
@@ -2389,6 +2445,9 @@
 				controls.zoomToCursor = true;
 				controls.minPolarAngle = 0;
 				controls.maxPolarAngle = Math.PI / 2;
+				
+				// Disable controls initially for cinematic intro
+				controls.enabled = false;
 
 				// stats = new Stats();
 				// container.appendChild( stats.dom );
@@ -2510,11 +2569,26 @@
 				// --- NEW: Load Fountain GLB ---
 				const loader = new GLTFLoader();
 				
+				// Set up DRACO decoder
+				const dracoLoader = new DRACOLoader();
+				dracoLoader.setDecoderPath('/draco/'); // Path to DRACO decoder files
+				loader.setDRACOLoader(dracoLoader);
+				
+				console.log('[Fountain] Starting to load model: /models/fountain2.glb with DRACO compression');
+				
+				// Add timeout for model loading
+				let modelLoadTimeout = setTimeout(() => {
+					console.warn('[Fountain] Model load timeout after 30 seconds, proceeding without model');
+					assetsToLoad.fountainModel = true;
+					checkAllAssetsLoaded();
+				}, 30000); // 30 second timeout
+				
 				loader.load(
 					// Resource URL - REPLACE WITH YOUR FILE PATH
 					'/models/fountain2.glb',
 					// Called when the resource is loaded
 					function ( gltf ) {
+						clearTimeout(modelLoadTimeout);
 						const fountainModel = gltf.scene;
 						const fallRadius = 0.32; // Match the inner radius of the SDF's roundCyl
                 const fallHeight = 0.94; // Match the height from the SDF (bowl bottom to top water level approx)
@@ -2630,25 +2704,42 @@
 						const desiredScale = BOUNDS / modelOriginalSize;
 						// fountainModel.scale.set(desiredScale, desiredScale, desiredScale); // Uniform scale
 						// Or scale non-uniformly if needed:
-						 fountainModel.scale.set(0.8, 0.8, 0.8); // Example scale - ADJUST THIS!
+						 // Try different scales to debug visibility
+						 fountainModel.scale.set(0.8, 0.8, 0.8); // Changed from 0.8 to 1.0 for debugging
 
 						 // Rotate if necessary (e.g., if it loads sideways)
 						 // fountainModel.rotation.y = Math.PI / 8; // Example: Rotate slightly if needed
 
 
 						// Enable shadows on all meshes within the loaded model
+						let meshCount = 0;
 						fountainModel.traverse( function ( child ) {
 							if ( child.isMesh ) {
+								meshCount++;
 								child.castShadow = true;
 								child.receiveShadow = true;
-								// Optional: Adjust material properties if needed
-								// child.material.metalness = 0.4;
-								// child.material.roughness = 0.6;
+								// Make sure materials are visible
+								if (child.material) {
+									child.material.opacity = 1.0;
+									child.material.transparent = false;
+									// Log material info
+									console.log(`Mesh ${meshCount}:`, child.name, 'Material type:', child.material.type);
+								}
 							}
 						} );
+						console.log(`Total meshes found in model: ${meshCount}`);
 
 						scene.add( fountainModel );
 						console.log("Fountain model loaded and added.");
+						console.log("Model position:", fountainModel.position);
+						console.log("Model scale:", fountainModel.scale);
+						console.log("Model visible:", fountainModel.visible);
+						
+						// Calculate bounding box to see actual size
+						const box = new THREE.Box3().setFromObject(fountainModel);
+						const size = box.getSize(new THREE.Vector3());
+						console.log("Model bounding box size:", size);
+						console.log("Model bounding box:", box);
 						
 						// Mark model as loaded
 						fountainModelLoaded = true;
@@ -2658,11 +2749,17 @@
 					},
 					// Called while loading is progressing
 					function ( xhr ) {
-						console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+						if (xhr.total > 0) {
+							const percentLoaded = (xhr.loaded / xhr.total * 100).toFixed(1);
+							console.log(`[Fountain] DRACO model loading: ${percentLoaded}% (${(xhr.loaded / 1024 / 1024).toFixed(2)}MB / ${(xhr.total / 1024 / 1024).toFixed(2)}MB)`);
+						}
 					},
 					// Called when loading has errors
 					function ( error ) {
 						console.error( 'An error happened loading the fountain model:', error );
+						// Still mark as loaded to prevent infinite wait
+						assetsToLoad.fountainModel = true;
+						checkAllAssetsLoaded();
 					}
 				);
 				// --- END NEW ---
@@ -2750,18 +2847,165 @@
 					}
 				}, 10000); // 10 seconds fallback
 
-				// Add ground floor
-				const groundGeometry = new THREE.PlaneGeometry(90, 90);
-				const groundMaterial = new THREE.MeshStandardMaterial({
-					color: 0xa79d7e,
-					roughness: 0.8,
-					metalness: 0.0
+				// Add infinite ground with gradient fade
+				const groundGeometry = new THREE.PlaneGeometry(500, 500, 50, 50);
+				
+				// Create custom shader material for gradient fade
+				const groundMaterial = new THREE.ShaderMaterial({
+					uniforms: {
+						uColor1: { value: new THREE.Color(0xa79d7e) }, // Near color (original sand color)
+						uColor2: { value: new THREE.Color(0x9b8270) }, // Mid color (slightly darker)
+						uFogColor: { value: new THREE.Color(0xc8a08c) }, // Far color (peachy to match sky horizon)
+						uFadeStart: { value: 20.0 }, // Where fade begins
+						uFadeEnd: { value: 120.0 } // Where fade completes
+					},
+					vertexShader: `
+						varying vec3 vWorldPosition;
+						void main() {
+							vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+							vWorldPosition = worldPosition.xyz;
+							gl_Position = projectionMatrix * viewMatrix * worldPosition;
+						}
+					`,
+					fragmentShader: `
+						uniform vec3 uColor1;
+						uniform vec3 uColor2;
+						uniform vec3 uFogColor;
+						uniform float uFadeStart;
+						uniform float uFadeEnd;
+						
+						varying vec3 vWorldPosition;
+						
+						void main() {
+							// Calculate distance from center
+							float dist = length(vWorldPosition.xz);
+							
+							// Create smooth fade based on distance
+							float fadeFactor = smoothstep(uFadeStart, uFadeEnd, dist);
+							
+							// Mix between near and far colors
+							vec3 color = mix(uColor1, uColor2, fadeFactor * 0.5);
+							color = mix(color, uFogColor, fadeFactor);
+							
+							// Add subtle noise for texture
+							float noise = (fract(sin(dot(vWorldPosition.xz, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * 0.02;
+							color += noise;
+							
+							// Apply very subtle transparency at edges
+							float alpha = 1.0 - fadeFactor * 0.1; // Reduced from 0.3 to 0.1
+							
+							gl_FragColor = vec4(color, alpha);
+						}
+					`,
+					transparent: true,
+					side: THREE.DoubleSide
 				});
+				
 				const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
 				groundMesh.rotation.x = -Math.PI / 2; // Rotate to lie flat
 				groundMesh.position.y = -2; // Position below fountain
 				groundMesh.receiveShadow = true;
 				scene.add(groundMesh);
+				
+				// No fog - let the ground shader handle the horizon blend
+				// The sky gradient should remain untouched
+				
+				// Add distant mountain range
+				const mountainGeometry = new THREE.PlaneGeometry(600, 80, 200, 1);
+				
+				// Create mountain silhouette with custom shader
+				const mountainMaterial = new THREE.ShaderMaterial({
+					uniforms: {
+						uColor1: { value: new THREE.Color(0x8b7d8c) }, // Light purple-gray for distant mountains
+						uColor2: { value: new THREE.Color(0x9b8595) }, // Slightly warmer for variety
+						uSkyBlend: { value: 0.7 }, // How much the mountains blend with sky
+						uTime: { value: 0.0 }
+					},
+					vertexShader: `
+						varying vec2 vUv;
+						varying float vElevation;
+						uniform float uTime;
+						
+						// Simple noise function
+						float random(vec2 st) {
+							return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453);
+						}
+						
+						void main() {
+							vUv = uv;
+							
+							// Create mountain silhouette using sine waves and noise
+							float elevation = 0.0;
+							
+							// Main mountain peaks
+							elevation += sin(position.x * 0.05) * 15.0;
+							elevation += sin(position.x * 0.02 + 1.0) * 25.0;
+							elevation += sin(position.x * 0.08 - 2.0) * 10.0;
+							
+							// Add smaller variations
+							elevation += sin(position.x * 0.15) * 5.0;
+							elevation += sin(position.x * 0.3 + 3.0) * 2.0;
+							
+							// Add some noise for natural randomness
+							elevation += random(vec2(position.x * 0.1, 0.0)) * 8.0;
+							
+							// Taper edges
+							float edgeFade = smoothstep(0.0, 0.1, vUv.x) * smoothstep(1.0, 0.9, vUv.x);
+							elevation *= edgeFade;
+							
+							vElevation = elevation;
+							
+							vec3 newPosition = position;
+							newPosition.y += elevation;
+							
+							gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+						}
+					`,
+					fragmentShader: `
+						uniform vec3 uColor1;
+						uniform vec3 uColor2;
+						uniform float uSkyBlend;
+						varying vec2 vUv;
+						varying float vElevation;
+						
+						void main() {
+							// Create gradient from bottom to top
+							float gradient = vUv.y + (vElevation * 0.01);
+							
+							// Mix between two mountain colors for variety
+							vec3 color = mix(uColor1, uColor2, gradient);
+							
+							// Fade out at the base to blend with ground
+							float baseFade = smoothstep(0.0, 0.3, vUv.y);
+							
+							// Add atmospheric perspective (fade with distance)
+							float distanceFade = 0.4 + (vUv.y * 0.3); // Mountains are naturally faded
+							
+							// Apply haze effect
+							color = mix(color, vec3(0.95, 0.85, 0.95), uSkyBlend * (1.0 - baseFade));
+							
+							gl_FragColor = vec4(color, distanceFade * baseFade);
+						}
+					`,
+					transparent: true,
+					side: THREE.DoubleSide,
+					depthWrite: false // Ensures mountains render behind other objects properly
+				});
+				
+				const mountainMesh = new THREE.Mesh(mountainGeometry, mountainMaterial);
+				mountainMesh.rotation.x = -Math.PI / 2;
+				mountainMesh.position.set(0, -1, -150); // Far in the distance
+				mountainMesh.scale.y = 1.1; // Stretch depth for perspective
+				scene.add(mountainMesh);
+				
+				// Add a second layer of more distant mountains
+				const distantMountainMesh = mountainMesh.clone();
+				distantMountainMesh.material = mountainMaterial.clone();
+				distantMountainMesh.material.uniforms.uColor1.value = new THREE.Color(0xa595a8); // Even lighter/hazier
+				distantMountainMesh.material.uniforms.uSkyBlend.value = 0.85; // More sky blend
+				distantMountainMesh.position.set(0, -2, -180); // Even farther
+				distantMountainMesh.scale.set(1.2, 2, 0.8); // Wider and more stretched
+				scene.add(distantMountainMesh);
 
 				// Setup post-processing after shaders are defined
 				setupPostProcessing();

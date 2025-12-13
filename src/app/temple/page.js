@@ -125,7 +125,19 @@ export default function CyborgTemple() {
   useEffect(() => {
     const checkMobile = () => {
       if (typeof window !== 'undefined') {
-        setIsMobileView(window.innerWidth <= 768);
+        const isMobile = window.innerWidth <= 768;
+        setIsMobileView(isMobile);
+        
+        // Preload the appropriate model
+        if (isMobile && !document.querySelector('link[href="/models/MOBILE.glb"]')) {
+          const link = document.createElement('link');
+          link.rel = 'preload';
+          link.as = 'fetch';
+          link.href = '/models/MOBILE.glb';
+          link.crossOrigin = 'anonymous';
+          document.head.appendChild(link);
+          console.log('[Temple] Preloading MOBILE.glb');
+        }
       }
     };
     checkMobile();
@@ -203,9 +215,11 @@ export default function CyborgTemple() {
     setLoadingProgress(70);
     setLoadingMessage("Loading trading data");
     
-    // Now that the model is loaded, we can start loading TickerDisplay3
-    // console.log('🎯 Enabling TickerDisplay3 rendering');
-    setTickerReady(true);
+    // Only enable TickerDisplay3 on desktop
+    if (!isMobileView) {
+      // console.log('🎯 Enabling TickerDisplay3 rendering');
+      setTickerReady(true);
+    }
   };
 
   // Handle ticker loading completion
@@ -234,7 +248,8 @@ export default function CyborgTemple() {
     }
     
     // Check ticker condition only after model is loaded
-    const tickerCondition = !tickerReady || (tickerReady && tickerLoaded);
+    // On mobile, we don't need to wait for ticker at all
+    const tickerCondition = isMobileView ? true : (!tickerReady || (tickerReady && tickerLoaded));
     
     // console.log('📋 Ticker condition:', tickerCondition, 'tickerReady:', tickerReady, 'tickerLoaded:', tickerLoaded);
     
@@ -250,24 +265,24 @@ export default function CyborgTemple() {
           // console.log('🎬 Hiding loading screen!');
           setIsSceneLoading(false);
         }, 500); // Brief additional delay for smooth transition
-      }, 1000); // Increased delay to ensure everything is rendered
+      }, isMobileView ? 500 : 1000); // Reduced delay for mobile
       
       return () => clearTimeout(timer);
     }
-  }, [fontLoaded, mounted, modelLoaded, tickerLoaded, tickerReady]);
+  }, [fontLoaded, mounted, modelLoaded, tickerLoaded, tickerReady, isMobileView]);
 
   // Fallback timeout to prevent infinite loading
   useEffect(() => {
     const fallbackTimer = setTimeout(() => {
       if (isSceneLoading) {
-        // console.log('Fallback timeout reached, forcing scene ready');
+        console.log('[Temple] Fallback timeout reached, forcing scene ready');
         setSceneReady(true);
         setIsSceneLoading(false);
       }
-    }, 20000); // 20 second max loading time - increased to ensure model loads
+    }, isMobileView ? 10000 : 20000); // 10 seconds for mobile, 20 for desktop
 
     return () => clearTimeout(fallbackTimer);
-  }, [isSceneLoading]);
+  }, [isSceneLoading, isMobileView]);
 
   // Don't render on server-side
   if (!mounted) {
@@ -430,7 +445,7 @@ export default function CyborgTemple() {
           key="temple-canvas"
           camera={{ 
             position: isMobileView ? [0, 3.4, 2] : [0, -5, 4.5], 
-            fov: isMobileView ? 40 : 50 
+            fov: isMobileView ? 35 : 50 
           }}
           gl={{ 
             antialias: !isMobileView,
@@ -468,7 +483,7 @@ export default function CyborgTemple() {
               is80sMode={false} 
             />
             
-            {/* MaryTraderScene with grid */}
+            {/* CyborgTempleScene with grid */}
             <CyborgTempleScene
               ref={modelRef}
               position={[0, -1.5, 0]}
@@ -522,7 +537,7 @@ export default function CyborgTemple() {
               target={isMobileView ? [0, 4, 0] : [0, 0, 0]}
             />
           </Suspense>
-          <Stats className="stats-monitor" />
+          {/* <Stats className="stats-monitor" /> */}
         </CleanCanvas>
         )}
   {/* Dev Panel Only - Chat is in TradingOverlay */}
