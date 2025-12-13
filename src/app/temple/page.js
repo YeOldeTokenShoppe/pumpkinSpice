@@ -428,7 +428,10 @@ export default function CyborgTemple() {
         {canvasReady && shouldRenderCanvas && !isCandleModalOpen && (
         <CleanCanvas
           key="temple-canvas"
-          camera={{ position: [0, -5, 4.5], fov: 50 }}
+          camera={{ 
+            position: isMobileView ? [0, 3.4, 2] : [0, -5, 4.5], 
+            fov: isMobileView ? 40 : 50 
+          }}
           gl={{ 
             antialias: !isMobileView,
             alpha: true,
@@ -475,9 +478,10 @@ export default function CyborgTemple() {
               onLoad={handleSceneLoad}
               showAnnotations={showAnnotations}
               is80sMode={is80sMode}
+              isMobile={isMobileView}
             />
 
-            {tickerReady && !isCandleModalOpen && <TickerDisplay3 modelRef={modelRef} onLoad={handleTickerLoad} />}
+            {tickerReady && !isCandleModalOpen && !isMobileView && <TickerDisplay3 modelRef={modelRef} onLoad={handleTickerLoad} />}
 
           
             {/* Constellation */}
@@ -515,14 +519,14 @@ export default function CyborgTemple() {
               zoomToCursor={true}
               // autoRotate={true}
               // autoRotateSpeed={0.2}
-              target={[0, 0, 0]}
+              target={isMobileView ? [0, 4, 0] : [0, 0, 0]}
             />
           </Suspense>
           <Stats className="stats-monitor" />
         </CleanCanvas>
         )}
   {/* Dev Panel Only - Chat is in TradingOverlay */}
-  <DevModePanel show={true} />
+  {/* <DevModePanel show={true} /> */}
         {/* Top Controls Container - Music, User, and Nav */}
         {mounted && (
           <div

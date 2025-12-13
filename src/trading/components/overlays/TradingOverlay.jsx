@@ -415,12 +415,13 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
               </div>
               
               {[
-                { key: 'candle', icon: '🕯️', label: 'TEMPLE CANDLE', color: '#00ff88' },
+          
                 { key: 'stats', icon: '⚡', label: 'FUND STATS', color: '#00ff00' },
                 { key: 'thoughts', icon: '💬', label: 'TEAM CHAT', color: '#ff00ff' },
                 { key: 'macro', icon: '🌍', label: 'MACRO ANALYSIS', color: '#00ddff' },
                 { key: 'positions', icon: '📈', label: 'ACTIVE POSITIONS', color: '#ffdd00' },
-                { key: 'trades', icon: '📜', label: 'COMPLETED TRADES', color: '#ff8800' }
+                { key: 'trades', icon: '📜', label: 'COMPLETED TRADES', color: '#ff8800' },
+                { key: 'candle', icon: '🕯️', label: 'CANDLELARIA', color: '#00ff88' }
               ].map(tab => (
                 <button
                   key={tab.key}

@@ -18,6 +18,7 @@ const CyborgTempleScene = forwardRef(({
   showAnnotations = true,
   is80sMode = false,
   onAnnotationClick = null, // Callback when annotation is clicked
+  isMobile = false, // Pass this prop to determine device type
 }, ref) => {
   const groupRef = useRef();
   const { scene } = useThree();
@@ -28,11 +29,30 @@ const CyborgTempleScene = forwardRef(({
   const slowdownIntervalRef = useRef(null);
   const rampUpIntervalRef = useRef(null);
   const [loadedModel, setLoadedModel] = useState(null);
+  const [detectedMobile, setDetectedMobile] = useState(false);
   const cylinderMeshRef = useRef(); // Ref for the specific cylinder mesh
   const object7MeshRef = useRef(); // Ref for Object_5 (was Object_7)
   const cube010MeshRef = useRef(); // Ref for Cube010
   const previousTrackRef = useRef(null); // Track the previous track for detecting changes
   const transitionTimeoutRef = useRef(null); // For handling track transition slowdowns
+  
+  // Detect mobile device on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase()) ||
+                             (window.innerWidth <= 768);
+      setDetectedMobile(isMobileDevice);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  // Use prop or detected mobile state
+  const isOnMobile = isMobile || detectedMobile;
   
   // Expose the loaded model through ref
   useImperativeHandle(ref, () => ({
@@ -91,9 +111,11 @@ const CyborgTempleScene = forwardRef(({
     dracoLoader.setDecoderPath("/draco/");
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    // console.log('Loading MaryTraderScene_extraClothes2.glb...');
+    // Determine which model to load based on device type
+    const modelPath = isOnMobile ? "/models/MOBILE.glb" : "/models/RL80_4anims.glb";
+    console.log(`Loading model: ${modelPath} (Mobile: ${isOnMobile})`);
     
-    gltfLoader.load("/models/RL80_4anims.glb", (gltf) => {
+    gltfLoader.load(modelPath, (gltf) => {
       // console.log('✓ MaryTraderScene_extraClothes2.glb loaded successfully');
       
       const templeScene = gltf.scene;
@@ -104,9 +126,15 @@ const CyborgTempleScene = forwardRef(({
       
       // Create an anchor group for positioning
       const anchorGroup = new THREE.Group();
-      anchorGroup.position.set(...position);
+      // Use different positions and scales for mobile vs desktop
+      const mobilePosition = [0, 1.5, 0];
+      const mobileScale = [0.8, 0.8, 0.8];
+      const desktopPosition = position;
+      const desktopScale = scale;
+      
+      anchorGroup.position.set(...(isOnMobile ? mobilePosition : desktopPosition));
       anchorGroup.rotation.set(...rotation);
-      anchorGroup.scale.set(...scale);
+      anchorGroup.scale.set(...(isOnMobile ? mobileScale : desktopScale));
       
       // Add the temple scene to the anchor group
       anchorGroup.add(templeScene);
@@ -228,7 +256,7 @@ const CyborgTempleScene = forwardRef(({
         });
       }
     };
-  }, [scene, position, rotation, scale, onLoad]);
+  }, [scene, position, rotation, scale, onLoad, isOnMobile]);
 
   // Detect track changes and trigger transition effect
   useEffect(() => {

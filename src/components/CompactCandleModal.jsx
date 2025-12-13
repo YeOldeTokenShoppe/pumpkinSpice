@@ -1294,6 +1294,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
   const modalContentRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   
   // Preload candle data whenever form changes (for instant snapshot)
   React.useEffect(() => {
@@ -2646,18 +2647,17 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   </label>
                   
                   <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                    gap: '12px',
+                    display: 'flex',
+                    gap: '10px',
                     padding: '0 10px',
-                    maxWidth: '100%',
-                    margin: '0 auto'
+                    width: '100%',
+                    justifyContent: 'space-between'
                   }}>
                     {[
                       { 
                         value: 'short', 
                         label: 'Short', 
-                        description: 'Compact and intimate',
+                        description: 'Compact & intimate',
                         image: '/EcclesiasticalShortPreview.webp'
                       },
                       { 
@@ -2669,7 +2669,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                       { 
                         value: 'tall', 
                         label: 'Tall', 
-                        description: 'Grand and stately',
+                        description: 'Grand & stately',
                         image: '/EcclesiasticalTallPreview.webp'
                       }
                     ].map((height) => (
@@ -2679,60 +2679,42 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                           setFormData(prev => ({ ...prev, candleHeight: height.value }));
                         }}
                         style={{
-                          padding: '15px',
+                          flex: 1,
+                          padding: '12px 8px',
                           background: formData.candleHeight === height.value 
                             ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))'
                             : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
                           border: formData.candleHeight === height.value 
                             ? '2px solid #ffd700'
                             : '1px solid rgba(255, 215, 0, 0.3)',
-                          borderRadius: '12px',
+                          borderRadius: '8px',
                           color: '#fff',
                           cursor: 'pointer',
                           transition: 'all 0.3s ease',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          gap: '10px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-3px)';
-                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 215, 0, 0.3)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = 'none';
+                          gap: '4px',
+                          minWidth: '0',
+                          boxShadow: formData.candleHeight === height.value 
+                            ? '0 4px 15px rgba(255, 215, 0, 0.3)'
+                            : 'none'
                         }}
                       >
-                        {/* Image Preview */}
-                        <div style={{
-                          width: '100%',
-                          height: '80px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                        <div style={{ 
+                          fontSize: '16px', 
+                          fontWeight: 'bold',
+                          color: formData.candleHeight === height.value ? '#ffd700' : '#fff'
                         }}>
-                          <img 
-                            src={height.image}
-                            alt={height.label}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'contain'
-                            }}
-                          />
+                          {height.label}
                         </div>
-                        
-                        <div>
-                          <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '3px' }}>
-                            {height.label}
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)' }}>
-                            {height.description}
-                          </div>
+                        <div style={{ 
+                          fontSize: '10px', 
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          textAlign: 'center',
+                          lineHeight: '1.2'
+                        }}>
+                          {height.description}
                         </div>
                       </button>
                     ))}
@@ -2757,12 +2739,11 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                   </label>
                   
                   <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                    gap: '12px',
+                    display: 'flex',
+                    gap: '10px',
                     padding: '0 10px',
-                    maxWidth: '100%',
-                    margin: '0 auto'
+                    width: '100%',
+                    justifyContent: 'space-between'
                   }}>
                     {[
                       { 
@@ -2790,60 +2771,42 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                           setFormData(prev => ({ ...prev, candleHeight: height.value }));
                         }}
                         style={{
-                          padding: '15px',
+                          flex: 1,
+                          padding: '12px 8px',
                           background: formData.candleHeight === height.value 
                             ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))'
                             : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
                           border: formData.candleHeight === height.value 
                             ? '2px solid #ffd700'
                             : '1px solid rgba(255, 215, 0, 0.3)',
-                          borderRadius: '12px',
+                          borderRadius: '8px',
                           color: '#fff',
                           cursor: 'pointer',
                           transition: 'all 0.3s ease',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          gap: '10px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-3px)';
-                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 215, 0, 0.3)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = 'none';
+                          gap: '4px',
+                          minWidth: '0',
+                          boxShadow: formData.candleHeight === height.value 
+                            ? '0 4px 15px rgba(255, 215, 0, 0.3)'
+                            : 'none'
                         }}
                       >
-                        {/* Image Preview */}
-                        <div style={{
-                          width: '100%',
-                          height: '80px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                        <div style={{ 
+                          fontSize: '16px', 
+                          fontWeight: 'bold',
+                          color: formData.candleHeight === height.value ? '#ffd700' : '#fff'
                         }}>
-                          <img 
-                            src={height.image}
-                            alt={height.label}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'contain'
-                            }}
-                          />
+                          {height.label}
                         </div>
-                        
-                        <div>
-                          <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '3px' }}>
-                            {height.label}
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)' }}>
-                            {height.description}
-                          </div>
+                        <div style={{ 
+                          fontSize: '10px', 
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          textAlign: 'center',
+                          lineHeight: '1.2'
+                        }}>
+                          {height.description}
                         </div>
                       </button>
                     ))}
@@ -2862,28 +2825,27 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             textAlign: 'center'
           }}>
             <h2 style={{
-              fontSize: '24px',
-              marginBottom: '10px',
+              fontSize: '20px',
+              marginBottom: '8px',
               color: '#ffd700',
               fontWeight: 'bold'
             }}>What type of message?</h2>
             <p style={{
-              fontSize: '14px',
+              fontSize: '12px',
               color: 'rgba(255, 255, 255, 0.7)',
-              marginBottom: '30px'
+              marginBottom: '20px'
             }}>Choose the intention for your candle</p>
             
             <div style={{
               display: 'flex',
-              flexDirection: 'column',
-              gap: '15px',
-              maxWidth: '400px',
-              margin: '0 auto'
+              gap: '10px',
+              width: '100%',
+              justifyContent: 'space-between'
             }}>
               {[
-                { value: 'petition', label: '🙏 Petition', description: 'Ask for divine intercession' },
-                { value: 'confession', label: '💭 Confession', description: 'Unburden your heart' },
-                { value: 'praise', label: '✨ Thanks', description: 'Show your appreciation' }
+                { value: 'petition', label: 'Petition', emoji: '🙏', description: 'Ask for intercession' },
+                { value: 'confession', label: 'Confession', emoji: '💭', description: 'Unburden heart' },
+                { value: 'praise', label: 'Thanks', emoji: '✨', description: 'Show gratitude' }
               ].map((type) => (
                 <button
                   key={type.value}
@@ -2892,32 +2854,47 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
                     // Don't auto-advance - let user click Next when ready
                   }}
                   style={{
-                    padding: '20px',
+                    flex: 1,
+                    padding: '15px 8px',
                     background: formData.messageType === type.value 
                       ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))'
                       : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
                     border: formData.messageType === type.value 
                       ? '2px solid #ffd700'
                       : '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '12px',
+                    borderRadius: '8px',
                     color: '#fff',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    textAlign: 'left'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 5px 20px rgba(255, 215, 0, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px',
+                    minWidth: '0',
+                    boxShadow: formData.messageType === type.value 
+                      ? '0 4px 15px rgba(255, 215, 0, 0.3)'
+                      : 'none'
                   }}
                 >
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '5px' }}>
+                  <div style={{ 
+                    fontSize: '24px',
+                    lineHeight: '1'
+                  }}>
+                    {type.emoji}
+                  </div>
+                  <div style={{ 
+                    fontSize: '14px', 
+                    fontWeight: 'bold',
+                    color: formData.messageType === type.value ? '#ffd700' : '#fff'
+                  }}>
                     {type.label}
                   </div>
-                  <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    lineHeight: '1.2'
+                  }}>
                     {type.description}
                   </div>
                 </button>
@@ -3089,73 +3066,149 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         );
         
       case 5: // Background Selection
+        const scrollLeft = () => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollBy({ left: -220, behavior: 'smooth' });
+          }
+        };
+        
+        const scrollRight = () => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollBy({ left: 220, behavior: 'smooth' });
+          }
+        };
+        
         return (
-          <div style={{ padding: '20px' }}>
+          <div style={{ padding: '20px 10px' }}>
             <h3 style={{
-              fontSize: '20px',
-              marginBottom: '20px',
+              fontSize: '18px',
+              marginBottom: '15px',
               color: '#ffd700',
               textAlign: 'center'
             }}>Choose Your Sacred Space</h3>
             
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '15px',
-              marginTop: '20px'
-            }}>
-              {BACKGROUND_TEXTURES.map((bg) => (
-                <button
-                  key={bg.id}
-                  onClick={() => setFormData(prev => ({ ...prev, background: bg.id }))}
-                  style={{
-                    position: 'relative',
-                    padding: '0',
-                    background: 'none',
-                    border: formData.background === bg.id 
-                      ? '3px solid #ffd700' 
-                      : '2px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    overflow: 'hidden',
-                    aspectRatio: '16/9',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <img 
-                    src={bg.path}
-                    alt={bg.name}
+            <div style={{ position: 'relative' }}>
+              {/* Left Arrow */}
+              <button
+                onClick={scrollLeft}
+                style={{
+                  position: 'absolute',
+                  left: '-5px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '30px',
+                  height: '60px',
+                  background: 'linear-gradient(90deg, rgba(0,0,0,0.8), transparent)',
+                  border: 'none',
+                  borderRadius: '0 8px 8px 0',
+                  color: '#ffd700',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  zIndex: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0
+                }}
+              >
+                ‹
+              </button>
+              
+              {/* Right Arrow */}
+              <button
+                onClick={scrollRight}
+                style={{
+                  position: 'absolute',
+                  right: '-5px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '30px',
+                  height: '60px',
+                  background: 'linear-gradient(-90deg, rgba(0,0,0,0.8), transparent)',
+                  border: 'none',
+                  borderRadius: '8px 0 0 8px',
+                  color: '#ffd700',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  zIndex: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0
+                }}
+              >
+                ›
+              </button>
+              
+              <div 
+                ref={scrollContainerRef}
+                style={{
+                  display: 'flex',
+                  overflowX: 'auto',
+                  gap: '12px',
+                  padding: '10px 0',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitScrollbar: { display: 'none' }
+                }}
+              >
+                {BACKGROUND_TEXTURES.map((bg) => (
+                  <button
+                    key={bg.id}
+                    onClick={() => setFormData(prev => ({ ...prev, background: bg.id }))}
                     style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      opacity: formData.background === bg.id ? 1 : 0.7
+                      position: 'relative',
+                      padding: '0',
+                      background: 'none',
+                      border: formData.background === bg.id 
+                        ? '3px solid #ffd700' 
+                        : '2px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      width: '200px',
+                      height: '112px',
+                      transition: 'all 0.3s ease',
+                      transform: formData.background === bg.id ? 'scale(1.05)' : 'scale(1)'
                     }}
-                  />
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '0',
-                    left: '0',
-                    right: '0',
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)',
-                    padding: '10px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    textAlign: 'center'
-                  }}>
-                    {bg.name}
-                    {formData.background === bg.id && (
-                      <span style={{
-                        display: 'block',
-                        marginTop: '5px',
-                        color: '#ffd700',
-                        fontSize: '12px'
-                      }}>✓ Selected</span>
-                    )}
-                  </div>
-                </button>
-              ))}
+                  >
+                    <img 
+                      src={bg.path}
+                      alt={bg.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: formData.background === bg.id ? 1 : 0.7
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '0',
+                      left: '0',
+                      right: '0',
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)',
+                      padding: '8px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      textAlign: 'center'
+                    }}>
+                      {bg.name}
+                      {formData.background === bg.id && (
+                        <span style={{
+                          display: 'block',
+                          marginTop: '3px',
+                          color: '#ffd700',
+                          fontSize: '10px'
+                        }}>✓ Selected</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         );
@@ -3733,7 +3786,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         
         <div className="compact-modal-layout">
           {/* Left side - 3D Preview */}
-          <div className="compact-candle-preview">
+          <div className={`compact-candle-preview ${currentStep === 4 ? 'message-step' : ''}`}>
             <div className="preview-label">Your Candle Preview</div>
             {/* Conditionally show Canvas for votive (with overlay) or static image for others */}
             <div style={{
@@ -3882,7 +3935,7 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
           </div>
 
           {/* Right side - Form */}
-          <div className="compact-form-section">
+          <div className={`compact-form-section ${currentStep === 4 ? 'message-step' : ''}`}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h2 style={{
                 background: 'linear-gradient(45deg, #ff6600, #ffaa00, #ff6600, #ff3300)',
@@ -3921,14 +3974,24 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
             </div>
 
             {/* Step Content */}
-            {renderStepContent()}
+            <div style={{ paddingBottom: '100px' }}>
+              {renderStepContent()}
+            </div>
             
             {/* Navigation Buttons */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               padding: '20px',
-              borderTop: '1px solid rgba(255, 215, 0, 0.2)'
+              paddingBottom: 'max(40px, env(safe-area-inset-bottom, 40px))',
+              borderTop: '1px solid rgba(255, 215, 0, 0.2)',
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: 'linear-gradient(to top, rgba(10, 10, 10, 1), rgba(10, 10, 10, 0.98))',
+              zIndex: 100,
+              backdropFilter: 'blur(10px)'
             }}>
               <button
                 onClick={handlePrev}

@@ -262,6 +262,23 @@
 }
 
 /* Mobile Responsive - Override any cached styles */
+/* Special layout for message input step on mobile */
+@media (max-width: 768px) {
+  .compact-candle-preview.message-step {
+    flex: 0 0 25vh !important;
+    height: 25vh !important;
+    max-height: 25vh !important;
+    min-height: 25vh !important;
+  }
+  
+  .compact-form-section.message-step {
+    flex: 1 1 75vh !important;
+    height: 75vh !important;
+    max-height: 75vh !important;
+    min-height: 75vh !important;
+  }
+}
+
 @media (max-width: 768px) {
   /* CRITICAL: Force full viewport height, override any 80vh */
   .compact-modal-layout {

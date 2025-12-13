@@ -2275,12 +2275,12 @@ export default function CompactCandleModal({ isOpen, onClose, onCandleCreated })
         console.log('Rendering case 2');
         return (
           <div style={{ padding: '20px' }}>
-            <h3 style={{
+            <h4 style={{
               fontSize: '20px',
               marginBottom: '20px',
               color: '#ffd700',
               textAlign: 'center'
-            }}>Personalize Your Candle</h3>
+            }}>Personalize Your Candle</h4>
             
             {/* Show image upload option for votive candles */}
             {formData.candleType === 'votive' ? (
