@@ -24,6 +24,7 @@ import { useLighterAPI } from '@/hooks/useLighterAPI'; // API-based Lighter inte
 import DevModePanel from '@/components/DevModePanel';
 // import AgentChatDisplay from '@/components/AgentChatDisplay'; // Using existing Trading Team Chat instead
 // import MobileDevTabs from '@/components/MobileDevTabs';
+import RotatingPnL from '@/components/RotatingPnL';
 
 
 export default function CyborgTemple() {
@@ -444,7 +445,7 @@ export default function CyborgTemple() {
         <CleanCanvas
           key="temple-canvas"
           camera={{ 
-            position: isMobileView ? [0, 3.4, 2] : [0, -5, 4.5], 
+            position: isMobileView ? [0, 3.4, 1.5] : [0, -5, 4.5], 
             fov: isMobileView ? 35 : 50 
           }}
           gl={{ 
@@ -542,6 +543,11 @@ export default function CyborgTemple() {
         )}
   {/* Dev Panel Only - Chat is in TradingOverlay */}
   {/* <DevModePanel show={true} /> */}
+        {/* Rotating P&L Display for Mobile */}
+        {mounted && isMobileView && sceneReady && (
+          <RotatingPnL tradingData={tradingData} />
+        )}
+        
         {/* Top Controls Container - Music, User, and Nav */}
         {mounted && (
           <div
@@ -741,7 +747,7 @@ export default function CyborgTemple() {
             </div>
 
             {/* Annotations Toggle */}
-            <div style={{ order: isMobileView ? 3 : 2 }}>
+            {/* <div style={{ order: isMobileView ? 3 : 2 }}>
               <button
                 style={{
                   width: isMobileView ? "2.5rem" : "3.75rem",
@@ -777,7 +783,7 @@ export default function CyborgTemple() {
                   </text>
                 </svg>
               </button>
-            </div>
+            </div> */}
 
             {/* CyberNav Menu */}
             <div style={{ order: isMobileView ? 0 : 3 }}>

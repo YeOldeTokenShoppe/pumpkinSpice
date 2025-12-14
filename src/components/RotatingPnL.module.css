@@ -1,0 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
+
+.container {
+  position: fixed;
+  bottom: 20vh;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 1000;
+  pointer-events: none;
+  min-width: 70vw;
+  font-family: 'Inter', sans-serif;
+}
+
+.titleWrapper {
+  position: relative;
+  height: 1.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d;
+}
+
+.title {
+  font-size: 1.2rem;
+  color: #aaa;
+  letter-spacing: 0.3rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rotatingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  height: 3rem;
+  perspective: 500px;
+  transform-style: preserve-3d;
+}
+
+.wordWrapper {
+  position: relative;
+  height: 3rem;
+  display: inline-block;
+  transform-style: preserve-3d;
+}
+
+.word {
+  position: absolute;
+  width: 100%;
+  opacity: 0;
+  transform-style: preserve-3d;
+  white-space: nowrap;
+}
+
+.word.active {
+  opacity: 1;
+}
+
+.letter {
+  display: inline-block;
+  position: relative;
+  transform: translateZ(25px);
+  transform-origin: 50% 50% 0;
+  transform-style: preserve-3d;
+}
+
+.letter.out {
+  animation: rotateOut 0.6s forwards;
+}
+
+.letter.in {
+  animation: rotateIn 0.6s forwards;
+}
+
+@keyframes rotateOut {
+  0% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateX(90deg);
+    opacity: 0;
+  }
+}
+
+@keyframes rotateIn {
+  0% {
+    transform: rotateX(-90deg);
+    opacity: 0;
+  }
+  100% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+.period {
+  font-size: 1.8rem;
+  color: #fff;
+  font-weight: 900;
+  letter-spacing: 0.05rem;
+  min-width: 4rem;
+}
+
+.value {
+  font-size: 2rem;
+  font-weight: 900;
+  min-width: 9rem;
+  text-shadow: 0 0 1.5rem currentColor;
+  white-space: nowrap;
+}
+
+.percentage {
+  font-size: 1.6rem;
+  font-weight: 800;
+  min-width: 5rem;
+  white-space: nowrap;
+}
+
+.dotsContainer {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-top: 0.8rem;
+}
+
+.dot {
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background-color: #444;
+  transition: background-color 0.3s ease;
+}
+
+.dot.active {
+  background-color: #fff;
+}

@@ -36,6 +36,14 @@ const CyborgTempleScene = forwardRef(({
   const previousTrackRef = useRef(null); // Track the previous track for detecting changes
   const transitionTimeoutRef = useRef(null); // For handling track transition slowdowns
   
+  // Refs for MOBILE.glb animated objects
+  const angelEmptyRef = useRef(); // Parent container for angel and coins
+  const angelRef = useRef();
+  const coin1Ref = useRef();
+  const coin2Ref = useRef();
+  const coin3Ref = useRef();
+  const coin4Ref = useRef();
+  
   // Detect mobile device on mount
   useEffect(() => {
     const checkMobile = () => {
@@ -217,6 +225,34 @@ const CyborgTempleScene = forwardRef(({
           // console.log('Found Cube010 mesh:', child);
           cube010MeshRef.current = child;
         }
+        
+        // Find angel and coin objects for MOBILE.glb animations
+        if (isOnMobile) {
+          if (child.name === 'Angel_Empty') {
+            console.log('Found Angel_Empty parent:', child);
+            angelEmptyRef.current = child;
+          }
+          if (child.name === 'angel' || child.name === 'Angel') {
+            console.log('Found angel object:', child);
+            angelRef.current = child;
+          }
+          if (child.name === 'Coin1') {
+            console.log('Found Coin1:', child);
+            coin1Ref.current = child;
+          }
+          if (child.name === 'Coin2') {
+            console.log('Found Coin2:', child);
+            coin2Ref.current = child;
+          }
+          if (child.name === 'Coin3') {
+            console.log('Found Coin3:', child);
+            coin3Ref.current = child;
+          }
+          if (child.name === 'Coin4') {
+            console.log('Found Coin4:', child);
+            coin4Ref.current = child;
+          }
+        }
       });
       
       // Call onLoad callback if provided
@@ -343,7 +379,6 @@ const CyborgTempleScene = forwardRef(({
       if (actions['TypingRobot2'] && !actions['TypingRobot2'].isRunning()) {
         actions['TypingRobot2'].play();
       }
-      
       // Delay the dance animations by 2 seconds
       danceTimeoutRef.current = setTimeout(() => {
         // console.log('[CyborgTempleScene] Starting dance animations after delay...');
@@ -493,9 +528,58 @@ const CyborgTempleScene = forwardRef(({
   
 
   // Animation loop
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (mixerRef.current) {
       mixerRef.current.update(delta);
+    }
+    
+    // Add subtle animations for mobile objects
+    if (isOnMobile) {
+      // Angel_Empty hover animation - subtle up and down motion for the entire group
+      if (angelEmptyRef.current) {
+        const time = state.clock.getElapsedTime();
+        // Store original Y position if not already stored
+        if (angelEmptyRef.current.userData.originalY === undefined) {
+          angelEmptyRef.current.userData.originalY = angelEmptyRef.current.position.y;
+        }
+        // Apply hover animation relative to original position
+        angelEmptyRef.current.position.y = angelEmptyRef.current.userData.originalY + Math.sin(time * 0.8) * 0.01; // Gentle hover with 0.05 units amplitude
+      }
+      
+      // Coin animations - subtle individual hovering
+      const time = state.clock.getElapsedTime();
+      
+      // Helper function for individual coin hovering
+      const hoverCoin = (coinRef, phaseOffset, speed = 1.2, amplitude = 0.01) => {
+        if (!coinRef.current) return;
+        
+        // Store initial Y position if not set
+        if (coinRef.current.userData.initialY === undefined) {
+          coinRef.current.userData.initialY = coinRef.current.position.y;
+          // Debug log for Coin3
+          if (coinRef.current.name === 'Coin3') {
+            console.log('Coin3 initial Y:', coinRef.current.userData.initialY);
+            console.log('Coin3 children:', coinRef.current.children);
+          }
+        }
+        
+        // Special handling for Coin3 since it's a Group
+        if (coinRef.current.name === 'Coin3' && coinRef.current.type === 'Group') {
+          // Use much smaller amplitude for the Group
+          coinRef.current.position.y = coinRef.current.userData.initialY + 
+            Math.sin(time * speed + phaseOffset) * (amplitude * 0.1); // Reduce amplitude by 70%
+        } else {
+          // Normal handling for Mesh coins
+          coinRef.current.position.y = coinRef.current.userData.initialY + 
+            Math.sin(time * speed + phaseOffset) * amplitude;
+        }
+      };
+      
+      // Apply hovering to each coin with different phases and speeds
+      hoverCoin(coin1Ref, 0, 1.2, 0.015);           // Base hover
+      hoverCoin(coin2Ref, Math.PI * 0.5, 1.0, 0.012);  // Quarter phase offset, slower
+      hoverCoin(coin3Ref, Math.PI * 1.5, 1.1, 0.01);        // Opposite phase, faster
+      hoverCoin(coin4Ref, Math.PI * 1.5, 1.1, 0.01);   // Three-quarter phase, smallest amplitude
     }
   });
 

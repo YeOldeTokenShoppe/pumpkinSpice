@@ -3281,7 +3281,7 @@ export default function Home3() {
             <PostProcessingEffects />
           </Suspense>
           {/* Performance Monitor - Shows FPS, MS, MB */}
-          <Stats className="perf-monitor" />
+          {/* <Stats className="perf-monitor" /> */}
         </CleanCanvas>
       </div>
       

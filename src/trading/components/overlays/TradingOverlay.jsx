@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRandomCandles } from '@/utilities/useRandomCandles';
 import CompactCandleModal from '@/components/CompactCandleModal';
+import NotificationBadge from '@/components/NotificationBadge';
 import { useUser } from '@clerk/nextjs';
 
 // Dynamically import SingleCandleDisplay to avoid SSR issues with Three.js
@@ -35,6 +36,44 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
   const [userCandle, setUserCandle] = useState(null); // User's own candle data
   const [showAddCandleModal, setShowAddCandleModal] = useState(false); // Modal for adding user's candle
   const [showCompactCandleModal, setShowCompactCandleModal] = React.useState(false); // Modal for CompactCandleModal
+  
+  // Notification states for the three buttons
+  const [notifications, setNotifications] = useState({
+    trades: 0,      // For 📊 Trading Data & Positions
+    messages: 0,    // For 💬 Team Chat
+    analyses: 0     // For 🤖 AI Traders
+  });
+  
+  // Simulate notifications for demo (remove in production)
+  useEffect(() => {
+    if (!show) return;
+    
+    // Simulate random notifications
+    const notificationInterval = setInterval(() => {
+      const rand = Math.random();
+      if (rand < 0.3) {
+        // New trade notification
+        setNotifications(prev => ({ 
+          ...prev, 
+          trades: Math.min(prev.trades + 1, 99) 
+        }));
+      } else if (rand < 0.6) {
+        // New message notification
+        setNotifications(prev => ({ 
+          ...prev, 
+          messages: Math.min(prev.messages + 1, 99) 
+        }));
+      } else if (rand < 0.8) {
+        // New analysis notification
+        setNotifications(prev => ({ 
+          ...prev, 
+          analyses: Math.min(prev.analyses + 1, 99) 
+        }));
+      }
+    }, 5000); // Every 5 seconds
+    
+    return () => clearInterval(notificationInterval);
+  }, [show]);
   
   // Debug initial state
   // console.log('TradingOverlay initial render, showCompactCandleModal:', showCompactCandleModal);
@@ -334,39 +373,131 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
   };
 
 
-  // Mobile and Tablet view - side flyout interface
-  if ((isMobile || isTablet) && show) {
+  // Simplified UI with bottom navigation for all screen sizes
+  if (show) {
     return (
       <>
-        {/* Floating Menu Button */}
-        {!showMobileMenu && !activeTab && (
-          <button
-            onClick={() => setShowMobileMenu(true)}
-            style={{
-              position: 'fixed',
-              left: '20px',
-              bottom: '20px',
-              width: '60px',
-              height: '60px',
-              background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.9) 0%, rgba(0, 150, 0, 0.7) 100%)',
-              border: '2px solid #00ff00',
-              borderRadius: '50%',
-              color: '#000',
-              fontSize: '24px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 0 25px rgba(0, 255, 0, 0.6)',
-              zIndex: 1000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'monospace'
-            }}
-          >
-            📊
-          </button>
+        {/* Bottom Navigation Bar */}
+        {!activeTab && (
+          <div style={{
+            position: 'fixed',
+            left: '20px',
+            bottom: '20px',
+            display: 'flex',
+            gap: '10px',
+            zIndex: 1000
+          }}>
+            {/* Chart Button */}
+            <button
+              onClick={() => {
+                setShowMobileMenu(true);
+                // Clear trade notifications when viewing
+                setNotifications(prev => ({ ...prev, trades: 0 }));
+              }}
+              style={{
+                position: 'relative',
+                width: '60px',
+                height: '60px',
+                background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.9) 0%, rgba(0, 150, 0, 0.7) 100%)',
+                border: '2px solid #00ff00',
+                borderRadius: '50%',
+                color: '#000',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 0 25px rgba(0, 255, 0, 0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'monospace'
+              }}
+              title="Trading Data & Positions"
+            >
+              📊
+              <NotificationBadge 
+                count={notifications.trades}
+                color="#ff0041"
+                pulse={true}
+                position="top-right"
+              />
+            </button>
+            
+            {/* Chat Button */}
+            <button
+              onClick={() => {
+                setActiveTab('chat');
+                // Clear message notifications when viewing
+                setNotifications(prev => ({ ...prev, messages: 0 }));
+              }}
+              style={{
+                position: 'relative',
+                width: '60px',
+                height: '60px',
+                background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.9) 0%, rgba(150, 0, 150, 0.7) 100%)',
+                border: '2px solid #ff00ff',
+                borderRadius: '50%',
+                color: '#000',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 0 25px rgba(255, 0, 255, 0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'monospace'
+              }}
+              title="Team Chat"
+            >
+              💬
+              <NotificationBadge 
+                count={notifications.messages}
+                color="#ff0041"
+                pulse={true}
+                position="top-right"
+              />
+            </button>
+            
+            {/* AI Traders Button */}
+            <button
+              onClick={() => {
+                setActiveTab('aitraders');
+                // Clear analysis notifications when viewing
+                setNotifications(prev => ({ ...prev, analyses: 0 }));
+              }}
+              style={{
+                position: 'relative',
+                width: '60px',
+                height: '60px',
+                background: 'linear-gradient(135deg, rgba(0, 150, 255, 0.9) 0%, rgba(0, 100, 200, 0.7) 100%)',
+                border: '2px solid #0096ff',
+                borderRadius: '50%',
+                color: '#000',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 0 25px rgba(0, 150, 255, 0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'monospace'
+              }}
+              title="AI Traders"
+            >
+              🤖
+              <NotificationBadge 
+                count={notifications.analyses}
+                color="#ff0041"
+                pulse={true}
+                position="top-right"
+              />
+            </button>
+          </div>
         )}
 
         {/* Menu Selection Panel */}
@@ -417,7 +548,6 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
               {[
           
                 { key: 'stats', icon: '⚡', label: 'FUND STATS', color: '#00ff00' },
-                { key: 'thoughts', icon: '💬', label: 'TEAM CHAT', color: '#ff00ff' },
                 { key: 'macro', icon: '🌍', label: 'MACRO ANALYSIS', color: '#00ddff' },
                 { key: 'positions', icon: '📈', label: 'ACTIVE POSITIONS', color: '#ffdd00' },
                 { key: 'trades', icon: '📜', label: 'COMPLETED TRADES', color: '#ff8800' },
@@ -1317,6 +1447,242 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
           )}
           
           {/* Candle Tab - Mobile View - Full Screen with Portal */}
+          {/* Chat Panel */}
+          {activeTab === 'chat' && (
+            <>
+              <div style={{
+                marginBottom: '12px',
+                paddingBottom: '8px',
+                borderBottom: '1px solid rgba(255, 0, 255, 0.3)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div style={{ color: '#ff00ff', fontWeight: 'bold', fontSize: '13px' }}>
+                  💬 4-AGENT TEAM CHAT
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}>
+                  <div style={{
+                    width: '5px',
+                    height: '5px',
+                    borderRadius: '50%',
+                    background: '#ff00ff',
+                    animation: 'pulse 2s infinite'
+                  }} />
+                  <span style={{ color: '#ff00ff', fontSize: '9px' }}>LIVE</span>
+                </div>
+              </div>
+              
+              {/* Chat Messages */}
+              <div style={{
+                maxHeight: 'calc(100vh - 240px)',
+                overflowY: 'auto',
+                paddingRight: '5px'
+              }}>
+                {tradingData.modelThoughts.map((thought, idx) => (
+                  <div key={idx} style={{
+                    marginBottom: '10px',
+                    padding: '8px',
+                    background: thought.type === 'learning' ? 'rgba(255, 221, 0, 0.05)' :
+                               thought.type === 'trading' ? 'rgba(0, 255, 0, 0.05)' :
+                               thought.type === 'market' ? 'rgba(0, 150, 255, 0.05)' :
+                               thought.type === 'sentiment' ? 'rgba(255, 0, 255, 0.05)' :
+                               'rgba(255, 255, 255, 0.02)',
+                    borderLeft: `2px solid ${
+                      thought.type === 'learning' ? '#ffdd00' :
+                      thought.type === 'trading' ? '#00ff00' :
+                      thought.type === 'market' ? '#0096ff' :
+                      thought.type === 'sentiment' ? '#ff00ff' :
+                      '#888'
+                    }`,
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '4px'
+                    }}>
+                      <span style={{ 
+                        color: thought.type === 'learning' ? '#ffdd00' :
+                               thought.type === 'trading' ? '#00ff00' :
+                               thought.type === 'market' ? '#0096ff' :
+                               thought.type === 'sentiment' ? '#ff00ff' :
+                               '#888',
+                        fontSize: '10px',
+                        fontWeight: 'bold'
+                      }}>
+                        {thought.agent}
+                      </span>
+                      <span style={{ color: '#666', fontSize: '9px' }}>
+                        {new Date(thought.timestamp).toLocaleTimeString('en-US', { 
+                          hour: '2-digit', 
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <div style={{ color: '#ddd', fontSize: '10px', lineHeight: '1.3' }}>
+                      {thought.message}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* AI Traders Panel */}
+          {activeTab === 'aitraders' && (
+            <>
+              <div style={{
+                marginBottom: '12px',
+                paddingBottom: '8px',
+                borderBottom: '1px solid rgba(0, 150, 255, 0.3)'
+              }}>
+                <div style={{ color: '#0096ff', fontWeight: 'bold', fontSize: '13px' }}>
+                  🤖 AI TRADING TEAM
+                </div>
+              </div>
+              
+              {/* AI Trader Cards */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                maxHeight: 'calc(100vh - 240px)',
+                overflowY: 'auto'
+              }}>
+                {[
+                  {
+                    name: 'BULL RIDER',
+                    emoji: '🐂',
+                    color: '#00ff00',
+                    specialty: 'Long Momentum',
+                    thesis: 'Identifies and rides strong upward trends using technical indicators and volume analysis.',
+                    stats: { winRate: '68%', avgReturn: '+12.5%', trades: 342 }
+                  },
+                  {
+                    name: 'BEAR HUNTER',
+                    emoji: '🐻',
+                    color: '#ff4444',
+                    specialty: 'Short Positions',
+                    thesis: 'Finds overvalued assets and market inefficiencies for strategic short positions.',
+                    stats: { winRate: '71%', avgReturn: '+9.8%', trades: 198 }
+                  },
+                  {
+                    name: 'QUANT MASTER',
+                    emoji: '📊',
+                    color: '#ffdd00',
+                    specialty: 'Algorithmic Trading',
+                    thesis: 'Uses machine learning and statistical arbitrage to find alpha in market microstructure.',
+                    stats: { winRate: '83%', avgReturn: '+7.2%', trades: 1847 }
+                  },
+                  {
+                    name: 'MACRO SAGE',
+                    emoji: '🌍',
+                    color: '#0096ff',
+                    specialty: 'Global Macro',
+                    thesis: 'Analyzes global economic trends, policy changes, and geopolitical events for strategic positioning.',
+                    stats: { winRate: '75%', avgReturn: '+15.3%', trades: 89 }
+                  }
+                ].map((trader, idx) => (
+                  <div key={idx} style={{
+                    background: `linear-gradient(135deg, ${trader.color}10 0%, ${trader.color}05 100%)`,
+                    border: `1px solid ${trader.color}60`,
+                    borderRadius: '8px',
+                    padding: '12px',
+                    position: 'relative'
+                  }}>
+                    {/* Header */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      marginBottom: '10px'
+                    }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        background: `${trader.color}20`,
+                        border: `2px solid ${trader.color}`,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '20px'
+                      }}>
+                        {trader.emoji}
+                      </div>
+                      <div>
+                        <div style={{ 
+                          color: trader.color, 
+                          fontWeight: 'bold', 
+                          fontSize: '12px' 
+                        }}>
+                          {trader.name}
+                        </div>
+                        <div style={{ 
+                          color: '#888', 
+                          fontSize: '10px' 
+                        }}>
+                          {trader.specialty}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Thesis */}
+                    <div style={{
+                      marginBottom: '10px',
+                      padding: '8px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '4px',
+                      borderLeft: `2px solid ${trader.color}`
+                    }}>
+                      <div style={{ color: '#aaa', fontSize: '9px', marginBottom: '4px' }}>
+                        STRATEGY
+                      </div>
+                      <div style={{ color: '#ddd', fontSize: '10px', lineHeight: '1.4' }}>
+                        {trader.thesis}
+                      </div>
+                    </div>
+                    
+                    {/* Stats */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: '8px'
+                    }}>
+                      {Object.entries(trader.stats).map(([key, value]) => (
+                        <div key={key} style={{
+                          flex: 1,
+                          textAlign: 'center',
+                          padding: '6px',
+                          background: 'rgba(0, 0, 0, 0.2)',
+                          borderRadius: '4px'
+                        }}>
+                          <div style={{ color: '#888', fontSize: '8px', marginBottom: '2px' }}>
+                            {key === 'winRate' ? 'WIN RATE' : 
+                             key === 'avgReturn' ? 'AVG RETURN' : 
+                             'TRADES'}
+                          </div>
+                          <div style={{ 
+                            color: trader.color, 
+                            fontSize: '11px', 
+                            fontWeight: 'bold' 
+                          }}>
+                            {value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           {activeTab === 'candle' && typeof window !== 'undefined' && ReactDOM.createPortal(
             <div style={{
               position: 'fixed',
@@ -1753,7 +2119,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
     );
   }
 
-  // Desktop view - original layout
+  // Desktop view - original layout (deprecated - now using simplified UI for all screen sizes)
+  // This code should never be reached since we're always showing the simplified UI above
   return (
     <>
       <style>{`
