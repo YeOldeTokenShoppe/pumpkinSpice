@@ -7,7 +7,8 @@ import { createThirdwebClient, defineChain } from "thirdweb";
 // Create the client - you'll need to add your actual client ID
 // Get a free client ID at: https://thirdweb.com/dashboard
 const client = createThirdwebClient({
-  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "YOUR_CLIENT_ID_HERE",
+  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID
+  
 });
 
 const ThirdwebBuyModal = ({ isOpen, onClose }) => {
