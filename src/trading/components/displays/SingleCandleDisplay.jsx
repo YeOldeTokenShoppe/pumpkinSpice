@@ -1276,6 +1276,9 @@ function UserInfoOverlay({ userData }) {
   const message = userData.message || userData.prayer || 'May the gains be with you 🚀';
   const imageUrl = userData.image || userData.profileImage || '/defaultAvatar.png';
   
+  // Get viewport dimensions for mobile
+  const isMobileDevice = typeof window !== 'undefined' && window.innerWidth <= 768;
+  
   return (
     <div style={{
       position: 'absolute',
@@ -1285,7 +1288,8 @@ function UserInfoOverlay({ userData }) {
       background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 20, 0, 0.8) 50%, rgba(0, 0, 0, 0.85) 100%)',
       borderTop: '1px solid rgba(0, 255, 0, 0.2)',
       padding: '10px 12px',
-      paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
+      // More aggressive padding for mobile browsers
+      paddingBottom: isMobileDevice ? 'calc(3rem + env(safe-area-inset-bottom, 3rem))' : 'calc(12px + env(safe-area-inset-bottom, 0px))',
       backdropFilter: 'blur(8px)',
       boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.5)',
       zIndex: 10
@@ -1822,7 +1826,9 @@ export default function SingleCandleDisplay({ firestoreData, isUserCandle = fals
             height: '100%',
             margin: 0,
             padding: 0,
-            overflow: 'hidden'
+            overflow: 'hidden',
+            // Add bottom padding for mobile to push content above browser bar
+            paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0)' : 0
           }}>
           {isCanvasReady ? (
             <Canvas

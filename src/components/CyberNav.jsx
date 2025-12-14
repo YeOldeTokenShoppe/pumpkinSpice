@@ -74,7 +74,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
             position: position === "relative" ? "relative" : position,
             top: position === "relative" ? "0" : (position === "absolute" ? "10px" : "20px"),
             right: position === "relative" ? "0" : "20px",
-            zIndex: position === "relative" ? 1 : 2147483646,
+            zIndex: position === "relative" ? 1 : 9990,
             color: is80sMode ? "#D946EF" : "#ffffff",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             backdropFilter: "blur(10px)",
@@ -125,7 +125,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
               backgroundColor: "rgba(0, 0, 0, 0.95)",
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
-              zIndex: 2147483647,
+              zIndex: 9991,
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
@@ -152,7 +152,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                 cursor: "pointer",
                 padding: "10px",
                 fontSize: "24px",
-                zIndex: 2147483648
+                zIndex: 9992
               }}
               onClick={() => setIsMenuOpen(false)}
               aria-label="Close menu"

@@ -42,6 +42,7 @@ import BreathSmoke from "@/components/BreathSmoke";
 import SkewedHeading from "@/components/SkewedHeading";
 import AngelOfCurrencies from "@/components/AngelOfCurrencies";
 // import SlidingNav from "@/components/SlidingNav";
+import ThirdwebBuyModal from '@/components/ThirdwebBuyModal';
 // import CircularCTA from "@/components/CircularCTA";
 // import FeatureCarousel from "@/components/FeatureCarousel";
 // import { WatchlistSlide, Illumin80Slide, TradingDeskSlide, TokenomicsSlide } from "@/components/FeatureSlides";
@@ -485,7 +486,7 @@ const CSS3DScreenManager = () => {
 };
 
 // Drone component with built-in hover animation and scroll-based appearance
-const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrollY, isMobile = false, isSignedIn = false }) {
+const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrollY, isMobile = false, isSignedIn = false, onOpenBuyModal }) {
   const modelPath = isMobile ? '/models/drone_mobile.glb' : '/models/drone.glb';
   const { scene, animations } = useGLTF(modelPath);
   const groupRef = useRef();
@@ -833,7 +834,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.fillStyle = '#00ff41';
               ctx.font = 'bold 28px Courier New';
               ctx.textAlign = 'center';
-              ctx.fillText('DRONE SYSTEM', 256, 80);
+              ctx.fillText('DRONE SYSTEM', 256, 50);
               
               // Welcome terminal button with cyberpunk style
               const terminalBtnX = 56;
@@ -894,6 +895,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               // Navigation buttons - adjusted spacing for larger buttons
               const buttons = [
                 // { text: '◆ HOME', y: 230, url: '/' },
+                { text: '✨ BUY RL80', y: 80, action: 'openBuyModal', style: 'special' },  // Special buy button
                 { text: '▶ VIDEO MESSAGE', y: 230, action: 'playVideo', video: '/videos/23.mp4' },
                 { text: '▲ TRADING DESK', y: 300, url: '/temple' },
                 { text: '🔒 ILLUMIN80 [RESTRICTED]', y: 370, action: 'checkAccess', url: '/gallery3' },
@@ -913,6 +915,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 const isHovered = hoveredIndex === index + 1; // +1 because terminal button is index 0
                 const isVideoBtn = btn.action === 'playVideo';
                 const isRestrictedBtn = btn.action === 'checkAccess';
+                const isSpecialBtn = btn.style === 'special';
                 
                 // Draw cyberpunk-style button with cut corner
                 ctx.save();
@@ -926,7 +929,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 ctx.lineTo(btnX, btnY + btnHeight);
                 ctx.closePath();
                 
-                // Fill background - special color for video button and restricted button
+                // Fill background - special color for video button, restricted button, and special button
                 if (isHovered) {
                   // Glitch effect for hovered state
                   const glitchOffset = Math.random() * 2 - 1;
@@ -934,13 +937,15 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                     ctx.fillStyle = 'rgba(147, 51, 234, 0.3)'; // Purple for video
                   } else if (isRestrictedBtn) {
                     ctx.fillStyle = 'rgba(255, 0, 0, 0.3)'; // Red for restricted
+                  } else if (isSpecialBtn) {
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.3)'; // Gold for special
                   } else {
                     ctx.fillStyle = 'rgba(0, 255, 65, 0.2)';
                   }
                   ctx.fill();
                   
                   // Add glitch lines
-                  ctx.strokeStyle = isVideoBtn ? '#9333ea' : (isRestrictedBtn ? '#ff0000' : '#00ff41');
+                  ctx.strokeStyle = isVideoBtn ? '#9333ea' : (isRestrictedBtn ? '#ff0000' : (isSpecialBtn ? '#ffd700' : '#00ff41'));
                   ctx.lineWidth = 1;
                   ctx.globalAlpha = 0.5;
                   ctx.beginPath();
@@ -957,11 +962,13 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                   ctx.fill();
                 }
                 
-                // Draw border - different color for video button and restricted button
+                // Draw border - different color for video button, restricted button, and special button
                 if (isVideoBtn) {
                   ctx.strokeStyle = isHovered ? '#9333ea' : 'rgba(147, 51, 234, 0.8)';
                 } else if (isRestrictedBtn) {
                   ctx.strokeStyle = isHovered ? '#ff0000' : 'rgba(255, 0, 0, 0.8)';
+                } else if (isSpecialBtn) {
+                  ctx.strokeStyle = isHovered ? '#ffd700' : 'rgba(255, 215, 0, 0.8)';
                 } else {
                   ctx.strokeStyle = isHovered ? '#00ff41' : 'rgba(0, 255, 65, 0.8)';
                 }
@@ -977,6 +984,8 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                   ctx.strokeStyle = isHovered ? '#9333ea' : 'rgba(147, 51, 234, 0.6)';
                 } else if (isRestrictedBtn) {
                   ctx.strokeStyle = isHovered ? '#ff0000' : 'rgba(255, 0, 0, 0.6)';
+                } else if (isSpecialBtn) {
+                  ctx.strokeStyle = isHovered ? '#ffd700' : 'rgba(255, 215, 0, 0.6)';
                 } else {
                   ctx.strokeStyle = isHovered ? '#00ff41' : 'rgba(0, 255, 65, 0.6)';
                 }
@@ -986,12 +995,14 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 // No corner accent - matching terminal button style
                 
                 // Draw text with enhanced glow effect when hovered
-                ctx.shadowColor = isVideoBtn ? '#9333ea' : (isRestrictedBtn ? '#ff0000' : '#00ff41');
+                ctx.shadowColor = isVideoBtn ? '#9333ea' : (isRestrictedBtn ? '#ff0000' : (isSpecialBtn ? '#ffd700' : '#00ff41'));
                 ctx.shadowBlur = isHovered ? 25 : 15;  // Match terminal button glow
                 if (isVideoBtn) {
                   ctx.fillStyle = isHovered ? '#ffffff' : '#9333ea';
                 } else if (isRestrictedBtn) {
                   ctx.fillStyle = isHovered ? '#ffffff' : '#ff0000';
+                } else if (isSpecialBtn) {
+                  ctx.fillStyle = isHovered ? '#ffffff' : '#ffd700';
                 } else {
                   ctx.fillStyle = isHovered ? '#ffffff' : '#00ff41';
                 }
@@ -1344,6 +1355,16 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                     setTimeout(() => {
                       window.location.href = area.url;
                     }, 200);
+                  } else if (area.action === 'openBuyModal') {
+                    console.log('Opening Buy Modal');
+                    // Play accept sound
+                    sounds.accept.cloneNode(true).play().catch(err => {
+                      console.log('Accept sound play failed:', err);
+                    });
+                    // Call the prop function to open the modal
+                    if (onOpenBuyModal) {
+                      onOpenBuyModal();
+                    }
                   } else if (area.action === 'checkAccess') {
                     console.log('Checking access for ILLUMIN80');
                     // Check if user is authenticated
@@ -2846,6 +2867,7 @@ export default function Home3() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showNumerology, setShowNumerology] = useState(false);
   const [showDroneScreen, setShowDroneScreen] = useState(false);
+  const [showBuyModal, setShowBuyModal] = useState(false);
 
   // Refs
   const secondTitleRef = useRef(null);
@@ -3133,6 +3155,12 @@ export default function Home3() {
       {/* Loading Screen */}
       <CoinLoader loading={isSceneLoading} />
       
+      {/* Thirdweb Buy Modal */}
+      <ThirdwebBuyModal 
+        isOpen={showBuyModal} 
+        onClose={() => setShowBuyModal(false)} 
+      />
+      
       {/* Scroll Position Indicator */}
       {/* <div style={{
         position: 'fixed',
@@ -3242,6 +3270,7 @@ export default function Home3() {
               scrollY={scrollY}
               isMobile={isMobile}
               isSignedIn={isSignedIn}
+              onOpenBuyModal={() => setShowBuyModal(true)}
             />
             
             {/* Angel Model with playful swoop animation */}

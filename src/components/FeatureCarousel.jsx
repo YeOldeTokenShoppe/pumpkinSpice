@@ -224,6 +224,45 @@ const FeatureCarousel = ({ slides, autoRotate = true, rotationInterval = 6000 })
         </>
       )}
 
+      {/* Custom Action Button */}
+      <button
+        onClick={() => {
+          console.log('Custom action button clicked!');
+          window.parent.postMessage({ action: 'customButtonClick', timestamp: Date.now() }, '*');
+        }}
+        style={{
+          position: "absolute",
+          top: "1rem",
+          right: "1rem",
+          padding: "12px 24px",
+          background: "linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2))",
+          border: "2px solid rgba(255, 0, 255, 0.6)",
+          color: "#fff",
+          fontSize: "14px",
+          fontWeight: "bold",
+          letterSpacing: "1px",
+          textTransform: "uppercase",
+          borderRadius: "8px",
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+          backdropFilter: "blur(10px)",
+          boxShadow: "0 0 20px rgba(255, 0, 255, 0.3)",
+          zIndex: 30,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "linear-gradient(135deg, rgba(255, 0, 255, 0.4), rgba(0, 255, 255, 0.4))";
+          e.currentTarget.style.transform = "scale(1.05)";
+          e.currentTarget.style.boxShadow = "0 0 30px rgba(255, 0, 255, 0.5)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2))";
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "0 0 20px rgba(255, 0, 255, 0.3)";
+        }}
+      >
+        New Feature
+      </button>
+
       {/* Slide Indicators */}
       {slides.length > 1 && (
         <div

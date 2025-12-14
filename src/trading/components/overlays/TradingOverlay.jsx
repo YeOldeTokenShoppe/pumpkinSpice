@@ -436,7 +436,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
             {/* Chart Button */}
             <button
               onClick={() => {
-                setShowMobileMenu(true);
+                setActiveTab('stats');  // Go directly to stats instead of showing menu
                 // Clear trade notifications when viewing
                 setNotifications(prev => ({ ...prev, trades: 0 }));
               }}
@@ -583,106 +583,16 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
           </div>
         )}
 
-        {/* Menu Selection Panel */}
-        {showMobileMenu && !activeTab && (
-          <>
-            {/* Background Overlay */}
-            <div
-              onClick={() => setShowMobileMenu(false)}
-              style={{
-                position: 'fixed',
-                top: '0',
-                left: '0',
-                right: '0',
-                bottom: '0',
-                background: 'rgba(0, 0, 0, 0.4)',
-                zIndex: 998,
-                transition: 'all 0.3s ease'
-              }}
-            />
-            
-            {/* Menu Panel */}
-            <div style={{
-              position: 'fixed',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
-              border: '2px solid #00ff00',
-              borderRadius: '15px',
-              padding: '20px',
-              backdropFilter: 'blur(15px)',
-              boxShadow: '0 0 40px rgba(0, 255, 0, 0.4)',
-              zIndex: 999,
-              minWidth: '250px'
-            }}
-            onClick={(e) => e.stopPropagation()}>
-              <div style={{
-                color: '#00ff00',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                marginBottom: '15px',
-                textAlign: 'center',
-                fontFamily: 'monospace'
-              }}>
-                📊 TRADING DATA
-              </div>
-              
-              {[
-          
-                { key: 'stats', icon: '⚡', label: 'FUND STATS', color: '#00ff00' },
-                { key: 'macro', icon: '🌍', label: 'MACRO ANALYSIS', color: '#00ddff' },
-                { key: 'positions', icon: '📈', label: 'ACTIVE POSITIONS', color: '#ffdd00' },
-                { key: 'trades', icon: '📜', label: 'COMPLETED TRADES', color: '#ff8800' },
-                { key: 'candle', icon: '🕯️', label: 'CANDLELARIA', color: '#00ff88' }
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => {
-                    setActiveTab(tab.key);
-                    setShowMobileMenu(false);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 15px',
-                    marginBottom: '8px',
-                    background: `linear-gradient(90deg, ${tab.color}15 0%, transparent 100%)`,
-                    border: `1px solid ${tab.color}80`,
-                    borderRadius: '8px',
-                    color: tab.color,
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    fontFamily: 'monospace',
-                    textAlign: 'left'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = `linear-gradient(90deg, ${tab.color}25 0%, ${tab.color}10 100%)`;
-                    e.target.style.transform = 'scale(1.02)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = `linear-gradient(90deg, ${tab.color}15 0%, transparent 100%)`;
-                    e.target.style.transform = 'scale(1)';
-                  }}
-                >
-                  <div style={{ fontSize: '18px' }}>{tab.icon}</div>
-                  <div>{tab.label}</div>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
 
         {/* Content Panel */}
         {activeTab && (
           <>
             {/* Background Overlay */}
             <div
-              onClick={() => setActiveTab(null)}
+              onClick={() => {
+                setActiveTab(null);
+                setShowMobileMenu(false);  // Close menu when closing tab
+              }}
               style={{
                 position: 'fixed',
                 top: '0',
@@ -695,35 +605,6 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
               }}
             />
             
-            {/* Back Button */}
-            <button
-              onClick={() => {
-                setActiveTab(null);
-                setShowMobileMenu(true);
-              }}
-              style={{
-                position: 'fixed',
-                left: '20px',
-                top: '80px',
-                padding: '8px 12px',
-                background: 'linear-gradient(135deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 150, 0, 0.1) 100%)',
-                border: '1px solid rgba(0, 255, 0, 0.5)',
-                borderRadius: '8px',
-                color: '#00ff00',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                backdropFilter: 'blur(10px)',
-                zIndex: 1001,
-                fontFamily: 'monospace',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              ← MENU
-            </button>
 
             {/* Content Panel */}
             <div style={{
@@ -1780,7 +1661,9 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
               display: 'flex',
               flexDirection: 'column',
               zIndex: 99999,
-              isolation: 'isolate'
+              isolation: 'isolate',
+              // Add padding for mobile safe areas
+              paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0)' : 0
             }}>
               <div style={{
                 marginBottom: '12px',

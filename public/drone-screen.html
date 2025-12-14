@@ -420,6 +420,7 @@
         <div class="controls">
             <button class="control-btn" onclick="toggleView()">Switch View</button>
             <button class="control-btn" onclick="autoPlay()">Auto Play</button>
+            <button class="control-btn" onclick="handleNewButton()">New Action</button>
         </div>
     </div>
     
@@ -495,6 +496,51 @@
                 btn.textContent = 'Auto Play';
             }
         }
+        
+        function handleNewButton() {
+            // Add your custom action here
+            console.log('New button clicked!');
+            
+            // Example: Show an alert with animation
+            const message = document.createElement('div');
+            message.textContent = 'Action Executed!';
+            message.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                padding: 1rem 2rem;
+                background: #00ff41;
+                color: #000;
+                font-family: 'Courier New', monospace;
+                font-size: 1.5rem;
+                font-weight: bold;
+                border-radius: 10px;
+                box-shadow: 0 0 30px #00ff41;
+                z-index: 1000;
+                animation: fadeInOut 2s ease;
+            `;
+            document.body.appendChild(message);
+            
+            // Remove message after animation
+            setTimeout(() => {
+                message.remove();
+            }, 2000);
+            
+            // Send message to parent window if needed
+            window.parent.postMessage({ action: 'customAction', timestamp: Date.now() }, '*');
+        }
+        
+        // Add fadeInOut animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+                100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            }
+        `;
+        document.head.appendChild(style);
         
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
