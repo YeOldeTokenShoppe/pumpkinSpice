@@ -1279,12 +1279,13 @@ function UserInfoOverlay({ userData }) {
   return (
     <div style={{
       position: 'absolute',
-      bottom: '-1px', // Negative to ensure it reaches the edge
-      left: '-1px',
-      right: '-1px', 
+      bottom: '0',
+      left: '0',
+      right: '0', 
       background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 20, 0, 0.8) 50%, rgba(0, 0, 0, 0.85) 100%)',
       borderTop: '1px solid rgba(0, 255, 0, 0.2)',
-      padding: '10px 12px 11px 12px',
+      padding: '10px 12px',
+      paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
       backdropFilter: 'blur(8px)',
       boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.5)',
       zIndex: 10

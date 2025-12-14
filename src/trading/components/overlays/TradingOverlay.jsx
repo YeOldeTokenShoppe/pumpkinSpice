@@ -426,7 +426,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
         {!activeTab && (
           <div style={{
             position: 'fixed',
-            left: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
             bottom: '20px',
             display: 'flex',
             gap: '10px',
@@ -1981,69 +1982,102 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                       </div>
                       {/* Navigation controls when user has multiple candles */}
                       {userCandles.length > 1 && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '50px',
-                          right: '15px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '8px',
-                          alignItems: 'center',
-                          background: 'rgba(0, 0, 0, 0.9)',
-                          borderRadius: '12px',
-                          padding: '12px',
-                          border: '2px solid #00ff88',
-                          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.8)',
-                          zIndex: 1000
-                        }}>
+                        <>
+                          {/* Left Arrow */}
                           <button
                             onClick={() => {
-                              // console.log('Previous button clicked');
                               setUserCandleIndex(prev => (prev - 1 + userCandles.length) % userCandles.length);
                             }}
                             style={{
-                              background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
-                              border: '1px solid #00ff88',
-                              borderRadius: '6px',
-                              color: '#000',
-                              padding: '6px 10px',
+                              position: 'absolute',
+                              left: '10px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'rgba(0, 0, 0, 0.5)',
+                              border: '1px solid rgba(0, 255, 0, 0.2)',
+                              borderRadius: '50%',
+                              color: '#00ff88',
                               cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              minWidth: '50px'
+                              fontSize: '20px',
+                              width: '36px',
+                              height: '36px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s',
+                              zIndex: 1000
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
+                              e.currentTarget.style.borderColor = '#00ff88';
+                              e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                              e.currentTarget.style.borderColor = 'rgba(0, 255, 0, 0.2)';
+                              e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
                             }}
                           >
-                            ↑ Prev
+                            ‹
                           </button>
-                          <div style={{
-                            color: '#00ff88',
-                            fontSize: '11px',
-                            fontWeight: 'bold',
-                            textShadow: '0 0 5px #00ff88',
-                            textAlign: 'center'
-                          }}>
-                            {userCandleIndex + 1} of {userCandles.length}
-                          </div>
+                          
+                          {/* Right Arrow */}
                           <button
                             onClick={() => {
-                              // console.log('Next button clicked');
                               setUserCandleIndex(prev => (prev + 1) % userCandles.length);
                             }}
                             style={{
-                              background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
-                              border: '1px solid #00ff88',
-                              borderRadius: '6px',
-                              color: '#000',
-                              padding: '6px 10px',
+                              position: 'absolute',
+                              right: '10px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'rgba(0, 0, 0, 0.5)',
+                              border: '1px solid rgba(0, 255, 0, 0.2)',
+                              borderRadius: '50%',
+                              color: '#00ff88',
                               cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              minWidth: '50px'
+                              fontSize: '20px',
+                              width: '36px',
+                              height: '36px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s',
+                              zIndex: 1000
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
+                              e.currentTarget.style.borderColor = '#00ff88';
+                              e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                              e.currentTarget.style.borderColor = 'rgba(0, 255, 0, 0.2)';
+                              e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
                             }}
                           >
-                            Next ↓
+                            ›
                           </button>
-                        </div>
+                          
+                          {/* Page Indicator */}
+                          <div style={{
+                            position: 'absolute',
+                            top: '15px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            color: 'rgba(0, 255, 0, 0.6)',
+                            fontSize: '11px',
+                            fontWeight: '500',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(0, 255, 0, 0.1)',
+                            userSelect: 'none',
+                            zIndex: 999
+                          }}>
+                            {userCandleIndex + 1} / {userCandles.length}
+                          </div>
+                        </>
                       )}
                     </>
                   ) : (
@@ -2113,69 +2147,102 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                     </div>
                     {/* Navigation controls for community candles */}
                     {firestoreResults && firestoreResults.length > 1 && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '50px',
-                        right: '15px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        alignItems: 'center',
-                        background: 'rgba(0, 0, 0, 0.9)',
-                        borderRadius: '12px',
-                        padding: '12px',
-                        border: '2px solid #00ff88',
-                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.8)',
-                        zIndex: 1000
-                      }}>
+                      <>
+                        {/* Left Arrow */}
                         <button
                           onClick={() => {
-                            // console.log('Community Previous button clicked');
                             setCandleIndex(prev => (prev - 1 + firestoreResults.length) % firestoreResults.length);
                           }}
                           style={{
-                            background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
-                            border: '1px solid #00ff88',
-                            borderRadius: '6px',
-                            color: '#000',
-                            padding: '6px 10px',
+                            position: 'absolute',
+                            left: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            border: '1px solid rgba(0, 255, 0, 0.2)',
+                            borderRadius: '50%',
+                            color: '#00ff88',
                             cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            minWidth: '50px'
+                            fontSize: '20px',
+                            width: '36px',
+                            height: '36px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                            zIndex: 1000
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
+                            e.currentTarget.style.borderColor = '#00ff88';
+                            e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                            e.currentTarget.style.borderColor = 'rgba(0, 255, 0, 0.2)';
+                            e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
                           }}
                         >
-                          ↑ Prev
+                          ‹
                         </button>
-                        <div style={{
-                          color: '#00ff88',
-                          fontSize: '11px',
-                          fontWeight: 'bold',
-                          textShadow: '0 0 5px #00ff88',
-                          textAlign: 'center'
-                        }}>
-                          {candleIndex + 1} of {firestoreResults.length}
-                        </div>
+                        
+                        {/* Right Arrow */}
                         <button
                           onClick={() => {
-                            // console.log('Community Next button clicked');
                             setCandleIndex(prev => (prev + 1) % firestoreResults.length);
                           }}
                           style={{
-                            background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
-                            border: '1px solid #00ff88',
-                            borderRadius: '6px',
-                            color: '#000',
-                            padding: '6px 10px',
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            border: '1px solid rgba(0, 255, 0, 0.2)',
+                            borderRadius: '50%',
+                            color: '#00ff88',
                             cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            minWidth: '50px'
+                            fontSize: '20px',
+                            width: '36px',
+                            height: '36px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                            zIndex: 1000
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
+                            e.currentTarget.style.borderColor = '#00ff88';
+                            e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                            e.currentTarget.style.borderColor = 'rgba(0, 255, 0, 0.2)';
+                            e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
                           }}
                         >
-                          Next ↓
+                          ›
                         </button>
-                      </div>
+                        
+                        {/* Page Indicator */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '15px',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          color: 'rgba(0, 255, 0, 0.6)',
+                          fontSize: '11px',
+                          fontWeight: '500',
+                          background: 'rgba(0, 0, 0, 0.5)',
+                          padding: '4px 10px',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(0, 255, 0, 0.1)',
+                          userSelect: 'none',
+                          zIndex: 999
+                        }}>
+                          {candleIndex + 1} / {firestoreResults.length}
+                        </div>
+                      </>
                     )}
                   </>
                 )}
@@ -2192,9 +2259,11 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
           isOpen={showCompactCandleModal}
           onClose={() => {
             setShowCompactCandleModal(false);
+            setShowMobileMenu(false);  // Also close the menu panel
           }}
           onCandleCreated={() => {
             setShowCompactCandleModal(false);
+            setShowMobileMenu(false);  // Also close the menu panel
           }}
         />
       </>
@@ -4098,9 +4167,11 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
         isOpen={showCompactCandleModal}
         onClose={() => {
           setShowCompactCandleModal(false);
+          setShowMobileMenu(false);  // Also close the menu panel
         }}
         onCandleCreated={() => {
           setShowCompactCandleModal(false);
+          setShowMobileMenu(false);  // Also close the menu panel
         }}
       />
     </>

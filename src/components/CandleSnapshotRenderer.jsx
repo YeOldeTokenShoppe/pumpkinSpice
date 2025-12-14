@@ -484,49 +484,142 @@ export default function CandleSnapshotRenderer({
   
   return (
     <>
-      {/* Loading indicator */}
+      {/* Loading indicator with full-screen backdrop */}
       {showLoading && isVisible && (
-        <div style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 99998,
-          background: 'rgba(0, 0, 0, 0.8)',
-          padding: '30px 40px',
-          borderRadius: '15px',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '15px'
-        }}>
+        <>
+          {/* Full screen backdrop with blur */}
           <div style={{
-            width: '50px',
-            height: '50px',
-            border: '3px solid rgba(255, 255, 255, 0.1)',
-            borderTop: '3px solid #ffa500',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            zIndex: 99997,
+            animation: 'fadeIn 0.3s ease',
           }} />
+          
+          {/* Centered message card */}
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 99998,
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+            padding: '40px 50px',
+            borderRadius: '20px',
+            border: '2px solid rgba(0, 255, 0, 0.3)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8), 0 0 120px rgba(0, 255, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '25px',
+            animation: 'slideUp 0.4s ease',
+            minWidth: '320px'
+          }}>
+            {/* Success header */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <div style={{
+                fontSize: '48px',
+                animation: 'bounce 1s ease infinite'
+              }}>
+                🕯️
+              </div>
+              <h2 style={{
+                color: '#00ff00',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                margin: 0,
+                textAlign: 'center',
+                textShadow: '0 0 20px rgba(0, 255, 0, 0.5)'
+              }}>
+                Your candle has been lit! ✨
+              </h2>
+            </div>
+            
+            {/* Loading animation */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '15px'
+            }}>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: 'conic-gradient(from 0deg, transparent, #00ff00)',
+                animation: 'spin 1s linear infinite',
+                boxShadow: '0 0 20px rgba(0, 255, 0, 0.5)'
+              }} />
+              <div style={{
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '16px',
+                fontWeight: '400'
+              }}>
+                Creating your snapshot...
+              </div>
+            </div>
+            
+            {/* Progress dots */}
+            <div style={{
+              display: 'flex',
+              gap: '8px'
+            }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: 'rgba(0, 255, 0, 0.5)',
+                  animation: `pulse 1.5s ease infinite ${i * 0.3}s`
+                }} />
+              ))}
+            </div>
+          </div>
+          
           <style jsx>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes slideUp {
+              from { 
+                opacity: 0;
+                transform: translate(-50%, -40%);
+              }
+              to { 
+                opacity: 1;
+                transform: translate(-50%, -50%);
+              }
+            }
             @keyframes spin {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
             }
+            @keyframes bounce {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-10px); }
+            }
+            @keyframes pulse {
+              0%, 100% { 
+                opacity: 0.3;
+                transform: scale(1);
+              }
+              50% { 
+                opacity: 1;
+                transform: scale(1.2);
+              }
+            }
           `}</style>
-          <div style={{
-            color: 'white',
-            fontSize: '18px',
-            fontWeight: '500',
-            textAlign: 'center'
-          }}>
-            <div>🕯️ Your candle has been lit! ✨</div>
-            <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.9 }}>
-              Creating your snapshot...
-            </div>
-          </div>
-        </div>
+        </>
       )}
       
       {/* Hidden canvas for rendering the candle */}
