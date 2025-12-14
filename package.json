@@ -62,6 +62,10 @@
     "wouter": "^3.7.1"
   },
   "devDependencies": {
+    "@babel/generator": "^7.28.5",
+    "@babel/parser": "^7.28.5",
+    "@babel/traverse": "^7.28.5",
+    "@babel/types": "^7.28.5",
     "@tailwindcss/postcss": "^4",
     "pino-pretty": "^13.1.1",
     "raw-loader": "^4.0.2",

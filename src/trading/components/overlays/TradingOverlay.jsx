@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRandomCandles } from '@/utilities/useRandomCandles';
 import CompactCandleModal from '@/components/CompactCandleModal';
 import NotificationBadge from '@/components/NotificationBadge';
 import { useUser } from '@clerk/nextjs';
+import { db, collection, onSnapshot, query, orderBy, limit } from '@/utilities/firebaseClient';
 
 // Dynamically import SingleCandleDisplay to avoid SSR issues with Three.js
 const SingleCandleDisplay = dynamic(() => import('../displays/SingleCandleDisplay'), {
@@ -37,12 +38,16 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
   const [showAddCandleModal, setShowAddCandleModal] = useState(false); // Modal for adding user's candle
   const [showCompactCandleModal, setShowCompactCandleModal] = React.useState(false); // Modal for CompactCandleModal
   
-  // Notification states for the three buttons
+  // Notification states for all buttons
   const [notifications, setNotifications] = useState({
     trades: 0,      // For 📊 Trading Data & Positions
     messages: 0,    // For 💬 Team Chat
-    analyses: 0     // For 🤖 AI Traders
+    analyses: 0,    // For 🤖 AI Traders
+    candles: 0      // For 🕯️ Candlelaria
   });
+  
+  // Track the last seen candle timestamp to detect new ones
+  const lastCandleTimestamp = useRef(null);
   
   // Simulate notifications for demo (remove in production)
   useEffect(() => {
@@ -80,6 +85,46 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
   
   // Get user info from Clerk
   const { user, isSignedIn } = useUser();
+  
+  // Monitor Firestore for new candles
+  useEffect(() => {
+    if (!db) return;
+    
+    try {
+      // Query to get the most recent candles
+      const candlesQuery = query(
+        collection(db, 'candles'),
+        orderBy('createdAt', 'desc'),
+        limit(10)
+      );
+      
+      // Set up real-time listener
+      const unsubscribe = onSnapshot(candlesQuery, (snapshot) => {
+        if (!snapshot.empty) {
+          const latestCandle = snapshot.docs[0].data();
+          const latestTimestamp = latestCandle.createdAt?.toMillis?.() || latestCandle.createdAt;
+          
+          // Check if this is a new candle (not the initial load)
+          if (lastCandleTimestamp.current && latestTimestamp > lastCandleTimestamp.current) {
+            // New candle detected - increment notification
+            setNotifications(prev => ({
+              ...prev,
+              candles: Math.min(prev.candles + 1, 99)
+            }));
+          }
+          
+          // Update the last seen timestamp
+          lastCandleTimestamp.current = latestTimestamp;
+        }
+      }, (error) => {
+        console.error('Error monitoring candles:', error);
+      });
+      
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Error setting up candle listener:', error);
+    }
+  }, []);
   
   // Get random selection of candles (user's + random community candles)
   const firestoreResults = useRandomCandles(25); // Get max 25 candles total
@@ -492,6 +537,43 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
               🤖
               <NotificationBadge 
                 count={notifications.analyses}
+                color="#ff0041"
+                pulse={true}
+                position="top-right"
+              />
+            </button>
+            
+            {/* Candle Display Button */}
+            <button
+              onClick={() => {
+                setActiveTab('candle');
+                // Clear candle notifications when viewing
+                setNotifications(prev => ({ ...prev, candles: 0 }));
+              }}
+              style={{
+                position: 'relative',
+                width: '60px',
+                height: '60px',
+                background: 'linear-gradient(135deg, rgba(255, 136, 0, 0.9) 0%, rgba(200, 100, 0, 0.7) 100%)',
+                border: '2px solid #ff8800',
+                borderRadius: '50%',
+                color: '#000',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 0 25px rgba(255, 136, 0, 0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'monospace'
+              }}
+              title="Candlelaria"
+            >
+              🕯️
+              <NotificationBadge 
+                count={notifications.candles}
                 color="#ff0041"
                 pulse={true}
                 position="top-right"

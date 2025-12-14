@@ -2,6 +2,8 @@ import React, { useState, Suspense, useRef, useEffect, useCallback } from 'react
 import ReactDOM from 'react-dom';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useTexture } from '@react-three/drei';
+
+// Preload the candle model to improve performance
 useGLTF.preload('/models/singleCandleAnimatedFlamePreview.glb');
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -12,29 +14,31 @@ import { ScrambleTextPlugin } from 'gsap/dist/ScrambleTextPlugin';
 import { encryptMessage, generateScrambledDisplay } from '@/utilities/encryption';
 import { generatePrayer, getRemainingPrayers, PRAYER_PROMPTS } from '@/utilities/aiPrayers';
 import { useUser } from '@clerk/nextjs';
+// Removed BurningEffect import - no longer needed
 import './CompactCandleModal.css';
 import { useFirestoreResults } from '@/utilities/useFirestoreResults';
 import CandleSnapshotRenderer from './CandleSnapshotRenderer';
+
+// Register GSAP plugin
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrambleTextPlugin);
 }
-const LANGUAGE_NAMES = {
-  en: 'English',
-  es: 'Spanish',
-  pt: 'Portuguese',
-  fr: 'French',
-  it: 'Italian',
-  zh: 'Chinese',
-  hi: 'Hindi'
-};
+
+// Language names for display
+
+// Detect user language (fallback to English)
 const getUserLanguage = () => {
+  // Check if we're on the client side
   if (typeof window === 'undefined') {
-    return 'en';
+    return 'en'; // Default to English on server
   }
   const lang = navigator.language || navigator.userLanguage || 'en';
   const shortLang = lang.substring(0, 2).toLowerCase();
+  // Return supported language or default to English
   return ['es', 'pt', 'zh', 'hi', 'fr', 'it'].includes(shortLang) ? shortLang : 'en';
 };
+
+// Multi-language prayers
 const PRAYERS_BY_LANGUAGE = {
   en: {
     heading: ['Prayer to Our Lady', 'of Perpetual Profit'],
@@ -205,9 +209,13 @@ const PRAYERS_BY_LANGUAGE = {
     }]
   }
 };
-const PRAYERS = PRAYERS_BY_LANGUAGE[getUserLanguage()]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
+
+// Get current language prayers (defaults to English)
+
+// Cache for hands overlay image
 let cachedHandsImage = null;
 let handsImageCallbacks = [];
+// 3D Candle Component
 function CandlePreview({
   imageUrl,
   message,
@@ -240,6 +248,8 @@ function CandlePreview({
   const mixerRef = useRef(null);
   const [userTexture, setUserTexture] = useState(null);
   const [textTexture, setTextTexture] = useState(null);
+
+  // Flip and enhance default texture
   useEffect(() => {
     if (defaultTexture) {
       defaultTexture.wrapS = THREE.ClampToEdgeWrapping;
@@ -253,27 +263,41 @@ function CandlePreview({
       defaultTexture.needsUpdate = true;
     }
   }, [defaultTexture]);
+
+  // Load user image as texture if provided
   useEffect(() => {
+    // Clean up previous texture
     if (userTexture) {
       userTexture.dispose();
       setUserTexture(null);
     }
     if (imageUrl && imageUrl !== '/defaultAvatar.png') {
+      // console.log('Loading user texture from:', imageUrl.substring(0, 50) + '...');
       const loader = new THREE.TextureLoader();
+
+      // Don't add timestamp to data URLs (base64 images)
       const finalUrl = imageUrl.startsWith('data:') ? imageUrl : `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+
+      // For Clerk images, we need to handle CORS properly
       loader.setCrossOrigin('anonymous');
       loader.load(finalUrl, texture => {
+        // High quality texture settings
         texture.wrapS = THREE.ClampToEdgeWrapping;
         texture.wrapT = THREE.ClampToEdgeWrapping;
-        texture.repeat.set(1, -1);
-        texture.offset.set(0, 1);
+        texture.repeat.set(1, -1); // Flip vertically
+        texture.offset.set(0, 1); // Adjust offset after flipping
+
+        // Improve texture quality
         texture.minFilter = THREE.LinearMipMapLinearFilter;
         texture.magFilter = THREE.LinearFilter;
-        texture.anisotropy = 16;
+        texture.anisotropy = 16; // Maximum anisotropic filtering
         texture.generateMipmaps = true;
         texture.needsUpdate = true;
         setUserTexture(texture);
+        // console.log('User texture loaded successfully with high quality settings');
       }, undefined, error => {
+        console.error('Error loading texture:', error);
+        // If texture loading fails, try loading it as an image first
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
@@ -284,8 +308,10 @@ function CandlePreview({
           texture.offset.set(0, 1);
           texture.needsUpdate = true;
           setUserTexture(texture);
+          // console.log('User texture loaded via Image fallback');
         };
         img.onerror = () => {
+          console.error('Failed to load image even with fallback');
           setUserTexture(null);
         };
         img.src = finalUrl;
@@ -293,20 +319,28 @@ function CandlePreview({
     } else {
       setUserTexture(null);
     }
+
+    // Cleanup function
     return () => {
       if (userTexture) {
         userTexture.dispose();
       }
     };
   }, [imageUrl]);
+
+  // Store references to Label meshes
   const label1MeshRef = useRef(null);
   const label2MeshRef = useRef(null);
   const lastSuccessfulImageUrl = useRef(null);
   const lastTexture = useRef(null);
   const effectActive = useRef(false);
+
+  // Clone scene once and store reference
   useEffect(() => {
     if (scene) {
       clonedSceneRef.current = scene.clone();
+
+      // Set up animation mixer for the flame
       if (animations && animations.length > 0) {
         mixerRef.current = new THREE.AnimationMixer(clonedSceneRef.current);
         animations.forEach(clip => {
@@ -321,43 +355,63 @@ function CandlePreview({
       }
     };
   }, [scene, animations]);
+
+  // Find Label meshes in the cloned scene
   useEffect(() => {
     if (clonedSceneRef.current) {
+      // Reset refs first
       label1MeshRef.current = null;
       label2MeshRef.current = null;
       clonedSceneRef.current.traverse(child => {
         if (child.isMesh) {
           if (child.name === 'Label1' || child.name.includes('Label1')) {
             label1MeshRef.current = child;
+            // console.log('Found Label1 mesh in cloned scene:', child.name, child.scale, child.visible);
+            // Make sure it's visible
             child.visible = true;
           }
           if (child.name === 'Label2' || child.name.includes('Label2')) {
             label2MeshRef.current = child;
+            // console.log('Found Label2 mesh in cloned scene:', child.name);
           }
         }
       });
     }
-  }, [clonedSceneRef.current]);
+  }, [clonedSceneRef.current]); // Re-find labels when cloned scene changes
+
+  // Create text texture for Label1
   useEffect(() => {
     if (!label1MeshRef.current) return;
+
+    // Create canvas for text
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 1024;
     const ctx = canvas.getContext('2d');
+
+    // Enable better text rendering
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
+
+    // Fill parchment background
     ctx.fillStyle = '#F4E8D0';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add subtle border
     ctx.strokeStyle = '#e0e0e0';
     ctx.lineWidth = 2;
     ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+    // Check if we have a message to display
     if (!message || !message.trim()) {
+      // Show placeholder text when empty
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Your message here', canvas.width / 2, canvas.height / 2);
     } else {
+      // Add title heading
       const headingText = PRAYERS_BY_LANGUAGE[language]?.heading || PRAYERS_BY_LANGUAGE.en.heading;
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
@@ -365,49 +419,73 @@ function CandlePreview({
       ctx.textBaseline = 'middle';
       ctx.fillText(headingText[0], canvas.width / 2, 80);
       ctx.fillText(headingText[1], canvas.width / 2, 130);
+
+      // Add divider line
       ctx.strokeStyle = '#333333';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(canvas.width * 0.2, 160);
       ctx.lineTo(canvas.width * 0.8, 160);
       ctx.stroke();
+
+      // Add encryption header if encrypted
       let displayMessage = message;
-      let headerHeight = 180;
+      let headerHeight = 180; // Start content below title
+
       if (isEncrypted) {
+        // Draw encryption header
         ctx.fillStyle = '#ff6600';
         ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('This prayer has been encrypted:', canvas.width / 2, 210);
-        headerHeight = 250;
+        headerHeight = 250; // Space after encryption header
       }
+
+      // Configure text - black color with better rendering
       ctx.fillStyle = '#000000';
+      // Adjust font size based on message length (scaled for higher res)
       const fontSize = displayMessage.length > 200 ? 40 : displayMessage.length > 100 ? 48 : 56;
       ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+
+      // Word wrap function with better support for Chinese/Hindi
       const wrapText = (text, maxWidth) => {
+        // Check if text is Chinese (contains Chinese characters)
         const isChinese = /[\u4e00-\u9fff]/.test(text);
+        // Check if text is Hindi (contains Devanagari script)
+
+        // For encrypted text (no spaces), break by character limit
         if (isEncrypted && !text.includes(' ')) {
           const lines = [];
-          const charsPerLine = Math.floor(maxWidth / (fontSize * 0.6));
+          const charsPerLine = Math.floor(maxWidth / (fontSize * 0.6)); // Approximate char width
+
           for (let i = 0; i < text.length; i += charsPerLine) {
             lines.push(text.substring(i, i + charsPerLine));
           }
           return lines;
         }
+
+        // For Chinese text, break by character count since there are no spaces
         if (isChinese) {
           const lines = [];
           let currentLine = '';
+
+          // Chinese characters are roughly square, so we can estimate better
           const charsPerLine = Math.floor(maxWidth / (fontSize * 0.9));
           for (let i = 0; i < text.length; i++) {
             currentLine += text[i];
+
+            // Check actual width and break if too long
             if (ctx.measureText(currentLine).width > maxWidth || currentLine.length >= charsPerLine) {
+              // Try to break at punctuation if possible
               const lastPunc = currentLine.search(/[，。！？；：、]/);
               if (lastPunc > currentLine.length * 0.6) {
                 lines.push(currentLine.substring(0, lastPunc + 1));
                 currentLine = currentLine.substring(lastPunc + 1);
               } else if (currentLine.length > 1) {
+                // Break at last character that fits
                 lines.push(currentLine.substring(0, currentLine.length - 1));
                 currentLine = text[i];
               }
@@ -418,6 +496,8 @@ function CandlePreview({
           }
           return lines;
         }
+
+        // For Hindi and other scripts, use improved word wrapping
         const words = text.split(' ');
         const lines = [];
         let currentLine = '';
@@ -427,6 +507,8 @@ function CandlePreview({
           if (metrics.width > maxWidth && currentLine) {
             lines.push(currentLine);
             currentLine = word;
+
+            // If single word is too long (common in Hindi compounds), break it
             if (ctx.measureText(word).width > maxWidth) {
               const chars = word.split('');
               let tempWord = '';
@@ -449,9 +531,13 @@ function CandlePreview({
         }
         return lines;
       };
-      const lines = wrapText(displayMessage, canvas.width - 120);
-      const lineHeight = displayMessage.length > 200 ? 60 : 80;
-      const startY = headerHeight + 40;
+
+      // Draw wrapped text with better quality
+      const lines = wrapText(displayMessage, canvas.width - 120); // Adjusted for higher res
+      const lineHeight = displayMessage.length > 200 ? 60 : 80; // Scaled for higher res
+      const startY = headerHeight + 40; // Always position text below the header/title
+
+      // Add subtle shadow for better text quality
       ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
       ctx.shadowBlur = 2;
       ctx.shadowOffsetX = 1;
@@ -460,21 +546,30 @@ function CandlePreview({
         ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
       });
     }
+
+    // Create high-quality texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.repeat.set(-1, -1);
-    texture.offset.set(1, 1);
-    texture.flipY = false;
+    texture.repeat.set(-1, -1); // Flip both X and Y for Label1
+    texture.offset.set(1, 1); // Adjust offset after flipping both axes
+    texture.flipY = false; // Ensure texture is not flipped vertically
+
+    // Improve texture quality settings
     texture.minFilter = THREE.LinearMipMapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
-    texture.anisotropy = 16;
+    texture.anisotropy = 16; // Maximum anisotropic filtering
     texture.generateMipmaps = true;
     texture.needsUpdate = true;
     setTextTexture(texture);
-  }, [message, isEncrypted, language]);
+  }, [message, isEncrypted, language]); // Recreate texture when message, encryption, or language changes
+
+  // Apply text texture to Label1
   useEffect(() => {
     if (label1MeshRef.current && textTexture) {
+      // console.log('Applying text to Label1', label1MeshRef.current);
+
+      // Simply apply the texture without modifying geometry
       label1MeshRef.current.material = new THREE.MeshStandardMaterial({
         map: textTexture,
         transparent: true,
@@ -485,11 +580,24 @@ function CandlePreview({
       label1MeshRef.current.visible = true;
     }
   }, [textTexture]);
+
+  // Create combined texture with image and username for Label2
   useEffect(() => {
     if (!label2MeshRef.current) return;
+
+    // Generate unique ID for this effect run
+
+    // Debounce to prevent multiple rapid executions
     const timeoutId = setTimeout(() => {
+      // Set active flag
       effectActive.current = true;
+
+      // console.log('Effect starting for template:', template === '/images/face.png' ? 'Virgin Mary' : 'Other', 'effectId:', effectId);
+
+      // Use the current imageUrl if available, otherwise use the last successful one
       const currentImageUrl = imageUrl || lastSuccessfulImageUrl.current;
+
+      // Update the last successful image URL if we have a valid one
       if (imageUrl && imageUrl !== '/defaultAvatar.png') {
         lastSuccessfulImageUrl.current = imageUrl;
       }
@@ -497,30 +605,72 @@ function CandlePreview({
       canvas.width = 1024;
       canvas.height = 1024;
       const ctx = canvas.getContext('2d');
+
+      // Fill background with a light color for better visibility
       ctx.fillStyle = '#f5f5f5';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Function to draw image with template overlay if selected
       const drawImageWithTemplate = (img, templateImg = null, handsImg = null) => {
+        // console.log('drawImageWithTemplate called:', {
+        //   drawId,
+        //   effectId,
+        //   hasImg: !!img,
+        //   imgSize: img ? {w: img.width, h: img.height} : null,
+        //   hasTemplate: !!templateImg, 
+        //   hasHands: !!handsImg,
+        //   template,
+        //   effectActive: effectActive.current
+        // });
+        // Check if this is likely a Clerk letter avatar (small dimensions)
+
+        // console.log('isLetterAvatar:', isLetterAvatar, 'img dimensions:', img.width, 'x', img.height);
+
+        // Draw the image (leave space at bottom for name)
         const imageHeight = username ? canvas.height * 0.9 : canvas.height;
+
+        // console.log('Template check - templateImg:', !!templateImg);
         if (templateImg) {
+          // When template is used, apply positioning
+
+          // Fill with a base color first for areas not covered
           ctx.fillStyle = '#f5f5f5';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // FIRST: Draw template image (underneath)
           ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+
+          // SECOND: Draw user image
           ctx.save();
+
+          // Calculate positioned dimensions - use circle
           const scaleFactor = userImageScale / 100;
           const baseSize = Math.min(canvas.width, canvas.height) * 0.4;
+
+          // console.log('User image dimensions:', {width: img.width, height: img.height, src: img.src?.substring(0, 50)});
+
+          // Fix for tiny images
           const actualWidth = img.width <= 10 ? 200 : img.width;
           const actualHeight = img.height <= 10 ? 200 : img.height;
           const aspectRatio = actualWidth / actualHeight;
+
+          // Circle size
           const circleSize = baseSize * scaleFactor;
           const radius = circleSize / 2;
+
+          // Calculate the image draw size to cover the circle while maintaining aspect ratio
           let drawWidth, drawHeight;
           if (aspectRatio > 1) {
+            // Image is wider - fit to height
             drawHeight = circleSize;
             drawWidth = circleSize * aspectRatio;
           } else {
+            // Image is taller or square - fit to width
             drawWidth = circleSize;
             drawHeight = circleSize / aspectRatio;
           }
+
+          // Apply rotation
           if (userImageRotation !== 0) {
             const centerX = userImagePosition.x / 100 * canvas.width;
             const centerY = userImagePosition.y / 100 * canvas.height;
@@ -528,39 +678,74 @@ function CandlePreview({
             ctx.rotate(userImageRotation * Math.PI / 180);
             ctx.translate(-centerX, -centerY);
           }
+
+          // Create circular clipping path
           ctx.save();
           ctx.beginPath();
           const centerX = userImagePosition.x / 100 * canvas.width;
           const centerY = userImagePosition.y / 100 * canvas.height;
-          const yCompressionFactor = 0.7;
-          ctx.ellipse(centerX, centerY, radius, radius * yCompressionFactor, 0, 0, Math.PI * 2);
+
+          // Compress the Y-axis for cylinder projection
+          // Adjust this compression factor based on your cylinder's curvature
+          const yCompressionFactor = 0.7; // Start with 0.7, adjust as needed (lower = more compressed)
+
+          // Create an elliptical clipping path (compressed on Y-axis)
+          ctx.ellipse(centerX, centerY, radius,
+          // X radius (unchanged)
+          radius * yCompressionFactor,
+          // Y radius (compressed)
+          0,
+          // rotation
+          0,
+          // start angle
+          Math.PI * 2 // end angle
+          );
           ctx.clip();
+
+          // Also compress the drawn image on Y-axis
           ctx.drawImage(img, centerX - drawWidth / 2, centerY - drawHeight * yCompressionFactor / 2, drawWidth, drawHeight * yCompressionFactor);
           ctx.restore();
           ctx.restore();
+
+          // THIRD: Draw hands/feet overlay if provided (on top)
           if (handsImg && handsImg.complete) {
+            // console.log('Drawing hands overlay');
+            // Save the current composite operation
             const prevComposite = ctx.globalCompositeOperation;
+            // Use source-over to preserve transparency
             ctx.globalCompositeOperation = 'source-over';
             if (skinToneAdjustment !== 0) {
+              // Create temporary canvas for color adjustment
               const tempCanvas = document.createElement('canvas');
               tempCanvas.width = canvas.width;
               tempCanvas.height = canvas.height;
               const tempCtx = tempCanvas.getContext('2d');
+
+              // Draw hands/feet to temp canvas
               tempCtx.drawImage(handsImg, 0, 0, canvas.width, canvas.height);
+
+              // Get image data for manipulation
               const imageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
               const data = imageData.data;
+
+              // Apply color adjustment
               for (let i = 0; i < data.length; i += 4) {
                 if (data[i + 3] > 0) {
+                  // Only adjust non-transparent pixels
                   const r = data[i];
                   const g = data[i + 1];
                   const b = data[i + 2];
+
+                  // Simple adjustment approach
                   let newR, newG, newB;
                   if (skinToneAdjustment < 0) {
+                    // Lighter skin tone - add brightness
                     const lightness = Math.abs(skinToneAdjustment) / 100;
                     newR = Math.min(255, r + (255 - r) * lightness * 0.5);
                     newG = Math.min(255, g + (255 - g) * lightness * 0.5);
                     newB = Math.min(255, b + (255 - b) * lightness * 0.6);
                   } else {
+                    // Darker skin tone - reduce brightness more aggressively and shift toward brown
                     const darkness = skinToneAdjustment / 100;
                     newR = Math.max(0, r - r * darkness * 0.5);
                     newG = Math.max(0, g - g * darkness * 0.6);
@@ -571,34 +756,55 @@ function CandlePreview({
                   data[i + 2] = newB;
                 }
               }
+
+              // Put adjusted image back
               tempCtx.putImageData(imageData, 0, 0);
+
+              // Draw adjusted hands/feet to main canvas (full size to match template)
               ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
             } else {
+              // No adjustment - draw directly (full size to match template)
               ctx.drawImage(handsImg, 0, 0, canvas.width, canvas.height);
             }
+
+            // Restore composite operation
             ctx.globalCompositeOperation = prevComposite;
           }
         } else {
+          // No template - always draw full size to fill the canvas
+          // console.log('No template path - drawing image to fill canvas');
+          // console.log('Drawing non-template image to fill canvas:', canvas.width, 'x', canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
+
+        // Draw username if provided
         if (username && username.trim()) {
+          // Create gradient background for text
           const gradient = ctx.createLinearGradient(0, imageHeight, 0, canvas.height);
           gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
           gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
           ctx.fillStyle = gradient;
           ctx.fillRect(0, imageHeight, canvas.width, canvas.height - imageHeight);
+
+          // Draw the username
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
+
+          // Just the name, no prefix
           const nameText = username;
           const textY = imageHeight + (canvas.height - imageHeight) / 2;
+
+          // Add text shadow for better readability
           ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
           ctx.shadowBlur = 4;
           ctx.shadowOffsetX = 2;
           ctx.shadowOffsetY = 2;
           ctx.fillText(nameText, canvas.width / 2, textY);
         }
+
+        // Create texture from canvas
         const texture = new THREE.CanvasTexture(canvas);
         texture.wrapS = THREE.ClampToEdgeWrapping;
         texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -609,11 +815,18 @@ function CandlePreview({
         texture.anisotropy = 16;
         texture.generateMipmaps = true;
         texture.needsUpdate = true;
+
+        // Apply texture to Label2
+        // console.log('Applying texture to Label2, effectActive:', effectActive.current);
         if (label2MeshRef.current && label2MeshRef.current.material) {
+          // Don't dispose textures - just replace
           label2MeshRef.current.material.map = texture;
           label2MeshRef.current.material.needsUpdate = true;
+          // Save this texture as the last successful one
           lastTexture.current = texture;
+          // console.log('Texture applied successfully');
         } else if (label2MeshRef.current) {
+          // console.log('Creating new material with texture');
           label2MeshRef.current.material = new THREE.MeshStandardMaterial({
             map: texture,
             emissive: new THREE.Color(0xff6600),
@@ -625,16 +838,31 @@ function CandlePreview({
           });
         }
       };
+
+      // Load and draw the appropriate image
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      img.crossOrigin = 'anonymous'; // Enable CORS for external images
+
+      // Handle template loading if one is selected
       if (template) {
+        // console.log('Starting template load:', template === '/images/face2.png' ? 'Virgin Mary' : template);
         const templateImg = new Image();
         templateImg.crossOrigin = 'anonymous';
+
+        // Load the main template first
         templateImg.onload = () => {
+          // console.log('Template loaded, loading user image next');
+          // Set up the user image loading
           img.onload = () => {
             if (!effectActive.current) return;
+
+            // Capture the user image reference to prevent it from being modified
             const userImg = img;
+
+            // Always ensure we draw at least once
             drawImageWithTemplate(userImg, templateImg, null);
+
+            // Load and redraw with hands overlay for Virgin Mary if needed
             if (template === '/images/face2.png') {
               const handsImg = new Image();
               handsImg.crossOrigin = 'anonymous';
@@ -643,16 +871,22 @@ function CandlePreview({
                   drawImageWithTemplate(userImg, templateImg, handsImg);
                 }
               };
-              handsImg.onerror = () => {};
+              handsImg.onerror = () => {
+                console.error('Failed to load hands overlay');
+              };
               handsImg.src = '/images/FeetHands.png';
             }
           };
           img.onerror = () => {
+            // Use a default placeholder image
             const placeholderImg = new Image();
             placeholderImg.crossOrigin = 'anonymous';
             placeholderImg.onload = () => {
               if (effectActive.current) {
+                // Draw immediately without hands first
                 drawImageWithTemplate(placeholderImg, templateImg, null);
+
+                // Load and redraw with hands overlay for Virgin Mary if needed
                 if (template === '/images/face2.png') {
                   const handsImg = new Image();
                   handsImg.crossOrigin = 'anonymous';
@@ -667,13 +901,17 @@ function CandlePreview({
             };
             placeholderImg.src = '/defaultAvatar.png';
           };
+
+          // Load user image
           if (currentImageUrl && currentImageUrl !== '/defaultAvatar.png') {
             img.src = currentImageUrl;
           } else {
+            // No custom image, use default avatar
             img.src = '/defaultAvatar.png';
           }
         };
         templateImg.onerror = () => {
+          // Fallback to drawing without template
           if (effectActive.current) {
             img.onload = () => {
               if (effectActive.current) {
@@ -684,10 +922,16 @@ function CandlePreview({
           }
         };
         templateImg.src = template;
+      } else {
+        // Non-template path handled below
       }
       img.onerror = () => {
+        console.error('Failed to load image for Label2');
+        // Fallback to a solid color if image fails
         ctx.fillStyle = '#ff6600';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Still draw the username if available
         if (username && username.trim()) {
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 72px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
@@ -695,6 +939,8 @@ function CandlePreview({
           ctx.textBaseline = 'middle';
           ctx.fillText(username, canvas.width / 2, canvas.height / 2);
         }
+
+        // Create texture even on error
         const texture = new THREE.CanvasTexture(canvas);
         texture.wrapS = THREE.ClampToEdgeWrapping;
         texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -706,40 +952,59 @@ function CandlePreview({
           label2MeshRef.current.material.needsUpdate = true;
         }
       };
+
+      // Handle non-template path
       if (!template) {
+        // console.log('Non-template path');
         img.onload = () => {
           if (effectActive.current) {
             drawImageWithTemplate(img, null, null);
           }
         };
-        img.onerror = () => {};
+        img.onerror = () => {
+          console.error('Failed to load image for non-template path');
+        };
         if (currentImageUrl && currentImageUrl !== '/defaultAvatar.png') {
+          // console.log('Non-template path: using imageUrl:', currentImageUrl);
           img.src = currentImageUrl;
         } else if (userTexture) {
+          // console.log('Non-template path: using userTexture');
           img.src = userTexture.image.src;
         } else if (defaultTexture) {
+          // console.log('Non-template path: using defaultTexture');
           img.src = defaultTexture.image.src;
         } else {
+          // console.log('Non-template path: no image available, using default');
           img.src = '/defaultAvatar.png';
         }
       }
-    }, 50);
+    }, 50); // 50ms debounce
+
+    // Cleanup function
     return () => {
       clearTimeout(timeoutId);
       effectActive.current = false;
     };
-  }, [userTexture, defaultTexture, username, template, templatePosition, templateScale, templateRotation, skinToneAdjustment, userImagePosition, userImageScale, userImageRotation, imageUrl]);
+  }, [userTexture, defaultTexture, username, template, templatePosition, templateScale, templateRotation, skinToneAdjustment, userImagePosition, userImageScale, userImageRotation, imageUrl]); // Added imageUrl to trigger update
+
+  // Animation frame update for flame
   useFrame((state, delta) => {
     if (mixerRef.current) {
       mixerRef.current.update(delta);
     }
   });
+
+  // Also add OrbitControls to the scene
   return <>
       {clonedSceneRef.current && <primitive ref={candleRef} object={clonedSceneRef.current} scale={[2, 2, 2]} position={[0, -1, 0]} />}
       <OrbitControls enablePan={false} enableZoom={true} minDistance={2} maxDistance={8} minPolarAngle={Math.PI / 3} maxPolarAngle={Math.PI / 2} autoRotate={false} />
     </>;
 }
+
+// Preload the candle model
 useGLTF.preload('/models/singleCandleAnimatedFlame.glb');
+
+// Available background textures
 const BACKGROUND_TEXTURES = [{
   id: 'cyberpunk',
   path: '/cyberpunk.webp',
@@ -765,20 +1030,36 @@ const BACKGROUND_TEXTURES = [{
   path: '/templeScene.webp',
   name: 'Temple Scene'
 }];
+
+// Sanitization helper to prevent XSS attacks
 const sanitizeInput = (input, maxLength = 500) => {
   if (!input) return '';
+
+  // Convert to string and trim
   let sanitized = String(input).trim();
+
+  // Remove any HTML tags
   sanitized = sanitized.replace(/<[^>]*>/g, '');
+
+  // Remove any script tags and their content
   sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
+  // Escape special HTML characters
   sanitized = sanitized.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
+
+  // Remove any potential JavaScript protocols
   sanitized = sanitized.replace(/javascript:/gi, '');
   sanitized = sanitized.replace(/data:text\/html/gi, '');
   sanitized = sanitized.replace(/vbscript:/gi, '');
+
+  // Limit length
   if (sanitized.length > maxLength) {
     sanitized = sanitized.substring(0, maxLength);
   }
   return sanitized;
 };
+
+// Unescape for display (converts HTML entities back for safe display)
 const unescapeForDisplay = text => {
   if (!text) return '';
   return text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&#x2F;/g, '/');
@@ -788,15 +1069,24 @@ export default function CompactCandleModal({
   onClose,
   onCandleCreated
 }) {
+  // console.log('CompactCandleModal render - isOpen:', isOpen);
+
+  // Step tracking for multi-step flow (now 6 steps with background)
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 6;
+  const totalSteps = 6; // Step 1: Candle, Step 2: Size/Image, Step 3: Message Type, Step 4: Message, Step 5: Background, Step 6: Review
+
+  // Get top burners for Illumin80 qualification
   const topBurners = useFirestoreResults("burnedAmount");
+
+  // Calculate minimum amount for Illumin80 (8th place)
   const getIllumin80Threshold = () => {
     if (topBurners.length >= 8) {
-      return topBurners[7].burnedAmount;
+      return topBurners[7].burnedAmount; // 8th place (0-indexed)
     }
-    return null;
+    return null; // Not enough data yet
   };
+
+  // Template configurations
   const templates = [{
     id: null,
     name: 'None',
@@ -811,7 +1101,9 @@ export default function CompactCandleModal({
       x: 50,
       y: 50
     },
+    // Default centered
     userImageScale: 200,
+    // Doubled for new base size
     userImageRotation: 0
   }, {
     id: '/images/face2.png',
@@ -828,7 +1120,9 @@ export default function CompactCandleModal({
       x: 64,
       y: 40
     },
+    // User face position for Virgin Mary
     userImageScale: 60,
+    // Fixed scale value
     userImageRotation: 0
   }, {
     id: '/images/saint2.png',
@@ -844,9 +1138,13 @@ export default function CompactCandleModal({
       x: 50,
       y: 23
     },
+    // Adjusted for saint template
     userImageScale: 85,
+    // Doubled for new base size
     userImageRotation: 0
   }];
+
+  // Apply default template (Virgin Mary) settings on component mount
   useEffect(() => {
     const virginMaryTemplate = templates.find(t => t.id === '/images/face2.png');
     if (virginMaryTemplate) {
@@ -854,7 +1152,8 @@ export default function CompactCandleModal({
       setUserImageScale(virginMaryTemplate.userImageScale);
       setUserImageRotation(virginMaryTemplate.userImageRotation);
     }
-  }, []);
+  }, []); // Only run once on mount
+
   const {
     user,
     isSignedIn
@@ -863,17 +1162,21 @@ export default function CompactCandleModal({
   const [currentLanguage, setCurrentLanguage] = useState(getUserLanguage());
   const [formData, setFormData] = useState({
     messageType: '',
+    // 'petition', 'confession', or 'praise'
     candleType: 'votive',
+    // 'ecclesiastical', 'japanese', or 'votive' - default to votive
     candleHeight: 'medium',
+    // 'short', 'medium', 'tall' - for ecclesiastical candles
     username: '',
     message: '',
     burnedAmount: '1000',
     allowLikes: false,
-    background: 'synthwave'
+    // Default to not allowing likes
+    background: 'synthwave' // Default background
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [selectedTemplate, setSelectedTemplate] = useState('/images/face2.png');
+  const [selectedTemplate, setSelectedTemplate] = useState('/images/face2.png'); // Virgin Mary default
   const [templatePosition, setTemplatePosition] = useState({
     x: 67,
     y: 40
@@ -883,10 +1186,10 @@ export default function CompactCandleModal({
   const [userImagePosition, setUserImagePosition] = useState({
     x: 50,
     y: 35
-  });
-  const [userImageScale, setUserImageScale] = useState(150);
+  }); // Default for Virgin Mary
+  const [userImageScale, setUserImageScale] = useState(150); // Doubled for new base size
   const [userImageRotation, setUserImageRotation] = useState(0);
-  const [skinToneAdjustment, setSkinToneAdjustment] = useState(0);
+  const [skinToneAdjustment, setSkinToneAdjustment] = useState(0); // -100 to 100, 0 is default
   const [showPositionControls, setShowPositionControls] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -896,10 +1199,11 @@ export default function CompactCandleModal({
   const [scrambledDisplay, setScrambledDisplay] = useState('');
   const [canvasKey, setCanvasKey] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [showExitConfirmDialog, setShowExitConfirmDialog] = useState(false);
+  const [showExitConfirmDialog, setShowExitConfirmDialog] = useState(false); // For exit confirmation
+  // Removed isBurning state - no longer using burning effect
   const [showRotateTooltip, setShowRotateTooltip] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
+  const [toastMessage, setToastMessage] = useState(''); // For custom toast messages
   const [candleWasCreated, setCandleWasCreated] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [showCandleSnapshot, setShowCandleSnapshot] = useState(false);
@@ -910,6 +1214,8 @@ export default function CompactCandleModal({
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const scrollContainerRef = useRef(null);
+
+  // Preload candle data whenever form changes (for instant snapshot)
   React.useEffect(() => {
     if (formData.username || imagePreview) {
       setPreloadCandleData({
@@ -920,6 +1226,10 @@ export default function CompactCandleModal({
       });
     }
   }, [formData, imagePreview]);
+
+  // Hide tooltip on canvas interaction
+
+  // Show tooltip after 3 seconds when modal opens
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => {
@@ -927,31 +1237,66 @@ export default function CompactCandleModal({
       }, 3000);
       return () => clearTimeout(timer);
     } else {
+      // Reset tooltip when modal closes
       setShowRotateTooltip(false);
     }
   }, [isOpen]);
+
+  // AI Prayer Generation states
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [remainingPrayers, setRemainingPrayers] = useState(10);
+
+  // Helper function to format numbers with commas for display
+
+  // Debug exit dialog state
+  // useEffect(() => {
+  //   console.log('showExitConfirmDialog state changed to:', showExitConfirmDialog);
+  // }, [showExitConfirmDialog]);
+
+  // Reset form when modal opens and prepopulate with Clerk user data
   useEffect(() => {
     if (isOpen) {
+      // Debug: Log the entire Clerk user object to see Discord avatar info
+      // console.log('Clerk user object:', user);
+      // console.log('User imageUrl:', user?.imageUrl);
+      // console.log('User hasImage:', user?.hasImage);
+      // console.log('External accounts:', user?.externalAccounts);
+
+      // Get Clerk user image
       let clerkImageUrl = null;
+
+      // Check if user has a valid image (not the default avatar)
       if (user?.hasImage && user?.imageUrl) {
+        // console.log('User has custom image from OAuth or upload');
         clerkImageUrl = user.imageUrl;
       } else if (user?.imageUrl && !user?.imageUrl.includes('gravatar')) {
+        // Sometimes Clerk uses gravatar for default avatars
+        // console.log('Using user imageUrl (non-gravatar)');
         clerkImageUrl = user.imageUrl;
       }
+
+      // If still no image, try to get from external accounts
       if (!clerkImageUrl && user?.externalAccounts && user.externalAccounts.length > 0) {
+        // console.log('Checking external accounts for avatar...');
         const discordAccount = user.externalAccounts.find(account => account.provider === 'discord' || account.provider === 'oauth_discord');
         if (discordAccount) {
+          // console.log('Discord account found:', discordAccount);
+          // Try different possible properties
           clerkImageUrl = discordAccount.imageUrl || discordAccount.avatarUrl || discordAccount.picture || discordAccount.avatar_url || null;
-          if (clerkImageUrl) {}
+          if (clerkImageUrl) {
+            // console.log('Using Discord avatar:', clerkImageUrl);
+          }
         }
       }
+
+      // console.log('Final clerkImageUrl:', clerkImageUrl);
+
       setFormData({
         messageType: '',
         candleType: 'votive',
+        // Reset to default votive
         username: '',
         message: '',
         burnedAmount: '1000',
@@ -959,11 +1304,13 @@ export default function CompactCandleModal({
       });
       setCurrentStep(1);
       setSelectedPrayer(null);
+      // Don't clear imageFile if we already have one (preserve across template changes)
       if (!imageFile && !imagePreview) {
         setImageFile(null);
+        // Set Clerk profile image as preview if available
         setImagePreview(clerkImageUrl);
       }
-      setSelectedTemplate('/images/face2.png');
+      setSelectedTemplate('/images/face2.png'); // Reset to Virgin Mary default
       setTemplatePosition({
         x: 67,
         y: 40
@@ -980,14 +1327,22 @@ export default function CompactCandleModal({
       setScrambledDisplay('');
       setShowAIPanel(false);
       setAiPrompt('');
+      // Force Canvas to recreate by changing key
       setCanvasKey(prev => prev + 1);
+      // Reset success indicators
       setCandleWasCreated(false);
+
+      // Clear the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+
+      // Check remaining AI prayers
       setRemainingPrayers(getRemainingPrayers());
     }
   }, [isOpen, user]);
+
+  // Helper function to get byte length of a string
   const getByteLength = str => {
     return new TextEncoder().encode(str).length;
   };
@@ -996,35 +1351,51 @@ export default function CompactCandleModal({
       name,
       value
     } = e.target;
+
+    // Input validation and sanitization
     let sanitizedValue = value;
     if (name === 'username') {
-      sanitizedValue = value.slice(0, 50).replace(/[<>\"'&]/g, '');
+      // Limit username length and remove dangerous characters
+      sanitizedValue = value.slice(0, 50) // Max 50 characters
+      .replace(/[<>\"'&]/g, ''); // Remove potentially dangerous HTML characters
+
+      // Block file extensions in username
       const suspiciousExtensions = /\.(exe|bat|cmd|sh|ps1|vbs|js|jar|com|scr|msi|dll|app|deb|dmg|pkg|run|php|asp|jsp|cgi|pl|py|rb|java|c|cpp|cs|vb|swift|go|rs|kt|scala|lua|r|m|sql|db|zip|rar|7z|tar|gz|bz2|xz|iso|img|vmdk|vhd|pdf|doc|docx|xls|xlsx|ppt|pptx|html|htm|xml|json|yaml|yml|ini|cfg|conf|txt|log|bak|tmp|temp|swp|DS_Store)$/i;
       if (suspiciousExtensions.test(sanitizedValue)) {
         sanitizedValue = sanitizedValue.replace(suspiciousExtensions, '');
       }
     } else if (name === 'message') {
-      sanitizedValue = value.slice(0, 500);
+      // Limit message length
+      sanitizedValue = value.slice(0, 500); // Max 500 characters
+
+      // Block file paths and extensions in messages (but be less strict than username)
+      // Remove obvious file paths
       sanitizedValue = sanitizedValue.replace(/([C-Z]:\\|\/usr\/|\/etc\/|\/var\/|\.\.\/|\.\/)/gi, '');
     }
     setFormData(prev => ({
       ...prev,
       [name]: sanitizedValue
     }));
+
+    // Reset encryption state when message is manually changed
     if (name === 'message' && isEncrypted) {
       setIsEncrypted(false);
       setEncryptionPassword('');
       setScrambledDisplay('');
     }
   };
+
+  // Handle template selection from gallery
   const selectTemplate = template => {
     setSelectedTemplate(template.id);
     setTemplatePosition(template.position);
     setTemplateScale(template.scale);
     setTemplateRotation(template.rotation);
+    // Set user image positioning for this template
     setUserImagePosition(template.userImagePosition);
     setUserImageScale(template.userImageScale);
     setUserImageRotation(template.userImageRotation);
+    // Reset skin tone for non-Virgin Mary templates
     if (template.id !== '/images/face2.png') {
       setSkinToneAdjustment(0);
     }
@@ -1032,17 +1403,22 @@ export default function CompactCandleModal({
   const handleImageChange = e => {
     const file = e.target.files[0];
     if (file) {
+      // Security: Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Image must be less than 5MB');
         e.target.value = '';
         return;
       }
+
+      // Security: Validate file type (only allow JPG, PNG, WebP)
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         setError('Please upload a valid image file (JPEG, PNG, or WebP only)');
         e.target.value = '';
         return;
       }
+
+      // Additional security: Check file extension
       const fileName = file.name.toLowerCase();
       const validExtensions = /\.(jpg|jpeg|png|webp)$/i;
       if (!validExtensions.test(fileName)) {
@@ -1050,6 +1426,8 @@ export default function CompactCandleModal({
         e.target.value = '';
         return;
       }
+
+      // Block double extensions that could be malicious
       const doubleExtension = /\.[^.]+\.(jpg|jpeg|png|webp)$/i;
       if (fileName.split('.').length > 2 && !doubleExtension.test(fileName)) {
         setError('Suspicious filename detected. Please rename your file and try again');
@@ -1059,7 +1437,9 @@ export default function CompactCandleModal({
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
+        // Replace any existing preview (including Clerk image) with the uploaded file
         setImagePreview(reader.result);
+        // Clear the file input value so the same file can be re-selected if needed
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -1068,6 +1448,8 @@ export default function CompactCandleModal({
       setError('');
     }
   };
+
+  // Apply template overlay to image with positioning and skin tone
   const applyTemplate = async (imageUrl, templatePath, position = templatePosition, scale = templateScale, rotation = templateRotation, skinTone = skinToneAdjustment, userImgPosition = userImagePosition, userImgScale = userImageScale, userImgRotation = userImageRotation) => {
     return new Promise(resolve => {
       const canvas = document.createElement('canvas');
@@ -1078,17 +1460,27 @@ export default function CompactCandleModal({
       const templateImg = new Image();
       const handsImg = new Image();
       let loadedImages = 0;
-      const totalImages = templatePath === '/images/face2.png' ? 3 : 2;
+      const totalImages = templatePath === '/images/face2.png' ? 3 : 2; // Load hands overlay for Virgin Mary
+
       const checkAllLoaded = () => {
         loadedImages++;
         if (loadedImages === totalImages) {
+          // Clear canvas
           ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Fill with base color
           ctx.fillStyle = '#f5f5f5';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // FIRST: Draw template image (underneath)
           ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+
+          // SECOND: Draw user image on top
           ctx.save();
+
+          // Calculate user image dimensions and position - maintain aspect ratio
           const scaleFactor = userImgScale / 100;
-          const baseSize = Math.min(canvas.width, canvas.height) * 0.4;
+          const baseSize = Math.min(canvas.width, canvas.height) * 0.4; // Smaller base for better scale control
           const aspectRatio = userImg.width / userImg.height;
           let imgWidth, imgHeight;
           if (aspectRatio > 1) {
@@ -1100,6 +1492,8 @@ export default function CompactCandleModal({
           }
           const imgX = userImgPosition.x / 100 * canvas.width - imgWidth / 2;
           const imgY = userImgPosition.y / 100 * canvas.height - imgHeight / 2;
+
+          // Apply rotation if needed
           if (userImgRotation !== 0) {
             const centerX = userImgPosition.x / 100 * canvas.width;
             const centerY = userImgPosition.y / 100 * canvas.height;
@@ -1107,20 +1501,37 @@ export default function CompactCandleModal({
             ctx.rotate(userImgRotation * Math.PI / 180);
             ctx.translate(-centerX, -centerY);
           }
+
+          // Draw user image ON TOP of template (so it shows through erased areas)
           ctx.drawImage(userImg, imgX, imgY, imgWidth, imgHeight);
+
+          // Restore context
           ctx.restore();
+
+          // THIRD: If Virgin Mary template, draw hands/feet overlay with skin tone adjustment
           if (templatePath === '/images/face2.png' && handsImg.complete) {
             ctx.save();
+
+            // Apply filter for skin tone adjustment
             if (skinTone !== 0) {
+              // Create a temporary canvas for the hands/feet with filter
               const tempCanvas = document.createElement('canvas');
               tempCanvas.width = canvas.width;
               tempCanvas.height = canvas.height;
               const tempCtx = tempCanvas.getContext('2d');
+
+              // Draw hands/feet to temp canvas
               tempCtx.drawImage(handsImg, 0, 0, canvas.width, canvas.height);
+
+              // Apply color adjustment
               const imageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
               const data = imageData.data;
+
+              // Adjust hue and saturation based on skinTone value
               for (let i = 0; i < data.length; i += 4) {
                 if (data[i + 3] > 0) {
+                  // Only adjust non-transparent pixels
+                  // Convert RGB to HSL
                   const r = data[i] / 255;
                   const g = data[i + 1] / 255;
                   const b = data[i + 2] / 255;
@@ -1143,16 +1554,24 @@ export default function CompactCandleModal({
                         h = ((r - g) / d + 4) / 6;
                         break;
                     }
-                    h = h + skinTone / 300;
+
+                    // Adjust hue based on skinTone
+                    h = h + skinTone / 300; // Subtle hue shift
                     if (h < 0) h += 1;
                     if (h > 1) h -= 1;
+
+                    // Adjust saturation and lightness for skin tone
                     if (skinTone < 0) {
+                      // Lighter skin tones
                       l = Math.min(1, l + Math.abs(skinTone) / 200);
                       s = Math.max(0, s - Math.abs(skinTone) / 300);
                     } else {
+                      // Darker skin tones - more aggressive darkening
                       l = Math.max(0, l - skinTone / 150);
                       s = Math.min(1, s + skinTone / 300);
                     }
+
+                    // Convert back to RGB
                     let r2, g2, b2;
                     if (s === 0) {
                       r2 = g2 = b2 = l;
@@ -1178,35 +1597,47 @@ export default function CompactCandleModal({
                 }
               }
               tempCtx.putImageData(imageData, 0, 0);
+
+              // Draw the adjusted hands/feet
               ctx.drawImage(tempCanvas, 0, 0);
             } else {
+              // Draw hands/feet without adjustment
               ctx.drawImage(handsImg, 0, 0, canvas.width, canvas.height);
             }
             ctx.restore();
           }
+
+          // Return composite image as data URL
           resolve(canvas.toDataURL('image/png'));
         }
       };
       userImg.crossOrigin = 'anonymous';
       userImg.onload = checkAllLoaded;
       userImg.onerror = () => {
-        resolve(imageUrl);
+        console.error('Failed to load user image');
+        resolve(imageUrl); // Fallback to original image
       };
       userImg.src = imageUrl;
       templateImg.onload = checkAllLoaded;
       templateImg.onerror = () => {
-        resolve(imageUrl);
+        console.error('Failed to load template');
+        resolve(imageUrl); // Fallback to original image
       };
       templateImg.src = templatePath;
+
+      // Load hands/feet overlay for Virgin Mary template
       if (templatePath === '/images/face2.png') {
         handsImg.onload = checkAllLoaded;
         handsImg.onerror = () => {
-          checkAllLoaded();
+          console.error('Failed to load hands/feet overlay');
+          checkAllLoaded(); // Continue without hands overlay
         };
         handsImg.src = '/images/FeetHands.png';
       }
     });
   };
+
+  // AI Prayer Generation handlers
   const handleAIGenerate = async (customPrompt = null) => {
     setIsGenerating(true);
     setError('');
@@ -1217,22 +1648,35 @@ export default function CompactCandleModal({
         ...prev,
         message: result.prayer
       }));
-      setSelectedPrayer(null);
+      setSelectedPrayer(null); // Mark as custom
       setRemainingPrayers(result.remaining);
-      if (result.fromCache) {}
+      if (result.fromCache) {
+        // Optional: show that it came from cache
+        // console.log('Prayer served from cache');
+      }
+
+      // Close AI panel after successful generation
       setShowAIPanel(false);
       setAiPrompt('');
     } catch (error) {
+      console.error('AI generation failed:', error);
       setError(error.message || 'Failed to generate prayer. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   };
   const uploadImage = async () => {
+    // console.log('uploadImage called - user:', user);
+    // console.log('imageFile:', imageFile);
+    // console.log('imagePreview:', imagePreview);
     let finalImageUrl = null;
+
+    // Get base image URL
     if (imageFile) {
+      // Only apply templates for votive candles
       if (selectedTemplate && formData.candleType === 'votive') {
         const compositeImage = await applyTemplate(imagePreview, selectedTemplate);
+        // Convert data URL to blob for upload
         const response = await fetch(compositeImage);
         const blob = await response.blob();
         const timestamp = Date.now();
@@ -1241,6 +1685,7 @@ export default function CompactCandleModal({
         const snapshot = await uploadBytes(storageRef, blob);
         finalImageUrl = await getDownloadURL(snapshot.ref);
       } else {
+        // Upload original file without template
         const timestamp = Date.now();
         const fileName = `candles/${timestamp}_${imageFile.name}`;
         const storageRef = ref(storage, fileName);
@@ -1248,6 +1693,7 @@ export default function CompactCandleModal({
         finalImageUrl = await getDownloadURL(snapshot.ref);
       }
     } else if (imagePreview && imagePreview.startsWith('http')) {
+      // If using Clerk image (or any external URL)
       if (selectedTemplate && formData.candleType === 'votive') {
         const compositeImage = await applyTemplate(imagePreview, selectedTemplate);
         const response = await fetch(compositeImage);
@@ -1258,6 +1704,8 @@ export default function CompactCandleModal({
         const snapshot = await uploadBytes(storageRef, blob);
         finalImageUrl = await getDownloadURL(snapshot.ref);
       } else {
+        // Re-upload Clerk image to Firebase Storage to ensure persistence
+        // This prevents 404 errors when Clerk development URLs expire
         try {
           const response = await fetch(imagePreview);
           const blob = await response.blob();
@@ -1267,36 +1715,63 @@ export default function CompactCandleModal({
           const snapshot = await uploadBytes(storageRef, blob);
           finalImageUrl = await getDownloadURL(snapshot.ref);
         } catch (error) {
+          console.error('Failed to re-upload Clerk image:', error);
+          // Fallback to using the URL directly if fetch fails
           finalImageUrl = imagePreview;
         }
       }
     }
+
+    // If no image was processed but we have a Clerk image, use it
     if (!finalImageUrl && user?.imageUrl) {
+      // console.log('Using Clerk user image as fallback:', user.imageUrl);
       finalImageUrl = user.imageUrl;
     }
+
+    // console.log('uploadImage returning:', finalImageUrl);
     return finalImageUrl;
   };
+
+  // Capture the 3D candle as an image
   const captureCandle = () => {
+    // Small delay to ensure canvas is fully rendered
     setTimeout(() => {
-      const canvas = document.querySelector('canvas');
+      const canvas = document.querySelector('canvas'); // Get the Three.js canvas
       if (canvas) {
         try {
           const imageData = canvas.toDataURL('image/png');
+          // console.log('Captured image data:', imageData ? 'Success' : 'Failed');
           setCapturedImage(imageData);
-        } catch (error) {}
-      } else {}
+        } catch (error) {
+          console.error('Failed to capture canvas:', error);
+        }
+      } else {
+        console.error('Canvas not found');
+      }
     }, 100);
   };
+
+  // Social media sharing functions
+
   const handleSubmit = e => {
+    // console.log('handleSubmit called');
     e.preventDefault();
     e.stopPropagation();
+
+    // Don't submit if we're showing other dialogs
     if (showPasswordDialog) {
+      // console.log('Password dialog is showing, returning');
       return;
     }
+
+    // Validate and sanitize fields
     const trimmedUsername = sanitizeInput(formData.username, 50).trim();
     let trimmedMessage = sanitizeInput(formData.message, 500).trim();
+
+    // Ensure message doesn't exceed 500 bytes (fallback safety check)
     if (getByteLength(trimmedMessage) > 500) {
       trimmedMessage = truncateToBytes(trimmedMessage, 500);
+      // Update form data to reflect truncation
       setFormData(prev => ({
         ...prev,
         message: trimmedMessage
@@ -1318,6 +1793,8 @@ export default function CompactCandleModal({
       setError('Please enter a message or select a prayer');
       return;
     }
+
+    // Additional validation
     if (trimmedUsername.length > 50) {
       setError('Name must be less than 50 characters');
       return;
@@ -1326,35 +1803,62 @@ export default function CompactCandleModal({
       setError('Message must be less than 500 bytes');
       return;
     }
+
+    // Default burnedAmount to 1000 if not set
     if (!formData.burnedAmount || formData.burnedAmount === '0') {
       formData.burnedAmount = '1000';
     }
+
+    // Capture the candle image before showing dialog
     captureCandle();
+
+    // Show confirmation dialog instead of immediately saving
+    // console.log('Setting showConfirmDialog to true');
     setShowConfirmDialog(true);
+    // console.log('showConfirmDialog state will be:', true);
   };
   const handleConfirmedSave = async e => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+
+    // console.log('handleConfirmedSave called');
+
+    // Capture the candle image first
     captureCandle();
+
+    // Small delay to ensure image is captured
     await new Promise(resolve => setTimeout(resolve, 100));
     setShowConfirmDialog(false);
+
+    // Get sanitized values
     const trimmedUsername = sanitizeInput(formData.username, 50).trim();
     const trimmedMessage = sanitizeInput(formData.message, 500).trim();
+    // console.log('Form data:', { trimmedUsername, trimmedMessage, formData });
+
+    // No burning effect - proceed directly to saving
+
     setIsSubmitting(true);
     setError('');
     try {
+      // console.log('Starting save process...');
+      // Upload image or use Clerk profile image
       const imageUrl = await uploadImage();
+      // console.log('Image uploaded:', imageUrl);
+
       let docData;
       if (isEncrypted && encryptionPassword) {
+        // Encrypt the message before saving
         const encryptedData = await encryptMessage(trimmedMessage, encryptionPassword);
         docData = {
           messageType: formData.messageType,
           candleType: formData.candleType,
           candleHeight: formData.candleHeight || 'medium',
           username: trimmedUsername,
+          // Who the candle is dedicated to
           createdBy: user?.id,
+          // Who actually created the candle
           createdByUsername: user?.username || user?.firstName || user?.fullName,
           encrypted: encryptedData.encrypted,
           salt: encryptedData.salt,
@@ -1367,12 +1871,15 @@ export default function CompactCandleModal({
           createdAt: serverTimestamp()
         };
       } else {
+        // Save unencrypted message
         docData = {
           messageType: formData.messageType,
           candleType: formData.candleType,
           candleHeight: formData.candleHeight || 'medium',
           username: trimmedUsername,
+          // Who the candle is dedicated to
           createdBy: user?.id,
+          // Who actually created the candle
           createdByUsername: user?.username || user?.firstName || user?.fullName,
           message: trimmedMessage,
           burnedAmount: parseInt(formData.burnedAmount) || 1000,
@@ -1382,8 +1889,20 @@ export default function CompactCandleModal({
           createdAt: serverTimestamp()
         };
       }
+
+      // console.log('Attempting to save to Firestore with data:', docData);
       const docRef = await addDoc(collection(db, 'candles'), docData);
+      // console.log('Candle saved successfully with ID:', docRef.id);
+
+      // Mark that candle was successfully created
       setCandleWasCreated(true);
+
+      // Skip the toaster - the polaroid will be the success feedback
+      // setToastMessage('🕯️ Your candle has been lit successfully! ✨');
+      // setShowSuccessToast(true);
+      // setTimeout(() => setShowSuccessToast(false), 3000);
+
+      // Save candle data for snapshot BEFORE clearing form
       setSavedCandleData({
         username: formData.username || 'Anonymous',
         imageUrl: imageUrl,
@@ -1393,9 +1912,12 @@ export default function CompactCandleModal({
         candleHeight: formData.candleHeight || 'medium',
         background: formData.background || 'synthwave'
       });
+
+      // Clear the form immediately after saving data
       setFormData({
         messageType: '',
         candleType: 'votive',
+        // Reset to default votive
         username: '',
         message: '',
         burnedAmount: 1000,
@@ -1404,8 +1926,12 @@ export default function CompactCandleModal({
       setCurrentStep(1);
       setImageFile(null);
       setImagePreview(null);
-      setSelectedTemplate('/images/face2.png');
+      setSelectedTemplate('/images/face2.png'); // Reset to Virgin Mary default
+
+      // Show the candle snapshot
       setShowCandleSnapshot(true);
+
+      // Close the modal so the polaroid shows after
       onClose();
       if (onCandleCreated) {
         onCandleCreated({
@@ -1414,16 +1940,23 @@ export default function CompactCandleModal({
           createdAt: new Date()
         });
       }
+
+      // Candle successfully created and snapshot will be shown
     } catch (err) {
+      console.error('Error creating candle:', err);
+      console.error('Error details:', err.message, err.code);
       setError(`Failed to create candle: ${err.message || 'Please try again.'}`);
       setCandleWasCreated(false);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Function to render step content
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
+        // Candle Type Selection
         return <div style={{
           padding: '20px',
           textAlign: 'center'
@@ -1468,9 +2001,11 @@ export default function CompactCandleModal({
                 ...prev,
                 candleType: type.value
               }));
+              // Force Canvas remount when switching to votive
               if (type.value === 'votive') {
                 setCanvasKey(prev => prev + 1);
               }
+              // Don't auto-advance - let user click Next when ready
             }} style={{
               padding: '20px',
               width: '200px',
@@ -1491,7 +2026,7 @@ export default function CompactCandleModal({
               e.currentTarget.style.transform = 'translateY(0)';
               e.currentTarget.style.boxShadow = 'none';
             }}>
-                  
+                  {/* Image Preview */}
                   <div style={{
                 width: '160px',
                 height: '120px',
@@ -1528,6 +2063,8 @@ export default function CompactCandleModal({
             </div>
           </div>;
       case 2:
+        // Size/Image Customization
+        // console.log('Rendering case 2');
         return <div style={{
           padding: '20px'
         }}>
@@ -1538,6 +2075,7 @@ export default function CompactCandleModal({
             textAlign: 'center'
           }}>Personalize Your Candle</h3>
             
+            {/* Show image upload option for votive candles */}
             {formData.candleType === 'votive' ? <div style={{
             marginBottom: '20px'
           }}>
@@ -1567,6 +2105,7 @@ export default function CompactCandleModal({
                   </span>
                 </label>
                 
+                {/* Show preview if image uploaded */}
                 {imagePreview && <div className="image-preview-container" style={{
               marginTop: '10px',
               textAlign: 'center'
@@ -1579,6 +2118,7 @@ export default function CompactCandleModal({
               }} />
                   </div>}
                 
+                {/* Template Gallery for Votive */}
                 {(imageFile || imagePreview) && <div style={{
               marginTop: '15px',
               marginBottom: '10px'
@@ -1661,6 +2201,7 @@ export default function CompactCandleModal({
                     </div>
                   </div>}
 
+                {/* Image Position Controls - Collapsible Panel */}
                 {(imageFile || imagePreview) && selectedTemplate && <>
                     <button type="button" onClick={() => setShowPositionControls(!showPositionControls)} style={{
                 width: '100%',
@@ -1698,7 +2239,7 @@ export default function CompactCandleModal({
                     gridTemplateColumns: '1fr 1fr',
                     gap: '8px'
                   }}>
-                          
+                          {/* X Position */}
                           <div>
                             <label style={{
                         fontSize: '11px',
@@ -1720,6 +2261,7 @@ export default function CompactCandleModal({
                       }} />
                           </div>
                           
+                          {/* Y Position */}
                           <div>
                             <label style={{
                         fontSize: '11px',
@@ -1741,6 +2283,7 @@ export default function CompactCandleModal({
                       }} />
                           </div>
                           
+                          {/* Size */}
                           <div>
                             <label style={{
                         fontSize: '11px',
@@ -1760,6 +2303,7 @@ export default function CompactCandleModal({
                           </div>
                         </div>
                         
+                        {/* Skin Tone Adjustment - Only for Virgin Mary */}
                         {selectedTemplate === '/images/face2.png' && <div style={{
                     marginTop: '8px',
                     padding: '8px',
@@ -1785,7 +2329,9 @@ export default function CompactCandleModal({
                       </div>
                     </div>
                   </>}
-              </div> : formData.candleType === 'ecclesiastical' ? <div>
+              </div> : formData.candleType === 'ecclesiastical' ?
+          // Height selection for ecclesiastical candles
+          <div>
                 <div style={{
               marginBottom: '20px'
             }}>
@@ -1861,7 +2407,9 @@ export default function CompactCandleModal({
                       </button>)}
                   </div>
                 </div>
-              </div> : <div>
+              </div> :
+          // Height selection for Japanese candles
+          <div>
                 <div style={{
               marginBottom: '20px'
             }}>
@@ -1940,6 +2488,7 @@ export default function CompactCandleModal({
               </div>}
           </div>;
       case 3:
+        // Message Type Selection
         return <div style={{
           padding: '20px',
           textAlign: 'center'
@@ -1982,6 +2531,7 @@ export default function CompactCandleModal({
                 ...prev,
                 messageType: type.value
               }));
+              // Don't auto-advance - let user click Next when ready
             }} style={{
               flex: 1,
               padding: '15px 8px',
@@ -2023,10 +2573,12 @@ export default function CompactCandleModal({
             </div>
           </div>;
       case 4:
+        // Message/Prayer
+        // console.log('Rendering case 4');
         return <div style={{
           padding: '20px'
         }}>
-            
+            {/* Name field */}
             <div style={{
             marginBottom: '20px'
           }}>
@@ -2055,6 +2607,8 @@ export default function CompactCandleModal({
             }} />
             </div>
             
+            
+            {/* Combined Language and Prayer Selection for Petitions */}
             {formData.messageType === 'petition' && <div style={{
             display: 'flex',
             gap: '8px',
@@ -2131,6 +2685,8 @@ export default function CompactCandleModal({
                   ...prev,
                   message: newValue
                 }));
+
+                // If user edits a pre-selected prayer, deselect it
                 if (selectedPrayer) {
                   const currentPrayers = PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
                   const selectedPrayerText = currentPrayers.find(p => p.id === selectedPrayer)?.text;
@@ -2161,6 +2717,7 @@ export default function CompactCandleModal({
             </div>
           </div>;
       case 5:
+        // Background Selection
         const scrollLeft = () => {
           if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollBy({
@@ -2190,7 +2747,7 @@ export default function CompactCandleModal({
             <div style={{
             position: 'relative'
           }}>
-              
+              {/* Left Arrow */}
               <button onClick={scrollLeft} style={{
               position: 'absolute',
               left: '-5px',
@@ -2213,6 +2770,7 @@ export default function CompactCandleModal({
                 ‹
               </button>
               
+              {/* Right Arrow */}
               <button onClick={scrollRight} style={{
               position: 'absolute',
               right: '-5px',
@@ -2295,6 +2853,7 @@ export default function CompactCandleModal({
             </div>
           </div>;
       case 6:
+        // Review & Submit
         return <div style={{
           padding: '12px'
         }}>
@@ -2450,6 +3009,7 @@ export default function CompactCandleModal({
                 </div>
               </div>
               
+              {/* Offering Amount Input */}
               <div style={{
               marginTop: '10px'
             }}>
@@ -2488,7 +3048,9 @@ export default function CompactCandleModal({
                   </button>
                   <input type="number" value={formData.burnedAmount} onChange={e => {
                   const value = e.target.value;
+                  // Only allow numbers
                   const numericValue = value.replace(/\D/g, '');
+                  // Limit to reasonable max (1 trillion) and min (1000)
                   if (numericValue === '') {
                     setFormData(prev => ({
                       ...prev,
@@ -2541,6 +3103,8 @@ export default function CompactCandleModal({
         return null;
     }
   };
+
+  // Navigation handlers
   const handleNext = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
@@ -2551,6 +3115,8 @@ export default function CompactCandleModal({
       setCurrentStep(currentStep - 1);
     }
   };
+
+  // Create portal for exit dialog
   const ExitDialog = () => {
     if (!showExitConfirmDialog) return null;
     return ReactDOM.createPortal(<div style={{
@@ -2600,6 +3166,7 @@ export default function CompactCandleModal({
           justifyContent: 'center'
         }}>
             <button onClick={() => {
+            // console.log('Continue editing clicked');
             setShowExitConfirmDialog(false);
           }} style={{
             padding: '12px 24px',
@@ -2615,6 +3182,7 @@ export default function CompactCandleModal({
               Continue Editing
             </button>
             <button onClick={() => {
+            // console.log('Discard clicked');
             setShowExitConfirmDialog(false);
             onClose();
           }} style={{
@@ -2637,7 +3205,7 @@ export default function CompactCandleModal({
   return <>
       <ExitDialog />
       
-      {}
+      {/* Hidden Preload Renderer - Start loading when user is on final steps */}
       {isOpen && currentStep >= 5 && formData.candleType && formData.background && <div style={{
       position: 'fixed',
       top: '-9999px',
@@ -2656,21 +3224,23 @@ export default function CompactCandleModal({
       }} preloadOnly={true} />
         </div>}
       
-      {}
+      {/* Candle Snapshot Renderer - Shows polaroid AFTER modal closes */}
       {!isOpen && showCandleSnapshot && savedCandleData && <div style={{
       position: 'relative',
       zIndex: 100000
     }} onClick={e => {
+      // If user clicks outside the polaroid action buttons, dismiss
       if (!e.target.closest('.action-button')) {
+        // console.log('User dismissed polaroid');
         setShowCandleSnapshot(false);
         setSavedCandleData(null);
       }
     }}>
-          
+          {/* {console.log('Rendering CandleSnapshotRenderer wrapper, isOpen:', isOpen, 'showCandleSnapshot:', showCandleSnapshot, 'savedCandleData:', savedCandleData)} */}
           <CandleSnapshotRenderer isVisible={true} userData={savedCandleData} instantCapture={false} onComplete={imageData => {}} />
         </div>}
       
-      {}
+      {/* Success toaster removed - polaroid snapshot provides the success feedback */}
       
       <style>{`
         @keyframes slideDown {
@@ -2778,25 +3348,37 @@ export default function CompactCandleModal({
       `}</style>
       
       <div className="compact-modal-overlay" onClick={e => {
+        // Only close if clicking directly on the overlay (not on modal content)
         if (e.target === e.currentTarget) {
+          // Don't close if any dialog is open
           if (showPasswordDialog || showConfirmDialog) {
             return;
           }
+
+          // Check if the click is near the modal edges (might be accidental during rotation)
           const modalContent = modalContentRef.current;
           if (modalContent) {
             const rect = modalContent.getBoundingClientRect();
-            const margin = 150;
+            const margin = 150; // Large tolerance around the modal (150px)
+
+            // If click is within margin of modal, ignore it
             if (e.clientX >= rect.left - margin && e.clientX <= rect.right + margin && e.clientY >= rect.top - margin && e.clientY <= rect.bottom + margin) {
-              return;
+              return; // Too close to modal, likely accidental while rotating the 3D model
             }
           }
+
+          // Check if candle was already created or if there's unsaved data
           if (candleWasCreated) {
+            // Candle was created, just close
             onClose();
           } else {
+            // Check if user has entered any data
             const hasUnsavedData = formData.username.trim() || formData.message.trim() || imageFile;
             if (hasUnsavedData) {
+              // Show custom confirmation dialog
               setShowExitConfirmDialog(true);
             } else {
+              // No data entered, just close
               onClose();
             }
           }
@@ -2804,26 +3386,37 @@ export default function CompactCandleModal({
       }}>
       <div className="compact-modal-content" ref={modalContentRef} onClick={e => e.stopPropagation()}>
         <button className="compact-modal-close" onClick={() => {
+            // console.log('Close button clicked');
+            // console.log('candleWasCreated:', candleWasCreated);
+            // console.log('formData:', formData);
+
+            // Check if candle was created
             if (candleWasCreated) {
               onClose();
             } else {
+              // Check if user has entered any data
               const hasUnsavedData = formData.username.trim() || formData.message.trim() || imageFile;
+              // console.log('hasUnsavedData:', hasUnsavedData);
               if (hasUnsavedData) {
+                // Show custom confirmation dialog
+                // console.log('Setting showExitConfirmDialog to true');
                 setShowExitConfirmDialog(true);
               } else {
+                // No data entered, just close
                 onClose();
               }
             }
           }}>×</button>
         
         <div className="compact-modal-layout">
-          
+          {/* Left side - 3D Preview */}
           <div className={`compact-candle-preview ${currentStep === 4 ? 'message-step' : ''}`}>
             <div className="preview-label">Your Candle Preview</div>
-            
+            {/* Conditionally show Canvas for votive (with overlay) or static image for others */}
             <div style={{
                 width: '100%',
                 height: 'calc(100% - 40px)',
+                // Account for the preview-label height
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -2832,7 +3425,7 @@ export default function CompactCandleModal({
                 position: 'relative',
                 overflow: 'hidden'
               }}>
-              
+              {/* Background Image - shows in steps 5 and 6 */}
               {currentStep >= 5 && formData.background && <div style={{
                   position: 'absolute',
                   top: 0,
@@ -2857,7 +3450,9 @@ export default function CompactCandleModal({
                     pointerEvents: 'none'
                   }} />
                 </div>}
-              {formData.candleType === 'votive' && (currentStep === 2 || imagePreview) ? <Canvas key={`votive-canvas-${canvasKey}`} camera={{
+              {formData.candleType === 'votive' && (currentStep === 2 || imagePreview) ?
+                // Show 3D Canvas for votive when in Step 2 or when image is uploaded
+                <Canvas key={`votive-canvas-${canvasKey}`} camera={{
                   position: [0, 2, 7],
                   fov: 45
                 }} style={{
@@ -2871,13 +3466,22 @@ export default function CompactCandleModal({
                   preserveDrawingBuffer: false
                 }}>
                   <ambientLight intensity={1} />
-                  
+                  {/* <directionalLight 
+                    position={[0, 5, 3]} 
+                    intensity={3.8} 
+                    castShadow 
+                   /> */}
                   <pointLight position={[0, 3, 2]} intensity={0.5} color="#ffaa00" />
                   <Suspense fallback={null}>
                     <CandlePreview imageUrl={imagePreview || '/defaultAvatar.png'} message={formData.message} isEncrypted={false} username={formData.username} language={currentLanguage} template={selectedTemplate} templatePosition={templatePosition} templateScale={templateScale} templateRotation={templateRotation} skinToneAdjustment={skinToneAdjustment} userImagePosition={userImagePosition} userImageScale={userImageScale} userImageRotation={userImageRotation} candleModel='/models/singleCandleAnimatedFlamePreview.glb' />
                   </Suspense>
-                  <OrbitControls enablePan={false} enableZoom={true} minDistance={2} maxDistance={8} minPolarAngle={Math.PI / 3} maxPolarAngle={Math.PI / 2} />
-                </Canvas> : <img src={formData.candleType === 'ecclesiastical' ? formData.candleHeight === 'short' ? '/EcclesiasticalShortPreview.webp' : formData.candleHeight === 'tall' ? '/EcclesiasticalTallPreview.webp' : '/EcclesiasticalMediumPreview.webp' : formData.candleType === 'japanese' ? formData.candleHeight === 'short' ? '/JapaneseShortPreview.webp' : formData.candleHeight === 'tall' ? '/JapaneseTallPreview.webp' : '/JapaneseMediumPreview.webp' : '/votiveCandlePreview.webp'} alt={`${formData.candleType} candle`} style={{
+                  <OrbitControls enablePan={false} enableZoom={true} minDistance={2} maxDistance={8} minPolarAngle={Math.PI / 3} maxPolarAngle={Math.PI / 2}
+                  // autoRotate={true}
+                  // autoRotateSpeed={1}
+                  />
+                </Canvas> :
+                // Show static image for Japanese and Ecclesiastical
+                <img src={formData.candleType === 'ecclesiastical' ? formData.candleHeight === 'short' ? '/EcclesiasticalShortPreview.webp' : formData.candleHeight === 'tall' ? '/EcclesiasticalTallPreview.webp' : '/EcclesiasticalMediumPreview.webp' : formData.candleType === 'japanese' ? formData.candleHeight === 'short' ? '/JapaneseShortPreview.webp' : formData.candleHeight === 'tall' ? '/JapaneseTallPreview.webp' : '/JapaneseMediumPreview.webp' : '/votiveCandlePreview.webp'} alt={`${formData.candleType} candle`} style={{
                   width: 'auto',
                   height: '100%',
                   maxWidth: '100%',
@@ -2887,6 +3491,7 @@ export default function CompactCandleModal({
                   transform: 'scale(1.4)'
                 }} />}
                 
+                {/* Optional: Add candle info overlay */}
                 {formData.username && <div style={{
                   position: 'absolute',
                   bottom: '20px',
@@ -2915,6 +3520,7 @@ export default function CompactCandleModal({
               </div>
           </div>
 
+          {/* Right side - Form */}
           <div className={`compact-form-section ${currentStep === 4 ? 'message-step' : ''}`}>
             <div style={{
                 display: 'flex',
@@ -2935,6 +3541,7 @@ export default function CompactCandleModal({
                 }}>Get Lit with RL80</h2>
             </div>
             
+            {/* Step Progress Indicator */}
             <div className="step-indicator" style={{
                 display: 'flex',
                 justifyContent: 'center',
@@ -2950,12 +3557,14 @@ export default function CompactCandleModal({
                 }} />)}
             </div>
 
+            {/* Step Content */}
             <div style={{
                 paddingBottom: '100px'
               }}>
               {renderStepContent()}
             </div>
             
+            {/* Navigation Buttons */}
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -3016,14 +3625,15 @@ export default function CompactCandleModal({
             <form onSubmit={handleSubmit} style={{
                 display: 'none'
               }}>
-              
+              {/* Row 1: Username and Amount */}
               <div className="compact-form-group" style={{
                   display: 'flex',
                   gap: '10px',
                   marginBottom: '12px'
                 }}>
-                
+                {/* Username - Left */}
                 <input type="text" name="username" value={formData.username} onChange={handleInputChange} onKeyDown={e => {
+                    // Prevent Enter key from submitting form
                     if (e.key === 'Enter') {
                       e.preventDefault();
                     }
@@ -3037,6 +3647,7 @@ export default function CompactCandleModal({
                     fontSize: '14px'
                   }} />
                 
+                {/* Amount - Right */}
                 <div style={{
                     flex: '1.5',
                     display: 'flex',
@@ -3055,6 +3666,7 @@ export default function CompactCandleModal({
                     RL80:
                   </span>
                   
+                  {/* Illumin80 Info - Always visible */}
                   <div style={{
                       position: 'relative',
                       display: 'inline-block',
@@ -3070,10 +3682,12 @@ export default function CompactCandleModal({
                     </span>
                   </div>
                   
+                  {/* Qualification Status - Only show crown when qualified */}
                   {(() => {
                       const threshold = getIllumin80Threshold();
                       const currentAmount = parseInt(formData.burnedAmount) || 0;
                       if (!threshold || !currentAmount || currentAmount === 0) return null;
+                      // Only show icon if they qualify
                       if (!wouldQualify) return null;
                       return <div style={{
                         position: 'relative',
@@ -3167,6 +3781,7 @@ export default function CompactCandleModal({
                 </div>
               </div>
 
+              {/* Illumin80 Explanation */}
               {(() => {
                   const threshold = getIllumin80Threshold();
                   const currentAmount = parseInt(formData.burnedAmount) || 0;
@@ -3218,6 +3833,7 @@ export default function CompactCandleModal({
                   </div>;
                 })()}
 
+              {/* AI Generation Panel */}
               {showAIPanel && <div style={{
                   margin: '15px 0',
                   padding: '15px',
@@ -3272,6 +3888,7 @@ export default function CompactCandleModal({
                     </div>
                   </div>
 
+                  {/* Quick prompt buttons */}
                   <div style={{
                     marginTop: '12px'
                   }}>
@@ -3370,16 +3987,18 @@ export default function CompactCandleModal({
                     </div>}
                 </div>}
 
+              {/* Row 2: Prayer Template and AI Generator */}
               <div className="compact-form-group" style={{
                   display: 'flex',
                   gap: '10px',
                   marginBottom: '12px'
                 }}>
-                
+                {/* Prayer Template Dropdown - Left */}
                 <select value={selectedPrayer || ''} onChange={e => {
                     const value = e.target.value;
                     if (value === '') {
                       setSelectedPrayer(null);
+                      // Don't clear message when deselecting
                     } else {
                       const prayers = PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
                       const prayer = prayers.find(p => p.id === value);
@@ -3413,6 +4032,8 @@ export default function CompactCandleModal({
                           </option>)}
                     </select>
                     
+                
+                {/* AI Button - Right */}
                 <button type="button" onClick={() => setShowAIPanel(!showAIPanel)} title="AI Prayer Generator" style={{
                     padding: '10px 20px',
                     borderRadius: '8px',
@@ -3433,13 +4054,19 @@ export default function CompactCandleModal({
                 </button>
               </div>
                   
+              {/* Row 3: Message Textarea */}
               <div className="compact-form-group message-group">
                 <textarea ref={textareaRef} name="message" value={formData.message} onChange={e => {
                     let newValue = e.target.value;
+
+                    // Enforce 500-byte limit
                     if (getByteLength(newValue) > 500) {
                       newValue = truncateToBytes(newValue, 500);
+                      // Update the textarea value to show truncated text
                       e.target.value = newValue;
                     }
+
+                    // Create modified event with truncated value
                     const modifiedEvent = {
                       ...e,
                       target: {
@@ -3449,13 +4076,16 @@ export default function CompactCandleModal({
                       }
                     };
                     handleInputChange(modifiedEvent);
+                    // If user edits a pre-made prayer, mark as custom
                     const currentPrayers = PRAYERS_BY_LANGUAGE[currentLanguage]?.prayers || PRAYERS_BY_LANGUAGE.en.prayers;
                     if (selectedPrayer && currentPrayers.find(p => p.id === selectedPrayer)?.text !== newValue) {
                       setSelectedPrayer(null);
                     }
                   }} placeholder={selectedPrayer ? "Edit the selected prayer or write your own..." : "Write your message, prayer, wish, or dedication (max 500 bytes)"} rows={2} maxLength={500} required disabled={isEncrypted} onKeyDown={e => {
+                    // Prevent Enter key from submitting form in textarea
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
+                      // Allow Shift+Enter for new lines
                       if (e.shiftKey) {
                         return;
                       }
@@ -3465,6 +4095,7 @@ export default function CompactCandleModal({
                     boxSizing: 'border-box',
                     padding: '10px',
                     paddingRight: '50px',
+                    // Make room for char counter
                     borderRadius: '8px',
                     backgroundColor: 'rgba(0, 0, 0, 0.3)',
                     border: '1px solid rgba(255, 215, 0, 0.3)',
@@ -3484,13 +4115,14 @@ export default function CompactCandleModal({
                   }}>{getByteLength(formData.message)}/500 bytes</span>
               </div>
 
+              {/* Row 4: Image Upload and Template Selection */}
               <div className="compact-form-group" style={{
                   display: 'flex',
                   gap: '10px',
                   alignItems: 'stretch',
                   marginBottom: '12px'
                 }}>
-                
+                {/* Image Selection - Left */}
                 <label className="compact-file-label" style={{
                     flex: '1',
                     display: 'flex',
@@ -3524,6 +4156,7 @@ export default function CompactCandleModal({
                 
               </div>
 
+              {/* Template Gallery - Show if image selected and votive candle */}
               {(imageFile || imagePreview) && formData.candleType === 'votive' && <div style={{
                   marginTop: '15px',
                   marginBottom: '10px'
@@ -3598,6 +4231,7 @@ export default function CompactCandleModal({
                   </div>
                 </div>}
 
+              {/* User Image Position Controls - Compact Version */}
               {(imageFile || imagePreview) && selectedTemplate && formData.candleType === 'votive' && <div style={{
                   marginBottom: '12px',
                   padding: '8px',
@@ -3631,7 +4265,7 @@ export default function CompactCandleModal({
                       backgroundColor: 'rgba(0, 0, 0, 0.2)',
                       borderRadius: '6px'
                     }}>
-                        
+                        {/* Compact Control Sliders */}
                         <div>
                           <label style={{
                           fontSize: '11px',
@@ -3688,7 +4322,7 @@ export default function CompactCandleModal({
                           
                       </div>
                       
-                      {}
+                      {/* Skin Tone Adjustment - Only for Virgin Mary template */}
                       {selectedTemplate === '/images/face2.png' && <div style={{
                       marginTop: '8px',
                       padding: '8px',
@@ -3726,6 +4360,7 @@ export default function CompactCandleModal({
                     </>}
                 </div>}
               
+              {/* Submit Buttons Row - More compact */}
               <div className="compact-form-actions" style={{
                   display: 'flex',
                   gap: '10px',
@@ -3759,6 +4394,9 @@ export default function CompactCandleModal({
                   {isSubmitting ? <span>Creating...</span> : <span>🕯️ Light Candle</span>}
                 </button>
               </div>
+
+
+              {/* Confirmation Dialog moved outside - see end of component */}
 
               {error && <div className="compact-error">{error}</div>}
 
