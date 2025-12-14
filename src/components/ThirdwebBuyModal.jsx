@@ -2,14 +2,8 @@
 
 import React from 'react';
 import { BuyWidget } from "thirdweb/react";
-import { createThirdwebClient, defineChain } from "thirdweb";
-
-// Create the client - you'll need to add your actual client ID
-// Get a free client ID at: https://thirdweb.com/dashboard
-const client = createThirdwebClient({
-  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID
-  
-});
+import { defineChain } from "thirdweb";
+import { client } from "@/client";
 
 const ThirdwebBuyModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
