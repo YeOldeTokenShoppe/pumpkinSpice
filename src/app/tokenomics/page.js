@@ -660,8 +660,8 @@ export default function TokenomicsPage() {
                           }
                         }}
                         style={{
-                          width: isMobile ? "2.5rem" : "3.75rem",
-                          height: isMobile ? "2.5rem" : "3.75rem",
+                          width: isMobile ? "3.5rem" : "3.75rem",
+                          height: isMobile ? "3.5rem" : "3.75rem",
                           borderRadius: "0.5rem",
                           backgroundColor: "rgba(0, 0, 0, 0.7)",
                           border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -788,8 +788,8 @@ export default function TokenomicsPage() {
                       <SignInButton mode="modal" forceRedirectUrl="/home3">
                         <button
                           style={{
-                            width: isMobileDevice ? "2.5rem" : "3.75rem",
-                            height: isMobileDevice ? "2.5rem" : "3.75rem",
+                            width: isMobileDevice ? "3.5rem" : "3.75rem",
+                            height: isMobileDevice ? "3.5rem" : "3.75rem",
                             borderRadius: "0.5rem",
                             backgroundColor: "rgba(0, 0, 0, 0.7)",
                             border: "2px solid rgba(255, 255, 255, 0.2)",

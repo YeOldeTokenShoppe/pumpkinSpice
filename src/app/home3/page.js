@@ -3435,8 +3435,8 @@ export default function Home3() {
                 }
               }}
               style={{
-                width: isMobile ? "2.5rem" : "3.75rem",
-                height: isMobile ? "2.5rem" : "3.75rem",
+                width: isMobile ? "3.5rem" : "3.75rem",
+                height: isMobile ? "3.5rem" : "3.75rem",
                 borderRadius: "0.5rem",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -3478,8 +3478,8 @@ export default function Home3() {
               <div
                 className={contextIsPlaying ? "spinning-record" : ""}
                 style={{
-                  width: isMobile ? "2.5rem" : "3.75rem",
-                  height: isMobile ? "2.5rem" : "3.75rem",
+                  width: isMobile ? "3.5rem" : "3.75rem",
+                  height: isMobile ? "3.5rem" : "3.75rem",
                   borderRadius: "50%",
                   backgroundImage: "url('/virginRecords.jpg')",
                   backgroundSize: "cover",
@@ -3563,8 +3563,8 @@ export default function Home3() {
             <SignInButton mode="modal" forceRedirectUrl="/home3">
               <button
                 style={{
-            width: isMobile ? "2.5rem" : "3.75rem",
-                height: isMobile ? "2.5rem" : "3.75rem",
+            width: isMobile ? "3.5rem" : "3.75rem",
+                height: isMobile ? "3.5rem" : "3.75rem",
                   borderRadius: "0.5rem",
                   backgroundColor: "rgba(0, 0, 0, 0.7)",
                   border: "2px solid rgba(255, 255, 255, 0.2)",

@@ -255,8 +255,8 @@ export default function FountainPage() {
         <button
           onClick={() => handleMusicToggle(true)}
           style={{
-            width: isMobileDevice ? "2.5rem" : "3.75rem",
-            height: isMobileDevice ? "2.5rem" : "3.75rem",
+            width: isMobileDevice ? "3.5rem" : "3.75rem",
+            height: isMobileDevice ? "3.5rem" : "3.75rem",
             borderRadius: "8px",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
             border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -366,8 +366,8 @@ export default function FountainPage() {
             <SignInButton mode="modal" forceRedirectUrl="/fountain">
               <button
                 style={{
-                  width: isMobileDevice ? "2.5rem" : "3.75rem",
-                  height: isMobileDevice ? "2.5rem" : "3.75rem",
+                  width: isMobileDevice ? "3.5rem" : "3.75rem",
+                  height: isMobileDevice ? "3.5rem" : "3.75rem",
                   borderRadius: "8px",
                   backgroundColor: "rgba(0, 0, 0, 0.7)",
                   border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -393,8 +393,8 @@ export default function FountainPage() {
           <button
             onClick={() => toggle80sMode()}
             style={{
-              width: isMobileDevice ? "2.5rem" : "3.75rem",
-              height: isMobileDevice ? "2.5rem" : "3.75rem",
+              width: isMobileDevice ? "3.5rem" : "3.75rem",
+              height: isMobileDevice ? "3.5rem" : "3.75rem",
               borderRadius: "8px",
           backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.3)" : "rgba(0, 0, 0, 0.7)",
           border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",

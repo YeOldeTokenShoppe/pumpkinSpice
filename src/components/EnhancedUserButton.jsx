@@ -27,7 +27,7 @@ export function EnhancedUserButton({
   const { user, isSignedIn, isLoaded } = useUser();
   const { openSignIn } = useClerk();
   const isMobile = useIsMobile();
-  const buttonSize = isMobile ? '2.5rem' : '3.75rem';
+  const buttonSize = isMobile ? '3.5rem' : '3.75rem';
   const [illumin80Status, setIllumin80Status] = useState(providedStatus);
   const [streak, setStreak] = useState(0);
   const [showModal, setShowModal] = useState(false);

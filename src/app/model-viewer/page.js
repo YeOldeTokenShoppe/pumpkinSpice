@@ -112,8 +112,8 @@ export default function ModelViewerPage() {
             <button
               onClick={() => handleMusicToggle(true)}
               style={{
-                width: isMobileDevice ? "2.5rem" : "3.75rem",
-                height: isMobileDevice ? "2.5rem" : "3.75rem",
+                width: isMobileDevice ? "3.5rem" : "3.75rem",
+                height: isMobileDevice ? "3.5rem" : "3.75rem",
                 borderRadius: "8px",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -185,8 +185,8 @@ export default function ModelViewerPage() {
               <button
                 onClick={() => nextTrack && nextTrack()}
                 style={{
-                  width: isMobileDevice ? "2.5rem" : "3.75rem",
-                  height: isMobileDevice ? "2.5rem" : "3.75rem",
+                  width: isMobileDevice ? "3.5rem" : "3.75rem",
+                  height: isMobileDevice ? "3.5rem" : "3.75rem",
                   borderRadius: "4px",
                   backgroundColor: "rgba(255, 255, 255, 0.1)",
                   border: "none",
@@ -243,8 +243,8 @@ export default function ModelViewerPage() {
             <SignInButton mode="modal" forceRedirectUrl="/model-viewer">
               <button
                 style={{
-                  width: isMobileDevice ? "2.5rem" : "3.75rem",
-                  height: isMobileDevice ? "2.5rem" : "3.75rem",
+                  width: isMobileDevice ? "3.5rem" : "3.75rem",
+                  height: isMobileDevice ? "3.5rem" : "3.75rem",
                   borderRadius: "8px",
                   backgroundColor: "rgba(0, 0, 0, 0.7)",
                   border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -269,8 +269,8 @@ export default function ModelViewerPage() {
           <button
             onClick={() => toggle80sMode(!is80sMode)}
             style={{
-              width: isMobileDevice ? "2.5rem" : "3.75rem",
-              height: isMobileDevice ? "2.5rem" : "3.75rem",
+              width: isMobileDevice ? "3.5rem" : "3.75rem",
+              height: isMobileDevice ? "3.5rem" : "3.75rem",
               borderRadius: "8px",
               backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.3)" : "rgba(0, 0, 0, 0.7)",
               border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",

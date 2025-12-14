@@ -572,8 +572,8 @@ export default function CyborgTemple() {
                     }
                   }}
                   style={{
-                    width: isMobileView ? "2.5rem" : "3.75rem",
-                    height: isMobileView ? "2.5rem" : "3.75rem",
+                    width: isMobileView ? "3.5rem" : "3.75rem",
+                    height: isMobileView ? "3.5rem" : "3.75rem",
                     borderRadius: "0.5rem",
                     backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
                     border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
