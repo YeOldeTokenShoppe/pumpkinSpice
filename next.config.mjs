@@ -38,10 +38,11 @@ const nextConfig = {
       };
     }
     
-    // Add alias for Three.js BufferGeometryUtils compatibility
+    // Add aliases for compatibility
     config.resolve.alias = {
       ...config.resolve.alias,
       'three/examples/jsm/utils/BufferGeometryUtils.js': new URL('./patches/BufferGeometryUtils.js', import.meta.url).pathname,
+      'why-is-node-running': false, // Fix for thirdweb's thread-stream test dependency
     };
     
     return config;
