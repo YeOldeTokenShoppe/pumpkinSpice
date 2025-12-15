@@ -140,6 +140,14 @@ export default function CyborgTemple() {
           link.crossOrigin = 'anonymous';
           document.head.appendChild(link);
           console.log('[Temple] Preloading MOBILE.glb');
+        } else if (!isMobile && !document.querySelector('link[href="/models/RL80_4anims.glb"]')) {
+          const link = document.createElement('link');
+          link.rel = 'preload';
+          link.as = 'fetch';
+          link.href = '/models/RL80_4anims.glb';
+          link.crossOrigin = 'anonymous';
+          document.head.appendChild(link);
+          console.log('[Temple] Preloading RL80_4anims.glb');
         }
       }
     };
