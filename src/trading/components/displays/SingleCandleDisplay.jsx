@@ -1289,7 +1289,7 @@ function UserInfoOverlay({ userData }) {
       borderTop: '1px solid rgba(0, 255, 0, 0.2)',
       padding: '10px 12px',
       // More aggressive padding for mobile browsers
-      paddingBottom: isMobileDevice ? 'calc(3rem + env(safe-area-inset-bottom, 3rem))' : 'calc(12px + env(safe-area-inset-bottom, 0px))',
+      paddingBottom: isMobileDevice ? 'calc(4rem + env(safe-area-inset-bottom, 4rem))' : 'calc(12px + env(safe-area-inset-bottom, 0px))',
       backdropFilter: 'blur(8px)',
       boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.5)',
       zIndex: 10

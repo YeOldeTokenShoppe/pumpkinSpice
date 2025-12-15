@@ -392,9 +392,9 @@ const CyborgTempleScene = forwardRef(({
   useEffect(() => {
     if (!groupRef.current || !gl) return;
     
-    console.log('[Click Handler] Setting up click detection, groupRef:', groupRef.current);
-    console.log('[Click Handler] Canvas element:', gl.domElement);
-    console.log('[Click Handler] Canvas pointer-events:', window.getComputedStyle(gl.domElement).pointerEvents);
+    // console.log('[Click Handler] Setting up click detection, groupRef:', groupRef.current);
+    // console.log('[Click Handler] Canvas element:', gl.domElement);
+    // console.log('[Click Handler] Canvas pointer-events:', window.getComputedStyle(gl.domElement).pointerEvents);
     
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();

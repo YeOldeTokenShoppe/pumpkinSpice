@@ -49,6 +49,7 @@ export default function CyborgTemple() {
   const [isCandleModalOpen, setIsCandleModalOpen] = useState(false);
   const [shouldRenderCanvas, setShouldRenderCanvas] = useState(true);
   const [focusedAgent, setFocusedAgent] = useState(null); // Track which agent is focused
+  const [showAgentCard, setShowAgentCard] = useState(false); // Track card visibility separately
   
   // Connect to Lighter trading API
   // Initial balance will be fetched from the actual account
@@ -507,7 +508,15 @@ export default function CyborgTemple() {
               isMobile={isMobileView}
               onAgentClick={(agentId) => {
                 console.log('Agent clicked in Temple:', agentId);
-                setFocusedAgent(agentId); // Set the focused agent to show their card
+                if (agentId === null) {
+                  // Clicked on empty space - reset camera and hide card
+                  setFocusedAgent(null);
+                  setShowAgentCard(false);
+                } else {
+                  // Clicked on an agent - focus and show card
+                  setFocusedAgent(agentId);
+                  setShowAgentCard(true);
+                }
               }}
             />
 
@@ -563,15 +572,11 @@ export default function CyborgTemple() {
         )}
         
         {/* Focused Agent Card - Shows when an agent is clicked */}
-        {focusedAgent && (
+        {focusedAgent && showAgentCard && (
           <FocusedAgentCard 
             agentId={focusedAgent}
             onClose={() => {
-              setFocusedAgent(null);
-              // Also reset camera if we have ref
-              if (modelRef.current && modelRef.current.resetCamera) {
-                modelRef.current.resetCamera();
-              }
+              setShowAgentCard(false); // Just hide the card, keep camera focused
             }}
           />
         )}

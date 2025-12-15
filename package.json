@@ -60,7 +60,8 @@
     "troika-three-text": "^0.52.4",
     "valtio": "^2.2.0",
     "wawa-vfx": "^1.2.10",
-    "wouter": "^3.7.1"
+    "wouter": "^3.7.1",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@babel/generator": "^7.28.5",
