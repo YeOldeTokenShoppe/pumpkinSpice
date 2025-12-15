@@ -25,6 +25,7 @@ import DevModePanel from '@/components/DevModePanel';
 // import AgentChatDisplay from '@/components/AgentChatDisplay'; // Using existing Trading Team Chat instead
 // import MobileDevTabs from '@/components/MobileDevTabs';
 import RotatingPnL from '@/components/RotatingPnL';
+import FocusedAgentCard from '@/components/FocusedAgentCard';
 
 
 export default function CyborgTemple() {
@@ -47,6 +48,7 @@ export default function CyborgTemple() {
   const [loadingMessage, setLoadingMessage] = useState("Initializing");
   const [isCandleModalOpen, setIsCandleModalOpen] = useState(false);
   const [shouldRenderCanvas, setShouldRenderCanvas] = useState(true);
+  const [focusedAgent, setFocusedAgent] = useState(null); // Track which agent is focused
   
   // Connect to Lighter trading API
   // Initial balance will be fetched from the actual account
@@ -445,7 +447,7 @@ export default function CyborgTemple() {
         <CleanCanvas
           key="temple-canvas"
           camera={{ 
-            position: isMobileView ? [0, 3.4, 1.5] : [0, -5, 4.5], 
+            position: isMobileView ? [0, 3.4, 1.5] : [0, 0.5, 6.5], 
             fov: isMobileView ? 35 : 50 
           }}
           gl={{ 
@@ -495,6 +497,10 @@ export default function CyborgTemple() {
               showAnnotations={showAnnotations}
               is80sMode={is80sMode}
               isMobile={isMobileView}
+              onAgentClick={(agentId) => {
+                console.log('Agent clicked in Temple:', agentId);
+                setFocusedAgent(agentId); // Set the focused agent to show their card
+              }}
             />
 
             {tickerReady && !isCandleModalOpen && !isMobileView && <TickerDisplay3 modelRef={modelRef} onLoad={handleTickerLoad} />}
@@ -546,6 +552,20 @@ export default function CyborgTemple() {
         {/* Rotating P&L Display for Mobile */}
         {mounted && isMobileView && sceneReady && (
           <RotatingPnL tradingData={tradingData} />
+        )}
+        
+        {/* Focused Agent Card - Shows when an agent is clicked */}
+        {focusedAgent && (
+          <FocusedAgentCard 
+            agentId={focusedAgent}
+            onClose={() => {
+              setFocusedAgent(null);
+              // Also reset camera if we have ref
+              if (modelRef.current && modelRef.current.resetCamera) {
+                modelRef.current.resetCamera();
+              }
+            }}
+          />
         )}
         
         {/* Top Controls Container - Music, User, and Nav */}
@@ -746,8 +766,9 @@ export default function CyborgTemple() {
               )}
             </div>
 
+
             {/* Annotations Toggle */}
-            {/* <div style={{ order: isMobileView ? 3 : 2 }}>
+            {/* <div style={{ order: isMobileView ? 4 : 3 }}>
               <button
                 style={{
                   width: isMobileView ? "2.5rem" : "3.75rem",
@@ -786,7 +807,7 @@ export default function CyborgTemple() {
             </div> */}
 
             {/* CyberNav Menu */}
-            <div style={{ order: isMobileView ? 0 : 3 }}>
+            <div style={{ order: isMobileView ? 0 : 2 }}>
               <CyberNav is80sMode={is80sMode} position="relative" />
             </div>
 

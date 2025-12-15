@@ -1,0 +1,428 @@
+/* Trading Card Styles */
+.trading-card {
+  --pointer-x: 0;
+  --pointer-y: 0;
+  --card-width: 240px;
+  --border: 8px;
+  --border-color: #00ff41;
+  --rotate-x: 25deg;
+  --rotate-y: -20deg;
+  --parallax-img-x: 5%;
+  --parallax-img-y: 5%;
+  
+  aspect-ratio: 5 / 7;
+  width: var(--card-width);
+  perspective: 1600px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.trading-card * {
+  transform-style: preserve-3d;
+}
+
+.trading-card button {
+  position: absolute;
+  z-index: 100;
+  inset: 0;
+  cursor: pointer;
+  opacity: 0;
+  background: transparent;
+  border: none;
+}
+
+.trading-card.active {
+  transform: scale(1.05);
+}
+
+.trading-card.active:hover {
+  transition: transform 0s;
+  transform: rotateX(calc(var(--pointer-y) * var(--rotate-x)))
+            rotateY(calc(var(--pointer-x) * var(--rotate-y)))
+            scale(1.05);
+}
+
+.card__content {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  position: relative;
+}
+
+.trading-card:has([aria-pressed='true']) .card__content {
+  transform: rotateY(180deg);
+}
+
+.card__face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: var(--border);
+  overflow: hidden;
+}
+
+.card__rear {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  transform: rotateY(180deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card__emboss {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border);
+  opacity: 0.3;
+}
+
+.wordmark {
+  position: absolute;
+  width: 80%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: var(--border-color);
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 1.2rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.wordmark:first-of-type {
+  top: 15%;
+}
+
+.wordmark:last-of-type {
+  bottom: 15%;
+  transform: translateX(-50%) rotate(180deg);
+  opacity: 0.5;
+}
+
+.gemstone {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(0, 255, 65, 0.6);
+  box-shadow: 
+    0 0 30px rgba(0, 255, 65, 0.4),
+    inset 0 0 20px rgba(0, 255, 65, 0.2);
+}
+
+.agent-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.9) contrast(1.1);
+}
+
+.gemstone-inner {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 30% 30%, 
+    rgba(0, 255, 65, 0.8),
+    rgba(0, 255, 65, 0.4),
+    transparent);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+.card__front {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+}
+
+.card__front .img {
+  display: none; /* Hide image on front of card */
+}
+
+.card__front .img img {
+  display: none; /* Hide image on front of card */
+}
+
+.pattern,
+.watermark {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.pattern::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, 
+    transparent 30%, 
+    rgba(0, 255, 65, 0.1) 50%, 
+    transparent 70%);
+  background-size: 4px 4px;
+}
+
+.watermark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 255, 65, 0.05) 10px,
+    rgba(0, 255, 65, 0.05) 20px
+  );
+}
+
+.refraction {
+  position: absolute;
+  width: 500%;
+  aspect-ratio: 1;
+  filter: saturate(2);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.trading-card.active:hover .refraction {
+  opacity: 1;
+}
+
+.refraction:first-child {
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle at 0 100%,
+    transparent 10%,
+    rgba(255, 0, 100, 0.3),
+    rgba(0, 255, 100, 0.3),
+    rgba(100, 0, 255, 0.3),
+    transparent 60%
+  );
+  transform-origin: 0 100%;
+  transform: scale(calc(0.15 + var(--pointer-x) * 0.25))
+            translate(calc(-10% + var(--pointer-x) * 10%), 
+                     calc(max(0%, var(--pointer-y) * -10%)));
+}
+
+.refraction:last-child {
+  top: 0;
+  right: 0;
+  background: radial-gradient(
+    circle at 100% 0,
+    transparent 10%,
+    rgba(255, 100, 0, 0.3),
+    rgba(100, 255, 0, 0.3),
+    rgba(0, 100, 255, 0.3),
+    transparent 60%
+  );
+  transform-origin: 100% 0;
+  transform: scale(calc(0.15 + var(--pointer-x) * -0.65))
+            translate(calc(10% - var(--pointer-x) * -10%), 
+                     calc(min(0%, var(--pointer-y) * -10%)));
+}
+
+.card__frame {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  background: transparent; /* Clean background since image is now small avatar */
+}
+
+.card__frame h3 {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.card__frame h3 span:first-child {
+  color: var(--border-color);
+  font-size: 1.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.card__frame h3 span:last-child {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.agent-stats {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(0, 255, 65, 0.3);
+  border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  color: var(--border-color);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.current-insight {
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+  border: 1px solid rgba(0, 255, 65, 0.2);
+}
+
+.current-insight p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.agent-signature {
+  margin-top: 10px;
+  text-align: center;
+  color: rgba(0, 255, 65, 0.5);
+  font-size: 0.75rem;
+  font-family: 'Courier New', monospace;
+}
+
+.status-indicator {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 10px;
+  height: 10px;
+}
+
+.status-indicator span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  animation: pulse-status 2s ease-in-out infinite;
+}
+
+.status-indicator.active span {
+  background: #00ff41;
+  box-shadow: 0 0 10px #00ff41;
+}
+
+.status-indicator.idle span {
+  background: #ffaa00;
+  box-shadow: 0 0 10px #ffaa00;
+}
+
+.status-indicator.offline span {
+  background: #ff0041;
+  box-shadow: 0 0 10px #ff0041;
+}
+
+@keyframes pulse-status {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.spotlight {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.spotlight::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 500%;
+  aspect-ratio: 1;
+  background: radial-gradient(
+    rgba(255, 255, 255, 0.4) 0 2%,
+    rgba(255, 255, 255, 0.2) 20%,
+    transparent 40%
+  );
+  transform: translate(calc(-50% + var(--pointer-x) * 20%), 
+                      calc(-50% + var(--pointer-y) * 20%));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.trading-card.active:hover .spotlight::before {
+  opacity: 1;
+}
+
+.glare-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--border);
+  pointer-events: none;
+}
+
+.glare {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    -65deg,
+    transparent 0 40%,
+    rgba(255, 255, 255, 0.5) 40% 50%,
+    transparent 50% 55%,
+    rgba(255, 255, 255, 0.5) 55% 60%,
+    transparent 60% 100%
+  );
+  transform: translateX(100%);
+  opacity: 0.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .trading-card {
+    --card-width: 240px;
+  }
+  
+  .card__frame h3 span:first-child {
+    font-size: 1.4rem;
+  }
+  
+  .agent-stats {
+    grid-template-columns: 1fr;
+  }
+}

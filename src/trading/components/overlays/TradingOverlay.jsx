@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useRandomCandles } from '@/utilities/useRandomCandles';
 import CompactCandleModal from '@/components/CompactCandleModal';
 import NotificationBadge from '@/components/NotificationBadge';
+import TradingCardsDisplay from '@/components/TradingCardsDisplay';
 import { useUser } from '@clerk/nextjs';
 import { db, collection, onSnapshot, query, orderBy, limit } from '@/utilities/firebaseClient';
 
@@ -584,8 +585,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
         )}
 
 
-        {/* Content Panel */}
-        {activeTab && (
+        {/* Content Panel - Only show for tabs that don't use portals */}
+        {activeTab && activeTab !== 'aitraders' && activeTab !== 'candle' && (
           <>
             {/* Background Overlay */}
             <div
@@ -599,8 +600,10 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                 left: '0',
                 right: '0',
                 bottom: '0',
-                background: 'rgba(0, 0, 0, 0.3)',
-                zIndex: 998,
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                zIndex: 999998,
                 transition: 'all 0.3s ease'
               }}
             />
@@ -617,9 +620,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
               border: '1px solid rgba(0, 255, 0, 0.3)',
               borderRadius: '12px',
               padding: '15px',
-              backdropFilter: 'blur(15px)',
               boxShadow: '0 0 30px rgba(0, 0, 0, 0.5)',
-              zIndex: 99999,
+              zIndex: 999999,
               overflowY: 'auto',
               fontFamily: 'monospace',
               fontSize: '11px',
@@ -1497,523 +1499,311 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
             </>
           )}
 
-          {/* AI Traders Panel */}
-          {activeTab === 'aitraders' && (
-            <>
-              <div style={{
-                marginBottom: '12px',
-                paddingBottom: '8px',
-                borderBottom: '1px solid rgba(0, 150, 255, 0.3)'
-              }}>
-                <div style={{ color: '#0096ff', fontWeight: 'bold', fontSize: '13px' }}>
-                  🤖 AI TRADING TEAM
-                </div>
-              </div>
-              
-              {/* AI Trader Cards */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                maxHeight: 'calc(100vh - 240px)',
-                overflowY: 'auto'
-              }}>
-                {[
-                  {
-                    name: 'BULL RIDER',
-                    emoji: '🐂',
-                    color: '#00ff00',
-                    specialty: 'Long Momentum',
-                    thesis: 'Identifies and rides strong upward trends using technical indicators and volume analysis.',
-                    stats: { winRate: '68%', avgReturn: '+12.5%', trades: 342 }
-                  },
-                  {
-                    name: 'BEAR HUNTER',
-                    emoji: '🐻',
-                    color: '#ff4444',
-                    specialty: 'Short Positions',
-                    thesis: 'Finds overvalued assets and market inefficiencies for strategic short positions.',
-                    stats: { winRate: '71%', avgReturn: '+9.8%', trades: 198 }
-                  },
-                  {
-                    name: 'QUANT MASTER',
-                    emoji: '📊',
-                    color: '#ffdd00',
-                    specialty: 'Algorithmic Trading',
-                    thesis: 'Uses machine learning and statistical arbitrage to find alpha in market microstructure.',
-                    stats: { winRate: '83%', avgReturn: '+7.2%', trades: 1847 }
-                  },
-                  {
-                    name: 'MACRO SAGE',
-                    emoji: '🌍',
-                    color: '#0096ff',
-                    specialty: 'Global Macro',
-                    thesis: 'Analyzes global economic trends, policy changes, and geopolitical events for strategic positioning.',
-                    stats: { winRate: '75%', avgReturn: '+15.3%', trades: 89 }
-                  }
-                ].map((trader, idx) => (
-                  <div key={idx} style={{
-                    background: `linear-gradient(135deg, ${trader.color}10 0%, ${trader.color}05 100%)`,
-                    border: `1px solid ${trader.color}60`,
-                    borderRadius: '8px',
-                    padding: '12px',
-                    position: 'relative'
-                  }}>
-                    {/* Header */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      marginBottom: '10px'
-                    }}>
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        background: `${trader.color}20`,
-                        border: `2px solid ${trader.color}`,
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '20px'
-                      }}>
-                        {trader.emoji}
-                      </div>
-                      <div>
-                        <div style={{ 
-                          color: trader.color, 
-                          fontWeight: 'bold', 
-                          fontSize: '12px' 
-                        }}>
-                          {trader.name}
-                        </div>
-                        <div style={{ 
-                          color: '#888', 
-                          fontSize: '10px' 
-                        }}>
-                          {trader.specialty}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Thesis */}
-                    <div style={{
-                      marginBottom: '10px',
-                      padding: '8px',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      borderRadius: '4px',
-                      borderLeft: `2px solid ${trader.color}`
-                    }}>
-                      <div style={{ color: '#aaa', fontSize: '9px', marginBottom: '4px' }}>
-                        STRATEGY
-                      </div>
-                      <div style={{ color: '#ddd', fontSize: '10px', lineHeight: '1.4' }}>
-                        {trader.thesis}
-                      </div>
-                    </div>
-                    
-                    {/* Stats */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: '8px'
-                    }}>
-                      {Object.entries(trader.stats).map(([key, value]) => (
-                        <div key={key} style={{
-                          flex: 1,
-                          textAlign: 'center',
-                          padding: '6px',
-                          background: 'rgba(0, 0, 0, 0.2)',
-                          borderRadius: '4px'
-                        }}>
-                          <div style={{ color: '#888', fontSize: '8px', marginBottom: '2px' }}>
-                            {key === 'winRate' ? 'WIN RATE' : 
-                             key === 'avgReturn' ? 'AVG RETURN' : 
-                             'TRADES'}
-                          </div>
-                          <div style={{ 
-                            color: trader.color, 
-                            fontSize: '11px', 
-                            fontWeight: 'bold' 
-                          }}>
-                            {value}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
 
-          {activeTab === 'candle' && typeof window !== 'undefined' && ReactDOM.createPortal(
+            </div>
+          </>
+        )}
+
+        {/* AI Traders Panel Portal - Moved outside content panel */}
+        {activeTab === 'aitraders' && typeof window !== 'undefined' && ReactDOM.createPortal(
+          <>
+            {/* Background overlay with blur - clickable to close */}
+            <div 
+              onClick={() => {
+                setActiveTab(null);
+                setShowMobileMenu(false);
+              }}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                zIndex: 99998,
+                cursor: 'pointer'
+              }} 
+            />
+            
+            {/* Content container */}
             <div style={{
               position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              backgroundColor: '#000000',
-              background: 'linear-gradient(135deg, #000000 0%, #0a1a0a 100%)',
+              top: isMobile ? '20px' : '50%',
+              left: isMobile ? '10px' : '50%',
+              right: isMobile ? '10px' : 'auto',
+              bottom: isMobile ? '20px' : 'auto',
+              transform: isMobile ? 'none' : 'translate(-50%, -50%)',
               display: 'flex',
               flexDirection: 'column',
               zIndex: 99999,
-              isolation: 'isolate',
-              // Add padding for mobile safe areas
-              paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0)' : 0
+              width: isMobile ? 'calc(100vw - 20px)' : 'auto',
+              height: isMobile ? 'calc(100vh - 40px)' : 'auto',
+              maxWidth: isMobile ? 'calc(100vw - 20px)' : '90vw',
+              maxHeight: isMobile ? 'calc(100vh - 40px)' : '90vh',
+              border: 'none',
+              outline: 'none',
+              overflow: 'visible'
             }}>
+              {/* Header with close button on mobile */}
               <div style={{
-                marginBottom: '12px',
-                padding: '40px 20px 16px 20px',
+                padding: isMobile ? '20px 15px 10px' : '40px 20px 16px 20px',
                 borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
-                position: 'relative',
-                zIndex: 1,
-                minHeight: '100px'
+                position: 'relative'
               }}>
-                {/* Header buttons */}
-                <div style={{
-                  position: 'absolute',
-                  top: '35px',
-                  right: '15px',
-                  display: 'flex',
-                  gap: '10px',
-                  zIndex: 2
-                }}>
-                  {/* Create button - moved to header */}
-                  {isSignedIn && candleTab === 'mine' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        console.log('Create button clicked, closing candle view and opening modal');
-                        // Close the candle view first
-                        setActiveTab(null);
-                        setShowMobileMenu(true);
-                        // Then open the modal
-                        setTimeout(() => {
-                          setShowCompactCandleModal(true);
-                        }, 100);
-                      }}
-                      style={{
-                        background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
-                        border: '1px solid #00ff88',
-                        borderRadius: '6px',
-                        color: '#000',
-                        padding: '6px 12px',
-                        cursor: 'pointer',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      + Create
-                    </button>
-                  )}
-                  
-                  {/* Close Button */}
+                {isMobile && (
                   <button
-                    onClick={() => {
-                      setActiveTab(null);
-                      setShowMobileMenu(true);
-                    }}
+                    onClick={() => setActiveTab(null)}
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      background: 'rgba(255, 0, 0, 0.15)',
-                      border: '1px solid rgba(255, 0, 0, 0.3)',
-                      borderRadius: '6px',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      fontSize: '18px',
+                      position: 'absolute',
+                      top: '15px',
+                      right: '15px',
+                      background: 'transparent',
+                      border: '1px solid rgba(0, 255, 0, 0.5)',
+                      color: '#00ff00',
+                      padding: '5px 10px',
+                      borderRadius: '4px',
                       cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s ease',
-                      backdropFilter: 'blur(10px)'
+                      fontSize: '12px',
+                      fontFamily: 'monospace',
+                      zIndex: 10
                     }}
                   >
                     ✕
                   </button>
-                </div>
-                
-                {/* Title Section with more vertical space */}
-                <div style={{
-                  marginTop: '10px',
-                  marginBottom: '16px'
+                )}
+                <h2 style={{
+                  margin: 0,
+                  fontSize: isMobile ? '20px' : '24px',
+                  color: '#00ff00',
+                  fontFamily: 'Orbitron, monospace',
+                  textAlign: 'center'
                 }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '12px'
-                  }}>
-                    <div style={{ 
-                      color: '#00ff88', 
-                      fontWeight: 'bold', 
-                      fontSize: '16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}>
-                      🕯️ 
-                      <span>
-                        {(() => {
-                          const currentCandle = candleTab === 'mine' ? currentUserCandle : randomFirestoreData;
-                          const messageType = currentCandle?.messageType;
-                          if (messageType) {
-                            const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
-                            return `Msg Protocol: ${displayType}`;
-                          }
-                          return 'TEMPLE CANDLES';
-                        })()}
-                      </span>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}>
-                      <div style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: 'radial-gradient(circle, #ffff00, #ff8800)',
-                        boxShadow: '0 0 10px #ff8800',
-                        animation: 'pulse 2s infinite'
-                      }}/>
-                      {/* <span style={{ color: 'rgba(0, 255, 136, 0.8)', fontSize: '11px', fontWeight: '500' }}>
-                        {candleTab === 'mine' ? 'My Offering' : 'Community'}
-                      </span> */}
-                    </div>
-                  </div>
-                  
-                  {/* Tab Selector for Mobile */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '6px'
-                  }}>
-                  <button
-                    onClick={() => setCandleTab('mine')}
-                    style={{
-                      flex: 1,
-                      padding: '6px 10px',
-                      background: candleTab === 'mine' 
-                        ? 'linear-gradient(90deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 255, 136, 0.1) 100%)'
-                        : 'rgba(0, 255, 136, 0.05)',
-                      border: `1px solid ${candleTab === 'mine' ? '#00ff88' : 'rgba(0, 255, 136, 0.2)'}`,
-                      borderRadius: '4px',
-                      color: candleTab === 'mine' ? '#00ff88' : '#888',
-                      fontSize: '11px',
-                      fontWeight: candleTab === 'mine' ? 'bold' : 'normal',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      fontFamily: 'monospace'
-                    }}
-                  >
-                    My Candle
-                  </button>
-                  <button
-                    onClick={() => setCandleTab('community')}
-                    style={{
-                      flex: 1,
-                      padding: '6px 10px',
-                      background: candleTab === 'community' 
-                        ? 'linear-gradient(90deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 255, 136, 0.1) 100%)'
-                        : 'rgba(0, 255, 136, 0.05)',
-                      border: `1px solid ${candleTab === 'community' ? '#00ff88' : 'rgba(0, 255, 136, 0.2)'}`,
-                      borderRadius: '4px',
-                      color: candleTab === 'community' ? '#00ff88' : '#888',
-                      fontSize: '11px',
-                      fontWeight: candleTab === 'community' ? 'bold' : 'normal',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      fontFamily: 'monospace'
-                    }}
-                  >
-                    Community
-                  </button>
-                </div>
-                </div>
+                  AI Trading Council
+                </h2>
               </div>
               
+              {/* Trading Cards Display */}
               <div style={{
                 flex: 1,
-                position: 'relative',
-                minHeight: 0,
-                zIndex: 0,
+                overflowY: isMobile ? 'auto' : 'visible',
+                overflowX: 'hidden',
                 padding: '20px',
-                paddingTop: '10px'
+                border: 'none',
+                outline: 'none',
+                boxShadow: 'none'
               }}>
-                {candleTab === 'mine' ? (
-                  currentUserCandle ? (
-                    <>
-                      <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        left: '20px',
-                        right: '20px',
-                        bottom: '20px',
-                        zIndex: 0
-                      }}>
-                        <SingleCandleDisplay 
-                          firestoreData={currentUserCandle}
-                          isUserCandle={true}
-                        />
-                      </div>
-                      {/* Navigation controls when user has multiple candles */}
-                      {userCandles.length > 1 && (
-                        <>
-                          {/* Left Arrow */}
-                          <button
-                            onClick={() => {
-                              setUserCandleIndex(prev => (prev - 1 + userCandles.length) % userCandles.length);
-                            }}
-                            style={{
-                              position: 'absolute',
-                              left: '10px',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              background: 'rgba(0, 0, 0, 0.5)',
-                              border: '1px solid rgba(0, 255, 0, 0.2)',
-                              borderRadius: '50%',
-                              color: '#00ff88',
-                              cursor: 'pointer',
-                              fontSize: '20px',
-                              width: '36px',
-                              height: '36px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.2s',
-                              zIndex: 1000
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
-                              e.currentTarget.style.borderColor = '#00ff88';
-                              e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
-                              e.currentTarget.style.borderColor = 'rgba(0, 255, 0, 0.2)';
-                              e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-                            }}
-                          >
-                            ‹
-                          </button>
-                          
-                          {/* Right Arrow */}
-                          <button
-                            onClick={() => {
-                              setUserCandleIndex(prev => (prev + 1) % userCandles.length);
-                            }}
-                            style={{
-                              position: 'absolute',
-                              right: '10px',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              background: 'rgba(0, 0, 0, 0.5)',
-                              border: '1px solid rgba(0, 255, 0, 0.2)',
-                              borderRadius: '50%',
-                              color: '#00ff88',
-                              cursor: 'pointer',
-                              fontSize: '20px',
-                              width: '36px',
-                              height: '36px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.2s',
-                              zIndex: 1000
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
-                              e.currentTarget.style.borderColor = '#00ff88';
-                              e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
-                              e.currentTarget.style.borderColor = 'rgba(0, 255, 0, 0.2)';
-                              e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-                            }}
-                          >
-                            ›
-                          </button>
-                          
-                          {/* Page Indicator */}
-                          <div style={{
-                            position: 'absolute',
-                            top: '15px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            color: 'rgba(0, 255, 0, 0.6)',
-                            fontSize: '11px',
-                            fontWeight: '500',
-                            background: 'rgba(0, 0, 0, 0.5)',
-                            padding: '4px 10px',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(0, 255, 0, 0.1)',
-                            userSelect: 'none',
-                            zIndex: 999
-                          }}>
-                            {userCandleIndex + 1} / {userCandles.length}
-                          </div>
-                        </>
-                      )}
-                    </>
-                  ) : (
+                <TradingCardsDisplay />
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
+
+        {/* Candle Panel Portal - Moved outside content panel */}
+        {activeTab === 'candle' && typeof window !== 'undefined' && ReactDOM.createPortal(
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: '#000000',
+            background: 'linear-gradient(135deg, #000000 0%, #0a1a0a 100%)',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 99999,
+            isolation: 'isolate',
+            // Add padding for mobile safe areas
+            paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0)' : 0
+          }}>
+            <div style={{
+              marginBottom: '12px',
+              padding: '40px 20px 16px 20px',
+              borderBottom: '1px solid rgba(0, 255, 0, 0.3)',
+              position: 'relative',
+              zIndex: 1,
+              minHeight: '100px'
+            }}>
+              {/* Header buttons */}
+              <div style={{
+                position: 'absolute',
+                top: '35px',
+                right: '15px',
+                display: 'flex',
+                gap: '10px',
+                zIndex: 2
+              }}>
+                {/* Create button - moved to header */}
+                {isSignedIn && candleTab === 'mine' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      console.log('Create button clicked, closing candle view and opening modal');
+                      // Close the candle view first
+                      setActiveTab(null);
+                      setShowMobileMenu(true);
+                      // Then open the modal
+                      setTimeout(() => {
+                        setShowCompactCandleModal(true);
+                      }, 100);
+                    }}
+                    style={{
+                      background: 'linear-gradient(135deg, #00ff88 0%, #00dd66 100%)',
+                      border: '1px solid #00ff88',
+                      borderRadius: '6px',
+                      color: '#000',
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    + Create
+                  </button>
+                )}
+                
+                {/* Close Button */}
+                <button
+                  onClick={() => {
+                    setActiveTab(null);
+                    setShowMobileMenu(true);
+                  }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    background: 'rgba(255, 0, 0, 0.15)',
+                    border: '1px solid rgba(255, 0, 0, 0.3)',
+                    borderRadius: '6px',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fontSize: '18px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* Title Section with more vertical space */}
+              <div style={{
+                marginTop: '10px',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ 
+                    color: '#00ff88', 
+                    fontWeight: 'bold', 
+                    fontSize: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    🕯️ 
+                    <span>
+                      {(() => {
+                        const currentCandle = candleTab === 'mine' ? currentUserCandle : randomFirestoreData;
+                        const messageType = currentCandle?.messageType;
+                        if (messageType) {
+                          const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
+                          return `Msg Protocol: ${displayType}`;
+                        }
+                        return 'TEMPLE CANDLES';
+                      })()}
+                    </span>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
                     <div style={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '20px',
-                      padding: '20px'
-                    }}>
-                      <div style={{
-                        fontSize: '50px',
-                        opacity: 0.3
-                      }}>🕯️</div>
-                      <div style={{
-                        color: '#888',
-                        fontSize: '12px',
-                        textAlign: 'center',
-                        lineHeight: '1.5'
-                      }}>
-                        {!isSignedIn ? 'Sign in to view your candles' : 'You haven\'t lit a candle yet'}
-                      </div>
-                      {isSignedIn && (
-                        <button
-                          onClick={() => setShowCompactCandleModal(true)}
-                          onTouchEnd={(e) => {
-                            e.preventDefault();
-                            setShowCompactCandleModal(true);
-                          }}
-                        style={{
-                          padding: '10px 20px',
-                          background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%)',
-                          border: '1px solid #00ff88',
-                          borderRadius: '8px',
-                          color: '#00ff88',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          fontFamily: 'monospace',
-                          WebkitTapHighlightColor: 'transparent',
-                          touchAction: 'manipulation'
-                        }}
-                      >
-                        Light Your Candle
-                      </button>
-                      )}
-                    </div>
-                  )
-                ) : (
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, #ffff00, #ff8800)',
+                      boxShadow: '0 0 10px #ff8800',
+                      animation: 'pulse 2s infinite'
+                    }}/>
+                    {/* <span style={{ color: 'rgba(0, 255, 136, 0.8)', fontSize: '11px', fontWeight: '500' }}>
+                      {candleTab === 'mine' ? 'My Offering' : 'Community'}
+                    </span> */}
+                  </div>
+                </div>
+                
+                {/* Tab Selector for Mobile */}
+                <div style={{
+                  display: 'flex',
+                  gap: '6px'
+                }}>
+                <button
+                  onClick={() => setCandleTab('mine')}
+                  style={{
+                    flex: 1,
+                    padding: '6px 10px',
+                    background: candleTab === 'mine' 
+                      ? 'linear-gradient(90deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 255, 136, 0.1) 100%)'
+                      : 'rgba(0, 255, 136, 0.05)',
+                    border: `1px solid ${candleTab === 'mine' ? '#00ff88' : 'rgba(0, 255, 136, 0.2)'}`,
+                    borderRadius: '4px',
+                    color: candleTab === 'mine' ? '#00ff88' : '#888',
+                    fontSize: '11px',
+                    fontWeight: candleTab === 'mine' ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    fontFamily: 'monospace'
+                  }}
+                >
+                  My Candle
+                </button>
+                <button
+                  onClick={() => setCandleTab('community')}
+                  style={{
+                    flex: 1,
+                    padding: '6px 10px',
+                    background: candleTab === 'community' 
+                      ? 'linear-gradient(90deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 255, 136, 0.1) 100%)'
+                      : 'rgba(0, 255, 136, 0.05)',
+                    border: `1px solid ${candleTab === 'community' ? '#00ff88' : 'rgba(0, 255, 136, 0.2)'}`,
+                    borderRadius: '4px',
+                    color: candleTab === 'community' ? '#00ff88' : '#888',
+                    fontSize: '11px',
+                    fontWeight: candleTab === 'community' ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    fontFamily: 'monospace'
+                  }}
+                >
+                  Community
+                </button>
+              </div>
+              </div>
+            </div>
+            
+            <div style={{
+              flex: 1,
+              position: 'relative',
+              minHeight: 0,
+              zIndex: 0,
+              padding: '20px',
+              paddingTop: '10px'
+            }}>
+              {candleTab === 'mine' ? (
+                currentUserCandle ? (
                   <>
                     <div style={{
                       position: 'absolute',
@@ -2024,17 +1814,17 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                       zIndex: 0
                     }}>
                       <SingleCandleDisplay 
-                        firestoreData={randomFirestoreData}
-                        isUserCandle={false}
+                        firestoreData={currentUserCandle}
+                        isUserCandle={true}
                       />
                     </div>
-                    {/* Navigation controls for community candles */}
-                    {firestoreResults && firestoreResults.length > 1 && (
+                    {/* Navigation controls when user has multiple candles */}
+                    {userCandles.length > 1 && (
                       <>
                         {/* Left Arrow */}
                         <button
                           onClick={() => {
-                            setCandleIndex(prev => (prev - 1 + firestoreResults.length) % firestoreResults.length);
+                            setUserCandleIndex(prev => (prev - 1 + userCandles.length) % userCandles.length);
                           }}
                           style={{
                             position: 'absolute',
@@ -2072,7 +1862,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                         {/* Right Arrow */}
                         <button
                           onClick={() => {
-                            setCandleIndex(prev => (prev + 1) % firestoreResults.length);
+                            setUserCandleIndex(prev => (prev + 1) % userCandles.length);
                           }}
                           style={{
                             position: 'absolute',
@@ -2123,18 +1913,180 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                           userSelect: 'none',
                           zIndex: 999
                         }}>
-                          {candleIndex + 1} / {firestoreResults.length}
+                          {userCandleIndex + 1} / {userCandles.length}
                         </div>
                       </>
                     )}
                   </>
-                )}
-              </div>
-            </div>,
-            document.body
-          )}
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '20px',
+                    padding: '20px'
+                  }}>
+                    <div style={{
+                      fontSize: '50px',
+                      opacity: 0.3
+                    }}>🕯️</div>
+                    <div style={{
+                      color: '#888',
+                      fontSize: '12px',
+                      textAlign: 'center',
+                      lineHeight: '1.5'
+                    }}>
+                      {!isSignedIn ? 'Sign in to view your candles' : 'You haven\'t lit a candle yet'}
+                    </div>
+                    {isSignedIn && (
+                      <button
+                        onClick={() => setShowCompactCandleModal(true)}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          setShowCompactCandleModal(true);
+                        }}
+                      style={{
+                        padding: '10px 20px',
+                        background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.1) 100%)',
+                        border: '1px solid #00ff88',
+                        borderRadius: '8px',
+                        color: '#00ff88',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        fontFamily: 'monospace',
+                        WebkitTapHighlightColor: 'transparent',
+                        touchAction: 'manipulation'
+                      }}
+                    >
+                      Light Your Candle
+                    </button>
+                    )}
+                  </div>
+                )
+              ) : (
+                <>
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '20px',
+                    right: '20px',
+                    bottom: '20px',
+                    zIndex: 0
+                  }}>
+                    <SingleCandleDisplay 
+                      firestoreData={randomFirestoreData}
+                      isUserCandle={false}
+                    />
+                  </div>
+                  {/* Navigation controls for community candles */}
+                  {firestoreResults && firestoreResults.length > 1 && (
+                    <>
+                      {/* Left Arrow */}
+                      <button
+                        onClick={() => {
+                          setCandleIndex(prev => (prev - 1 + firestoreResults.length) % firestoreResults.length);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          left: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'rgba(0, 0, 0, 0.5)',
+                          border: '1px solid rgba(0, 255, 0, 0.2)',
+                          borderRadius: '50%',
+                          color: '#00ff88',
+                          cursor: 'pointer',
+                          fontSize: '20px',
+                          width: '36px',
+                          height: '36px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s',
+                          zIndex: 1000
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
+                          e.currentTarget.style.borderColor = '#00ff88';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                          e.currentTarget.style.borderColor = 'rgba(0, 255, 0, 0.2)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                        }}
+                      >
+                        ‹
+                      </button>
+                      
+                      {/* Right Arrow */}
+                      <button
+                        onClick={() => {
+                          setCandleIndex(prev => (prev + 1) % firestoreResults.length);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'rgba(0, 0, 0, 0.5)',
+                          border: '1px solid rgba(0, 255, 0, 0.2)',
+                          borderRadius: '50%',
+                          color: '#00ff88',
+                          cursor: 'pointer',
+                          fontSize: '20px',
+                          width: '36px',
+                          height: '36px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s',
+                          zIndex: 1000
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
+                          e.currentTarget.style.borderColor = '#00ff88';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                          e.currentTarget.style.borderColor = 'rgba(0, 255, 0, 0.2)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                        }}
+                      >
+                        ›
+                      </button>
+                      
+                      {/* Page Indicator */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '15px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        color: 'rgba(0, 255, 0, 0.6)',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        background: 'rgba(0, 0, 0, 0.5)',
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(0, 255, 0, 0.1)',
+                        userSelect: 'none',
+                        zIndex: 999
+                      }}>
+                        {candleIndex + 1} / {firestoreResults.length}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
             </div>
-          </>
+          </div>,
+          document.body
         )}
         
         {/* Compact Candle Modal for mobile */}

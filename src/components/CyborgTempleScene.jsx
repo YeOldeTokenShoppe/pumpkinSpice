@@ -18,10 +18,11 @@ const CyborgTempleScene = forwardRef(({
   showAnnotations = true,
   is80sMode = false,
   onAnnotationClick = null, // Callback when annotation is clicked
+  onAgentClick = null, // Callback when an agent is clicked
   isMobile = false, // Pass this prop to determine device type
 }, ref) => {
   const groupRef = useRef();
-  const { scene } = useThree();
+  const { scene, camera, gl } = useThree();
   const hasLoadedRef = useRef(false);
   const mixerRef = useRef();
   const actionsRef = useRef({});
@@ -44,6 +45,11 @@ const CyborgTempleScene = forwardRef(({
   const coin3Ref = useRef();
   const coin4Ref = useRef();
   
+  // Camera focus state
+  const [focusTarget, setFocusTarget] = useState(null);
+  const ourLadyRef = useRef(); // Reference to RL80 (OurLady) mesh
+  const originalCameraPosition = useRef(null); // Store original camera position
+  
   // Detect mobile device on mount
   useEffect(() => {
     const checkMobile = () => {
@@ -62,10 +68,44 @@ const CyborgTempleScene = forwardRef(({
   // Use prop or detected mobile state
   const isOnMobile = isMobile || detectedMobile;
   
-  // Expose the loaded model through ref
+  // Expose the loaded model and camera control functions through ref
   useImperativeHandle(ref, () => ({
-    current: loadedModel
-  }), [loadedModel]);
+    current: loadedModel,
+    focusOnAgent: (agentId) => {
+      // Focus on a specific agent programmatically
+      let targetRef = null;
+      
+      if (agentId === 'RL80' && ourLadyRef.current) {
+        targetRef = ourLadyRef.current;
+      } else if (agentId === 'Mike' && cube010MeshRef.current) {
+        targetRef = cube010MeshRef.current;
+      }
+      
+      if (targetRef) {
+        const objectWorldPos = new THREE.Vector3();
+        targetRef.getWorldPosition(objectWorldPos);
+        
+        // Calculate camera position relative to the object
+        const cameraOffset = new THREE.Vector3(2, 0.5, 3);
+        const cameraPosition = objectWorldPos.clone().add(cameraOffset);
+        
+        setFocusTarget({
+          position: cameraPosition,
+          lookAt: objectWorldPos,
+          agentId: agentId,
+          agentName: agentId
+        });
+      }
+    },
+    resetCamera: () => {
+      // Reset camera to original position
+      setFocusTarget(null);
+      if (originalCameraPosition.current) {
+        camera.position.copy(originalCameraPosition.current);
+        camera.lookAt(0, 0, 0);
+      }
+    }
+  }), [loadedModel, camera]);
 
   // Define annotation points - adjust positions based on your temple scene
   const annotations = [
@@ -207,11 +247,9 @@ const CyborgTempleScene = forwardRef(({
       scene.add(anchorGroup);
       
       // Store reference for cleanup
-      if (groupRef.current) {
-        groupRef.current = anchorGroup;
-      }
+      groupRef.current = anchorGroup;
       
-      // Find the specific meshes
+      // Find the specific meshes and add click handlers
       templeScene.traverse((child) => {
         if (child.name === 'Cylinder043_0') {
           // console.log('Found Cylinder043_0 mesh:', child);
@@ -221,9 +259,56 @@ const CyborgTempleScene = forwardRef(({
           // console.log('Found Object_5 mesh:', child);
           object7MeshRef.current = child;
         }
-        if (child.name === 'Mike') {
-          // console.log('Found Cube010 mesh:', child);
-          cube010MeshRef.current = child;
+        
+        // Find OurLady (RL80) and make it clickable
+        if (child.name === 'OurLady' || child.name === 'Object_7' || child.name === 'RL80') {
+          console.log('Found OurLady/RL80:', child.name, 'Type:', child.type, 'isMesh:', child.isMesh);
+          
+          // Get world position of the object
+          const worldPos = new THREE.Vector3();
+          child.getWorldPosition(worldPos);
+          console.log('OurLady world position:', worldPos);
+          
+          ourLadyRef.current = child;
+          
+          // Set clickable data on this object and all its children
+          const setClickableData = (obj) => {
+            obj.userData.clickable = true;
+            obj.userData.agentId = 'RL80';
+            obj.userData.agentName = 'RL80';
+            obj.userData.targetObject = child; // Store reference to the actual object
+            
+            // Also apply to all children if it's a group
+            if (obj.children && obj.children.length > 0) {
+              obj.children.forEach(setClickableData);
+            }
+          };
+          
+          setClickableData(child);
+        }
+        
+        // Make the three mechs clickable
+        if (child.name === 'Mike' || child.name === 'Emo' || child.name === 'Macro' || child.name === 'Tekno') {
+          console.log('Found Mech:', child.name, 'Type:', child.type, 'isMesh:', child.isMesh);
+          
+          // Get world position of the mech
+          const mechWorldPos = new THREE.Vector3();
+          child.getWorldPosition(mechWorldPos);
+          console.log(`${child.name} world position:`, mechWorldPos);
+          
+          const setMechClickableData = (obj) => {
+            obj.userData.clickable = true;
+            obj.userData.agentId = child.name;
+            obj.userData.agentName = child.name;
+            obj.userData.targetObject = child; // Store reference to the actual object
+            
+            // Also apply to all children if it's a group
+            if (obj.children && obj.children.length > 0) {
+              obj.children.forEach(setMechClickableData);
+            }
+          };
+          
+          setMechClickableData(child);
         }
         
         // Find angel and coin objects for MOBILE.glb animations
@@ -262,9 +347,7 @@ const CyborgTempleScene = forwardRef(({
         }, 100);
       }
     }, 
-    (progress) => {
-      // console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
-    },
+    undefined,
     (error) => {
       console.error(`Error loading model ${modelPath}:`, error);
       // Still call onLoad even if there's an error, so the page doesn't hang
@@ -297,6 +380,203 @@ const CyborgTempleScene = forwardRef(({
       }
     };
   }, [scene, position, rotation, scale, onLoad, isOnMobile]);
+
+  // Store original camera position on first render
+  useEffect(() => {
+    if (!originalCameraPosition.current && camera) {
+      originalCameraPosition.current = camera.position.clone();
+    }
+  }, [camera]);
+
+  // Add raycaster for click detection and keyboard shortcuts
+  useEffect(() => {
+    if (!groupRef.current || !gl) return;
+    
+    console.log('[Click Handler] Setting up click detection, groupRef:', groupRef.current);
+    console.log('[Click Handler] Canvas element:', gl.domElement);
+    console.log('[Click Handler] Canvas pointer-events:', window.getComputedStyle(gl.domElement).pointerEvents);
+    
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    
+    // Handle escape key to reset camera
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && focusTarget) {
+        console.log('[Escape] Resetting camera');
+        setFocusTarget(null);
+        
+        // Notify parent that focus is cleared
+        if (onAgentClick) {
+          onAgentClick(null);
+        }
+        
+        if (originalCameraPosition.current) {
+          const resetTarget = {
+            position: originalCameraPosition.current.clone(),
+            lookAt: new THREE.Vector3(0, 0, 0),
+            agentId: null,
+            agentName: 'Reset'
+          };
+          setFocusTarget(resetTarget);
+          
+          setTimeout(() => {
+            setFocusTarget(null);
+          }, 1500);
+        }
+      }
+    };
+    
+    // Also set up hover detection for visual feedback
+    const handlePointerMove = (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(groupRef.current.children, true);
+      
+      // Change cursor if hovering over clickable object
+      let foundClickable = false;
+      for (let i = 0; i < intersects.length; i++) {
+        if (intersects[i].object.userData.clickable) {
+          foundClickable = true;
+          break;
+        }
+      }
+      gl.domElement.style.cursor = foundClickable ? 'pointer' : 'default';
+    };
+    
+    const handleClick = (event) => {
+      // Prevent default to avoid any interference
+      event.preventDefault();
+      event.stopPropagation();
+      
+      // Calculate mouse position in normalized device coordinates
+      const rect = gl.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      console.log('[Click] Mouse position:', mouse.x, mouse.y);
+      console.log('[Click] Canvas rect:', rect);
+      
+      // Update the picking ray with the camera and mouse position
+      raycaster.setFromCamera(mouse, camera);
+      
+      // Calculate objects intersecting the picking ray
+      const intersects = raycaster.intersectObjects(groupRef.current.children, true);
+      
+      console.log('[Click] Intersected objects:', intersects.length);
+      
+      let clickedOnAgent = false;
+      
+      for (let i = 0; i < intersects.length; i++) {
+        const object = intersects[i].object;
+        console.log('[Click] Checking object:', object.name, 'clickable:', object.userData.clickable);
+        
+        if (object.userData.clickable) {
+          clickedOnAgent = true;
+          console.log('Clicked on agent:', object.userData.agentName);
+          
+          // Get the target object's world position
+          const targetObject = object.userData.targetObject || object;
+          const objectWorldPos = new THREE.Vector3();
+          targetObject.getWorldPosition(objectWorldPos);
+          
+          console.log('Target object world position:', objectWorldPos);
+          
+          // Calculate the direction from the object to the center (0,0,0)
+          // This helps us position the camera "in front" of each model
+          const directionToCenter = new THREE.Vector3(0, 0, 0).sub(objectWorldPos).normalize();
+          
+          // Custom settings per agent (optional)
+          const agentSettings = {
+            'RL80': { distance: 1.5, height: -1.8, lookAtHeight: 1 },
+            'Emo': { distance: 1.5, height: -0.9, lookAtHeight: 1.1 },
+            'Macro': { distance: 1.5, height: -2, lookAtHeight: 1 },
+            'Tekno': { distance: 1.5, height: -0.5, lookAtHeight: 1 }
+          };
+          
+          const settings = agentSettings[object.userData.agentId] || { distance: 3, height: 1, lookAtHeight: 0.8 };
+          
+          // Calculate camera position
+          // Position camera "in front" of the model (opposite side from center)
+          // and slightly above
+          const distance = settings.distance; // Distance from the model
+          const height = settings.height; // Height above the model's base
+          
+          const cameraPosition = new THREE.Vector3();
+          // Start from object position
+          cameraPosition.copy(objectWorldPos);
+          // Move TOWARD center (in front of the model, since models face inward)
+          cameraPosition.x += directionToCenter.x * distance;
+          cameraPosition.z += directionToCenter.z * distance;
+          // Set height
+          cameraPosition.y = objectWorldPos.y + height;
+          
+          // Set the lookAt target higher up on the model (not at its base)
+          const lookAtTarget = new THREE.Vector3();
+          lookAtTarget.copy(objectWorldPos);
+          lookAtTarget.y += settings.lookAtHeight; // Look at a point above the base
+          
+          console.log('Camera position:', cameraPosition);
+          console.log('LookAt target:', lookAtTarget);
+          
+          // Set focus target for camera animation
+          setFocusTarget({
+            position: cameraPosition,
+            lookAt: lookAtTarget, // Look at a point higher up on the model
+            agentId: object.userData.agentId,
+            agentName: object.userData.agentName
+          });
+          
+          // Call the parent callback if provided
+          if (onAgentClick) {
+            onAgentClick(object.userData.agentId);
+          }
+          
+          break; // Stop after first clickable object
+        }
+      }
+      
+      // If we didn't click on an agent and we're currently focused, reset the camera
+      if (!clickedOnAgent && focusTarget) {
+        console.log('[Click] Clicked on empty space, resetting camera');
+        setFocusTarget(null);
+        
+        // Notify parent that focus is cleared
+        if (onAgentClick) {
+          onAgentClick(null);
+        }
+        
+        // Smoothly return to original position
+        if (originalCameraPosition.current) {
+          const resetTarget = {
+            position: originalCameraPosition.current.clone(),
+            lookAt: new THREE.Vector3(0, 0, 0),
+            agentId: null,
+            agentName: 'Reset'
+          };
+          setFocusTarget(resetTarget);
+          
+          // Clear the focus target after a short delay to stop the animation
+          setTimeout(() => {
+            setFocusTarget(null);
+          }, 1500); // Adjust timing as needed
+        }
+      }
+    };
+    
+    gl.domElement.addEventListener('click', handleClick);
+    gl.domElement.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      gl.domElement.removeEventListener('click', handleClick);
+      gl.domElement.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('keydown', handleKeyDown);
+      gl.domElement.style.cursor = 'default';
+    };
+  }, [gl, camera, onAgentClick, loadedModel, focusTarget, originalCameraPosition]); // Added dependencies
 
   // Detect track changes and trigger transition effect
   useEffect(() => {
@@ -531,6 +811,31 @@ const CyborgTempleScene = forwardRef(({
   useFrame((state, delta) => {
     if (mixerRef.current) {
       mixerRef.current.update(delta);
+    }
+    
+    // Camera focus animation
+    if (focusTarget) {
+      // Smoothly move camera to target position
+      camera.position.lerp(focusTarget.position, 0.05);
+      
+      // Look at the target
+      const lookAtVector = new THREE.Vector3();
+      lookAtVector.lerpVectors(
+        new THREE.Vector3(
+          camera.getWorldDirection(new THREE.Vector3()).x,
+          camera.getWorldDirection(new THREE.Vector3()).y,
+          camera.getWorldDirection(new THREE.Vector3()).z
+        ),
+        focusTarget.lookAt,
+        0.05
+      );
+      camera.lookAt(focusTarget.lookAt);
+      
+      // Check if we're close enough to stop animating
+      if (camera.position.distanceTo(focusTarget.position) < 0.1) {
+        // Optional: trigger a callback when focus is complete
+        console.log('Camera focused on:', focusTarget.agentName);
+      }
     }
     
     // Add subtle animations for mobile objects

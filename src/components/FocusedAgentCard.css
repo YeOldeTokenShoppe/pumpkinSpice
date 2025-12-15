@@ -1,0 +1,159 @@
+.focused-agent-card {
+  position: fixed;
+  top: 6rem; /* Move down below top controls */
+  right: 2rem;
+  transform: translateX(110%);
+  z-index: 1000;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  max-height: calc(100vh - 8rem); /* Ensure it doesn't go below viewport */
+  overflow: visible; /* Allow close button to show outside */
+}
+
+.focused-agent-card.visible {
+  transform: translateX(0);
+  pointer-events: all;
+}
+
+.card-container {
+  position: relative;
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid rgba(0, 255, 65, 0.3);
+  border-radius: 12px;
+  padding: 1rem; /* Reduced padding */
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.8),
+    0 0 100px rgba(0, 255, 65, 0.1);
+  width: 360px; /* Fixed width for card proportions */
+  overflow-y: auto;
+  max-height: calc(100vh - 8rem);
+}
+
+.close-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(255, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.close-button:hover {
+  background: rgba(255, 0, 0, 1);
+  transform: scale(1.1);
+}
+
+.card-header {
+  text-align: center;
+  margin-bottom: 0.5rem; /* Reduced margin */
+  padding-bottom: 0.5rem; /* Reduced padding */
+  border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+}
+
+.card-header h3 {
+  margin: 0;
+  color: #00ff41;
+  font-size: 1.2rem; /* Smaller font */
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+}
+
+.card-header p {
+  margin: 0.2rem 0 0; /* Less margin */
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem; /* Smaller font */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.focused-card {
+  margin: 0 auto;
+  transform: scale(0.85); /* Better proportion for wider container */
+}
+
+.card-description {
+  margin-top: 0.5rem; /* Reduced margin */
+  padding-top: 0.5rem; /* Reduced padding */
+  border-top: 1px solid rgba(0, 255, 65, 0.2);
+}
+
+.card-description p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .focused-agent-card {
+    right: 1rem;
+    left: 1rem;
+    top: auto;
+    bottom: 2rem;
+    transform: translateY(120%);
+    max-width: none;
+  }
+  
+  .focused-agent-card.visible {
+    transform: translateY(0);
+  }
+  
+  .card-container {
+    max-width: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .focused-card {
+    transform: scale(0.7);
+  }
+}
+
+/* Animation for card entrance */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(120%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.focused-agent-card.visible {
+  animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Pulse effect for active state */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 
+      0 20px 50px rgba(0, 0, 0, 0.8),
+      0 0 100px rgba(0, 255, 65, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 20px 50px rgba(0, 0, 0, 0.8),
+      0 0 150px rgba(0, 255, 65, 0.2);
+  }
+}
+
+.card-container {
+  animation: pulse 3s ease-in-out infinite;
+}

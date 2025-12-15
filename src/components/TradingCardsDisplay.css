@@ -1,0 +1,220 @@
+/* Trading Cards Display Styles */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+.trading-cards-container {
+  height: 100%;
+  padding: 40px 20px;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  position: relative;
+  width: 100%;
+}
+
+/* Grid background effect - disabled to remove outline */
+.trading-cards-container::before {
+  display: none;
+}
+
+@keyframes grid-move {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(50px, 50px); }
+}
+
+.cards-header {
+  text-align: center;
+  z-index: 1;
+  margin-bottom: 10px;
+}
+
+.cards-header h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #00ff41;
+  margin: 0 0 5px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 
+    0 0 20px rgba(0, 255, 65, 0.5),
+    0 0 40px rgba(0, 255, 65, 0.3);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from { text-shadow: 0 0 20px rgba(0, 255, 65, 0.5), 0 0 40px rgba(0, 255, 65, 0.3); }
+  to { text-shadow: 0 0 30px rgba(0, 255, 65, 0.7), 0 0 60px rgba(0, 255, 65, 0.5); }
+}
+
+.cards-header p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin: 5px 0 0 0;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 240px);
+  gap: 40px;
+  z-index: 1;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card-wrapper {
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.card-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle at center, 
+    transparent 30%,
+    rgba(0, 255, 65, 0) 40%,
+    rgba(0, 255, 65, 0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: 15px;
+}
+
+.card-wrapper.active::before {
+  opacity: 1;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+.card-wrapper:hover {
+  transform: translateY(-10px);
+}
+
+.card-wrapper.active {
+  transform: translateY(-10px) scale(1.02);
+  z-index: 10;
+}
+
+.cards-controls {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  z-index: 1;
+}
+
+.card-indicators {
+  display: flex;
+  gap: 10px;
+}
+
+.indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(0, 255, 65, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.indicator:hover {
+  background: rgba(0, 255, 65, 0.3);
+  transform: scale(1.2);
+}
+
+.indicator.active {
+  background: #00ff41;
+  border-color: #00ff41;
+  box-shadow: 0 0 10px #00ff41;
+}
+
+.council-status {
+  display: flex;
+  gap: 40px;
+  padding: 20px 40px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 10px;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-value {
+  color: #00ff41;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Orbitron', monospace;
+}
+
+.status-value.active {
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .cards-header h2 {
+    font-size: 2rem;
+  }
+  
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .council-status {
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .card-wrapper.active {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 480px) {
+  .trading-cards-container {
+    padding: 20px 10px;
+  }
+  
+  .cards-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .cards-header p {
+    font-size: 1rem;
+  }
+}
