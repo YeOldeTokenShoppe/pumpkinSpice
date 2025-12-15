@@ -1,9 +1,30 @@
 'use client';
 
 import React from 'react';
-import { BuyWidget } from "thirdweb/react";
+import dynamic from 'next/dynamic';
 import { defineChain } from "thirdweb";
 import { client } from "@/client";
+
+// Dynamically import BuyWidget to avoid SSR issues with test dependencies
+const BuyWidget = dynamic(
+  () => import('thirdweb/react').then((mod) => ({ default: mod.BuyWidget })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '400px',
+        color: '#ffd700',
+        fontSize: '1.2rem',
+        fontFamily: 'Courier New, monospace',
+      }}>
+        Loading...
+      </div>
+    )
+  }
+);
 
 const ThirdwebBuyModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
