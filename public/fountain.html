@@ -452,50 +452,48 @@
 		<!-- Collection Counter - Clean Text Only -->
 		<div id="mobileCollectionCounter" style="
 			position: fixed;
-			left: 50%;
-			transform: translateX(-50%);
-			bottom: 20vh;
+			right: 15px;
+			bottom: 15px;
 			display: none;
 			flex-direction: column;
-			align-items: center;
+			align-items: flex-end;
 			justify-content: center;
-			gap: 8px;
+			gap: 6px;
 			z-index: 1600;
-			width: 95%;
-			max-width: 600px;
+			background: linear-gradient(135deg, rgba(240, 147, 251, 0.12) 0%, rgba(245, 87, 108, 0.12) 100%);
+			border: 2px solid rgba(255, 255, 255, 0.15);
+			border-radius: 14px;
+			padding: 10px 14px;
+			backdrop-filter: blur(10px);
+			-webkit-backdrop-filter: blur(10px);
+			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 		">
 			<!-- Pool counter row -->
 			<div style="
 				display: flex;
 				align-items: center;
-				justify-content: center;
-				gap: 8px;
-				width: 100%;
+				justify-content: flex-end;
+				gap: 6px;
 			">
 				<div style="
-					font-size: 12px;
-					font-weight: 700;
+					font-size: 11px;
+					font-weight: 600;
 					color: rgba(255, 255, 255, 0.8);
 					text-transform: uppercase;
-					letter-spacing: 1px;
-					text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+					letter-spacing: 0.5px;
+					text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 				">Pool:</div>
 				<div style="
-					font-size: 32px;
-					font-weight: 900;
+					font-size: 18px;
+					font-weight: 700;
 					color: white;
 					line-height: 1;
-					letter-spacing: -1px;
+					letter-spacing: -0.5px;
 					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-					background: linear-gradient(180deg, #ffffff 0%, #ffd700 50%, #ffb700 100%);
-					-webkit-background-clip: text;
-					-webkit-text-fill-color: transparent;
-					background-clip: text;
-					text-fill-color: transparent;
-					text-align: center;
+					text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 				">
-					<span id="mobileCurrentCount">0</span><span style="font-size: 0.3em; opacity: 0.8; background: inherit; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-fill-color: transparent;">/200</span>
+					<span id="mobileCurrentCount">0</span><span style="font-size: 0.7em; opacity: 0.7;">/200</span>
 				</div>
 				<!-- Info button -->
 				<button id="mobileInfoBtn" onclick="toggleInstructions()" class="pumpkin-info-button" style="
@@ -536,24 +534,24 @@
 		
 		<!-- Coin Counter Display - Simplified for Mobile -->
 		<div id="coinCounter" class="coin-counter" style="
-			position: absolute;
-			right: 30px;
-			top: calc(50% + 200px);
+			position: fixed;
+			right: 20px;
+			bottom: 20px;
 			transform: translateY(0);
-			background: linear-gradient(135deg, rgba(240, 147, 251, 0.15) 0%, rgba(245, 87, 108, 0.15) 100%);
-			border: 2px solid rgba(255, 255, 255, 0.2);
-			border-radius: 20px;
-			padding: 20px;
+			background: linear-gradient(135deg, rgba(240, 147, 251, 0.12) 0%, rgba(245, 87, 108, 0.12) 100%);
+			border: 2px solid rgba(255, 255, 255, 0.15);
+			border-radius: 16px;
+			padding: 12px 16px;
 			color: white;
 			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-			font-size: 14px;
+			font-size: 12px;
 			font-weight: 600;
-			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 80px rgba(240, 147, 251, 0.2);
+			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 0 40px rgba(240, 147, 251, 0.1);
 			z-index: 1000;
 			display: flex;
 			flex-direction: column;
-			gap: 8px;
-			width: 280px;
+			gap: 6px;
+			width: 200px;
 			box-sizing: border-box;
 			backdrop-filter: blur(10px);
 			-webkit-backdrop-filter: blur(10px);
@@ -562,18 +560,18 @@
 			<!-- Title for desktop -->
 			<div class="counter-title desktop-only" style="
 				text-align: center;
-				font-size: 18px;
+				font-size: 14px;
 				font-weight: 600;
 				background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 				-webkit-background-clip: text;
 				-webkit-text-fill-color: transparent;
 				background-clip: text;
-				margin-bottom: 8px;
-				border-bottom: 2px solid rgba(240, 147, 251, 0.3);
-				padding-bottom: 8px;
-				letter-spacing: 0.5px;
+				margin-bottom: 6px;
+				border-bottom: 1px solid rgba(240, 147, 251, 0.2);
+				padding-bottom: 6px;
+				letter-spacing: 0.3px;
 			">
-				💫 Charity Collection 💫
+				Charity Pool
 			</div>
 			<!-- Simplified mobile stats - large stylized number -->
 			<div class="compact-stats mobile-only" style="
@@ -607,37 +605,37 @@
 			<div style="
 				display: flex;
 				align-items: center;
-				gap: 10px;
-				padding: 8px 12px;
+				gap: 8px;
+				padding: 6px 10px;
 				background: rgba(255, 255, 255, 0.05);
-				border-radius: 12px;
+				border-radius: 10px;
 			">
-				<span class="coin-emoji" style="font-size: 20px;">🪙</span>
-				<span style="flex: 1; color: rgba(255, 255, 255, 0.95);"><span class="desktop-text">Current Pool: </span><span class="mobile-text">Pool: </span><span id="coinCount" style="font-weight: 700;">0</span> / 200</span>
+				<span class="coin-emoji" style="font-size: 16px;">🪙</span>
+				<span style="flex: 1; color: rgba(255, 255, 255, 0.95); font-size: 12px;"><span class="desktop-text">Pool: </span><span class="mobile-text">Pool: </span><span id="coinCount" style="font-weight: 700;">0</span> / 200</span>
 			</div>
 			<div style="
 				display: flex;
 				align-items: center;
-				gap: 10px;
-				padding: 8px 12px;
+				gap: 8px;
+				padding: 6px 10px;
 				background: rgba(255, 255, 255, 0.05);
-				border-radius: 12px;
+				border-radius: 10px;
 			">
-				<span class="coin-emoji" style="font-size: 20px;">💰</span>
-				<span style="flex: 1; color: rgba(255, 255, 255, 0.95);"><span class="desktop-text">Total Donated: </span><span id="collectedCount" style="font-weight: 700;">0</span></span>
+				<span class="coin-emoji" style="font-size: 16px;">💰</span>
+				<span style="flex: 1; color: rgba(255, 255, 255, 0.95); font-size: 12px;"><span class="desktop-text">Total: </span><span id="collectedCount" style="font-weight: 700;">0</span></span>
 			</div>
 			<div style="
-				padding: 10px 12px;
+				padding: 6px 10px;
 				background: rgba(255, 255, 255, 0.05);
-				border-radius: 12px;
+				border-radius: 10px;
 			">
-				<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-					<span style="font-size: 16px;">🍽️</span>
-					<span style="flex: 1; color: rgba(255, 255, 255, 0.9);">WCK: <span id="wckPercentage" style="font-weight: 700;">0</span>%</span>
+				<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+					<span style="font-size: 14px;">🍽️</span>
+					<span style="flex: 1; color: rgba(255, 255, 255, 0.9); font-size: 11px;">WCK: <span id="wckPercentage" style="font-weight: 700;">0</span>%</span>
 				</div>
-				<div style="display: flex; align-items: center; gap: 8px;">
-					<span style="font-size: 16px;">🐾</span>
-					<span style="flex: 1; color: rgba(255, 255, 255, 0.9);">ASPCA: <span id="aspcaPercentage" style="font-weight: 700;">0</span>%</span>
+				<div style="display: flex; align-items: center; gap: 6px;">
+					<span style="font-size: 14px;">🐾</span>
+					<span style="flex: 1; color: rgba(255, 255, 255, 0.9); font-size: 11px;">ASPCA: <span id="aspcaPercentage" style="font-weight: 700;">0</span>%</span>
 				</div>
 			</div>
 			<div id="resetMessage" style="
@@ -785,7 +783,7 @@
 					if (mobileCollectionCounter) {
 						mobileCollectionCounter.style.display = 'flex';
 						mobileCollectionCounter.style.flexDirection = 'column';
-						mobileCollectionCounter.style.bottom = '25vh'; // Higher on desktop
+						// Keep bottom right position from CSS, don't override
 						
 						// Reset the mobile-counter-buttons container to column for desktop
 						const mobileCounterButtons = mobileCollectionCounter.querySelector('.mobile-counter-buttons');
@@ -1576,6 +1574,17 @@
             const gravity = 0.03; // Simple gravity strength
             const coinSplashDuration = 75; // ms the splash force lasts
             let coinSplashTimeout = null; // Timeout ID for resetting splash
+            
+            // Camera follow system variables
+            let cameraFollowActive = false;
+            let followedCoin = null;
+            let originalCameraPosition = null;
+            let originalCameraTarget = null;
+            let cameraPhase = 'none'; // 'none', 'following', 'impact', 'underwater', 'returning'
+            let cameraReturnTimer = 0;
+            let underwaterStartTime = 0;
+            let underwaterOverlay = null;
+            let previouslyVisibleElements = new Map(); // Track which elements were visible
 
 			const fallingWaterUniforms = {
         iTime: { value: 0.0 }
@@ -1966,17 +1975,17 @@
 				console.log('[Fountain] Starting cinematic camera intro');
 				
 				// Initial camera position (far and high, looking down at fountain)
-				camera.position.set(6, 8, 10);
+				camera.position.set(0, 0, 10);
 				camera.lookAt(0, 0, 0);
 				
 				// Target positions for the camera animation (matching the default setup)
-				const startPos = { x: 6, y: 6, z: 18 };
-				const endPos = { x: 0, y: 0, z: 4 };  // Default camera position
+				const startPos = { x: 0, y: 0, z: 18 };
+				const endPos = { x: 0, y: 1, z: 4 };  // Default camera position
 				const startLookAt = { x: 0, y: 3, z: 0 };
 				const endLookAt = { x: 0, y: 0, z: 0 };  // Default look-at target
 				
 				// Animation duration in milliseconds
-				const duration = 6000;
+				const duration = 4000;
 				const startTime = Date.now();
 				
 				function animateCamera() {
@@ -2398,6 +2407,20 @@
 				
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
+				
+				// Create underwater overlay element
+				underwaterOverlay = document.createElement('div');
+				underwaterOverlay.style.position = 'fixed';
+				underwaterOverlay.style.top = '0';
+				underwaterOverlay.style.left = '0';
+				underwaterOverlay.style.width = '100%';
+				underwaterOverlay.style.height = '100%';
+				underwaterOverlay.style.backgroundColor = 'rgba(0, 100, 200, 0)'; // Blue tint
+				underwaterOverlay.style.pointerEvents = 'none';
+				underwaterOverlay.style.zIndex = '100';
+				underwaterOverlay.style.transition = 'background-color 0.5s ease';
+				underwaterOverlay.style.display = 'none';
+				document.body.appendChild(underwaterOverlay);
 
 				// Set up HTML button click handlers
 				setupHTMLButtons();
@@ -3741,10 +3764,11 @@
 					}
 				}
 				
-				// Only disable controls if water was clicked to allow dragging
-				if (waterClicked && controls.enabled) {
-					controls.enabled = false;
-				}
+				// DON'T disable controls - allow both water ripples AND rotation
+				// This way users can rotate the scene while creating ripples
+				// if (waterClicked && controls.enabled) {
+				//     controls.enabled = false;
+				// }
 				// --- End Modified Logic ---
 			}
             function onKeyDown( event ) {
@@ -3798,6 +3822,218 @@
         
 
           
+            // Camera follow system functions
+            function startCameraFollow(coin) {
+                if (cameraFollowActive) return; // Already following a coin
+                
+                cameraFollowActive = true;
+                followedCoin = coin;
+                cameraPhase = 'following';
+                
+                // Save original camera position and target
+                originalCameraPosition = camera.position.clone();
+                originalCameraTarget = controls.target.clone();
+                
+                // Temporarily disable user controls
+                controls.enabled = false;
+                
+                // Hide UI elements for cinematic view
+                hideUIForCinematic();
+                
+                console.log('[Camera] Starting to follow coin');
+            }
+            
+            function hideUIForCinematic() {
+                // Clear previous visibility tracking
+                previouslyVisibleElements.clear();
+                
+                // Hide all UI elements
+                const elementsToHide = [
+                    document.getElementById('coinTossButtons'),
+                    document.getElementById('info'),
+                    document.getElementById('coinCounter'),
+                    document.getElementById('mobileCollectionCounter'),
+                    document.getElementById('desktopInfoBtn'),
+                    document.getElementById('mobileInfoBtn'),
+                    document.querySelector('.mobile-buttons-inline'),
+                    tossCoinButton3D,
+                    localCoinButton3D
+                ];
+                
+                elementsToHide.forEach(element => {
+                    if (element) {
+                        if (element.style) {
+                            // Track if element was visible before hiding
+                            const isVisible = element.style.display !== 'none' && 
+                                           element.style.opacity !== '0' &&
+                                           !element.classList.contains('hidden');
+                            previouslyVisibleElements.set(element, isVisible);
+                            
+                            if (isVisible) {
+                                element.style.transition = 'opacity 0.3s ease';
+                                element.style.opacity = '0';
+                                setTimeout(() => {
+                                    if (element.style) element.style.display = 'none';
+                                }, 300);
+                            }
+                        } else if (element.visible !== undefined) {
+                            // Three.js objects
+                            previouslyVisibleElements.set(element, element.visible);
+                            element.visible = false;
+                        }
+                    }
+                });
+            }
+            
+            function showUIAfterCinematic() {
+                // Only restore elements that were previously visible
+                previouslyVisibleElements.forEach((wasVisible, element) => {
+                    if (wasVisible && element) {
+                        if (element.style) {
+                            // HTML elements
+                            element.style.display = '';
+                            setTimeout(() => {
+                                element.style.opacity = '1';
+                            }, 50);
+                        } else if (element.visible !== undefined) {
+                            // Three.js objects
+                            element.visible = true;
+                        }
+                    }
+                });
+                
+                // Clear the tracking map
+                previouslyVisibleElements.clear();
+            }
+            
+            function updateCameraFollow(deltaTime) {
+                if (!cameraFollowActive || !followedCoin) return;
+                
+                const smoothFactor = 0.1; // How quickly camera follows (0.1 = smooth, 1 = instant)
+                const coinPos = followedCoin.position;
+                const coinVel = followedCoin.userData.velocity;
+                
+                switch(cameraPhase) {
+                    case 'following':
+                        // Follow coin from a dynamic angle during flight
+                        const followDistance = 3.5; // Increased from 1.5 for better view
+                        const followHeight = 1; // Increased from 0.8
+                        
+                        // Calculate ideal camera position (behind and above the coin's trajectory)
+                        const velocityDir = coinVel.clone().normalize();
+                        const idealCamPos = new THREE.Vector3(
+                            coinPos.x - velocityDir.x * followDistance - 0.3, // Shifted 0.3 units left
+                            coinPos.y + followHeight,
+                            coinPos.z - velocityDir.z * followDistance
+                        );
+                        
+                        // Smoothly move camera
+                        camera.position.lerp(idealCamPos, smoothFactor);
+                        
+                        // Look slightly ahead of the coin's position
+                        const lookAheadTarget = coinPos.clone().add(velocityDir.clone().multiplyScalar(0.3));
+                        controls.target.lerp(lookAheadTarget, smoothFactor * 1.5);
+                        
+                        // Check if coin is about to hit water
+                        // Determine which bowl the coin is heading for based on position
+                        const distanceFromUpperCenter = Math.sqrt(
+                            Math.pow(coinPos.x - 0.05, 2) + 
+                            Math.pow(coinPos.z + 0.01, 2)
+                        );
+                        const upperBowlRadius = 0.125;
+                        const isHeadingForUpperBowl = coinPos.y > 0.2 && distanceFromUpperCenter < upperBowlRadius * 1.5;
+                        const waterLevel = isHeadingForUpperBowl ? 0.4 : -0.5;
+                        
+                        if (coinPos.y < waterLevel + 0.2 && coinVel.y < 0) {
+                            cameraPhase = 'impact';
+                            console.log('[Camera] Transitioning to impact view');
+                        }
+                        break;
+                        
+                    case 'impact':
+                        // Zoom in close for water impact
+                        const impactDistance = 1.5; // Increased from 0.5
+                        const impactHeight = 0; // Increased from 0.2
+                        
+                        const impactCamPos = new THREE.Vector3(
+                            coinPos.x + impactDistance - 0.2, // Slight left shift for consistency
+                            coinPos.y + impactHeight,
+                            coinPos.z + impactDistance
+                        );
+                        
+                        camera.position.lerp(impactCamPos, smoothFactor * 0.7);
+                        controls.target.lerp(coinPos, smoothFactor);
+                        
+                        // Transition to underwater after coin enters water
+                        if (followedCoin.userData.underwater) {
+                            cameraPhase = 'underwater';
+                            underwaterStartTime = Date.now();
+                            console.log('[Camera] Coin entered water, switching to underwater view');
+                        }
+                        break;
+                        
+                    case 'underwater':
+                        // Follow coin underwater with blue tint effect
+                        const underwaterDistance = 0.3;
+                        const underwaterCamPos = new THREE.Vector3(
+                            coinPos.x + underwaterDistance * 0.5 - 0.15, // Slight left shift
+                            coinPos.y + 0.1,
+                            coinPos.z + underwaterDistance * 0.5
+                        );
+                        
+                        camera.position.lerp(underwaterCamPos, smoothFactor * 0.5);
+                        controls.target.lerp(coinPos, smoothFactor * 0.8);
+                        
+                        // Show underwater overlay effect
+                        if (underwaterOverlay) {
+                            underwaterOverlay.style.display = 'block';
+                            underwaterOverlay.style.backgroundColor = 'rgba(0, 100, 200, 0.3)';
+                        }
+                        
+                        // Stay underwater for 4 seconds after coin stops
+                        if (followedCoin.userData.stopped && Date.now() - underwaterStartTime > 4000) {
+                            cameraPhase = 'returning';
+                            cameraReturnTimer = 0;
+                            console.log('[Camera] Starting return to original position');
+                        }
+                        break;
+                        
+                    case 'returning':
+                        // Smoothly return to original position
+                        cameraReturnTimer += deltaTime;
+                        const returnProgress = Math.min(cameraReturnTimer / 2, 1); // 2 second return
+                        const eased = 1 - Math.pow(1 - returnProgress, 3); // Ease-out cubic
+                        
+                        camera.position.lerpVectors(camera.position, originalCameraPosition, eased * smoothFactor);
+                        controls.target.lerpVectors(controls.target, originalCameraTarget, eased * smoothFactor);
+                        
+                        // Fade out underwater overlay
+                        if (underwaterOverlay && returnProgress < 0.5) {
+                            underwaterOverlay.style.backgroundColor = 'rgba(0, 100, 200, 0)';
+                        } else if (underwaterOverlay && returnProgress >= 0.5) {
+                            underwaterOverlay.style.display = 'none';
+                        }
+                        
+                        // Check if we're close enough to original position
+                        if (returnProgress >= 1) {
+                            // Reset camera follow system
+                            cameraFollowActive = false;
+                            followedCoin = null;
+                            cameraPhase = 'none';
+                            controls.enabled = true;
+                            
+                            // Show UI elements again
+                            showUIAfterCinematic();
+                            
+                            console.log('[Camera] Returned to original position');
+                        }
+                        break;
+                }
+                
+                // Update camera (important for controls.target changes)
+                camera.updateProjectionMatrix();
+            }
+            
             function isWithinFountainWater(position) {
                 // Get distance from center of fountain
                 const centerX = 0;
@@ -3839,6 +4075,9 @@
                 if (!isLocalCoin && selectedCharity) {
                     console.log(`Coin will support: ${selectedCharity}`);
                 }
+                
+                // Initiate camera follow for this coin
+                startCameraFollow(coin);
             }
 
 			// Make functions globally accessible for mobile buttons
@@ -3858,7 +4097,10 @@
 			function onPointerUp() {
 
 				mousedown = false;
-				controls.enabled = true;
+				// Always ensure controls are enabled after pointer up
+				if (!cameraFollowActive) {
+					controls.enabled = true;
+				}
 
 			}
 
@@ -3908,7 +4150,8 @@
 					
 						}
 						
-						if (controls.enabled) controls.enabled = false;
+						// Don't disable controls - allow rotation while creating ripples
+						// if (controls.enabled) controls.enabled = false;
 						
 					} else {
 						uniforms['mousePos'].value.set(10000, 10000);
@@ -3966,6 +4209,9 @@
                  }
 
                  const dt = 1/60;
+                 
+                 // Update camera follow system
+                 updateCameraFollow(dt);
                 // Lower bowl water levels
                 const lowerWaterLevel = -0.5; // Adjusted to match water mesh position
                 const lowerBottomDepth = -0.78; // Adjusted bottom depth (-0.28 - 0.5)
