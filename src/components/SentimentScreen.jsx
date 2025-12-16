@@ -24,34 +24,34 @@ const useSentimentData = (refreshInterval = 28800000) => { // 8 hours for sentim
         let isGrokLive = false
         
         try {
-          console.log('[SentimentScreen] Fetching from Grok API...')
+          // console.log('[SentimentScreen] Fetching from Grok API...')
           const grokRes = await fetch('/api/ai/trending', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
           })
           
-          console.log('[SentimentScreen] Grok API status:', grokRes.status)
+          // console.log('[SentimentScreen] Grok API status:', grokRes.status)
           
           if (grokRes.ok) {
             const grokData = await grokRes.json()
-            console.log('[SentimentScreen] Full Grok API response:', grokData)
+            // console.log('[SentimentScreen] Full Grok API response:', grokData)
             
             if (grokData.topics && grokData.topics.length > 0) {
               trendingTopics = grokData.topics
               polymarket = grokData.polymarket || null
               // Check source - it could be 'grok', 'firestore', or 'fallback'
               isGrokLive = grokData.source === 'grok' || grokData.source === 'firestore'
-              console.log('[SentimentScreen] Data source:', grokData.source)
-              console.log('[SentimentScreen] Using trending topics (live:', isGrokLive, '):', trendingTopics)
-              console.log('[SentimentScreen] Polymarket data:', polymarket)
+              // console.log('[SentimentScreen] Data source:', grokData.source)
+              // console.log('[SentimentScreen] Using trending topics (live:', isGrokLive, '):', trendingTopics)
+              // console.log('[SentimentScreen] Polymarket data:', polymarket)
             } else {
-              console.log('[SentimentScreen] No topics in Grok response')
+              // console.log('[SentimentScreen] No topics in Grok response')
             }
           } else {
-            console.log('[SentimentScreen] Grok API returned non-OK status:', grokRes.status)
+            // console.log('[SentimentScreen] Grok API returned non-OK status:', grokRes.status)
           }
         } catch (err) {
-          console.log('[SentimentScreen] Failed to fetch from Grok API:', err)
+          // console.log('[SentimentScreen] Failed to fetch from Grok API:', err)
         }
         
         // Don't use fallback trending topics - keep empty if not available
@@ -99,7 +99,7 @@ const SentimentScreen = () => {
   
   // Only log when data actually changes
   useEffect(() => {
-    console.log('[SentimentScreen] Data updated:', data)
+    // console.log('[SentimentScreen] Data updated:', data)
   }, [data.fearGreed.value, data.trendingTopics.length])
 
   // Draw loop using useEffect with interval
@@ -112,7 +112,7 @@ const SentimentScreen = () => {
       const texture = window.__screen1Texture
       
       if (!canvas || !texture) {
-        console.log('[SentimentScreen] Waiting for canvas/texture...')
+        // console.log('[SentimentScreen] Waiting for canvas/texture...')
         return
       }
       

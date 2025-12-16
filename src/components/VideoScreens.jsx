@@ -122,7 +122,7 @@ function VideoScreens() {
       scene.traverse((child) => {
         // Screen1 - Apply SentimentScreen texture directly
         if (child.isMesh && child.name === 'Screen1' && !screen1Found) {
-          console.log('[VideoScreens] Found Screen1, will apply SentimentScreen texture');
+          // console.log('[VideoScreens] Found Screen1, will apply SentimentScreen texture');
           screen1Found = true;
           
           // Store reference to Screen1 for later use
@@ -144,7 +144,7 @@ function VideoScreens() {
         
         // Screen2 - Apply MacroAgentScreen texture directly
         if (child.isMesh && child.name === 'Screen2' && !screen2Found) {
-          console.log('[VideoScreens] Found Screen2, will apply MacroAgentScreen texture');
+          // console.log('[VideoScreens] Found Screen2, will apply MacroAgentScreen texture');
           screen2Found = true;
           
           // Store reference to Screen2 for later use
@@ -313,7 +313,7 @@ function VideoScreens() {
     const setupScreen1 = () => {
       // @ts-ignore
       if (window.__screen1Mesh) {
-        console.log('[VideoScreens] Setting up SentimentScreen on Screen1');
+        // console.log('[VideoScreens] Setting up SentimentScreen on Screen1');
         
         // Create canvas for drawing
         const canvas = document.createElement('canvas');
@@ -344,7 +344,7 @@ function VideoScreens() {
         // @ts-ignore
         window.__screen1Texture = texture;
       } else {
-        console.log('[VideoScreens] Waiting for Screen1 mesh...');
+        // console.log('[VideoScreens] Waiting for Screen1 mesh...');
         setTimeout(setupScreen1, 500);
       }
     };
@@ -353,7 +353,7 @@ function VideoScreens() {
     const setupMacroScreen = () => {
       // @ts-ignore
       if (window.__screen2Mesh) {
-        console.log('[VideoScreens] Setting up MacroAgentScreen on Screen2');
+        // console.log('[VideoScreens] Setting up MacroAgentScreen on Screen2');
         
         // Create canvas for drawing
         const canvas = document.createElement('canvas');
@@ -386,7 +386,7 @@ function VideoScreens() {
         
         setScreen2Position([0, 0, 0]); // Trigger render
       } else {
-        console.log('[VideoScreens] Waiting for Screen2 mesh...');
+        // console.log('[VideoScreens] Waiting for Screen2 mesh...');
         setTimeout(setupMacroScreen, 500);
       }
     };

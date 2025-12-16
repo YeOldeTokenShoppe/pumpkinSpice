@@ -131,20 +131,32 @@ const ClickHandler = () => {
         if (screen1Intersect && screen1Intersect.object.userData.handleHover) {
           const uv = screen1Intersect.uv;
           if (uv) {
+            // Check if drone is close enough to be interactive
+            const approachProgress = screen1Intersect.object.userData.approachProgress || 0;
+            if (approachProgress >= 0.8) {
+              // Drone is interactive - show pointer cursor
+              gl.domElement.style.cursor = 'pointer';
+            } else {
+              // Drone is too far - show default cursor
+              gl.domElement.style.cursor = 'default';
+            }
+            
             // Account for texture rotation (-90 degrees)
             const screenX = uv.y * 512;
             const screenY = (1 - uv.x) * 512;
             screen1Intersect.object.userData.handleHover(screenX, screenY);
           }
         } else {
-          // Not hovering over screen - clear hover state
+          // Not hovering over screen - clear hover state and reset cursor
+          gl.domElement.style.cursor = 'default';
           const screen1 = scene.getObjectByName('Screen1');
           if (screen1 && screen1.userData.handleHover) {
             screen1.userData.handleHover(-1, -1); // Clear hover
           }
         }
       } else {
-        // Not hovering over anything - clear hover state
+        // Not hovering over anything - clear hover state and reset cursor
+        gl.domElement.style.cursor = 'default';
         const screen1 = scene.getObjectByName('Screen1');
         if (screen1 && screen1.userData.handleHover) {
           screen1.userData.handleHover(-1, -1); // Clear hover
@@ -209,7 +221,7 @@ const ClickHandler = () => {
 };
 
 // Scroll-responsive Model component with Ticker
-const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
+const Model = React.memo(function Model({ scrollY, scrollProgress, isMobile, onLoad }) {
   const { scene } = useGLTF('/models/ourlady_rider7.glb');
   const groupRef = useRef();
   const staticBreathRef = useRef();
@@ -320,25 +332,25 @@ const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
         groupRef.current.visible = true;
         const baseY = isMobile ? -15 : -15;
         
-        // Check if we're in drone approach phase
-        const droneAppearThreshold = 3500; // Appears halfway down the extended page
-        const droneApproachDuration = 3000; // Matches actual drone duration
-        const droneApproachEnd = droneAppearThreshold + droneApproachDuration;
+        // Check if we're in drone approach phase using scroll progress
+        const droneAppearProgress = 0.35; // Drone appears at 35% of page
+        const droneApproachDuration = 0.30; // Approach takes 30% of scroll
+        const droneApproachEnd = droneAppearProgress + droneApproachDuration;
         
-        let effectiveScrollY = scrollY;
+        let effectiveScrollProgress = scrollProgress;
         
         // During drone approach, lock the model at the appearance position
-        if (scrollY >= droneAppearThreshold - 200 && scrollY < droneApproachEnd) {
+        if (scrollProgress >= droneAppearProgress - 0.02 && scrollProgress < droneApproachEnd) {
           // Lock model at the position it was when drone started appearing
-          effectiveScrollY = droneAppearThreshold - 200;
-        } else if (scrollY >= droneApproachEnd) {
+          effectiveScrollProgress = droneAppearProgress - 0.02;
+        } else if (scrollProgress >= droneApproachEnd) {
           // After drone approach, subtract the approach duration to continue smoothly
-          effectiveScrollY = scrollY - droneApproachDuration;
+          effectiveScrollProgress = scrollProgress - droneApproachDuration;
         }
         
         // Clamp Y position to prevent model from going too high
         const maxY = 50;
-        const calculatedY = baseY + effectiveScrollY * 0.035;
+        const calculatedY = baseY + effectiveScrollProgress * 350;
         groupRef.current.position.y = Math.min(calculatedY, maxY);
       }
     }
@@ -357,6 +369,7 @@ const Model = React.memo(function Model({ scrollY, isMobile, onLoad }) {
       {/* TickerCurve positioned relative to model (from Simple3DScene) */}
       <TickerCurve 
         scrollY={scrollY}
+        scrollProgress={scrollProgress}
         scale={3}
         position={[0, 2, 8]} // Position relative to model - moved up
       />
@@ -486,7 +499,7 @@ const CSS3DScreenManager = () => {
 };
 
 // Drone component with built-in hover animation and scroll-based appearance
-const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrollY, isMobile = false, isSignedIn = false, onOpenBuyModal }) {
+const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrollY, scrollProgress, isMobile = false, isSignedIn = false, onOpenBuyModal }) {
   const modelPath = isMobile ? '/models/drone_mobile.glb' : '/models/drone.glb';
   const { scene, animations } = useGLTF(modelPath);
   const groupRef = useRef();
@@ -822,19 +835,219 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               typeNextMessage();
             };
             
+            // Power-on animation state (stored on object for persistence)
+            object.userData.bootProgress = 0;
+            object.userData.isPoweringOn = false;
+            object.userData.screenDrawn = false;
+            
             // Draw initial navigation screen
             const drawNavigationScreen = (hoveredIndex = null) => {
-              // Reset any lingering canvas states
+              // Check if drone is interactive
+              const approachProgress = object.userData.approachProgress || 0;
+              const isInteractive = approachProgress >= 0.8;
+              
+              // If screen is off (not interactive yet)
+              if (!isInteractive) {
+                // Draw black/off screen with subtle static
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, 512, 512);
+                
+                // Add subtle static effect
+                for (let i = 0; i < 20; i++) {
+                  const x = Math.random() * 512;
+                  const y = Math.random() * 512;
+                  const brightness = Math.random() * 30;
+                  ctx.fillStyle = `rgba(${brightness}, ${brightness}, ${brightness}, 0.5)`;
+                  ctx.fillRect(x, y, 1, 1);
+                }
+                
+                // Faint power indicator
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.beginPath();
+                ctx.arc(256, 450, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                return; // Don't draw anything else when off
+              }
+              
+              // Power-on effect tied to scroll progress
+              if (object.userData.isPoweringOn) {
+                const progress = object.userData.bootProgress || 0;
+                
+                // Clear screen
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, 512, 512);
+                
+                // Boot sequence animation based on scroll progress
+                if (progress < 0.25) {
+                  // Phase 1 (0-25%): Power indicator transitions from red to green
+                  const phase1Progress = progress / 0.25;
+                  const greenAmount = Math.floor(phase1Progress * 255);
+                  const redAmount = Math.floor((1 - phase1Progress) * 255);
+                  ctx.fillStyle = `rgb(${redAmount}, ${greenAmount}, 0)`;
+                  ctx.beginPath();
+                  ctx.arc(256, 450, 5 + phase1Progress * 15, 0, Math.PI * 2);
+                  ctx.fill();
+                  
+                  // Add pulsing effect
+                  ctx.strokeStyle = `rgba(${redAmount}, ${greenAmount}, 0, ${0.5 - phase1Progress * 0.3})`;
+                  ctx.lineWidth = 2;
+                  ctx.beginPath();
+                  ctx.arc(256, 450, 10 + phase1Progress * 20, 0, Math.PI * 2);
+                  ctx.stroke();
+                  
+                } else if (progress < 0.6) {
+                  // Phase 2 (25-60%): Scanline boot effect with crosshairs
+                  const phase2Progress = (progress - 0.25) / 0.35;
+                  
+                  // Keep power indicator green
+                  ctx.fillStyle = '#00ff41';
+                  ctx.beginPath();
+                  ctx.arc(256, 450, 20, 0, Math.PI * 2);
+                  ctx.fill();
+                  
+                  // Expanding crosshairs from center
+                  const expansion = phase2Progress;
+                  ctx.strokeStyle = '#00ff41';
+                  ctx.lineWidth = 3;
+                  ctx.globalAlpha = Math.max(0, 1 - expansion * 0.3);
+                  
+                  // Horizontal line
+                  ctx.beginPath();
+                  ctx.moveTo(256 - expansion * 200, 256);
+                  ctx.lineTo(256 + expansion * 200, 256);
+                  ctx.stroke();
+                  
+                  // Vertical line
+                  ctx.beginPath();
+                  ctx.moveTo(256, 256 - expansion * 200);
+                  ctx.lineTo(256, 256 + expansion * 200);
+                  ctx.stroke();
+                  
+                  // Corner brackets that expand
+                  ctx.lineWidth = 2;
+                  const bracketSize = expansion * 50;
+                  // Top-left
+                  ctx.beginPath();
+                  ctx.moveTo(256 - expansion * 150, 256 - expansion * 150);
+                  ctx.lineTo(256 - expansion * 150 + bracketSize, 256 - expansion * 150);
+                  ctx.moveTo(256 - expansion * 150, 256 - expansion * 150);
+                  ctx.lineTo(256 - expansion * 150, 256 - expansion * 150 + bracketSize);
+                  ctx.stroke();
+                  
+                  // Top-right
+                  ctx.beginPath();
+                  ctx.moveTo(256 + expansion * 150, 256 - expansion * 150);
+                  ctx.lineTo(256 + expansion * 150 - bracketSize, 256 - expansion * 150);
+                  ctx.moveTo(256 + expansion * 150, 256 - expansion * 150);
+                  ctx.lineTo(256 + expansion * 150, 256 - expansion * 150 + bracketSize);
+                  ctx.stroke();
+                  
+                  // Bottom-left
+                  ctx.beginPath();
+                  ctx.moveTo(256 - expansion * 150, 256 + expansion * 150);
+                  ctx.lineTo(256 - expansion * 150 + bracketSize, 256 + expansion * 150);
+                  ctx.moveTo(256 - expansion * 150, 256 + expansion * 150);
+                  ctx.lineTo(256 - expansion * 150, 256 + expansion * 150 - bracketSize);
+                  ctx.stroke();
+                  
+                  // Bottom-right
+                  ctx.beginPath();
+                  ctx.moveTo(256 + expansion * 150, 256 + expansion * 150);
+                  ctx.lineTo(256 + expansion * 150 - bracketSize, 256 + expansion * 150);
+                  ctx.moveTo(256 + expansion * 150, 256 + expansion * 150);
+                  ctx.lineTo(256 + expansion * 150, 256 + expansion * 150 - bracketSize);
+                  ctx.stroke();
+                  
+                  ctx.globalAlpha = 1;
+                  
+                  // Static effect that decreases
+                  for (let i = 0; i < 150 * (1 - phase2Progress); i++) {
+                    const x = Math.random() * 512;
+                    const y = Math.random() * 512;
+                    ctx.fillStyle = `rgba(0, 255, 65, ${Math.random() * (1 - phase2Progress) * 0.3})`;
+                    ctx.fillRect(x, y, 1, 1);
+                  }
+                  
+                } else {
+                  // Phase 3 (60-100%): Boot text and progress
+                  const phase3Progress = (progress - 0.6) / 0.4;
+                  
+                  // Keep power indicator
+                  ctx.fillStyle = '#00ff41';
+                  ctx.beginPath();
+                  ctx.arc(256, 450, 20, 0, Math.PI * 2);
+                  ctx.fill();
+                  
+                  // Fade in the UI
+                  ctx.globalAlpha = phase3Progress;
+                  
+                  ctx.fillStyle = '#00ff41';
+                  ctx.font = 'bold 24px Courier New';
+                  ctx.textAlign = 'center';
+                  ctx.fillText('SYSTEM BOOTING', 256, 200);
+                  
+                  // Boot messages appear progressively
+                  ctx.font = '12px Courier New';
+                  ctx.textAlign = 'left';
+                  const messages = [
+                    'Initializing drone OS...',
+                    'Loading navigation module...',
+                    'Calibrating sensors...',
+                    'Establishing uplink...',
+                    'System ready'
+                  ];
+                  
+                  const numMessages = Math.floor(phase3Progress * messages.length);
+                  for (let i = 0; i < numMessages; i++) {
+                    ctx.fillText('> ' + messages[i], 100, 250 + i * 20);
+                  }
+                  
+                  // Progress bar
+                  ctx.strokeStyle = '#00ff41';
+                  ctx.lineWidth = 2;
+                  ctx.strokeRect(156, 380, 200, 20);
+                  ctx.fillStyle = '#00ff41';
+                  ctx.fillRect(158, 382, 196 * phase3Progress, 16);
+                  
+                  // Percentage
+                  ctx.textAlign = 'center';
+                  ctx.font = '14px Courier New';
+                  ctx.fillText(`${Math.floor(phase3Progress * 100)}%`, 256, 420);
+                  
+                  ctx.globalAlpha = 1;
+                }
+                
+                // Update texture
+                texture.needsUpdate = true;
+                return;
+              }
+              
+              // Normal interactive screen
               ctx.shadowColor = 'transparent';
               ctx.shadowBlur = 0;
               ctx.fillStyle = '#0a0a0a';
               ctx.fillRect(0, 0, 512, 512);
               
-              // Title
+              // Draw glowing border
+              ctx.strokeStyle = '#00ff41';
+              ctx.lineWidth = 3;
+              ctx.strokeRect(3, 3, 506, 506);
+              
+              // System ready indicator
+              ctx.fillStyle = '#00ff41';
+              ctx.font = 'bold 14px Courier New';
+              ctx.textAlign = 'center';
+              ctx.fillText('[SYSTEM ONLINE]', 256, 25);
+              
+              // Title with glow effect
+              ctx.shadowColor = '#00ff41';
+              ctx.shadowBlur = 10;
               ctx.fillStyle = '#00ff41';
               ctx.font = 'bold 28px Courier New';
               ctx.textAlign = 'center';
               ctx.fillText('DRONE SYSTEM', 256, 50);
+              ctx.shadowBlur = 0;
               
               // Welcome terminal button with cyberpunk style
               const terminalBtnX = 56;
@@ -886,7 +1099,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.fillStyle = isTerminalHovered ? '#ffffff' : '#72bfbe';  // Cyber blue
               ctx.font = 'bold 20px Courier New';
               ctx.textAlign = 'center';
-              ctx.fillText('▶ ACTIVATE TERMINAL', terminalBtnX + terminalBtnWidth/2, terminalBtnY + terminalBtnHeight/2 + 7);
+              ctx.fillText('▶ ACTIVATE INTERCESSION', terminalBtnX + terminalBtnWidth/2, terminalBtnY + terminalBtnHeight/2 + 7);
               
               ctx.shadowBlur = 0;
               ctx.textAlign = 'left';
@@ -1580,14 +1793,33 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               }
             };
             
-            // Store handlers
-            object.userData.handleClick = handleScreenClick;
-            object.userData.handleHover = handleScreenHover;
+            // Store handlers with approach progress check
+            object.userData.handleClickOriginal = handleScreenClick;
+            object.userData.handleHoverOriginal = handleScreenHover;
+            object.userData.approachProgress = 0; // Initialize approach progress
+            
+            // Wrapped handlers that check if drone is close enough
+            object.userData.handleClick = (x, y) => {
+              if (object.userData.approachProgress >= 0.8) {
+                handleScreenClick(x, y);
+              }
+            };
+            object.userData.handleHover = (x, y) => {
+              if (object.userData.approachProgress >= 0.8) {
+                handleScreenHover(x, y);
+              } else {
+                // Clear hover when not interactive
+                handleScreenHover(-1, -1);
+              }
+            };
             
             // Store references for cleanup
             object.userData.texture = texture;
             object.userData.canvas = canvas;
             object.userData.terminalAnimation = terminalAnimation;
+            
+            // Store draw function for later updates
+            object.userData.drawNavigationScreen = drawNavigationScreen;
             
             // Draw initial screen
             drawNavigationScreen();
@@ -1705,10 +1937,11 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
     }
     
     if (groupRef.current) {
-      const appearThreshold = 3500; // Drone appears halfway down the page
-      const approachDuration = 3000; // Extended approach over 2000 scroll units for dramatic effect
+      // Drone appears at 35% of page scroll
+      const appearProgress = 0.35;
+      const approachDuration = 0.30; // Approach takes 30% of total scroll
       
-      if (scrollY < appearThreshold - 200) {
+      if (scrollProgress < appearProgress - 0.02) {
         // Hide drone well before threshold to prepare for approach
         groupRef.current.visible = false;
         hasAppearedRef.current = false;
@@ -1717,7 +1950,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
         groupRef.current.visible = true;
         
         // Calculate raw approach progress
-        const rawProgress = (scrollY - (appearThreshold - 200)) / approachDuration;
+        const rawProgress = (scrollProgress - (appearProgress - 0.02)) / approachDuration;
         
         // Split the animation into two phases:
         // Phase 1 (0-0.3): Vertical rise from below
@@ -1744,6 +1977,48 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
         // Clamp to 0-1 range
         approachProgress = Math.min(Math.max(approachProgress, 0), 1);
         
+        // Update screen's approach progress for click handling
+        if (screenRef.current) {
+          const prevProgress = screenRef.current.userData.approachProgress || 0;
+          screenRef.current.userData.approachProgress = approachProgress;
+          
+          // Handle boot animation based on scroll progress
+          // Boot animation happens between 80% and 90% approach progress
+          const bootStartProgress = 0.8;
+          const bootEndProgress = 0.9;
+          
+          if (approachProgress < bootStartProgress) {
+            // Screen is off
+            screenRef.current.userData.isPoweringOn = false;
+            screenRef.current.userData.bootProgress = 0;
+            screenRef.current.userData.screenDrawn = false;
+            if (screenRef.current.userData.drawNavigationScreen) {
+              screenRef.current.userData.drawNavigationScreen();
+            }
+          } else if (approachProgress >= bootStartProgress && approachProgress < bootEndProgress) {
+            // Screen is booting - progress tied to scroll
+            screenRef.current.userData.isPoweringOn = true;
+            // Calculate boot progress (0 to 1) based on scroll position
+            const bootRange = bootEndProgress - bootStartProgress;
+            const bootProgress = (approachProgress - bootStartProgress) / bootRange;
+            screenRef.current.userData.bootProgress = Math.max(0, Math.min(1, bootProgress));
+            
+            if (screenRef.current.userData.drawNavigationScreen) {
+              screenRef.current.userData.drawNavigationScreen();
+            }
+          } else if (approachProgress >= bootEndProgress) {
+            // Screen is fully booted
+            screenRef.current.userData.isPoweringOn = false;
+            screenRef.current.userData.bootProgress = 1;
+            if (!screenRef.current.userData.screenDrawn) {
+              if (screenRef.current.userData.drawNavigationScreen) {
+                screenRef.current.userData.drawNavigationScreen();
+                screenRef.current.userData.screenDrawn = true;
+              }
+            }
+          }
+        }
+        
         // Calculate progress for each phase
         const riseProgress = Math.min(approachProgress / risePhaseEnd, 1);
         const forwardProgress = Math.max((approachProgress - risePhaseEnd) / (1 - risePhaseEnd), 0);
@@ -1764,9 +2039,9 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
           // After approach: move with the scene normally
           // Calculate the position the drone should be at when it starts moving with the scene
           // This should match where it was at the end of the approach
-          const scrollAtApproachEnd = appearThreshold - 200 + approachDuration;
-          const baseY = finalDroneY - (scrollAtApproachEnd * 0.035);
-          scrolledY = baseY + scrollY * 0.035;
+          const scrollProgressAtApproachEnd = appearProgress - 0.02 + approachDuration;
+          const baseY = finalDroneY - (scrollProgressAtApproachEnd * 350);
+          scrolledY = baseY + scrollProgress * 350;
         }
         
         // Debug log to see where it is
@@ -1850,7 +2125,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
 });
 
 // Angel Model component with scroll-based swoop animation
-const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrollY, isMobile = false, isTabletPortrait = false, isTabletLandscape = false }) {
+const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrollY, scrollProgress, isMobile = false, isTabletPortrait = false, isTabletLandscape = false }) {
   const { scene, animations } = useGLTF('/models/angel2.glb');
   const groupRef = useRef();
   const mixerRef = useRef();
@@ -1885,27 +2160,16 @@ const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrol
     };
   }, [animations, scene]);
 
-  // Animation constants - multi-stage flight path
-  const appearThreshold = 1000;
-  const exitThreshold = 3000;
-  const totalDuration = exitThreshold - appearThreshold; // 2000 scroll units
+  // Animation constants - using scroll progress percentages
+  // First appearance: 10% to 30% of page scroll
+  const appearProgress = 0.10;
+  const exitProgress = 0.30;
+  const duration = exitProgress - appearProgress;
   
-  // Second appearance for chase sequence - with tablet support
-  const getChaseAppearThreshold = () => {
-    if (isMobile) return 9000;
-    if (isTabletPortrait) return 11300;
-    if (isTabletLandscape) return 9700;
-    return 9500; // Desktop
-  };
-  const getChaseExitThreshold = () => {
-    if (isMobile) return 10000;
-    if (isTabletPortrait) return 12300;
-    if (isTabletLandscape) return 10700;
-    return 10500; // Desktop
-  };
-  const chaseAppearThreshold = getChaseAppearThreshold();
-  const chaseExitThreshold = getChaseExitThreshold();
-  const chaseDuration = chaseExitThreshold - chaseAppearThreshold;
+  // Second appearance for chase sequence: 85% to 95% of page scroll
+  const chaseAppearProgress = 0.85;
+  const chaseExitProgress = 0.95;
+  const chaseDuration = chaseExitProgress - chaseAppearProgress;
   
   // Flight stages (as percentage of total scroll duration)
   const swoopInDuration = 0.25;    // 25% - swoop in from right
@@ -1923,9 +2187,9 @@ const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrol
     if (groupRef.current) {
       const time = state.clock.elapsedTime;
       
-      // Calculate scroll-based visibility and movement
-      const inFirstSequence = scrollY >= appearThreshold && scrollY <= exitThreshold;
-      const inChaseSequence = scrollY >= chaseAppearThreshold && scrollY <= chaseExitThreshold;
+      // Calculate scroll-based visibility and movement using progress
+      const inFirstSequence = scrollProgress >= appearProgress && scrollProgress <= exitProgress;
+      const inChaseSequence = scrollProgress >= chaseAppearProgress && scrollProgress <= chaseExitProgress;
       
       if (!inFirstSequence && !inChaseSequence) {
         groupRef.current.visible = false;
@@ -1941,10 +2205,10 @@ const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrol
       if (inChaseSequence) {
         // Chase sequence - angel chases devil
         isChasing = true;
-        overallProgress = (scrollY - chaseAppearThreshold) / chaseDuration;
+        overallProgress = (scrollProgress - chaseAppearProgress) / chaseDuration;
       } else {
         // Original sequence
-        overallProgress = (scrollY - appearThreshold) / totalDuration;
+        overallProgress = (scrollProgress - appearProgress) / duration;
       }
       
       // Determine which flight stage we're in
@@ -2116,7 +2380,7 @@ const AngelModel = React.memo(function AngelModel({ position = [0, 0, 10], scrol
 });
 
 // Devil Model component with scroll-based swoop animation (appears at end of page)
-const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrollY, isMobile = false, isTabletPortrait = false, isTabletLandscape = false }) {
+const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrollY, scrollProgress, isMobile = false, isTabletPortrait = false, isTabletLandscape = false }) {
   const { scene, animations } = useGLTF('/models/devil2.glb');
   const groupRef = useRef();
   const mixerRef = useRef();
@@ -2151,22 +2415,11 @@ const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrol
     };
   }, [animations, scene]);
 
-  // Animation constants - multi-stage flight path (appears at end of page) - with tablet support
-  const getDevilAppearThreshold = () => {
-    if (isMobile) return 8000;
-    if (isTabletPortrait) return 10300;
-    if (isTabletLandscape) return 8700;
-    return 9000; // Desktop
-  };
-  const getDevilExitThreshold = () => {
-    if (isMobile) return 9000;
-    if (isTabletPortrait) return 11300;
-    if (isTabletLandscape) return 9700;
-    return 10000; // Desktop
-  };
-  const appearThreshold = getDevilAppearThreshold();
-  const exitThreshold = getDevilExitThreshold();
-  const totalDuration = exitThreshold - appearThreshold; // 2000 scroll units
+  // Animation constants - using scroll progress percentages
+  // Devil appears near end of page: 80% to 90% of scroll
+  const appearProgress = 0.80;
+  const exitProgress = 0.90;
+  const totalDuration = exitProgress - appearProgress;
   
   // Flight stages (as percentage of total scroll duration)
   const swoopInDuration = 0.25;    // 25% - swoop in from left 
@@ -2184,8 +2437,8 @@ const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrol
     if (groupRef.current) {
       const time = state.clock.elapsedTime;
       
-      // Calculate scroll-based visibility and movement
-      if (scrollY < appearThreshold || scrollY > exitThreshold) {
+      // Calculate scroll-based visibility and movement using progress
+      if (scrollProgress < appearProgress || scrollProgress > exitProgress) {
         groupRef.current.visible = false;
         return;
       }
@@ -2193,7 +2446,7 @@ const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrol
       groupRef.current.visible = true;
       
       // Calculate overall progress (0 to 1) through the flight sequence
-      const overallProgress = (scrollY - appearThreshold) / totalDuration;
+      const overallProgress = (scrollProgress - appearProgress) / totalDuration;
       
       // Determine which flight stage we're in
       let stage, stageProgress;
@@ -2303,7 +2556,7 @@ const DevilModel = React.memo(function DevilModel({ position = [0, 0, 10], scrol
 });
 
 // Breath component that follows the same scroll animation as the Model
-function ScrollingBreath({ scrollY, isMobile }) {
+function ScrollingBreath({ scrollY, scrollProgress, isMobile }) {
   const breathGroupRef = useRef();
   
   // Track when we've reached the bottom (same logic as Model)
@@ -2349,25 +2602,25 @@ function ScrollingBreath({ scrollY, isMobile }) {
       
       const baseY = isMobile ? -15 : -15;
       
-      // Check if we're in drone approach phase
-      const droneAppearThreshold = 3500; // Matches actual drone threshold
-      const droneApproachDuration = 3000; // Matches actual drone duration
-      const droneApproachEnd = droneAppearThreshold + droneApproachDuration;
+      // Check if we're in drone approach phase using scroll progress
+      const droneAppearProgress = 0.35; // Drone appears at 35% of page
+      const droneApproachDuration = 0.30; // Approach takes 30% of scroll
+      const droneApproachEnd = droneAppearProgress + droneApproachDuration;
       
-      let effectiveScrollY = scrollY;
+      let effectiveScrollProgress = scrollProgress;
       
       // During drone approach, lock the breath at the appearance position
-      if (scrollY >= droneAppearThreshold - 200 && scrollY < droneApproachEnd) {
+      if (scrollProgress >= droneAppearProgress - 0.02 && scrollProgress < droneApproachEnd) {
         // Lock breath at the position it was when drone started appearing
-        effectiveScrollY = droneAppearThreshold - 200;
-      } else if (scrollY >= droneApproachEnd) {
+        effectiveScrollProgress = droneAppearProgress - 0.02;
+      } else if (scrollProgress >= droneApproachEnd) {
         // After drone approach, subtract the approach duration to continue smoothly
-        effectiveScrollY = scrollY - droneApproachDuration;
+        effectiveScrollProgress = scrollProgress - droneApproachDuration;
       }
       
       // Match Model's increased scroll speed with same clamping
       const maxY = 40; // Same max as model
-      const calculatedY = baseY + effectiveScrollY * 0.035;
+      const calculatedY = baseY + effectiveScrollProgress * 350;
       breathGroupRef.current.position.y = Math.min(calculatedY, maxY);
       breathGroupRef.current.visible = true;
     }
@@ -2393,7 +2646,7 @@ function ScrollingBreath({ scrollY, isMobile }) {
 }
 
 // Scroll-responsive Clouds component wrapper
-function ScrollClouds({ scrollY, onLoad }) {
+function ScrollClouds({ scrollY, scrollProgress, onLoad }) {
   const cloudGroupRef = useRef();
   
   // Animate clouds with scroll (from Simple3DScene)
@@ -2635,7 +2888,7 @@ function GradientSkySphere() {
 }
 
 // ScrollTriggeredTitle - DropInTitle that animates when in view
-function ScrollTriggeredTitle({ isMobile }) {
+function ScrollTriggeredTitle({ isMobile, scrollProgress }) {
   const titleRef = useRef(null);
   const titleInView = useInView(titleRef, { 
     threshold: 0.01, // Very low threshold - just 1% visible
@@ -2674,7 +2927,7 @@ function ScrollTriggeredTitle({ isMobile }) {
 
 
 // Exact TickerCurve from Simple3DScene
-const TickerCurve = ({ scrollY = 0, scale = 3, position = [0, 3, 5] }) => {
+const TickerCurve = ({ scrollY = 0, scrollProgress = 0, scale = 3, position = [0, 3, 5] }) => {
   const textRefs = useRef([]);
   const curveRef = useRef();
   const groupRef = useRef();
@@ -2863,6 +3116,7 @@ export default function Home3() {
   const [showMusicControls, setShowMusicControls] = useState(false);
   const [emoji, setEmoji] = useState("😇");
   const [scrollY, setScrollY] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [isClient, setIsClient] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showNumerology, setShowNumerology] = useState(false);
@@ -2992,12 +3246,12 @@ export default function Home3() {
         currentScroll = scrollingElement.scrollTop || window.scrollY || window.pageYOffset || 0;
       }
       
-      // Debug high scroll values
-      // if (currentScroll > 9000) {
-      //   console.log('High scroll detected:', currentScroll);
-      // }
+      // Calculate scroll progress as percentage (0 to 1)
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = totalHeight > 0 ? Math.min(1, Math.max(0, currentScroll / totalHeight)) : 0;
       
       setScrollY(currentScroll);
+      setScrollProgress(progress);
     };
     
     checkDevice();
@@ -3259,15 +3513,16 @@ export default function Home3() {
               // color="#d89d12ff"
               // intensity={1.5}
             />
-            <Model scrollY={scrollY} isMobile={isMobile} onLoad={() => setModelLoaded(true)} />
+            <Model scrollY={scrollY} scrollProgress={scrollProgress} isMobile={isMobile} onLoad={() => setModelLoaded(true)} />
             {/* <VideoScreens /> */}
             {/* Breath that follows the same scroll animation as the bull */}
-            <ScrollingBreath scrollY={scrollY} isMobile={isMobile} />
+            <ScrollingBreath scrollY={scrollY} scrollProgress={scrollProgress} isMobile={isMobile} />
             
             {/* Drone with Screen1 display with interactive screen */}
             <DroneModel 
               position={[0, 5, -5]} 
               scrollY={scrollY}
+              scrollProgress={scrollProgress}
               isMobile={isMobile}
               isSignedIn={isSignedIn}
               onOpenBuyModal={() => setShowBuyModal(true)}
@@ -3276,6 +3531,7 @@ export default function Home3() {
             {/* Angel Model with playful swoop animation */}
             <AngelModel 
               scrollY={scrollY}
+              scrollProgress={scrollProgress}
               isMobile={isMobile}
               isTabletPortrait={isTabletPortrait}
               isTabletLandscape={isTabletLandscape}
@@ -3284,6 +3540,7 @@ export default function Home3() {
             {/* Devil Model with playful swoop animation (appears at end) */}
             <DevilModel 
               scrollY={scrollY}
+              scrollProgress={scrollProgress}
               isMobile={isMobile}
               isTabletPortrait={isTabletPortrait}
               isTabletLandscape={isTabletLandscape}
@@ -3304,7 +3561,7 @@ export default function Home3() {
               enableInteraction={true}
             /> */}
             
-            <ScrollClouds scrollY={scrollY} onLoad={() => setCloudsLoaded(true)} />
+            <ScrollClouds scrollY={scrollY} scrollProgress={scrollProgress} onLoad={() => setCloudsLoaded(true)} />
             {/* Additional point lights for desktop only */}
  
             <PostProcessingEffects />
@@ -3656,7 +3913,7 @@ export default function Home3() {
           }}
         >
           {/* Animated Drop-In Title with scroll trigger */}
-          <ScrollTriggeredTitle isMobile={isMobile} />
+          <ScrollTriggeredTitle isMobile={isMobile} scrollProgress={scrollProgress} />
         </div>
 
        

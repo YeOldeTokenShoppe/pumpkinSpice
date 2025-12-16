@@ -1,82 +1,102 @@
 import React, { useEffect, useState } from 'react';
-import TradingCard from './TradingCard';
+import PokemonHoloCard from './PokemonHoloCard';
 import './FocusedAgentCard.css';
 
-const FocusedAgentCard = ({ agentId, onClose }) => {
+const FocusedAgentCard = ({ agentId }) => {
   const [agentData, setAgentData] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Agent data - in a real app, this might come from an API
+  // Agent data with Pokemon card properties
   const agentsDatabase = {
     'RL80': {
-      id: 'RL80-PRIME',
       name: 'RL80',
-      specialty: 'Autonomous Trader',
-      image: '/pyromania.gif',
-      status: 'active',
-      stats: {
-        successRate: 87,
-        totalTrades: 1247,
-        profit: '+324.5%'
-      },
-      currentInsight: 'Analyzing perpetual contracts. Strong bullish signal detected on ETH/USD. Executing long position with 3x leverage.',
-      description: 'A virtuous and autonomous agent with one purpose: learn to trade perpetual contracts and maximize profits.'
+      hp: 120,
+      type: 'Fire',
+      backgroundImage: '/aurora.webp',
+      foregroundImage: '/crier.png',
+      attacks: [
+        { name: 'Momentum Trade', damage: 87, cost: '💎💎💎' },
+        { name: 'Leverage Strike', damage: 124, cost: '🔥🔥🔥🔥' }
+      ],
+      weakness: 'Market Crash',
+      resistance: 'FOMO',
+      retreatCost: 2,
+      rarity: 'rare holo',
+      artist: 'AI Trader',
+      cardNumber: 'RL80-001',
+      description: 'Analyzing perpetual contracts. Strong bullish signal detected on ETH/USD. Executing long position with 3x leverage.'
     },
     'Emo': {
-      id: 'EMO-001',
       name: 'Emo',
-      specialty: 'Sentiment Analysis',
-      image: '/images/agent-placeholder.svg',
-      status: 'active',
-      stats: {
-        successRate: 82,
-        totalTrades: 892,
-        profit: '+267.3%'
-      },
-      currentInsight: 'Market sentiment shifting to extreme greed. Social media mentions up 450%. Recommending defensive positioning.',
-      description: 'Specialist in market sentiment, analyzing social signals and emotional market drivers.'
+      hp: 100,
+      type: 'Water',
+      backgroundImage: '/80carpet.png',
+      foregroundImage: '/candles.png',
+      attacks: [
+        { name: 'Sentiment Shift', damage: 82, cost: '💧💧' },
+        { name: 'Social Signal', damage: 67, cost: '💧' }
+      ],
+      weakness: 'Black Swan',
+      resistance: 'FUD',
+      retreatCost: 1,
+      rarity: 'common',
+      artist: 'Sentiment Bot',
+      cardNumber: 'EMO-001',
+      description: 'Market sentiment shifting to extreme greed. Social media mentions up 450%. Recommending defensive positioning.'
     },
     'Macro': {
-      id: 'MACRO-002',
       name: 'Macro',
-      specialty: 'Macro Trends',
-      image: '/images/agent-placeholder.svg',
-      status: 'active',
-      stats: {
-        successRate: 79,
-        totalTrades: 543,
-        profit: '+198.7%'
-      },
-      currentInsight: 'Fed pivot indicators strengthening. DXY showing weakness. Favorable conditions for risk-on assets detected.',
-      description: 'Macro trends specialist, tracking global economic indicators and policy shifts.'
+      hp: 110,
+      type: 'Electric',
+      backgroundImage: '/heart.png',
+      foregroundImage: '/crier.png',
+      attacks: [
+        { name: 'Fed Pivot', damage: 79, cost: '⚡⚡⚡' },
+        { name: 'DXY Analysis', damage: 98, cost: '⚡⚡⚡⚡' }
+      ],
+      weakness: 'Inflation',
+      resistance: 'Recession',
+      retreatCost: 3,
+      rarity: 'uncommon',
+      artist: 'Macro Trader',
+      cardNumber: 'MAC-002',
+      description: 'Fed pivot indicators strengthening. DXY showing weakness. Favorable conditions for risk-on assets detected.'
     },
     'Tekno': {
-      id: 'TEKNO-003',
       name: 'Tekno',
-      specialty: 'Technical Analysis',
-      image: '/images/agent-placeholder.svg',
-      status: 'active',
-      stats: {
-        successRate: 91,
-        totalTrades: 2103,
-        profit: '+412.8%'
-      },
-      currentInsight: 'BTC forming ascending triangle on 4H. RSI divergence confirmed. Target: $52,000. Stop loss: $47,200.',
-      description: 'Technical analysis expert, identifying patterns and executing precision trades.'
+      hp: 105,
+      type: 'Steel',
+      backgroundImage: '/aurora.webp',
+      foregroundImage: '/candles.png',
+      attacks: [
+        { name: 'Pattern Scan', damage: 91, cost: '⚙️⚙️' },
+        { name: 'RSI Divergence', damage: 112, cost: '⚙️⚙️⚙️' }
+      ],
+      weakness: 'Slippage',
+      resistance: 'Volatility',
+      retreatCost: 2,
+      rarity: 'rare',
+      artist: 'Tech Analyst',
+      cardNumber: 'TEK-003',
+      description: 'BTC forming ascending triangle on 4H. RSI divergence confirmed. Target: $52,000. Stop loss: $47,200.'
     },
     'Mike': {
-      id: 'MIKE-004',
       name: 'Mike',
-      specialty: 'Risk Management',
-      image: '/images/agent-placeholder.svg',
-      status: 'active',
-      stats: {
-        successRate: 85,
-        totalTrades: 765,
-        profit: '+215.3%'
-      },
-      currentInsight: 'Portfolio risk exposure at 65%. Suggesting position size reduction on high-leverage trades.',
-      description: 'Risk management specialist, optimizing portfolio exposure and protecting capital.'
+      hp: 95,
+      type: 'Psychic',
+      backgroundImage: '/80carpet.png',
+      foregroundImage: '/crier.png',
+      attacks: [
+        { name: 'Risk Control', damage: 85, cost: '🔮🔮' },
+        { name: 'Capital Shield', damage: 65, cost: '🔮' }
+      ],
+      weakness: 'Overleveraged',
+      resistance: 'Drawdown',
+      retreatCost: 1,
+      rarity: 'uncommon',
+      artist: 'Risk Manager',
+      cardNumber: 'MIK-004',
+      description: 'Portfolio risk exposure at 65%. Suggesting position size reduction on high-leverage trades.'
     }
   };
 
@@ -96,30 +116,10 @@ const FocusedAgentCard = ({ agentId, onClose }) => {
 
   return (
     <div className={`focused-agent-card ${isVisible ? 'visible' : ''}`}>
-      <div className="card-container">
-        <button className="close-button" onClick={onClose}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-        
-        <div className="card-header">
-          <h3>{agentData.name}</h3>
-          <p>{agentData.specialty}</p>
-        </div>
-        
-        <TradingCard 
-          agent={agentData}
-          isActive={true}
-          onFlip={() => {}}
-          className="focused-card"
-        />
-        
-        <div className="card-description">
-          <p>{agentData.description}</p>
-        </div>
-      </div>
+      <PokemonHoloCard 
+        agent={agentData}
+        className="focused-card"
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo, forwardRef, useImperativeHandle } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import * as THREE from "three";
@@ -8,7 +8,7 @@ import AnnotationSystem from "@/components/AnnotationSystem";
 
 
 
-const CyborgTempleScene = forwardRef(({ 
+const CyborgTempleScene = ({ 
   onLoad, 
   position = [0, 0.9, 0],
   rotation = [0, 0, 0],
@@ -20,7 +20,7 @@ const CyborgTempleScene = forwardRef(({
   onAnnotationClick = null, // Callback when annotation is clicked
   onAgentClick = null, // Callback when an agent is clicked
   isMobile = false, // Pass this prop to determine device type
-}, ref) => {
+}) => {
   const groupRef = useRef();
   const { scene, camera, gl } = useThree();
   const hasLoadedRef = useRef(false);
@@ -50,6 +50,16 @@ const CyborgTempleScene = forwardRef(({
   const ourLadyRef = useRef(); // Reference to RL80 (OurLady) mesh
   const originalCameraPosition = useRef(null); // Store original camera position
   
+  // Eye mesh refs for blinking animation
+  const leftEyeRef = useRef();
+  const rightEyeRef = useRef();
+  const blinkStateRef = useRef({
+    lastBlinkTime: 0,
+    nextBlinkDelay: Math.random() * 3000 + 2000, // Random delay between 2-5 seconds
+    isBlinking: false,
+    blinkProgress: 0
+  });
+  
   // Detect mobile device on mount
   useEffect(() => {
     const checkMobile = () => {
@@ -69,7 +79,7 @@ const CyborgTempleScene = forwardRef(({
   const isOnMobile = isMobile || detectedMobile;
   
   // Expose the loaded model and camera control functions through ref
-  useImperativeHandle(ref, () => ({
+  /* useImperativeHandle(ref, () => ({
     current: loadedModel,
     focusOnAgent: (agentId) => {
       // Focus on a specific agent programmatically
@@ -105,7 +115,7 @@ const CyborgTempleScene = forwardRef(({
         camera.lookAt(0, 0, 0);
       }
     }
-  }), [loadedModel, camera]);
+  }), [loadedModel, camera]); */
 
   // Define annotation points - adjust positions based on your temple scene
   const annotations = [
@@ -152,7 +162,17 @@ const CyborgTempleScene = forwardRef(({
 
   useEffect(() => {
     if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
+    
+    // Small delay to ensure the ref is attached after first render
+    const timer = setTimeout(() => {
+      if (!groupRef.current) {
+        console.error('[CyborgTempleScene] groupRef.current is still null after mount');
+        return;
+      }
+      
+      hasLoadedRef.current = true;
+      const currentGroupRef = groupRef.current; // Capture the ref value
+      console.log('[CyborgTempleScene] groupRef.current available, starting model load');
 
     const gltfLoader = new GLTFLoader();
     
@@ -166,11 +186,31 @@ const CyborgTempleScene = forwardRef(({
     const startTime = performance.now();
     console.log(`[CyborgTempleScene] Starting to load: ${modelPath} (Mobile: ${isOnMobile})`);
     
-    gltfLoader.load(modelPath, (gltf) => {
-      const loadTime = performance.now() - startTime;
-      console.log(`[CyborgTempleScene] Model loaded in ${loadTime.toFixed(2)}ms`);
-      
-      const templeScene = gltf.scene;
+    // First, verify the model file is accessible
+    fetch(modelPath, { method: 'HEAD' })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Model file not accessible: ${response.status} ${response.statusText}`);
+        }
+        console.log(`[CyborgTempleScene] Model file verified at: ${modelPath}`);
+      })
+      .catch(error => {
+        console.error(`[CyborgTempleScene] Failed to verify model file:`, error);
+      });
+    
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const loadModel = () => {
+      gltfLoader.load(
+      modelPath, 
+      (gltf) => {
+        const loadTime = performance.now() - startTime;
+        console.log(`[CyborgTempleScene] Model loaded successfully in ${loadTime.toFixed(2)}ms`);
+        console.log(`[CyborgTempleScene] Model path: ${modelPath}`);
+        console.log(`[CyborgTempleScene] GLTF object:`, gltf);
+        
+        const templeScene = gltf.scene;
       
       // Store the loaded model in state for external access
       setLoadedModel(templeScene);
@@ -178,15 +218,10 @@ const CyborgTempleScene = forwardRef(({
       
       // Create an anchor group for positioning
       const anchorGroup = new THREE.Group();
-      // Use different positions and scales for mobile vs desktop
-      const mobilePosition = [0, 1.5, 0];
-      const mobileScale = [0.8, 0.8, 0.8];
-      const desktopPosition = position;
-      const desktopScale = scale;
-      
-      anchorGroup.position.set(...(isOnMobile ? mobilePosition : desktopPosition));
-      anchorGroup.rotation.set(...rotation);
-      anchorGroup.scale.set(...(isOnMobile ? mobileScale : desktopScale));
+      // The anchor group doesn't need additional transforms since parent group handles them
+      anchorGroup.position.set(0, 0, 0);
+      anchorGroup.rotation.set(0, 0, 0);
+      anchorGroup.scale.set(1, 1, 1);
       
       // Add the temple scene to the anchor group
       anchorGroup.add(templeScene);
@@ -243,11 +278,33 @@ const CyborgTempleScene = forwardRef(({
       gridHelper.position.y = -.06; // Position the grid below the scene
       anchorGroup.add(gridHelper);
       
-      // Add the anchor group to the scene
-      scene.add(anchorGroup);
-      
-      // Store reference for cleanup
-      groupRef.current = anchorGroup;
+      // Add the anchor group to our captured group ref
+      // Using the captured ref to avoid closure issues
+      if (currentGroupRef) {
+        currentGroupRef.add(anchorGroup);
+        console.log('[CyborgTempleScene] Added model to group ref');
+        console.log('[CyborgTempleScene] Group children count:', currentGroupRef.children.length);
+        console.log('[CyborgTempleScene] Group children:', currentGroupRef.children);
+        
+        // Debug: Check visibility and position
+        console.log('[CyborgTempleScene] AnchorGroup visible:', anchorGroup.visible);
+        console.log('[CyborgTempleScene] AnchorGroup position:', anchorGroup.position);
+        console.log('[CyborgTempleScene] AnchorGroup scale:', anchorGroup.scale);
+        console.log('[CyborgTempleScene] Parent group visible:', currentGroupRef.visible);
+        console.log('[CyborgTempleScene] Parent group in scene:', currentGroupRef.parent);
+        
+        // Ensure everything is visible
+        anchorGroup.visible = true;
+        templeScene.visible = true;
+        
+        // Force update
+        anchorGroup.updateMatrix();
+        anchorGroup.updateMatrixWorld(true);
+      } else {
+        // This shouldn't happen but as a fallback, add to scene
+        console.error('[CyborgTempleScene] currentGroupRef is null, falling back to scene');
+        scene.add(anchorGroup);
+      }
       
       // Find the specific meshes and add click handlers
       templeScene.traverse((child) => {
@@ -258,6 +315,16 @@ const CyborgTempleScene = forwardRef(({
         if (child.name === 'Object_5') {
           // console.log('Found Object_5 mesh:', child);
           object7MeshRef.current = child;
+        }
+        
+        // Find eye meshes for blinking animation
+        if (child.name === 'L_eye' || child.name === 'L_Eye') {
+          console.log('Found left eye mesh:', child.name);
+          leftEyeRef.current = child;
+        }
+        if (child.name === 'R_eye' || child.name === 'R_Eye') {
+          console.log('Found right eye mesh:', child.name);
+          rightEyeRef.current = child;
         }
         
         // Find OurLady (RL80) and make it clickable
@@ -347,22 +414,60 @@ const CyborgTempleScene = forwardRef(({
         }, 100);
       }
     }, 
-    undefined,
+    // Progress callback
+    (xhr) => {
+      const percentComplete = (xhr.loaded / xhr.total) * 100;
+      console.log(`[CyborgTempleScene] Loading progress: ${percentComplete.toFixed(2)}%`);
+    },
+    // Error callback
     (error) => {
-      console.error(`Error loading model ${modelPath}:`, error);
-      // Still call onLoad even if there's an error, so the page doesn't hang
-      if (onLoad) {
+      console.error(`[CyborgTempleScene] Error loading model ${modelPath}:`, error);
+      console.error(`[CyborgTempleScene] Error details:`, {
+        message: error.message,
+        stack: error.stack,
+        modelPath: modelPath,
+        isOnMobile: isOnMobile
+      });
+      
+      // Check if it's a 404 error
+      if (error.message && error.message.includes('404')) {
+        console.error(`[CyborgTempleScene] Model file not found at path: ${modelPath}`);
+        console.error('[CyborgTempleScene] Please ensure the file exists at: public' + modelPath);
+      }
+      
+      // Retry logic
+      if (retryCount < maxRetries) {
+        retryCount++;
+        console.warn(`[CyborgTempleScene] Retrying model load (attempt ${retryCount}/${maxRetries})...`);
         setTimeout(() => {
-          onLoad();
-        }, 100);
+          loadModel();
+        }, 1000 * retryCount); // Exponential backoff
+      } else {
+        console.error(`[CyborgTempleScene] Failed to load model after ${maxRetries} attempts`);
+        // Still call onLoad even if there's an error, so the page doesn't hang
+        if (onLoad) {
+          console.warn('[CyborgTempleScene] Calling onLoad despite error to prevent hanging');
+          setTimeout(() => {
+            onLoad();
+          }, 100);
+        }
       }
     });
+    };
+    
+    // Start loading the model
+    loadModel();
 
+    }, 100); // 100ms delay to ensure ref is attached
+    
     // Cleanup function
     return () => {
+      clearTimeout(timer);
       if (groupRef.current) {
-        // Remove from scene
-        scene.remove(groupRef.current);
+        // Clear the group's children
+        while (groupRef.current.children.length > 0) {
+          groupRef.current.remove(groupRef.current.children[0]);
+        }
         
         // Dispose of materials and geometries
         groupRef.current.traverse((child) => {
@@ -379,7 +484,7 @@ const CyborgTempleScene = forwardRef(({
         });
       }
     };
-  }, [scene, position, rotation, scale, onLoad, isOnMobile]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Store original camera position on first render
   useEffect(() => {
@@ -813,6 +918,81 @@ const CyborgTempleScene = forwardRef(({
       mixerRef.current.update(delta);
     }
     
+    // Blinking animation for RL80's eyes
+    if (leftEyeRef.current && rightEyeRef.current && !isOnMobile) {
+      const currentTime = state.clock.getElapsedTime() * 1000; // Convert to milliseconds
+      const blinkState = blinkStateRef.current;
+      
+      // Store original positions if not already stored
+      if (!leftEyeRef.current.userData.originalPosition) {
+        leftEyeRef.current.userData.originalPosition = leftEyeRef.current.position.clone();
+        leftEyeRef.current.userData.originalScale = leftEyeRef.current.scale.clone();
+      }
+      if (!rightEyeRef.current.userData.originalPosition) {
+        rightEyeRef.current.userData.originalPosition = rightEyeRef.current.position.clone();
+        rightEyeRef.current.userData.originalScale = rightEyeRef.current.scale.clone();
+      }
+      
+      // Check if it's time to blink
+      if (!blinkState.isBlinking && currentTime - blinkState.lastBlinkTime > blinkState.nextBlinkDelay) {
+        blinkState.isBlinking = true;
+        blinkState.blinkProgress = 0;
+        blinkState.lastBlinkTime = currentTime;
+        // Set random delay for next blink (2-5 seconds)
+        blinkState.nextBlinkDelay = Math.random() * 3000 + 2000;
+      }
+      
+      // Animate the blink
+      if (blinkState.isBlinking) {
+        const blinkDuration = 150; // Total blink duration in milliseconds
+        const timeSinceBlinkStart = currentTime - blinkState.lastBlinkTime;
+        
+        if (timeSinceBlinkStart < blinkDuration) {
+          // Calculate blink progress (0 to 1 and back to 0)
+          const halfDuration = blinkDuration / 2;
+          let progress;
+          
+          if (timeSinceBlinkStart < halfDuration) {
+            // Closing eyes
+            progress = timeSinceBlinkStart / halfDuration;
+          } else {
+            // Opening eyes
+            progress = 1 - ((timeSinceBlinkStart - halfDuration) / halfDuration);
+          }
+          
+          // Apply scale transformation to simulate closing eyes
+          // Use setFromMatrixScale to maintain position while scaling
+          const eyeScale = 1 - (progress * 0.9); // Don't fully close to 0, leave at 0.1
+          
+          // Scale from the center of each eye mesh
+          leftEyeRef.current.scale.set(
+            leftEyeRef.current.userData.originalScale.x,
+            leftEyeRef.current.userData.originalScale.y * eyeScale,
+            leftEyeRef.current.userData.originalScale.z
+          );
+          rightEyeRef.current.scale.set(
+            rightEyeRef.current.userData.originalScale.x,
+            rightEyeRef.current.userData.originalScale.y * eyeScale,
+            rightEyeRef.current.userData.originalScale.z
+          );
+          
+          // Compensate for position shift when scaling
+          // Move eyes slightly to maintain their visual position
+          const positionOffset = (1 - eyeScale) * 0.01; // Adjust this value as needed
+          leftEyeRef.current.position.y = leftEyeRef.current.userData.originalPosition.y - positionOffset;
+          rightEyeRef.current.position.y = rightEyeRef.current.userData.originalPosition.y - positionOffset;
+          
+        } else {
+          // Blink complete, reset to original
+          blinkState.isBlinking = false;
+          leftEyeRef.current.scale.copy(leftEyeRef.current.userData.originalScale);
+          rightEyeRef.current.scale.copy(rightEyeRef.current.userData.originalScale);
+          leftEyeRef.current.position.copy(leftEyeRef.current.userData.originalPosition);
+          rightEyeRef.current.position.copy(rightEyeRef.current.userData.originalPosition);
+        }
+      }
+    }
+    
     // Camera focus animation
     if (focusTarget) {
       // Smoothly move camera to target position
@@ -888,22 +1068,14 @@ const CyborgTempleScene = forwardRef(({
     }
   });
 
-  // Return AnnotationSystem component if annotations should be shown
-  if (!showAnnotations) {
-    return null;
-  }
-
-  // return (
-  //   <AnnotationSystem 
-  //     annotations={annotations} 
-  //     is80sMode={is80sMode} 
-  //     onAnnotationClick={onAnnotationClick}
-  //     scale={0.8}
-  //     textScale={0.8}
-  //   />
-  // );
-});
+  // Always return the group that contains the model  
+  return (
+    <group ref={groupRef} visible={true} position={position} scale={scale} rotation={rotation}>
+      {/* The 3D model is added dynamically in useEffect */}
+    </group>
+  );
+};
 
 CyborgTempleScene.displayName = 'CyborgTempleScene';
 
-export default memo(CyborgTempleScene);
+export default CyborgTempleScene;

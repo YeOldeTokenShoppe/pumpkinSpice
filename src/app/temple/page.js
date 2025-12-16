@@ -7,6 +7,8 @@ import StarField from '@/components/StarField';
 import Link from 'next/link';
 import PostProcessingEffects from '@/components/PostProcessingEffects';
 import CyborgTempleScene from '@/components/CyborgTempleScene';
+import TestCyborgScene from '@/components/TestCyborgScene';
+import TestCyborgScene2 from '@/components/TestCyborgScene2';
 import VideoScreens from "@/components/VideoScreens";
 import TickerDisplay3 from "@/components/TickerDisplay3";
 import { useMusic } from '@/components/MusicContext';
@@ -133,22 +135,36 @@ export default function CyborgTemple() {
         setIsMobileView(isMobile);
         
         // Preload the appropriate model
-        if (isMobile && !document.querySelector('link[href="/models/MOBILE.glb"]')) {
+        const modelToPreload = isMobile ? '/models/MOBILE.glb' : '/models/RL80_4anims.glb';
+        
+        if (!document.querySelector(`link[href="${modelToPreload}"]`)) {
           const link = document.createElement('link');
           link.rel = 'preload';
           link.as = 'fetch';
-          link.href = '/models/MOBILE.glb';
+          link.href = modelToPreload;
           link.crossOrigin = 'anonymous';
+          link.type = 'model/gltf-binary';
           document.head.appendChild(link);
-          console.log('[Temple] Preloading MOBILE.glb');
-        } else if (!isMobile && !document.querySelector('link[href="/models/RL80_4anims.glb"]')) {
-          const link = document.createElement('link');
-          link.rel = 'preload';
-          link.as = 'fetch';
-          link.href = '/models/RL80_4anims.glb';
-          link.crossOrigin = 'anonymous';
-          document.head.appendChild(link);
-          console.log('[Temple] Preloading RL80_4anims.glb');
+          console.log(`[Temple] Preloading ${modelToPreload}`);
+          
+          // Also actively fetch the model to warm up the cache
+          fetch(modelToPreload, { 
+            mode: 'cors',
+            cache: 'force-cache'
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Failed to preload: ${response.status}`);
+            }
+            console.log(`[Temple] Successfully preloaded ${modelToPreload}`);
+            return response.blob();
+          })
+          .then(blob => {
+            console.log(`[Temple] Model size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+          })
+          .catch(error => {
+            console.error(`[Temple] Failed to preload model:`, error);
+          });
         }
       }
     };
@@ -437,7 +453,7 @@ export default function CyborgTemple() {
           show={showTrading} 
           data={tradingData} 
           isConnected={isConnected}
-          modelRef={modelRef}
+          modelRef={null}
           modelLoaded={modelLoaded}
           onModalStateChange={(isOpen) => {
             setIsCandleModalOpen(isOpen);
@@ -487,6 +503,8 @@ export default function CyborgTemple() {
           <Suspense fallback={null}>
             <ambientLight intensity={0.3} />
             <PostProcessingEffects />
+            
+            
             {/* Starry background */}
             <StarField 
               radius={150} 
@@ -495,32 +513,27 @@ export default function CyborgTemple() {
               is80sMode={false} 
             />
             
-            {/* CyborgTempleScene with grid */}
+            
+            {/* CyborgTempleScene with the RL80 model */}
             <CyborgTempleScene
-              ref={modelRef}
               position={[0, -1.5, 0]}
               scale={[1.2, 1.2, 1.2]}
               rotation={[0, 0, 0]}
-              isPlaying={contextIsPlaying}
+              isPlaying={false}
               onLoad={handleSceneLoad}
-              showAnnotations={showAnnotations}
-              is80sMode={is80sMode}
+              showAnnotations={true}
+              is80sMode={false}
               isMobile={isMobileView}
               onAgentClick={(agentId) => {
-                console.log('Agent clicked in Temple:', agentId);
-                if (agentId === null) {
-                  // Clicked on empty space - reset camera and hide card
-                  setFocusedAgent(null);
-                  setShowAgentCard(false);
-                } else {
-                  // Clicked on an agent - focus and show card
-                  setFocusedAgent(agentId);
-                  setShowAgentCard(true);
-                }
+                console.log('Agent clicked:', agentId);
+                setFocusedAgent(agentId);
+                setShowAgentCard(true);
               }}
             />
 
-            {tickerReady && !isCandleModalOpen && !isMobileView && <TickerDisplay3 modelRef={modelRef} onLoad={handleTickerLoad} />}
+            {tickerReady && !isCandleModalOpen && !isMobileView ? (
+              <TickerDisplay3 modelRef={null} onLoad={handleTickerLoad} />
+            ) : null}
 
           
             {/* Constellation */}

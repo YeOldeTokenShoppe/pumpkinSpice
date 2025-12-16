@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import TradingCard from './TradingCard';
+import SimpleCard from './SimpleCard';
 import './TradingCardsDisplay.css';
 
 const TradingCardsDisplay = () => {
-  const [activeCard, setActiveCard] = useState(0);
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+  
   const [agentsData, setAgentsData] = useState([
     {
       id: 'RL80-PRIME',
@@ -78,50 +79,70 @@ const TradingCardsDisplay = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-rotate through cards
-  useEffect(() => {
-    const rotateInterval = setInterval(() => {
-      setActiveCard((prev) => (prev + 1) % agentsData.length);
-    }, 5000); // Change active card every 5 seconds
+  const handlePrev = () => {
+    setActiveCardIndex(i => i > 0 ? i - 1 : i);
+  };
 
-    return () => clearInterval(rotateInterval);
-  }, [agentsData.length]);
-
-  const handleCardClick = (index) => {
-    setActiveCard(index);
+  const handleNext = () => {
+    setActiveCardIndex(i => i < agentsData.length - 1 ? i + 1 : i);
   };
 
   return (
     <div className="trading-cards-container">
-      {/* Header removed - shown in overlay portal instead */}
-      
-      <div className="cards-grid">
-        {agentsData.map((agent, index) => (
-          <div 
-            key={agent.id} 
-            className={`card-wrapper ${index === activeCard ? 'active' : ''}`}
-            onClick={() => handleCardClick(index)}
-          >
-            <TradingCard 
-              agent={agent}
-              isActive={index === activeCard}
-              onFlip={(flipped) => console.log(`Card ${agent.name} flipped:`, flipped)}
-            />
-          </div>
-        ))}
+      <div className="cards-header">
+        <h2>AI Trading Council</h2>
+        <p>Navigate with arrows • Click cards to flip</p>
       </div>
       
-      <div className="cards-controls">
-        <div className="card-indicators">
-          {agentsData.map((_, index) => (
-            <button
-              key={index}
-              className={`indicator ${index === activeCard ? 'active' : ''}`}
-              onClick={() => setActiveCard(index)}
-              aria-label={`View agent ${index + 1}`}
-            />
-          ))}
-        </div>
+      <div className="carousel">
+        {activeCardIndex > 0 && (
+          <button className="nav left" onClick={handlePrev}>
+            ‹
+          </button>
+        )}
+        
+        {agentsData.map((agent, i) => {
+          let className = 'card-container';
+          if (i === activeCardIndex) {
+            className += ' active';
+          } else if (i === activeCardIndex - 1) {
+            className += ' prev';
+          } else if (i === activeCardIndex + 1) {
+            className += ' next';
+          } else {
+            className += ' hidden';
+          }
+          
+          return (
+            <div 
+              key={agent.id}
+              className={className}
+            >
+              <SimpleCard 
+                agent={agent}
+                isActive={i === activeCardIndex}
+                className="carousel-card"
+              />
+            </div>
+          );
+        })}
+        
+        {activeCardIndex < agentsData.length - 1 && (
+          <button className="nav right" onClick={handleNext}>
+            ›
+          </button>
+        )}
+      </div>
+      
+      <div className="card-indicators">
+        {agentsData.map((_, index) => (
+          <button
+            key={index}
+            className={`indicator ${activeCardIndex === index ? 'active' : ''}`}
+            aria-label={`Agent ${index + 1}`}
+            onClick={() => setActiveCardIndex(index)}
+          />
+        ))}
       </div>
       
       <div className="council-status">
@@ -130,12 +151,12 @@ const TradingCardsDisplay = () => {
           <span className="status-value active">ONLINE</span>
         </div>
         <div className="status-item">
-          <span className="status-label">Total Profit:</span>
-          <span className="status-value">+1203.3%</span>
+          <span className="status-label">Active Agent:</span>
+          <span className="status-value">{agentsData[activeCardIndex].name}</span>
         </div>
         <div className="status-item">
-          <span className="status-label">Active Positions:</span>
-          <span className="status-value">17</span>
+          <span className="status-label">Total Profit:</span>
+          <span className="status-value">+1203.3%</span>
         </div>
       </div>
     </div>
