@@ -20,16 +20,75 @@ const PokemonHoloCard = ({
   artist = "",
   cardNumber = "4/102",
   description = "Spits fire that is hot enough to melt boulders. Known to cause forest fires unintentionally.",
-  className = ""
+  className = "",
+  agent = null  // Added to check if it's an agent card
 }) => {
   const cardRef = useRef(null);
   const shineRef = useRef(null);
   const [isTouch, setIsTouch] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
     setIsTouch('ontouchstart' in window);
   }, []);
+
+  // Initial animation effect when card loads (especially for agent cards)
+  useEffect(() => {
+    // Only animate if it's an agent card (has agent prop) and hasn't animated yet
+    if (agent && cardRef.current && !hasAnimated) {
+      setHasAnimated(true);
+      
+      // Define animation sequence with different positions
+      const animationSequence = [
+        { rotateX: -10, rotateY: 15, mx: 70, my: 30, duration: 400 },
+        { rotateX: 10, rotateY: -10, mx: 30, my: 70, duration: 400 },
+        // { rotateX: -5, rotateY: -15, mx: 20, my: 50, duration: 400 },
+        // { rotateX: 5, rotateY: 10, mx: 80, my: 40, duration: 400 },
+        { rotateX: 0, rotateY: 0, mx: 50, my: 50, duration: 300 } // Return to center
+      ];
+      
+      let currentStep = 0;
+      
+      const animateStep = () => {
+        if (currentStep < animationSequence.length) {
+          const step = animationSequence[currentStep];
+          
+          // Apply rotation
+          cardRef.current.style.setProperty('--rotate-x', `${step.rotateX}deg`);
+          cardRef.current.style.setProperty('--rotate-y', `${step.rotateY}deg`);
+          
+          // Apply position for shine effect
+          cardRef.current.style.setProperty('--mx', `${step.mx}%`);
+          cardRef.current.style.setProperty('--my', `${step.my}%`);
+          cardRef.current.style.setProperty('--posx', `${step.mx}%`);
+          cardRef.current.style.setProperty('--posy', `${step.my}%`);
+          
+          // Calculate hyp for shine intensity
+          const centerX = 50;
+          const centerY = 50;
+          const distance = Math.sqrt(Math.pow(step.mx - centerX, 2) + Math.pow(step.my - centerY, 2));
+          const hyp = distance / Math.sqrt(Math.pow(centerX, 2) + Math.pow(centerY, 2));
+          cardRef.current.style.setProperty('--hyp', hyp);
+          
+          // Also update shine element if it exists
+          if (shineRef.current) {
+            shineRef.current.style.setProperty('--mx', `${step.mx}%`);
+            shineRef.current.style.setProperty('--my', `${step.my}%`);
+            shineRef.current.style.setProperty('--posx', `${step.mx}%`);
+            shineRef.current.style.setProperty('--posy', `${step.my}%`);
+            shineRef.current.style.setProperty('--hyp', hyp);
+          }
+          
+          currentStep++;
+          setTimeout(animateStep, step.duration);
+        }
+      };
+      
+      // Start animation after a short delay
+      setTimeout(animateStep, 200);
+    }
+  }, [agent, hasAnimated]);
 
   const handleMouseMove = (e) => {
     if (!cardRef.current || isTouch) return;

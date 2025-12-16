@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PokemonHoloCard from './PokemonHoloCard';
 import './FocusedAgentCard.css';
 
-const FocusedAgentCard = ({ agentId }) => {
+const FocusedAgentCard = ({ agentId, onClose }) => {
   const [agentData, setAgentData] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
 

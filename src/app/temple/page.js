@@ -74,7 +74,7 @@ export default function CyborgTemple() {
       
       return () => clearTimeout(timer);
     }
-  }, [mounted, isConnected]);
+  }, [mounted, isConnected, initialize]);
 
     // Emoji animation
     useEffect(() => {
@@ -526,8 +526,14 @@ export default function CyborgTemple() {
               isMobile={isMobileView}
               onAgentClick={(agentId) => {
                 console.log('Agent clicked:', agentId);
-                setFocusedAgent(agentId);
-                setShowAgentCard(true);
+                if (agentId) {
+                  setFocusedAgent(agentId);
+                  setShowAgentCard(true);
+                } else {
+                  // Agent was deselected (clicked on empty space or pressed Escape)
+                  setFocusedAgent(null);
+                  setShowAgentCard(false);
+                }
               }}
             />
 
@@ -559,12 +565,13 @@ export default function CyborgTemple() {
             
             <OrbitControls 
               makeDefault
+              enabled={!focusedAgent}  // Disable when focusing on an agent
               enablePan={true}
               enableZoom={true}
               zoomSpeed={0.2}
               enableDamping={true}
               dampingFactor={0.1}
-              minDistance={1}
+              minDistance={0.1}
               maxDistance={20}
               minPolarAngle={0}
               maxPolarAngle={Math.PI / 1.9}
@@ -589,7 +596,8 @@ export default function CyborgTemple() {
           <FocusedAgentCard 
             agentId={focusedAgent}
             onClose={() => {
-              setShowAgentCard(false); // Just hide the card, keep camera focused
+              setShowAgentCard(false);
+              setFocusedAgent(null);
             }}
           />
         )}

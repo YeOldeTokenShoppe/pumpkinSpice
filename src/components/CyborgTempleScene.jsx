@@ -218,10 +218,18 @@ const CyborgTempleScene = ({
       
       // Create an anchor group for positioning
       const anchorGroup = new THREE.Group();
-      // The anchor group doesn't need additional transforms since parent group handles them
-      anchorGroup.position.set(0, 0, 0);
-      anchorGroup.rotation.set(0, 0, 0);
-      anchorGroup.scale.set(1, 1, 1);
+      // Apply different positioning for MOBILE.glb vs RL80_4anims.glb
+      if (isOnMobile) {
+        // Custom position for MOBILE.glb - adjust these values as needed
+        anchorGroup.position.set(0, 0.8, -1); // Lower the mobile model
+        anchorGroup.rotation.set(0, 0, 0);
+        anchorGroup.scale.set(1.2, 1.2, 1.2); // Slightly larger scale for mobile
+      } else {
+        // Keep original positioning for RL80_4anims.glb
+        anchorGroup.position.set(0, 0, 0);
+        anchorGroup.rotation.set(0, 0, 0);
+        anchorGroup.scale.set(1, 1, 1);
+      }
       
       // Add the temple scene to the anchor group
       anchorGroup.add(templeScene);
@@ -334,7 +342,11 @@ const CyborgTempleScene = ({
           // Get world position of the object
           const worldPos = new THREE.Vector3();
           child.getWorldPosition(worldPos);
-          console.log('OurLady world position:', worldPos);
+          console.log('RL80 world position:', {
+            x: worldPos.x.toFixed(3),
+            y: worldPos.y.toFixed(3),
+            z: worldPos.z.toFixed(3)
+          });
           
           ourLadyRef.current = child;
           
@@ -355,13 +367,17 @@ const CyborgTempleScene = ({
         }
         
         // Make the three mechs clickable
-        if (child.name === 'Mike' || child.name === 'Emo' || child.name === 'Macro' || child.name === 'Tekno') {
+        if (child.name === 'Emo' || child.name === 'Macro' || child.name === 'Tekno') {
           console.log('Found Mech:', child.name, 'Type:', child.type, 'isMesh:', child.isMesh);
           
           // Get world position of the mech
           const mechWorldPos = new THREE.Vector3();
           child.getWorldPosition(mechWorldPos);
-          console.log(`${child.name} world position:`, mechWorldPos);
+          console.log(`${child.name} world position:`, {
+            x: mechWorldPos.x.toFixed(3),
+            y: mechWorldPos.y.toFixed(3),
+            z: mechWorldPos.z.toFixed(3)
+          });
           
           const setMechClickableData = (obj) => {
             obj.userData.clickable = true;
@@ -486,7 +502,7 @@ const CyborgTempleScene = ({
     };
   }, []); // Empty dependency array - only run once on mount
 
-  // Store original camera position on first render
+  // Store initial camera position only once
   useEffect(() => {
     if (!originalCameraPosition.current && camera) {
       originalCameraPosition.current = camera.position.clone();
@@ -506,9 +522,63 @@ const CyborgTempleScene = ({
     
     // Handle escape key to reset camera
     const handleKeyDown = (event) => {
+      // Debug: Press 'P' to log all character positions
+      if (event.key === 'p' || event.key === 'P') {
+        console.log('=== CHARACTER WORLD POSITIONS ===');
+        
+        // Find and log each character's position
+        if (groupRef.current) {
+          groupRef.current.traverse((child) => {
+            // Check various possible names
+            if (child.name === 'OurLady' || child.name === 'Object_7' || child.name === 'RL80') {
+              const pos = new THREE.Vector3();
+              child.getWorldPosition(pos);
+              console.log('RL80:', {
+                x: pos.x.toFixed(3),
+                y: pos.y.toFixed(3),
+                z: pos.z.toFixed(3)
+              });
+            }
+            
+            if (child.name === 'Emo' || child.name === 'Macro' || child.name === 'Tekno') {
+              const pos = new THREE.Vector3();
+              child.getWorldPosition(pos);
+              console.log(`${child.name}:`, {
+                x: pos.x.toFixed(3),
+                y: pos.y.toFixed(3),
+                z: pos.z.toFixed(3)
+              });
+            }
+            
+            if (child.name === 'Mike' || child.name === 'Cube010') {
+              const pos = new THREE.Vector3();
+              child.getWorldPosition(pos);
+              console.log('Mike/Cube010:', {
+                x: pos.x.toFixed(3),
+                y: pos.y.toFixed(3),
+                z: pos.z.toFixed(3)
+              });
+            }
+          });
+        }
+        console.log('=================================');
+      }
+      
+      // Debug: Press 'D' to log current camera position for setting up character views
+      if (event.key === 'd' || event.key === 'D') {
+        console.log('=== CAMERA DEBUG INFO ===');
+        console.log('Camera Position:', {
+          x: camera.position.x.toFixed(2),
+          y: camera.position.y.toFixed(2),
+          z: camera.position.z.toFixed(2)
+        });
+        console.log('Camera Target (looking at center):', { x: 0, y: 0, z: 0 });
+        console.log('Use these values in agentSettings for the current view');
+        console.log('========================');
+      }
+      
       if (event.key === 'Escape' && focusTarget) {
         console.log('[Escape] Resetting camera');
-        setFocusTarget(null);
         
         // Notify parent that focus is cleared
         if (onAgentClick) {
@@ -526,7 +596,11 @@ const CyborgTempleScene = ({
           
           setTimeout(() => {
             setFocusTarget(null);
-          }, 1500);
+            // Clear the stored position after reset
+            originalCameraPosition.current = null;
+          }, 1000);
+        } else {
+          setFocusTarget(null);
         }
       }
     };
@@ -582,6 +656,13 @@ const CyborgTempleScene = ({
           clickedOnAgent = true;
           console.log('Clicked on agent:', object.userData.agentName);
           
+          // Store the current camera position BEFORE any animation
+          // But only if we're not already focused on something
+          if (!focusTarget) {
+            originalCameraPosition.current = camera.position.clone();
+            console.log('Stored camera position for return:', originalCameraPosition.current);
+          }
+          
           // Get the target object's world position
           const targetObject = object.userData.targetObject || object;
           const objectWorldPos = new THREE.Vector3();
@@ -589,50 +670,67 @@ const CyborgTempleScene = ({
           
           console.log('Target object world position:', objectWorldPos);
           
-          // Calculate the direction from the object to the center (0,0,0)
-          // This helps us position the camera "in front" of each model
-          const directionToCenter = new THREE.Vector3(0, 0, 0).sub(objectWorldPos).normalize();
+          // Define camera positions based on actual character world positions
+          // Character positions from console:
+          // RL80: (1.704, -1.652, 1.476)
+          // Emo: (-1.554, -1.719, -1.351)
+          // Macro: (-1.315, -1.672, 1.636)
+          // Tekno: (1.512, -1.625, -1.575)
           
-          // Custom settings per agent (optional)
           const agentSettings = {
-            'RL80': { distance: 1.5, height: -1.8, lookAtHeight: 1 },
-            'Emo': { distance: 1.5, height: -0.9, lookAtHeight: 1.1 },
-            'Macro': { distance: 1.5, height: -2, lookAtHeight: 1 },
-            'Tekno': { distance: 1.5, height: -0.5, lookAtHeight: 1 }
+            'RL80': { 
+              // RL80 at (1.704, -1.652, 1.476)
+              // Camera should be closer to center (opposite side)
+              cameraPos: new THREE.Vector3(1, -0.4, 0.7),  // Positioned toward center, looking outward
+              lookAtPos: new THREE.Vector3(1.804, -0.7, 2)  // Look at upper body
+            },
+            'Emo': { 
+              // Emo at (-1.554, -1.719, -1.351)
+              // Camera positioned on opposite side (toward center)
+              cameraPos: new THREE.Vector3(-0.9, -0.5, -0.7),  // Positioned toward center, looking outward
+              lookAtPos: new THREE.Vector3(-1.3, -0.6,  -1.351)  // Look at upper body
+            },
+            'Macro': { 
+              // Macro at (-1.315, -1.672, 1.636)
+              // Camera positioned on opposite side (toward center)
+              cameraPos: new THREE.Vector3(-0.5, -0.5, 1.3),  // Positioned toward center, looking outward
+              lookAtPos: new THREE.Vector3(-1.515, -0.7, 1.636)  // Look at upper body
+            },
+            'Tekno': { 
+              // Tekno at (1.512, -1.625, -1.575)
+              // Camera positioned on opposite side (toward center)
+              cameraPos: new THREE.Vector3(0.7, -0.3, -1.3),  // Positioned toward center, looking outward
+              lookAtPos: new THREE.Vector3(0.9, -0.4,  -1.351)  // Look at upper body
+            },
           };
           
-          const settings = agentSettings[object.userData.agentId] || { distance: 3, height: 1, lookAtHeight: 0.8 };
+          const settings = agentSettings[object.userData.agentId];
           
-          // Calculate camera position
-          // Position camera "in front" of the model (opposite side from center)
-          // and slightly above
-          const distance = settings.distance; // Distance from the model
-          const height = settings.height; // Height above the model's base
-          
-          const cameraPosition = new THREE.Vector3();
-          // Start from object position
-          cameraPosition.copy(objectWorldPos);
-          // Move TOWARD center (in front of the model, since models face inward)
-          cameraPosition.x += directionToCenter.x * distance;
-          cameraPosition.z += directionToCenter.z * distance;
-          // Set height
-          cameraPosition.y = objectWorldPos.y + height;
-          
-          // Set the lookAt target higher up on the model (not at its base)
-          const lookAtTarget = new THREE.Vector3();
-          lookAtTarget.copy(objectWorldPos);
-          lookAtTarget.y += settings.lookAtHeight; // Look at a point above the base
-          
-          console.log('Camera position:', cameraPosition);
-          console.log('LookAt target:', lookAtTarget);
-          
-          // Set focus target for camera animation
-          setFocusTarget({
-            position: cameraPosition,
-            lookAt: lookAtTarget, // Look at a point higher up on the model
-            agentId: object.userData.agentId,
-            agentName: object.userData.agentName
-          });
+          if (!settings) {
+            // Fallback: calculate a reasonable position based on object location
+            const cameraPosition = new THREE.Vector3(
+              objectWorldPos.x + 2,
+              objectWorldPos.y + 0.5,
+              objectWorldPos.z + 3
+            );
+            const lookAtTarget = objectWorldPos.clone();
+            lookAtTarget.y += 0.5;
+            
+            setFocusTarget({
+              position: cameraPosition,
+              lookAt: lookAtTarget,
+              agentId: object.userData.agentId,
+              agentName: object.userData.agentName
+            });
+          } else {
+            // Use absolute positions for known agents
+            setFocusTarget({
+              position: settings.cameraPos.clone(),
+              lookAt: settings.lookAtPos.clone(),
+              agentId: object.userData.agentId,
+              agentName: object.userData.agentName
+            });
+          }
           
           // Call the parent callback if provided
           if (onAgentClick) {
@@ -646,14 +744,13 @@ const CyborgTempleScene = ({
       // If we didn't click on an agent and we're currently focused, reset the camera
       if (!clickedOnAgent && focusTarget) {
         console.log('[Click] Clicked on empty space, resetting camera');
-        setFocusTarget(null);
         
         // Notify parent that focus is cleared
         if (onAgentClick) {
           onAgentClick(null);
         }
         
-        // Smoothly return to original position
+        // Smoothly return to the position before we focused
         if (originalCameraPosition.current) {
           const resetTarget = {
             position: originalCameraPosition.current.clone(),
@@ -663,10 +760,15 @@ const CyborgTempleScene = ({
           };
           setFocusTarget(resetTarget);
           
-          // Clear the focus target after a short delay to stop the animation
+          // Clear the focus target after animation completes
           setTimeout(() => {
             setFocusTarget(null);
-          }, 1500); // Adjust timing as needed
+            // Clear the stored position after reset to avoid conflicts
+            originalCameraPosition.current = null;
+          }, 1000);
+        } else {
+          // If no stored position, just clear focus
+          setFocusTarget(null);
         }
       }
     };

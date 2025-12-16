@@ -18,14 +18,14 @@
 .card-container {
   position: relative;
   background: rgba(0, 0, 0, 0.9);
-  border: 2px solid rgba(0, 255, 65, 0.3);
-  border-radius: 12px;
+  border: 0.125rem solid rgba(0, 255, 65, 0.3);
+  border-radius: 0.75rem;
   padding: 1rem; /* Reduced padding */
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(1.25rem);
   box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.8),
-    0 0 100px rgba(0, 255, 65, 0.1);
-  width: 360px; /* Fixed width for card proportions */
+    0 1.25rem 3.125rem rgba(0, 0, 0, 0.8),
+    0 0 6.25rem rgba(0, 255, 65, 0.1);
+  width: 20rem; /* Smaller width for card proportions */
   overflow-y: auto;
   max-height: calc(100vh - 8rem);
 }
@@ -38,7 +38,7 @@
   height: 2rem;
   border-radius: 50%;
   background: rgba(255, 0, 0, 0.8);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 0.125rem solid rgba(255, 255, 255, 0.3);
   color: white;
   display: flex;
   align-items: center;
@@ -57,7 +57,7 @@
   text-align: center;
   margin-bottom: 0.5rem; /* Reduced margin */
   padding-bottom: 0.5rem; /* Reduced padding */
-  border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+  border-bottom: 0.0625rem solid rgba(0, 255, 65, 0.2);
 }
 
 .card-header h3 {
@@ -67,7 +67,7 @@
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+  text-shadow: 0 0 1.25rem rgba(0, 255, 65, 0.5);
 }
 
 .card-header p {
@@ -80,13 +80,13 @@
 
 .focused-card {
   margin: 0 auto;
-  transform: scale(0.85); /* Better proportion for wider container */
+  transform: scale(1); /* Full scale to show card at actual size */
 }
 
 .card-description {
   margin-top: 0.5rem; /* Reduced margin */
   padding-top: 0.5rem; /* Reduced padding */
-  border-top: 1px solid rgba(0, 255, 65, 0.2);
+  border-top: 0.0625rem solid rgba(0, 255, 65, 0.2);
 }
 
 .card-description p {
@@ -120,7 +120,7 @@
   }
   
   .focused-card {
-    transform: scale(0.7);
+    transform: scale(0.9);
   }
 }
 
@@ -144,13 +144,13 @@
 @keyframes pulse {
   0%, 100% {
     box-shadow: 
-      0 20px 50px rgba(0, 0, 0, 0.8),
-      0 0 100px rgba(0, 255, 65, 0.1);
+      0 1.25rem 3.125rem rgba(0, 0, 0, 0.8),
+      0 0 6.25rem rgba(0, 255, 65, 0.1);
   }
   50% {
     box-shadow: 
-      0 20px 50px rgba(0, 0, 0, 0.8),
-      0 0 150px rgba(0, 255, 65, 0.2);
+      0 1.25rem 3.125rem rgba(0, 0, 0, 0.8),
+      0 0 9.375rem rgba(0, 255, 65, 0.2);
   }
 }
 
