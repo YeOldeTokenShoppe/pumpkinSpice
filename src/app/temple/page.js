@@ -106,7 +106,7 @@ export default function CyborgTemple() {
       console.warn = (...args) => {
         // Suppress Three.js context lost warning
         if (typeof args[0] === 'string' && args[0].includes('Context Lost')) {
-          console.log('🎨 3D scene paused for modal display');
+          // console.log('🎨 3D scene paused for modal display');
           return;
         }
         originalWarn.apply(console, args);
@@ -145,7 +145,7 @@ export default function CyborgTemple() {
           link.crossOrigin = 'anonymous';
           link.type = 'model/gltf-binary';
           document.head.appendChild(link);
-          console.log(`[Temple] Preloading ${modelToPreload}`);
+          // console.log(`[Temple] Preloading ${modelToPreload}`);
           
           // Also actively fetch the model to warm up the cache
           fetch(modelToPreload, { 
@@ -156,11 +156,11 @@ export default function CyborgTemple() {
             if (!response.ok) {
               throw new Error(`Failed to preload: ${response.status}`);
             }
-            console.log(`[Temple] Successfully preloaded ${modelToPreload}`);
+            // console.log(`[Temple] Successfully preloaded ${modelToPreload}`);
             return response.blob();
           })
           .then(blob => {
-            console.log(`[Temple] Model size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+            // console.log(`[Temple] Model size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
           })
           .catch(error => {
             console.error(`[Temple] Failed to preload model:`, error);
@@ -472,7 +472,7 @@ export default function CyborgTemple() {
         <CleanCanvas
           key="temple-canvas"
           camera={{ 
-            position: isMobileView ? [0, 3.4, 1.5] : [0, 0.5, 6.5], 
+            position: isMobileView ? [0, 4.2, 2] : [0, 0.5, 6.5], 
             fov: isMobileView ? 35 : 50 
           }}
           gl={{ 
@@ -525,7 +525,7 @@ export default function CyborgTemple() {
               is80sMode={false}
               isMobile={isMobileView}
               onAgentClick={(agentId) => {
-                console.log('Agent clicked:', agentId);
+                // console.log('Agent clicked:', agentId);
                 if (agentId) {
                   setFocusedAgent(agentId);
                   setShowAgentCard(true);
@@ -578,7 +578,7 @@ export default function CyborgTemple() {
               zoomToCursor={true}
               // autoRotate={true}
               // autoRotateSpeed={0.2}
-              target={isMobileView ? [0, 4, 0] : [0, 0, 0]}
+              target={isMobileView ? [0, 4.2, 0] : [0, 0, 0]}
             />
           </Suspense>
           {/* <Stats className="stats-monitor" /> */}

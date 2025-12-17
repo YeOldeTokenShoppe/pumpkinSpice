@@ -18,11 +18,11 @@ const useMacroData = (refreshInterval = 900000) => { // 900000ms = 15 minutes
         
         if (response.ok) {
           const cachedData = await response.json()
-          console.log('[MacroAgentScreen] Using cached data from:', cachedData.source)
+          // console.log('[MacroAgentScreen] Using cached data from:', cachedData.source)
           
           // If data is stale, trigger an update in the background
           if (cachedData.isStale) {
-            console.log('[MacroAgentScreen] Data is stale, triggering background update')
+            // console.log('[MacroAgentScreen] Data is stale, triggering background update')
             fetch('/api/ai/update-crypto').catch(err => 
               console.log('[MacroAgentScreen] Background update failed:', err)
             )
@@ -39,7 +39,7 @@ const useMacroData = (refreshInterval = 900000) => { // 900000ms = 15 minutes
             volume24h: cachedData.volume24h || 145000000000
           })
         } else {
-          console.log('[MacroAgentScreen] Failed to fetch cached data, using fallback')
+          // console.log('[MacroAgentScreen] Failed to fetch cached data, using fallback')
           // Use fallback values
           setData({
             btc: { price: 95000, change: 2.5, history: [] },
@@ -79,11 +79,11 @@ const MacroAgentScreen = () => {
   const data = useMacroData()
   
   // Only log when data actually changes
-  useEffect(() => {
-    if (data.btc.price > 0) {
-      console.log('[MacroAgentScreen] Data updated:', data)
-    }
-  }, [data.btc.price, data.eth.price])
+  // useEffect(() => {
+  //   if (data.btc.price > 0) {
+  //     console.log('[MacroAgentScreen] Data updated:', data)
+  //   }
+  // }, [data.btc.price, data.eth.price])
 
   // Draw loop using useEffect with interval instead of useFrame
   useEffect(() => {
@@ -95,7 +95,7 @@ const MacroAgentScreen = () => {
       const texture = window.__screen2Texture
       
       if (!canvas || !texture) {
-        console.log('[MacroAgentScreen] Waiting for canvas/texture...')
+        // console.log('[MacroAgentScreen] Waiting for canvas/texture...')
         return
       }
       

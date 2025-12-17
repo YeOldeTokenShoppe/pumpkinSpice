@@ -227,7 +227,7 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
       // Call onLoad callback if provided (only once)
       if (onLoad && !hasCalledOnLoad.current) {
         hasCalledOnLoad.current = true;
-        console.log('TickerDisplay3 loaded');
+        // console.log('TickerDisplay3 loaded');
         onLoad();
       }
     } catch (error) {
@@ -374,26 +374,8 @@ const TickerDisplay3 = ({ modelRef, is80sMode = false, onLoad }) => {
     }
   };
 
-  // Simplified Fear and Greed Index function using mock data
-  const fetchFearGreedIndex = async () => {
-    // API calls disabled due to CORS issues
-    // Will be re-enabled when proper backend proxy is implemented
-    console.log("Fear & Greed index fetch disabled");
-  };
 
-  // Format large numbers
-  const formatNumber = (value) => {
-    if (value === null || value === undefined) return "---";
-    const num =
-      typeof value === "string"
-        ? parseFloat(value.replace(/[^0-9.-]/g, ""))
-        : parseFloat(value);
-    if (isNaN(num)) return "---";
-    if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-    return num.toFixed(1);
-  };
+
 
 
 
