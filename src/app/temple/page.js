@@ -12,8 +12,7 @@ import TestCyborgScene2 from '@/components/TestCyborgScene2';
 import VideoScreens from "@/components/VideoScreens";
 import TickerDisplay3 from "@/components/TickerDisplay3";
 import { useMusic } from '@/components/MusicContext';
-import { useUser, SignInButton } from "@clerk/nextjs";
-import { Illumin80ClerkButton } from "@/components/Illumin80Display";
+import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import CyberNav from '@/components/CyberNav';
 import SocialBar from '@/components/SocialBar';
 import SimpleTextLoader from '@/components/SimpleTextLoader';
@@ -604,20 +603,21 @@ export default function CyborgTemple() {
         
         {/* Top Controls Container - Music, User, and Nav */}
         {mounted && (
-          <div
-            style={{
-              position: "fixed",
-              top: "1rem",
-              right: "1rem",
-              display: "flex",
-              flexDirection: isMobileView ? "column" : "row",
-              gap: "1rem",
-              zIndex: 10001,
-            }}
-          >
-            {/* Music Controls */}
-            <div style={{ order: isMobileView ? 2 : 0 }}>
-              {!showMusicControls ? (
+          <>
+            {/* CyberNav Menu with integrated buttons */}
+            <div
+              style={{
+                position: "fixed",
+                top: "1rem",
+                right: "1rem",
+                zIndex: 10001,
+              }}
+            >
+              <CyberNav 
+                is80sMode={is80sMode} 
+                position="fixed"
+                musicButton={
+                  !showMusicControls ? (
                 <button
                   onClick={() => {
                     setShowMusicControls(true);
@@ -626,8 +626,8 @@ export default function CyborgTemple() {
                     }
                   }}
                   style={{
-                    width: isMobileView ? "3.5rem" : "3.75rem",
-                    height: isMobileView ? "3.5rem" : "3.75rem",
+                    width: isMobileView ? "3.5rem" : "3.5rem",
+                    height: isMobileView ? "3.5rem" : "3.5rem",
                     borderRadius: "0.5rem",
                     backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
                     border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
@@ -657,7 +657,7 @@ export default function CyborgTemple() {
                     <circle cx="18" cy="16" r="3"/>
                   </svg>
                 </button>
-              ) : (
+                  ) : (
                 <div
                   style={{
                     display: "flex",
@@ -767,22 +767,43 @@ export default function CyborgTemple() {
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* User Button */}
-            <div style={{ order: isMobileView ? 1 : 1 }}>
-              {isSignedIn ? (
-                <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileView} />
-              ) : (
-                <SignInButton mode="modal" forceRedirectUrl="/temple">
-                  <button
-                    style={{
-                      width: isMobileView ? "2.5rem" : "3.75rem",
-                      height: isMobileView ? "2.5rem" : "3.75rem",
+                  )
+                }
+                userButton={
+                  isSignedIn ? (
+                    <UserButton
+                      afterSignOutUrl="/"
+                      appearance={{
+                        baseTheme: "dark",
+                        elements: {
+                          avatarBox: {
+                            width: isMobileView ? "3rem" : "3.5rem",
+                            height: isMobileView ? "3rem" : "3.5rem",
+                            borderRadius: "8px",
+                            backgroundColor: "rgba(0, 0, 0, 0.7)",
+                            backdropFilter: "blur(10px)",
+                            border: "2px solid rgba(255, 255, 255, 0.2)",
+                            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
+                          },
+                          userButtonPopoverCard: {
+                            backgroundColor: "rgba(0, 0, 0, 0.95)",
+                            backdropFilter: "blur(20px)",
+                            border: "2px solid rgba(0, 255, 0, 0.3)",
+                            borderRadius: "12px",
+                            boxShadow: "0 0 30px rgba(0, 255, 0, 0.2)"
+                          }
+                        }
+                      }}
+                    />
+                  ) : (
+                    <SignInButton mode="modal" forceRedirectUrl="/temple">
+                      <button
+                        style={{
+                          width: isMobileView ? "3rem" : "3.5rem",
+                          height: isMobileView ? "3rem" : "3.5rem",
                       borderRadius: "0.5rem",
                       backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
-                      border: is80sMode ? "1px solid #D946EF" : "1px solid rgba(255, 255, 255, 0.2)",
+                      border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
                       color: is80sMode ? "#67e8f9" : "#ffffff",
                       display: "flex",
                       alignItems: "center",
@@ -794,14 +815,13 @@ export default function CyborgTemple() {
                     }}
                     title="Sign In"
                   >
-                    <span style={{ fontSize: "2.2rem" }}>{emoji}</span>
-                  </button>
-                </SignInButton>
-              )}
+                        <span style={{ fontSize: "2.2rem" }}>{emoji}</span>
+                      </button>
+                    </SignInButton>
+                  )
+                }
+              />
             </div>
-
-
-            {/* Annotations Toggle */}
             {/* <div style={{ order: isMobileView ? 4 : 3 }}>
               <button
                 style={{
@@ -840,16 +860,7 @@ export default function CyborgTemple() {
               </button>
             </div> */}
 
-            {/* CyberNav Menu */}
-            <div style={{ order: isMobileView ? 0 : 2 }}>
-              <CyberNav is80sMode={is80sMode} position="relative" />
-            </div>
-
-            {/* Social Bar */}
-            {/* <div style={{ order: isMobileView ? 4 : 3 }}>
-              <SocialBar is80sMode={is80sMode} />
-            </div> */}
-          </div>
+          </>
         )}
         
         {/* Annotations Toggle */}

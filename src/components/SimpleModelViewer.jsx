@@ -1374,7 +1374,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.gl
                       textAlign: 'center',
                       textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)'
                     }}>
-                      Here you can find the works of devout RL80 devotee, Saint GR80, the anachronistic android, mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
+                      Here you can find the works of devout RL80 devotee, Saint GR80, the anachronistic android, mystic and medieval scholar.
                     </p>
                   </div>
                 )}
@@ -1625,7 +1625,7 @@ export default function SimpleModelViewer({ modelPath = '/models/saint_robot2.gl
                     textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)',
                     paddingRight: '1.5rem' // Make room for close button
                   }}>
-                    Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic and medieval scholar — forever pondering the ethics of markets and the metaphysics of memes.
+                    Here you can find the works of RL80 devotee, Saint GR80, a mechanized mystic and medieval scholar.
                   </p>
                 </div>
               )}

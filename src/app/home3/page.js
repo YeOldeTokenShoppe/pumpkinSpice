@@ -13,8 +13,7 @@ import DarkClouds from "../../components/Clouds";
 import PostProcessingEffects from "../../components/PostProcessingEffects";
 import { useFirestoreResults } from '../../utilities/useFirestoreResults';
 import { useMusic } from '../../components/MusicContext';
-import { useUser, SignInButton } from "@clerk/nextjs";
-import { Illumin80ClerkButton } from "../../components/Illumin80Display";
+import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import CyberNav from '../../components/CyberNav';
 // import SocialBar from '../../components/SocialBar';
 import EnhancedVolumetricLight from '@/components/EnhancedVolumetricLight';
@@ -3136,7 +3135,7 @@ export default function Home3() {
   });
 
   // Auth state
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
 
     const handleOpenModal = () => {
     if (!isSignedIn) {
@@ -3667,23 +3666,23 @@ export default function Home3() {
 
       {/* Top Controls Container - Music, User, and Nav (from home3/page) */}
       {mounted && !isSceneLoading && (
-      <div
-        style={{
-          position: "fixed",
-          top: "20px",
-          right: "20px",
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          gap: isMobile ? "10px" : "15px",
-          alignItems: isMobile ? "flex-end" : "center",
-          zIndex: 9999,
-          opacity: isSceneLoading ? 0 : 1,
-          transition: "opacity 0.5s ease-in-out"
-        }}
-      >
-        {/* Music Controls */}
-        <div style={{ order: isMobileDevice ? 2 : 0 }}>
-          {!showMusicControls ? (
+      <>
+        {/* CyberNav Menu with integrated buttons */}
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            zIndex: 9999,
+            opacity: isSceneLoading ? 0 : 1,
+            transition: "opacity 0.5s ease-in-out"
+          }}
+        >
+          <CyberNav 
+            is80sMode={is80sMode} 
+            position="fixed"
+            musicButton={
+              !showMusicControls ? (
             <button
               onClick={() => {
                 setShowMusicControls(true);
@@ -3692,8 +3691,8 @@ export default function Home3() {
                 }
               }}
               style={{
-                width: isMobile ? "3.5rem" : "3.75rem",
-                height: isMobile ? "3.5rem" : "3.75rem",
+                width: isMobile ? "3.5rem" : "3.5rem",
+                height: isMobile ? "3.5rem" : "3.5rem",
                 borderRadius: "0.5rem",
                 backgroundColor: "rgba(0, 0, 0, 0.7)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
@@ -3723,7 +3722,7 @@ export default function Home3() {
                 <circle cx="18" cy="16" r="3" />
               </svg>
             </button>
-          ) : (
+              ) : (
             <div
               style={{
                 display: "flex",
@@ -3735,8 +3734,8 @@ export default function Home3() {
               <div
                 className={contextIsPlaying ? "spinning-record" : ""}
                 style={{
-                  width: isMobile ? "3.5rem" : "3.75rem",
-                  height: isMobile ? "3.5rem" : "3.75rem",
+                  width: isMobile ? "3rem" : "3.5rem",
+                  height: isMobile ? "3rem" : "3.5rem",
                   borderRadius: "50%",
                   backgroundImage: "url('/virginRecords.jpg')",
                   backgroundSize: "cover",
@@ -3809,47 +3808,58 @@ export default function Home3() {
                 </svg>
               </button>
             </div>
-          )}
+              )
+            }
+            userButton={
+              user ? (
+                <UserButton
+                  appearance={{
+                    baseTheme: "dark",
+                    elements: {
+                      avatarBox: {
+                        width: isMobile ? "3rem" : "3.5rem",
+                        height: isMobile ? "3rem" : "3.5rem",
+                        borderRadius: "8px",
+                        backgroundColor: "rgba(0, 0, 0, 0.7)",
+                        backdropFilter: "blur(10px)",
+                        border: "2px solid rgba(255, 255, 255, 0.2)",
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
+                      },
+                      userButtonPopoverCard: {
+                        backgroundColor: "rgba(0, 0, 0, 0.95)",
+                        backdropFilter: "blur(20px)",
+                        border: "2px solid rgba(0, 255, 0, 0.3)",
+                        borderRadius: "12px",
+                        boxShadow: "0 0 30px rgba(0, 255, 0, 0.2)"
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <SignInButton mode="modal">
+                  <button
+                    style={{
+                      width: isMobile ? "3rem" : "3.5rem",
+                      height: isMobile ? "3rem" : "3.5rem",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(0, 0, 0, 0.7)",
+                      border: "2px solid rgba(255, 255, 255, 0.2)",
+                      color: "#ffffff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      backdropFilter: "blur(10px)",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
+                    }}
+                  >
+                    <span style={{ fontSize: "1.8rem" }}>{emoji}</span>
+                  </button>
+                </SignInButton>
+              )
+            }
+          />
         </div>
-        
-        {/* User Account */}
-        <div style={{ order: isMobileDevice ? 1 : 1, pointerEvents: 'auto', zIndex: 10, position: 'relative' }}>
-          {isSignedIn ? (
-            <Illumin80ClerkButton afterSignOutUrl="/" isMobileDevice={isMobileDevice} />
-          ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/home3">
-              <button
-                style={{
-            width: isMobile ? "3.5rem" : "3.75rem",
-                height: isMobile ? "3.5rem" : "3.75rem",
-                  borderRadius: "0.5rem",
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  border: "2px solid rgba(255, 255, 255, 0.2)",
-                  color: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  backdropFilter: "blur(10px)",
-                  boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
-                }}
-                title="Sign In"
-              >
-                <span style={{ fontSize: "2.2rem" }}>{emoji}</span>
-              </button>
-            </SignInButton>
-          )}
-        </div>
-        
-        {/* CyberNav Menu */}
-        <div style={{ order: isMobileDevice ? 0 : 2, pointerEvents: 'auto', zIndex: 10, position: 'relative' }}>
-          <CyberNav is80sMode={is80sMode} position="relative" />
-        </div>
-        
-        {/* Social Bar */}
-        {/* <div style={{ order: isMobileDevice ? 4 : 3 }}>
-          <SocialBar is80sMode={is80sMode} />
-        </div> */}
         
         {/* Global Copy Lighting Values Button (commented out - uncomment if using GUI controls) */}
         {/* <div style={{ order: isMobileDevice ? 5 : 4 }}>
@@ -3883,7 +3893,7 @@ export default function Home3() {
             📋
           </button>
         </div> */}
-      </div>
+      </>
       )}
 
       {/* Welcome Section with DropInTitle */}

@@ -959,7 +959,7 @@ s.box .shimmer {
 }
 
 /* Base styles for modal */
-.cl-userButtonTrigger {
+/* .cl-userButtonTrigger {
   position: absolute;
   width: 3rem !important;
   height: 3rem !important;
@@ -972,7 +972,7 @@ s.box .shimmer {
   display: flex;
   justify-content: center;
   align-items: center;
-}
+} */
 
 #wallet-button {
   display: flex;
@@ -4488,10 +4488,10 @@ body {
 .cl-headerTitle {
   font-size: 1.6rem;
 }
-.cl-userButtonTrigger {
+/* .cl-userButtonTrigger {
   position: absolute;
-  width: 3rem !important;
-  height: 3rem !important;
+  width: 3.5rem !important;
+  height: 3.5rem !important;
   top: 3rem;
   right: 5%;
 
@@ -4501,7 +4501,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-}
+} */
 
 #header > div.menu-wrapper > div:nth-child(3) > div > button {
   position: relative;

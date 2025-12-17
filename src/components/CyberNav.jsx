@@ -1,13 +1,29 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
-const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
+const CyberNav = ({ is80sMode = false, position = "fixed", musicButton = null, userButton = null, extra80sButton = null }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [hoveredItemPath, setHoveredItemPath] = useState(null);
+  const [hoveredItemPath, setHoveredItemPath] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [showExtraButtons, setShowExtraButtons] = useState(false);
+  const [canHover, setCanHover] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
+  
+  // Clear hover state when pathname changes or menu state changes
+  React.useEffect(() => {
+    setHoveredItemPath('');
+    // Enable hover after a delay when menu opens
+    if (isMenuOpen) {
+      setCanHover(false);
+      const timer = setTimeout(() => {
+        setCanHover(true);
+      }, 300); // Wait 300ms after menu opens before allowing hover
+      return () => clearTimeout(timer);
+    } else {
+      setCanHover(false);
+    }
+  }, [pathname, isMenuOpen]);
   
   // Check for mobile device
   React.useEffect(() => {
@@ -22,7 +38,9 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
   // Reset hover state when menu closes and handle body scroll
   React.useEffect(() => {
     if (!isMenuOpen) {
-      setHoveredItemPath(null);
+      setHoveredItemPath('');
+      // Hide extra buttons when menu closes
+      setShowExtraButtons(false);
       // Re-enable body scroll
       const scrollY = document.body.style.top;
       document.body.style.overflow = '';
@@ -69,6 +87,63 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
   // Always use mobile-style menu
   return (
       <>
+        {/* Music Button - flies out to the left from CyberNav */}
+        {musicButton && (
+          <div
+            style={{
+              position: position === "relative" ? "relative" : position,
+              top: position === "relative" ? "0" : (position === "absolute" ? "10px" : "20px"),
+              right: position === "relative" ? (showExtraButtons ? (isMobile ? "4.5rem" : "5rem") : "0") : (showExtraButtons ? (isMobile ? "5.5rem" : "6rem") : "20px"),
+              zIndex: position === "relative" ? 1 : 9992,
+              opacity: showExtraButtons ? 1 : 0,
+              pointerEvents: showExtraButtons ? "auto" : "none",
+              transform: showExtraButtons ? "translateX(0) scale(1)" : "translateX(100%) scale(0)",
+              transformOrigin: "right center",
+              transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            }}
+          >
+            {musicButton}
+          </div>
+        )}
+        
+        {/* User Button - flies out downward from CyberNav */}
+        {userButton && (
+          <div
+            style={{
+              position: position === "relative" ? "relative" : position,
+              top: position === "relative" ? (showExtraButtons ? (isMobile ? "3.5rem" : "4rem") : "0") : (position === "absolute" ? (showExtraButtons ? (isMobile ? "4.5rem" : "5.5rem") : "10px") : (showExtraButtons ? (isMobile ? "5.5rem" : "6rem") : "20px")),
+              right: position === "relative" ? "0" : "20px",
+              zIndex: position === "relative" ? 1 : 9992,
+              opacity: showExtraButtons ? 1 : 0,
+              pointerEvents: showExtraButtons ? "auto" : "none",
+              transform: showExtraButtons ? "translateY(0) scale(1)" : "translateY(-100%) scale(0)",
+              transformOrigin: "center top",
+              transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s",
+            }}
+          >
+            {userButton}
+          </div>
+        )}
+        
+        {/* 80s Button - flies out below User Button from CyberNav origin */}
+        {extra80sButton && (
+          <div
+            style={{
+              position: position === "relative" ? "relative" : position,
+              top: position === "relative" ? (showExtraButtons ? (isMobile ? "8.5rem" : "8rem") : "0") : (position === "absolute" ? (showExtraButtons ? (isMobile ? "10.5rem" : "11rem") : "10px") : (showExtraButtons ? (isMobile ? "10.5rem" : "11rem") : "20px")),
+              right: position === "relative" ? "0" : "20px",
+              zIndex: position === "relative" ? 1 : 9992,
+              opacity: showExtraButtons ? 1 : 0,
+              pointerEvents: showExtraButtons ? "auto" : "none",
+              transform: showExtraButtons ? "translateY(0) scale(1)" : "translateY(-200%) scale(0)",
+              transformOrigin: "center top",
+              transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s",
+            }}
+          >
+            {extra80sButton}
+          </div>
+        )}
+        
         <button
           style={{
             position: position === "relative" ? "relative" : position,
@@ -92,6 +167,8 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
           aria-label="Menu"
           onClick={() => {
             setIsMenuOpen(!isMenuOpen);
+            setShowExtraButtons(!showExtraButtons);
+            setHoveredItemPath('');
           }}
           onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(0, 0, 0, 0.8)"}
           onMouseLeave={(e) => e.target.style.backgroundColor = "rgba(0, 0, 0, 0.7)"}
@@ -130,16 +207,16 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
-              gap: "20px",
-              padding: "20px",
+              // gap: "15px",
+              padding: "40px 20px",
               isolation: "isolate"
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setIsMenuOpen(false);
+                setHoveredItemPath('');
               }
             }}
-            onMouseLeave={() => setHoveredItemPath(null)}
           >
             <button
               style={{
@@ -162,23 +239,25 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                 <line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
-            {navItems.map((item, index) => {
+            {navItems.map((item) => {
               // Handle route matching - ensure exact match only
-              const isActive = pathname === item.path;
+              const currentPath = pathname || '';
+              const itemPath = item.path || '';
+              const isActive = currentPath === itemPath && currentPath !== '';
+              const isHovered = hoveredItemPath === itemPath && !isActive;
               
-              const isHovered = hoveredItemPath === item.path;
               
               return (
                 <Link 
-                  key={`${item.id}-${pathname}`} 
+                  key={item.id} 
                   href={item.path}
                   style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
                   onClick={(e) => {
-                    console.log('Navigating to:', item.path);
                     setIsMenuOpen(false);
+                    setHoveredItemPath('');
                     
                     // Force a hard navigation if on the same page to reset state
-                    if (pathname === item.path) {
+                    if (currentPath === itemPath) {
                       e.preventDefault();
                       window.location.href = item.path;
                     }
@@ -189,21 +268,24 @@ const CyberNav = ({ is80sMode = false, position = "fixed" }) => {
                       display: "flex",
                       flexDirection: "row",
                       alignItems: "center",
-                      gap: "15px",
-                      padding: "20px",
+                      gap: "12px",
+                      padding: isActive ? "14px" : "16px",
                       borderRadius: "10px",
                       backgroundColor: isActive 
                         ? (is80sMode ? "#67e8f9" : "#c896ff")
-                        : (isHovered ? "rgb(200, 150, 255)" : "transparent"),
-                      transition: "background-color 0.3s ease"
+                        : (isHovered ? "rgba(200, 150, 255, 0.15)" : "transparent"),
+                      border: isActive ? "2px solid" : "2px solid transparent",
+                      outline: isHovered && !isActive ? "2px dashed rgba(200, 150, 255, 0.5)" : "none",
+                      transition: "all 0.3s ease"
                     }}
-                    onMouseEnter={() => {
-                      if (!isActive) {
-                        setHoveredItemPath(item.path);
+                    onMouseEnter={(e) => {
+                      // Only set hover if we're allowed to (after initial delay) and not on active item
+                      if (!isActive && canHover) {
+                        setHoveredItemPath(itemPath);
                       }
                     }}
                     onMouseLeave={() => {
-                      setHoveredItemPath(null);
+                      setHoveredItemPath('');
                     }}
                   >
                     <div style={{ width: "50px", height: "50px", overflow: "hidden", borderRadius: "5px", flexShrink: "0" }}>
