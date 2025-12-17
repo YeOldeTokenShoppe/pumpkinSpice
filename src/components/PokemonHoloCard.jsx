@@ -91,7 +91,7 @@ const PokemonHoloCard = ({
   }, [agent, hasAnimated]);
 
   const handleMouseMove = (e) => {
-    if (!cardRef.current || isTouch) return;
+    if (!cardRef.current) return;
     
     const rect = cardRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -132,7 +132,64 @@ const PokemonHoloCard = ({
   };
 
   const handleMouseLeave = () => {
-    if (!cardRef.current || isTouch) return;
+    if (!cardRef.current) return;
+    
+    cardRef.current.style.setProperty('--rotate-x', '0deg');
+    cardRef.current.style.setProperty('--rotate-y', '0deg');
+    
+    if (shineRef.current) {
+      shineRef.current.style.setProperty('--mx', '50%');
+      shineRef.current.style.setProperty('--my', '50%');
+      shineRef.current.style.setProperty('--posx', '50%');
+      shineRef.current.style.setProperty('--posy', '50%');
+      shineRef.current.style.setProperty('--hyp', '0');
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!cardRef.current) return;
+    
+    const touch = e.touches[0];
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    // Calculate rotation
+    const rotateX = ((y - centerY) / centerY) * -15;
+    const rotateY = ((x - centerX) / centerX) * 15;
+    
+    // Calculate position for shine effect
+    const mx = (x / rect.width) * 100;
+    const my = (y / rect.height) * 100;
+    const posx = (x / rect.width) * 100;
+    const posy = (y / rect.height) * 100;
+    const hyp = Math.sqrt(Math.pow((x - centerX), 2) + Math.pow((y - centerY), 2)) / Math.sqrt(Math.pow(centerX, 2) + Math.pow(centerY, 2));
+    
+    // Set CSS variables on card for rotation
+    cardRef.current.style.setProperty('--rotate-x', `${rotateX}deg`);
+    cardRef.current.style.setProperty('--rotate-y', `${rotateY}deg`);
+    
+    // Also set position variables on card for backdrop effects
+    cardRef.current.style.setProperty('--mx', `${mx}%`);
+    cardRef.current.style.setProperty('--my', `${my}%`);
+    cardRef.current.style.setProperty('--posx', `${posx}%`);
+    cardRef.current.style.setProperty('--posy', `${posy}%`);
+    cardRef.current.style.setProperty('--hyp', hyp);
+    
+    // Set on shine element too if it exists
+    if (shineRef.current) {
+      shineRef.current.style.setProperty('--mx', `${mx}%`);
+      shineRef.current.style.setProperty('--my', `${my}%`);
+      shineRef.current.style.setProperty('--posx', `${posx}%`);
+      shineRef.current.style.setProperty('--posy', `${posy}%`);
+      shineRef.current.style.setProperty('--hyp', hyp);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!cardRef.current) return;
     
     cardRef.current.style.setProperty('--rotate-x', '0deg');
     cardRef.current.style.setProperty('--rotate-y', '0deg');
@@ -160,6 +217,8 @@ const PokemonHoloCard = ({
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         onClick={handleCardClick}
       >
         {/* Card Front */}

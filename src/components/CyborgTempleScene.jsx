@@ -26,16 +26,11 @@ const CyborgTempleScene = ({
   const hasLoadedRef = useRef(false);
   const mixerRef = useRef();
   const actionsRef = useRef({});
-  const danceTimeoutRef = useRef(null);
-  const slowdownIntervalRef = useRef(null);
-  const rampUpIntervalRef = useRef(null);
   const [loadedModel, setLoadedModel] = useState(null);
   const [detectedMobile, setDetectedMobile] = useState(false);
   const cylinderMeshRef = useRef(); // Ref for the specific cylinder mesh
   const object7MeshRef = useRef(); // Ref for Object_5 (was Object_7)
   const cube010MeshRef = useRef(); // Ref for Cube010
-  const previousTrackRef = useRef(null); // Track the previous track for detecting changes
-  const transitionTimeoutRef = useRef(null); // For handling track transition slowdowns
   
   // Refs for MOBILE.glb animated objects
   const angelEmptyRef = useRef(); // Parent container for angel and coins
@@ -70,6 +65,14 @@ const CyborgTempleScene = ({
     isBlinking: false,
     blinkProgress: 0
   });
+  
+  // Macro animation alternation state
+  const macroAnimStateRef = useRef({
+    currentAnimation: 'TypingRobot2', // Start with TypingRobot2
+    lastSwitchTime: 0,
+    nextSwitchDelay: Math.random() * 10000 + 8000, // Initially wait 8-18 seconds before first switch
+  });
+  
   
   // Detect mobile device on mount
   useEffect(() => {
@@ -256,7 +259,11 @@ const CyborgTempleScene = ({
           const animName = animation.name;
           const action = mixer.clipAction(animation);
           actionsRef.current[animName] = action;
+          
         });
+        
+        // Log all animation names to understand the structure
+        console.log('[CyborgTempleScene] Available animations:', gltf.animations.map(a => a.name));
         
         // Play initial animations
         gltf.animations.forEach((animation) => {
@@ -268,6 +275,9 @@ const CyborgTempleScene = ({
             // Play TYPE animations for characters
             action.play();
             // console.log(`Playing TYPE animation: ${animation.name}`);
+          } else if (animName === 'IdleRobot2') {
+            // Don't play IdleRobot2 initially, it will alternate with TypingRobot2
+            // console.log(`Found IdleRobot2 animation, will alternate with TypingRobot2`);
           } else if (animName === 'HaloRotation') {
             // Play HaloRotation animation
             action.play();
@@ -1071,239 +1081,55 @@ const CyborgTempleScene = ({
       coin1OriginalScale, coin1OriginalEmissive, coin2OriginalScale, coin2OriginalEmissive,
       coin3OriginalScale, coin3OriginalEmissive, coin4OriginalScale, coin4OriginalEmissive, isOnMobile]); // Added dependencies
 
-  // Detect track changes and trigger transition effect
-  useEffect(() => {
-    if (!actionsRef.current || Object.keys(actionsRef.current).length === 0) return;
-    
-    // Check if track has changed (not just on first load)
-    if (previousTrackRef.current && currentTrack && previousTrackRef.current.name !== currentTrack.name) {
-      // console.log('[CyborgTempleScene] Track changed from', previousTrackRef.current.name, 'to', currentTrack.name);
-      
-      const actions = actionsRef.current;
-      
-      // Immediately slow down dancing during track transition
-      ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
-        if (actions[danceAnim] && actions[danceAnim].isRunning()) {
-          actions[danceAnim].timeScale = 0.2; // Slow to 20% speed during transition
-        }
-      });
-      
-      // Clear any existing transition timeout
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-      }
-      
-      // After a brief pause, restore the new track's BPM
-      transitionTimeoutRef.current = setTimeout(() => {
-        const referenceBPM = 100;
-        const trackBPM = currentTrack?.bpm || referenceBPM;
-        const speedMultiplier = trackBPM / referenceBPM;
-        
-        ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
-          if (actions[danceAnim] && actions[danceAnim].isRunning()) {
-            actions[danceAnim].timeScale = speedMultiplier;
-            // console.log(`[CyborgTempleScene] Restored dance speed to ${speedMultiplier}x for ${currentTrack.name}`);
-          }
-        });
-      }, 800); // 0.8 second transition period
-    }
-    
-    // Update the previous track reference
-    previousTrackRef.current = currentTrack;
-  }, [currentTrack]);
-  
-  // Handle dance animation switching based on music playing state
-  useEffect(() => {
-    if (!actionsRef.current || Object.keys(actionsRef.current).length === 0) return;
-    
-    const actions = actionsRef.current;
-    
-    // Clear any pending dance timeout
-    if (danceTimeoutRef.current) {
-      clearTimeout(danceTimeoutRef.current);
-      danceTimeoutRef.current = null;
-    }
-
-    // Log available animations to help identify dance animations
-    // console.log('[CyborgTempleScene] Switching animations. isPlaying:', isPlaying);
-    // console.log('[CyborgTempleScene] Available animations:', Object.keys(actions));
-    
-    if (isPlaying) {
-      // console.log('[CyborgTempleScene] Music started, characters will start dancing in 2 seconds...');
-      
-      // Clear any existing timeouts/intervals
-      if (danceTimeoutRef.current) {
-        clearTimeout(danceTimeoutRef.current);
-        danceTimeoutRef.current = null;
-      }
-      if (slowdownIntervalRef.current) {
-        clearInterval(slowdownIntervalRef.current);
-        slowdownIntervalRef.current = null;
-      }
-      if (rampUpIntervalRef.current) {
-        clearInterval(rampUpIntervalRef.current);
-        rampUpIntervalRef.current = null;
-      }
-      
-      // Keep TYPE animations running for characters
-      if (actions['Typing'] && !actions['Typing'].isRunning()) {
-        actions['Typing'].play();
-      }
-      if (actions['TypingRobot2'] && !actions['TypingRobot2'].isRunning()) {
-        actions['TypingRobot2'].play();
-      }
-      // Delay the dance animations by 2 seconds
-      danceTimeoutRef.current = setTimeout(() => {
-        // console.log('[CyborgTempleScene] Starting dance animations after delay...');
-        
-        // Stop idle animations for characters that will dance
-        ['Idle.001', 'Idle.002', 'Idle.003'].forEach(idleAnim => {
-          if (actions[idleAnim]) {
-            actions[idleAnim].stop();
-          }
-        });
-        
-        // Calculate dance speed based on track BPM
-        // Base reference BPM (can be adjusted for best visual effect)
-        const referenceBPM = 100; // This is the BPM the animations look good at normally
-        const trackBPM = currentTrack?.bpm || referenceBPM;
-        const targetSpeedMultiplier = trackBPM / referenceBPM;
-        
-        // Play dance animations starting slow and ramping up
-        ['Dance.001', 'Dance.002', 'Dance.003'].forEach((danceAnim) => {
-          if (actions[danceAnim]) {
-            actions[danceAnim].reset();
-            actions[danceAnim].timeScale = 0.1; // Start very slow
-            
-            // Set different starting times based on animation name
-            if (danceAnim === 'Dance.001') {
-              actions[danceAnim].time = Math.random() * actions[danceAnim].getClip().duration; // Random offset
-            } else if (danceAnim === 'Dance.002') {
-              actions[danceAnim].time = actions[danceAnim].getClip().duration * 0.33; // Start 1/3 through
-            } else if (danceAnim === 'Dance.003') {
-              actions[danceAnim].time = actions[danceAnim].getClip().duration * 0.66; // Start 2/3 through
-            }
-            
-            actions[danceAnim].play();
-            // console.log(`✅ Starting dance animation: ${danceAnim} - ramping up to ${targetSpeedMultiplier}x (${trackBPM} BPM)`);
-          }
-        });
-        
-        // Gradually ramp up to full speed
-        let currentSpeed = 0.1;
-        const rampDuration = 1500; // 1.5 seconds to reach full speed
-        const intervalTime = 50; // Update every 50ms
-        const speedIncrement = (targetSpeedMultiplier - 0.1) / (rampDuration / intervalTime);
-        
-        rampUpIntervalRef.current = setInterval(() => {
-          currentSpeed += speedIncrement;
-          
-          if (currentSpeed >= targetSpeedMultiplier) {
-            clearInterval(rampUpIntervalRef.current);
-            rampUpIntervalRef.current = null;
-            currentSpeed = targetSpeedMultiplier;
-            // console.log(`[CyborgTempleScene] Dance animations reached target speed: ${targetSpeedMultiplier}x`);
-          }
-          
-          // Apply the current speed to all dance animations
-          ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
-            if (actions[danceAnim] && actions[danceAnim].isRunning()) {
-              actions[danceAnim].timeScale = currentSpeed;
-            }
-          });
-        }, intervalTime);
-      }, 2000); // 2 second delay
-      
-    } else {
-      // Gradually slow down and stop dance animations
-      // console.log('[CyborgTempleScene] Music stopped, characters will gradually slow down dancing...');
-      
-      // Clear any pending timeouts/intervals
-      if (danceTimeoutRef.current) {
-        clearTimeout(danceTimeoutRef.current);
-        danceTimeoutRef.current = null;
-      }
-      if (slowdownIntervalRef.current) {
-        clearInterval(slowdownIntervalRef.current);
-        slowdownIntervalRef.current = null;
-      }
-      if (rampUpIntervalRef.current) {
-        clearInterval(rampUpIntervalRef.current);
-        rampUpIntervalRef.current = null;
-      }
-      
-      // Start the gradual slowdown process
-      // Calculate initial speed based on current track BPM
-      const referenceBPM = 100;
-      const trackBPM = currentTrack?.bpm || referenceBPM;
-      const initialSpeed = trackBPM / referenceBPM;
-      
-      let currentSpeed = initialSpeed;
-      const slowdownDuration = 2000; // 2 seconds to slow down
-      const intervalTime = 50; // Update every 50ms for smooth transition
-      const speedDecrement = initialSpeed / (slowdownDuration / intervalTime); // Calculate how much to decrease each interval
-      
-      slowdownIntervalRef.current = setInterval(() => {
-        currentSpeed -= speedDecrement;
-        
-        if (currentSpeed <= 0) {
-          // Stop the slowdown and blend to idle animations
-          clearInterval(slowdownIntervalRef.current);
-          slowdownIntervalRef.current = null;
-          
-          // console.log('[CyborgTempleScene] Dance animations fully stopped, switching to idle...');
-          
-          // Stop dance animations
-          ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
-            if (actions[danceAnim]) {
-              actions[danceAnim].stop();
-            }
-          });
-          
-          // Restart idle animations with different time offsets
-          ['Idle.001', 'Idle.002', 'Idle.003'].forEach((idleAnim) => {
-            if (actions[idleAnim]) {
-              actions[idleAnim].reset();
-              
-              // Set different starting times based on animation name
-              if (idleAnim === 'Idle.001') {
-                actions[idleAnim].time = Math.random() * actions[idleAnim].getClip().duration; // Random offset
-              } else if (idleAnim === 'Idle.002') {
-                actions[idleAnim].time = actions[idleAnim].getClip().duration * 0.33; // Start 1/3 through
-              } else if (idleAnim === 'Idle.003') {
-                actions[idleAnim].time = actions[idleAnim].getClip().duration * 0.66; // Start 2/3 through
-              }
-              
-              actions[idleAnim].play();
-              // console.log(`✅ Restarting idle animation: ${idleAnim} with offset ${actions[idleAnim].time}`);
-            }
-          });
-        } else {
-          // Gradually slow down dance animations
-          ['Dance.001', 'Dance.002', 'Dance.003'].forEach(danceAnim => {
-            if (actions[danceAnim] && actions[danceAnim].isRunning()) {
-              actions[danceAnim].timeScale = Math.max(0.1, currentSpeed); // Don't go below 0.1 to avoid stopping mid-slowdown
-            }
-          });
-        }
-      }, intervalTime);
-    }
-  }, [isPlaying, currentTrack]);
-  
-  // Cleanup transition timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-      }
-    };
-  }, []);
   
 
   // Animation loop
   useFrame((state, delta) => {
     if (mixerRef.current) {
       mixerRef.current.update(delta);
+    }
+    
+    // Handle Macro animation alternation
+    if (!isOnMobile && actionsRef.current) { // Alternate animations for Macro
+      const currentTime = state.clock.getElapsedTime() * 1000; // Convert to milliseconds
+      const macroState = macroAnimStateRef.current;
+      
+      // Check if it's time to switch animations
+      if (currentTime - macroState.lastSwitchTime > macroState.nextSwitchDelay) {
+        const actions = actionsRef.current;
+        
+        // Switch between TypingRobot2 and IdleRobot2
+        if (macroState.currentAnimation === 'TypingRobot2') {
+          // Switch to IdleRobot2
+          if (actions['TypingRobot2']) {
+            actions['TypingRobot2'].fadeOut(0.5); // Fade out over 0.5 seconds
+          }
+          if (actions['IdleRobot2']) {
+            actions['IdleRobot2'].reset();
+            actions['IdleRobot2'].fadeIn(0.5); // Fade in over 0.5 seconds
+            actions['IdleRobot2'].play();
+          }
+          macroState.currentAnimation = 'IdleRobot2';
+          // IdleRobot2 plays for shorter duration (3-5 seconds)
+          macroState.nextSwitchDelay = Math.random() * 2000 + 3000;
+        } else {
+          // Switch back to TypingRobot2
+          if (actions['IdleRobot2']) {
+            actions['IdleRobot2'].fadeOut(0.5);
+          }
+          if (actions['TypingRobot2']) {
+            actions['TypingRobot2'].reset();
+            actions['TypingRobot2'].fadeIn(0.5);
+            actions['TypingRobot2'].play();
+          }
+          macroState.currentAnimation = 'TypingRobot2';
+          // TypingRobot2 plays for longer duration (10-20 seconds)
+          macroState.nextSwitchDelay = Math.random() * 10000 + 10000;
+        }
+        
+        // Update timing for next switch
+        macroState.lastSwitchTime = currentTime;
+      }
     }
     
     // Blinking animation for RL80's eyes

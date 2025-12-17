@@ -96,6 +96,7 @@ const useSentimentData = (refreshInterval = 28800000) => { // 8 hours for sentim
 // The sentiment screen component
 const SentimentScreen = () => {
   const data = useSentimentData()
+  const [hasStartedDrawing, setHasStartedDrawing] = useState(false)
   
   // Only log when data actually changes
   useEffect(() => {
@@ -107,13 +108,26 @@ const SentimentScreen = () => {
     const draw = () => {
       // Use the global canvas set up by VideoScreens
       // @ts-ignore
-      const canvas = window.__screen1Canvas
+      const canvas = window['__screen1Canvas']
       // @ts-ignore
-      const texture = window.__screen1Texture
+      const texture = window['__screen1Texture']
       
       if (!canvas || !texture) {
-        // console.log('[SentimentScreen] Waiting for canvas/texture...')
+        // Only log once in a while to reduce spam
+        if (Math.random() < 0.01) {  // 1% chance
+          // console.log('[SentimentScreen] Waiting for canvas/texture...', {
+          //   canvas: !!canvas,
+          //   texture: !!texture,
+          //   windowKeys: Object.keys(window).filter(k => k.includes('screen'))
+          // })
+        }
         return
+      }
+      
+      // Log once when we start drawing
+      if (!hasStartedDrawing) {
+        // console.log('[SentimentScreen] Started drawing to Screen1!');
+        setHasStartedDrawing(true);
       }
       
       const ctx = canvas.getContext('2d')
@@ -173,7 +187,7 @@ const SentimentScreen = () => {
     return () => {
       clearInterval(intervalId)
     }
-  }, [data]) // Redraw when data changes
+  }, [data, hasStartedDrawing]) // Redraw when data changes
 
   return null
 }

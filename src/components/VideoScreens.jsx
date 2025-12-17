@@ -119,15 +119,59 @@ function VideoScreens() {
       let screen4SmallFound = false;
       let screen5Found = false;
 
+      // console.log('[VideoScreens] Starting scene traversal to find screens...');
       scene.traverse((child) => {
-        // Screen1 - Apply SentimentScreen texture directly
+        // Debug log for Screen1
+        if (child.name === 'Screen1') {
+          // console.log('[VideoScreens] Found object with name Screen1:', {
+          //   isMesh: child.isMesh,
+          //   type: child.type,
+          //   screen1Found: screen1Found
+          // });
+        }
+        
+        // Screen1 - Setup canvas texture for SentimentScreen
         if (child.isMesh && child.name === 'Screen1' && !screen1Found) {
-          // console.log('[VideoScreens] Found Screen1, will apply SentimentScreen texture');
+          // console.log('[VideoScreens] Found Screen1, setting up canvas texture');
           screen1Found = true;
           
-          // Store reference to Screen1 for later use
+          // Create canvas for drawing
+          const canvas = document.createElement('canvas');
+          canvas.width = 512;
+          canvas.height = 320;
+          
+          // Create texture from canvas
+          const canvasTexture = new THREE.CanvasTexture(canvas);
+          canvasTexture.minFilter = THREE.LinearFilter;
+          canvasTexture.magFilter = THREE.LinearFilter;
+          canvasTexture.flipY = false;
+          canvasTexture.repeat.x = 1;
+          canvasTexture.center.set(0.5, 0.5);
+          
+          // Apply to Screen1
+          const material = new THREE.MeshBasicMaterial({
+            map: canvasTexture,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = material;
+          
+          // Store refs globally for SentimentScreen to use
           // @ts-ignore
-          window.__screen1Mesh = child;
+          window['__screen1Canvas'] = canvas;
+          // @ts-ignore
+          window['__screen1Texture'] = canvasTexture;
+          // @ts-ignore  
+          window['__screen1Mesh'] = child;
+          
+          // console.log('[VideoScreens] Screen1 canvas setup complete', {
+          //   canvas: !!window['__screen1Canvas'],
+          //   texture: !!window['__screen1Texture'],
+          //   mesh: !!window['__screen1Mesh'],
+          //   actualCanvas: canvas,
+          //   actualTexture: canvasTexture
+          // });
         }
         
         // Screen1_small - Apply video texture
@@ -142,14 +186,45 @@ function VideoScreens() {
           video1.play().catch(e => {});
         }
         
-        // Screen2 - Apply MacroAgentScreen texture directly
+        // Screen2 - Setup canvas texture for MacroAgentScreen  
         if (child.isMesh && child.name === 'Screen2' && !screen2Found) {
-          // console.log('[VideoScreens] Found Screen2, will apply MacroAgentScreen texture');
+          // console.log('[VideoScreens] Found Screen2, setting up canvas texture');
           screen2Found = true;
           
-          // Store reference to Screen2 for later use
+          // Create canvas for drawing
+          const canvas2 = document.createElement('canvas');
+          canvas2.width = 512;
+          canvas2.height = 320;
+          
+          // Create texture from canvas
+          const canvasTexture2 = new THREE.CanvasTexture(canvas2);
+          canvasTexture2.minFilter = THREE.LinearFilter;
+          canvasTexture2.magFilter = THREE.LinearFilter;
+          canvasTexture2.flipY = false;
+          canvasTexture2.repeat.x = 1;
+          canvasTexture2.center.set(0.5, 0.5);
+          
+          // Apply to Screen2
+          const material2 = new THREE.MeshBasicMaterial({
+            map: canvasTexture2,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = material2;
+          
+          // Store refs globally for MacroAgentScreen to use
           // @ts-ignore
-          window.__screen2Mesh = child;
+          window['__screen2Canvas'] = canvas2;
+          // @ts-ignore
+          window['__screen2Texture'] = canvasTexture2;
+          // @ts-ignore
+          window['__screen2Mesh'] = child;
+          
+          // console.log('[VideoScreens] Screen2 canvas setup complete', {
+          //   canvas: !!window['__screen2Canvas'],
+          //   texture: !!window['__screen2Texture']
+          // });
         }
         
         // Screen2_small - Apply video texture
@@ -164,6 +239,7 @@ function VideoScreens() {
           video1.play().catch(e => {});
         }
         
+        // Screen3 - Keep using video texture
         if (child.isMesh && child.name === 'Screen3' && !screen3Found) {
           const material = new THREE.MeshBasicMaterial({
             map: texture3,
@@ -221,35 +297,18 @@ function VideoScreens() {
           video5.play().catch(e => {});
         }
         
-        // Option 2: Target by material name (Material.001)
-        if (child.isMesh && child.material) {
-          // Handle both single material and array of materials
-          const materials = Array.isArray(child.material) ? child.material : [child.material];
-          
-          materials.forEach((mat, index) => {
-            // Apply video to material named 'Material.001'
-            if (mat.name === 'Material.001' && !screen1Found) {
-              const newMaterial = new THREE.MeshBasicMaterial({
-                map: texture1,
-                side: THREE.FrontSide,
-                toneMapped: false,
-              });
-              
-              if (Array.isArray(child.material)) {
-                child.material[index] = newMaterial;
-              } else {
-                child.material = newMaterial;
-              }
-              screen1Found = true;
-              video1.play().catch(() => {});
-            }
-          });
-        }
+        // Removed fallback material code - it was interfering with Screen1 setup
       });
 
       const allScreensFound = screen1Found || screen1SmallFound || screen2Found || screen2SmallFound || screen3Found || screen3SmallFound || screen4Found || screen4SmallFound || screen5Found;
       
+      // console.log('[VideoScreens] Search results:', {
+      //   screen1Found, screen2Found, screen3Found, screen4Found,
+      //   screen1SmallFound, screen2SmallFound, screen3SmallFound, screen4SmallFound
+      // });
+      
       if (!allScreensFound) {
+        // console.log('[VideoScreens] No screens found, retrying in 500ms...');
         // Keep retrying if no screens found at all
         setTimeout(findAndSetupScreens, 500);
       } else {
@@ -307,93 +366,8 @@ function VideoScreens() {
   const [screen2Rotation, setScreen2Rotation] = useState(null);
   const [screen2Scale, setScreen2Scale] = useState(null);
 
-  // Create and manage the screen textures
+  // Cleanup effect for screen textures
   useEffect(() => {
-    // Setup for Screen1 (Sentiment)
-    const setupScreen1 = () => {
-      // @ts-ignore
-      if (window.__screen1Mesh) {
-        // console.log('[VideoScreens] Setting up SentimentScreen on Screen1');
-        
-        // Create canvas for drawing
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 320;
-        
-        // Create texture from canvas
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.flipY = false;
-        texture.repeat.x = 1;
-        texture.center.set(0.5, 0.5);
-        
-        // Apply to Screen1
-        const material = new THREE.MeshBasicMaterial({
-          map: texture,
-          side: THREE.FrontSide,
-          toneMapped: false,
-        });
-        
-        // @ts-ignore
-        window.__screen1Mesh.material = material;
-        
-        // Store refs for SentimentScreen to use
-        // @ts-ignore
-        window.__screen1Canvas = canvas;
-        // @ts-ignore
-        window.__screen1Texture = texture;
-      } else {
-        // console.log('[VideoScreens] Waiting for Screen1 mesh...');
-        setTimeout(setupScreen1, 500);
-      }
-    };
-    
-    // Setup for Screen2 (Macro)
-    const setupMacroScreen = () => {
-      // @ts-ignore
-      if (window.__screen2Mesh) {
-        // console.log('[VideoScreens] Setting up MacroAgentScreen on Screen2');
-        
-        // Create canvas for drawing
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 320;
-        
-        // Create texture from canvas
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.flipY = false;  // Changed to true to flip Y-axis
-        texture.repeat.x = 1;
-        texture.center.set(0.5, 0.5);
-        
-        // Apply to Screen2
-        const material = new THREE.MeshBasicMaterial({
-          map: texture,
-          side: THREE.FrontSide,
-          toneMapped: false,
-        });
-        
-        // @ts-ignore
-        window.__screen2Mesh.material = material;
-        
-        // Store refs for MacroAgentScreen to use
-        // @ts-ignore
-        window.__screen2Canvas = canvas;
-        // @ts-ignore
-        window.__screen2Texture = texture;
-        
-        setScreen2Position([0, 0, 0]); // Trigger render
-      } else {
-        // console.log('[VideoScreens] Waiting for Screen2 mesh...');
-        setTimeout(setupMacroScreen, 500);
-      }
-    };
-    
-    setTimeout(setupScreen1, 1000);
-    setTimeout(setupMacroScreen, 1000);
-    
     return () => {
       // Clean up Screen1
       // @ts-ignore
@@ -433,7 +407,7 @@ function VideoScreens() {
         delete window.__screen2Mesh;
       }
     };
-  }, [scene]);
+  }, []);
 
   return (
     <>
