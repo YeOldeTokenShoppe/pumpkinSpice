@@ -18,11 +18,11 @@ const CRTTerminal = ({
 
   // Default welcome messages if none provided
   const defaultMessages = [
-    { text: "INITIALIZING DRONE SYSTEM...", delay: 0.5 },
+    { text: "INITIALIZING SYSTEM...", delay: 0.5 },
     { text: "CONNECTING TO NEURAL NETWORK...", delay: 1.0 },
     { text: "AUTHENTICATION SUCCESSFUL", delay: 0.8 },
     { text: "", delay: 0.5 }, // Empty line
-    { text: "WELCOME TO PUMPKIN SPICE", delay: 1.2 },
+    { text: "WELCOME TO RL80", delay: 1.2 },
     { text: "DIGITAL SANCTUARY", delay: 1.0 },
     { text: "", delay: 0.5 },
     { text: "PREPARING NAVIGATION MATRIX...", delay: 1.0 },

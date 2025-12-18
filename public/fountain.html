@@ -455,7 +455,8 @@
 		<!-- Collection Counter - Clean Text Only -->
 		<div id="mobileCollectionCounter" style="
 			position: fixed;
-			/* right: 10px; */
+			left: 50%;
+			transform: translateX(-50%);
 			bottom: 80px;
 			display: none;
 			flex-direction: column;
@@ -471,6 +472,34 @@
 			-webkit-backdrop-filter: blur(10px);
 			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 		">
+			<!-- Coin Cam checkbox -->
+			<div style="
+				display: flex;
+				align-items: center;
+				gap: 6px;
+				width: 100%;
+				margin-bottom: 4px;
+				padding-bottom: 6px;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+			">
+				<input type="checkbox" id="coinCamToggle" checked style="
+					width: 16px;
+					height: 16px;
+					cursor: pointer;
+					accent-color: #FFD700;
+				">
+				<label for="coinCamToggle" style="
+					font-size: 12px;
+					font-weight: 600;
+					color: rgba(255, 255, 255, 0.9);
+					cursor: pointer;
+					text-transform: uppercase;
+					letter-spacing: 0.5px;
+					text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+					user-select: none;
+				">Coin Cam</label>
+			</div>
 			<!-- Pool counter row -->
 			<div style="
 				display: flex;
@@ -753,11 +782,11 @@
 						});
 					}
 				} else {
-					// Desktop layout - position on left side
+					// Desktop layout - use same positioning as mobile for consistency
 					info.style.position = 'absolute';
 					info.style.right = 'auto';
-					info.style.left = '10%';
-					info.style.top = '50%';
+					info.style.left = '85%';
+					info.style.top = '80%';
 					info.style.bottom = 'auto';
 					info.style.transform = 'translateY(-50%)';
 					info.style.width = '280px';
@@ -767,55 +796,36 @@
 					// Remove collapsed class on desktop
 					info.classList.remove('collapsed');
 					
-					// Show collection counter on desktop (but keep it vertical)
+					// Show collection counter on desktop with same layout as mobile
 					if (mobileCollectionCounter) {
 						mobileCollectionCounter.style.display = 'flex';
-						mobileCollectionCounter.style.flexDirection = 'column';
-						// Keep bottom right position from CSS, don't override
 						
-						// Reset the mobile-counter-buttons container to column for desktop
-						const mobileCounterButtons = mobileCollectionCounter.querySelector('.mobile-counter-buttons');
-						if (mobileCounterButtons) {
-							mobileCounterButtons.style.flexDirection = 'column';
-							mobileCounterButtons.style.gap = '2px';
+						// Get the toggle from original container and move it to mobile container for desktop too
+						const toggleContainer = document.querySelector('.fountain-toggle');
+						if (toggleContainer && mobileButtonsContainer) {
+							// Check if toggle needs to be moved to mobile container
+							if (toggleContainer.parentElement !== mobileButtonsContainer) {
+								mobileButtonsContainer.appendChild(toggleContainer);
+							}
+							// Show the mobile buttons container
+							mobileButtonsContainer.style.display = 'flex';
 						}
 						
-						// Reset font size for desktop
-						const countDisplay = document.querySelector('#mobileCurrentCount').parentElement;
-						if (countDisplay) {
-							countDisplay.style.fontSize = '72px';
-							countDisplay.style.letterSpacing = '-2px';
-						}
-						
-						// Reset pool label for desktop
-						const poolLabel = mobileCollectionCounter.querySelector('div[style*="current pool"]');
-						if (poolLabel) {
-							poolLabel.style.fontSize = '12px';
-							poolLabel.style.letterSpacing = '2px';
-						}
-						
-						// Show info button on desktop - position it to the right of the counter
-						const desktopInfoBtn = document.getElementById('desktopInfoBtn');
+						// Show info button
 						const mobileInfoBtn = document.getElementById('mobileInfoBtn');
-						const desktopCountElement = document.querySelector('#mobileCurrentCount');
-						// Show mobile info button on desktop too since it's already positioned correctly
 						if (mobileInfoBtn) {
 							mobileInfoBtn.style.display = 'block';
 						}
-						// Hide desktop info button since mobile one is better positioned
+						// Hide desktop info button
+						const desktopInfoBtn = document.getElementById('desktopInfoBtn');
 						if (desktopInfoBtn) {
 							desktopInfoBtn.style.display = 'none';
 						}
 					}
 					
-					// Show original buttons on desktop
+					// Hide original buttons container on desktop (since we're using mobile container)
 					if (originalButtonsContainer) {
-						originalButtonsContainer.style.display = 'flex';
-					}
-					
-					// Clear mobile button container on desktop
-					if (mobileButtonsContainer) {
-						mobileButtonsContainer.innerHTML = '';
+						originalButtonsContainer.style.display = 'none';
 					}
 					
 					// Hide old desktop coin counter
@@ -1564,6 +1574,7 @@
             let coinSplashTimeout = null; // Timeout ID for resetting splash
             
             // Camera follow system variables
+            let coinCamEnabled = true; // User preference for coin camera animation
             let cameraFollowActive = false;
             let followedCoin = null;
             let originalCameraPosition = null;
@@ -3792,6 +3803,8 @@
           
             // Camera follow system functions
             function startCameraFollow(coin) {
+                // Check if coin cam is enabled by user preference
+                if (!coinCamEnabled) return;
                 if (cameraFollowActive) return; // Already following a coin
                 
                 cameraFollowActive = true;
@@ -4060,6 +4073,15 @@
 			// Now that global functions are set up, initialize mobile buttons if they exist
 			setTimeout(() => {
 				setupMobileButtons();
+				
+				// Set up coin cam toggle handler
+				const coinCamToggle = document.getElementById('coinCamToggle');
+				if (coinCamToggle) {
+					coinCamToggle.addEventListener('change', function(e) {
+						coinCamEnabled = e.target.checked;
+						console.log('[Coin Cam] Camera follow is now', coinCamEnabled ? 'enabled' : 'disabled');
+					});
+				}
 			}, 100);
 
 			function onPointerUp() {
@@ -5352,7 +5374,7 @@
 			/* Small phone screens (iPhone SE, older iPhones) */
 			@media (max-width: 480px) and (max-height: 700px) {
 				#mobileCollectionCounter {
-					bottom: 5% !important;
+					bottom: 8% !important;
 				}
 				
 				.mobile-counter-buttons {
@@ -5372,7 +5394,7 @@
 				
 				#mobileCollectionCounter {
 					display: flex !important;
-					bottom: 25vh !important;
+					/* bottom: 25vh !important; */
 				}
 			}
 			

@@ -637,8 +637,11 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
             texture.center.set(0.5, 0.5);
             texture.rotation = -Math.PI / 2;
             
+            // Store original rotation for later
+            const originalRotation = texture.rotation;
+            
             // Screen states
-            let screenMode = 'navigation'; // 'navigation', 'crt-terminal', 'post-video', 'video', 'access-denied', 'verifying', 'access-granted'
+            let screenMode = 'navigation'; // 'navigation', 'crt-terminal', 'post-video', 'video', 'access-denied', 'verifying', 'access-granted', 'token-prompt'
             let clickAreas = [];
             let hoveredButton = null;
             let lastRedrawTime = 0;
@@ -663,10 +666,13 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.fillStyle = '#000000';
               ctx.fillRect(0, 0, 512, 512);
               
-              // Draw CRT border effect
+              // Draw CRT border effect with rounded corners
               ctx.strokeStyle = '#333333';
               ctx.lineWidth = 4;
-              ctx.strokeRect(10, 10, 492, 492);
+              const borderRadius = 35;
+              ctx.beginPath();
+              ctx.roundRect(10, 10, 492, 492, borderRadius);
+              ctx.stroke();
               
               // CRT glow effect
               const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
@@ -687,7 +693,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               const centerX = 256; // Center of 512px canvas
               
               ctx.textAlign = 'center';
-              ctx.fillText('DRONE_TERMINAL_v2.1', centerX, y);
+              ctx.fillText('CLOUD_TERMINAL_v2.1', centerX, y);
               y += 30;
               
               // Switch to left align for message content
@@ -695,11 +701,11 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               const leftMargin = 40;
               
               // Show text messages (INITIALIZING or TRANSMISSION COMPLETE)
-              if (currentText && currentText !== "TRANSMISSION COMPLETE") {
-                ctx.font = '14px Courier New, monospace';
-                ctx.fillText('> ' + currentText, leftMargin, y);
-                y += 30;
-              }
+              // if (currentText && currentText !== "TRANSMISSION COMPLETE") {
+              //   ctx.font = '14px Courier New, monospace';
+              //   ctx.fillText('> ' + currentText, leftMargin, y);
+              //   y += 30;
+              // }
               
               // Draw ASCII art line by line
               if (showingAscii) {
@@ -718,7 +724,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 ctx.shadowBlur = 5;
                 
                 // Show "TRANSMISSION COMPLETE" below ASCII art
-                if (currentText === "TRANSMISSION COMPLETE") {
+                if (currentText === "TRANSMISSION INITIATED") {
                   ctx.textAlign = 'center';
                   ctx.fillStyle = '#00ff41';
                   ctx.shadowBlur = 10;
@@ -771,18 +777,18 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                         
                         // Display "TRANSMISSION COMPLETE" after ASCII art
                         setTimeout(() => {
-                          currentText = "TRANSMISSION COMPLETE";
+                          currentText = "TRANSMISSION INITIATED";
                           // Keep showingAscii true to display both
                           drawCRTTerminal();
                           
                           // Play acceptance sound for completion
                           sounds.accept.cloneNode(true).play().catch(() => {});
                           
-                          // Then show navigation after a pause
+                          // Then show token prompt after a pause
                           setTimeout(() => {
-                            console.log('CRT Terminal complete, showing navigation');
-                            screenMode = 'post-video';
-                            drawPostVideoScreen();
+                            console.log('CRT Terminal complete, showing token prompt');
+                            screenMode = 'token-prompt';
+                            drawTokenPromptScreen();
                           }, 2000);
                         }, 500);
                       }
@@ -1022,30 +1028,40 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 return;
               }
               
-              // Normal interactive screen
-              ctx.shadowColor = 'transparent';
-              ctx.shadowBlur = 0;
-              ctx.fillStyle = '#0a0a0a';
+              // Normal interactive screen with CRT terminal aesthetic
+              ctx.fillStyle = '#000000';
               ctx.fillRect(0, 0, 512, 512);
               
-              // Draw glowing border
-              ctx.strokeStyle = '#00ff41';
-              ctx.lineWidth = 3;
-              ctx.strokeRect(3, 3, 506, 506);
+              // Draw CRT border effect with rounded corners
+              ctx.strokeStyle = '#333333';
+              ctx.lineWidth = 4;
+              const borderRadius = 35;
+              ctx.beginPath();
+              ctx.roundRect(10, 10, 492, 492, borderRadius);
+              ctx.stroke();
+              
+              // CRT glow effect
+              const crtGradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
+              crtGradient.addColorStop(0, 'rgba(0, 255, 65, 0.1)');
+              crtGradient.addColorStop(1, 'rgba(0, 255, 65, 0)');
+              ctx.fillStyle = crtGradient;
+              ctx.fillRect(0, 0, 512, 512);
               
               // System ready indicator
               ctx.fillStyle = '#00ff41';
-              ctx.font = 'bold 14px Courier New';
+              ctx.font = 'bold 14px Courier New, monospace';
               ctx.textAlign = 'center';
-              ctx.fillText('[SYSTEM ONLINE]', 256, 25);
+              ctx.shadowColor = '#00ff41';
+              ctx.shadowBlur = 5;
+              ctx.fillText('CLOUD_TERMINAL_v2.1', 256, 45);
               
-              // Title with glow effect
+              // Title with terminal glow effect
               ctx.shadowColor = '#00ff41';
               ctx.shadowBlur = 10;
               ctx.fillStyle = '#00ff41';
-              ctx.font = 'bold 28px Courier New';
+              ctx.font = 'bold 28px Courier New, monospace';
               ctx.textAlign = 'center';
-              ctx.fillText('DRONE SYSTEM', 256, 50);
+              ctx.fillText('[ MAIN MENU ]', 256, 75);
               ctx.shadowBlur = 0;
               
               // Welcome terminal button with cyberpunk style
@@ -1098,7 +1114,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.fillStyle = isTerminalHovered ? '#ffffff' : '#72bfbe';  // Cyber blue
               ctx.font = 'bold 20px Courier New';
               ctx.textAlign = 'center';
-              ctx.fillText('▶ ACTIVATE INTERCESSION', terminalBtnX + terminalBtnWidth/2, terminalBtnY + terminalBtnHeight/2 + 7);
+              ctx.fillText('▶ ACQUIRE TOKENS', terminalBtnX + terminalBtnWidth/2, terminalBtnY + terminalBtnHeight/2 + 7);
               
               ctx.shadowBlur = 0;
               ctx.textAlign = 'left';
@@ -1107,11 +1123,12 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               // Navigation buttons - adjusted spacing for larger buttons
               const buttons = [
                 // { text: '◆ HOME', y: 230, url: '/' },
-                { text: '✨ BUY RL80', y: 80, action: 'openBuyModal', style: 'special' },  // Special buy button
-                { text: '▶ VIDEO MESSAGE', y: 230, action: 'playVideo', video: '/videos/23.mp4' },
-                { text: '▲ TRADING DESK', y: 300, url: '/temple' },
-                { text: '🔒 ILLUMIN80 [RESTRICTED]', y: 370, action: 'checkAccess', url: '/gallery3' },
-                { text: '◉ TOKENOMICS', y: 440, url: '/tokenomics' }
+                // { text: 'BUY RL80', y: 80, action: 'openBuyModal', style: 'special' },  // Special buy button
+                // { text: '▶ VIDEO MESSAGE', y: 230, action: 'playVideo', video: '/videos/23.mp4' },
+                { text: '▲ TRADING DESK', y: 220, url: '/temple' },
+                { text: '◉ TOKENOMICS', y: 290, url: '/tokenomics' },
+                { text: '🔒 ILLUMIN80 [RESTRICTED]', y: 360, action: 'checkAccess', url: '/gallery3' },
+
               ];
               
               clickAreas = [
@@ -1253,6 +1270,12 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                 });
               });
               
+              // Add scanlines effect for CRT look
+              for (let i = 0; i < 512; i += 4) {
+                ctx.fillStyle = 'rgba(0, 255, 65, 0.02)';
+                ctx.fillRect(0, i, 512, 2);
+              }
+              
               texture.needsUpdate = true;
             };
             
@@ -1263,6 +1286,135 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               drawNavigationScreen();
             };
             
+            // Draw token prompt screen with yes/no buttons (no ASCII art)
+            const drawTokenPromptScreen = () => {
+              // Clear canvas with black background
+              ctx.fillStyle = '#000000';
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Draw CRT border effect with rounded corners
+              ctx.strokeStyle = '#333333';
+              ctx.lineWidth = 4;
+              const borderRadius = 35;
+              ctx.beginPath();
+              ctx.roundRect(10, 10, 492, 492, borderRadius);
+              ctx.stroke();
+              
+              // CRT glow effect
+              const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
+              gradient.addColorStop(0, 'rgba(0, 255, 65, 0.1)');
+              gradient.addColorStop(1, 'rgba(0, 255, 65, 0)');
+              ctx.fillStyle = gradient;
+              ctx.fillRect(0, 0, 512, 512);
+              
+              // Set up text styling
+              ctx.font = '16px Courier New, monospace';
+              ctx.fillStyle = '#00ff41';
+              ctx.textBaseline = 'top';
+              ctx.shadowColor = '#00ff41';
+              ctx.shadowBlur = 5;
+              
+              // Header text
+              const centerX = 256;
+              const centerY = 256;
+              
+              ctx.textAlign = 'center';
+              ctx.fillText('CLOUD_TERMINAL_v2.1', centerX, 60);
+              
+              // Draw RL80 flame logo (simplified ASCII version)
+              ctx.font = '24px Courier New, monospace';
+              ctx.shadowBlur = 10;
+              ctx.fillStyle = '#00ff41';
+              ctx.fillText('🔥', centerX, centerY - 80);
+              ctx.font = 'bold 32px Courier New, monospace';
+              ctx.fillText('RL80', centerX, centerY - 40);
+              
+              // Draw prompt text
+              ctx.font = 'bold 18px Courier New, monospace';
+              ctx.fillStyle = '#00ff41';
+              ctx.shadowBlur = 8;
+              ctx.textAlign = 'center';
+              ctx.fillText('BUY RL80 TOKENS?', centerX, centerY + 20);
+              
+              // Clear click areas and define new ones for yes/no buttons
+              clickAreas = [];
+              
+              // Debug: Log button drawing
+              console.log('Drawing token prompt, hoveredButton:', hoveredButton);
+              
+              // Draw buttons - standard horizontal layout
+              const buttonY = centerY + 70;
+              const buttonWidth = 100;
+              const buttonHeight = 40;
+              const buttonSpacing = 50;
+              
+              // Draw YES button on LEFT in canvas space
+              const yesX = centerX - buttonWidth - buttonSpacing/2;
+              const yesHovered = hoveredButton === 'yes';
+              console.log('Drawing YES button at X:', yesX, 'hovered:', yesHovered);
+              
+              // Draw YES button box
+              ctx.strokeStyle = yesHovered ? '#00ff41' : 'rgba(0, 255, 65, 0.5)';
+              ctx.fillStyle = yesHovered ? 'rgba(0, 255, 65, 0.2)' : 'rgba(0, 255, 65, 0.05)';
+              ctx.lineWidth = 2;
+              ctx.fillRect(yesX, buttonY, buttonWidth, buttonHeight);
+              ctx.strokeRect(yesX, buttonY, buttonWidth, buttonHeight);
+              
+              // YES text
+              ctx.fillStyle = '#00ff41';
+              ctx.font = yesHovered ? 'bold 20px Courier New, monospace' : '18px Courier New, monospace';
+              ctx.shadowBlur = yesHovered ? 12 : 6;
+              ctx.textAlign = 'center';
+              ctx.fillText('YES', yesX + buttonWidth/2, buttonY + buttonHeight/2 - 8);
+              
+              // Add YES click area
+              clickAreas.push({
+                x: yesX,
+                y: buttonY,
+                width: buttonWidth,
+                height: buttonHeight,
+                action: 'buyTokens',
+                button: 'yes'
+              });
+              
+              // Draw NO button on RIGHT in canvas space
+              const noX = centerX + buttonSpacing/2;
+              const noHovered = hoveredButton === 'no';
+              console.log('Drawing NO button at X:', noX, 'hovered:', noHovered);
+              
+              // Draw NO button box
+              ctx.strokeStyle = noHovered ? '#00ff41' : 'rgba(0, 255, 65, 0.5)';
+              ctx.fillStyle = noHovered ? 'rgba(0, 255, 65, 0.2)' : 'rgba(0, 255, 65, 0.05)';
+              ctx.lineWidth = 2;
+              ctx.fillRect(noX, buttonY, buttonWidth, buttonHeight);
+              ctx.strokeRect(noX, buttonY, buttonWidth, buttonHeight);
+              
+              // NO text
+              ctx.fillStyle = '#00ff41';
+              ctx.font = noHovered ? 'bold 20px Courier New, monospace' : '18px Courier New, monospace';
+              ctx.shadowBlur = noHovered ? 12 : 6;
+              ctx.textAlign = 'center';
+              ctx.fillText('NO', noX + buttonWidth/2, buttonY + buttonHeight/2 - 8);
+              
+              // Add NO click area
+              clickAreas.push({
+                x: noX,
+                y: buttonY,
+                width: buttonWidth,
+                height: buttonHeight,
+                action: 'declineTokens',
+                button: 'no'
+              });
+              
+              // Scanlines effect
+              for (let i = 0; i < 512; i += 4) {
+                ctx.fillStyle = 'rgba(0, 255, 65, 0.02)';
+                ctx.fillRect(0, i, 512, 2);
+              }
+              
+              texture.needsUpdate = true;
+            };
+            
             // Draw access denied CRT screen
             const drawAccessDeniedScreen = () => {
               // Clear canvas with black background
@@ -1271,8 +1423,12 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               
               // Draw CRT border effect
               ctx.strokeStyle = '#ff0000';
+
               ctx.lineWidth = 4;
-              ctx.strokeRect(10, 10, 492, 492);
+              const borderRadius = 35;
+              ctx.beginPath();
+              ctx.roundRect(10, 10, 492, 492, borderRadius);
+              ctx.stroke();
               
               // CRT glow effect with red tint
               const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
@@ -1301,13 +1457,13 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.font = '14px Courier New, monospace';
               ctx.fillStyle = '#00ff41';
               ctx.fillText('AUTHENTICATION REQUIRED', 256, 280);
-              ctx.fillText('LEVEL 5 CLEARANCE NEEDED', 256, 310);
+              ctx.fillText('CLEARANCE NEEDED', 256, 310);
               
               // Instructions
               ctx.font = '12px Courier New, monospace';
               ctx.fillStyle = '#00ff41';
-              ctx.fillText('Please log in to access ILLUMIN80', 256, 360);
-              ctx.fillText('Contact admin for credentials', 256, 380);
+              ctx.fillText('Please check back for updates', 256, 360);
+              // ctx.fillText('Contact admin for credentials', 256, 380);
               
               // Return button
               const btnX = 156;
@@ -1492,12 +1648,25 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               
               let newHoveredButton = null;
               
-              // Check which button is being hovered
-              for (const area of clickAreas) {
-                if (x >= area.x && x <= area.x + area.width && 
-                    y >= area.y && y <= area.y + area.height) {
-                  newHoveredButton = area.index !== undefined ? area.index : (area.action === 'activateTerminal' ? 0 : null);
-                  break;
+              // For token prompt, swap X coordinate due to rotation
+              if (screenMode === 'token-prompt') {
+                const swappedX = 512 - x;  // Mirror the X coordinate
+                for (const area of clickAreas) {
+                  if (swappedX >= area.x && swappedX <= area.x + area.width && 
+                      y >= area.y && y <= area.y + area.height) {
+                    newHoveredButton = area.button; // 'yes' or 'no'
+                    console.log('Hovering over button:', area.button, 'swapped X:', swappedX);
+                    break;
+                  }
+                }
+              } else {
+                // Check which button is being hovered (normal mode)
+                for (const area of clickAreas) {
+                  if (x >= area.x && x <= area.x + area.width && 
+                      y >= area.y && y <= area.y + area.height) {
+                    newHoveredButton = area.index !== undefined ? area.index : (area.action === 'activateTerminal' ? 0 : null);
+                    break;
+                  }
                 }
               }
               
@@ -1517,6 +1686,8 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                   lastRedrawTime = now;
                   if (screenMode === 'navigation' || screenMode === 'post-video') {
                     drawNavigationScreen(hoveredButton);
+                  } else if (screenMode === 'token-prompt') {
+                    drawTokenPromptScreen();
                   }
                 }
               }
@@ -1546,6 +1717,51 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                   screenMode = 'crt-terminal';
                   startCRTTerminal();
                   return; // Exit early
+                }
+              }
+              
+              // Handle token prompt clicks
+              if (screenMode === 'token-prompt') {
+                const swappedX = 512 - x;  // Mirror the X coordinate due to rotation
+                console.log('Token prompt click at original X:', x, 'swapped X:', swappedX, 'Y:', y);
+                console.log('Available click areas:', clickAreas);
+                
+                for (const area of clickAreas) {
+                  console.log('Checking area:', area.button, 'at', area.x, area.y, 'to', area.x + area.width, area.y + area.height);
+                  if (swappedX >= area.x && swappedX <= area.x + area.width && 
+                      y >= area.y && y <= area.y + area.height) {
+                    
+                    console.log('Clicked on button:', area.button, 'with action:', area.action);
+                    
+                    if (area.action === 'buyTokens') {
+                      console.log('User clicked YES to buy RL80 tokens');
+                      // Play accept sound
+                      sounds.accept.cloneNode(true).play().catch(() => {});
+                      
+                      // Open the buy modal
+                      if (onOpenBuyModal) {
+                        onOpenBuyModal();
+                      }
+                      
+                      // Return to navigation screen
+                      setTimeout(() => {
+                        screenMode = 'post-video';
+                        drawPostVideoScreen();
+                      }, 500);
+                      
+                    } else if (area.action === 'declineTokens') {
+                      console.log('User clicked NO to buying RL80 tokens');
+                      // Play reject sound
+                      sounds.reject.cloneNode(true).play().catch(() => {});
+                      
+                      // Return to navigation screen
+                      setTimeout(() => {
+                        screenMode = 'post-video';
+                        drawPostVideoScreen();
+                      }, 500);
+                    }
+                    return;
+                  }
                 }
               }
               
@@ -1789,6 +2005,9 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
                   lastRedrawTime = now;
                   drawNavigationScreen(hoveredButton);
                 }
+              } else if (screenMode === 'token-prompt') {
+                // Keep the token prompt screen updated with hover effects
+                drawTokenPromptScreen();
               }
             };
             

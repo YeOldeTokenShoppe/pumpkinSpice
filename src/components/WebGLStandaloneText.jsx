@@ -11,7 +11,8 @@ export default function WebGLStandaloneText({
   fontSize = 2,
   lineHeight = 1.4,
   color = "#fdcdf9",
-  id = "webgl-standalone-text"
+  id = "webgl-standalone-text",
+  skipAnimation = false // New prop to skip the rise animation
 }) {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
@@ -137,8 +138,14 @@ export default function WebGLStandaloneText({
     textMeshRef.current = textMesh;
 
     // Animate in
-    let animateIn = true;
+    let animateIn = !skipAnimation;
     const animationDuration = 1500;
+    
+    // If skipping animation, set progress to 1 immediately
+    if (skipAnimation) {
+      progressRef.current = 1;
+      textMesh.material.uniforms.uProgress.value = 1;
+    }
 
     // Animation loop
     const animate = () => {
@@ -150,7 +157,7 @@ export default function WebGLStandaloneText({
       if (textMeshRef.current && textMeshRef.current.material.uniforms) {
         textMeshRef.current.material.uniforms.uTime.value = elapsedTime;
         
-        // Animate progress
+        // Animate progress (only if not skipping)
         if (animateIn && progressRef.current < 1) {
           progressRef.current = Math.min(1, (Date.now() - startTimeRef.current) / animationDuration);
           textMeshRef.current.material.uniforms.uProgress.value = progressRef.current;

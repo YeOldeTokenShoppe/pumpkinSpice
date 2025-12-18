@@ -19,12 +19,15 @@
 
 /* Custom Font Declarations */
 @font-face {
-  font-family: 'Fjalla One';
-  src: url('/fonts/FjallaOne-Regular.ttf') format('truetype');
-  font-weight: normal;
+ font-family: "Pirata One";
+  src: url('/fonts/PirataOne-Regular.ttf') format('truetype');
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
+
+
+
 
 /* Accordion animations for shadcn/ui */
 @keyframes accordion-down {
@@ -376,7 +379,7 @@ h4,
 h5,
 h6 {
   color: #8e662b;
-  font-family: "UnifrakturCook";
+  /* font-family: "UnifrakturCook"; */
   font-weight: 700;
   letter-spacing: 0.15rem;
   line-height: 1.5;
@@ -401,7 +404,7 @@ h6 {
 .headlines h5,
 .headlines h6 {
   color: #8e662b !important;
-  font-family: UnifrakturCook !important;
+  /* font-family: UnifrakturCook !important; */
   font-weight: 700;
   letter-spacing: 0.15rem;
   margin: 0 0 1.5rem;
@@ -496,12 +499,7 @@ h6 {
   /* height: 100vh; */
 }
 
-h2 {
-  font-family: "UnifrakturCook";
-}
-h1 {
-  font-family: "UnifrakturCook";
-}
+
 /*
 	Wide Angle by Pixelarity
 	pixelarity.com | hello@pixelarity.com
@@ -663,7 +661,7 @@ h3,
 h4,
 h6 {
   color: #8e662b;
-  font-family: "UnifrakturCook" !important;
+  /* font-family: "UnifrakturCook" !important; */
   font-weight: 700;
   letter-spacing: 0.15rem;
   line-height: 1.5;
@@ -675,7 +673,7 @@ h3,
 h4,
 h5 {
   color: #8e662b !important;
-  font-family: "UnifrakturCook" !important;
+  /* font-family: "UnifrakturCook" !important; */
   font-weight: 700;
   letter-spacing: 0.15rem;
   line-height: 1.5;
@@ -1842,13 +1840,6 @@ h3 {
     @apply bg-zinc-950 text-neutral-200;
   }
 } */
-
-h2 {
-  font-family: "UnifrakturCook";
-}
-h1 {
-  font-family: "UnifrakturCook";
-}
 /*
 	Wide Angle by Pixelarity
 	pixelarity.com | hello@pixelarity.com
@@ -2008,7 +1999,7 @@ h4,
 h5,
 h6 {
   color: #8e662b;
-  font-family: "UnifrakturCook";
+  /* font-family: "UnifrakturCook"; */
   font-weight: 700;
   letter-spacing: 0.15rem;
   line-height: 1.5;

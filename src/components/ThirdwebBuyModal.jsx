@@ -107,12 +107,12 @@ const ThirdwebBuyModal = ({ isOpen, onClose }) => {
             textAlign: 'center',
             marginBottom: '1.5rem',
             fontSize: '1.8rem',
-            fontFamily: 'Courier New, monospace',
+            fontFamily: '"Pirata One", system-ui',
             textTransform: 'uppercase',
             letterSpacing: '2px',
             textShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
           }}>
-            ✨ Buy RL80 Tokens
+            Buy RL80 Tokens
           </h2>
 
           {/* Thirdweb Buy Widget */}

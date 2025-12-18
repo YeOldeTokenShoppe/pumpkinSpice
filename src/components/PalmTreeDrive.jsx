@@ -23,35 +23,47 @@ gsap.registerPlugin(ScrollTrigger);
 // Define text blocks for transitions
 const textBlocks = [
 [
-    "join the ride",
-    "stake your tokens",
-    "rewards on autopilot",
-    "tokenomics in motion"
+    "join",
+  
+      "the ride"
+    // "stake your tokens",
+    // "rewards on autopilot",
+    // "tokenomics in motion"
   ],
   [
-    "cruising toward 500k",
-    "liquidity in the tank",
-    "foundation for the journey",
-    "we accelerate"
+    // "cruising toward 500k",
+    // "liquidity in the tank",
+    // "foundation for the journey",
+    // "we accelerate,"
+    "we're taking",
+    "the scenic",
+       "route"
   ],
   [
-    "goals in the rearview",
-    "buybacks engage",
-    "smoothing the way",
-    "through every dip and climb"
+    // "goals in the rearview",
+    // "buybacks engage",
+    // "smoothing the way",
+    // "through every dip and climb"
+    "if character",
+        "is destiny"
   ],
   [
-    "Major listings on the horizon",
-    "taxes drop to zero",
-    "frictionless trading",
-    "bridges to new ecosystems"
+    // "Major listings on the horizon",
+    // "taxes drop to zero",
+    // "frictionless trading",
+    // "bridges to new ecosystems"
+    "then",
+        "success",
+        "could be"
+
   ],
   [
-    "the road ahead:",
-    "one thousand holders",
-    "five thousand, ten..",
-    "you're never alone",
-    // "on this dream ride"
+    // "the road ahead:",
+    // "one thousand holders",
+    // "five thousand, ten..",
+    // "you're never alone",
+    "your new",
+    "REAL80",
   ]
 ];
 
@@ -157,6 +169,7 @@ const PalmsScene = ({ onLoadingChange }) => {
   const scrollCameraActive = true; // Scroll camera always active
   const [currentCameraStage, setCurrentCameraStage] = useState(0); // Track which camera position we're at
   const [showEnterButton, setShowEnterButton] = useState(true); // Show "Take me there" button immediately
+  const [hideLastText, setHideLastText] = useState(false); // Hide the last text block after delay
   // Music player states
   const [userClosedMusic, setUserClosedMusic] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -385,6 +398,17 @@ const PalmsScene = ({ onLoadingChange }) => {
       previousCameraStage.current = currentCameraStage;
     }
   }, [currentCameraStage, scrollCameraActive]);
+  
+  // Effect to hide the last text block after 2 seconds
+  useEffect(() => {
+    if (currentCameraStage === 4 && !hideLastText) {
+      const timer = setTimeout(() => {
+        setHideLastText(true);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentCameraStage, hideLastText]);
   
   
   
@@ -2585,6 +2609,15 @@ const PalmsScene = ({ onLoadingChange }) => {
           }
         }
         
+        @keyframes simpleFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
         .scroll-text-line {
           display: inline-block;
           transition: all 0.3s ease;
@@ -2801,11 +2834,17 @@ const PalmsScene = ({ onLoadingChange }) => {
             overflow: 'visible',
           }}
         >
-          <div style={{ marginBottom: isMobile ? '0' : '0', position: 'relative', height: '400px' }}>
+          <div style={{ 
+            marginBottom: isMobile ? '0' : '0', 
+            position: 'relative', 
+            height: '400px',
+            opacity: (currentCameraStage === 4 && hideLastText) ? 0 : 1,
+            transition: 'opacity 1s ease-out'
+          }}>
             {/* Using WebGL Standalone Text with textBlocks array */}
             <WebGLStandaloneText 
               textArray={textBlocks[currentCameraStage] || ["DRIFT"]}
-              fontSize={isMobile ? 1.2 : 1.8}
+              fontSize={isMobile ? 1.6 : 1.8}
               lineHeight={isMobile ? 1 : 1}
               color="#ff00ff"
               id={`palmtree-stage-${currentCameraStage}`}
@@ -2905,8 +2944,8 @@ const PalmsScene = ({ onLoadingChange }) => {
         }} 
       />
       
-      {/* Enter Button - positioned under the pagination dots */}
-      {currentCameraStage === 4 && (
+      {/* Enter Button - positioned under the pagination dots, appears after text fades */}
+      {currentCameraStage === 4 && hideLastText && (
         <div style={{
           position: 'fixed',
           right: isMobile ? '20px' : '15%',
@@ -2919,6 +2958,7 @@ const PalmsScene = ({ onLoadingChange }) => {
           alignItems: 'center',
           zIndex: 999999,
           pointerEvents: 'auto',
+          animation: 'simpleFadeIn 1s ease-in',
         }}>
           <button
             onClick={() => {
