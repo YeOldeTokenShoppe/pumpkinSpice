@@ -646,9 +646,9 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
             
             // Initialize sound effects
             const sounds = {
-              hover: new Audio('https://cdn.freesound.org/previews/367/367997_6512973-lq.mp3'),
-              accept: new Audio('https://cdn.freesound.org/previews/220/220166_4100837-lq.mp3'),
-              reject: new Audio('https://cdn.freesound.org/previews/657/657950_6142149-lq.mp3')
+              hover: new Audio('https://cdn.freesound.org/previews/582/582898_5965684-lq.mp3'),
+              accept: new Audio('https://cdn.freesound.org/previews/370/370962_5450487-lq.mp3'),
+              reject: new Audio('https://cdn.freesound.org/previews/370/370962_5450487-lq.mp3')
             };
             
             // Configure sounds
