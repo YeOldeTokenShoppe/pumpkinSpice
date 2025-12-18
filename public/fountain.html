@@ -4903,15 +4903,17 @@
 
 			.donate-section .indicator {
 				position: absolute;
-				background: white;
+				background: rgba(255, 255, 255, 0.95);
 				width: 50%;
 				height: 100%;
-				left: 0;
+				left: 50%;
 				top: 0;
+				translate: -50% 0;
 				border-radius: 100px;
-				transition: translate 0.25s ease-out, opacity 0.25s ease-out;
+				transition: translate 0.25s ease-out, clip-path 0.25s ease-out, background 0.25s ease-out;
 				opacity: 0;
 				z-index: 1;
+				clip-path: inset(35% calc(50% + 1px) 35% calc(50% - 3px) round 100px);
 			}
 
 			.donate-section label {
@@ -4951,7 +4953,7 @@
 			
 			.fountain-toggle__track:has(#donate:checked) > .indicator {
 				translate: 100% 0;
-				background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+				background: transparent;
 			}
 			
 			.fountain-toggle__track:has(#donate:checked) .donate-main-label {
@@ -4964,9 +4966,40 @@
 				pointer-events: all;
 			}
 			
-			.fountain-toggle__track:has(#donate:checked) .donate-section label span {
-				opacity: 0.7;
+			/* When donate is selected - main indicator becomes blue background */
+			.fountain-toggle__track:has(#donate:checked) > .indicator,
+			.fountain-toggle__track:has(#aspca:checked) > .indicator,
+			.fountain-toggle__track:has(#stlukes:checked) > .indicator {
+				translate: 100% 0;
+				background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+			}
+			
+			.fountain-toggle__track:has(#donate:checked) .donate-section,
+			.fountain-toggle__track:has(#aspca:checked) .donate-section,
+			.fountain-toggle__track:has(#stlukes:checked) .donate-section {
+				opacity: 1;
+				pointer-events: all;
+			}
+			
+			/* When donate is first selected - show white pill on right */
+			.fountain-toggle__track:has(#donate:checked) .donate-section .indicator {
+				opacity: 1;
+				clip-path: inset(0 0 0 0 round 100px);  /* Full pill */
+				translate: 0 0;  /* Position on right (St. Luke's) */
+				background: rgba(255, 255, 255, 0.95);
+			}
+			
+			/* Both labels visible but dimmed when donate first selected */
+			.fountain-toggle__track:has(#donate:checked) .donate-section label[for="aspca"] span {
+				opacity: 1;
 				transform: scale(1);
+				color: rgba(255, 255, 255, 0.7);
+			}
+			
+			.fountain-toggle__track:has(#donate:checked) .donate-section label[for="stlukes"] span {
+				opacity: 1;
+				transform: scale(1);
+				color: rgba(0, 0, 0, 0.8);  /* Dark text on white pill */
 			}
 			
 			/* When any donate sub-option is selected */
@@ -4980,19 +5013,6 @@
 				color: rgba(255, 255, 255, 0.5);
 			}
 
-			.fountain-toggle__track:has(#aspca:checked) > .indicator,
-			.fountain-toggle__track:has(#stlukes:checked) > .indicator {
-				translate: 100% 0;
-				background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
-				box-shadow: 0 2px 8px rgba(0, 131, 176, 0.5);
-			}
-			
-			.fountain-toggle__track:has(#aspca:checked) .donate-section,
-			.fountain-toggle__track:has(#stlukes:checked) .donate-section {
-				opacity: 1;
-				pointer-events: all;
-			}
-			
 			.fountain-toggle__track:has(#aspca:checked) .donate-main-label,
 			.fountain-toggle__track:has(#stlukes:checked) .donate-main-label {
 				opacity: 0;
@@ -5000,33 +5020,49 @@
 			}
 
 
-			/* Sub-option states */
-			.fountain-toggle__track:has(#aspca:checked) .donate-section label span,
-			.fountain-toggle__track:has(#stlukes:checked) .donate-section label span {
-				opacity: 0.5;
-				transform: scale(0.95);
+			/* When ASPCA is selected - white pill, positioned left */
+			.fountain-toggle__track:has(#aspca:checked) .donate-section .indicator {
+				opacity: 1;
+				clip-path: inset(0 0 0 0 round 100px);  /* Full pill! */
+				translate: -100% 0;
+				background: rgba(255, 255, 255, 0.95);
 			}
-
-			.fountain-toggle__track:has(#aspca:checked) .donate-section label[for="aspca"] span,
-			.fountain-toggle__track:has(#stlukes:checked) .donate-section label[for="stlukes"] span {
+			
+			/* When St. Luke's is selected - white pill, positioned right */
+			.fountain-toggle__track:has(#stlukes:checked) .donate-section .indicator {
+				opacity: 1;
+				clip-path: inset(0 0 0 0 round 100px);  /* Full pill! */
+				translate: 0 0;
+				background: rgba(255, 255, 255, 0.95);
+			}
+			
+			/* Text colors - selected gets dark text, unselected gets dimmed white */
+			.fountain-toggle__track:has(#aspca:checked) .donate-section label[for="aspca"] span {
 				opacity: 1;
 				transform: scale(1);
-				color: rgba(0, 0, 0, 0.85);
+				color: rgba(0, 0, 0, 0.85);  /* Dark text on white pill */
 				font-weight: 600;
 			}
 			
-			.fountain-toggle__track:has(#aspca:checked) .donate-section .indicator,
-			.fountain-toggle__track:has(#stlukes:checked) .donate-section .indicator {
+			.fountain-toggle__track:has(#aspca:checked) .donate-section label[for="stlukes"] span {
+				opacity: 0.75;
+				transform: scale(1);
+				color: rgba(255, 255, 255, 0.7);  /* Dimmed white on blue */
+			}
+			
+			.fountain-toggle__track:has(#stlukes:checked) .donate-section label[for="stlukes"] span {
 				opacity: 1;
+				transform: scale(1);
+				color: rgba(0, 0, 0, 0.85);  /* Dark text on white pill */
+				font-weight: 600;
 			}
-
-			.fountain-toggle__track:has(#aspca:checked) .donate-section .indicator {
-				translate: 0 0;
+			
+			.fountain-toggle__track:has(#stlukes:checked) .donate-section label[for="aspca"] span {
+				opacity: 0.75;
+				transform: scale(1);
+				color: rgba(255, 255, 255, 0.7);  /* Dimmed white on blue */
 			}
-
-			.fountain-toggle__track:has(#stlukes:checked) .donate-section .indicator {
-				translate: 100% 0;
-			}
+			
 
 
 			/* Screen reader only helper */
