@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useGLTF, OrbitControls } from '@react-three/drei';
+import { useGLTF, OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import PolaroidSnapshot from './PolaroidSnapshot';
 
@@ -18,37 +18,27 @@ const SKYBOX_TEXTURES = {
 
 // Preload models to prevent loading issues
 if (typeof window !== 'undefined') {
-  useGLTF.preload('/models/votiveComplete.glb');
-  useGLTF.preload('/models/japaneseMediumComplete.glb');
-  useGLTF.preload('/models/japaneseShortComplete.glb');
-  useGLTF.preload('/models/japaneseTallComplete.glb');
-  useGLTF.preload('/models/ecclesiasticalMediumComplete.glb');
-  useGLTF.preload('/models/ecclesiasticalShortComplete.glb');
-  useGLTF.preload('/models/ecclesiasticalTallComplete.glb');
+  useGLTF.preload('/models/tinyVotiveBox.glb');
+  useGLTF.preload('/models/tinyJapCanBox.glb');
 }
 
 // Helper function to determine which model to load
-  function getCandleModelPath(candleType, candleHeight) {
+  function getCandleModelPath(candleType, candleHeight, includeBox = false) {
     if (candleType === 'votive') {
-      return "/models/votiveComplete.glb"; // Use complete model with room for proper background
+      return includeBox ? "/models/tinyVotiveBox.glb" : "/models/tinyVotiveOnly.glb"; // Use candle-only for snapshot
     } else if (candleType === 'japanese') {
-      const size = candleHeight || 'medium';
-      return size === 'short' ? '/models/japaneseShortComplete.glb' :
-             size === 'tall' ? '/models/japaneseTallComplete.glb' :
-             '/models/japaneseMediumComplete.glb';
-    } else if (candleType === 'ecclesiastical') {
-      const size = candleHeight || 'medium';
-      return size === 'short' ? '/models/ecclesiasticalShortComplete.glb' :
-             size === 'tall' ? '/models/ecclesiasticalTallComplete.glb' :
-             '/models/ecclesiasticalMediumComplete.glb';
+      return includeBox ? '/models/tinyJapCanBox.glb' : '/models/tinyJapCanOnly.glb'; // Use candle-only for snapshot
     }
-    return "/models/singleCandleAnimatedFlamePreview.glb"; // Default fallback
+    // Default fallback to votive
+    return includeBox ? "/models/tinyVotiveBox.glb" : "/models/tinyVotiveOnly.glb";
   }
 
 // Candle scene component (similar to FloatingCandleViewer but optimized for snapshot)
 function CandleScene({ userData, onReady }) {
-  const modelPath = getCandleModelPath(userData?.candleType, userData?.candleHeight);
-  // console.log('Loading candle model:', modelPath, 'for type:', userData?.candleType, 'height:', userData?.candleHeight);
+  // For snapshot, we want candle-only (no box) but keep the background if specified
+  const modelPath = getCandleModelPath(userData?.candleType, userData?.candleHeight, false);
+  // console.log('CandleScene userData:', userData);
+  // console.log('Loading candle model:', modelPath, 'for type:', userData?.candleType, 'burnedAmount:', userData?.burnedAmount, 'background:', userData?.background);
   
   let scene, animations;
   try {
@@ -57,8 +47,8 @@ function CandleScene({ userData, onReady }) {
     animations = model.animations;
   } catch (error) {
     console.error('Error loading model:', error);
-    // Fallback to votive if model fails to load
-    const fallbackModel = useGLTF('/models/singleCandleAnimatedFlamePreview.glb');
+    // Fallback to votive candle-only if model fails to load
+    const fallbackModel = useGLTF('/models/tinyVotiveOnly.glb');
     scene = fallbackModel.scene;
     animations = fallbackModel.animations;
   }
@@ -66,6 +56,7 @@ function CandleScene({ userData, onReady }) {
   const mixerRef = useRef(null);
   const spotlightRef = useRef();
   const flamePointLightRef = useRef();
+  const backgroundTextureRef = useRef(null);
   
   useEffect(() => {
     if (!scene) return;
@@ -87,15 +78,54 @@ function CandleScene({ userData, onReady }) {
     let roomTextureNeeded = false;
     let roomMeshFound = false;
     
-    // Apply skybox texture to Room mesh for ALL candle types
+    // Apply user's image to senora mesh for votive candles (matching SimpleCandleViewer logic)
+    if (userData?.imageUrl && userData?.candleType === 'votive') {
+      const textureLoader = new THREE.TextureLoader();
+      
+      clonedScene.traverse((child) => {
+        // Target the senora mesh specifically for votive candles
+        const isSenoraObject = child.name === 'senora' || 
+                              (child.material && child.material.name === 'senora') ||
+                              (child.material && child.material.name === 'senora.001');
+        
+        if (child.isMesh && isSenoraObject) {
+          console.log('Found senora mesh in snapshot, applying user image');
+          
+          textureLoader.load(
+            userData.imageUrl,
+            (texture) => {
+              texture.colorSpace = THREE.SRGBColorSpace;
+              texture.flipY = false;
+              texture.wrapS = THREE.ClampToEdgeWrapping;
+              texture.wrapT = THREE.ClampToEdgeWrapping;
+              texture.needsUpdate = true;
+              
+              // Clone and update the material
+              child.material = child.material.clone();
+              child.material.map = texture;
+              child.material.transparent = true;
+              child.material.opacity = 1;
+              child.material.alphaTest = 0.1;
+              child.material.needsUpdate = true;
+            },
+            undefined,
+            (error) => {
+              console.error('Error loading user image for senora in snapshot:', error);
+            }
+          );
+        }
+      });
+    }
+    
+    // Apply skybox texture to Box mesh for ALL candle types
     if (userData?.background && SKYBOX_TEXTURES[userData.background]) {
       roomTextureNeeded = true;
       
-      // Find Room mesh
+      // Find Box mesh (the background mesh in the new models)
       clonedScene.traverse((child) => {
-        if (child.isMesh && child.name === 'Room') {
+        if (child.isMesh && (child.name === 'Box' || child.name === 'box')) {
           roomMeshFound = true;
-          // console.log('Found Room mesh! Loading background:', userData.background);
+          // console.log('Found Box mesh! Loading background:', userData.background);
           
           // Make Room visible and set initial properties
           child.visible = true;
@@ -105,7 +135,7 @@ function CandleScene({ userData, onReady }) {
       });
       
       if (!roomMeshFound) {
-        console.warn(`Room mesh not found in ${userData?.candleType} model! Using gradient fallback.`);
+        console.warn(`Box mesh not found in ${userData?.candleType} model! Using gradient fallback.`);
         // console.log('All meshes in scene:');
         clonedScene.traverse((child) => {
           if (child.isMesh) {
@@ -113,27 +143,7 @@ function CandleScene({ userData, onReady }) {
           }
         });
         
-        // Create gradient background plane as fallback for models without Room mesh
-        const planeGeometry = new THREE.PlaneGeometry(30, 30);
-        const planeMaterial = new THREE.MeshBasicMaterial({
-          color: userData?.background === 'cyberpunk' ? 0xff006e :
-                 userData?.background === 'synthwave' ? 0xff71ce :
-                 userData?.background === 'gothicTokyo' ? 0x4a0080 :
-                 userData?.background === 'neoTokyo' ? 0x00d4ff :
-                 userData?.background === 'aurora' ? 0x00ff66 :
-                 userData?.background === 'templeScene' ? 0xff6b35 :
-                 0xff71ce,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: 0.5
-        });
-        const backgroundPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-        backgroundPlane.position.z = -8;
-        backgroundPlane.renderOrder = -1000;
-        
-        if (candleRef.current) {
-          candleRef.current.add(backgroundPlane);
-        }
+        // Don't create gradient plane here - will add it later when candleRef is ready
         
         // If no room mesh, just signal ready
         if (onReady) {
@@ -156,29 +166,21 @@ function CandleScene({ userData, onReady }) {
             texture.flipY = false; // Don't flip vertically
             texture.needsUpdate = true;
             
-            // Apply to Room mesh
+            // Apply to Box mesh (the background mesh in the new models)
             clonedScene.traverse((child) => {
-              if (child.name === 'Room' && child.isMesh) {
-                // console.log('Applying texture to Room mesh');
-                // console.log('Original Room material:', child.material);
+              if ((child.name === 'Box' || child.name === 'box') && child.isMesh) {
+                // console.log('Applying texture to Box mesh');
+                // console.log('Original Box material:', child.material);
                 
-                // Create new material exactly matching SingleCandleDisplay
-                const skyboxMaterial = new THREE.MeshBasicMaterial({
-                  map: texture,
-                  side: THREE.DoubleSide,
-                  color: 0x808080, // Darken the texture (matches SingleCandleDisplay)
-                  transparent: false,
-                  opacity: 1,
-                  depthWrite: false
-                });
-                
-                // Replace material
-                child.material = skyboxMaterial;
+                // Update existing material's texture instead of replacing the whole material
+                child.material = child.material.clone();
+                child.material.map = texture;
+                child.material.needsUpdate = true;
                 child.visible = true;
                 child.renderOrder = -1000;
                 child.frustumCulled = false;
                 
-                // console.log('Room mesh updated:', {
+                // console.log('Box mesh updated:', {
                 //   material: child.material,
                 //   hasMap: !!child.material.map,
                 //   mapImage: child.material.map?.image,
@@ -293,6 +295,61 @@ function CandleScene({ userData, onReady }) {
     if (candleRef.current) {
       candleRef.current.add(clonedScene);
       
+      // Add background plane with actual texture since we're using candle-only models (no Box mesh)
+      if (userData?.background) {
+        console.log('Setting up background:', userData.background, 'Path:', SKYBOX_TEXTURES[userData.background]);
+        if (SKYBOX_TEXTURES[userData.background]) {
+          const textureLoader = new THREE.TextureLoader();
+          const texturePath = SKYBOX_TEXTURES[userData.background];
+        
+        textureLoader.load(
+          texturePath,
+          (texture) => {
+            // Configure texture
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.flipY = false;
+            texture.needsUpdate = true;
+            
+            // Store texture reference for cleanup
+            backgroundTextureRef.current = texture;
+            
+            // Create background plane with the actual texture
+            const planeGeometry = new THREE.PlaneGeometry(20, 20);
+            const planeMaterial = new THREE.MeshBasicMaterial({
+              map: texture,
+              side: THREE.DoubleSide,
+              transparent: false,
+              opacity: 1
+            });
+            const backgroundPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+            backgroundPlane.position.z = -5;
+            backgroundPlane.renderOrder = -1000;
+            
+            if (candleRef.current) {
+              candleRef.current.add(backgroundPlane);
+            }
+          },
+          undefined,
+          (error) => {
+            console.error('Failed to load background texture for snapshot:', error);
+            // Fallback to gradient if texture fails
+            const planeGeometry = new THREE.PlaneGeometry(20, 20);
+            const planeMaterial = new THREE.MeshBasicMaterial({
+              color: 0xff71ce,
+              side: THREE.DoubleSide,
+              transparent: true,
+              opacity: 0.7
+            });
+            const backgroundPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+            backgroundPlane.position.z = -5;
+            backgroundPlane.renderOrder = -1000;
+            candleRef.current.add(backgroundPlane);
+          }
+        );
+        }
+      }
+      
       // Position spotlight after candle is added
       if (spotlightRef.current && candleRef.current) {
         const box = new THREE.Box3().setFromObject(candleRef.current);
@@ -309,8 +366,47 @@ function CandleScene({ userData, onReady }) {
     }
     
     return () => {
+      // Stop animations
       if (mixerRef.current) {
         mixerRef.current.stopAllAction();
+        mixerRef.current = null;
+      }
+      
+      // Dispose of textures and materials to prevent shader overflow
+      if (candleRef.current) {
+        candleRef.current.traverse((child) => {
+          if (child.isMesh) {
+            // Dispose geometry
+            if (child.geometry) {
+              child.geometry.dispose();
+            }
+            
+            // Dispose material and its textures
+            if (child.material) {
+              // Handle array of materials
+              const materials = Array.isArray(child.material) ? child.material : [child.material];
+              materials.forEach(material => {
+                if (material.map) material.map.dispose();
+                if (material.normalMap) material.normalMap.dispose();
+                if (material.roughnessMap) material.roughnessMap.dispose();
+                if (material.metalnessMap) material.metalnessMap.dispose();
+                if (material.emissiveMap) material.emissiveMap.dispose();
+                material.dispose();
+              });
+            }
+          }
+        });
+        
+        // Clear the candle reference
+        while (candleRef.current.children.length > 0) {
+          candleRef.current.remove(candleRef.current.children[0]);
+        }
+      }
+      
+      // Dispose background texture if it exists
+      if (backgroundTextureRef.current) {
+        backgroundTextureRef.current.dispose();
+        backgroundTextureRef.current = null;
       }
     };
   }, [scene, animations, userData, onReady]);
@@ -350,20 +446,24 @@ function CandleScene({ userData, onReady }) {
     };
   }, [userData?.candleType]);
   
+  // Debug log
+  console.log('CandleScene render - burnedAmount:', userData?.burnedAmount, 'type:', typeof userData?.burnedAmount);
+  
   return (
     <>
-      {/* <ambientLight intensity={0.3} color="#ffffff" />   */}
+      <ambientLight intensity={1.5} color="#ffffff" />  
+            <directionalLight 
+        position={[-1, 5, 3]} 
+        intensity={1.4}  // Reduced from 0.6
+        color="#fff5ee" // Softer warm fill
+      />
       {/* <directionalLight 
         position={[5, 8, 5]} 
         intensity={0.8}  // Reduced from 1.2
         color="#ffffff"
         castShadow
       />
-      <directionalLight 
-        position={[-3, 5, 3]} 
-        intensity={0.4}  // Reduced from 0.6
-        color="#fff5ee" // Softer warm fill
-      />
+
       <pointLight 
         position={[0, 2, 4]} 
         intensity={0.5}  // Reduced from 0.8
@@ -382,33 +482,38 @@ function CandleScene({ userData, onReady }) {
         intensity={0.2}  // Reduced from 0.3
         color="#ffffff" // Top down rim light
       /> */}
-       <ambientLight intensity={2} />
+       <ambientLight intensity={0.8} />
+        {/* <directionalLight position={[5, 10, 5]} intensity={0.8} castShadow />
+        <pointLight position={[0, 3, 2]} intensity={0.5} color="#ffaa00" />
+        <pointLight position={[-3, 2, -2]} intensity={0.3} color="#ffffff" /> */}
 
         {/* Spotlight for general candle illumination */}
-        <spotLight
+        {/* <spotLight
           ref={spotlightRef}
-          intensity={1.5}
+          intensity={0.8}
           angle={0.4}
           penumbra={0.5}
           distance={5}
           castShadow={false}
           color="#ffedd0"
-        />
+        /> */}
 
         {/* Point light that will always follow the flame area */}
-        <pointLight
+        {/* <pointLight
           ref={flamePointLightRef}
-          intensity={2.0}
+          intensity={1.0}
           distance={3}
           color="#ff9c5e"
           decay={2}
-        />
-      <group ref={candleRef} scale={[1.8, 1.8, 1.8]} position={[0, -0.5, 0]} /> {/* Adjusted position to center candle */}
+        /> */}
+      <group ref={candleRef} scale={[1.2, 1.2, 1.2]} position={[0, -0.5, 0]} /> {/* Adjusted position to center candle */}
+      
+      
       <OrbitControls 
         enableZoom={false}
         enablePan={false}
-        autoRotate={true}
-        autoRotateSpeed={0.5}
+        // autoRotate={true}
+        // autoRotateSpeed={0.5}
         minPolarAngle={Math.PI / 3}
         maxPolarAngle={Math.PI / 2}
       />
@@ -624,6 +729,7 @@ export default function CandleSnapshotRenderer({
       
       {/* Hidden canvas for rendering the candle */}
       <div
+        id="candle-snapshot-container"  // Add ID to capture entire container
         style={{
           position: 'fixed',
           top: '50%',
@@ -638,21 +744,18 @@ export default function CandleSnapshotRenderer({
       >
         <Canvas
           ref={canvasRef}
-          id="candle-snapshot-canvas"
           camera={{ 
-            // Adjust camera position and FOV based on candle type and height
-            // Votive candles and tall candles need more space
-            position: (userData?.candleHeight === 'tall' || userData?.candleType === 'votive') ? [0, 1.2, 8.5] : [0, 0.5, 7],
-            fov: (userData?.candleHeight === 'tall' || userData?.candleType === 'votive') ? 42 : 35
+            position: [0, -2, 6],  // Simplified camera position for all candle types
+            fov: 30  // Standard FOV for consistent framing
           }}
-          gl={{
-            preserveDrawingBuffer: true,
-            antialias: true,
-            alpha: false,
-            outputColorSpace: 'srgb', // Ensure correct color space
-            toneMapping: THREE.ACESFilmicToneMapping, // Better color reproduction
-            toneMappingExposure: 1.2, // Slightly brighter exposure
-          }}
+          // gl={{
+          //   preserveDrawingBuffer: true,
+          //   antialias: true,
+          //   alpha: false,
+          //   outputColorSpace: 'srgb', // Ensure correct color space
+          //   toneMapping: THREE.ACESFilmicToneMapping, // Better color reproduction
+          //   toneMappingExposure: 1.2, // Slightly brighter exposure
+          // }}
         >
           {/* All candles should show the user's selected background */}
           {/* Use black background to let the skybox/gradient show through */}
@@ -670,8 +773,8 @@ export default function CandleSnapshotRenderer({
         <PolaroidSnapshot 
           trigger={triggerSnapshot}
           onComplete={handleSnapshotComplete}
-          captureElementId="candle-snapshot-canvas"
-          label={`${userData?.username || 'Anonymous'}'s Candle`}
+          captureElementId="candle-snapshot-container"  // Capture entire container with overlay
+          label={userData?.burnedAmount ? `Burned ${parseInt(userData.burnedAmount).toLocaleString()} RL80 tokens!` : `${userData?.username || 'Anonymous'}'s Candle`}
         />
       )}
     </>

@@ -1,8 +1,9 @@
 import React, { useState, Suspense, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useTexture } from '@react-three/drei';
-useGLTF.preload('/models/singleCandleAnimatedFlamePreview.glb');
+import { OrbitControls, useGLTF, useTexture, Html } from '@react-three/drei';
+useGLTF.preload('/models/tinyVotiveOnly.glb');
+useGLTF.preload('/models/tinyJapCanOnly.glb');
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/utilities/firebaseClient';
@@ -18,6 +19,429 @@ import CandleSnapshotRenderer from './CandleSnapshotRenderer';
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrambleTextPlugin);
 }
+// Simple viewer component for displaying candle models with dynamic texture support
+function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, dedicationName, dedicationMessage, showPlaque, userAvatar, burnAmount }) {
+  const { scene, materials } = useGLTF(modelPath);
+  const modelRef = useRef();
+  const groupRef = useRef();
+  const cardDetailsRef = useRef();
+  const textureLoader = new THREE.TextureLoader();
+  const backgroundTextureRef = useRef(null);
+  const currentBackgroundPath = useRef(null);
+  const boxMeshRef = useRef(null);
+  const originalBoxTextureRef = useRef(null);
+  const [plaqueVisible, setPlaqueVisible] = useState(true);
+  
+  // Check camera position to hide plaque when viewing from behind
+  useFrame(({ camera }) => {
+    if (showPlaque && modelRef.current) {
+      // Get the camera position relative to the model
+      const cameraPosition = camera.position;
+      // Check if camera is behind the model (negative z means behind)
+      // We'll consider "front" as roughly -45 to +45 degrees from the front
+      const angle = Math.atan2(cameraPosition.x, cameraPosition.z);
+      const isFront = Math.abs(angle) < Math.PI / 2.5; // Narrower cone for better front detection
+      
+      if (isFront !== plaqueVisible) {
+        setPlaqueVisible(isFront);
+      }
+    }
+  });
+  
+  React.useEffect(() => {
+    if (scene && modelRef.current) {
+      const clonedModel = scene.clone(true); // Deep clone to preserve materials
+      
+      // Reset background path tracking when model changes
+      currentBackgroundPath.current = null;
+      
+      // Different positioning for different models
+      if (modelPath.includes('tinyVotiveOnly')) {
+        clonedModel.scale.set(2, 2, 2);
+        clonedModel.position.set(0, 0, 0);
+      } else if (modelPath.includes('tinyVotiveBox')) {
+        clonedModel.scale.set(1, 1, 1);
+        clonedModel.position.set(0, -2.7, -1);  // Move down significantly
+      } else if (modelPath.includes('tinyJapCanBox')) {
+        clonedModel.scale.set(1, 1, 1);  // Same scale as votive box
+        clonedModel.position.set(0, -2.7, -1);  // Move down significantly
+      } else {
+        clonedModel.scale.set(1.5, 1.5, 1.5);
+        clonedModel.position.set(0, -1, 1);
+      }
+      
+      // Track if we found and applied texture to Box mesh
+      let boxMeshFound = false;
+      
+      // Log all meshes when we have a box model and background texture
+      if ((modelPath.includes('tinyVotiveBox') || modelPath.includes('tinyJapCanBox')) && backgroundTexturePath) {
+        console.log('=== SEARCHING FOR BOX MESH ===');
+        console.log('Model:', modelPath);
+        console.log('Background texture to apply:', backgroundTexturePath);
+      }
+      
+      // Enable shadows and ensure materials/textures are visible
+      clonedModel.traverse((child) => {
+        if (child.isMesh) {
+          // Debug: Log ALL meshes for Japanese candle box to find the right one
+          if (modelPath.includes('tinyJapCanBox')) {
+            console.log(`[JapCanBox] Mesh found: name="${child.name}", material="${child.material?.name}"`);
+          }
+          
+          child.castShadow = true;
+          child.receiveShadow = true;
+          
+          // Log all meshes when we have a box model
+          if ((modelPath.includes('tinyVotiveBox') || modelPath.includes('tinyJapCanBox')) && backgroundTexturePath) {
+            console.log(`Mesh: "${child.name}" | Material: "${child.material?.name}" | Has map: ${!!child.material?.map}`);
+          }
+          
+          // Ensure material and textures are properly configured
+          if (child.material) {
+            // Clone the material to avoid affecting the original
+            child.material = child.material.clone();
+            
+            // Don't modify materials unless absolutely necessary
+            // The model already has correct transparency settings from Blender
+            
+            // Ensure Card_Details renders on top of the plaque
+            if (child.name === 'Card_Details' || child.name === 'card' || child.name.toLowerCase().includes('card')) {
+              child.renderOrder = 10; // Render after the plaque
+              if (child.material) {
+                child.material.depthWrite = true;
+                child.material.depthTest = true;
+              }
+            }
+            
+            // Target the 'senora' object/mesh/material specifically for votive candles
+            const isSenoraObject = child.name === 'senora' || 
+                                  child.material.name === 'senora' ||
+                                  (child.parent && child.parent.name === 'senora');
+            
+            // Only apply custom image if it's different from the default senora.png
+            // If no custom image or it's the default, keep the original texture
+            const shouldApplyCustomTexture = customImageUrl && 
+                                            customImageUrl !== '/senora.png' && 
+                                            (modelPath.includes('tinyVotiveOnly') || modelPath.includes('tinyVotiveBox')) && 
+                                            isSenoraObject;
+            
+            // If custom image URL is provided and this is the senora mesh (for votive)
+            if (shouldApplyCustomTexture) {
+              textureLoader.load(
+                customImageUrl,
+                (texture) => {
+                  texture.colorSpace = THREE.SRGBColorSpace;
+                  texture.flipY = false; // Adjust based on your model
+                  texture.wrapS = THREE.ClampToEdgeWrapping;
+                  texture.wrapT = THREE.ClampToEdgeWrapping;
+                  texture.needsUpdate = true;
+                  
+                  // Enable transparency for PNG images
+                  child.material.map = texture;
+                  child.material.transparent = true;
+                  child.material.opacity = 1;
+                  child.material.alphaTest = 0.1; // Helps with transparency edges
+                  child.material.needsUpdate = true;
+                },
+                undefined,
+                (error) => {
+                  console.error('Error loading texture:', error);
+                  // Fallback to original texture if custom fails
+                  if (child.material.map) {
+                    child.material.map.needsUpdate = true;
+                    child.material.map.colorSpace = THREE.SRGBColorSpace;
+                    child.material.transparent = true;
+                    child.material.opacity = 1;
+                  }
+                }
+              );
+            }
+            
+            // Apply background texture to the Box mesh for box models
+            // Only target the specific "Box" mesh, not "OuterBox" or other box-related meshes
+            const isBoxMesh = child.name === 'Box' || child.name === 'box';
+            
+            // Debug log for Japanese candle box
+            if (modelPath.includes('tinyJapCanBox') && child.name.toLowerCase().includes('box')) {
+              console.log(`Japanese box model - Found mesh: "${child.name}"`);
+            }
+            
+            if (isBoxMesh && (modelPath.includes('tinyVotiveBox') || modelPath.includes('tinyJapCanBox'))) {
+              boxMeshFound = true;
+              // Store reference to the Box mesh
+              boxMeshRef.current = child;
+              
+              // Store the original texture if it exists
+              if (child.material && child.material.map) {
+                originalBoxTextureRef.current = child.material.map;
+                console.log(`✓ FOUND BOX MESH: "${child.name}" with original texture`);
+                
+                // If the current background selection is 'none', remove the default texture immediately
+                if (!backgroundTexturePath) {
+                  console.log('Removing default texture from Box mesh (No Background selected)');
+                  child.material.map = null;
+                  child.material.needsUpdate = true;
+                  // Set a neutral color for the box
+                  if (child.material.color) {
+                    child.material.color.set(0x333333); // Dark gray
+                  }
+                }
+              } else {
+                originalBoxTextureRef.current = null;
+                console.log(`✓ FOUND BOX MESH: "${child.name}" (no texture)`);
+              }
+              
+              // Log mesh properties for debugging
+              if (child.geometry) {
+                child.geometry.computeBoundingBox();
+                const box = child.geometry.boundingBox;
+                console.log('Box mesh dimensions:', {
+                  width: box.max.x - box.min.x,
+                  height: box.max.y - box.min.y,
+                  depth: box.max.z - box.min.z
+                });
+                console.log('Box mesh position:', child.position);
+                console.log('Box mesh scale:', child.scale);
+              }
+            }
+            
+            // Update material
+            child.material.needsUpdate = true;
+          }
+        }
+      });
+      
+      // Log if we didn't find the Box mesh
+      if ((modelPath.includes('tinyVotiveBox') || modelPath.includes('tinyJapCanBox')) && backgroundTexturePath && !boxMeshFound) {
+        console.log('✗ BOX MESH NOT FOUND in model!');
+      }
+      
+      // Clear previous model and add new one
+      while (modelRef.current.children.length > 0) {
+        modelRef.current.remove(modelRef.current.children[0]);
+      }
+      
+      // Add the model to the group
+      groupRef.current = clonedModel;
+      modelRef.current.add(clonedModel);
+    }
+  }, [scene, materials, modelPath, customImageUrl]);
+  
+  // Separate effect for background texture application
+  React.useEffect(() => {
+    if (boxMeshRef.current && backgroundTexturePath && (modelPath.includes('tinyVotiveBox') || modelPath.includes('tinyJapCanBox'))) {
+      // Only load the texture if it's different from the current one
+      if (currentBackgroundPath.current !== backgroundTexturePath) {
+        console.log(`Applying background texture to Box mesh: ${backgroundTexturePath}`);
+        currentBackgroundPath.current = backgroundTexturePath;
+        
+        // Dispose of previous custom texture if exists (but not the original)
+        if (backgroundTextureRef.current && backgroundTextureRef.current !== originalBoxTextureRef.current) {
+          backgroundTextureRef.current.dispose();
+          backgroundTextureRef.current = null;
+        }
+        
+        textureLoader.load(
+          backgroundTexturePath,
+          (texture) => {
+            // Check if this is still the current texture we want
+            if (currentBackgroundPath.current === backgroundTexturePath && boxMeshRef.current) {
+              console.log('✓ Background texture loaded successfully');
+              console.log('Applying to mesh:', boxMeshRef.current.name, 'for model:', modelPath);
+              
+              texture.colorSpace = THREE.SRGBColorSpace;
+              texture.wrapS = THREE.ClampToEdgeWrapping;
+              texture.wrapT = THREE.ClampToEdgeWrapping;
+              texture.needsUpdate = true;
+              
+              // Store reference to prevent garbage collection
+              backgroundTextureRef.current = texture;
+              
+              // Update the existing material's texture instead of replacing the whole material
+              boxMeshRef.current.material.map = texture;
+              boxMeshRef.current.material.needsUpdate = true;
+              
+              // Ensure the material is set up correctly for texture display
+              if (boxMeshRef.current.material.color) {
+                boxMeshRef.current.material.color.set(0xffffff); // Reset to white to show texture colors
+              }
+              boxMeshRef.current.material.emissive = new THREE.Color(0x000000); // No emissive
+              boxMeshRef.current.material.emissiveIntensity = 0;
+              
+              console.log('✓ Background texture applied to Box mesh successfully');
+              console.log('Material check:', {
+                hasMap: !!boxMeshRef.current.material.map,
+                meshName: boxMeshRef.current.name,
+                modelPath: modelPath,
+                materialType: boxMeshRef.current.material.type,
+                visible: boxMeshRef.current.visible
+              });
+            }
+          },
+          undefined,
+          (error) => {
+            console.error('✗ Error loading background texture:', error);
+          }
+        );
+      }
+    } else if (boxMeshRef.current && !backgroundTexturePath) {
+      // Clear texture completely when "No Background" is selected
+      console.log('Clearing Box mesh texture (No Background selected)');
+      currentBackgroundPath.current = null;
+      
+      // Dispose of the current texture if it's not the original
+      if (backgroundTextureRef.current && backgroundTextureRef.current !== originalBoxTextureRef.current) {
+        backgroundTextureRef.current.dispose();
+        backgroundTextureRef.current = null;
+      }
+      
+      // Remove texture completely
+      boxMeshRef.current.material.map = null;
+      boxMeshRef.current.material.needsUpdate = true;
+      
+      // Set a neutral color for the box when no texture
+      if (boxMeshRef.current.material.color) {
+        boxMeshRef.current.material.color.set(0x333333); // Dark gray
+      }
+    }
+  }, [backgroundTexturePath, modelPath]);
+  
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      // Clean up background texture reference
+      if (backgroundTextureRef.current) {
+        backgroundTextureRef.current.dispose();
+        backgroundTextureRef.current = null;
+      }
+      
+      // Clean up textures and materials when component unmounts
+      if (modelRef.current) {
+        modelRef.current.traverse((child) => {
+          if (child.material) {
+            if (child.material.map) child.material.map.dispose();
+            child.material.dispose();
+          }
+          if (child.geometry) {
+            child.geometry.dispose();
+          }
+        });
+        while (modelRef.current.children.length > 0) {
+          modelRef.current.remove(modelRef.current.children[0]);
+        }
+      }
+    };
+  }, []);
+  
+  return (
+    <group ref={modelRef}>
+      {showPlaque && dedicationName && (
+        <Html
+          position={[0, 0, -0.1]}
+          center
+          distanceFactor={18}
+          transform
+          style={{
+            transition: 'opacity 0.3s ease',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            transform: 'scale(0.4)',
+            opacity: plaqueVisible ? 1 : 0
+          }}
+        >
+          <div style={{
+            // background: 'linear-gradient(135deg, rgb(212, 175, 55), rgb(184, 134, 11))',
+            // border: '1px solid #b8860b',
+            borderRadius: '6px',
+            padding: '8px 12px',
+            // boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+            minWidth: '120px',
+            maxWidth: '180px',
+            minHeight: '100px',
+            textAlign: 'center',
+            fontFamily: 'Georgia, serif',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start'
+          }}>
+            {userAvatar && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                marginBottom: '4px'
+              }}>
+                <img 
+                  src={userAvatar} 
+                  alt="User" 
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    border: '1px solid #eaea0b',
+                    boxShadow: '0 0 4px rgba(234, 234, 11, 0.5)'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            <div style={{
+              color: '#eaea0b',
+              fontSize: '8px',
+              fontWeight: 'bold',
+              marginBottom: dedicationMessage ? '4px' : '0',
+              textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)'
+            }}>
+              {dedicationName}
+            </div>
+            {dedicationMessage && (
+              <div style={{
+              color: '#eaea0b',
+                fontSize: '6px',
+                fontStyle: 'italic',
+                lineHeight: '1.2',
+                flex: 1,
+                overflow: 'auto',
+                wordWrap: 'break-word',
+                maxWidth: '100%',
+                paddingTop: '2px'
+              }}>
+                "{dedicationMessage}"
+              </div>
+            )}
+            {burnAmount && burnAmount !== '0' && parseInt(burnAmount) > 0 && (
+              <div style={{
+                marginTop: '6px',
+                paddingTop: '4px',
+                borderTop: '1px solid rgba(234, 234, 11, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '3px'
+              }}>
+                <span style={{
+                  fontSize: '8px',
+                  filter: 'drop-shadow(0 0 2px rgba(255, 100, 0, 0.8))'
+                }}>🔥</span>
+                <span style={{
+                  color: '#ffb000',
+                  fontSize: '7px',
+                  fontWeight: 'bold',
+                  textShadow: '0 0 3px rgba(255, 176, 0, 0.5)'
+                }}>
+                  {parseInt(burnAmount).toLocaleString()} RL80
+                </span>
+              </div>
+            )}
+          </div>
+        </Html>
+      )}
+    </group>
+  );
+}
+
 const LANGUAGE_NAMES = {
   en: 'English',
   es: 'Spanish',
@@ -739,8 +1163,11 @@ function CandlePreview({
       <OrbitControls enablePan={false} enableZoom={true} minDistance={2} maxDistance={8} minPolarAngle={Math.PI / 3} maxPolarAngle={Math.PI / 2} autoRotate={false} />
     </>;
 }
-useGLTF.preload('/models/singleCandleAnimatedFlame.glb');
 const BACKGROUND_TEXTURES = [{
+  id: 'none',
+  path: null,
+  name: 'No Background'
+}, {
   id: 'cyberpunk',
   path: '/cyberpunk.webp',
   name: 'Cyberpunk'
@@ -767,7 +1194,7 @@ const BACKGROUND_TEXTURES = [{
 }];
 const sanitizeInput = (input, maxLength = 500) => {
   if (!input) return '';
-  let sanitized = String(input).trim();
+  let sanitized = String(input);  // Don't trim here - it prevents typing spaces
   sanitized = sanitized.replace(/<[^>]*>/g, '');
   sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
   sanitized = sanitized.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
@@ -859,6 +1286,7 @@ export default function CompactCandleModal({
     user,
     isSignedIn
   } = useUser();
+  const clerkImageUrl = user?.imageUrl;
   const [selectedPrayer, setSelectedPrayer] = useState(null);
   const [currentLanguage, setCurrentLanguage] = useState(getUserLanguage());
   const [formData, setFormData] = useState({
@@ -867,12 +1295,12 @@ export default function CompactCandleModal({
     candleHeight: 'medium',
     username: '',
     message: '',
-    burnedAmount: '1000',
+    burnedAmount: '0',  // Default to 0
     allowLikes: false,
-    background: 'synthwave'
+    background: 'none'  // Default to no background
   });
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imagePreview, setImagePreview] = useState('/senora.png'); // Default to senora.png
   const [selectedTemplate, setSelectedTemplate] = useState('/images/face2.png');
   const [templatePosition, setTemplatePosition] = useState({
     x: 67,
@@ -954,7 +1382,7 @@ export default function CompactCandleModal({
         candleType: 'votive',
         username: '',
         message: '',
-        burnedAmount: '1000',
+        burnedAmount: '0',  // Default to 0
         allowLikes: false
       });
       setCurrentStep(1);
@@ -1326,8 +1754,10 @@ export default function CompactCandleModal({
       setError('Message must be less than 500 bytes');
       return;
     }
-    if (!formData.burnedAmount || formData.burnedAmount === '0') {
-      formData.burnedAmount = '1000';
+    // Don't allow submission with 0 tokens
+    if (!formData.burnedAmount || formData.burnedAmount === '0' || parseInt(formData.burnedAmount) === 0) {
+      setError('Please select an amount of tokens to burn (minimum 1000)');
+      return;
     }
     captureCandle();
     setShowConfirmDialog(true);
@@ -1386,7 +1816,7 @@ export default function CompactCandleModal({
       setCandleWasCreated(true);
       setSavedCandleData({
         username: formData.username || 'Anonymous',
-        imageUrl: imageUrl,
+        imageUrl: imagePreview || imageUrl,  // Use imagePreview (selected image) for snapshot, fallback to uploaded URL
         message: formData.message,
         burnedAmount: docData.burnedAmount,
         candleType: formData.candleType,
@@ -1398,7 +1828,7 @@ export default function CompactCandleModal({
         candleType: 'votive',
         username: '',
         message: '',
-        burnedAmount: 1000,
+        burnedAmount: '0',  // Reset to 0
         allowLikes: false
       });
       setCurrentStep(1);
@@ -1451,18 +1881,15 @@ export default function CompactCandleModal({
               {[{
               value: 'votive',
               label: 'Votive',
-              description: 'Classic prayer candle',
-              image: '/votiveCandlePreview.webp'
+              description: 'Classic candle box',
+              image: '/tinyVotive.webp',
+              modelPath: '/models/tinyVotiveOnly.glb'
             }, {
               value: 'japanese',
               label: 'Japanese',
-              description: 'Minimalist zen style',
-              image: '/japaneseCandlePreview.webp'
-            }, {
-              value: 'ecclesiastical',
-              label: 'Classic',
-              description: 'Traditional church candle',
-              image: '/EcclesiasticalMediumPreview.webp'
+              description: 'Traditional Japanese style',
+              image: '/tinyJapCan.webp',
+              modelPath: '/models/tinyJapCanOnly.glb'
             }].map(type => <button key={type.value} className="candle-type-button" onClick={() => {
               setFormData(prev => ({
                 ...prev,
@@ -1503,8 +1930,8 @@ export default function CompactCandleModal({
                 backgroundColor: 'rgba(0, 0, 0, 0.2)'
               }}>
                     <img src={type.image} alt={type.label} style={{
-                  width: type.value === 'ecclesiastical' || type.value === 'japanese' ? '120%' : '100%',
-                  height: type.value === 'ecclesiastical' || type.value === 'japanese' ? '120%' : '100%',
+                  width: '100%',
+                  height: '100%',
                   objectFit: 'contain'
                 }} />
                   </div>
@@ -1528,6 +1955,24 @@ export default function CompactCandleModal({
             </div>
           </div>;
       case 2:
+        // For Japanese candles, we skip the personalization step
+        // But we should still allow going back to step 1
+        if (formData.candleType === 'japanese') {
+          // Don't render anything for step 2, but don't force navigation here
+          return <div style={{
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '400px'
+          }}>
+            <p style={{ color: '#999', fontSize: '14px' }}>
+              Japanese candles don't support personalization
+            </p>
+          </div>;
+        }
+        
         return <div style={{
           padding: '20px'
         }}>
@@ -1536,408 +1981,202 @@ export default function CompactCandleModal({
             marginBottom: '20px',
             color: '#ffd700',
             textAlign: 'center'
-          }}>Personalize Your Candle</h3>
+          }}>Choose Your Image</h3>
             
-            {formData.candleType === 'votive' ? <div style={{
-            marginBottom: '20px'
-          }}>
-                <label style={{
-              display: 'block',
-              padding: '12px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
-              border: '1px solid rgba(255, 215, 0, 0.3)',
-              cursor: 'pointer',
-              textAlign: 'center',
-              transition: 'all 0.2s ease'
+            <div style={{
+              marginBottom: '20px'
             }}>
-                  <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleImageChange} style={{
-                display: 'none'
-              }} />
-                  <span style={{
-                color: imageFile ? '#00ff00' : 'rgba(255, 215, 0, 0.8)',
-                fontWeight: '600',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
-              }}>
-                    {imageFile ? <>✅ Image Uploaded</> : <>📷 {imagePreview ? 'Change' : 'Add'} Your Image</>}
-                  </span>
-                </label>
-                
-                {imagePreview && <div className="image-preview-container" style={{
-              marginTop: '10px',
-              textAlign: 'center'
-            }}>
-                    <img src={imagePreview} alt="Preview" style={{
-                maxWidth: '100px',
-                maxHeight: '100px',
-                borderRadius: '8px',
-                border: '1px solid rgba(255, 215, 0, 0.3)'
-              }} />
-                  </div>}
-                
-                {(imageFile || imagePreview) && <div style={{
-              marginTop: '15px',
-              marginBottom: '10px'
-            }}>
-                    <div style={{
-                color: 'rgba(255, 215, 0, 0.9)',
-                fontSize: '12px',
-                marginBottom: '8px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                      Select Template Style
-                      <span style={{
-                  fontSize: '10px',
-                  opacity: 0.7,
-                  fontWeight: 'normal'
-                }}>← swipe →</span>
-                    </div>
-                    <div className="template-gallery" style={{
-                display: 'flex',
-                gap: '8px',
-                overflowX: 'auto',
-                padding: '8px 4px',
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none'
-              }}>
-                      {templates.map(template => <button key={template.id} type="button" onClick={() => selectTemplate(template)} style={{
-                  minWidth: '80px',
-                  width: '80px',
-                  height: '90px',
-                  padding: '4px',
-                  backgroundColor: selectedTemplate === template.id ? 'rgba(255, 102, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)',
-                  border: selectedTemplate === template.id ? '2px solid #ff6600' : '1px solid rgba(255, 215, 0, 0.2)',
-                  borderRadius: '8px',
-                  color: selectedTemplate === template.id ? '#ff6600' : 'rgba(255, 255, 255, 0.9)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '2px',
-                  transition: 'all 0.3s ease',
-                  flexShrink: 0,
-                  transform: selectedTemplate === template.id ? 'scale(1.02)' : 'scale(1)'
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '15px',
+                  maxWidth: '500px',
+                  margin: '0 auto'
                 }}>
-                          {template.id ? <img src={template.id} alt={template.name} style={{
-                    width: '60px',
-                    height: '60px',
-                    objectFit: 'cover',
-                    borderRadius: '4px',
-                    marginTop: '2px'
-                  }} /> : <div style={{
-                    fontSize: '32px',
-                    height: '60px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>{template.preview}</div>}
-                          <div style={{
-                    fontSize: '10px',
-                    fontWeight: selectedTemplate === template.id ? 'bold' : 'normal',
-                    opacity: selectedTemplate === template.id ? 1 : 0.8,
-                    lineHeight: '1.2',
-                    textAlign: 'center',
-                    padding: '0 2px',
-                    marginBottom: '2px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    width: '100%'
-                  }}>
-                            {template.name}
-                          </div>
-                        </button>)}
-                    </div>
-                  </div>}
-
-                {(imageFile || imagePreview) && selectedTemplate && <>
-                    <button type="button" onClick={() => setShowPositionControls(!showPositionControls)} style={{
-                width: '100%',
-                padding: '8px',
-                marginTop: '10px',
-                backgroundColor: showPositionControls ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 102, 0, 0.1)',
-                border: '1px solid rgba(255, 102, 0, 0.4)',
-                borderRadius: '6px',
-                color: showPositionControls ? '#ff6600' : 'rgba(255, 255, 255, 0.8)',
-                cursor: 'pointer',
-                fontSize: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.3s ease'
-              }}>
-                      {showPositionControls ? '▼' : '▶'} Adjust Image Position
+                  {/* User's Clerk Image Option */}
+                  {clerkImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(clerkImageUrl);
+                        setImageFile(null);
+                      }}
+                      style={{
+                        padding: '15px',
+                        background: imagePreview === clerkImageUrl ? 
+                          'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))' : 
+                          'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                        border: imagePreview === clerkImageUrl ? '2px solid #ffd700' : '1px solid rgba(255, 215, 0, 0.3)',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '10px',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <img 
+                        src={clerkImageUrl} 
+                        alt="Your Image" 
+                        style={{
+                          width: '80px',
+                          height: '80px',
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }} 
+                      />
+                      <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Your Image</span>
                     </button>
-                    
-                    <div style={{
-                maxHeight: showPositionControls ? '250px' : '0',
-                overflow: 'hidden',
-                transition: 'all 0.3s ease',
-                marginTop: showPositionControls ? '10px' : '0'
-              }}>
-                      <div style={{
-                  padding: '12px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(255, 102, 0, 0.2)',
-                  borderRadius: '8px'
-                }}>
-                        <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '8px'
+                  )}
+                  
+                  {/* Senora Option (Default) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImagePreview('/senora.png');
+                      setImageFile(null);
+                    }}
+                    style={{
+                      padding: '15px',
+                      background: imagePreview === '/senora.png' ? 
+                        'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))' : 
+                        'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                      border: imagePreview === '/senora.png' ? '2px solid #ffd700' : '1px solid rgba(255, 215, 0, 0.3)',
+                      borderRadius: '12px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '10px',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <img 
+                      src="/senora.png" 
+                      alt="Senora" 
+                      style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '8px',
+                        objectFit: 'cover'
+                      }} 
+                    />
+                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Senora (Default)</span>
+                  </button>
+                  
+                  {/* PinkCloudA Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImagePreview('/PinkCloudA.png');
+                      setImageFile(null);
+                    }}
+                    style={{
+                      padding: '15px',
+                      background: imagePreview === '/PinkCloudA.png' ? 
+                        'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))' : 
+                        'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                      border: imagePreview === '/PinkCloudA.png' ? '2px solid #ffd700' : '1px solid rgba(255, 215, 0, 0.3)',
+                      borderRadius: '12px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '10px',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <img 
+                      src="/PinkCloudA.png" 
+                      alt="Pink Cloud" 
+                      style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '8px',
+                        objectFit: 'cover'
+                      }} 
+                    />
+                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Pink Cloud</span>
+                  </button>
+                  
+                  {/* Nosferatu Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImagePreview('/nosferatu.png');
+                      setImageFile(null);
+                    }}
+                    style={{
+                      padding: '15px',
+                      background: imagePreview === '/nosferatu.png' ? 
+                        'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))' : 
+                        'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                      border: imagePreview === '/nosferatu.png' ? '2px solid #ffd700' : '1px solid rgba(255, 215, 0, 0.3)',
+                      borderRadius: '12px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '10px',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <img 
+                      src="/nosferatu.png" 
+                      alt="Nosferatu" 
+                      style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '8px',
+                        objectFit: 'cover'
+                      }} 
+                    />
+                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Nosferatu</span>
+                  </button>
+                  
+                  {/* Custom Upload Option */}
+                  <label style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '15px',
+                    background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
                   }}>
-                          
-                          <div>
-                            <label style={{
-                        fontSize: '11px',
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        marginBottom: '2px',
-                        display: 'block'
-                      }}>
-                              X: {userImagePosition.x.toFixed(0)}%
-                            </label>
-                            <input type="range" min="0" max="100" value={userImagePosition.x} onChange={e => setUserImagePosition({
-                        ...userImagePosition,
-                        x: parseFloat(e.target.value)
-                      })} style={{
-                        width: '100%',
-                        height: '4px',
-                        background: 'linear-gradient(to right, rgba(255, 102, 0, 0.3) 0%, #ff6600 100%)',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }} />
-                          </div>
-                          
-                          <div>
-                            <label style={{
-                        fontSize: '11px',
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        marginBottom: '2px',
-                        display: 'block'
-                      }}>
-                              Y: {userImagePosition.y.toFixed(0)}%
-                            </label>
-                            <input type="range" min="25" max="75" value={userImagePosition.y} onChange={e => setUserImagePosition({
-                        ...userImagePosition,
-                        y: parseFloat(e.target.value)
-                      })} style={{
-                        width: '100%',
-                        height: '4px',
-                        background: 'linear-gradient(to right, rgba(255, 102, 0, 0.3) 0%, #ff6600 100%)',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }} />
-                          </div>
-                          
-                          <div>
-                            <label style={{
-                        fontSize: '11px',
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        marginBottom: '2px',
-                        display: 'block'
-                      }}>
-                              Size: {userImageScale}%
-                            </label>
-                            <input type="range" min="50" max="150" value={userImageScale} onChange={e => setUserImageScale(parseFloat(e.target.value))} style={{
-                        width: '100%',
-                        height: '4px',
-                        background: 'linear-gradient(to right, rgba(255, 102, 0, 0.3) 0%, #ff6600 100%)',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }} />
-                          </div>
-                        </div>
-                        
-                        {selectedTemplate === '/images/face2.png' && <div style={{
-                    marginTop: '8px',
-                    padding: '8px',
-                    backgroundColor: 'rgba(255, 215, 0, 0.05)',
-                    borderRadius: '6px'
-                  }}>
-                            <label style={{
-                      fontSize: '11px',
-                      color: 'rgba(255, 255, 255, 0.6)',
-                      marginBottom: '2px',
-                      display: 'block'
-                    }}>
-                              Skin Tone: {skinToneAdjustment > 0 ? '+' : ''}{skinToneAdjustment}
-                            </label>
-                            <input type="range" min="-100" max="100" value={skinToneAdjustment} onChange={e => setSkinToneAdjustment(parseFloat(e.target.value))} style={{
-                      width: '100%',
-                      height: '4px',
-                      background: 'linear-gradient(to right, #663300 0%, #ffdbac 50%, #ffe0bd 100%)',
-                      outline: 'none',
-                      cursor: 'pointer'
+                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleImageChange} style={{
+                      display: 'none'
                     }} />
-                          </div>}
-                      </div>
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '32px'
+                    }}>
+                      📷
                     </div>
-                  </>}
-              </div> : formData.candleType === 'ecclesiastical' ? <div>
-                <div style={{
-              marginBottom: '20px'
-            }}>
-                  <label style={{
-                display: 'block',
-                marginBottom: '15px',
-                fontSize: '16px',
-                color: 'rgba(255, 215, 0, 0.9)',
-                fontWeight: 'bold',
-                textAlign: 'center'
-              }}>
-                    Choose Candle Height
+                    <span style={{
+                      color: imageFile ? '#00ff00' : 'rgba(255, 215, 0, 0.8)',
+                      fontWeight: '600',
+                      fontSize: '12px'
+                    }}>
+                      {imageFile ? 'Uploaded' : 'Custom'}
+                    </span>
                   </label>
-                  
-                  <div style={{
-                display: 'flex',
-                gap: '10px',
-                padding: '0 10px',
-                width: '100%',
-                justifyContent: 'space-between'
-              }}>
-                    {[{
-                  value: 'short',
-                  label: 'Short',
-                  description: 'Compact & intimate',
-                  image: '/EcclesiasticalShortPreview.webp'
-                }, {
-                  value: 'medium',
-                  label: 'Medium',
-                  description: 'Classic proportions',
-                  image: '/EcclesiasticalMediumPreview.webp'
-                }, {
-                  value: 'tall',
-                  label: 'Tall',
-                  description: 'Grand & stately',
-                  image: '/EcclesiasticalTallPreview.webp'
-                }].map(height => <button key={height.value} onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    candleHeight: height.value
-                  }));
-                }} style={{
-                  flex: 1,
-                  padding: '12px 8px',
-                  background: formData.candleHeight === height.value ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))' : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
-                  border: formData.candleHeight === height.value ? '2px solid #ffd700' : '1px solid rgba(255, 215, 0, 0.3)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '4px',
-                  minWidth: '0',
-                  boxShadow: formData.candleHeight === height.value ? '0 4px 15px rgba(255, 215, 0, 0.3)' : 'none'
-                }}>
-                        <div style={{
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    color: formData.candleHeight === height.value ? '#ffd700' : '#fff'
-                  }}>
-                          {height.label}
-                        </div>
-                        <div style={{
-                    fontSize: '10px',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    textAlign: 'center',
-                    lineHeight: '1.2'
-                  }}>
-                          {height.description}
-                        </div>
-                      </button>)}
-                  </div>
                 </div>
-              </div> : <div>
-                <div style={{
-              marginBottom: '20px'
-            }}>
-                  <label style={{
-                display: 'block',
-                marginBottom: '15px',
-                fontSize: '16px',
-                color: 'rgba(255, 215, 0, 0.9)',
-                fontWeight: 'bold',
-                textAlign: 'center'
-              }}>
-                    Choose Candle Height
-                  </label>
-                  
-                  <div style={{
-                display: 'flex',
-                gap: '10px',
-                padding: '0 10px',
-                width: '100%',
-                justifyContent: 'space-between'
-              }}>
-                    {[{
-                  value: 'short',
-                  label: 'Short',
-                  description: 'Intimate minimalism',
-                  image: '/JapaneseShortPreview.webp'
-                }, {
-                  value: 'medium',
-                  label: 'Medium',
-                  description: 'Balanced harmony',
-                  image: '/JapaneseMediumPreview.webp'
-                }, {
-                  value: 'tall',
-                  label: 'Tall',
-                  description: 'Zen elegance',
-                  image: '/JapaneseTallPreview.webp'
-                }].map(height => <button key={height.value} onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    candleHeight: height.value
-                  }));
-                }} style={{
-                  flex: 1,
-                  padding: '12px 8px',
-                  background: formData.candleHeight === height.value ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.2))' : 'linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))',
-                  border: formData.candleHeight === height.value ? '2px solid #ffd700' : '1px solid rgba(255, 215, 0, 0.3)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '4px',
-                  minWidth: '0',
-                  boxShadow: formData.candleHeight === height.value ? '0 4px 15px rgba(255, 215, 0, 0.3)' : 'none'
-                }}>
-                        <div style={{
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    color: formData.candleHeight === height.value ? '#ffd700' : '#fff'
-                  }}>
-                          {height.label}
-                        </div>
-                        <div style={{
-                    fontSize: '10px',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    textAlign: 'center',
-                    lineHeight: '1.2'
-                  }}>
-                          {height.description}
-                        </div>
-                      </button>)}
-                  </div>
-                </div>
-              </div>}
+              </div>
           </div>;
       case 3:
         return <div style={{
@@ -2264,12 +2503,27 @@ export default function CompactCandleModal({
                 transition: 'all 0.3s ease',
                 transform: formData.background === bg.id ? 'scale(1.05)' : 'scale(1)'
               }}>
-                    <img src={bg.path} alt={bg.name} style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  opacity: formData.background === bg.id ? 1 : 0.7
-                }} />
+                    {bg.path ? (
+                      <img src={bg.path} alt={bg.name} style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: formData.background === bg.id ? 1 : 0.7
+                      }} />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        fontSize: '24px'
+                      }}>
+                        ✕
+                      </div>
+                    )}
                     <div style={{
                   position: 'absolute',
                   bottom: '0',
@@ -2296,14 +2550,149 @@ export default function CompactCandleModal({
           </div>;
       case 6:
         return <div style={{
-          padding: '12px'
+          padding: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
         }}>
+            {/* Token Burn Amount - Prominent and separated */}
             <div style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '10px'
-          }}>
+              backgroundColor: 'rgba(255, 215, 0, 0.1)',
+              border: '2px solid rgba(255, 215, 0, 0.4)',
+              borderRadius: '12px',
+              padding: '16px',
+              boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)'
+            }}>
+              <label style={{
+                color: '#ffd700',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                display: 'block',
+                marginBottom: '8px',
+                textAlign: 'center'
+              }}>🔥 Select Token Amount to Burn (RL80) 🔥</label>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                justifyContent: 'center'
+              }}>
+                <button type="button" onClick={() => {
+                  const currentValue = parseInt(formData.burnedAmount) || 0;
+                  const newValue = Math.max(0, currentValue - 1000);
+                  setFormData(prev => ({
+                    ...prev,
+                    burnedAmount: newValue.toString()
+                  }));
+                }} style={{
+                  width: '40px',
+                  height: '40px',
+                  background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1))',
+                  border: '2px solid rgba(255, 215, 0, 0.5)',
+                  borderRadius: '8px',
+                  color: '#ffd700',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }} onMouseOver={e => {
+                  e.target.style.transform = 'scale(1.1)';
+                }} onMouseOut={e => {
+                  e.target.style.transform = 'scale(1)';
+                }}>
+                  −
+                </button>
+                <input type="number" value={formData.burnedAmount} onChange={e => {
+                  const value = e.target.value;
+                  const numericValue = value.replace(/\D/g, '');
+                  if (numericValue === '') {
+                    setFormData(prev => ({
+                      ...prev,
+                      burnedAmount: '0'
+                    }));
+                  } else if (parseInt(numericValue) >= 0 && parseInt(numericValue) <= 1000000000000) {
+                    setFormData(prev => ({
+                      ...prev,
+                      burnedAmount: numericValue
+                    }));
+                  }
+                }} style={{
+                  width: '150px',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  border: '2px solid rgba(255, 215, 0, 0.5)',
+                  color: '#ffd700',
+                  fontSize: '18px',
+                  textAlign: 'center',
+                  fontWeight: 'bold'
+                }} min="0" placeholder="0" />
+                <button type="button" onClick={() => {
+                  const currentValue = parseInt(formData.burnedAmount) || 0;
+                  const newValue = currentValue + 1000;
+                  setFormData(prev => ({
+                    ...prev,
+                    burnedAmount: newValue.toString()
+                  }));
+                }} style={{
+                  width: '40px',
+                  height: '40px',
+                  background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1))',
+                  border: '2px solid rgba(255, 215, 0, 0.5)',
+                  borderRadius: '8px',
+                  color: '#ffd700',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }} onMouseOver={e => {
+                  e.target.style.transform = 'scale(1.1)';
+                }} onMouseOut={e => {
+                  e.target.style.transform = 'scale(1)';
+                }}>
+                  +
+                </button>
+              </div>
+              {formData.burnedAmount === '0' || !formData.burnedAmount ? (
+                <div style={{
+                  color: '#ff6b6b',
+                  fontSize: '12px',
+                  textAlign: 'center',
+                  marginTop: '8px'
+                }}>
+                  ⚠️ Minimum 1000 tokens required to light candle
+                </div>
+              ) : (
+                <div style={{
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '12px',
+                  textAlign: 'center',
+                  marginTop: '8px'
+                }}>
+                  Amount: {parseInt(formData.burnedAmount).toLocaleString()} RL80
+                </div>
+              )}
+            </div>
+
+            {/* Summary Section */}
+            <div style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '8px',
+              padding: '12px'
+            }}>
+              <h3 style={{
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '12px',
+                marginBottom: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>Candle Summary</h3>
               <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
@@ -2336,9 +2725,8 @@ export default function CompactCandleModal({
                   fontSize: '13px',
                   marginTop: '2px'
                 }}>
-                    {formData.candleType === 'ecclesiastical' && '⛪ Classic'}
-                    {formData.candleType === 'japanese' && '🏮 Japanese'}
-                    {formData.candleType === 'votive' && '🕯️ Votive'}
+                    {formData.candleType === 'japanese' && '🏮 Japanese Box'}
+                    {formData.candleType === 'votive' && '🕯️ Votive Box'}
                   </div>
                 </div>
               </div>
@@ -2424,7 +2812,7 @@ export default function CompactCandleModal({
                   fontSize: '13px',
                   marginTop: '2px'
                 }}>
-                    {BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.name || 'Synthwave'}
+                    {BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.name || 'No Background'}
                   </div>
                 </div>
               </div>
@@ -2449,92 +2837,6 @@ export default function CompactCandleModal({
                   {unescapeForDisplay(formData.message) || 'No message'}
                 </div>
               </div>
-              
-              <div style={{
-              marginTop: '10px'
-            }}>
-                <label style={{
-                color: 'rgba(255, 255, 255, 0.6)',
-                fontSize: '10px',
-                display: 'block',
-                marginBottom: '4px'
-              }}>Candle Offering (RL80)</label>
-                <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                  <button type="button" onClick={() => {
-                  const currentValue = parseInt(formData.burnedAmount) || 0;
-                  const newValue = Math.max(1000, currentValue - 1000);
-                  setFormData(prev => ({
-                    ...prev,
-                    burnedAmount: newValue.toString()
-                  }));
-                }} style={{
-                  width: '28px',
-                  height: '28px',
-                  background: 'rgba(255, 215, 0, 0.2)',
-                  border: '1px solid rgba(255, 215, 0, 0.3)',
-                  borderRadius: '4px',
-                  color: 'rgba(255, 215, 0, 0.8)',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                    −
-                  </button>
-                  <input type="number" value={formData.burnedAmount} onChange={e => {
-                  const value = e.target.value;
-                  const numericValue = value.replace(/\D/g, '');
-                  if (numericValue === '') {
-                    setFormData(prev => ({
-                      ...prev,
-                      burnedAmount: '1000'
-                    }));
-                  } else if (parseInt(numericValue) >= 1000 && parseInt(numericValue) <= 1000000000000) {
-                    setFormData(prev => ({
-                      ...prev,
-                      burnedAmount: numericValue
-                    }));
-                  }
-                }} style={{
-                  flex: 1,
-                  padding: '6px',
-                  borderRadius: '4px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(255, 215, 0, 0.3)',
-                  color: '#ffd700',
-                  fontSize: '12px',
-                  textAlign: 'center',
-                  fontWeight: 'bold'
-                }} min="1000" />
-                  <button type="button" onClick={() => {
-                  const currentValue = parseInt(formData.burnedAmount) || 0;
-                  const newValue = currentValue + 1000;
-                  setFormData(prev => ({
-                    ...prev,
-                    burnedAmount: newValue.toString()
-                  }));
-                }} style={{
-                  width: '28px',
-                  height: '28px',
-                  background: 'rgba(255, 215, 0, 0.2)',
-                  border: '1px solid rgba(255, 215, 0, 0.3)',
-                  borderRadius: '4px',
-                  color: 'rgba(255, 215, 0, 0.8)',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                    +
-                  </button>
-                </div>
-              </div>
             </div>
           </div>;
       default:
@@ -2543,12 +2845,25 @@ export default function CompactCandleModal({
   };
   const handleNext = () => {
     if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+      // Skip step 2 (personalization) for Japanese candles
+      if (currentStep === 1 && formData.candleType === 'japanese') {
+        setCurrentStep(3); // Jump directly to step 3
+      } else {
+        setCurrentStep(currentStep + 1);
+      }
     }
   };
   const handlePrev = () => {
+    console.log('handlePrev called, currentStep:', currentStep);
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      // For Japanese candles, skip step 2 when going back from step 3
+      if (currentStep === 3 && formData.candleType === 'japanese') {
+        setCurrentStep(1); // Jump back to step 1
+        console.log('Skipping step 2, moving to step: 1');
+      } else {
+        setCurrentStep(currentStep - 1);
+        console.log('Moving to step:', currentStep - 1);
+      }
     }
   };
   const ExitDialog = () => {
@@ -2638,7 +2953,7 @@ export default function CompactCandleModal({
       <ExitDialog />
       
       {}
-      {isOpen && currentStep >= 5 && formData.candleType && formData.background && <div style={{
+      {false && isOpen && currentStep >= 5 && formData.candleType && formData.background && <div style={{
       position: 'fixed',
       top: '-9999px',
       left: '-9999px',
@@ -2833,51 +3148,66 @@ export default function CompactCandleModal({
                 overflow: 'hidden'
               }}>
               
-              {currentStep >= 5 && formData.background && <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  zIndex: 0
+              {!formData.candleType && currentStep === 1 ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  color: 'rgba(255, 255, 255, 0.3)',
+                  fontSize: '14px',
+                  textAlign: 'center'
                 }}>
-                  <img src={BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.path || '/synthwave.webp'} alt="Background" style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    opacity: 0.4
-                  }} />
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'radial-gradient(circle at center, transparent 20%, rgba(0,0,0,0.6) 100%)',
-                    pointerEvents: 'none'
-                  }} />
-                </div>}
-              {formData.candleType === 'votive' && (currentStep === 2 || imagePreview) ? <Canvas key={`votive-canvas-${canvasKey}`} camera={{
-                  position: [0, 2, 7],
-                  fov: 45
+                  Select a candle type to see preview
+                </div>
+              ) : formData.candleType ? <Canvas camera={{
+                  position: (currentStep === 5 || currentStep === 6) ? [0, -3, 9] : [0, 1, 5],
+                  fov: 50
                 }} style={{
                   background: 'transparent',
                   position: 'relative',
                   zIndex: 1
-                }} dpr={1} gl={{
-                  antialias: false,
+                }} dpr={window.devicePixelRatio} gl={{
+                  antialias: true,
                   alpha: true,
-                  powerPreference: "low-power",
-                  preserveDrawingBuffer: false
+                  powerPreference: "high-performance",
+                  preserveDrawingBuffer: true,
+                  outputColorSpace: THREE.SRGBColorSpace
                 }}>
-                  <ambientLight intensity={1} />
-                  
+                  <ambientLight intensity={1.2} />
+                  <directionalLight position={[5, 10, 5]} intensity={0.8} castShadow />
                   <pointLight position={[0, 3, 2]} intensity={0.5} color="#ffaa00" />
+                  <pointLight position={[-3, 2, -2]} intensity={0.3} color="#ffffff" />
                   <Suspense fallback={null}>
-                    <CandlePreview imageUrl={imagePreview || '/defaultAvatar.png'} message={formData.message} isEncrypted={false} username={formData.username} language={currentLanguage} template={selectedTemplate} templatePosition={templatePosition} templateScale={templateScale} templateRotation={templateRotation} skinToneAdjustment={skinToneAdjustment} userImagePosition={userImagePosition} userImageScale={userImageScale} userImageRotation={userImageRotation} candleModel='/models/singleCandleAnimatedFlamePreview.glb' />
+                    {formData.candleType && <SimpleCandleViewer 
+                      modelPath={
+                        (currentStep === 5 || currentStep === 6 || formData.background)
+                          ? (formData.candleType === 'japanese' ? '/models/tinyJapCanBox.glb' : '/models/tinyVotiveBox.glb')
+                          : (formData.candleType === 'japanese' ? '/models/tinyJapCanOnly.glb' : '/models/tinyVotiveOnly.glb')
+                      } 
+                      customImageUrl={imagePreview || imageFile ? imagePreview : null}
+                      backgroundTexturePath={formData.background ? 
+                        BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.path : null
+                      }
+                      showPlaque={currentStep === 5 || currentStep === 6}
+                      dedicationName={formData.username}
+                      dedicationMessage={formData.message}
+                      userAvatar={clerkImageUrl || imagePreview}
+                      burnAmount={formData.burnedAmount}
+                    />}
                   </Suspense>
-                  <OrbitControls enablePan={false} enableZoom={true} minDistance={2} maxDistance={8} minPolarAngle={Math.PI / 3} maxPolarAngle={Math.PI / 2} />
-                </Canvas> : <img src={formData.candleType === 'ecclesiastical' ? formData.candleHeight === 'short' ? '/EcclesiasticalShortPreview.webp' : formData.candleHeight === 'tall' ? '/EcclesiasticalTallPreview.webp' : '/EcclesiasticalMediumPreview.webp' : formData.candleType === 'japanese' ? formData.candleHeight === 'short' ? '/JapaneseShortPreview.webp' : formData.candleHeight === 'tall' ? '/JapaneseTallPreview.webp' : '/JapaneseMediumPreview.webp' : '/votiveCandlePreview.webp'} alt={`${formData.candleType} candle`} style={{
+                  <OrbitControls 
+                    enablePan={false} 
+                    enableZoom={true} 
+                    minDistance={3} 
+                    maxDistance={(currentStep === 5 || currentStep === 6) ? 12 : 10} 
+                    minPolarAngle={Math.PI / 4} 
+                    maxPolarAngle={Math.PI / 2}
+                    // autoRotate={currentStep !== 5 && currentStep !== 6}
+                    // autoRotateSpeed={2}
+                    target={(currentStep === 5 || currentStep === 6) ? [0, -1, 0] : [0, 0, 0]}
+                  />
+                </Canvas> : <img src={formData.candleType === 'japanese' ? '/tinyJapCan.webp' : '/tinyVotive.webp'} alt={`${formData.candleType} candle`} style={{
                   width: 'auto',
                   height: '100%',
                   maxWidth: '100%',
@@ -2941,7 +3271,7 @@ export default function CompactCandleModal({
                 marginBottom: '10px',
                 gap: '8px'
               }}>
-              {[1, 2, 3, 4, 5].map(step => <div key={step} style={{
+              {[1, 2, 3, 4, 5, 6].map(step => <div key={step} style={{
                   width: '40px',
                   height: '4px',
                   backgroundColor: currentStep >= step ? '#ffd700' : 'rgba(255, 215, 0, 0.2)',
@@ -2970,7 +3300,11 @@ export default function CompactCandleModal({
                 zIndex: 100,
                 backdropFilter: 'blur(10px)'
               }}>
-              <button onClick={handlePrev} style={{
+              <button onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handlePrev();
+                }} style={{
                   padding: '10px 20px',
                   background: currentStep === 1 ? 'transparent' : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 237, 78, 0.2))',
                   border: '1px solid rgba(255, 215, 0, 0.4)',
@@ -2979,7 +3313,9 @@ export default function CompactCandleModal({
                   cursor: currentStep === 1 ? 'not-allowed' : 'pointer',
                   fontSize: '14px',
                   fontWeight: 'bold',
-                  opacity: currentStep === 1 ? 0.5 : 1
+                  opacity: currentStep === 1 ? 0.5 : 1,
+                  position: 'relative',
+                  zIndex: 101
                 }} disabled={currentStep === 1}>
                 Back
               </button>
@@ -3006,7 +3342,7 @@ export default function CompactCandleModal({
                   fontSize: '14px',
                   fontWeight: 'bold',
                   boxShadow: '0 4px 15px rgba(255, 107, 53, 0.4)'
-                }} disabled={isSubmitting || !formData.messageType || !formData.candleType || !formData.username.trim()}>
+                }} disabled={isSubmitting || !formData.messageType || !formData.candleType || !formData.username.trim() || !formData.burnedAmount || formData.burnedAmount === '0' || parseInt(formData.burnedAmount) === 0}>
                   {isSubmitting ? 'Lighting...' : 'Light Candle 🔥'}
                 </button>}
             </div>
@@ -3744,7 +4080,7 @@ export default function CompactCandleModal({
                   }}>
                   Cancel
                 </button>
-                <button type="submit" className="compact-btn-submit" disabled={isSubmitting || !formData.username.trim() || !formData.message.trim()} title={!formData.username.trim() || !formData.message.trim() ? 'Please fill in all required fields' : 'Review and light your candle'} style={{
+                <button type="submit" className="compact-btn-submit" disabled={isSubmitting || !formData.username.trim() || !formData.message.trim() || !formData.burnedAmount || formData.burnedAmount === '0' || parseInt(formData.burnedAmount) === 0} title={!formData.username.trim() || !formData.message.trim() ? 'Please fill in all required fields' : (!formData.burnedAmount || formData.burnedAmount === '0' ? 'Please select an amount of tokens to burn' : 'Review and light your candle')} style={{
                     flex: 1,
                     padding: '12px',
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',

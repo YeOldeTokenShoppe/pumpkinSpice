@@ -575,8 +575,8 @@ export default function CyborgTemple() {
               minPolarAngle={0}
               maxPolarAngle={Math.PI / 1.9}
               zoomToCursor={true}
-              // autoRotate={true}
-              // autoRotateSpeed={0.2}
+              autoRotate={true}
+              autoRotateSpeed={0.2}
               target={isMobileView ? [0, 4.2, 0] : [0, 0, 0]}
             />
           </Suspense>

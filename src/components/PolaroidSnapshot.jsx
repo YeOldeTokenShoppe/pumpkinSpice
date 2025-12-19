@@ -39,7 +39,7 @@ const PolaroidSnapshot = ({
           return;
         }
         
-        // If it's a canvas, use it; otherwise look for canvas inside it
+        // Find the canvas - either the element itself or a canvas inside it
         const canvas = element.tagName === 'CANVAS' ? element : element.querySelector('canvas');
         
         if (!canvas) {
@@ -48,50 +48,56 @@ const PolaroidSnapshot = ({
         }
         
         try {
-            // Create a new canvas that matches viewport aspect ratio
-            const tempCanvas = document.createElement('canvas');
-            const viewportRatio = window.innerHeight / window.innerWidth;
-            
-            // Use the canvas dimensions but adjust for viewport
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d', { 
-              preserveDrawingBuffer: true,
-              willReadFrequently: true 
-            });
-            
-            // Draw the entire WebGL canvas
-            tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
-            
-            // Convert to data URL with high quality
-            const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
-            
-            // Always show the polaroid, even if capture isn't perfect
-            if (dataUrl) {
-              // console.log('Setting polaroid image, length:', dataUrl.length);
-              setImageUrl(dataUrl);
-              setIsVisible(true);
-              
-              setTimeout(() => {
-                setIsBlurred(false);
-              }, 300);
-
-              if (onComplete) {
-                setTimeout(() => {
-                  onComplete(dataUrl);
-                }, 2000);
-              }
-            } else {
-              // Try alternate capture method
-              console.warn('Canvas capture was empty, trying alternate method');
-              captureWithDelay();
-            }
-          } catch (error) {
-            console.error('Direct canvas capture failed:', error);
-            captureWithDelay();
-          }
+          // Just capture the canvas directly
+          captureCanvasOnly(canvas);
+        } catch (error) {
+          console.error('Direct capture failed:', error);
+          captureWithDelay();
+        }
       });
     });
+  };
+
+  const captureCanvasOnly = (canvas) => {
+    try {
+      // Create a new canvas that matches viewport aspect ratio
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext('2d', { 
+        preserveDrawingBuffer: true,
+        willReadFrequently: true 
+      });
+      
+      // Draw the entire WebGL canvas
+      tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+      
+      // Convert to data URL with high quality
+      const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
+      
+      // Always show the polaroid, even if capture isn't perfect
+      if (dataUrl) {
+        setImageUrl(dataUrl);
+        setIsVisible(true);
+        
+        setTimeout(() => {
+          setIsBlurred(false);
+        }, 300);
+
+        if (onComplete) {
+          setTimeout(() => {
+            onComplete(dataUrl);
+          }, 2000);
+        }
+      } else {
+        // Try alternate capture method
+        console.warn('Canvas capture was empty, trying alternate method');
+        captureWithDelay();
+      }
+    } catch (error) {
+      console.error('Canvas capture failed:', error);
+      captureWithDelay();
+    }
   };
 
   // Backup capture with a small delay to let scene render
@@ -109,6 +115,7 @@ const PolaroidSnapshot = ({
       }
       
       const canvas = element.tagName === 'CANVAS' ? element : element.querySelector('canvas');
+      
       if (!canvas) {
         console.error(`No canvas found in element with id "${captureElementId}" in backup capture`);
         return;
@@ -119,28 +126,10 @@ const PolaroidSnapshot = ({
       
       requestAnimationFrame(() => {
         try {
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = canvas.width;
-          tempCanvas.height = canvas.height;
-          const tempCtx = tempCanvas.getContext('2d');
-          tempCtx.drawImage(canvas, 0, 0);
-          
-          const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
-          setImageUrl(dataUrl);
-          setIsVisible(true);
-          
-          setTimeout(() => {
-            setIsBlurred(false);
-          }, 300);
-
-          if (onComplete) {
-            setTimeout(() => {
-              onComplete(dataUrl);
-            }, 2000);
-          }
+          // Just capture the canvas
+          captureCanvasOnly(canvas);
         } catch (e) {
-          console.error('Failed to capture canvas in backup:', e);
-          // Don't fall back to DOM capture - just fail
+          console.error('Failed to capture in backup:', e);
         }
       });
     }, 100);

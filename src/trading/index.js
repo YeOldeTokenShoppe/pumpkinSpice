@@ -75,7 +75,6 @@ export { FearGreedOverlay } from './components/overlays/FearGreedOverlay';
 export { TickerDisplay } from './components/displays/TickerDisplay';
 export { TickerDisplay3 } from './components/displays/TickerDisplay3';
 export { SingleCandleDisplay } from './components/displays/SingleCandleDisplay';
-export { CompactCandleModal } from './components/displays/CompactCandleModal';
 
 // Market Components
 export { MarketEmojis } from './components/MarketEmojis';
