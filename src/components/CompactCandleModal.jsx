@@ -20,7 +20,7 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrambleTextPlugin);
 }
 // Simple viewer component for displaying candle models with dynamic texture support
-function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, dedicationName, dedicationMessage, showPlaque, userAvatar, burnAmount }) {
+function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, dedicationName, dedicationMessage, showPlaque, userAvatar, burnAmount, baseColor }) {
   const { scene, materials } = useGLTF(modelPath);
   const modelRef = useRef();
   const groupRef = useRef();
@@ -58,7 +58,7 @@ function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, 
       // Different positioning for different models
       if (modelPath.includes('tinyVotiveOnly')) {
         clonedModel.scale.set(2, 2, 2);
-        clonedModel.position.set(0, 0, 0);
+        clonedModel.position.set(0, 0, -1);
       } else if (modelPath.includes('tinyVotiveBox')) {
         clonedModel.scale.set(1, 1, 1);
         clonedModel.position.set(0, -2.7, -1);  // Move down significantly
@@ -83,10 +83,6 @@ function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, 
       // Enable shadows and ensure materials/textures are visible
       clonedModel.traverse((child) => {
         if (child.isMesh) {
-          // Debug: Log ALL meshes for Japanese candle box to find the right one
-          if (modelPath.includes('tinyJapCanBox')) {
-            console.log(`[JapCanBox] Mesh found: name="${child.name}", material="${child.material?.name}"`);
-          }
           
           child.castShadow = true;
           child.receiveShadow = true;
@@ -226,6 +222,35 @@ function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, 
       modelRef.current.add(clonedModel);
     }
   }, [scene, materials, modelPath, customImageUrl]);
+  
+  // Separate effect for base color application
+  React.useEffect(() => {
+    if (groupRef.current && baseColor) {
+      groupRef.current.traverse((child) => {
+        if (child.isMesh) {
+          const meshNameLower = child.name.toLowerCase();
+          const isBoxMesh = child.name === 'Box' || child.name === 'box';
+          
+          // Apply color to XBase meshes but NOT to Box mesh
+          const isXBaseMesh = !isBoxMesh && (
+                             meshNameLower === 'xbase' || 
+                             meshNameLower.startsWith('xbase') ||
+                             (modelPath.includes('tinyVotive') && 
+                              (meshNameLower === 'base' || 
+                               meshNameLower === 'cylinder' || 
+                               meshNameLower === 'candle' ||
+                               meshNameLower.includes('candle_base') ||
+                               meshNameLower.includes('wax'))));
+          
+          if (isXBaseMesh && baseColor !== '#ffffff') {
+            const color = new THREE.Color(baseColor);
+            child.material.color = color;
+            child.material.needsUpdate = true;
+          }
+        }
+      });
+    }
+  }, [baseColor, modelPath]);
   
   // Separate effect for background texture application
   React.useEffect(() => {
@@ -1297,7 +1322,8 @@ export default function CompactCandleModal({
     message: '',
     burnedAmount: '0',  // Default to 0
     allowLikes: false,
-    background: 'none'  // Default to no background
+    background: 'none',  // Default to no background
+    baseColor: '#ffffff'  // Default white color for XBase meshes
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('/senora.png'); // Default to senora.png
@@ -1383,7 +1409,8 @@ export default function CompactCandleModal({
         username: '',
         message: '',
         burnedAmount: '0',  // Default to 0
-        allowLikes: false
+        allowLikes: false,
+        baseColor: '#ffffff'
       });
       setCurrentStep(1);
       setSelectedPrayer(null);
@@ -1786,6 +1813,7 @@ export default function CompactCandleModal({
           username: trimmedUsername,
           createdBy: user?.id,
           createdByUsername: user?.username || user?.firstName || user?.fullName,
+          userAvatar: clerkImageUrl || null,
           encrypted: encryptedData.encrypted,
           salt: encryptedData.salt,
           iv: encryptedData.iv,
@@ -1793,6 +1821,7 @@ export default function CompactCandleModal({
           burnedAmount: parseInt(formData.burnedAmount) || 1000,
           image: imageUrl,
           background: formData.background || 'synthwave',
+          baseColor: formData.baseColor || '#ffffff',
           staked: false,
           createdAt: serverTimestamp()
         };
@@ -1804,10 +1833,12 @@ export default function CompactCandleModal({
           username: trimmedUsername,
           createdBy: user?.id,
           createdByUsername: user?.username || user?.firstName || user?.fullName,
+          userAvatar: clerkImageUrl || null,
           message: trimmedMessage,
           burnedAmount: parseInt(formData.burnedAmount) || 1000,
           image: imageUrl,
           background: formData.background || 'synthwave',
+          baseColor: formData.baseColor || '#ffffff',
           staked: false,
           createdAt: serverTimestamp()
         };
@@ -1821,7 +1852,8 @@ export default function CompactCandleModal({
         burnedAmount: docData.burnedAmount,
         candleType: formData.candleType,
         candleHeight: formData.candleHeight || 'medium',
-        background: formData.background || 'synthwave'
+        background: formData.background || 'synthwave',
+        baseColor: formData.baseColor || '#ffffff'
       });
       setFormData({
         messageType: '',
@@ -1829,7 +1861,8 @@ export default function CompactCandleModal({
         username: '',
         message: '',
         burnedAmount: '0',  // Reset to 0
-        allowLikes: false
+        allowLikes: false,
+        baseColor: '#ffffff'
       });
       setCurrentStep(1);
       setImageFile(null);
@@ -2547,6 +2580,87 @@ export default function CompactCandleModal({
                   </button>)}
               </div>
             </div>
+            
+            {/* Base Color Picker */}
+            <div style={{
+              marginTop: '20px',
+              padding: '15px',
+              background: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '12px',
+              border: '1px solid rgba(255, 215, 0, 0.2)'
+            }}>
+              <h4 style={{
+                fontSize: '16px',
+                marginBottom: '10px',
+                color: '#ffd700'
+              }}>Candle Base Color</h4>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px'
+              }}>
+                <input
+                  type="color"
+                  value={formData.baseColor}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    baseColor: e.target.value
+                  }))}
+                  style={{
+                    width: '50px',
+                    height: '50px',
+                    border: '2px solid rgba(255, 215, 0, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    background: 'transparent'
+                  }}
+                />
+                <div style={{
+                  flex: 1
+                }}>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#fff',
+                    marginBottom: '5px'
+                  }}>
+                    Selected: <span style={{
+                      color: formData.baseColor,
+                      fontWeight: 'bold'
+                    }}>{formData.baseColor}</span>
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: 'rgba(255, 255, 255, 0.6)'
+                  }}>
+                    Adjust the color of the candle base material
+                  </div>
+                </div>
+                <button
+                  onClick={() => setFormData(prev => ({
+                    ...prev,
+                    baseColor: '#ffffff'
+                  }))}
+                  style={{
+                    padding: '8px 15px',
+                    background: 'rgba(255, 215, 0, 0.2)',
+                    border: '1px solid rgba(255, 215, 0, 0.4)',
+                    borderRadius: '6px',
+                    color: '#ffd700',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'rgba(255, 215, 0, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'rgba(255, 215, 0, 0.2)';
+                  }}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
           </div>;
       case 6:
         return <div style={{
@@ -2817,6 +2931,37 @@ export default function CompactCandleModal({
                 </div>
               </div>
               
+              {formData.baseColor && formData.baseColor !== '#ffffff' && (
+                <div style={{
+                  marginBottom: '10px'
+                }}>
+                  <label style={{
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    fontSize: '10px'
+                  }}>Base Color</label>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginTop: '4px'
+                  }}>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      backgroundColor: formData.baseColor,
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      borderRadius: '4px'
+                    }} />
+                    <div style={{
+                      color: '#fff',
+                      fontSize: '13px'
+                    }}>
+                      Custom Color
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div>
                 <label style={{
                 color: 'rgba(255, 255, 255, 0.6)',
@@ -2967,7 +3112,8 @@ export default function CompactCandleModal({
         imageUrl: imagePreview,
         candleType: formData.candleType,
         candleHeight: formData.candleHeight || 'medium',
-        background: formData.background || 'synthwave'
+        background: formData.background || 'synthwave',
+        baseColor: formData.baseColor || '#ffffff'
       }} preloadOnly={true} />
         </div>}
       
@@ -3194,6 +3340,7 @@ export default function CompactCandleModal({
                       dedicationMessage={formData.message}
                       userAvatar={clerkImageUrl || imagePreview}
                       burnAmount={formData.burnedAmount}
+                      baseColor={formData.baseColor}
                     />}
                   </Suspense>
                   <OrbitControls 

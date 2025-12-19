@@ -63,6 +63,7 @@ function CandleScene({ userData, onReady }) {
     
     // Clone the scene to avoid conflicts
     const clonedScene = scene.clone();
+    const currentModelPath = modelPath; // Store modelPath for use in traversal
     
     // Debug: Log all meshes in the scene
     // console.log('=== Debugging CandleSnapshotRenderer ===');
@@ -117,6 +118,47 @@ function CandleScene({ userData, onReady }) {
       });
     }
     
+    // Apply baseColor to XBase meshes (matching SimpleCandleViewer logic)
+    if (userData?.baseColor && userData.baseColor !== '#ffffff') {
+      console.log(`[Snapshot] Applying base color: ${userData.baseColor} to model: ${currentModelPath}`);
+      let colorApplied = false;
+      
+      clonedScene.traverse((child) => {
+        if (child.isMesh) {
+          const meshNameLower = child.name.toLowerCase();
+          const isBoxMesh = child.name === 'Box' || child.name === 'box';
+          
+          // Look for XBase meshes in the same way as SimpleCandleViewer (but NOT Box mesh)
+          const isXBaseMesh = !isBoxMesh && (
+                             meshNameLower === 'xbase' || 
+                             meshNameLower.startsWith('xbase') ||
+                             (currentModelPath.includes('tinyVotive') && 
+                              (meshNameLower === 'base' || 
+                               meshNameLower === 'cylinder' || 
+                               meshNameLower === 'candle' ||
+                               meshNameLower.includes('candle_base') ||
+                               meshNameLower.includes('wax'))));
+          
+          if (isXBaseMesh) {
+            console.log(`[Snapshot] Found XBase mesh to color: "${child.name}"`);
+            // Clone the material and apply the color
+            child.material = child.material.clone();
+            const color = new THREE.Color(userData.baseColor);
+            child.material.color = color;
+            child.material.needsUpdate = true;
+            colorApplied = true;
+            console.log(`[Snapshot] Applied color ${userData.baseColor} to mesh: "${child.name}"`);
+          }
+        }
+      });
+      
+      if (!colorApplied) {
+        console.log(`[Snapshot] No XBase meshes found to apply color to`);
+      }
+    } else {
+      console.log(`[Snapshot] No custom base color to apply (color: ${userData?.baseColor})`);
+    }
+    
     // Apply skybox texture to Box mesh for ALL candle types
     if (userData?.background && SKYBOX_TEXTURES[userData.background]) {
       roomTextureNeeded = true;
@@ -163,7 +205,7 @@ function CandleScene({ userData, onReady }) {
             // Configure texture exactly like SingleCandleDisplay
             texture.wrapS = THREE.ClampToEdgeWrapping;
             texture.wrapT = THREE.ClampToEdgeWrapping;
-            texture.flipY = false; // Don't flip vertically
+            texture.flipY = true; // Flip vertically for correct orientation in snapshot
             texture.needsUpdate = true;
             
             // Apply to Box mesh (the background mesh in the new models)
@@ -308,7 +350,7 @@ function CandleScene({ userData, onReady }) {
             // Configure texture
             texture.wrapS = THREE.ClampToEdgeWrapping;
             texture.wrapT = THREE.ClampToEdgeWrapping;
-            texture.flipY = false;
+            texture.flipY = true;  // Flip for correct orientation on the background plane
             texture.needsUpdate = true;
             
             // Store texture reference for cleanup
@@ -506,7 +548,7 @@ function CandleScene({ userData, onReady }) {
           color="#ff9c5e"
           decay={2}
         /> */}
-      <group ref={candleRef} scale={[1.2, 1.2, 1.2]} position={[0, -0.5, 0]} /> {/* Adjusted position to center candle */}
+      <group ref={candleRef} scale={[1.2, 1.2, 1.2]} position={[0, -0.7, 0]} /> {/* Adjusted position to center candle */}
       
       
       <OrbitControls 

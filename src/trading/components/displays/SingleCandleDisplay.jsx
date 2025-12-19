@@ -6,8 +6,9 @@ import { collection, getDocs, query, orderBy, limit, where } from 'firebase/fire
 import { db } from '../../../utilities/firebaseClient';
 import { useUser } from '@clerk/nextjs';
 
+
 // Model viewer component with candle data display and texture support
-function ModelViewer({ modelPath, candleData = null }) {
+function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
   const { scene, materials } = useGLTF(modelPath);
   const modelRef = useRef();
   const groupRef = useRef();
@@ -22,7 +23,7 @@ function ModelViewer({ modelPath, candleData = null }) {
       
       // Scale and position the model
       clonedModel.scale.set(1, 1, 1);
-      clonedModel.position.set(0, 0, 0);
+      clonedModel.position.set(0, -1.2, -2);
       
       // Process meshes and apply textures
       clonedModel.traverse((child) => {
@@ -56,8 +57,33 @@ function ModelViewer({ modelPath, candleData = null }) {
             }
           }
           
-          // Apply background texture to Box mesh
+          // Clone material first for all meshes that we'll modify
+          if (child.material) {
+            child.material = child.material.clone();
+          }
+          
+          // Check if this is the Box mesh first (for background texture)
           const isBoxMesh = child.name === 'Box' || child.name === 'box';
+          
+          // Apply baseColor to XBase meshes (but NOT to Box mesh)
+          const meshNameLower = child.name.toLowerCase();
+          const isXBaseMesh = !isBoxMesh && (
+                             meshNameLower === 'xbase' || 
+                             meshNameLower.startsWith('xbase') ||
+                             (modelPath.includes('tinyVotive') && 
+                              (meshNameLower === 'base' || 
+                               meshNameLower === 'cylinder' || 
+                               meshNameLower === 'candle' ||
+                               meshNameLower.includes('candle_base') ||
+                               meshNameLower.includes('wax'))));
+          
+          if (isXBaseMesh && candleData?.baseColor && candleData.baseColor !== '#ffffff') {
+            const color = new THREE.Color(candleData.baseColor);
+            child.material.color = color;
+            child.material.needsUpdate = true;
+          }
+          
+          // Apply background texture to Box mesh
           if (isBoxMesh && candleData && candleData.background && candleData.background !== 'none') {
             boxMeshRef.current = child;
             
@@ -73,6 +99,7 @@ function ModelViewer({ modelPath, candleData = null }) {
             
             const texturePath = BACKGROUND_TEXTURES[candleData.background];
             if (texturePath) {
+              console.log(`Loading background texture: ${texturePath} for background: ${candleData.background}`);
               textureLoader.load(
                 texturePath,
                 (texture) => {
@@ -89,6 +116,13 @@ function ModelViewer({ modelPath, candleData = null }) {
                   if (child.material.color) {
                     child.material.color.set(0xffffff);
                   }
+                  console.log(`Background texture applied successfully to ${child.name}`);
+                },
+                (xhr) => {
+                  console.log(`Loading background: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+                },
+                (error) => {
+                  console.error(`Error loading background texture ${texturePath}:`, error);
                 }
               );
             }
@@ -136,11 +170,11 @@ function ModelViewer({ modelPath, candleData = null }) {
       {/* The model */}
       <group ref={modelRef}>
         {/* Display candle data if available */}
-        {groupRef.current && candleData && plaqueVisible && (
+        {groupRef.current && candleData && plaqueVisible && showPlaque && (
           <Html
-            position={[0, 2.8, 0.7]}
+            position={[0, 1.1, -1.2]}
             center
-            distanceFactor={12}
+            distanceFactor={16}
             transform
             occlude
             style={{
@@ -157,7 +191,8 @@ function ModelViewer({ modelPath, candleData = null }) {
               justifyContent: 'flex-start',
               pointerEvents: 'none',
               userSelect: 'none',
-              transform: 'scale(0.4)'
+              transform: 'scale(0.4)',
+              zIndex: 10
             }}
           >
             <div style={{
@@ -166,6 +201,28 @@ function ModelViewer({ modelPath, candleData = null }) {
               alignItems: 'center',
               width: '100%'
             }}>
+              {candleData.userAvatar && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginBottom: '4px'
+                }}>
+                  <img 
+                    src={candleData.userAvatar} 
+                    alt="User" 
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      border: '1px solid #eaea0b',
+                      boxShadow: '0 0 4px rgba(234, 234, 11, 0.5)'
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
               {candleData.username && (
                 <div style={{
                   color: '#eaea0b',
@@ -227,9 +284,14 @@ function ModelViewer({ modelPath, candleData = null }) {
         dampingFactor={0.2}
         enablePan={false}
         enableZoom={true}
-        minDistance={3}
-        maxDistance={10}
+        minDistance={2}
+        maxDistance={4}
         autoRotate={false}
+        minPolarAngle={Math.PI / 3}    // 60 degrees - prevents looking too high
+        maxPolarAngle={Math.PI / 2}  // ~82 degrees - prevents looking too low
+        minAzimuthAngle={-Math.PI / 12}  // ~90 degrees - prevents looking too far left
+        maxAzimuthAngle={Math.PI / 12}   // ~90 degrees - prevents looking too far right
+
       />
     </>
   );
@@ -244,21 +306,48 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
   const [currentMyCandleIndex, setCurrentMyCandleIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMyCandles, setLoadingMyCandles] = useState(false);
+  const [isRevealing, setIsRevealing] = useState(false);
+  const [showParticles, setShowParticles] = useState(false);
+  const [showPlaque, setShowPlaque] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const [filterMode, setFilterMode] = useState('random'); // 'random', 'leaderboard', 'newest'
+  const [filteredCandles, setFilteredCandles] = useState([]);
   const { user, isSignedIn } = useUser();
   
+  // Helper function to estimate object size in bytes
+  const getObjectSize = (obj) => {
+    const jsonString = JSON.stringify(obj);
+    return new Blob([jsonString]).size;
+  };
+
   // Fetch all candles from Firebase
   useEffect(() => {
     const fetchAllCandles = async () => {
       try {
         setLoading(true);
         const candlesRef = collection(db, 'candles');
-        const q = query(candlesRef, orderBy('createdAt', 'desc'), limit(20));
+        
+        // Fetch more for leaderboard to ensure we get high burners
+        const limitCount = filterMode === 'leaderboard' ? 50 : 20;
+        const q = query(candlesRef, orderBy('createdAt', 'desc'), limit(limitCount));
         const snapshot = await getDocs(q);
         
         const candlesData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
+        
+        // Log memory usage info
+        if (candlesData.length > 0) {
+          const totalSize = candlesData.reduce((sum, candle) => sum + getObjectSize(candle), 0);
+          const avgSize = Math.round(totalSize / candlesData.length);
+          console.log('Candles memory usage:', {
+            totalRecords: candlesData.length,
+            totalSize: `${(totalSize / 1024).toFixed(2)} KB`,
+            averageSize: `${avgSize} bytes`,
+            largestRecord: Math.max(...candlesData.map(c => getObjectSize(c))) + ' bytes'
+          });
+        }
         
         setAllCandles(candlesData);
         setLoading(false);
@@ -269,7 +358,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
     };
     
     fetchAllCandles();
-  }, []);
+  }, [filterMode]);
   
   // Fetch user's candles when signed in
   useEffect(() => {
@@ -297,7 +386,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
         let q = query(
           candlesRef, 
           where('createdBy', '==', user.id),
-          limit(50)
+          limit(20) // Reduced from 50 to 20
         );
         let snapshot = await getDocs(q);
         
@@ -308,7 +397,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
           q = query(
             candlesRef, 
             where('createdByUsername', '==', userIdentifier),
-            limit(50)
+            limit(20) // Reduced from 50 to 20
           );
           snapshot = await getDocs(q);
           console.log(`Found ${snapshot.size} candles for username: ${userIdentifier}`);
@@ -319,6 +408,15 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
           ...doc.data()
         }));
         
+        // Log memory usage for user candles
+        if (userCandlesData.length > 0) {
+          const totalSize = userCandlesData.reduce((sum, candle) => sum + getObjectSize(candle), 0);
+          console.log('User candles memory:', {
+            records: userCandlesData.length,
+            totalSize: `${(totalSize / 1024).toFixed(2)} KB`
+          });
+        }
+        
         // Sort by createdAt client-side to avoid needing composite index
         const sortedUserCandles = userCandlesData.sort((a, b) => {
           const aTime = a.createdAt?.seconds || 0;
@@ -326,8 +424,8 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
           return bTime - aTime; // Descending order (newest first)
         });
         
-        // Take only the first 20 after sorting
-        setMyCandles(sortedUserCandles.slice(0, 20));
+        // Take only the first 10 after sorting
+        setMyCandles(sortedUserCandles.slice(0, 10));
         setLoadingMyCandles(false);
       } catch (error) {
         console.error('Error fetching user candles:', error);
@@ -340,26 +438,128 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
     }
   }, [activeTab, isSignedIn, user]);
   
-  // Cycle through candles every 5 seconds
+  // Apply filtering/sorting based on filterMode
   useEffect(() => {
-    if (activeTab === 'all' && allCandles.length > 0) {
+    if (allCandles.length === 0) {
+      setFilteredCandles([]);
+      return;
+    }
+    
+    let processed = [...allCandles];
+    
+    switch (filterMode) {
+      case 'leaderboard':
+        // Sort by burnedAmount descending (highest burners first)
+        processed = processed
+          .filter(c => c.burnedAmount && parseInt(c.burnedAmount) > 0)
+          .sort((a, b) => {
+            const burnA = parseInt(a.burnedAmount) || 0;
+            const burnB = parseInt(b.burnedAmount) || 0;
+            return burnB - burnA;
+          })
+          .slice(0, 20); // Take top 20 burners
+        break;
+        
+      case 'newest':
+        // Already sorted by createdAt desc from Firebase
+        processed = processed.slice(0, 20);
+        break;
+        
+      case 'random':
+        // Shuffle array using Fisher-Yates algorithm
+        for (let i = processed.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [processed[i], processed[j]] = [processed[j], processed[i]];
+        }
+        processed = processed.slice(0, 20);
+        break;
+    }
+    
+    setFilteredCandles(processed);
+    setCurrentAllCandleIndex(0); // Reset to first candle when filter changes
+  }, [allCandles, filterMode]);
+  
+  // Cycle through candles every 5 seconds with reveal effect (when not paused)
+  useEffect(() => {
+    if (activeTab === 'all' && filteredCandles.length > 0 && !isPaused) {
       const interval = setInterval(() => {
-        setCurrentAllCandleIndex((prev) => (prev + 1) % allCandles.length);
+        // Hide plaque immediately when starting reveal
+        setShowPlaque(false);
+        // Trigger reveal animation
+        setIsRevealing(true);
+        setShowParticles(true);
+        
+        // After curtains close, change the candle
+        setTimeout(() => {
+          setCurrentAllCandleIndex((prev) => (prev + 1) % filteredCandles.length);
+        }, 600);
+        
+        // Open curtains after candle changes
+        setTimeout(() => {
+          setIsRevealing(false);
+        }, 800);
+        
+        // Show plaque after curtains are fully open (add extra delay)
+        setTimeout(() => {
+          setShowPlaque(true);
+        }, 1200);
+        
+        // Hide particles after animation
+        setTimeout(() => {
+          setShowParticles(false);
+        }, 1600);
       }, 5000); // 5 seconds
       
       return () => clearInterval(interval);
-    } else if (activeTab === 'my' && myCandles.length > 1) {
+    } else if (activeTab === 'my' && myCandles.length > 1 && !isPaused) {
       const interval = setInterval(() => {
-        setCurrentMyCandleIndex((prev) => (prev + 1) % myCandles.length);
+        // Hide plaque immediately when starting reveal
+        setShowPlaque(false);
+        // Trigger reveal animation
+        setIsRevealing(true);
+        setShowParticles(true);
+        
+        // After curtains close, change the candle
+        setTimeout(() => {
+          setCurrentMyCandleIndex((prev) => (prev + 1) % myCandles.length);
+        }, 600);
+        
+        // Open curtains after candle changes
+        setTimeout(() => {
+          setIsRevealing(false);
+        }, 800);
+        
+        // Show plaque after curtains are fully open (add extra delay)
+        setTimeout(() => {
+          setShowPlaque(true);
+        }, 1200);
+        
+        // Hide particles after animation
+        setTimeout(() => {
+          setShowParticles(false);
+        }, 1600);
       }, 5000); // 5 seconds
       
       return () => clearInterval(interval);
     }
-  }, [activeTab, allCandles.length, myCandles.length]);
+  }, [activeTab, filteredCandles.length, myCandles.length, isPaused]);
   
+  // Clean up old textures when switching candles (helps with memory)
+  useEffect(() => {
+    return () => {
+      // This cleanup runs when component unmounts or candle changes
+      if (window.THREE) {
+        const cache = window.THREE.Cache;
+        if (cache && cache.enabled) {
+          cache.clear();
+        }
+      }
+    };
+  }, [currentAllCandleIndex, currentMyCandleIndex]);
+
   // Get current candle data based on active tab
   const currentCandle = activeTab === 'all' 
-    ? allCandles[currentAllCandleIndex]
+    ? filteredCandles[currentAllCandleIndex]
     : myCandles[currentMyCandleIndex];
   
   // Determine model path based on candle type
@@ -381,7 +581,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      width: '30rem',
+      width: '25rem',
       height: '35rem',
       margin: 'auto',
       background: '#1a1a1a',
@@ -392,43 +592,105 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
       {/* Tab buttons */}
       <div style={{
         display: 'flex',
+        flexDirection: 'column',
         background: '#0a0a0a',
         borderBottom: '1px solid #333'
       }}>
-        <button
-          onClick={() => setActiveTab('all')}
-          style={{
-            flex: 1,
-            padding: '12px',
-            background: activeTab === 'all' ? '#1a1a1a' : 'transparent',
-            color: activeTab === 'all' ? '#00ff00' : '#666',
-            border: 'none',
-            borderBottom: activeTab === 'all' ? '2px solid #00ff00' : 'none',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: activeTab === 'all' ? 'bold' : 'normal',
-            transition: 'all 0.3s ease'
-          }}
-        >
-          All Candles
-        </button>
-        <button
-          onClick={() => setActiveTab('my')}
-          style={{
-            flex: 1,
-            padding: '12px',
-            background: activeTab === 'my' ? '#1a1a1a' : 'transparent',
-            color: activeTab === 'my' ? '#00ff00' : '#666',
-            border: 'none',
-            borderBottom: activeTab === 'my' ? '2px solid #00ff00' : 'none',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: activeTab === 'my' ? 'bold' : 'normal',
-            transition: 'all 0.3s ease'
-          }}
-        >
-          My Candle
-        </button>
+        <div style={{ display: 'flex' }}>
+          <button
+            onClick={() => setActiveTab('all')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: activeTab === 'all' ? '#1a1a1a' : 'transparent',
+              color: activeTab === 'all' ? '#00ff00' : '#666',
+              border: 'none',
+              borderBottom: activeTab === 'all' ? '2px solid #00ff00' : 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: activeTab === 'all' ? 'bold' : 'normal',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            All Candles
+          </button>
+          <button
+            onClick={() => setActiveTab('my')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: activeTab === 'my' ? '#1a1a1a' : 'transparent',
+              color: activeTab === 'my' ? '#00ff00' : '#666',
+              border: 'none',
+              borderBottom: activeTab === 'my' ? '2px solid #00ff00' : 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: activeTab === 'my' ? 'bold' : 'normal',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            My Candle
+          </button>
+        </div>
+        
+        {/* Filter dropdown for All Candles tab */}
+        {activeTab === 'all' && (
+          <div style={{
+            padding: '8px',
+            background: '#1a1a1a',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ color: '#888', fontSize: '12px' }}>View:</span>
+            <select
+              value={filterMode}
+              onChange={(e) => setFilterMode(e.target.value)}
+              style={{
+                background: '#2a2a2a',
+                color: '#00ff00',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              <option value="random">🎲 Random Mix</option>
+              <option value="leaderboard">🔥 Top Burners</option>
+              <option value="newest">✨ Newest</option>
+            </select>
+            {filterMode === 'leaderboard' && filteredCandles.length > 0 && (
+              <span style={{ 
+                color: '#ffb000', 
+                fontSize: '11px',
+                marginLeft: 'auto'
+              }}>
+                #1 burned {parseInt(filteredCandles[0]?.burnedAmount || 0).toLocaleString()} RL80
+              </span>
+            )}
+            {filterMode !== 'leaderboard' && currentCandle && (
+              <span style={{ 
+                // color: '#888', 
+                color: '#00ff00',
+                fontSize: '14px',
+                marginLeft: 'auto',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                {(() => {
+                  const messageType = currentCandle?.messageType;
+                  if (messageType) {
+                    const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
+                    return `Msg Protocol: ${displayType}`;
+                  }
+                  return 'TEMPLE CANDLES';
+                })()}
+              </span>
+            )}
+          </div>
+        )}
       </div>
       
       {/* 3D viewer */}
@@ -476,7 +738,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
           </div>
         ) : (
           <Canvas
-            camera={{ position: [0, 1, 5], fov: 45 }}
+            camera={{ position: [0, 0, 6], fov: 50 }}
             style={{ width: '100%', height: '100%' }}
             shadows
             gl={{
@@ -503,13 +765,166 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
                 key={`${currentModelPath}-${activeTab}-${activeTab === 'all' ? currentAllCandleIndex : currentMyCandleIndex}`}
                 modelPath={currentModelPath}
                 candleData={currentCandle}
+                showPlaque={showPlaque}
               />
             </Suspense>
           </Canvas>
         )}
         
+        {/* Reveal Effect Curtains */}
+        {!loading && !loadingMyCandles && (
+          <>
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '50%',
+              height: '100%',
+              background: 'linear-gradient(135deg, #dc143c 0%, #ff1744 100%)',
+              transformOrigin: 'left center',
+              transform: isRevealing ? 'translateX(0)' : 'translateX(-100%)',
+              transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+              zIndex: 20,
+              boxShadow: isRevealing ? '10px 0 30px rgba(220, 20, 60, 0.5)' : 'none'
+            }} />
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '50%',
+              height: '100%',
+              background: 'linear-gradient(135deg, #ff1744 0%, #dc143c 100%)',
+              transformOrigin: 'right center',
+              transform: isRevealing ? 'translateX(0)' : 'translateX(100%)',
+              transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+              zIndex: 20,
+              boxShadow: isRevealing ? '-10px 0 30px rgba(220, 20, 60, 0.5)' : 'none'
+            }} />
+            
+            {/* Particle Container */}
+            {showParticles && (
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+                zIndex: 25,
+                overflow: 'hidden'
+              }}>
+                {[...Array(30)].map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: 'absolute',
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      background: `hsl(${15 + Math.random() * 30}, 100%, ${50 + Math.random() * 20}%)`,
+                      left: '50%',
+                      top: '50%',
+                      animation: `particleExplosion ${1 + Math.random() * 0.5}s ease-out forwards`,
+                      animationDelay: `${Math.random() * 0.2}s`,
+                      '--x-offset': `${Math.random() * 400 - 200}px`,
+                      '--y-offset': `${Math.random() * 400 - 200}px`
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+            
+            {/* Pause/Play Button */}
+            {((activeTab === 'all' && filteredCandles.length > 1) || (activeTab === 'my' && myCandles.length > 1)) && (
+              <button
+                onClick={() => setIsPaused(!isPaused)}
+                style={{
+                  position: 'absolute',
+                  bottom: '60px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  padding: '10px',
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '50%',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                  zIndex: 15,
+                  backdropFilter: 'blur(10px)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(0, 0, 0, 0.7)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                }}
+                title={isPaused ? 'Resume auto-play' : 'Pause auto-play'}
+              >
+                {isPaused ? '▶' : '⏸'}
+              </button>
+            )}
+            
+            {/* Reveal Button (optional manual trigger) */}
+            {/* {!isRevealing && ((activeTab === 'all' && allCandles.length > 1) || (activeTab === 'my' && myCandles.length > 1)) && (
+              <button
+                onClick={() => {
+                  setShowPlaque(false);
+                  setIsRevealing(true);
+                  setShowParticles(true);
+                  setTimeout(() => {
+                    if (activeTab === 'all') {
+                      setCurrentAllCandleIndex((prev) => (prev + 1) % filteredCandles.length);
+                    } else {
+                      setCurrentMyCandleIndex((prev) => (prev + 1) % myCandles.length);
+                    }
+                  }, 600);
+                  setTimeout(() => setIsRevealing(false), 800);
+                  setTimeout(() => setShowPlaque(true), 1500);
+                  setTimeout(() => setShowParticles(false), 1600);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '20px',
+                  right: '20px',
+                  padding: '8px 16px',
+                  background: 'rgba(220, 20, 60, 0.8)',
+                  border: '2px solid #fff',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s ease',
+                  zIndex: 15
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#fff';
+                  e.target.style.color = '#dc143c';
+                  e.target.style.borderColor = '#dc143c';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(220, 20, 60, 0.8)';
+                  e.target.style.color = '#fff';
+                  e.target.style.borderColor = '#fff';
+                }}
+              >
+                ✨ Reveal Next
+              </button>
+            )} */}
+          </>
+        )}
+        
         {/* Progress indicator */}
-        {((activeTab === 'all' && allCandles.length > 0) || (activeTab === 'my' && myCandles.length > 1)) && (
+        {((activeTab === 'all' && filteredCandles.length > 0) || (activeTab === 'my' && myCandles.length > 1)) && (
           <div style={{
             position: 'absolute',
             bottom: '20px',
@@ -522,7 +937,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
             borderRadius: '20px',
             backdropFilter: 'blur(10px)'
           }}>
-            {(activeTab === 'all' ? allCandles : myCandles).map((_, index) => (
+            {(activeTab === 'all' ? filteredCandles : myCandles).map((_, index) => (
               <div
                 key={index}
                 style={{
@@ -579,6 +994,28 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
       </div>
     </div>
   );
+}
+
+// Inject particle animation styles
+if (typeof document !== 'undefined' && !document.getElementById('particle-styles')) {
+  const styleElement = document.createElement('style');
+  styleElement.id = 'particle-styles';
+  styleElement.textContent = `
+    @keyframes particleExplosion {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(
+          calc(-50% + var(--x-offset)),
+          calc(-50% + var(--y-offset))
+        ) scale(0);
+        opacity: 0;
+      }
+    }
+  `;
+  document.head.appendChild(styleElement);
 }
 
 // Preload the models
