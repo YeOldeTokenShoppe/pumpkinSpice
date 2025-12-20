@@ -72,6 +72,7 @@ const CyborgTempleScene = ({
     currentAnimation: 'TypingRobot2', // Start with TypingRobot2
     lastSwitchTime: 0,
     nextSwitchDelay: Math.random() * 10000 + 8000, // Initially wait 8-18 seconds before first switch
+    isPlayingSpecial: false, // Track if a special animation is currently playing
   });
   
   // RL80 animation state
@@ -280,13 +281,31 @@ const CyborgTempleScene = ({
         if (child.name === 'RL80_Empty') {
           animatedCharacters['RL80'] = child;
           console.log(`[RL80] Found RL80_Empty for animations, type: ${child.type}`);
+          console.log('[RL80] Full structure:', {
+            parent: child.parent?.name,
+            children: child.children.map(c => ({
+              name: c.name,
+              type: c.type,
+              isSkinnedMesh: c.isSkinnedMesh,
+              hasSkeleton: !!c.skeleton,
+              childCount: c.children?.length
+            }))
+          });
         }
-        // The 3 Wise Mechs
+        // Macro - look for the Robot2_Empty parent container
+        else if (child.name === 'Robot2_Empty') {
+          animatedCharacters['Macro'] = child;
+          console.log(`[Macro] Found Robot2_Empty for animations, type: ${child.type}`);
+          console.log('[Macro] Full structure:', {
+            name: child.name,
+            parent: child.parent?.name,
+            type: child.type,
+            children: child.children?.map(c => c.name)
+          });
+        }
+        // The other Wise Mechs
         else if (child.name === 'Emo') {
           animatedCharacters['Emo'] = child;
-        }
-        else if (child.name === 'Macro') {
-          animatedCharacters['Macro'] = child;
         }
         else if (child.name === 'Tekno') {
           animatedCharacters['Tekno'] = child;
@@ -303,58 +322,74 @@ const CyborgTempleScene = ({
 
       // Play specific animations based on character
       if (gltf.animations.length > 0) {
-        // Map animations to their respective characters
+        console.log('[CyborgTempleScene] Found', gltf.animations.length, 'animations');
+        
+        // Analyze animations to understand their structure
+        gltf.animations.forEach((animation, index) => {
+          console.log(`[Animation ${index}] Name: "${animation.name}"`);
+          
+          // Log first few track names to understand bone naming
+          const trackSample = animation.tracks.slice(0, 3).map(track => {
+            const parts = track.name.split('.');
+            return `${parts[0]} (${parts[1]})`;
+          });
+          console.log(`  Sample tracks: ${trackSample.join(', ')}`);
+        });
+        
+        // Since all characters use the same Synty bone structure,
+        // we'll assign animations based on naming patterns
+        // Macro uses Robot animations, others use standard animations
+        
         gltf.animations.forEach((animation, index) => {
           const animName = animation.name;
-          console.log(`[Animation Detail] Animation ${index}: "${animName}"`);
           
-          // Determine which character this animation belongs to
-          let targetCharacter = null;
-          let targetMixer = null;
+          // Check what bones this animation targets
+          const firstTrackBone = animation.tracks[0]?.name.split('.')[0] || '';
           
-          // RL80 animations: Clap, Disbelief, FistPump, Typing (but not Typing if it's for other chars)
-          if (animName === 'Clap' || animName === 'Disbelief' || animName === 'FistPump') {
-            targetCharacter = 'RL80';
-            targetMixer = mixersRef.current['RL80'];
-            console.log(`[Animation] Assigning "${animName}" to RL80`);
+          // Determine which character(s) this animation is for based on name AND bone structure
+          let targetCharacters = [];
+          
+          // Check if it's a Macro-specific animation (Robot animations OR uses Pelvis/Root_1 bones)
+          if (animName.includes('Robot') || animName.includes('robot') || 
+              firstTrackBone === 'Pelvis' || firstTrackBone === 'Root_1') {
+            targetCharacters = ['Macro'];
+            console.log(`[Animation] "${animName}" identified as Macro animation (bone: ${firstTrackBone})`);
           }
-          // Macro animations (TypingRobot2, IdleRobot2)
-          else if (animName === 'TypingRobot2' || animName === 'IdleRobot2') {
-            targetCharacter = 'Macro';
-            targetMixer = mixersRef.current['Macro'];
-          }
-          // Typing animation - assign to all characters that need it
-          else if (animName === 'Typing') {
-            // Assign to RL80
-            if (mixersRef.current['RL80']) {
-              const action = mixersRef.current['RL80'].clipAction(animation);
-              if (!actionsRef.current['RL80']) {
-                actionsRef.current['RL80'] = {};
-              }
-              actionsRef.current['RL80'][animName] = action;
-              console.log(`[Animation] Assigning "${animName}" to RL80`);
+          // Standard animations for RL80, Emo, Tekno (uses Root bone)
+          else if (firstTrackBone === 'Root' || firstTrackBone === 'Root_2' ||
+                   animName === 'Typing' || animName === 'Idle' || 
+                   animName === 'Disbelief' || animName === 'FistPump' ||
+                   animName === 'Clap' || animName === 'Victory' || animName === 'Cheer') {
+            // Only assign to RL80/Emo/Tekno if it's not using Root_2 (which doesn't exist for them)
+            if (firstTrackBone === 'Root_2') {
+              // This is probably a misassigned Macro animation
+              targetCharacters = ['Macro'];
+              console.log(`[Animation] "${animName}" uses Root_2, assigning to Macro`);
+            } else {
+              targetCharacters = ['RL80', 'Emo', 'Tekno'];
+              console.log(`[Animation] "${animName}" identified as standard animation (bone: ${firstTrackBone})`);
             }
-            // Also assign to Emo and Tekno
-            ['Emo', 'Tekno'].forEach(charName => {
-              if (mixersRef.current[charName]) {
-                const action = mixersRef.current[charName].clipAction(animation);
-                if (!actionsRef.current[charName]) {
-                  actionsRef.current[charName] = {};
-                }
-                actionsRef.current[charName][animName] = action;
-              }
-            });
-            return; // Skip the single-character assignment below
+          }
+          // If we can't identify the animation, skip it
+          else {
+            console.log(`[Animation] "${animName}" - unknown bone structure (${firstTrackBone}), skipping`);
+            return;
           }
           
-          // Create action for the target character
-          if (targetMixer && targetCharacter) {
-            const action = targetMixer.clipAction(animation);
-            if (!actionsRef.current[targetCharacter]) {
-              actionsRef.current[targetCharacter] = {};
+          // Apply animation to target characters
+          targetCharacters.forEach(charName => {
+            if (animatedCharacters[charName] && mixersRef.current[charName]) {
+              const mixer = mixersRef.current[charName];
+              const action = mixer.clipAction(animation);
+              
+              if (!actionsRef.current[charName]) {
+                actionsRef.current[charName] = {};
+              }
+              
+              actionsRef.current[charName][animName] = action;
+              console.log(`[Animation] Assigned "${animName}" to ${charName}`);
             }
-            actionsRef.current[targetCharacter][animName] = action;
-          }
+          });
         });
         
         // Log all animation names to understand the structure
@@ -362,35 +397,79 @@ const CyborgTempleScene = ({
         
         // Play initial animations for each character
         Object.entries(actionsRef.current).forEach(([charName, charActions]) => {
-          console.log(`[Play] Character ${charName} has animations:`, Object.keys(charActions));
+          const availableAnims = Object.keys(charActions);
+          console.log(`[Play] Character ${charName} has ${availableAnims.length} animations:`, availableAnims);
+          
+          if (availableAnims.length === 0) {
+            console.error(`[Play] ERROR: ${charName} has no animations! Character will be in T-pose.`);
+            return;
+          }
+          
+          // Find a suitable default animation for each character
+          let defaultAnimName = null;
+          let defaultAnim = null;
+          
           if (charName === 'RL80') {
-            // Play RL80's Typing animation as the default
+            // Priority order for RL80
             if (charActions['Typing']) {
-              charActions['Typing'].setLoop(THREE.LoopRepeat); // Ensure it loops continuously
-              charActions['Typing'].play();
-              console.log(`[Play] Playing Typing for RL80`);
+              defaultAnimName = 'Typing';
+            } else if (charActions['Idle']) {
+              defaultAnimName = 'Idle';
+            } else {
+              defaultAnimName = availableAnims[0];
             }
-            // Log which animations are available
-            console.log(`[RL80] Available animations:`, Object.keys(charActions));
-            // Store other animations for potential future use
-            // Could alternate between Typing, Clap, FistPump, Disbelief randomly
           } else if (charName === 'Macro') {
-            // Start Macro with TypingRobot2
+            // Priority order for Macro
             if (charActions['TypingRobot2']) {
-              charActions['TypingRobot2'].play();
+              defaultAnimName = 'TypingRobot2';
+            } else if (charActions['IdleRobot2']) {
+              defaultAnimName = 'IdleRobot2';
+            } else {
+              defaultAnimName = availableAnims[0];
             }
           } else if (charName === 'Emo') {
-            // Start Emo with Typing animation at a random offset
+            // Priority order for Emo
             if (charActions['Typing']) {
-              charActions['Typing'].time = Math.random() * charActions['Typing'].getClip().duration * 0.5;
-              charActions['Typing'].play();
+              defaultAnimName = 'Typing';
+            } else if (charActions['Idle']) {
+              defaultAnimName = 'Idle';
+            } else {
+              defaultAnimName = availableAnims[0];
             }
           } else if (charName === 'Tekno') {
-            // Start Tekno with Typing animation at a different offset
+            // Priority order for Tekno
             if (charActions['Typing']) {
-              charActions['Typing'].time = Math.random() * charActions['Typing'].getClip().duration * 0.5 + charActions['Typing'].getClip().duration * 0.5;
-              charActions['Typing'].play();
+              defaultAnimName = 'Typing';
+            } else if (charActions['Idle']) {
+              defaultAnimName = 'Idle';
+            } else {
+              defaultAnimName = availableAnims[0];
             }
+          }
+          
+          if (defaultAnimName && charActions[defaultAnimName]) {
+            defaultAnim = charActions[defaultAnimName];
+            
+            // Add some timing variation for visual interest
+            if (charName === 'Emo' || charName === 'Tekno') {
+              defaultAnim.time = Math.random() * defaultAnim.getClip().duration * 0.5;
+            }
+            defaultAnim.setLoop(THREE.LoopRepeat);
+            defaultAnim.play();
+            console.log(`[Play] Started "${defaultAnimName}" animation for ${charName}`);
+            
+            // Update the current animation state
+            if (charName === 'RL80') {
+              rl80AnimStateRef.current.currentAnimation = defaultAnimName;
+            } else if (charName === 'Macro') {
+              macroAnimStateRef.current.currentAnimation = defaultAnimName;
+            } else if (charName === 'Emo') {
+              emoAnimStateRef.current.currentAnimation = defaultAnimName;
+            } else if (charName === 'Tekno') {
+              teknoAnimStateRef.current.currentAnimation = defaultAnimName;
+            }
+          } else {
+            console.error(`[Play] ERROR: Could not find a default animation for ${charName}`);
           }
         });
       }
@@ -1190,44 +1269,148 @@ const CyborgTempleScene = ({
     }
     
     // Handle Macro animation alternation
-    if (!isOnMobile && actionsRef.current['Macro']) { // Alternate animations for Macro
-      const currentTime = state.clock.getElapsedTime() * 1000; // Convert to milliseconds
+    if (!isOnMobile && actionsRef.current['Macro']) {
+      const currentTime = Date.now();
       const macroState = macroAnimStateRef.current;
       
-      // Check if it's time to switch animations
-      if (currentTime - macroState.lastSwitchTime > macroState.nextSwitchDelay) {
+      // Initialize lastSwitchTime if it's 0
+      if (macroState.lastSwitchTime === 0) {
+        macroState.lastSwitchTime = currentTime;
+      }
+      
+      // Check if it's time to switch animations AND not playing a special animation
+      if (!macroState.isPlayingSpecial && currentTime - macroState.lastSwitchTime > macroState.nextSwitchDelay) {
         const macroActions = actionsRef.current['Macro'];
         
-        // Switch between TypingRobot2 and IdleRobot2
-        if (macroState.currentAnimation === 'TypingRobot2') {
-          // Switch to IdleRobot2
-          if (macroActions['TypingRobot2']) {
-            macroActions['TypingRobot2'].fadeOut(0.5); // Fade out over 0.5 seconds
-          }
-          if (macroActions['IdleRobot2']) {
-            macroActions['IdleRobot2'].reset();
-            macroActions['IdleRobot2'].fadeIn(0.5); // Fade in over 0.5 seconds
-            macroActions['IdleRobot2'].play();
-          }
-          macroState.currentAnimation = 'IdleRobot2';
-          // IdleRobot2 plays for shorter duration (3-5 seconds)
-          macroState.nextSwitchDelay = Math.random() * 2000 + 3000;
-        } else {
-          // Switch back to TypingRobot2
-          if (macroActions['IdleRobot2']) {
-            macroActions['IdleRobot2'].fadeOut(0.5);
-          }
-          if (macroActions['TypingRobot2']) {
-            macroActions['TypingRobot2'].reset();
-            macroActions['TypingRobot2'].fadeIn(0.5);
-            macroActions['TypingRobot2'].play();
-          }
-          macroState.currentAnimation = 'TypingRobot2';
-          // TypingRobot2 plays for longer duration (10-20 seconds)
-          macroState.nextSwitchDelay = Math.random() * 10000 + 10000;
+        // Get available animations for Macro
+        const availableAnimations = Object.keys(macroActions);
+        
+        // Filter animations into categories based on what's actually available
+        const loopAnimations = availableAnimations.filter(anim => 
+          anim === 'TypingRobot2' || anim === 'IdleRobot2');
+        const specialAnimations = availableAnimations.filter(anim => 
+          anim === 'Cheer_Robot2' || anim === 'Victory_Robot2' || anim === 'Clap_Robot2');
+        
+        // If we don't have any animations, skip
+        if (availableAnimations.length === 0) {
+          console.warn('[Macro] No animations available, skipping switch');
+          return;
         }
         
-        // Update timing for next switch
+        let nextAnimation;
+        
+        // If currently on a loop animation
+        if (loopAnimations.includes(macroState.currentAnimation)) {
+          // Only try special animations if they exist
+          if (specialAnimations.length > 0 && Math.random() < 0.4) {
+            // Pick a random special animation
+            nextAnimation = specialAnimations[Math.floor(Math.random() * specialAnimations.length)];
+          } else if (loopAnimations.length > 1) {
+            // Switch between loop animations
+            nextAnimation = loopAnimations.find(anim => anim !== macroState.currentAnimation) || loopAnimations[0];
+          } else {
+            // Only one loop animation available, keep using it
+            nextAnimation = loopAnimations[0];
+          }
+        } else if (specialAnimations.includes(macroState.currentAnimation)) {
+          // Return from special to a loop animation
+          nextAnimation = loopAnimations.length > 0 ? 
+            loopAnimations[Math.floor(Math.random() * loopAnimations.length)] : 
+            availableAnimations[0];
+        } else {
+          // Fallback - use first available animation
+          nextAnimation = availableAnimations[0];
+        }
+        
+        console.log(`[Macro] Switching from ${macroState.currentAnimation} to ${nextAnimation}`);
+        console.log(`[Macro] Available animations:`, Object.keys(macroActions));
+        console.log(`[Macro] Is special animation: ${specialAnimations.includes(nextAnimation)}`);
+        
+        // Fade out current animation first (using same timing as RL80)
+        if (macroActions[macroState.currentAnimation]) {
+          macroActions[macroState.currentAnimation].fadeOut(0.5);
+        }
+        
+        // Play the next animation
+        if (macroActions[nextAnimation]) {
+          const nextAction = macroActions[nextAnimation];
+          
+          // Reset and fade in the animation (same as RL80)
+          nextAction.reset();
+          nextAction.fadeIn(0.5);
+          
+          // Check if this is a special animation
+          const isSpecialAnimation = specialAnimations.includes(nextAnimation);
+          
+          if (isSpecialAnimation) {
+            console.log(`[Macro] Playing special animation ${nextAnimation}`);
+            nextAction.setLoop(THREE.LoopOnce, 1);
+            nextAction.clampWhenFinished = true; // Keep the final pose like RL80 does
+            macroState.isPlayingSpecial = true; // Set flag to prevent interruptions
+            
+            // Set up return to loop animation
+            const animDuration = nextAction.getClip().duration * 1000;
+            const transitionTime = Math.max(100, animDuration - 500);
+            
+            setTimeout(() => {
+              const returnAnimation = loopAnimations.length > 0 ? 
+                loopAnimations[Math.floor(Math.random() * loopAnimations.length)] : 
+                'TypingRobot2';
+              
+              console.log(`[Macro] Special animation ${nextAnimation} ending, returning to ${returnAnimation}`);
+              
+              if (returnAnimation && macroActions[returnAnimation]) {
+                // Start the return animation with fadeIn for smooth transition
+                const returnAction = macroActions[returnAnimation];
+                returnAction.stop();
+                returnAction.reset();
+                returnAction.setLoop(THREE.LoopRepeat);
+                returnAction.setEffectiveWeight(1);
+                returnAction.fadeIn(0.5); // Add fadeIn for smooth transition
+                returnAction.play();
+                
+                // Simultaneously fade out the special animation
+                nextAction.fadeOut(0.5);
+                
+                // Update state
+                macroState.currentAnimation = returnAnimation;
+                macroState.isPlayingSpecial = false; // Clear the flag
+                macroState.nextSwitchDelay = returnAnimation === 'IdleRobot2' ? 
+                  Math.random() * 3000 + 4000 : // 4-7 seconds for idle
+                  Math.random() * 10000 + 8000; // 8-18 seconds for typing
+                macroState.lastSwitchTime = Date.now();
+              } else {
+                console.error(`[Macro] Failed to return to animation: ${returnAnimation}`);
+                macroState.isPlayingSpecial = false; // Clear flag on error too
+              }
+            }, transitionTime);
+            
+          } else {
+            // For loop animations
+            console.log(`[Macro] Playing loop animation ${nextAnimation}`);
+            nextAction.setLoop(THREE.LoopRepeat);
+          }
+          
+          // Play the animation (same pattern as RL80)
+          nextAction.play();
+        } else {
+          console.error(`[Macro] Animation ${nextAnimation} not found!`);
+        }
+        
+        macroState.currentAnimation = nextAnimation;
+        
+        // Set next switch delay
+        if (loopAnimations.includes(nextAnimation)) {
+          if (nextAnimation === 'IdleRobot2') {
+            macroState.nextSwitchDelay = Math.random() * 2000 + 3000; // 3-5 seconds for idle
+          } else {
+            macroState.nextSwitchDelay = Math.random() * 10000 + 8000; // 8-18 seconds for typing
+          }
+        } else {
+          // For special animations, wait for them to complete
+          macroState.nextSwitchDelay = 999999;
+        }
+        
         macroState.lastSwitchTime = currentTime;
       }
     }
@@ -1244,38 +1427,68 @@ const CyborgTempleScene = ({
       
       if (currentTime - rl80State.lastSwitchTime > rl80State.nextSwitchDelay) {
         const rl80Actions = actionsRef.current['RL80'];
-        const animations = ['Typing', 'Clap', 'FistPump', 'Disbelief'];
         
-        // Pick a random animation with weighted distribution
+        // Get available animations for RL80
+        const availableAnimations = Object.keys(rl80Actions);
+        
+        // Filter animations based on what's actually available
+        // RL80 has Idle, Typing, and Clap as loop animations
+        const loopAnimations = availableAnimations.filter(anim => 
+          anim === 'Typing' || anim === 'Idle' || anim === 'Clap');
+        const specialAnimations = availableAnimations.filter(anim => 
+          anim === 'Disbelief' || anim === 'FistPump');
+        
+        // If we don't have any animations, skip
+        if (availableAnimations.length === 0) {
+          console.warn('[RL80] No animations available, skipping switch');
+          return;
+        }
+        
         let nextAnimation;
-        const specialAnimations = ['Clap', 'FistPump', 'Disbelief'];
         
-        // If we're on Typing, pick a special animation
-        if (rl80State.currentAnimation === 'Typing') {
-          // Filter out recently used animations for better distribution
-          let availableSpecials = specialAnimations.filter(anim => 
-            !rl80State.recentAnimations.includes(anim)
-          );
-          
-          // If all have been used recently, reset and use all
-          if (availableSpecials.length === 0) {
-            availableSpecials = specialAnimations;
+        // If we're on a loop animation, pick next animation
+        if (loopAnimations.includes(rl80State.currentAnimation)) {
+          // Initialize recentAnimations if it doesn't exist
+          if (!rl80State.recentAnimations) {
             rl80State.recentAnimations = [];
           }
           
-          // Pick random from available
-          nextAnimation = availableSpecials[Math.floor(Math.random() * availableSpecials.length)];
-          
-          // Add to recent list
-          rl80State.recentAnimations.push(nextAnimation);
-          
-          // Keep only last 2 animations in history
-          if (rl80State.recentAnimations.length > 2) {
-            rl80State.recentAnimations.shift();
+          // 70% chance to stay with loop animations, 30% for special
+          if (Math.random() < 0.7 && loopAnimations.length > 0) {
+            // If we have multiple loop animations, switch between them
+            if (loopAnimations.length > 1) {
+              const otherLoops = loopAnimations.filter(anim => anim !== rl80State.currentAnimation);
+              nextAnimation = otherLoops[0];
+            } else {
+              // Only one loop animation (Typing), keep using it
+              nextAnimation = loopAnimations[0];
+            }
+          } else if (specialAnimations.length > 0) {
+            // Pick a special animation
+            let availableSpecials = specialAnimations.filter(anim => 
+              !rl80State.recentAnimations.includes(anim)
+            );
+            
+            if (availableSpecials.length === 0) {
+              availableSpecials = specialAnimations;
+              rl80State.recentAnimations = [];
+            }
+            
+            nextAnimation = availableSpecials[Math.floor(Math.random() * availableSpecials.length)];
+            rl80State.recentAnimations.push(nextAnimation);
+            
+            if (rl80State.recentAnimations.length > 1) {
+              rl80State.recentAnimations.shift();
+            }
+          } else {
+            // No special animations available, keep current or use first available
+            nextAnimation = rl80State.currentAnimation;
           }
         } else {
-          // Always return to Typing from special animations
-          nextAnimation = 'Typing';
+          // Return from special animation to a loop animation
+          nextAnimation = loopAnimations.length > 0 ? 
+            loopAnimations[Math.floor(Math.random() * loopAnimations.length)] : 
+            availableAnimations[0];
         }
         
         console.log(`[RL80] Switching from ${rl80State.currentAnimation} to ${nextAnimation} (recent: ${rl80State.recentAnimations})`);
@@ -1291,38 +1504,46 @@ const CyborgTempleScene = ({
           action.reset();
           action.fadeIn(0.5);
           
-          // For special animations, play once then return to Typing
-          if (nextAnimation !== 'Typing') {
+          // Check if this is a special (one-shot) animation
+          const isSpecialAnimation = ['Disbelief', 'FistPump'].includes(nextAnimation);
+          
+          if (isSpecialAnimation) {
             action.setLoop(THREE.LoopOnce, 1);
-            action.clampWhenFinished = true; // Keep the last frame until fadeout completes
+            action.clampWhenFinished = true;
             
-            // Calculate when to start transitioning back (slightly before animation ends)
+            // Calculate when to start transitioning back
             const animDuration = action.getClip().duration * 1000;
-            const transitionStartTime = Math.max(100, animDuration - 500); // Start transition 500ms before end, but at least 100ms
+            const transitionStartTime = Math.max(100, animDuration - 500);
             
-            // Start transition back to Typing slightly before animation ends
+            // Start transition back to a loop animation
             setTimeout(() => {
-              if (rl80Actions['Typing']) {
-                const typingAction = rl80Actions['Typing'];
-                typingAction.stop(); // Stop it first to reset completely
-                typingAction.reset();
-                typingAction.setLoop(THREE.LoopRepeat);
-                typingAction.setEffectiveWeight(1); // Set full weight
-                typingAction.play();
-                // Don't fade in - just start playing
+              // Use the actual available loop animations
+              const availableLoops = Object.keys(rl80Actions).filter(anim => 
+                anim === 'Typing' || anim === 'Idle' || anim === 'Clap');
+              const returnAnimation = availableLoops.length > 0 ? 
+                availableLoops[Math.floor(Math.random() * availableLoops.length)] : 
+                Object.keys(rl80Actions)[0]; // Fallback to first available animation
+              
+              if (returnAnimation && rl80Actions[returnAnimation]) {
+                const loopAction = rl80Actions[returnAnimation];
+                loopAction.stop();
+                loopAction.reset();
+                loopAction.setLoop(THREE.LoopRepeat);
+                loopAction.setEffectiveWeight(1);
+                loopAction.play();
               }
+              
               // Fade out the special animation
               if (rl80Actions[rl80State.currentAnimation]) {
                 rl80Actions[rl80State.currentAnimation].fadeOut(0.5);
               }
               
-              // Update state after transition
-              rl80State.currentAnimation = 'Typing';
+              rl80State.currentAnimation = returnAnimation;
               rl80State.nextSwitchDelay = Math.random() * 8000 + 12000;
-              rl80State.lastSwitchTime = Date.now(); // Use Date.now() instead
+              rl80State.lastSwitchTime = Date.now();
             }, transitionStartTime);
           } else {
-            // If switching to regular Typing from another Typing instance
+            // For loop animations (Typing, Idle)
             action.setLoop(THREE.LoopRepeat);
           }
           
@@ -1331,11 +1552,14 @@ const CyborgTempleScene = ({
         
         rl80State.currentAnimation = nextAnimation;
         
-        // If we're switching to Typing, set longer delay
+        // Set appropriate delay based on animation type
         if (nextAnimation === 'Typing') {
-          rl80State.nextSwitchDelay = Math.random() * 8000 + 12000;
+          rl80State.nextSwitchDelay = Math.random() * 8000 + 12000; // 12-20 seconds for typing
+        } else if (nextAnimation === 'Idle' || nextAnimation === 'Clap') {
+          // For other loop animations, set reasonable delays
+          rl80State.nextSwitchDelay = Math.random() * 5000 + 5000; // 5-10 seconds
         } else {
-          // For other animations, wait for them to finish (we'll handle return in the event)
+          // For special animations (Disbelief, FistPump), wait for them to finish
           rl80State.nextSwitchDelay = 999999; // Large number to prevent switching during animation
         }
         
@@ -1343,79 +1567,70 @@ const CyborgTempleScene = ({
       }
     }
     
-    // Handle Emo animation alternation
+    // Handle Emo animation alternation (same logic as RL80 - they share animations)
     if (!isOnMobile && actionsRef.current['Emo']) {
       const currentTime = Date.now();
       const emoState = emoAnimStateRef.current;
       
-      // Initialize lastSwitchTime if it's 0
       if (emoState.lastSwitchTime === 0) {
         emoState.lastSwitchTime = currentTime;
       }
       
       if (currentTime - emoState.lastSwitchTime > emoState.nextSwitchDelay) {
         const emoActions = actionsRef.current['Emo'];
-        // Emo can use: Typing, and potentially Clap, FistPump, Disbelief
-        const animations = ['Typing'];
+        const loopAnimations = ['Typing', 'Idle'];
+        const specialAnimations = ['Disbelief', 'FistPump'];
         
-        // Check if Emo can use RL80's animations
-        if (actionsRef.current['RL80']) {
-          if (actionsRef.current['RL80']['Clap']) animations.push('Clap');
-          if (actionsRef.current['RL80']['FistPump']) animations.push('FistPump');
-          if (actionsRef.current['RL80']['Disbelief']) animations.push('Disbelief');
+        let nextAnimation;
+        
+        if (loopAnimations.includes(emoState.currentAnimation)) {
+          if (Math.random() < 0.75) {
+            nextAnimation = emoState.currentAnimation === 'Typing' ? 'Idle' : 'Typing';
+          } else {
+            nextAnimation = specialAnimations[Math.floor(Math.random() * specialAnimations.length)];
+          }
+        } else {
+          nextAnimation = loopAnimations[Math.floor(Math.random() * loopAnimations.length)];
         }
         
-        // Pick a random animation
-        let nextAnimation;
-        do {
-          nextAnimation = animations[Math.floor(Math.random() * animations.length)];
-        } while (nextAnimation === emoState.currentAnimation && animations.length > 1);
-        
-        // Fade out current
         if (emoActions[emoState.currentAnimation]) {
           emoActions[emoState.currentAnimation].fadeOut(0.5);
         }
         
-        // Play the next animation
-        if (nextAnimation !== 'Typing') {
-          // Use RL80's animation clip for special animations
-          const rl80Action = actionsRef.current['RL80'][nextAnimation];
-          if (rl80Action && mixersRef.current['Emo']) {
-            const action = mixersRef.current['Emo'].clipAction(rl80Action.getClip());
-            emoActions[nextAnimation] = action;
-            action.reset();
+        if (emoActions[nextAnimation]) {
+          const action = emoActions[nextAnimation];
+          action.reset();
+          action.fadeIn(0.5);
+          
+          if (specialAnimations.includes(nextAnimation)) {
             action.setLoop(THREE.LoopOnce, 1);
             action.clampWhenFinished = true;
-            action.fadeIn(0.5);
-            action.play();
             
-            // Return to Typing after animation
             const animDuration = action.getClip().duration * 1000;
             setTimeout(() => {
-              if (emoActions['Typing']) {
+              const returnAnim = loopAnimations[Math.floor(Math.random() * loopAnimations.length)];
+              if (emoActions[returnAnim]) {
                 action.fadeOut(0.5);
-                emoActions['Typing'].stop();
-                emoActions['Typing'].reset();
-                emoActions['Typing'].setLoop(THREE.LoopRepeat);
-                emoActions['Typing'].setEffectiveWeight(1);
-                emoActions['Typing'].play();
+                emoActions[returnAnim].stop();
+                emoActions[returnAnim].reset();
+                emoActions[returnAnim].setLoop(THREE.LoopRepeat);
+                emoActions[returnAnim].setEffectiveWeight(1);
+                emoActions[returnAnim].play();
               }
-              emoState.currentAnimation = 'Typing';
+              emoState.currentAnimation = returnAnim;
               emoState.nextSwitchDelay = Math.random() * 10000 + 15000;
               emoState.lastSwitchTime = Date.now();
             }, Math.max(100, animDuration - 500));
+          } else {
+            action.setLoop(THREE.LoopRepeat);
           }
-        } else if (emoActions['Typing']) {
-          // Switch back to Typing
-          emoActions['Typing'].reset();
-          emoActions['Typing'].setLoop(THREE.LoopRepeat);
-          emoActions['Typing'].fadeIn(0.5);
-          emoActions['Typing'].play();
+          
+          action.play();
         }
         
         emoState.currentAnimation = nextAnimation;
         
-        if (nextAnimation === 'Typing') {
+        if (loopAnimations.includes(nextAnimation)) {
           emoState.nextSwitchDelay = Math.random() * 10000 + 15000;
         } else {
           emoState.nextSwitchDelay = 999999;
@@ -1425,80 +1640,85 @@ const CyborgTempleScene = ({
       }
     }
     
-    // Handle Tekno animation alternation
+    // Handle Tekno animation alternation (same as Emo but with different timing)
     if (!isOnMobile && actionsRef.current['Tekno']) {
       const currentTime = Date.now();
       const teknoState = teknoAnimStateRef.current;
       
-      // Initialize lastSwitchTime if it's 0
       if (teknoState.lastSwitchTime === 0) {
         teknoState.lastSwitchTime = currentTime;
       }
       
       if (currentTime - teknoState.lastSwitchTime > teknoState.nextSwitchDelay) {
         const teknoActions = actionsRef.current['Tekno'];
-        // Tekno can use: Typing, and potentially Clap, FistPump, Disbelief
-        const animations = ['Typing'];
         
-        // Check if Tekno can use RL80's animations
-        if (actionsRef.current['RL80']) {
-          if (actionsRef.current['RL80']['Clap']) animations.push('Clap');
-          if (actionsRef.current['RL80']['FistPump']) animations.push('FistPump');
-          if (actionsRef.current['RL80']['Disbelief']) animations.push('Disbelief');
+        // Get available animations for Tekno
+        const availableAnimations = Object.keys(teknoActions);
+        
+        // Filter animations based on what's actually available
+        // RL80 has Idle, Typing, and Clap as loop animations
+        const loopAnimations = availableAnimations.filter(anim => 
+          anim === 'Typing' || anim === 'Idle' || anim === 'Clap');
+        const specialAnimations = availableAnimations.filter(anim => 
+          anim === 'Disbelief' || anim === 'FistPump');
+        
+        // If we don't have any animations, skip
+        if (availableAnimations.length === 0) {
+          console.warn('[Tekno] No animations available, skipping switch');
+          return;
         }
         
-        // Pick a random animation
         let nextAnimation;
-        do {
-          nextAnimation = animations[Math.floor(Math.random() * animations.length)];
-        } while (nextAnimation === teknoState.currentAnimation && animations.length > 1);
         
-        // Fade out current
+        if (loopAnimations.includes(teknoState.currentAnimation)) {
+          if (Math.random() < 0.8) { // 80% chance for loop animations
+            nextAnimation = teknoState.currentAnimation === 'Typing' ? 'Idle' : 'Typing';
+          } else {
+            nextAnimation = specialAnimations[Math.floor(Math.random() * specialAnimations.length)];
+          }
+        } else {
+          nextAnimation = loopAnimations[Math.floor(Math.random() * loopAnimations.length)];
+        }
+        
         if (teknoActions[teknoState.currentAnimation]) {
           teknoActions[teknoState.currentAnimation].fadeOut(0.5);
         }
         
-        // Play the next animation
-        if (nextAnimation !== 'Typing') {
-          // Use RL80's animation clip for special animations
-          const rl80Action = actionsRef.current['RL80'][nextAnimation];
-          if (rl80Action && mixersRef.current['Tekno']) {
-            const action = mixersRef.current['Tekno'].clipAction(rl80Action.getClip());
-            teknoActions[nextAnimation] = action;
-            action.reset();
+        if (teknoActions[nextAnimation]) {
+          const action = teknoActions[nextAnimation];
+          action.reset();
+          action.fadeIn(0.5);
+          
+          if (specialAnimations.includes(nextAnimation)) {
             action.setLoop(THREE.LoopOnce, 1);
             action.clampWhenFinished = true;
-            action.fadeIn(0.5);
-            action.play();
             
-            // Return to Typing after animation
             const animDuration = action.getClip().duration * 1000;
             setTimeout(() => {
-              if (teknoActions['Typing']) {
+              const returnAnim = loopAnimations[Math.floor(Math.random() * loopAnimations.length)];
+              if (teknoActions[returnAnim]) {
                 action.fadeOut(0.5);
-                teknoActions['Typing'].stop();
-                teknoActions['Typing'].reset();
-                teknoActions['Typing'].setLoop(THREE.LoopRepeat);
-                teknoActions['Typing'].setEffectiveWeight(1);
-                teknoActions['Typing'].play();
+                teknoActions[returnAnim].stop();
+                teknoActions[returnAnim].reset();
+                teknoActions[returnAnim].setLoop(THREE.LoopRepeat);
+                teknoActions[returnAnim].setEffectiveWeight(1);
+                teknoActions[returnAnim].play();
               }
-              teknoState.currentAnimation = 'Typing';
+              teknoState.currentAnimation = returnAnim;
               teknoState.nextSwitchDelay = Math.random() * 10000 + 20000;
               teknoState.lastSwitchTime = Date.now();
             }, Math.max(100, animDuration - 500));
+          } else {
+            action.setLoop(THREE.LoopRepeat);
           }
-        } else if (teknoActions['Typing']) {
-          // Switch back to Typing
-          teknoActions['Typing'].reset();
-          teknoActions['Typing'].setLoop(THREE.LoopRepeat);
-          teknoActions['Typing'].fadeIn(0.5);
-          teknoActions['Typing'].play();
+          
+          action.play();
         }
         
         teknoState.currentAnimation = nextAnimation;
         
-        if (nextAnimation === 'Typing') {
-          teknoState.nextSwitchDelay = Math.random() * 10000 + 20000;
+        if (loopAnimations.includes(nextAnimation)) {
+          teknoState.nextSwitchDelay = Math.random() * 10000 + 20000; // 20-30 seconds
         } else {
           teknoState.nextSwitchDelay = 999999;
         }

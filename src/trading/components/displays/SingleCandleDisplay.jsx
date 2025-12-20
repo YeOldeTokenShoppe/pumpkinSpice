@@ -17,7 +17,8 @@ function decodeHTMLEntities(text) {
 
 // Model viewer component with candle data display and texture support
 function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlipped = false, isRevealing = false }) {
-  const { scene, materials } = useGLTF(modelPath);
+  const gltf = useGLTF(modelPath);
+  const { scene, materials, animations } = gltf;
   const modelRef = useRef();
   const groupRef = useRef();
   const [plaqueVisible, setPlaqueVisible] = useState(true);
@@ -36,7 +37,42 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
       
       // Process meshes and apply textures
       clonedModel.traverse((child) => {
-        if (child.isMesh) {
+        // Debug logging for rigged characters
+        if (child.name && (child.name.includes('Robot') || child.name.includes('Macro') || child.name.includes('RL80') || child.name.includes('Empty'))) {
+          console.log('Found character-related object:', {
+            name: child.name,
+            type: child.type,
+            isSkinnedMesh: child.isSkinnedMesh,
+            isMesh: child.isMesh,
+            isObject3D: child.isObject3D,
+            isBone: child.isBone,
+            hasChildren: child.children?.length > 0,
+            children: child.children?.map(c => ({ name: c.name, type: c.type }))
+          });
+          
+          if (child.isSkinnedMesh) {
+            console.log('SkinnedMesh details:', {
+              name: child.name,
+              hasSkeleton: !!child.skeleton,
+              boneCount: child.skeleton?.bones?.length,
+              hasBindMatrix: !!child.bindMatrix,
+              hasBindMatrixInverse: !!child.bindMatrixInverse
+            });
+          }
+        }
+        
+        // Handle SkinnedMesh (rigged characters like RL80 and Macro)
+        if (child.isSkinnedMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          console.log(`Processing SkinnedMesh: ${child.name}`);
+          // Force skeleton update to avoid t-pose
+          if (child.skeleton) {
+            child.skeleton.calculateInverses();
+            child.skeleton.computeBoneTexture();
+            child.skeleton.update();
+          }
+        } else if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
           
@@ -330,6 +366,11 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
       }
       groupRef.current = clonedModel;
       modelRef.current.add(clonedModel);
+      
+      // Log if animations exist (shouldn't for candle-only models)
+      if (animations && animations.length > 0) {
+        console.log(`Warning: Candle model has animations? ${animations.length} animations:`, animations.map(a => a.name));
+      }
     }
   }, [scene, materials, candleData]);
   
@@ -1111,13 +1152,15 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
             }}
           >
             <Suspense fallback={
-              <mesh>
-                <boxGeometry args={[1, 1, 1]} />
-                <meshBasicMaterial color="gray" />
-              </mesh>
+              isRevealing ? null : (
+                <mesh>
+                  <boxGeometry args={[1, 1, 1]} />
+                  <meshBasicMaterial color="gray" />
+                </mesh>
+              )
             }>
               <ModelViewer 
-                key={`${currentModelPath}-${activeTab}-${activeTab === 'all' ? currentAllCandleIndex : currentMyCandleIndex}`}
+                key={currentModelPath}
                 modelPath={currentModelPath}
                 candleData={currentCandle}
                 showPlaque={showPlaque}
@@ -1481,5 +1524,5 @@ if (typeof document !== 'undefined' && !document.getElementById('animation-style
 }
 
 // Preload the models
-useGLTF.preload('/models/tinyVotiveBox2.glb');
+useGLTF.preload('/models/tinyVotiveBox.glb');
 useGLTF.preload('/models/tinyJapCanBox.glb');
