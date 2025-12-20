@@ -7,8 +7,16 @@ import { db } from '../../../utilities/firebaseClient';
 import { useUser } from '@clerk/nextjs';
 
 
+// Helper function to decode HTML entities
+function decodeHTMLEntities(text) {
+  if (!text) return text;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
 // Model viewer component with candle data display and texture support
-function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
+function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlipped = false, isRevealing = false }) {
   const { scene, materials } = useGLTF(modelPath);
   const modelRef = useRef();
   const groupRef = useRef();
@@ -21,9 +29,10 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
     if (scene && modelRef.current) {
       const clonedModel = scene.clone();
       
-      // Scale and position the model
+      // Scale and position the model - adjust for mobile
+      const isMobile = window.innerWidth <= 768;
       clonedModel.scale.set(1, 1, 1);
-      clonedModel.position.set(0, -1.2, -2);
+      clonedModel.position.set(0, isMobile ? -1.4 : -1, isMobile ? -3 : -5);
       
       // Process meshes and apply textures
       clonedModel.traverse((child) => {
@@ -346,22 +355,22 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
       <pointLight position={[0, 3, 2]} intensity={0.5} color="#ffaa00" />
       <pointLight position={[-3, 2, -2]} intensity={0.3} color="#ffffff" />
       
-      {/* The model */}
-      <group ref={modelRef}>
+      {/* The model - hide when flipped */}
+      <group ref={modelRef} visible={!isFlipped}>
         {/* Display candle data if available */}
-        {groupRef.current && candleData && plaqueVisible && showPlaque && (
+        {groupRef.current && candleData && plaqueVisible && showPlaque && !isFlipped && (
           <Html
-            position={[0, 1.1, -1.2]}
+            position={window.innerWidth <= 768 ? [0, 1.3, -1.9] : [0, 1.1, -2.8]}
             center
-            distanceFactor={16}
+            distanceFactor={window.innerWidth <= 768 ? 5 : 6}
             transform
             occlude
             style={{
               borderRadius: '6px',
-              padding: '8px 12px',
-              minWidth: '120px',
-              maxWidth: '180px',
-              minHeight: '100px',
+              padding: window.innerWidth <= 768 ? '8px 12px' : '4px 8px',
+              minWidth: window.innerWidth <= 768 ? '120px' : '80px',
+              maxWidth: window.innerWidth <= 768 ? '180px' : '120px',
+              minHeight: window.innerWidth <= 768 ? '100px' : '60px',
               textAlign: 'center',
               fontFamily: 'Georgia, serif',
               display: 'flex',
@@ -370,7 +379,6 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
               justifyContent: 'flex-start',
               pointerEvents: 'none',
               userSelect: 'none',
-              transform: 'scale(0.4)',
               zIndex: 10
             }}
           >
@@ -390,8 +398,8 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
                     src={candleData.userAvatar} 
                     alt="User" 
                     style={{
-                      width: '20px',
-                      height: '20px',
+                      width: window.innerWidth <= 768 ? '1.5rem' : '15px',
+                      height: window.innerWidth <= 768 ? '1.5rem' : '15px',
                       borderRadius: '50%',
                       border: '1px solid #eaea0b',
                       boxShadow: '0 0 4px rgba(234, 234, 11, 0.5)'
@@ -405,46 +413,47 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
               {candleData.username && (
                 <div style={{
                   color: '#eaea0b',
-                  fontSize: '8px',
+                  fontSize: window.innerWidth <= 768 ? '14px' : '7px',
                   fontWeight: 'bold',
-                  marginBottom: candleData.message ? '4px' : '0',
+                  marginBottom: candleData.message && window.innerWidth > 768 ? '2px' : '0',
                   textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)'
                 }}>
                   {candleData.username}
                 </div>
               )}
-              {candleData.message && (
+              {/* Only show message on desktop, not mobile */}
+              {candleData.message && window.innerWidth > 768 && (
                 <div style={{
                   color: '#eaea0b',
-                  fontSize: '6px',
+                  fontSize: candleData.message.length > 50 ? 7 : 6,
                   fontStyle: 'italic',
-                  lineHeight: '1.2',
+                  lineHeight: '1.1',
                   flex: 1,
                   overflow: 'auto',
                   wordWrap: 'break-word',
                   maxWidth: '100%',
                   paddingTop: '2px'
                 }}>
-                  "{candleData.message}"
+                  "{decodeHTMLEntities(candleData.message)}"
                 </div>
               )}
               {candleData.burnedAmount && candleData.burnedAmount !== '0' && parseInt(candleData.burnedAmount) > 0 && (
                 <div style={{
-                  marginTop: '6px',
-                  paddingTop: '4px',
+                  marginTop: window.innerWidth <= 768 ? '8px' : '3px',
+                  paddingTop: window.innerWidth <= 768 ? '4px' : '2px',
                   borderTop: '1px solid rgba(234, 234, 11, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '3px'
+                  gap: window.innerWidth <= 768 ? '4px' : '2px'
                 }}>
                   <span style={{
-                    fontSize: '8px',
+                    fontSize: window.innerWidth <= 768 ? '10px' : '6px',
                     filter: 'drop-shadow(0 0 2px rgba(255, 100, 0, 0.8))'
                   }}>🔥</span>
                   <span style={{
                     color: '#ffb000',
-                    fontSize: '7px',
+                    fontSize: window.innerWidth <= 768 ? '9px' : '6px',
                     fontWeight: 'bold',
                     textShadow: '0 0 3px rgba(255, 176, 0, 0.5)'
                   }}>
@@ -457,27 +466,103 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
         )}
       </group>
       
-      {/* Camera controls */}
-      <OrbitControls
-        enableDamping
-        dampingFactor={0.2}
-        enablePan={false}
-        enableZoom={true}
-        minDistance={2}
-        maxDistance={4}
-        autoRotate={false}
-        minPolarAngle={Math.PI / 3}    // 60 degrees - prevents looking too high
-        maxPolarAngle={Math.PI / 2}  // ~82 degrees - prevents looking too low
-        minAzimuthAngle={-Math.PI / 12}  // ~90 degrees - prevents looking too far left
-        maxAzimuthAngle={Math.PI / 12}   // ~90 degrees - prevents looking too far right
-
-      />
+      {/* Show larger text display when flipped - hide during transitions */}
+      {isFlipped && candleData && !isRevealing && showPlaque && (
+        <Html
+          position={[0, 0.6, 0]}
+          center
+          distanceFactor={window.innerWidth <= 768 ? 5 : 4}
+          style={{
+            width: window.innerWidth <= 768 ? '300px' : '200px',
+            padding: window.innerWidth <= 768 ? '20px' : '15px',
+            // background: 'rgba(0, 0, 0, 0.9)',
+            // border: '2px solid #ffd700',
+            borderRadius: '10px',
+            color: '#ffd700',
+            textAlign: 'center',
+            fontFamily: 'Georgia, serif'
+          }}
+        >
+          {candleData.userAvatar && (
+            <img 
+              src={candleData.userAvatar} 
+              alt="User" 
+              style={{
+                width: window.innerWidth <= 768 ? '60px' : '40px',
+                height: window.innerWidth <= 768 ? '60px' : '40px',
+                borderRadius: '50%',
+                border: '2px solid #ffd700',
+                marginBottom: window.innerWidth <= 768 ? '15px' : '10px'
+              }}
+            />
+          )}
+          {candleData.username && (
+            <h2 style={{
+              fontSize: window.innerWidth <= 768 ? '24px' : '14px',
+              marginBottom: window.innerWidth <= 768 ? '10px' : '6px',
+              color: '#ffd700'
+            }}>
+              {candleData.username}
+            </h2>
+          )}
+          {candleData.message && (
+            <p style={{
+              fontSize: window.innerWidth <= 768 ? '16px' : '9px',
+              lineHeight: '1.4',
+              fontStyle: 'italic',
+              color: '#ffd700',
+              marginBottom: window.innerWidth <= 768 ? '15px' : '8px'
+            }}>
+              "{decodeHTMLEntities(candleData.message)}"
+            </p>
+          )}
+          {candleData.messageType && (
+            <div style={{
+              fontSize: window.innerWidth <= 768 ? '14px' : '6px',
+              color: '#00ff00',
+              marginBottom: window.innerWidth <= 768 ? '10px' : '6px'
+            }}>
+              {candleData.messageType.charAt(0).toUpperCase() + candleData.messageType.slice(1)}
+            </div>
+          )}
+          {candleData.burnedAmount && parseInt(candleData.burnedAmount) > 0 && (
+            <div style={{
+              fontSize: window.innerWidth <= 768 ? '18px' : '11px',
+              color: '#ff6600',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: window.innerWidth <= 768 ? '5px' : '3px'
+            }}>
+              🔥 {parseInt(candleData.burnedAmount).toLocaleString()} RL80
+            </div>
+          )}
+        </Html>
+      )}
+      
+      {/* Camera controls - disabled on mobile */}
+      {window.innerWidth > 768 && (
+        <OrbitControls
+          enableDamping
+          dampingFactor={0.2}
+          enablePan={false}
+          enableZoom={true}
+          minDistance={2}
+          maxDistance={4}
+          target={[0, 0.4, -2]}
+          autoRotate={false}
+          minPolarAngle={Math.PI / 3}    // 60 degrees - prevents looking too high
+          maxPolarAngle={Math.PI / 2}  // ~82 degrees - prevents looking too low
+          minAzimuthAngle={-Math.PI / 12}  // ~90 degrees - prevents looking too far left
+          maxAzimuthAngle={Math.PI / 12}   // ~90 degrees - prevents looking too far right
+        />
+      )}
     </>
   );
 }
 
 // Main component for single candle display
-export default function SingleCandleDisplay({ onOpenCompactModal }) {
+export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
   const [allCandles, setAllCandles] = useState([]);
   const [myCandles, setMyCandles] = useState([]);
@@ -492,7 +577,20 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
   const [isPaused, setIsPaused] = useState(false);
   const [filterMode, setFilterMode] = useState('random'); // 'random', 'leaderboard', 'newest'
   const [filteredCandles, setFilteredCandles] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
   const { user, isSignedIn } = useUser();
+  
+  // Handle responsive behavior
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Helper function to estimate object size in bytes
   const getObjectSize = (obj) => {
@@ -672,11 +770,13 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
         // Trigger reveal animation
         setIsRevealing(true);
         
-        // Show particles earlier in the transition
+        // Show particles earlier in the transition (but not when flipped)
         setTimeout(() => {
-          console.log('Setting particle type to:', currentType);
-          setParticleCandleType(currentType);
-          setShowParticles(true);
+          if (!isFlipped) {
+            console.log('Setting particle type to:', currentType);
+            setParticleCandleType(currentType);
+            setShowParticles(true);
+          }
         }, 150);  // Reduced from 400ms to 150ms
         
         // After curtains close, change the candle
@@ -713,11 +813,13 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
         // Trigger reveal animation
         setIsRevealing(true);
         
-        // Show particles earlier in the transition
+        // Show particles earlier in the transition (but not when flipped)
         setTimeout(() => {
-          console.log('Setting particle type to:', currentType);
-          setParticleCandleType(currentType);
-          setShowParticles(true);
+          if (!isFlipped) {
+            console.log('Setting particle type to:', currentType);
+            setParticleCandleType(currentType);
+            setShowParticles(true);
+          }
         }, 150);  // Reduced from 400ms to 150ms
         
         // After curtains close, change the candle
@@ -744,7 +846,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
       
       return () => clearInterval(interval);
     }
-  }, [activeTab, filteredCandles, myCandles, isPaused, currentAllCandleIndex, currentMyCandleIndex]);
+  }, [activeTab, filteredCandles, myCandles, isPaused, currentAllCandleIndex, currentMyCandleIndex, isFlipped]);
   
   // Clean up old textures when switching candles (helps with memory)
   useEffect(() => {
@@ -783,21 +885,66 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      width: '25rem',
-      height: '35rem',
-      margin: 'auto',
+      width: isMobile ? '100%' : '25rem',
+      height: isMobile ? '100vh' : '35rem',
+      maxWidth: isMobile ? '100%' : '25rem',
+      maxHeight: isMobile ? '100vh' : '35rem',
+      margin: isMobile ? 0 : 'auto',
       background: '#1a1a1a',
-      borderRadius: '10px',
+      borderRadius: isMobile ? '0' : '10px',
       overflow: 'hidden',
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+      position: isMobile ? 'fixed' : 'relative',
+      top: isMobile ? 0 : 'auto',
+      left: isMobile ? 0 : 'auto',
+      right: isMobile ? 0 : 'auto',
+      bottom: isMobile ? 0 : 'auto',
+      zIndex: isMobile ? 99999 : 'auto',
+      paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
+      paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0
     }}>
       {/* Tab buttons */}
       <div style={{
         display: 'flex',
         flexDirection: 'column',
         background: '#0a0a0a',
-        borderBottom: '1px solid #333'
+        borderBottom: '1px solid #333',
+        position: 'relative'
       }}>
+        {/* Close button for mobile */}
+        {isMobile && onClose && (
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: '#fff',
+              fontSize: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 100000,
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255, 0, 0, 0.3)';
+              e.target.style.borderColor = 'rgba(255, 0, 0, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            }}
+          >
+            ✕
+          </button>
+        )}
         <div style={{ display: 'flex' }}>
           <button
             onClick={() => setActiveTab('all')}
@@ -943,7 +1090,10 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
           </div>
         ) : (
           <Canvas
-            camera={{ position: [0, 0, 6], fov: 50 }}
+            camera={{ 
+              position: isFlipped ? [0, 0, -6] : (isMobile ? [0, -0.3, 6] : [0, -0.5, 6]), 
+              fov: isMobile ? 40 : 40 
+            }}
             style={{ width: '100%', height: '100%' }}
             shadows
             gl={{
@@ -955,7 +1105,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
             onCreated={({ gl, scene }) => {
               gl.toneMapping = THREE.ACESFilmicToneMapping;
               gl.toneMappingExposure = 1.2;
-              scene.background = new THREE.Color(0x0f0f0f);
+              scene.background = new THREE.Color(isFlipped ? 0x000000 : 0x0f0f0f);
               gl.shadowMap.enabled = true;
               gl.shadowMap.type = THREE.PCFSoftShadowMap;
             }}
@@ -971,6 +1121,8 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
                 modelPath={currentModelPath}
                 candleData={currentCandle}
                 showPlaque={showPlaque}
+                isFlipped={isFlipped}
+                isRevealing={isRevealing}
               />
             </Suspense>
           </Canvas>
@@ -1123,13 +1275,70 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
               </div>
             )}
             
+            {/* Diagonal Corner Flip Tab */}
+            <button
+              onClick={() => setIsFlipped(!isFlipped)}
+              onMouseEnter={(e) => {
+                const ribbon = e.currentTarget.querySelector('div');
+                if (ribbon && !isMobile) {
+                  ribbon.style.transform = 'rotate(45deg) scale(1.1)';
+                  ribbon.style.background = isFlipped ? 'linear-gradient(135deg, #ff6666 0%, #ff0000 100%)' : 'linear-gradient(135deg, #ff4444 0%, #ff6666 100%)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                const ribbon = e.currentTarget.querySelector('div');
+                if (ribbon && !isMobile) {
+                  ribbon.style.transform = 'rotate(45deg) scale(1)';
+                  ribbon.style.background = isFlipped ? 'linear-gradient(135deg, #ff4444 0%, #cc0000 100%)' : 'linear-gradient(135deg, #ff0000 0%, #ff4444 100%)';
+                }
+              }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '80px',
+                height: '80px',
+                padding: 0,
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                zIndex: 20
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '10px',
+                right: '-24px',
+                width: '100px',
+                height: '30px',
+                background: isFlipped ? 'linear-gradient(135deg, #ff4444 0%, #cc0000 100%)' : 'linear-gradient(135deg, #ff0000 0%, #ff4444 100%)',
+                transform: 'rotate(45deg)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                transition: 'all 0.3s ease'
+              }}>
+                <span style={{
+                  color: '#fff',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}>
+                  {isFlipped ? 'Back' : 'Flip'}
+                </span>
+              </div>
+            </button>
+            
             {/* Pause/Play Button */}
             {((activeTab === 'all' && filteredCandles.length > 1) || (activeTab === 'my' && myCandles.length > 1)) && (
               <button
                 onClick={() => setIsPaused(!isPaused)}
                 style={{
                   position: 'absolute',
-                  bottom: '60px',
+                  bottom: isMobile && activeTab === 'my' ? 'calc(100px + env(safe-area-inset-bottom))' : isMobile ? 'calc(60px + env(safe-area-inset-bottom))' : '60px',
                   left: '50%',
                   transform: 'translateX(-50%)',
                   padding: '10px',
@@ -1169,7 +1378,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
         {((activeTab === 'all' && filteredCandles.length > 0) || (activeTab === 'my' && myCandles.length > 1)) && (
           <div style={{
             position: 'absolute',
-            bottom: '20px',
+            bottom: isMobile ? 'calc(20px + env(safe-area-inset-bottom))' : '20px',
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex',
@@ -1205,7 +1414,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
             }}
             style={{
               position: 'absolute',
-              bottom: '20px',
+              bottom: isMobile ? 'calc(20px + env(safe-area-inset-bottom))' : '20px',
               left: '50%',
               transform: 'translateX(-50%)',
               padding: '12px 24px',
@@ -1238,10 +1447,10 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
   );
 }
 
-// Inject particle animation styles
-if (typeof document !== 'undefined' && !document.getElementById('particle-styles')) {
+// Inject animation styles
+if (typeof document !== 'undefined' && !document.getElementById('animation-styles')) {
   const styleElement = document.createElement('style');
-  styleElement.id = 'particle-styles';
+  styleElement.id = 'animation-styles';
   styleElement.textContent = `
     @keyframes particleExplosion {
       0% {
@@ -1254,6 +1463,17 @@ if (typeof document !== 'undefined' && !document.getElementById('particle-styles
           calc(-50% + var(--y-offset))
         ) scale(0);
         opacity: 0;
+      }
+    }
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 4px 20px rgba(255, 215, 0, 0.6);
+      }
+      50% {
+        box-shadow: 0 4px 30px rgba(255, 215, 0, 0.9), 0 0 50px rgba(255, 215, 0, 0.4);
+      }
+      100% {
+        box-shadow: 0 4px 20px rgba(255, 215, 0, 0.6);
       }
     }
   `;

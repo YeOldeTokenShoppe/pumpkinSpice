@@ -1485,21 +1485,23 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                 right: 0,
                 bottom: 0,
                 background: 'rgba(0, 0, 0, 0.8)',
-                zIndex: 9999,
+                zIndex: window.innerWidth <= 768 ? 99999 : 9999,
                 backdropFilter: 'blur(5px)'
               }}
             />
             
-            {/* Modal content */}
+            {/* Modal content - responsive for mobile */}
             <div 
               onClick={(e) => e.stopPropagation()}
               style={{
               position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 10000,
-              borderRadius: '10px',
+              top: window.innerWidth <= 768 ? 0 : '50%',
+              left: window.innerWidth <= 768 ? 0 : '50%',
+              transform: window.innerWidth <= 768 ? 'none' : 'translate(-50%, -50%)',
+              width: window.innerWidth <= 768 ? '100%' : 'auto',
+              height: window.innerWidth <= 768 ? '100%' : 'auto',
+              zIndex: window.innerWidth <= 768 ? 100000 : 10000,
+              borderRadius: window.innerWidth <= 768 ? 0 : '10px',
               overflow: 'visible'
             }}>
               {/* Close button */}
@@ -1510,8 +1512,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                 }}
                 style={{
                   position: 'absolute',
-                  top: '-10px',
-                  right: '-10px',
+                  top: window.innerWidth <= 768 ? '20px' : '-10px',
+                  right: window.innerWidth <= 768 ? '20px' : '-10px',
                   background: 'rgba(255, 0, 0, 0.8)',
                   border: '2px solid #ff0000',
                   borderRadius: '50%',
@@ -1540,6 +1542,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                     setShowCompactCandleModal(true); // Open the CompactCandleModal
                   }, 500);
                 }}
+                onClose={() => setShowSingleCandleDisplay(false)}
               />
             </div>
           </>
