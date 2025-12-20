@@ -20,7 +20,7 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrambleTextPlugin);
 }
 // Simple viewer component for displaying candle models with dynamic texture support
-function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, dedicationName, dedicationMessage, showPlaque, userAvatar, burnAmount, baseColor }) {
+function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, backgroundGradient, dedicationName, dedicationMessage, showPlaque, userAvatar, burnAmount, baseColor }) {
   const { scene, materials } = useGLTF(modelPath);
   const modelRef = useRef();
   const groupRef = useRef();
@@ -252,8 +252,352 @@ function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, 
     }
   }, [baseColor, modelPath]);
   
-  // Separate effect for background texture application
+  // Separate effect for background texture/gradient application
   React.useEffect(() => {
+    let animationFrame;
+    
+    if (boxMeshRef.current && (backgroundTexturePath || backgroundGradient) && (modelPath.includes('tinyVotiveBox') || modelPath.includes('tinyJapCanBox'))) {
+      // Handle gradient backgrounds
+      if (backgroundGradient && !backgroundTexturePath) {
+        // Create a gradient texture from canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        
+        // Check if it's a dynamic gradient
+        if (backgroundGradient === 'dynamic-aurora') {
+          // Aurora Borealis animated gradient
+          let time = 0;
+          const animate = () => {
+            time += 0.002; // Much slower increment
+            
+            // Fill with base color first - darker for more contrast
+            ctx.fillStyle = 'rgba(0, 5, 20, 1)'; // Very dark blue-black base
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Create marbling effect with multiple layers
+            for (let layer = 0; layer < 2; layer++) {
+              const offset = layer * Math.PI * 0.5;
+              const posX = Math.sin(time * 0.3 + offset) * 80;
+              const posY = Math.cos(time * 0.2 + offset) * 60;
+              const posX2 = Math.sin(time * 0.4 + offset + 1) * 100;
+              const posY2 = Math.cos(time * 0.35 + offset + 1) * 80;
+              
+              // Deep purples and magentas
+              const grad1 = ctx.createRadialGradient(
+                200 + posX, 100 + posY, 50 + Math.sin(time + offset) * 30,
+                256, 256, 300
+              );
+              grad1.addColorStop(0, 'rgba(150, 0, 255, 0.6)'); // Pure purple, less opacity
+              grad1.addColorStop(0.5, 'rgba(100, 0, 150, 0.5)'); // Deep purple
+              grad1.addColorStop(1, 'rgba(30, 0, 60, 0.2)'); // Dark purple fade
+              ctx.globalCompositeOperation = layer === 0 ? 'source-over' : 'screen';
+              ctx.fillStyle = grad1;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              
+              // Vibrant greens with cyan hints
+              const grad2 = ctx.createRadialGradient(
+                350 - posX2, 150 - posY2, 60 + Math.cos(time + offset) * 40,
+                256, 256, 350
+              );
+              grad2.addColorStop(0, 'rgba(0, 255, 100, 0.6)'); // Pure green, less opacity
+              grad2.addColorStop(0.4, 'rgba(0, 150, 80, 0.5)'); // Darker emerald
+              grad2.addColorStop(1, 'rgba(0, 30, 50, 0.2)'); // Dark teal fade
+              ctx.globalCompositeOperation = 'multiply';
+              ctx.fillStyle = grad2;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Add some colored streaks for marbling (no white)
+            const streakTime = time * 0.5;
+            for (let i = 0; i < 3; i++) {
+              const streakX = 256 + Math.sin(streakTime + i * 2) * 200;
+              const streakY = 256 + Math.cos(streakTime * 0.7 + i * 2) * 200;
+              const grad4 = ctx.createLinearGradient(
+                streakX - 100, streakY - 100,
+                streakX + 100, streakY + 100
+              );
+              if (i % 2 === 0) {
+                // Purple streaks
+                grad4.addColorStop(0, 'rgba(100, 0, 150, 0)');
+                grad4.addColorStop(0.5, 'rgba(180, 0, 255, 0.4)');
+                grad4.addColorStop(1, 'rgba(80, 0, 120, 0)');
+              } else {
+                // Green streaks
+                grad4.addColorStop(0, 'rgba(0, 100, 50, 0)');
+                grad4.addColorStop(0.5, 'rgba(0, 200, 100, 0.4)');
+                grad4.addColorStop(1, 'rgba(0, 80, 40, 0)');
+              }
+              ctx.globalCompositeOperation = 'screen';
+              ctx.fillStyle = grad4;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Update texture
+            if (backgroundTextureRef.current) {
+              backgroundTextureRef.current.needsUpdate = true;
+            }
+            
+            animationFrame = requestAnimationFrame(animate);
+          };
+          
+          const texture = new THREE.CanvasTexture(canvas);
+          backgroundTextureRef.current = texture;
+          boxMeshRef.current.material = boxMeshRef.current.material.clone();
+          boxMeshRef.current.material.map = texture;
+          boxMeshRef.current.material.needsUpdate = true;
+          
+          // Ensure material is set up for texture visibility
+          if (boxMeshRef.current.material.color) {
+            boxMeshRef.current.material.color.set(0xffffff); // White to show texture colors
+          }
+          boxMeshRef.current.material.emissive = new THREE.Color(0x000000);
+          boxMeshRef.current.material.emissiveIntensity = 0;
+          
+          animate();
+          currentBackgroundPath.current = backgroundGradient;
+          return;
+          
+        } else if (backgroundGradient === 'dynamic-sunset') {
+          // Animated sunset gradient
+          let time = 0;
+          const animate = () => {
+            time += 0.003; // Slow, peaceful movement
+            
+            // Fill with sky gradient base
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGrad.addColorStop(0, 'rgba(25, 25, 112, 1)'); // Midnight blue at top
+            skyGrad.addColorStop(0.3, 'rgba(75, 0, 130, 1)'); // Indigo
+            skyGrad.addColorStop(0.5, 'rgba(255, 94, 77, 1)'); // Coral
+            skyGrad.addColorStop(0.7, 'rgba(255, 140, 0, 1)'); // Dark orange
+            skyGrad.addColorStop(1, 'rgba(255, 69, 0, 1)'); // Red-orange at bottom
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add moving sun
+            const sunY = 256 + Math.sin(time * 0.5) * 30;
+            const sunGrad = ctx.createRadialGradient(
+              256, sunY, 0,
+              256, sunY, 120
+            );
+            sunGrad.addColorStop(0, 'rgba(255, 255, 200, 0.9)');
+            sunGrad.addColorStop(0.3, 'rgba(255, 200, 0, 0.7)');
+            sunGrad.addColorStop(0.6, 'rgba(255, 100, 0, 0.4)');
+            sunGrad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = sunGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add floating clouds/haze
+            for (let i = 0; i < 3; i++) {
+              const cloudX = (time * 20 + i * 170) % (canvas.width + 200) - 100;
+              const cloudY = 150 + i * 60 + Math.sin(time + i) * 10;
+              const cloudGrad = ctx.createRadialGradient(
+                cloudX, cloudY, 0,
+                cloudX, cloudY, 80
+              );
+              cloudGrad.addColorStop(0, 'rgba(255, 150, 100, 0.3)');
+              cloudGrad.addColorStop(1, 'rgba(255, 100, 150, 0)');
+              ctx.globalCompositeOperation = 'lighter';
+              ctx.fillStyle = cloudGrad;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Update texture
+            if (backgroundTextureRef.current) {
+              backgroundTextureRef.current.needsUpdate = true;
+            }
+            
+            animationFrame = requestAnimationFrame(animate);
+          };
+          
+          const texture = new THREE.CanvasTexture(canvas);
+          backgroundTextureRef.current = texture;
+          boxMeshRef.current.material = boxMeshRef.current.material.clone();
+          boxMeshRef.current.material.map = texture;
+          boxMeshRef.current.material.needsUpdate = true;
+          
+          // Ensure material is set up for texture visibility
+          if (boxMeshRef.current.material.color) {
+            boxMeshRef.current.material.color.set(0xffffff); // White to show texture colors
+          }
+          boxMeshRef.current.material.emissive = new THREE.Color(0x000000);
+          boxMeshRef.current.material.emissiveIntensity = 0;
+          
+          animate();
+          currentBackgroundPath.current = backgroundGradient;
+          return;
+          
+        } else if (backgroundGradient === 'dynamic-ethereal') {
+          // Ethereal mist animated gradient
+          let time = 0;
+          const animate = () => {
+            time += 0.004; // Gentle flow
+            
+            // Fill with deep ethereal base
+            ctx.fillStyle = 'rgba(10, 0, 30, 1)'; // Deep purple-black
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Create multiple layers of flowing mist
+            for (let layer = 0; layer < 4; layer++) {
+              const offset = layer * Math.PI * 0.7;
+              
+              // Flowing mist patterns
+              for (let i = 0; i < 2; i++) {
+                const mistX = 256 + Math.sin(time * 0.3 + offset + i) * 150;
+                const mistY = 256 + Math.cos(time * 0.2 + offset + i * 0.5) * 100;
+                const mistGrad = ctx.createRadialGradient(
+                  mistX, mistY, 20 + Math.sin(time + offset) * 10,
+                  mistX, mistY, 100 + Math.cos(time + offset) * 30
+                );
+                
+                if (layer % 2 === 0) {
+                  // Blue-white ethereal mist
+                  mistGrad.addColorStop(0, 'rgba(150, 200, 255, 0.4)');
+                  mistGrad.addColorStop(0.5, 'rgba(100, 150, 255, 0.2)');
+                  mistGrad.addColorStop(1, 'rgba(50, 100, 200, 0)');
+                } else {
+                  // Purple-pink ethereal mist
+                  mistGrad.addColorStop(0, 'rgba(255, 150, 255, 0.4)');
+                  mistGrad.addColorStop(0.5, 'rgba(200, 100, 255, 0.2)');
+                  mistGrad.addColorStop(1, 'rgba(150, 50, 200, 0)');
+                }
+                
+                ctx.globalCompositeOperation = layer === 0 ? 'source-over' : 'screen';
+                ctx.fillStyle = mistGrad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+              }
+            }
+            
+            // Add sparkles/stars
+            ctx.globalCompositeOperation = 'lighter';
+            for (let i = 0; i < 5; i++) {
+              const starX = (256 + Math.sin(time * 0.7 + i * 2) * 200);
+              const starY = (256 + Math.cos(time * 0.5 + i * 2) * 200);
+              const opacity = 0.3 + Math.sin(time * 2 + i) * 0.3;
+              ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+              ctx.beginPath();
+              ctx.arc(starX, starY, 1 + Math.sin(time * 3 + i) * 0.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Update texture
+            if (backgroundTextureRef.current) {
+              backgroundTextureRef.current.needsUpdate = true;
+            }
+            
+            animationFrame = requestAnimationFrame(animate);
+          };
+          
+          const texture = new THREE.CanvasTexture(canvas);
+          backgroundTextureRef.current = texture;
+          boxMeshRef.current.material = boxMeshRef.current.material.clone();
+          boxMeshRef.current.material.map = texture;
+          boxMeshRef.current.material.needsUpdate = true;
+          
+          // Ensure material is set up for texture visibility
+          if (boxMeshRef.current.material.color) {
+            boxMeshRef.current.material.color.set(0xffffff); // White to show texture colors
+          }
+          boxMeshRef.current.material.emissive = new THREE.Color(0x000000);
+          boxMeshRef.current.material.emissiveIntensity = 0;
+          
+          animate();
+          currentBackgroundPath.current = backgroundGradient;
+          return;
+          
+        } else if (backgroundGradient === 'dynamic-lava') {
+          // Lava flow animated gradient
+          let time = 0;
+          const animate = () => {
+            time += 0.02;
+            
+            // Fill with base color first
+            ctx.fillStyle = 'rgba(80, 20, 0, 1)'; // Dark red-brown base
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Create flowing lava effect
+            for (let i = 0; i < 5; i++) {
+              const x = 256 + Math.sin(time + i) * 100;
+              const y = 256 + Math.cos(time * 0.5 + i) * 100;
+              
+              const grad = ctx.createRadialGradient(x, y, 20, x, y, 150);
+              grad.addColorStop(0, `rgba(255, ${200 + Math.sin(time + i) * 50}, 0, 1)`); // Bright yellow-orange core
+              grad.addColorStop(0.5, `rgba(255, ${100 + Math.sin(time + i) * 50}, 0, 0.8)`); // Orange
+              grad.addColorStop(1, 'rgba(200, 50, 0, 0.4)'); // Red-orange glow
+              
+              ctx.fillStyle = grad;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Update texture
+            if (backgroundTextureRef.current) {
+              backgroundTextureRef.current.needsUpdate = true;
+            }
+            
+            animationFrame = requestAnimationFrame(animate);
+          };
+          
+          const texture = new THREE.CanvasTexture(canvas);
+          backgroundTextureRef.current = texture;
+          boxMeshRef.current.material = boxMeshRef.current.material.clone();
+          boxMeshRef.current.material.map = texture;
+          boxMeshRef.current.material.needsUpdate = true;
+          
+          // Ensure material is set up for texture visibility
+          if (boxMeshRef.current.material.color) {
+            boxMeshRef.current.material.color.set(0xffffff); // White to show texture colors
+          }
+          boxMeshRef.current.material.emissive = new THREE.Color(0x000000);
+          boxMeshRef.current.material.emissiveIntensity = 0;
+          
+          animate();
+          currentBackgroundPath.current = backgroundGradient;
+          return;
+          
+        } else {
+          // Static gradient handling (existing code)
+          const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+          
+          // Extract colors from the gradient string (simplified parsing)
+          const colors = backgroundGradient.match(/#[0-9a-f]{6}|#[0-9a-f]{3}|rgb\([^)]+\)|rgba\([^)]+\)/gi);
+          if (colors && colors.length >= 2) {
+            gradient.addColorStop(0, colors[0]);
+            gradient.addColorStop(1, colors[colors.length - 1]);
+            if (colors.length > 2) {
+              const step = 1 / (colors.length - 1);
+              for (let i = 1; i < colors.length - 1; i++) {
+                gradient.addColorStop(step * i, colors[i]);
+              }
+            }
+          }
+          
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Create texture from canvas
+          const texture = new THREE.CanvasTexture(canvas);
+          texture.needsUpdate = true;
+          
+          // Apply to box mesh
+          boxMeshRef.current.material = boxMeshRef.current.material.clone();
+          boxMeshRef.current.material.map = texture;
+          boxMeshRef.current.material.needsUpdate = true;
+          
+          // Store for cleanup
+          backgroundTextureRef.current = texture;
+          currentBackgroundPath.current = backgroundGradient;
+          return;
+        }
+      }
+      
     if (boxMeshRef.current && backgroundTexturePath && (modelPath.includes('tinyVotiveBox') || modelPath.includes('tinyJapCanBox'))) {
       // Only load the texture if it's different from the current one
       if (currentBackgroundPath.current !== backgroundTexturePath) {
@@ -329,7 +673,15 @@ function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, 
         boxMeshRef.current.material.color.set(0x333333); // Dark gray
       }
     }
-  }, [backgroundTexturePath, modelPath]);
+    }
+    
+    // Cleanup function for animation frames
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [backgroundTexturePath, backgroundGradient, modelPath]);
   
   // Cleanup on unmount
   React.useEffect(() => {
@@ -1191,31 +1543,58 @@ function CandlePreview({
 const BACKGROUND_TEXTURES = [{
   id: 'none',
   path: null,
-  name: 'No Background'
+  name: 'No Background',
+  type: 'none'
 }, {
   id: 'cyberpunk',
   path: '/cyberpunk.webp',
-  name: 'Cyberpunk'
+  name: 'Cyberpunk',
+  type: 'image'
 }, {
   id: 'synthwave',
   path: '/synthwave.webp',
-  name: 'Synthwave'
+  name: 'Synthwave',
+  type: 'image'
 }, {
   id: 'gothicTokyo',
   path: '/gothicTokyo.webp',
-  name: 'Gothic Tokyo'
+  name: 'Gothic Tokyo',
+  type: 'image'
 }, {
   id: 'neoTokyo',
   path: '/neoTokyo.webp',
-  name: 'Neo Tokyo'
+  name: 'Neo Tokyo',
+  type: 'image'
 }, {
   id: 'aurora',
   path: '/aurora.webp',
-  name: 'Aurora'
+  name: 'Aurora',
+  type: 'image'
 }, {
   id: 'templeScene',
   path: '/templeScene.webp',
-  name: 'Temple Scene'
+  name: 'Temple Scene',
+  type: 'image'
+}, {
+  id: 'gradient-sunset-dynamic',
+  gradient: 'dynamic-sunset',
+  name: 'Sunset Sky',
+  type: 'gradient-dynamic'
+}, {
+  id: 'gradient-ethereal-dynamic',
+  gradient: 'dynamic-ethereal',
+  name: 'Ethereal Mist',
+  type: 'gradient-dynamic'
+}, {
+  id: 'gradient-aurora-dynamic',
+  gradient: 'dynamic-aurora',
+  name: 'Aurora Borealis',
+  type: 'gradient-dynamic'
+}, {
+  id: 'gradient-lava-flow',
+  gradient: 'dynamic-lava',
+  name: 'Lava Flow',
+  type: 'gradient-dynamic'
 }];
 const sanitizeInput = (input, maxLength = 500) => {
   if (!input) return '';
@@ -2536,12 +2915,32 @@ export default function CompactCandleModal({
                 transition: 'all 0.3s ease',
                 transform: formData.background === bg.id ? 'scale(1.05)' : 'scale(1)'
               }}>
-                    {bg.path ? (
+                    {bg.type === 'image' && bg.path ? (
                       <img src={bg.path} alt={bg.name} style={{
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
                         opacity: formData.background === bg.id ? 1 : 0.7
+                      }} />
+                    ) : bg.type === 'gradient' ? (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        background: bg.gradient,
+                        opacity: formData.background === bg.id ? 1 : 0.8
+                      }} />
+                    ) : bg.type === 'gradient-dynamic' ? (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        background: bg.id === 'gradient-aurora-dynamic' 
+                          ? 'linear-gradient(135deg, #000520 0%, #9400ff 25%, #00ff88 50%, #ff00ff 75%, #000033 100%)'
+                          : bg.id === 'gradient-lava-flow'
+                          ? 'linear-gradient(135deg, #330000 0%, #ff3300 25%, #ffaa00 50%, #ff6600 75%, #660000 100%)'
+                          : bg.id === 'gradient-sunset-dynamic'
+                          ? 'linear-gradient(135deg, #191970 0%, #4B0082 20%, #FF5E4D 40%, #FF8C00 60%, #FF4500 100%)'
+                          : 'linear-gradient(135deg, #0A001E 0%, #96C8FF 30%, #FFC8FF 60%, #C896FF 100%)',
+                        opacity: formData.background === bg.id ? 1 : 0.8
                       }} />
                     ) : (
                       <div style={{
@@ -3307,8 +3706,8 @@ export default function CompactCandleModal({
                   Select a candle type to see preview
                 </div>
               ) : formData.candleType ? <Canvas camera={{
-                  position: (currentStep === 5 || currentStep === 6) ? [0, -3, 9] : [0, 1, 5],
-                  fov: 50
+                  position: (currentStep === 5 || currentStep === 6) ? [0, -3, 9] : [0, -3, 9],
+                  fov: 40
                 }} style={{
                   background: 'transparent',
                   position: 'relative',
@@ -3334,6 +3733,9 @@ export default function CompactCandleModal({
                       customImageUrl={imagePreview || imageFile ? imagePreview : null}
                       backgroundTexturePath={formData.background ? 
                         BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.path : null
+                      }
+                      backgroundGradient={formData.background ? 
+                        BACKGROUND_TEXTURES.find(bg => bg.id === formData.background)?.gradient : null
                       }
                       showPlaque={currentStep === 5 || currentStep === 6}
                       dedicationName={formData.username}

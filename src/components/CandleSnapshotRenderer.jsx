@@ -16,6 +16,26 @@ const SKYBOX_TEXTURES = {
   templeScene: '/templeScene.webp'
 };
 
+// Gradient backgrounds configuration
+const GRADIENT_BACKGROUNDS = {
+  'gradient-aurora-dynamic': {
+    type: 'gradient',
+    colors: ['#000520', '#9400ff', '#00ff88', '#ff00ff', '#000033']
+  },
+  'gradient-lava-flow': {
+    type: 'gradient', 
+    colors: ['#500000', '#ff3300', '#ffaa00', '#ff6600', '#330000']
+  },
+  'gradient-sunset-dynamic': {
+    type: 'gradient',
+    colors: ['#191970', '#4B0082', '#FF5E4D', '#FF8C00', '#FF4500']
+  },
+  'gradient-ethereal-dynamic': {
+    type: 'gradient',
+    colors: ['#0A001E', '#96C8FF', '#FFC8FF', '#C896FF', '#0A001E']
+  }
+};
+
 // Preload models to prevent loading issues
 if (typeof window !== 'undefined') {
   useGLTF.preload('/models/tinyVotiveBox.glb');
@@ -339,8 +359,116 @@ function CandleScene({ userData, onReady }) {
       
       // Add background plane with actual texture since we're using candle-only models (no Box mesh)
       if (userData?.background) {
-        console.log('Setting up background:', userData.background, 'Path:', SKYBOX_TEXTURES[userData.background]);
-        if (SKYBOX_TEXTURES[userData.background]) {
+        console.log('Setting up background:', userData.background);
+        
+        // Check if it's a gradient background
+        if (GRADIENT_BACKGROUNDS[userData.background]) {
+          const gradientConfig = GRADIENT_BACKGROUNDS[userData.background];
+          
+          // Create canvas for gradient texture
+          const canvas = document.createElement('canvas');
+          canvas.width = 512;
+          canvas.height = 512;
+          const ctx = canvas.getContext('2d');
+          
+          // Create static gradient snapshot based on type
+          if (userData.background === 'gradient-aurora-dynamic') {
+            // Aurora static snapshot
+            ctx.fillStyle = 'rgba(0, 5, 20, 1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add purple and green bands
+            const grad1 = ctx.createRadialGradient(200, 100, 50, 256, 256, 300);
+            grad1.addColorStop(0, 'rgba(150, 0, 255, 0.8)');
+            grad1.addColorStop(1, 'rgba(30, 0, 60, 0.3)');
+            ctx.fillStyle = grad1;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const grad2 = ctx.createRadialGradient(350, 150, 60, 256, 256, 350);
+            grad2.addColorStop(0, 'rgba(0, 255, 100, 0.7)');
+            grad2.addColorStop(1, 'rgba(0, 30, 50, 0.2)');
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = grad2;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+          } else if (userData.background === 'gradient-lava-flow') {
+            // Lava static snapshot
+            ctx.fillStyle = 'rgba(80, 20, 0, 1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add lava pools
+            for (let i = 0; i < 5; i++) {
+              const x = 256 + (i - 2) * 80;
+              const y = 256 + (i % 2) * 100 - 50;
+              const grad = ctx.createRadialGradient(x, y, 20, x, y, 150);
+              grad.addColorStop(0, 'rgba(255, 200, 0, 1)');
+              grad.addColorStop(0.5, 'rgba(255, 100, 0, 0.8)');
+              grad.addColorStop(1, 'rgba(200, 50, 0, 0.4)');
+              ctx.fillStyle = grad;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+          } else if (userData.background === 'gradient-sunset-dynamic') {
+            // Sunset static snapshot
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGrad.addColorStop(0, 'rgba(25, 25, 112, 1)');
+            skyGrad.addColorStop(0.3, 'rgba(75, 0, 130, 1)');
+            skyGrad.addColorStop(0.5, 'rgba(255, 94, 77, 1)');
+            skyGrad.addColorStop(0.7, 'rgba(255, 140, 0, 1)');
+            skyGrad.addColorStop(1, 'rgba(255, 69, 0, 1)');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add sun
+            const sunGrad = ctx.createRadialGradient(256, 256, 0, 256, 256, 120);
+            sunGrad.addColorStop(0, 'rgba(255, 255, 200, 0.9)');
+            sunGrad.addColorStop(0.3, 'rgba(255, 200, 0, 0.7)');
+            sunGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = sunGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+          } else if (userData.background === 'gradient-ethereal-dynamic') {
+            // Ethereal static snapshot
+            ctx.fillStyle = 'rgba(10, 0, 30, 1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add mist layers
+            for (let i = 0; i < 3; i++) {
+              const mistGrad = ctx.createRadialGradient(
+                256 + (i - 1) * 100, 256 + (i % 2) * 50,
+                30, 256, 256, 200
+              );
+              mistGrad.addColorStop(0, i % 2 ? 'rgba(150, 200, 255, 0.5)' : 'rgba(255, 150, 255, 0.5)');
+              mistGrad.addColorStop(1, 'rgba(50, 50, 100, 0)');
+              ctx.globalCompositeOperation = 'screen';
+              ctx.fillStyle = mistGrad;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+          }
+          
+          ctx.globalCompositeOperation = 'source-over';
+          
+          // Create texture from canvas
+          const texture = new THREE.CanvasTexture(canvas);
+          texture.needsUpdate = true;
+          backgroundTextureRef.current = texture;
+          
+          // Create background plane with gradient texture
+          const planeGeometry = new THREE.PlaneGeometry(20, 20);
+          const planeMaterial = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.DoubleSide,
+            transparent: false,
+            opacity: 1
+          });
+          const backgroundPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+          backgroundPlane.position.z = -5;
+          backgroundPlane.position.y = 1;
+          backgroundPlane.renderOrder = -1000;
+          candleRef.current.add(backgroundPlane);
+            
+        } else if (SKYBOX_TEXTURES[userData.background]) {
           const textureLoader = new THREE.TextureLoader();
           const texturePath = SKYBOX_TEXTURES[userData.background];
         

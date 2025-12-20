@@ -42,7 +42,7 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
                 candleData.imageUrl,
                 (texture) => {
                   texture.colorSpace = THREE.SRGBColorSpace;
-                  texture.flipY = false;
+                  texture.flipY = true;
                   texture.wrapS = THREE.ClampToEdgeWrapping;
                   texture.wrapT = THREE.ClampToEdgeWrapping;
                   
@@ -97,13 +97,192 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true }) {
               'templeScene': '/templeScene.webp'
             };
             
+            // Check for gradient backgrounds
+            const GRADIENT_BACKGROUNDS = {
+              'gradient-aurora-dynamic': 'aurora',
+              'gradient-lava-flow': 'lava',
+              'gradient-sunset-dynamic': 'sunset',
+              'gradient-ethereal-dynamic': 'ethereal'
+            };
+            
             const texturePath = BACKGROUND_TEXTURES[candleData.background];
-            if (texturePath) {
+            const gradientType = GRADIENT_BACKGROUNDS[candleData.background];
+            
+            if (gradientType) {
+              // Create animated gradient texture for skybox
+              console.log(`Creating animated gradient skybox: ${gradientType}`);
+              // For skybox, we need a cross-shaped texture or we can use equirectangular
+              const canvas = document.createElement('canvas');
+              canvas.width = 2048; // Wider for equirectangular projection
+              canvas.height = 1024;
+              const ctx = canvas.getContext('2d');
+              
+              let animationFrame = null;
+              let time = 0;
+              
+              const animate = () => {
+                if (gradientType === 'aurora') {
+                  // Aurora animation - create seamless horizontal wrap
+                  time += 0.002;
+                  ctx.fillStyle = 'rgba(0, 5, 20, 1)';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  
+                  // Create seamless aurora bands that wrap horizontally
+                  for (let band = 0; band < 4; band++) {
+                    const offset = band * Math.PI * 0.5;
+                    
+                    // Draw across the full width for seamless wrapping
+                    for (let x = 0; x < 3; x++) {
+                      const baseX = (canvas.width / 3) * x + canvas.width / 6;
+                      const posX = Math.sin(time * 0.3 + offset + x) * 200;
+                      const posY = Math.cos(time * 0.2 + offset) * 100;
+                      
+                      const grad = ctx.createRadialGradient(
+                        baseX + posX, canvas.height/2 + posY, 
+                        100 + Math.sin(time + offset) * 50,
+                        baseX + posX, canvas.height/2 + posY, 
+                        400
+                      );
+                      
+                      if (band % 2 === 0) {
+                        grad.addColorStop(0, 'rgba(150, 0, 255, 0.6)');
+                        grad.addColorStop(0.5, 'rgba(100, 0, 150, 0.4)');
+                        grad.addColorStop(1, 'rgba(30, 0, 60, 0)');
+                      } else {
+                        grad.addColorStop(0, 'rgba(0, 255, 100, 0.6)');
+                        grad.addColorStop(0.5, 'rgba(0, 150, 80, 0.4)');
+                        grad.addColorStop(1, 'rgba(0, 30, 50, 0)');
+                      }
+                      
+                      ctx.globalCompositeOperation = band === 0 ? 'source-over' : 'screen';
+                      ctx.fillStyle = grad;
+                      ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    }
+                  }
+                  
+                } else if (gradientType === 'lava') {
+                  // Lava animation - seamless wrap
+                  time += 0.02;
+                  ctx.fillStyle = 'rgba(80, 20, 0, 1)';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  
+                  // Create lava pools that wrap seamlessly
+                  for (let row = 0; row < 2; row++) {
+                    for (let col = 0; col < 8; col++) {
+                      const x = (canvas.width / 8) * col + (canvas.width / 16) + Math.sin(time + col) * 50;
+                      const y = canvas.height/2 + (row - 0.5) * 200 + Math.cos(time * 0.5 + col) * 50;
+                      const grad = ctx.createRadialGradient(x, y, 20, x, y, 150);
+                      grad.addColorStop(0, `rgba(255, ${200 + Math.sin(time + col) * 50}, 0, 1)`);
+                      grad.addColorStop(0.5, `rgba(255, ${100 + Math.sin(time + col) * 50}, 0, 0.8)`);
+                      grad.addColorStop(1, 'rgba(200, 50, 0, 0.3)');
+                      ctx.fillStyle = grad;
+                      ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    }
+                  }
+                  
+                } else if (gradientType === 'sunset') {
+                  // Sunset animation - seamless horizon
+                  time += 0.003;
+                  
+                  // Create gradient that works well on all sides
+                  const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                  skyGrad.addColorStop(0, 'rgba(25, 25, 112, 1)'); // Dark blue at top
+                  skyGrad.addColorStop(0.2, 'rgba(75, 0, 130, 1)'); // Purple
+                  skyGrad.addColorStop(0.4, 'rgba(255, 94, 77, 1)'); // Coral
+                  skyGrad.addColorStop(0.6, 'rgba(255, 140, 0, 1)'); // Orange
+                  skyGrad.addColorStop(0.8, 'rgba(255, 69, 0, 1)'); // Red-orange
+                  skyGrad.addColorStop(1, 'rgba(120, 30, 0, 1)'); // Dark red at bottom
+                  ctx.fillStyle = skyGrad;
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  
+                  // Add sun that appears to move across horizon
+                  const sunX = canvas.width/2 + Math.sin(time * 0.3) * canvas.width/3;
+                  const sunY = canvas.height * 0.6 + Math.sin(time * 0.5) * 30;
+                  const sunGrad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 150);
+                  sunGrad.addColorStop(0, 'rgba(255, 255, 200, 0.9)');
+                  sunGrad.addColorStop(0.3, 'rgba(255, 200, 0, 0.7)');
+                  sunGrad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+                  ctx.globalCompositeOperation = 'screen';
+                  ctx.fillStyle = sunGrad;
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  
+                } else if (gradientType === 'ethereal') {
+                  // Ethereal animation - seamless mist
+                  time += 0.004;
+                  ctx.fillStyle = 'rgba(10, 0, 30, 1)';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  
+                  // Create mist that wraps seamlessly horizontally
+                  for (let layer = 0; layer < 3; layer++) {
+                    const offset = layer * Math.PI * 0.7;
+                    
+                    // Draw mist patches across the width
+                    for (let i = 0; i < 6; i++) {
+                      const mistX = (canvas.width / 6) * i + (canvas.width / 12) + Math.sin(time * 0.3 + offset + i) * 100;
+                      const mistY = canvas.height/2 + Math.cos(time * 0.2 + offset + i * 0.5) * 150;
+                      const mistGrad = ctx.createRadialGradient(
+                        mistX, mistY, 
+                        50 + Math.sin(time + offset) * 20,
+                        mistX, mistY, 
+                        200 + Math.cos(time + offset) * 50
+                      );
+                      
+                      if (layer % 2 === 0) {
+                        mistGrad.addColorStop(0, 'rgba(150, 200, 255, 0.4)');
+                        mistGrad.addColorStop(0.5, 'rgba(100, 150, 255, 0.2)');
+                        mistGrad.addColorStop(1, 'rgba(50, 100, 200, 0)');
+                      } else {
+                        mistGrad.addColorStop(0, 'rgba(255, 150, 255, 0.4)');
+                        mistGrad.addColorStop(0.5, 'rgba(200, 100, 255, 0.2)');
+                        mistGrad.addColorStop(1, 'rgba(150, 50, 200, 0)');
+                      }
+                      
+                      ctx.globalCompositeOperation = layer === 0 ? 'source-over' : 'screen';
+                      ctx.fillStyle = mistGrad;
+                      ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    }
+                  }
+                }
+                
+                ctx.globalCompositeOperation = 'source-over';
+                
+                // Update texture
+                if (boxMeshRef.current && boxMeshRef.current.material && boxMeshRef.current.material.map) {
+                  boxMeshRef.current.material.map.needsUpdate = true;
+                }
+                
+                animationFrame = requestAnimationFrame(animate);
+              };
+              
+              // Create texture from canvas
+              const texture = new THREE.CanvasTexture(canvas);
+              texture.wrapS = THREE.RepeatWrapping; // Enable horizontal wrapping
+              texture.wrapT = THREE.ClampToEdgeWrapping; // Clamp vertical
+              texture.needsUpdate = true;
+              
+              child.material = child.material.clone();
+              child.material.map = texture;
+              child.material.color.set(0xffffff);
+              child.material.emissive = new THREE.Color(0x000000);
+              child.material.emissiveIntensity = 0;
+              child.material.needsUpdate = true;
+              
+              // Start animation
+              animate();
+              
+              // Store cleanup function
+              if (window.gradientAnimationFrame) {
+                cancelAnimationFrame(window.gradientAnimationFrame);
+              }
+              window.gradientAnimationFrame = animationFrame;
+              
+            } else if (texturePath) {
               console.log(`Loading background texture: ${texturePath} for background: ${candleData.background}`);
               textureLoader.load(
                 texturePath,
                 (texture) => {
                   texture.colorSpace = THREE.SRGBColorSpace;
+                  texture.flipY = false; // Match the setting from CompactCandleModal
                   texture.wrapS = THREE.ClampToEdgeWrapping;
                   texture.wrapT = THREE.ClampToEdgeWrapping;
                   texture.needsUpdate = true;
@@ -308,6 +487,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
   const [loadingMyCandles, setLoadingMyCandles] = useState(false);
   const [isRevealing, setIsRevealing] = useState(false);
   const [showParticles, setShowParticles] = useState(false);
+  const [particleCandleType, setParticleCandleType] = useState(null);
   const [showPlaque, setShowPlaque] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [filterMode, setFilterMode] = useState('random'); // 'random', 'leaderboard', 'newest'
@@ -483,17 +663,33 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
   useEffect(() => {
     if (activeTab === 'all' && filteredCandles.length > 0 && !isPaused) {
       const interval = setInterval(() => {
+        // Capture the current candle type before transition
+        const currentType = filteredCandles[currentAllCandleIndex]?.candleType;
+        console.log('Transition starting - Current candle type:', currentType, 'Index:', currentAllCandleIndex);
+        
         // Hide plaque immediately when starting reveal
         setShowPlaque(false);
         // Trigger reveal animation
         setIsRevealing(true);
-        setShowParticles(true);
+        
+        // Show particles earlier in the transition
+        setTimeout(() => {
+          console.log('Setting particle type to:', currentType);
+          setParticleCandleType(currentType);
+          setShowParticles(true);
+        }, 150);  // Reduced from 400ms to 150ms
         
         // After curtains close, change the candle
         setTimeout(() => {
           setCurrentAllCandleIndex((prev) => (prev + 1) % filteredCandles.length);
         }, 600);
         
+        // Hide particles after showing
+        setTimeout(() => {
+          setShowParticles(false);
+          setParticleCandleType(null);
+        }, 650);  // Adjusted to 650ms (500ms duration from 150ms start)
+        
         // Open curtains after candle changes
         setTimeout(() => {
           setIsRevealing(false);
@@ -503,27 +699,38 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
         setTimeout(() => {
           setShowPlaque(true);
         }, 1200);
-        
-        // Hide particles after animation
-        setTimeout(() => {
-          setShowParticles(false);
-        }, 1600);
       }, 5000); // 5 seconds
       
       return () => clearInterval(interval);
     } else if (activeTab === 'my' && myCandles.length > 1 && !isPaused) {
       const interval = setInterval(() => {
+        // Capture the current candle type before transition
+        const currentType = myCandles[currentMyCandleIndex]?.candleType;
+        console.log('My tab transition - Current candle type:', currentType, 'Index:', currentMyCandleIndex);
+        
         // Hide plaque immediately when starting reveal
         setShowPlaque(false);
         // Trigger reveal animation
         setIsRevealing(true);
-        setShowParticles(true);
+        
+        // Show particles earlier in the transition
+        setTimeout(() => {
+          console.log('Setting particle type to:', currentType);
+          setParticleCandleType(currentType);
+          setShowParticles(true);
+        }, 150);  // Reduced from 400ms to 150ms
         
         // After curtains close, change the candle
         setTimeout(() => {
           setCurrentMyCandleIndex((prev) => (prev + 1) % myCandles.length);
         }, 600);
         
+        // Hide particles after showing
+        setTimeout(() => {
+          setShowParticles(false);
+          setParticleCandleType(null);
+        }, 650);  // Adjusted to 650ms (500ms duration from 150ms start)
+        
         // Open curtains after candle changes
         setTimeout(() => {
           setIsRevealing(false);
@@ -533,16 +740,11 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
         setTimeout(() => {
           setShowPlaque(true);
         }, 1200);
-        
-        // Hide particles after animation
-        setTimeout(() => {
-          setShowParticles(false);
-        }, 1600);
       }, 5000); // 5 seconds
       
       return () => clearInterval(interval);
     }
-  }, [activeTab, filteredCandles.length, myCandles.length, isPaused]);
+  }, [activeTab, filteredCandles, myCandles, isPaused, currentAllCandleIndex, currentMyCandleIndex]);
   
   // Clean up old textures when switching candles (helps with memory)
   useEffect(() => {
@@ -672,8 +874,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
             )}
             {filterMode !== 'leaderboard' && currentCandle && (
               <span style={{ 
-                // color: '#888', 
-                color: '#00ff00',
+                color: '#888',
                 fontSize: '14px',
                 marginLeft: 'auto',
                 textTransform: 'uppercase',
@@ -683,7 +884,11 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
                   const messageType = currentCandle?.messageType;
                   if (messageType) {
                     const displayType = messageType.charAt(0).toUpperCase() + messageType.slice(1);
-                    return `Msg Protocol: ${displayType}`;
+                    return (
+                      <>
+                        Msg Protocol: <span style={{ color: '#00ff00' }}>{displayType}</span>
+                      </>
+                    );
                   }
                   return 'TEMPLE CANDLES';
                 })()}
@@ -813,24 +1018,108 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
                 zIndex: 25,
                 overflow: 'hidden'
               }}>
-                {[...Array(30)].map((_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      position: 'absolute',
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      background: `hsl(${15 + Math.random() * 30}, 100%, ${50 + Math.random() * 20}%)`,
-                      left: '50%',
-                      top: '50%',
-                      animation: `particleExplosion ${1 + Math.random() * 0.5}s ease-out forwards`,
-                      animationDelay: `${Math.random() * 0.2}s`,
-                      '--x-offset': `${Math.random() * 400 - 200}px`,
-                      '--y-offset': `${Math.random() * 400 - 200}px`
-                    }}
-                  />
-                ))}
+                {/* Japanese candle: 4 flame points */}
+                {particleCandleType === 'japanese' ? (
+                  // 4 flame sources at different positions
+                  <>
+                    {/* Top-left flame */}
+                    {[...Array(8)].map((_, i) => (
+                      <div
+                        key={`tl-${i}`}
+                        style={{
+                          position: 'absolute',
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: `hsl(${15 + Math.random() * 30}, 100%, ${50 + Math.random() * 20}%)`,
+                          left: '45%',
+                          top: '45%',
+                          animation: `particleExplosion ${0.8 + Math.random() * 0.4}s ease-out forwards`,
+                          animationDelay: `${Math.random() * 0.15}s`,
+                          '--x-offset': `${Math.random() * 150 - 75}px`,
+                          '--y-offset': `${Math.random() * -150}px`
+                        }}
+                      />
+                    ))}
+                    {/* Top-right flame */}
+                    {[...Array(8)].map((_, i) => (
+                      <div
+                        key={`tr-${i}`}
+                        style={{
+                          position: 'absolute',
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: `hsl(${15 + Math.random() * 30}, 100%, ${50 + Math.random() * 20}%)`,
+                          left: '55%',
+                          top: '40%',
+                          animation: `particleExplosion ${0.8 + Math.random() * 0.4}s ease-out forwards`,
+                          animationDelay: `${Math.random() * 0.15}s`,
+                          '--x-offset': `${Math.random() * 150 - 75}px`,
+                          '--y-offset': `${Math.random() * -150}px`
+                        }}
+                      />
+                    ))}
+                    {/* Bottom-left flame */}
+                    {[...Array(8)].map((_, i) => (
+                      <div
+                        key={`bl-${i}`}
+                        style={{
+                          position: 'absolute',
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: `hsl(${15 + Math.random() * 30}, 100%, ${50 + Math.random() * 20}%)`,
+                          left: '35%',
+                          top: '50%',
+                          animation: `particleExplosion ${0.8 + Math.random() * 0.4}s ease-out forwards`,
+                          animationDelay: `${Math.random() * 0.15}s`,
+                          '--x-offset': `${Math.random() * 150 - 75}px`,
+                          '--y-offset': `${Math.random() * -150}px`
+                        }}
+                      />
+                    ))}
+                    {/* Bottom-right flame */}
+                    {[...Array(8)].map((_, i) => (
+                      <div
+                        key={`br-${i}`}
+                        style={{
+                          position: 'absolute',
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: `hsl(${15 + Math.random() * 30}, 100%, ${50 + Math.random() * 20}%)`,
+                          left: '65%',
+                          top: '38%',
+                          animation: `particleExplosion ${0.8 + Math.random() * 0.4}s ease-out forwards`,
+                          animationDelay: `${Math.random() * 0.15}s`,
+                          '--x-offset': `${Math.random() * 150 - 75}px`,
+                          '--y-offset': `${Math.random() * -150}px`
+                        }}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  // Votive candle: single flame point
+                  [...Array(30)].map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        position: 'absolute',
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        background: `hsl(${15 + Math.random() * 30}, 100%, ${50 + Math.random() * 20}%)`,
+                        left: '50%',
+                        top: '50%',
+                        animation: `particleExplosion ${1 + Math.random() * 0.5}s ease-out forwards`,
+                        animationDelay: `${Math.random() * 0.2}s`,
+                        '--x-offset': `${Math.random() * 400 - 200}px`,
+                        '--y-offset': `${Math.random() * 400 - 200}px`
+                      }}
+                    />
+                  ))
+                )}
               </div>
             )}
             
@@ -873,53 +1162,6 @@ export default function SingleCandleDisplay({ onOpenCompactModal }) {
               </button>
             )}
             
-            {/* Reveal Button (optional manual trigger) */}
-            {/* {!isRevealing && ((activeTab === 'all' && allCandles.length > 1) || (activeTab === 'my' && myCandles.length > 1)) && (
-              <button
-                onClick={() => {
-                  setShowPlaque(false);
-                  setIsRevealing(true);
-                  setShowParticles(true);
-                  setTimeout(() => {
-                    if (activeTab === 'all') {
-                      setCurrentAllCandleIndex((prev) => (prev + 1) % filteredCandles.length);
-                    } else {
-                      setCurrentMyCandleIndex((prev) => (prev + 1) % myCandles.length);
-                    }
-                  }, 600);
-                  setTimeout(() => setIsRevealing(false), 800);
-                  setTimeout(() => setShowPlaque(true), 1500);
-                  setTimeout(() => setShowParticles(false), 1600);
-                }}
-                style={{
-                  position: 'absolute',
-                  top: '20px',
-                  right: '20px',
-                  padding: '8px 16px',
-                  background: 'rgba(220, 20, 60, 0.8)',
-                  border: '2px solid #fff',
-                  borderRadius: '6px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  transition: 'all 0.2s ease',
-                  zIndex: 15
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#fff';
-                  e.target.style.color = '#dc143c';
-                  e.target.style.borderColor = '#dc143c';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(220, 20, 60, 0.8)';
-                  e.target.style.color = '#fff';
-                  e.target.style.borderColor = '#fff';
-                }}
-              >
-                ✨ Reveal Next
-              </button>
-            )} */}
           </>
         )}
         
