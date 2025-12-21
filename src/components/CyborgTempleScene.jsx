@@ -326,17 +326,11 @@ const CyborgTempleScene = ({
         collectBoneNames(targetObject);
         
         // Known problematic bones that cause warnings (including _1 and _2 variants)
+        // Only include bones that are genuinely missing, not leg bones that exist
         const problematicBones = new Set([
-          'Ankle_R', 'Ball_R', 'Toes_R', 'Toes_R_end',
-          'Ankle_L', 'Ball_L', 'Toes_L', 'Toes_L_end',
-          'UpperLeg_L', 'UpperLeg_R', 'LowerLeg_L', 'LowerLeg_R',
-          'Ankle_R_1', 'Ball_R_1', 'Toes_R_1', 'Toes_R_1_end',
-          'Ankle_L_1', 'Ball_L_1', 'Toes_L_1', 'Toes_L_1_end',
-          'UpperLeg_L_1', 'UpperLeg_R_1', 'LowerLeg_L_1', 'LowerLeg_R_1',
-          'Ankle_R_2', 'Ball_R_2', 'Toes_R_2', 'Toes_R_2_end',
-          'Ankle_L_2', 'Ball_L_2', 'Toes_L_2', 'Toes_L_2_end',
-          'UpperLeg_L_2', 'UpperLeg_R_2', 'LowerLeg_L_2', 'LowerLeg_R_2',
+          // These bones don't exist in the model and should be filtered
           'Armature001', 'Armature002', 'Armature003'
+          // Removed leg bones as they DO exist and are needed for proper animation
         ]);
         
         // Filter out only the truly problematic tracks

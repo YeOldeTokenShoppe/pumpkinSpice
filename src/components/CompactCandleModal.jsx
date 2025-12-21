@@ -1577,24 +1577,24 @@ const BACKGROUND_TEXTURES = [{
   type: 'image'
 }, {
   id: 'gradient-sunset-dynamic',
-  gradient: 'dynamic-sunset',
+  path: '/gradient-sunset.webp',
   name: 'Sunset Sky',
-  type: 'gradient-dynamic'
+  type: 'image'
 }, {
   id: 'gradient-ethereal-dynamic',
-  gradient: 'dynamic-ethereal',
+  path: '/gradient-ethereal.webp',
   name: 'Ethereal Mist',
-  type: 'gradient-dynamic'
+  type: 'image'
 }, {
   id: 'gradient-aurora-dynamic',
-  gradient: 'dynamic-aurora',
+  path: '/gradient-aurora.webp',
   name: 'Aurora Borealis',
-  type: 'gradient-dynamic'
+  type: 'image'
 }, {
   id: 'gradient-lava-flow',
-  gradient: 'dynamic-lava',
-  name: 'Lava Flow',
-  type: 'gradient-dynamic'
+  path: '/gradient-dreams.webp',
+  name: 'Dream Waves',
+  type: 'image'
 }];
 const sanitizeInput = (input, maxLength = 500) => {
   if (!input) return '';
@@ -1628,64 +1628,8 @@ export default function CompactCandleModal({
     }
     return null;
   };
-  const templates = [{
-    id: null,
-    name: 'None',
-    preview: '🎯',
-    position: {
-      x: 50,
-      y: 50
-    },
-    scale: 70,
-    rotation: 0,
-    userImagePosition: {
-      x: 50,
-      y: 50
-    },
-    userImageScale: 200,
-    userImageRotation: 0
-  }, {
-    id: '/images/face2.png',
-    name: 'Virgin Mary',
-    preview: '👼',
-    hasHandsOverlay: true,
-    position: {
-      x: 67,
-      y: 40
-    },
-    scale: 25,
-    rotation: 0,
-    userImagePosition: {
-      x: 64,
-      y: 40
-    },
-    userImageScale: 60,
-    userImageRotation: 0
-  }, {
-    id: '/images/saint2.png',
-    name: 'Saint2',
-    preview: '/images/saint2.png',
-    position: {
-      x: 50,
-      y: 55
-    },
-    scale: 30,
-    rotation: 0,
-    userImagePosition: {
-      x: 50,
-      y: 23
-    },
-    userImageScale: 85,
-    userImageRotation: 0
-  }];
-  useEffect(() => {
-    const virginMaryTemplate = templates.find(t => t.id === '/images/face2.png');
-    if (virginMaryTemplate) {
-      setUserImagePosition(virginMaryTemplate.userImagePosition);
-      setUserImageScale(virginMaryTemplate.userImageScale);
-      setUserImageRotation(virginMaryTemplate.userImageRotation);
-    }
-  }, []);
+
+
   const {
     user,
     isSignedIn
@@ -1706,7 +1650,7 @@ export default function CompactCandleModal({
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('/senora.png'); // Default to senora.png
-  const [selectedTemplate, setSelectedTemplate] = useState('/images/face2.png');
+  const [selectedTemplate, setSelectedTemplate] = useState(null); // No template by default
   const [templatePosition, setTemplatePosition] = useState({
     x: 67,
     y: 40
@@ -1767,61 +1711,7 @@ export default function CompactCandleModal({
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [remainingPrayers, setRemainingPrayers] = useState(10);
-  useEffect(() => {
-    if (isOpen) {
-      let clerkImageUrl = null;
-      if (user?.hasImage && user?.imageUrl) {
-        clerkImageUrl = user.imageUrl;
-      } else if (user?.imageUrl && !user?.imageUrl.includes('gravatar')) {
-        clerkImageUrl = user.imageUrl;
-      }
-      if (!clerkImageUrl && user?.externalAccounts && user.externalAccounts.length > 0) {
-        const discordAccount = user.externalAccounts.find(account => account.provider === 'discord' || account.provider === 'oauth_discord');
-        if (discordAccount) {
-          clerkImageUrl = discordAccount.imageUrl || discordAccount.avatarUrl || discordAccount.picture || discordAccount.avatar_url || null;
-          if (clerkImageUrl) {}
-        }
-      }
-      setFormData({
-        messageType: '',
-        candleType: 'votive',
-        username: '',
-        message: '',
-        burnedAmount: '0',  // Default to 0
-        allowLikes: false,
-        baseColor: '#ffffff'
-      });
-      setCurrentStep(1);
-      setSelectedPrayer(null);
-      if (!imageFile && !imagePreview) {
-        setImageFile(null);
-        setImagePreview(clerkImageUrl);
-      }
-      setSelectedTemplate('/images/face2.png');
-      setTemplatePosition({
-        x: 67,
-        y: 40
-      });
-      setTemplateScale(25);
-      setTemplateRotation(0);
-      setSkinToneAdjustment(0);
-      setShowPositionControls(false);
-      setError('');
-      setIsSubmitting(false);
-      setIsEncrypted(false);
-      setEncryptionPassword('');
-      setShowPasswordDialog(false);
-      setScrambledDisplay('');
-      setShowAIPanel(false);
-      setAiPrompt('');
-      setCanvasKey(prev => prev + 1);
-      setCandleWasCreated(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setRemainingPrayers(getRemainingPrayers());
-    }
-  }, [isOpen, user]);
+
   const getByteLength = str => {
     return new TextEncoder().encode(str).length;
   };
@@ -2065,44 +1955,24 @@ export default function CompactCandleModal({
   const uploadImage = async () => {
     let finalImageUrl = null;
     if (imageFile) {
-      if (selectedTemplate && formData.candleType === 'votive') {
-        const compositeImage = await applyTemplate(imagePreview, selectedTemplate);
-        const response = await fetch(compositeImage);
-        const blob = await response.blob();
-        const timestamp = Date.now();
-        const fileName = `candles/${timestamp}_templated.png`;
-        const storageRef = ref(storage, fileName);
-        const snapshot = await uploadBytes(storageRef, blob);
-        finalImageUrl = await getDownloadURL(snapshot.ref);
-      } else {
-        const timestamp = Date.now();
-        const fileName = `candles/${timestamp}_${imageFile.name}`;
-        const storageRef = ref(storage, fileName);
-        const snapshot = await uploadBytes(storageRef, imageFile);
-        finalImageUrl = await getDownloadURL(snapshot.ref);
-      }
+      // Direct upload without template
+      const timestamp = Date.now();
+      const fileName = `candles/${timestamp}_${imageFile.name}`;
+      const storageRef = ref(storage, fileName);
+      const snapshot = await uploadBytes(storageRef, imageFile);
+      finalImageUrl = await getDownloadURL(snapshot.ref);
     } else if (imagePreview && imagePreview.startsWith('http')) {
-      if (selectedTemplate && formData.candleType === 'votive') {
-        const compositeImage = await applyTemplate(imagePreview, selectedTemplate);
-        const response = await fetch(compositeImage);
+      // Direct URL upload without template
+      try {
+        const response = await fetch(imagePreview);
         const blob = await response.blob();
         const timestamp = Date.now();
-        const fileName = `candles/${timestamp}_templated.png`;
+        const fileName = `candles/${timestamp}_clerk_profile.png`;
         const storageRef = ref(storage, fileName);
         const snapshot = await uploadBytes(storageRef, blob);
         finalImageUrl = await getDownloadURL(snapshot.ref);
-      } else {
-        try {
-          const response = await fetch(imagePreview);
-          const blob = await response.blob();
-          const timestamp = Date.now();
-          const fileName = `candles/${timestamp}_clerk_profile.png`;
-          const storageRef = ref(storage, fileName);
-          const snapshot = await uploadBytes(storageRef, blob);
-          finalImageUrl = await getDownloadURL(snapshot.ref);
-        } catch (error) {
-          finalImageUrl = imagePreview;
-        }
+      } catch (error) {
+        finalImageUrl = imagePreview;
       }
     }
     if (!finalImageUrl && user?.imageUrl) {
@@ -2246,7 +2116,7 @@ export default function CompactCandleModal({
       setCurrentStep(1);
       setImageFile(null);
       setImagePreview(null);
-      setSelectedTemplate('/images/face2.png');
+      setSelectedTemplate(null); // Reset to no template
       setShowCandleSnapshot(true);
       onClose();
       if (onCandleCreated) {
@@ -3726,7 +3596,7 @@ export default function CompactCandleModal({
                   <Suspense fallback={null}>
                     {formData.candleType && <SimpleCandleViewer 
                       modelPath={
-                        (currentStep === 5 || currentStep === 6 || formData.background)
+                        (currentStep === 5 || currentStep === 6 || (formData.background && currentStep > 4))
                           ? (formData.candleType === 'japanese' ? '/models/tinyJapCanBox.glb' : '/models/tinyVotiveBox.glb')
                           : (formData.candleType === 'japanese' ? '/models/tinyJapCanOnly.glb' : '/models/tinyVotiveOnly.glb')
                       } 
@@ -4409,207 +4279,7 @@ export default function CompactCandleModal({
                 
               </div>
 
-              {(imageFile || imagePreview) && formData.candleType === 'votive' && <div style={{
-                  marginTop: '15px',
-                  marginBottom: '10px'
-                }}>
-                  <div style={{
-                    color: 'rgba(255, 215, 0, 0.9)',
-                    fontSize: '12px',
-                    marginBottom: '8px',
-                    fontWeight: 'bold',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px'
-                  }}>
-                    Choose Template:
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    gap: '10px',
-                    overflowX: 'auto',
-                    padding: '10px',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    borderRadius: '12px',
-                    WebkitOverflowScrolling: 'touch',
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: 'rgba(255, 215, 0, 0.3) transparent'
-                  }}>
-                    {templates.map(template => <button key={template.id || 'none'} type="button" onClick={() => selectTemplate(template)} style={{
-                      minWidth: '80px',
-                      height: '80px',
-                      padding: '8px',
-                      backgroundColor: selectedTemplate === template.id ? 'rgba(255, 102, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)',
-                      border: selectedTemplate === template.id ? '3px solid #ff6600' : '2px solid rgba(255, 215, 0, 0.2)',
-                      borderRadius: '12px',
-                      color: selectedTemplate === template.id ? '#ff6600' : 'rgba(255, 255, 255, 0.9)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px',
-                      transition: 'all 0.3s ease',
-                      flexShrink: 0,
-                      transform: selectedTemplate === template.id ? 'scale(1.05)' : 'scale(1)'
-                    }} onMouseEnter={e => {
-                      if (selectedTemplate !== template.id) {
-                        e.target.style.transform = 'scale(1.05)';
-                        e.target.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
-                      }
-                    }} onMouseLeave={e => {
-                      if (selectedTemplate !== template.id) {
-                        e.target.style.transform = 'scale(1)';
-                        e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-                      }
-                    }}>
-                        {template.id ? <img src={template.id} alt={template.name} style={{
-                        width: '50px',
-                        height: '50px',
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        marginBottom: '4px'
-                      }} /> : <div style={{
-                        fontSize: '28px',
-                        marginBottom: '4px'
-                      }}>{template.preview}</div>}
-                        <div style={{
-                        fontSize: '11px',
-                        fontWeight: selectedTemplate === template.id ? 'bold' : 'normal',
-                        opacity: selectedTemplate === template.id ? 1 : 0.8
-                      }}>
-                          {template.name}
-                        </div>
-                      </button>)}
-                  </div>
-                </div>}
 
-              {(imageFile || imagePreview) && selectedTemplate && formData.candleType === 'votive' && <div style={{
-                  marginBottom: '12px',
-                  padding: '8px',
-                  backgroundColor: 'rgba(255, 102, 0, 0.05)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 102, 0, 0.2)'
-                }}>
-                  <button type="button" onClick={() => setShowPositionControls(!showPositionControls)} style={{
-                    width: '100%',
-                    padding: '8px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    color: 'rgba(255, 102, 0, 0.8)',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px'
-                  }}>
-                    {showPositionControls ? '▼' : '▶'} Adjust Your Image
-                  </button>
-                  
-                  {showPositionControls && selectedTemplate && <>
-                      <div style={{
-                      marginTop: '8px',
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '8px',
-                      padding: '8px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                      borderRadius: '6px'
-                    }}>
-                        
-                        <div>
-                          <label style={{
-                          fontSize: '11px',
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          marginBottom: '2px',
-                          display: 'block'
-                        }}>
-                            X: {userImagePosition.x.toFixed(0)}%
-                          </label>
-                          <input type="range" min="0" max="100" value={userImagePosition.x} onChange={e => setUserImagePosition({
-                          ...userImagePosition,
-                          x: parseFloat(e.target.value)
-                        })} style={{
-                          width: '100%',
-                          height: '16px',
-                          accentColor: '#ff6600'
-                        }} />
-                        </div>
-                        
-                        <div>
-                          <label style={{
-                          fontSize: '11px',
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          marginBottom: '2px',
-                          display: 'block'
-                        }}>
-                            Y: {userImagePosition.y.toFixed(0)}%
-                          </label>
-                          <input type="range" min="25" max="75" value={userImagePosition.y} onChange={e => setUserImagePosition({
-                          ...userImagePosition,
-                          y: parseFloat(e.target.value)
-                        })} style={{
-                          width: '100%',
-                          height: '16px',
-                          accentColor: '#ff6600'
-                        }} />
-                        </div>
-                        
-                        <div>
-                          <label style={{
-                          fontSize: '11px',
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          marginBottom: '2px',
-                          display: 'block'
-                        }}>
-                            Size: {userImageScale}%
-                          </label>
-                          <input type="range" min="50" max="150" value={userImageScale} onChange={e => setUserImageScale(parseFloat(e.target.value))} style={{
-                          width: '100%',
-                          height: '16px',
-                          accentColor: '#ff6600'
-                        }} />
-                        </div>
-                          
-                      </div>
-                      
-                      {}
-                      {selectedTemplate === '/images/face2.png' && <div style={{
-                      marginTop: '8px',
-                      padding: '8px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                      borderRadius: '6px'
-                    }}>
-                          <label style={{
-                        display: 'block',
-                        fontSize: '11px',
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        marginBottom: '4px'
-                      }}>
-                            Skin Tone
-                          </label>
-                          <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                      }}>
-                            <span style={{
-                          fontSize: '10px',
-                          color: 'rgba(255, 255, 255, 0.5)'
-                        }}>Light</span>
-                            <input type="range" min="-100" max="100" value={skinToneAdjustment} onChange={e => setSkinToneAdjustment(parseFloat(e.target.value))} style={{
-                          flex: 1,
-                          height: '16px',
-                          accentColor: '#ff6600'
-                        }} />
-                            <span style={{
-                          fontSize: '10px',
-                          color: 'rgba(255, 255, 255, 0.5)'
-                        }}>Dark</span>
-                          </div>
-                        </div>}
-                    </>}
-                </div>}
               
               <div className="compact-form-actions" style={{
                   display: 'flex',

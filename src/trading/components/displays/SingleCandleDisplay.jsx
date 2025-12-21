@@ -35,29 +35,40 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
       clonedModel.scale.set(1, 1, 1);
       clonedModel.position.set(0, isMobile ? -1.2 : -1.2, isMobile ? -2 : -2);
       
+      // Debug: Log all meshes in the model when dealing with votive candles with images
+      if (candleData && candleData.candleType === 'votive' && candleData.image) {
+        console.log('[SingleCandleDisplay] Votive candle with custom image detected:', candleData.image);
+        console.log('[SingleCandleDisplay] All meshes in votive model:');
+        clonedModel.traverse((child) => {
+          if (child.isMesh) {
+            console.log(`  - Mesh: "${child.name}", Material: "${child.material?.name}"`);
+          }
+        });
+      }
+      
       // Process meshes and apply textures
       clonedModel.traverse((child) => {
         // Debug logging for rigged characters
         if (child.name && (child.name.includes('Robot') || child.name.includes('Macro') || child.name.includes('RL80') || child.name.includes('Empty'))) {
-          console.log('Found character-related object:', {
-            name: child.name,
-            type: child.type,
-            isSkinnedMesh: child.isSkinnedMesh,
-            isMesh: child.isMesh,
-            isObject3D: child.isObject3D,
-            isBone: child.isBone,
-            hasChildren: child.children?.length > 0,
-            children: child.children?.map(c => ({ name: c.name, type: c.type }))
-          });
+          // console.log('Found character-related object:', {
+          //   name: child.name,
+          //   type: child.type,
+          //   isSkinnedMesh: child.isSkinnedMesh,
+          //   isMesh: child.isMesh,
+          //   isObject3D: child.isObject3D,
+          //   isBone: child.isBone,
+          //   hasChildren: child.children?.length > 0,
+          //   children: child.children?.map(c => ({ name: c.name, type: c.type }))
+          // });
           
           if (child.isSkinnedMesh) {
-            console.log('SkinnedMesh details:', {
-              name: child.name,
-              hasSkeleton: !!child.skeleton,
-              boneCount: child.skeleton?.bones?.length,
-              hasBindMatrix: !!child.bindMatrix,
-              hasBindMatrixInverse: !!child.bindMatrixInverse
-            });
+            // console.log('SkinnedMesh details:', {
+            //   name: child.name,
+            //   hasSkeleton: !!child.skeleton,
+            //   boneCount: child.skeleton?.bones?.length,
+            //   hasBindMatrix: !!child.bindMatrix,
+            //   hasBindMatrixInverse: !!child.bindMatrixInverse
+            // });
           }
         }
         
@@ -65,7 +76,7 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
         if (child.isSkinnedMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
-          console.log(`Processing SkinnedMesh: ${child.name}`);
+          // console.log(`Processing SkinnedMesh: ${child.name}`);
           // Force skeleton update to avoid t-pose
           if (child.skeleton) {
             child.skeleton.calculateInverses();
@@ -77,29 +88,51 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
           child.receiveShadow = true;
           
           // Apply user image to senora mesh for votive candles
-          if (candleData && candleData.imageUrl && candleData.candleType === 'votive') {
-            const isSenoraObject = child.name === 'senora' || 
-                                  (child.material && child.material.name === 'senora') ||
-                                  (child.material && child.material.name === 'senora.001');
+          // Check multiple possible names/materials for the senora mesh
+          const isSenoraObject = child.name === 'senora' || 
+                                child.name === 'Senora' ||
+                                (child.material && (
+                                  child.material.name === 'senora' ||
+                                  child.material.name === 'senora.001' ||
+                                  child.material.name === 'Senora' ||
+                                  child.material.name === 'Material.001' // Sometimes the senora material has this name
+                                )) ||
+                                (child.parent && child.parent.name === 'senora');
+          
+          // Use 'image' field from Firebase (not imageUrl)
+          if (candleData && candleData.image && candleData.candleType === 'votive' && isSenoraObject) {
+            console.log('[SingleCandleDisplay] Found senora mesh, applying user image:', {
+              meshName: child.name,
+              materialName: child.material?.name,
+              imageUrl: candleData.image
+            });
             
-            if (isSenoraObject) {
-              textureLoader.load(
-                candleData.imageUrl,
-                (texture) => {
-                  texture.colorSpace = THREE.SRGBColorSpace;
-                  texture.flipY = true;
-                  texture.wrapS = THREE.ClampToEdgeWrapping;
-                  texture.wrapT = THREE.ClampToEdgeWrapping;
-                  
+            textureLoader.load(
+              candleData.image,
+              (texture) => {
+                console.log('[SingleCandleDisplay] Senora texture loaded successfully');
+                texture.colorSpace = THREE.SRGBColorSpace;
+                texture.flipY = false; // Fixed: Don't flip the senora image
+                texture.wrapS = THREE.ClampToEdgeWrapping;
+                texture.wrapT = THREE.ClampToEdgeWrapping;
+                
+                // Clone material if not already cloned
+                if (!child.material.userData.cloned) {
                   child.material = child.material.clone();
-                  child.material.map = texture;
-                  child.material.transparent = true;
-                  child.material.opacity = 1;
-                  child.material.alphaTest = 0.1;
-                  child.material.needsUpdate = true;
+                  child.material.userData.cloned = true;
                 }
-              );
-            }
+                
+                child.material.map = texture;
+                child.material.transparent = true;
+                child.material.opacity = 1;
+                child.material.alphaTest = 0.1;
+                child.material.needsUpdate = true;
+              },
+              undefined,
+              (error) => {
+                console.error('[SingleCandleDisplay] Error loading senora texture:', error);
+              }
+            );
           }
           
           // Clone material first for all meshes that we'll modify
@@ -132,197 +165,25 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
           if (isBoxMesh && candleData && candleData.background && candleData.background !== 'none') {
             boxMeshRef.current = child;
             
-            // Map background IDs to texture paths
+            // Map background IDs to texture paths - now includes gradient images
             const BACKGROUND_TEXTURES = {
               'cyberpunk': '/cyberpunk.webp',
               'synthwave': '/synthwave.webp',
               'gothicTokyo': '/gothicTokyo.webp',
               'neoTokyo': '/neoTokyo.webp',
               'aurora': '/aurora.webp',
-              'templeScene': '/templeScene.webp'
-            };
-            
-            // Check for gradient backgrounds
-            const GRADIENT_BACKGROUNDS = {
-              'gradient-aurora-dynamic': 'aurora',
-              'gradient-lava-flow': 'lava',
-              'gradient-sunset-dynamic': 'sunset',
-              'gradient-ethereal-dynamic': 'ethereal'
+              'templeScene': '/templeScene.webp',
+              // Gradient backgrounds as static images
+              'gradient-aurora-dynamic': '/gradient-aurora.webp',
+              'gradient-lava-flow': '/gradient-dreams.webp',
+              'gradient-sunset-dynamic': '/gradient-sunset.webp',
+              'gradient-ethereal-dynamic': '/gradient-ethereal.webp'
             };
             
             const texturePath = BACKGROUND_TEXTURES[candleData.background];
-            const gradientType = GRADIENT_BACKGROUNDS[candleData.background];
             
-            if (gradientType) {
-              // Create animated gradient texture for skybox
-              console.log(`Creating animated gradient skybox: ${gradientType}`);
-              // For skybox, we need a cross-shaped texture or we can use equirectangular
-              const canvas = document.createElement('canvas');
-              canvas.width = 2048; // Wider for equirectangular projection
-              canvas.height = 1024;
-              const ctx = canvas.getContext('2d');
-              
-              let animationFrame = null;
-              let time = 0;
-              
-              const animate = () => {
-                if (gradientType === 'aurora') {
-                  // Aurora animation - create seamless horizontal wrap
-                  time += 0.002;
-                  ctx.fillStyle = 'rgba(0, 5, 20, 1)';
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-                  
-                  // Create seamless aurora bands that wrap horizontally
-                  for (let band = 0; band < 4; band++) {
-                    const offset = band * Math.PI * 0.5;
-                    
-                    // Draw across the full width for seamless wrapping
-                    for (let x = 0; x < 3; x++) {
-                      const baseX = (canvas.width / 3) * x + canvas.width / 6;
-                      const posX = Math.sin(time * 0.3 + offset + x) * 200;
-                      const posY = Math.cos(time * 0.2 + offset) * 100;
-                      
-                      const grad = ctx.createRadialGradient(
-                        baseX + posX, canvas.height/2 + posY, 
-                        100 + Math.sin(time + offset) * 50,
-                        baseX + posX, canvas.height/2 + posY, 
-                        400
-                      );
-                      
-                      if (band % 2 === 0) {
-                        grad.addColorStop(0, 'rgba(150, 0, 255, 0.6)');
-                        grad.addColorStop(0.5, 'rgba(100, 0, 150, 0.4)');
-                        grad.addColorStop(1, 'rgba(30, 0, 60, 0)');
-                      } else {
-                        grad.addColorStop(0, 'rgba(0, 255, 100, 0.6)');
-                        grad.addColorStop(0.5, 'rgba(0, 150, 80, 0.4)');
-                        grad.addColorStop(1, 'rgba(0, 30, 50, 0)');
-                      }
-                      
-                      ctx.globalCompositeOperation = band === 0 ? 'source-over' : 'screen';
-                      ctx.fillStyle = grad;
-                      ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    }
-                  }
-                  
-                } else if (gradientType === 'lava') {
-                  // Lava animation - seamless wrap
-                  time += 0.02;
-                  ctx.fillStyle = 'rgba(80, 20, 0, 1)';
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-                  
-                  // Create lava pools that wrap seamlessly
-                  for (let row = 0; row < 2; row++) {
-                    for (let col = 0; col < 8; col++) {
-                      const x = (canvas.width / 8) * col + (canvas.width / 16) + Math.sin(time + col) * 50;
-                      const y = canvas.height/2 + (row - 0.5) * 200 + Math.cos(time * 0.5 + col) * 50;
-                      const grad = ctx.createRadialGradient(x, y, 20, x, y, 150);
-                      grad.addColorStop(0, `rgba(255, ${200 + Math.sin(time + col) * 50}, 0, 1)`);
-                      grad.addColorStop(0.5, `rgba(255, ${100 + Math.sin(time + col) * 50}, 0, 0.8)`);
-                      grad.addColorStop(1, 'rgba(200, 50, 0, 0.3)');
-                      ctx.fillStyle = grad;
-                      ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    }
-                  }
-                  
-                } else if (gradientType === 'sunset') {
-                  // Sunset animation - seamless horizon
-                  time += 0.003;
-                  
-                  // Create gradient that works well on all sides
-                  const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-                  skyGrad.addColorStop(0, 'rgba(25, 25, 112, 1)'); // Dark blue at top
-                  skyGrad.addColorStop(0.2, 'rgba(75, 0, 130, 1)'); // Purple
-                  skyGrad.addColorStop(0.4, 'rgba(255, 94, 77, 1)'); // Coral
-                  skyGrad.addColorStop(0.6, 'rgba(255, 140, 0, 1)'); // Orange
-                  skyGrad.addColorStop(0.8, 'rgba(255, 69, 0, 1)'); // Red-orange
-                  skyGrad.addColorStop(1, 'rgba(120, 30, 0, 1)'); // Dark red at bottom
-                  ctx.fillStyle = skyGrad;
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-                  
-                  // Add sun that appears to move across horizon
-                  const sunX = canvas.width/2 + Math.sin(time * 0.3) * canvas.width/3;
-                  const sunY = canvas.height * 0.6 + Math.sin(time * 0.5) * 30;
-                  const sunGrad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 150);
-                  sunGrad.addColorStop(0, 'rgba(255, 255, 200, 0.9)');
-                  sunGrad.addColorStop(0.3, 'rgba(255, 200, 0, 0.7)');
-                  sunGrad.addColorStop(1, 'rgba(255, 50, 0, 0)');
-                  ctx.globalCompositeOperation = 'screen';
-                  ctx.fillStyle = sunGrad;
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-                  
-                } else if (gradientType === 'ethereal') {
-                  // Ethereal animation - seamless mist
-                  time += 0.004;
-                  ctx.fillStyle = 'rgba(10, 0, 30, 1)';
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-                  
-                  // Create mist that wraps seamlessly horizontally
-                  for (let layer = 0; layer < 3; layer++) {
-                    const offset = layer * Math.PI * 0.7;
-                    
-                    // Draw mist patches across the width
-                    for (let i = 0; i < 6; i++) {
-                      const mistX = (canvas.width / 6) * i + (canvas.width / 12) + Math.sin(time * 0.3 + offset + i) * 100;
-                      const mistY = canvas.height/2 + Math.cos(time * 0.2 + offset + i * 0.5) * 150;
-                      const mistGrad = ctx.createRadialGradient(
-                        mistX, mistY, 
-                        50 + Math.sin(time + offset) * 20,
-                        mistX, mistY, 
-                        200 + Math.cos(time + offset) * 50
-                      );
-                      
-                      if (layer % 2 === 0) {
-                        mistGrad.addColorStop(0, 'rgba(150, 200, 255, 0.4)');
-                        mistGrad.addColorStop(0.5, 'rgba(100, 150, 255, 0.2)');
-                        mistGrad.addColorStop(1, 'rgba(50, 100, 200, 0)');
-                      } else {
-                        mistGrad.addColorStop(0, 'rgba(255, 150, 255, 0.4)');
-                        mistGrad.addColorStop(0.5, 'rgba(200, 100, 255, 0.2)');
-                        mistGrad.addColorStop(1, 'rgba(150, 50, 200, 0)');
-                      }
-                      
-                      ctx.globalCompositeOperation = layer === 0 ? 'source-over' : 'screen';
-                      ctx.fillStyle = mistGrad;
-                      ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    }
-                  }
-                }
-                
-                ctx.globalCompositeOperation = 'source-over';
-                
-                // Update texture
-                if (boxMeshRef.current && boxMeshRef.current.material && boxMeshRef.current.material.map) {
-                  boxMeshRef.current.material.map.needsUpdate = true;
-                }
-                
-                animationFrame = requestAnimationFrame(animate);
-              };
-              
-              // Create texture from canvas
-              const texture = new THREE.CanvasTexture(canvas);
-              texture.wrapS = THREE.RepeatWrapping; // Enable horizontal wrapping
-              texture.wrapT = THREE.ClampToEdgeWrapping; // Clamp vertical
-              texture.needsUpdate = true;
-              
-              child.material = child.material.clone();
-              child.material.map = texture;
-              child.material.color.set(0xffffff);
-              child.material.emissive = new THREE.Color(0x000000);
-              child.material.emissiveIntensity = 0;
-              child.material.needsUpdate = true;
-              
-              // Start animation
-              animate();
-              
-              // Store cleanup function
-              if (window.gradientAnimationFrame) {
-                cancelAnimationFrame(window.gradientAnimationFrame);
-              }
-              window.gradientAnimationFrame = animationFrame;
-              
-            } else if (texturePath) {
-              console.log(`Loading background texture: ${texturePath} for background: ${candleData.background}`);
+            if (texturePath) {
+              // console.log(`Loading background texture: ${texturePath} for background: ${candleData.background}`);
               textureLoader.load(
                 texturePath,
                 (texture) => {
@@ -340,10 +201,10 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
                   if (child.material.color) {
                     child.material.color.set(0xffffff);
                   }
-                  console.log(`Background texture applied successfully to ${child.name}`);
+                  // console.log(`Background texture applied successfully to ${child.name}`);
                 },
                 (xhr) => {
-                  console.log(`Loading background: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+                  // console.log(`Loading background: ${(xhr.loaded / xhr.total * 100)}% loaded`);
                 },
                 (error) => {
                   console.error(`Error loading background texture ${texturePath}:`, error);
@@ -368,9 +229,9 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
       modelRef.current.add(clonedModel);
       
       // Log if animations exist (shouldn't for candle-only models)
-      if (animations && animations.length > 0) {
-        console.log(`Warning: Candle model has animations? ${animations.length} animations:`, animations.map(a => a.name));
-      }
+      // if (animations && animations.length > 0) {
+      //   console.log(`Warning: Candle model has animations? ${animations.length} animations:`, animations.map(a => a.name));
+      // }
     }
   }, [scene, materials, candleData]);
   
@@ -420,7 +281,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
   const [particleCandleType, setParticleCandleType] = useState(null);
   const [showPlaque, setShowPlaque] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
-  const [filterMode, setFilterMode] = useState('random'); // 'random', 'leaderboard', 'newest'
+  const [filterMode, setFilterMode] = useState('newest'); // 'random', 'leaderboard', 'newest'
   const [filteredCandles, setFilteredCandles] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -475,12 +336,12 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
         if (candlesData.length > 0) {
           const totalSize = candlesData.reduce((sum, candle) => sum + getObjectSize(candle), 0);
           const avgSize = Math.round(totalSize / candlesData.length);
-          console.log('Candles memory usage:', {
-            totalRecords: candlesData.length,
-            totalSize: `${(totalSize / 1024).toFixed(2)} KB`,
-            averageSize: `${avgSize} bytes`,
-            largestRecord: Math.max(...candlesData.map(c => getObjectSize(c))) + ' bytes'
-          });
+          // console.log('Candles memory usage:', {
+          //   totalRecords: candlesData.length,
+          //   totalSize: `${(totalSize / 1024).toFixed(2)} KB`,
+          //   averageSize: `${avgSize} bytes`,
+          //   largestRecord: Math.max(...candlesData.map(c => getObjectSize(c))) + ' bytes'
+          // });
         }
         
         setAllCandles(candlesData);
@@ -500,14 +361,14 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
       if (!isSignedIn || !user) return;
       
       // Debug: Log user info to see what's available
-      console.log('Current user:', {
-        username: user?.username,
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        fullName: user?.fullName,
-        email: user?.emailAddresses?.[0]?.emailAddress,
-        id: user?.id
-      });
+      // console.log('Current user:', {
+      //   username: user?.username,
+      //   firstName: user?.firstName,
+      //   lastName: user?.lastName,
+      //   fullName: user?.fullName,
+      //   email: user?.emailAddresses?.[0]?.emailAddress,
+      //   id: user?.id
+      // });
       
       // Try username first, then fall back to firstName or fullName
       const userIdentifier = user?.username || user?.firstName || user?.fullName || 'Anonymous';
@@ -524,7 +385,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
         );
         let snapshot = await getDocs(q);
         
-        console.log(`Found ${snapshot.size} candles for user ID: ${user.id}`);
+        // console.log(`Found ${snapshot.size} candles for user ID: ${user.id}`);
         
         // If no results, try by createdByUsername
         if (snapshot.size === 0) {
@@ -534,7 +395,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
             limit(20) // Reduced from 50 to 20
           );
           snapshot = await getDocs(q);
-          console.log(`Found ${snapshot.size} candles for username: ${userIdentifier}`);
+          // console.log(`Found ${snapshot.size} candles for username: ${userIdentifier}`);
         }
         
         const userCandlesData = snapshot.docs.map(doc => ({
@@ -545,10 +406,10 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
         // Log memory usage for user candles
         if (userCandlesData.length > 0) {
           const totalSize = userCandlesData.reduce((sum, candle) => sum + getObjectSize(candle), 0);
-          console.log('User candles memory:', {
-            records: userCandlesData.length,
-            totalSize: `${(totalSize / 1024).toFixed(2)} KB`
-          });
+          // console.log('User candles memory:', {
+          //   records: userCandlesData.length,
+          //   totalSize: `${(totalSize / 1024).toFixed(2)} KB`
+          // });
         }
         
         // Sort by createdAt client-side to avoid needing composite index
@@ -584,14 +445,14 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
         const summaryDocId = `${summaryPeriod}_${dateKey}`;
         
         // Try to get cached summary from Firestore
-        console.log('Looking for summary document:', summaryDocId);
+        // console.log('Looking for summary document:', summaryDocId);
         const cachedSummaryRef = doc(db, 'summaries', summaryDocId);
         const cachedSummary = await getDoc(cachedSummaryRef);
         
         if (cachedSummary.exists()) {
           // Use cached data
           const cached = cachedSummary.data();
-          console.log('Found cached summary:', cached);
+          // console.log('Found cached summary:', cached);
           setSummaryData({
             sentimentScore: cached.sentimentScore || 75,
             totalCandles: cached.totalCandles || 0,
@@ -602,12 +463,16 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
             summary: cached.summary || '',
             themes: cached.themes || []
           });
-          console.log('Using cached summary from Firestore');
+          // console.log('Using cached summary from Firestore');
           return;
         }
         
-        // No cache found, fetch and analyze data
-        console.log('No cached summary found, fetching fresh data...');
+        // No cache found - don't generate locally, wait for cloud function
+        // console.log('No cached summary found. Run the cloud function to generate one.');
+        return;
+        
+        // ALL CODE BELOW IS DISABLED - Cloud function handles summary generation
+        /*
         const candlesRef = collection(db, 'candles');
         
         // Calculate date range based on period
@@ -719,29 +584,29 @@ Respond in JSON format like:
         }
         
         // Fallback sentiment calculation if AI fails
-        if (!aiSummary) {
-          const positiveWords = ['thank', 'grateful', 'blessed', 'happy', 'love', 'amazing', 'wonderful'];
-          const negativeWords = ['sad', 'worried', 'fear', 'anxious', 'stressed', 'difficult', 'struggle'];
+        // if (!aiSummary) {
+        //   const positiveWords = ['thank', 'grateful', 'blessed', 'happy', 'love', 'amazing', 'wonderful'];
+        //   const negativeWords = ['sad', 'worried', 'fear', 'anxious', 'stressed', 'difficult', 'struggle'];
           
-          let positiveCount = 0;
-          let negativeCount = 0;
+        //   let positiveCount = 0;
+        //   let negativeCount = 0;
           
-          messages.forEach(msg => {
-            const lower = msg.toLowerCase();
-            positiveWords.forEach(word => {
-              if (lower.includes(word)) positiveCount++;
-            });
-            negativeWords.forEach(word => {
-              if (lower.includes(word)) negativeCount++;
-            });
-          });
+        //   messages.forEach(msg => {
+        //     const lower = msg.toLowerCase();
+        //     positiveWords.forEach(word => {
+        //       if (lower.includes(word)) positiveCount++;
+        //     });
+        //     negativeWords.forEach(word => {
+        //       if (lower.includes(word)) negativeCount++;
+        //     });
+        //   });
           
-          sentimentScore = Math.min(100, Math.max(0, 
-            50 + (positiveCount - negativeCount) * 5
-          ));
+        //   sentimentScore = Math.min(100, Math.max(0, 
+        //     50 + (positiveCount - negativeCount) * 5
+        //   ));
           
-          aiSummary = `The temple received ${snapshot.size} candles this ${summaryPeriod === 'daily' ? 'day' : summaryPeriod === 'weekly' ? 'week' : 'month'}. ${praise > petitions ? 'Gratitude and praise dominate the messages' : 'The community is actively seeking guidance and support'}. Total offerings reached ${totalBurned.toLocaleString()} RL80.`;
-        }
+        //   aiSummary = `The temple received ${snapshot.size} candles this ${summaryPeriod === 'daily' ? 'day' : summaryPeriod === 'weekly' ? 'week' : 'month'}. ${praise > petitions ? 'Gratitude and praise dominate the messages' : 'The community is actively seeking guidance and support'}. Total offerings reached ${totalBurned.toLocaleString()} RL80.`;
+        // }
         
         // Prepare the summary data
         const summaryDataToSave = {
@@ -758,18 +623,19 @@ Respond in JSON format like:
           date: dateKey
         };
         
-        // Save to Firestore for other users (only if we got real data)
-        if (snapshot.size > 0) {
-          try {
-            await setDoc(cachedSummaryRef, summaryDataToSave);
-            console.log('Summary saved to Firestore for other users');
-          } catch (saveError) {
-            console.error('Error saving summary to Firestore:', saveError);
-          }
-        }
+        // Don't save locally-generated summaries - let the cloud function handle it
+        // if (snapshot.size > 0) {
+        //   try {
+        //     await setDoc(cachedSummaryRef, summaryDataToSave);
+        //     console.log('Summary saved to Firestore for other users');
+        //   } catch (saveError) {
+        //     console.error('Error saving summary to Firestore:', saveError);
+        //   }
+        // }
         
         // Update local state
         setSummaryData(summaryDataToSave);
+        */
         
       } catch (error) {
         console.error('Error fetching summary data:', error);
@@ -826,7 +692,7 @@ Respond in JSON format like:
       const interval = setInterval(() => {
         // Capture the current candle type before transition
         const currentType = filteredCandles[currentAllCandleIndex]?.candleType;
-        console.log('Transition starting - Current candle type:', currentType, 'Index:', currentAllCandleIndex);
+        // console.log('Transition starting - Current candle type:', currentType, 'Index:', currentAllCandleIndex);
         
         // Hide plaque immediately when starting reveal
         setShowPlaque(false);
@@ -836,7 +702,7 @@ Respond in JSON format like:
         // Show particles earlier in the transition (but not when flipped)
         setTimeout(() => {
           if (!isFlipped) {
-            console.log('Setting particle type to:', currentType);
+            // console.log('Setting particle type to:', currentType);
             setParticleCandleType(currentType);
             setShowParticles(true);
           }
@@ -869,7 +735,7 @@ Respond in JSON format like:
       const interval = setInterval(() => {
         // Capture the current candle type before transition
         const currentType = myCandles[currentMyCandleIndex]?.candleType;
-        console.log('My tab transition - Current candle type:', currentType, 'Index:', currentMyCandleIndex);
+        // console.log('My tab transition - Current candle type:', currentType, 'Index:', currentMyCandleIndex);
         
         // Hide plaque immediately when starting reveal
         setShowPlaque(false);
@@ -879,7 +745,7 @@ Respond in JSON format like:
         // Show particles earlier in the transition (but not when flipped)
         setTimeout(() => {
           if (!isFlipped) {
-            console.log('Setting particle type to:', currentType);
+            // console.log('Setting particle type to:', currentType);
             setParticleCandleType(currentType);
             setShowParticles(true);
           }
@@ -1400,13 +1266,23 @@ Respond in JSON format like:
             alignItems: 'center',
             justifyContent: 'center',
             height: '100%',
-            gap: '20px'
+            width: '100%',
+            gap: '20px',
+            position: 'relative'
           }}>
-            <div style={{ color: '#666', fontSize: '14px' }}>
+            <div style={{ 
+              color: '#666', 
+              fontSize: '14px',
+              textAlign: 'center',
+              width: '100%',
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)'
+            }}>
               You haven't created any candles yet
             </div>
           </div>
-        ) : (
+        ) : activeTab !== 'summary' ? (
           <Canvas
             camera={{ 
               position: isFlipped ? [0, 0, -6] : (isMobile ? [0, 0, 5] : [0, 0, 5]), 
@@ -1446,10 +1322,10 @@ Respond in JSON format like:
               />
             </Suspense>
           </Canvas>
-        )}
+        ) : null}
         
         {/* Info Overlay - positioned on top of the canvas */}
-        {currentCandle && showPlaque && !isRevealing && !loading && !loadingMyCandles && (
+        {currentCandle && showPlaque && !isRevealing && !loading && !loadingMyCandles && activeTab !== 'summary' && (
           <div style={{
             position: 'absolute',
             top: 0,

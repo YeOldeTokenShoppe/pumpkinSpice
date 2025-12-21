@@ -51,7 +51,7 @@ const PokemonHoloCard = ({
       let currentStep = 0;
       
       const animateStep = () => {
-        if (currentStep < animationSequence.length) {
+        if (currentStep < animationSequence.length && cardRef.current) {
           const step = animationSequence[currentStep];
           
           // Apply rotation
