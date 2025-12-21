@@ -10,8 +10,12 @@
 const {setGlobalOptions} = require("firebase-functions");
 const {onRequest} = require("firebase-functions/v2/https");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
+const {defineSecret} = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const fetch = require("node-fetch");
+
+// Define the secret for OpenAI API key
+const openaiSecret = defineSecret("OPENAI_SECRET_KEY");
 
 // For a once-daily summary function, we only need 1 instance
 setGlobalOptions({ maxInstances: 1 });
@@ -25,7 +29,9 @@ if (!admin.apps.length) {
 // https://firebase.google.com/docs/functions/get-started
 
 // Manual trigger for testing the summary generation
-exports.generateSummaryManual = onRequest(async (request, response) => {
+exports.generateSummaryManual = onRequest({
+  secrets: ["OPENAI_SECRET_KEY"]
+}, async (request, response) => {
   const db = admin.firestore();
   const today = new Date();
   const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -69,12 +75,11 @@ exports.generateSummaryManual = onRequest(async (request, response) => {
     // Call OpenAI API
     let sentimentScore = 75;
     let aiSummary = '';
-    let extractedThemes = ['Faith', 'Family', 'Growth', 'Healing', 'Success'];
+    let extractedThemes = ['Success', 'Growth', 'Community', 'Prosperity', 'Wellness'];
     
-    // Try multiple ways to get the API key
-    const openAIKey = process.env.OPENAI_API_KEY || 
-                      process.env.openai_key || 
-                      (require("firebase-functions").config().openai && require("firebase-functions").config().openai.key);
+    // Get the API key from environment variables (for v2 functions)
+    const openAIKey = (process.env.OPENAI_SECRET_KEY || 
+                      process.env.OPENAI_API_KEY || '').trim();
     
     if (messages.length > 0 && openAIKey) {
       console.log('Using OpenAI to analyze messages...');
@@ -90,13 +95,13 @@ exports.generateSummaryManual = onRequest(async (request, response) => {
           messages: [
             {
               role: 'system',
-              content: 'You are analyzing spiritual messages from a digital temple. Be respectful and insightful.'
+              content: 'You are analyzing messages from users expressing hopes and aspirations. Be respectful and insightful.'
             },
             {
               role: 'user',
-              content: `Analyze these ${messages.length} temple messages and provide:
+              content: `Analyze these ${messages.length} user messages and provide:
 1. A sentiment score from 0-100 using this criteria:
-   - 90-100: Overwhelming gratitude, joy, celebration, answered prayers
+   - 90-100: Overwhelming gratitude, joy, celebration, success stories
    - 70-89: Mostly positive, hopeful, thankful, optimistic
    - 50-69: Mixed emotions, seeking guidance, neutral tone
    - 30-49: Struggling, worried, seeking help, challenges mentioned
@@ -104,7 +109,7 @@ exports.generateSummaryManual = onRequest(async (request, response) => {
    
 2. A 2-3 sentence summary capturing the overall spiritual mood and key concerns
 
-3. List 5 key themes (single words like: Gratitude, Health, Family, Finance, Love, Faith, Success, Healing, Protection, Guidance)
+3. List 5 key themes (single words like: Gratitude, Health, Wealth, Finance, Love, Success, Wellness, Growth, Career, Community)
 
 Messages:
 ${messages.slice(0, 30).join('\n')}
@@ -145,7 +150,7 @@ Respond in JSON: {"sentiment": 75, "summary": "...", "themes": ["word1", "word2"
       praise,
       confessions,
       trend: sentimentScore > 50 ? 'up' : 'down',
-      summary: aiSummary || `The temple received ${snapshot.size} candles today. ${praise > petitions ? 'Gratitude dominates.' : 'Many seek guidance.'}`,
+      summary: aiSummary || `The platform received ${snapshot.size} candles today. ${praise > petitions ? 'Gratitude and celebration dominate.' : 'Many are seeking support and guidance.'}`,
       themes: extractedThemes,
       createdAt: admin.firestore.Timestamp.now(),
       date: dateKey,
@@ -174,6 +179,7 @@ Respond in JSON: {"sentiment": 75, "summary": "...", "themes": ["word1", "word2"
 exports.generateDailySummary = onSchedule({
   schedule: 'every day 02:00',
   timeZone: 'America/New_York',
+  secrets: ["OPENAI_SECRET_KEY"]
 }, async (event) => {
   // Same logic as manual trigger
   console.log('Running scheduled daily summary generation');

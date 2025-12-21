@@ -210,7 +210,17 @@ const CyborgTempleScene = ({
       
       hasLoadedRef.current = true;
       const currentGroupRef = groupRef.current; // Capture the ref value
-      // console.log('[CyborgTempleScene] groupRef.current available, starting model load');
+
+    // Temporarily suppress THREE.js warnings during model loading
+    const originalWarn = console.warn;
+    const suppressAnimationWarnings = (message) => {
+      if (typeof message === 'string' && 
+          message.includes('THREE.PropertyBinding') && 
+          message.includes('No target node found')) {
+        return; // Suppress animation binding warnings
+      }
+      return originalWarn.apply(console, arguments);
+    };
 
     const gltfLoader = new GLTFLoader();
     
@@ -222,7 +232,6 @@ const CyborgTempleScene = ({
     // Determine which model to load based on device type
     const modelPath = isOnMobile ? "/models/MOBILE.glb" : "/models/RL80_4anims.glb";
     const startTime = performance.now();
-    // console.log(`[CyborgTempleScene] Starting to load: ${modelPath} (Mobile: ${isOnMobile})`);
     
     // First, verify the model file is accessible
     fetch(modelPath, { method: 'HEAD' })
@@ -230,7 +239,6 @@ const CyborgTempleScene = ({
         if (!response.ok) {
           throw new Error(`Model file not accessible: ${response.status} ${response.statusText}`);
         }
-        // console.log(`[CyborgTempleScene] Model file verified at: ${modelPath}`);
       })
       .catch(error => {
         console.error(`[CyborgTempleScene] Failed to verify model file:`, error);
@@ -244,15 +252,11 @@ const CyborgTempleScene = ({
       modelPath, 
       (gltf) => {
         const loadTime = performance.now() - startTime;
-        // console.log(`[CyborgTempleScene] Model loaded successfully in ${loadTime.toFixed(2)}ms`);
-        // console.log(`[CyborgTempleScene] Model path: ${modelPath}`);
-        // console.log(`[CyborgTempleScene] GLTF object:`, gltf);
         
         const templeScene = gltf.scene;
       
       // Store the loaded model in state for external access
       setLoadedModel(templeScene);
-      // console.log('[CyborgTempleScene] Model loaded and stored:', templeScene);
       
       // Create an anchor group for positioning
       const anchorGroup = new THREE.Group();
@@ -280,28 +284,10 @@ const CyborgTempleScene = ({
         // RL80's animations target the root Empty object named "RL80_Empty"
         if (child.name === 'RL80_Empty') {
           animatedCharacters['RL80'] = child;
-          console.log(`[RL80] Found RL80_Empty for animations, type: ${child.type}`);
-          console.log('[RL80] Full structure:', {
-            parent: child.parent?.name,
-            children: child.children.map(c => ({
-              name: c.name,
-              type: c.type,
-              isSkinnedMesh: c.isSkinnedMesh,
-              hasSkeleton: !!c.skeleton,
-              childCount: c.children?.length
-            }))
-          });
         }
         // Macro - look for the Robot2_Empty parent container
         else if (child.name === 'Robot2_Empty') {
           animatedCharacters['Macro'] = child;
-          console.log(`[Macro] Found Robot2_Empty for animations, type: ${child.type}`);
-          console.log('[Macro] Full structure:', {
-            name: child.name,
-            parent: child.parent?.name,
-            type: child.type,
-            children: child.children?.map(c => c.name)
-          });
         }
         // The other Wise Mechs
         else if (child.name === 'Emo') {
@@ -317,30 +303,82 @@ const CyborgTempleScene = ({
         const mixer = new THREE.AnimationMixer(charObject);
         mixersRef.current[charName] = mixer;
         actionsRef.current[charName] = {};
-        console.log(`[Mixer] Created mixer for ${charName} on object: ${charObject.name}`);
       });
+
+      // Helper function to clean animation tracks - only remove truly problematic tracks
+      const cleanAnimationTracks = (animation, targetObject) => {
+        // Get all bone names in the target object, including nested paths
+        const availableBones = new Set();
+        const collectBoneNames = (obj, path = '') => {
+          if (obj.name) {
+            availableBones.add(obj.name);
+            // Also add the full path for nested bones
+            if (path) {
+              availableBones.add(`${path}/${obj.name}`);
+            }
+          }
+          if (obj.children) {
+            obj.children.forEach(child => {
+              collectBoneNames(child, path ? `${path}/${obj.name}` : obj.name);
+            });
+          }
+        };
+        collectBoneNames(targetObject);
+        
+        // Known problematic bones that cause warnings (including _1 and _2 variants)
+        const problematicBones = new Set([
+          'Ankle_R', 'Ball_R', 'Toes_R', 'Toes_R_end',
+          'Ankle_L', 'Ball_L', 'Toes_L', 'Toes_L_end',
+          'UpperLeg_L', 'UpperLeg_R', 'LowerLeg_L', 'LowerLeg_R',
+          'Ankle_R_1', 'Ball_R_1', 'Toes_R_1', 'Toes_R_1_end',
+          'Ankle_L_1', 'Ball_L_1', 'Toes_L_1', 'Toes_L_1_end',
+          'UpperLeg_L_1', 'UpperLeg_R_1', 'LowerLeg_L_1', 'LowerLeg_R_1',
+          'Ankle_R_2', 'Ball_R_2', 'Toes_R_2', 'Toes_R_2_end',
+          'Ankle_L_2', 'Ball_L_2', 'Toes_L_2', 'Toes_L_2_end',
+          'UpperLeg_L_2', 'UpperLeg_R_2', 'LowerLeg_L_2', 'LowerLeg_R_2',
+          'Armature001', 'Armature002', 'Armature003'
+        ]);
+        
+        // Filter out only the truly problematic tracks
+        const validTracks = animation.tracks.filter(track => {
+          const boneName = track.name.split('.')[0];
+          // Only remove if it's in our known problematic list AND not available
+          if (problematicBones.has(boneName) && !availableBones.has(boneName)) {
+            return false; // Remove this track
+          }
+          return true; // Keep all other tracks
+        });
+        
+        // Only create a new clip if we removed any tracks
+        if (validTracks.length < animation.tracks.length) {
+          const cleanedAnimation = new THREE.AnimationClip(
+            animation.name,
+            animation.duration,
+            validTracks
+          );
+          return cleanedAnimation;
+        }
+        
+        return animation;
+      };
 
       // Play specific animations based on character
       if (gltf.animations.length > 0) {
-        console.log('[CyborgTempleScene] Found', gltf.animations.length, 'animations');
+        // Suppress warnings during animation setup
+        console.warn = suppressAnimationWarnings;
         
         // Analyze animations to understand their structure
-        gltf.animations.forEach((animation, index) => {
-          console.log(`[Animation ${index}] Name: "${animation.name}"`);
+        gltf.animations.forEach((animation) => {
           
-          // Log first few track names to understand bone naming
-          const trackSample = animation.tracks.slice(0, 3).map(track => {
-            const parts = track.name.split('.');
-            return `${parts[0]} (${parts[1]})`;
-          });
-          console.log(`  Sample tracks: ${trackSample.join(', ')}`);
+          // Track names follow pattern: BoneName.property (e.g., Root.position)
+          // This helps identify which bone hierarchy each animation targets
         });
         
         // Since all characters use the same Synty bone structure,
         // we'll assign animations based on naming patterns
         // Macro uses Robot animations, others use standard animations
         
-        gltf.animations.forEach((animation, index) => {
+        gltf.animations.forEach((animation) => {
           const animName = animation.name;
           
           // Check what bones this animation targets
@@ -353,7 +391,6 @@ const CyborgTempleScene = ({
           if (animName.includes('Robot') || animName.includes('robot') || 
               firstTrackBone === 'Pelvis' || firstTrackBone === 'Root_1') {
             targetCharacters = ['Macro'];
-            console.log(`[Animation] "${animName}" identified as Macro animation (bone: ${firstTrackBone})`);
           }
           // Standard animations for RL80, Emo, Tekno (uses Root bone)
           else if (firstTrackBone === 'Root' || firstTrackBone === 'Root_2' ||
@@ -364,41 +401,36 @@ const CyborgTempleScene = ({
             if (firstTrackBone === 'Root_2') {
               // This is probably a misassigned Macro animation
               targetCharacters = ['Macro'];
-              console.log(`[Animation] "${animName}" uses Root_2, assigning to Macro`);
             } else {
               targetCharacters = ['RL80', 'Emo', 'Tekno'];
-              console.log(`[Animation] "${animName}" identified as standard animation (bone: ${firstTrackBone})`);
             }
           }
-          // If we can't identify the animation, skip it
-          else {
-            console.log(`[Animation] "${animName}" - unknown bone structure (${firstTrackBone}), skipping`);
-            return;
-          }
+
           
-          // Apply animation to target characters
+          // Apply animation to target characters with track cleaning
           targetCharacters.forEach(charName => {
             if (animatedCharacters[charName] && mixersRef.current[charName]) {
               const mixer = mixersRef.current[charName];
-              const action = mixer.clipAction(animation);
+              
+              // Clean animation tracks to remove references to non-existent bones
+              const cleanedAnimation = cleanAnimationTracks(animation, animatedCharacters[charName]);
+              
+              const action = mixer.clipAction(cleanedAnimation);
               
               if (!actionsRef.current[charName]) {
                 actionsRef.current[charName] = {};
               }
               
               actionsRef.current[charName][animName] = action;
-              console.log(`[Animation] Assigned "${animName}" to ${charName}`);
             }
           });
         });
         
         // Log all animation names to understand the structure
-        console.log('[CyborgTempleScene] Available animations:', gltf.animations.map(a => a.name));
         
         // Play initial animations for each character
         Object.entries(actionsRef.current).forEach(([charName, charActions]) => {
           const availableAnims = Object.keys(charActions);
-          console.log(`[Play] Character ${charName} has ${availableAnims.length} animations:`, availableAnims);
           
           if (availableAnims.length === 0) {
             console.error(`[Play] ERROR: ${charName} has no animations! Character will be in T-pose.`);
@@ -456,7 +488,6 @@ const CyborgTempleScene = ({
             }
             defaultAnim.setLoop(THREE.LoopRepeat);
             defaultAnim.play();
-            console.log(`[Play] Started "${defaultAnimName}" animation for ${charName}`);
             
             // Update the current animation state
             if (charName === 'RL80') {
@@ -472,6 +503,9 @@ const CyborgTempleScene = ({
             console.error(`[Play] ERROR: Could not find a default animation for ${charName}`);
           }
         });
+        
+        // Restore original console.warn after animation setup
+        console.warn = originalWarn;
       }
       
       // Create grid ground
@@ -485,17 +519,6 @@ const CyborgTempleScene = ({
       // Using the captured ref to avoid closure issues
       if (currentGroupRef) {
         currentGroupRef.add(anchorGroup);
-        // console.log('[CyborgTempleScene] Added model to group ref');
-        // console.log('[CyborgTempleScene] Group children count:', currentGroupRef.children.length);
-        // console.log('[CyborgTempleScene] Group children:', currentGroupRef.children);
-        
-        // Debug: Check visibility and position
-        // console.log('[CyborgTempleScene] AnchorGroup visible:', anchorGroup.visible);
-        // console.log('[CyborgTempleScene] AnchorGroup position:', anchorGroup.position);
-        // console.log('[CyborgTempleScene] AnchorGroup scale:', anchorGroup.scale);
-        // console.log('[CyborgTempleScene] Parent group visible:', currentGroupRef.visible);
-        // console.log('[CyborgTempleScene] Parent group in scene:', currentGroupRef.parent);
-        
         // Ensure everything is visible
         anchorGroup.visible = true;
         templeScene.visible = true;
@@ -512,36 +535,24 @@ const CyborgTempleScene = ({
       // Find the specific meshes and add click handlers
       templeScene.traverse((child) => {
         if (child.name === 'Cylinder043_0') {
-          // console.log('Found Cylinder043_0 mesh:', child);
           cylinderMeshRef.current = child;
         }
         if (child.name === 'Object_5') {
-          // console.log('Found Object_5 mesh:', child);
           object7MeshRef.current = child;
         }
         
         // Find eye meshes for blinking animation
         if (child.name === 'L_eye' || child.name === 'L_Eye') {
-          // console.log('Found left eye mesh:', child.name);
           leftEyeRef.current = child;
         }
         if (child.name === 'R_eye' || child.name === 'R_Eye') {
-          // console.log('Found right eye mesh:', child.name);
           rightEyeRef.current = child;
         }
         
         // Find OurLady (RL80) and make it clickable
         if (child.name === 'OurLady' || child.name === 'Object_7' || child.name === 'RL80') {
-          // console.log('Found OurLady/RL80:', child.name, 'Type:', child.type, 'isMesh:', child.isMesh);
           
-          // Get world position of the object
-          // const worldPos = new THREE.Vector3();
-          // child.getWorldPosition(worldPos);
-          // console.log('RL80 world position:', {
-          //   x: worldPos.x.toFixed(3),
-          //   y: worldPos.y.toFixed(3),
-          //   z: worldPos.z.toFixed(3)
-          // });
+
           
           ourLadyRef.current = child;
           
@@ -563,16 +574,6 @@ const CyborgTempleScene = ({
         
         // Make the three mechs clickable
         if (child.name === 'Emo' || child.name === 'Macro' || child.name === 'Tekno') {
-          // console.log('Found Mech:', child.name, 'Type:', child.type, 'isMesh:', child.isMesh);
-          
-          // Get world position of the mech
-          // const mechWorldPos = new THREE.Vector3();
-          // child.getWorldPosition(mechWorldPos);
-          // console.log(`${child.name} world position:`, {
-          //   x: mechWorldPos.x.toFixed(3),
-          //   y: mechWorldPos.y.toFixed(3),
-          //   z: mechWorldPos.z.toFixed(3)
-          // });
           
           const setMechClickableData = (obj) => {
             obj.userData.clickable = true;
@@ -591,16 +592,6 @@ const CyborgTempleScene = ({
         
         // Make the four screens clickable
         if (child.name === 'Screen1' || child.name === 'Screen2' || child.name === 'Screen3' || child.name === 'Screen4') {
-          // console.log('Found Screen:', child.name, 'Type:', child.type, 'isMesh:', child.isMesh);
-          
-          // Get world position of the screen
-          // const screenWorldPos = new THREE.Vector3();
-          // child.getWorldPosition(screenWorldPos);
-          // console.log(`${child.name} world position:`, {
-          //   x: screenWorldPos.x.toFixed(3),
-          //   y: screenWorldPos.y.toFixed(3),
-          //   z: screenWorldPos.z.toFixed(3)
-          // });
           
           const setScreenClickableData = (obj) => {
             obj.userData.clickable = true;
@@ -620,17 +611,12 @@ const CyborgTempleScene = ({
         // Find angel and coin objects for MOBILE.glb animations
         if (isOnMobile) {
           if (child.name === 'Angel_Empty') {
-            // console.log('Found Angel_Empty parent:', child);
             angelEmptyRef.current = child;
           }
           if (child.name === 'angel' || child.name === 'Angel') {
-            // console.log('Found angel object:', child);
             angelRef.current = child;
           }
           if (child.name === 'Coin1') {
-            console.log('Found Coin1:', child);
-            console.log('Coin1 type:', child.type);
-            console.log('Coin1 isMesh:', child.isMesh);
             coin1Ref.current = child;
             
             // Make Coin1 clickable
@@ -648,10 +634,8 @@ const CyborgTempleScene = ({
             };
             
             setCoin1ClickableData(child);
-            console.log('Coin1 userData after setup:', child.userData);
           }
           if (child.name === 'Coin2') {
-            console.log('Found Coin2:', child);
             coin2Ref.current = child;
             
             // Make Coin2 clickable
@@ -670,7 +654,6 @@ const CyborgTempleScene = ({
             setCoin2ClickableData(child);
           }
           if (child.name === 'Coin3') {
-            console.log('Found Coin3:', child);
             coin3Ref.current = child;
             
             // Make Coin3 clickable
@@ -689,7 +672,6 @@ const CyborgTempleScene = ({
             setCoin3ClickableData(child);
           }
           if (child.name === 'Coin4') {
-            console.log('Found Coin4:', child);
             coin4Ref.current = child;
             
             // Make Coin4 clickable
@@ -718,9 +700,8 @@ const CyborgTempleScene = ({
       }
     }, 
     // Progress callback
-    (xhr) => {
-      const percentComplete = (xhr.loaded / xhr.total) * 100;
-      // console.log(`[CyborgTempleScene] Loading progress: ${percentComplete.toFixed(2)}%`);
+    () => {
+      // Progress tracking available if needed
     },
     // Error callback
     (error) => {
@@ -800,9 +781,6 @@ const CyborgTempleScene = ({
   useEffect(() => {
     if (!groupRef.current || !gl) return;
     
-    // console.log('[Click Handler] Setting up click detection, groupRef:', groupRef.current);
-    // console.log('[Click Handler] Canvas element:', gl.domElement);
-    // console.log('[Click Handler] Canvas pointer-events:', window.getComputedStyle(gl.domElement).pointerEvents);
     
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -811,7 +789,6 @@ const CyborgTempleScene = ({
     const handleKeyDown = (event) => {
       // Debug: Press 'P' to log all character positions
       if (event.key === 'p' || event.key === 'P') {
-        // console.log('=== CHARACTER WORLD POSITIONS ===');
         
         // Find and log each character's position
         if (groupRef.current) {
@@ -820,31 +797,16 @@ const CyborgTempleScene = ({
             if (child.name === 'OurLady' || child.name === 'Object_7' || child.name === 'RL80') {
               const pos = new THREE.Vector3();
               child.getWorldPosition(pos);
-              // console.log('RL80:', {
-              //   x: pos.x.toFixed(3),
-              //   y: pos.y.toFixed(3),
-              //   z: pos.z.toFixed(3)
-              // });
             }
             
             if (child.name === 'Emo' || child.name === 'Macro' || child.name === 'Tekno') {
               const pos = new THREE.Vector3();
               child.getWorldPosition(pos);
-              // console.log(`${child.name}:`, {
-              //   x: pos.x.toFixed(3),
-              //   y: pos.y.toFixed(3),
-              //   z: pos.z.toFixed(3)
-              // });
             }
             
             if (child.name === 'Mike' || child.name === 'Cube010') {
               const pos = new THREE.Vector3();
               child.getWorldPosition(pos);
-              // console.log('Mike/Cube010:', {
-              //   x: pos.x.toFixed(3),
-              //   y: pos.y.toFixed(3),
-              //   z: pos.z.toFixed(3)
-              // });
             }
             
             // Log screen positions
@@ -852,32 +814,13 @@ const CyborgTempleScene = ({
                 child.name === 'Screen3' || child.name === 'Screen4') {
               const pos = new THREE.Vector3();
               child.getWorldPosition(pos);
-              // console.log(`${child.name}:`, {
-              //   x: pos.x.toFixed(3),
-              //   y: pos.y.toFixed(3),
-              //   z: pos.z.toFixed(3)
-              // });
             }
           });
         }
-        // console.log('=================================');
       }
       
-      // Debug: Press 'D' to log current camera position for setting up character views
-      // if (event.key === 'd' || event.key === 'D') {
-      //   console.log('=== CAMERA DEBUG INFO ===');
-      //   console.log('Camera Position:', {
-      //     x: camera.position.x.toFixed(2),
-      //     y: camera.position.y.toFixed(2),
-      //     z: camera.position.z.toFixed(2)
-      //   });
-      //   console.log('Camera Target (looking at center):', { x: 0, y: 0, z: 0 });
-      //   console.log('Use these values in agentSettings for the current view');
-      //   console.log('========================');
-      // }
       
       if (event.key === 'Escape' && focusTarget) {
-        // console.log('[Escape] Resetting camera');
         
         // Notify parent that focus is cleared
         if (onAgentClick) {
@@ -933,7 +876,6 @@ const CyborgTempleScene = ({
       // Handle coin hover effects
       if (foundCoin && hoveredCoin !== foundCoin) {
         // Start hovering on a coin
-        console.log(`Starting hover on ${foundCoin}`);
         setHoveredCoin(foundCoin);
         
         // Get the appropriate coin ref and scale/emissive refs
@@ -995,7 +937,6 @@ const CyborgTempleScene = ({
         }
       } else if (!foundCoin && hoveredCoin) {
         // Stop hovering on any coin
-        console.log(`Stopping hover on ${hoveredCoin}`);
         
         // Get the appropriate coin ref and scale/emissive refs
         let coinRef, scaleRef, emissiveRef;
@@ -1053,9 +994,6 @@ const CyborgTempleScene = ({
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       
-      console.log('[Click] Mouse position:', mouse.x, mouse.y);
-      console.log('[Click] Canvas rect:', rect);
-      console.log('[Click] Is mobile:', isOnMobile);
       
       // Update the picking ray with the camera and mouse position
       raycaster.setFromCamera(mouse, camera);
@@ -1063,30 +1001,18 @@ const CyborgTempleScene = ({
       // Calculate objects intersecting the picking ray
       const intersects = raycaster.intersectObjects(groupRef.current.children, true);
       
-      console.log('[Click] Intersected objects:', intersects.length);
-      if (intersects.length > 0) {
-        console.log('[Click] First 3 intersected objects:', intersects.slice(0, 3).map(i => ({
-          name: i.object.name,
-          type: i.object.type,
-          clickable: i.object.userData.clickable,
-          isCoin: i.object.userData.isCoin,
-          agentId: i.object.userData.agentId
-        })));
-      }
+
       
       let clickedOnAgent = false;
       
       for (let i = 0; i < intersects.length; i++) {
         const object = intersects[i].object;
-        // console.log('[Click] Checking object:', object.name, 'clickable:', object.userData.clickable);
         
         if (object.userData.clickable) {
           clickedOnAgent = true;
-          console.log('Clicked on agent:', object.userData.agentName);
-          
+
           // Special handling for coins - directly trigger the FocusedAgentCard
           if (object.userData.isCoin) {
-            console.log(`Coin click detected! Calling onAgentClick with ${object.userData.agentId}`);
             // Call the parent callback to show FocusedAgentCard
             if (onAgentClick) {
               onAgentClick(object.userData.agentId); // This will trigger the FocusedAgentCard to show
@@ -1098,22 +1024,12 @@ const CyborgTempleScene = ({
           // But only if we're not already focused on something
           if (!focusTarget) {
             originalCameraPosition.current = camera.position.clone();
-            // console.log('Stored camera position for return:', originalCameraPosition.current);
           }
           
           // Get the target object's world position
           const targetObject = object.userData.targetObject || object;
           const objectWorldPos = new THREE.Vector3();
           targetObject.getWorldPosition(objectWorldPos);
-          
-          // console.log('Target object world position:', objectWorldPos);
-          
-          // Define camera positions based on actual character world positions
-          // Character positions from console:
-          // RL80: (1.704, -1.652, 1.476)
-          // Emo: (-1.554, -1.719, -1.351)
-          // Macro: (-1.315, -1.672, 1.636)
-          // Tekno: (1.512, -1.625, -1.575)
           
           const agentSettings = {
             'RL80': { 
@@ -1211,7 +1127,6 @@ const CyborgTempleScene = ({
       
       // If we didn't click on an agent and we're currently focused, reset the camera
       if (!clickedOnAgent && focusTarget) {
-        // console.log('[Click] Clicked on empty space, resetting camera');
         
         // Notify parent that focus is cleared
         if (onAgentClick) {
@@ -1322,9 +1237,6 @@ const CyborgTempleScene = ({
           nextAnimation = availableAnimations[0];
         }
         
-        console.log(`[Macro] Switching from ${macroState.currentAnimation} to ${nextAnimation}`);
-        console.log(`[Macro] Available animations:`, Object.keys(macroActions));
-        console.log(`[Macro] Is special animation: ${specialAnimations.includes(nextAnimation)}`);
         
         // Fade out current animation first (using same timing as RL80)
         if (macroActions[macroState.currentAnimation]) {
@@ -1343,7 +1255,6 @@ const CyborgTempleScene = ({
           const isSpecialAnimation = specialAnimations.includes(nextAnimation);
           
           if (isSpecialAnimation) {
-            console.log(`[Macro] Playing special animation ${nextAnimation}`);
             nextAction.setLoop(THREE.LoopOnce, 1);
             nextAction.clampWhenFinished = true; // Keep the final pose like RL80 does
             macroState.isPlayingSpecial = true; // Set flag to prevent interruptions
@@ -1357,7 +1268,6 @@ const CyborgTempleScene = ({
                 loopAnimations[Math.floor(Math.random() * loopAnimations.length)] : 
                 'TypingRobot2';
               
-              console.log(`[Macro] Special animation ${nextAnimation} ending, returning to ${returnAnimation}`);
               
               if (returnAnimation && macroActions[returnAnimation]) {
                 // Start the return animation with fadeIn for smooth transition
@@ -1387,7 +1297,6 @@ const CyborgTempleScene = ({
             
           } else {
             // For loop animations
-            console.log(`[Macro] Playing loop animation ${nextAnimation}`);
             nextAction.setLoop(THREE.LoopRepeat);
           }
           
@@ -1491,7 +1400,6 @@ const CyborgTempleScene = ({
             availableAnimations[0];
         }
         
-        console.log(`[RL80] Switching from ${rl80State.currentAnimation} to ${nextAnimation} (recent: ${rl80State.recentAnimations})`);
         
         // Fade out current animation
         if (rl80Actions[rl80State.currentAnimation]) {
@@ -1820,11 +1728,6 @@ const CyborgTempleScene = ({
       );
       camera.lookAt(focusTarget.lookAt);
       
-      // Check if we're close enough to stop animating
-      if (camera.position.distanceTo(focusTarget.position) < 0.1) {
-        // Optional: trigger a callback when focus is complete
-        // console.log('Camera focused on:', focusTarget.agentName);
-      }
     }
     
     // Add subtle animations for mobile objects
@@ -1852,8 +1755,6 @@ const CyborgTempleScene = ({
           coinRef.current.userData.initialY = coinRef.current.position.y;
           // Debug log for Coin3
           if (coinRef.current.name === 'Coin3') {
-            // console.log('Coin3 initial Y:', coinRef.current.userData.initialY);
-            // console.log('Coin3 children:', coinRef.current.children);
           }
         }
         

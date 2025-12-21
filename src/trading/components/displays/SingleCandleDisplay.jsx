@@ -584,12 +584,14 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
         const summaryDocId = `${summaryPeriod}_${dateKey}`;
         
         // Try to get cached summary from Firestore
+        console.log('Looking for summary document:', summaryDocId);
         const cachedSummaryRef = doc(db, 'summaries', summaryDocId);
         const cachedSummary = await getDoc(cachedSummaryRef);
         
         if (cachedSummary.exists()) {
           // Use cached data
           const cached = cachedSummary.data();
+          console.log('Found cached summary:', cached);
           setSummaryData({
             sentimentScore: cached.sentimentScore || 75,
             totalCandles: cached.totalCandles || 0,
@@ -655,7 +657,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
         // Try to use OpenAI for sentiment analysis if available
         let sentimentScore = 75;
         let aiSummary = '';
-        let extractedThemes = ['Faith', 'Family', 'Growth', 'Healing', 'Success'];
+        let extractedThemes = ['Success', 'Growth', 'Community', 'Prosperity', 'Wellness'];
         
         // Check if we should use AI (limit to daily to save API calls)
         if (summaryPeriod === 'daily' && messages.length > 0) {
@@ -1318,7 +1320,7 @@ Respond in JSON format like:
                 lineHeight: '1.6',
                 marginBottom: '15px'
               }}>
-                {summaryData.summary || `Today's temple shows a strong sense of gratitude and hope. The community is actively seeking guidance, with ${summaryData.petitions} petitions focusing on financial stability and personal growth. The ${summaryData.praise} messages of praise reflect deep appreciation for answered prayers and unexpected blessings. Notable themes include family healing, career breakthroughs, and spiritual awakening.`}
+                {summaryData.summary || `Today's platform shows a strong sense of gratitude and hope. The community is actively seeking guidance, with ${summaryData.petitions} petitions focusing on financial stability and personal growth. The ${summaryData.praise} messages of praise reflect deep appreciation for recent successes and unexpected opportunities. Notable themes include career breakthroughs, personal wellness, and community support.`}
               </p>
               
               {/* Key Themes */}
@@ -1327,7 +1329,7 @@ Respond in JSON format like:
                   Key Themes:
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {(summaryData.themes.length ? summaryData.themes : ['Gratitude', 'Hope', 'Family', 'Success', 'Healing']).map((theme, i) => (
+                  {(summaryData.themes.length ? summaryData.themes : ['Gratitude', 'Hope', 'Success', 'Growth', 'Wellness']).map((theme, i) => (
                     <span
                       key={i}
                       style={{
