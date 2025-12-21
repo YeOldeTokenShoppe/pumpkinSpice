@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Html } from '@react-three/drei';
+import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where, doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../../utilities/firebaseClient';
 import { useUser } from '@clerk/nextjs';
 
@@ -33,7 +33,7 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
       // Scale and position the model - adjust for mobile
       const isMobile = window.innerWidth <= 768;
       clonedModel.scale.set(1, 1, 1);
-      clonedModel.position.set(0, isMobile ? -1.4 : -1, isMobile ? -3 : -5);
+      clonedModel.position.set(0, isMobile ? -1.2 : -1.2, isMobile ? -2 : -2);
       
       // Process meshes and apply textures
       clonedModel.traverse((child) => {
@@ -398,213 +398,17 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
       
       {/* The model - hide when flipped */}
       <group ref={modelRef} visible={!isFlipped}>
-        {/* Display candle data if available */}
-        {groupRef.current && candleData && plaqueVisible && showPlaque && !isFlipped && (
-          <Html
-            position={window.innerWidth <= 768 ? [0, 1.3, -1.9] : [0, 1.1, -2.8]}
-            center
-            distanceFactor={window.innerWidth <= 768 ? 5 : 6}
-            transform
-            occlude
-            style={{
-              borderRadius: '6px',
-              padding: window.innerWidth <= 768 ? '8px 12px' : '4px 8px',
-              minWidth: window.innerWidth <= 768 ? '120px' : '80px',
-              maxWidth: window.innerWidth <= 768 ? '180px' : '120px',
-              minHeight: window.innerWidth <= 768 ? '100px' : '60px',
-              textAlign: 'center',
-              fontFamily: 'Georgia, serif',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              pointerEvents: 'none',
-              userSelect: 'none',
-              zIndex: 10
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              width: '100%'
-            }}>
-              {candleData.userAvatar && (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  marginBottom: '4px'
-                }}>
-                  <img 
-                    src={candleData.userAvatar} 
-                    alt="User" 
-                    style={{
-                      width: window.innerWidth <= 768 ? '1.5rem' : '15px',
-                      height: window.innerWidth <= 768 ? '1.5rem' : '15px',
-                      borderRadius: '50%',
-                      border: '1px solid #eaea0b',
-                      boxShadow: '0 0 4px rgba(234, 234, 11, 0.5)'
-                    }}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-              {candleData.username && (
-                <div style={{
-                  color: '#eaea0b',
-                  fontSize: window.innerWidth <= 768 ? '14px' : '7px',
-                  fontWeight: 'bold',
-                  marginBottom: candleData.message && window.innerWidth > 768 ? '2px' : '0',
-                  textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)'
-                }}>
-                  {candleData.username}
-                </div>
-              )}
-              {/* Only show message on desktop, not mobile */}
-              {candleData.message && window.innerWidth > 768 && (
-                <div style={{
-                  color: '#eaea0b',
-                  fontSize: candleData.message.length > 50 ? 7 : 6,
-                  fontStyle: 'italic',
-                  lineHeight: '1.1',
-                  flex: 1,
-                  overflow: 'auto',
-                  wordWrap: 'break-word',
-                  maxWidth: '100%',
-                  paddingTop: '2px'
-                }}>
-                  "{decodeHTMLEntities(candleData.message)}"
-                </div>
-              )}
-              {candleData.burnedAmount && candleData.burnedAmount !== '0' && parseInt(candleData.burnedAmount) > 0 && (
-                <div style={{
-                  marginTop: window.innerWidth <= 768 ? '8px' : '3px',
-                  paddingTop: window.innerWidth <= 768 ? '4px' : '2px',
-                  borderTop: '1px solid rgba(234, 234, 11, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: window.innerWidth <= 768 ? '4px' : '2px'
-                }}>
-                  <span style={{
-                    fontSize: window.innerWidth <= 768 ? '10px' : '6px',
-                    filter: 'drop-shadow(0 0 2px rgba(255, 100, 0, 0.8))'
-                  }}>🔥</span>
-                  <span style={{
-                    color: '#ffb000',
-                    fontSize: window.innerWidth <= 768 ? '9px' : '6px',
-                    fontWeight: 'bold',
-                    textShadow: '0 0 3px rgba(255, 176, 0, 0.5)'
-                  }}>
-                    {parseInt(candleData.burnedAmount).toLocaleString()} RL80
-                  </span>
-                </div>
-              )}
-            </div>
-          </Html>
-        )}
       </group>
       
-      {/* Show larger text display when flipped - hide during transitions */}
-      {isFlipped && candleData && !isRevealing && showPlaque && (
-        <Html
-          position={[0, 0.6, 0]}
-          center
-          distanceFactor={window.innerWidth <= 768 ? 5 : 4}
-          style={{
-            width: window.innerWidth <= 768 ? '300px' : '200px',
-            padding: window.innerWidth <= 768 ? '20px' : '15px',
-            // background: 'rgba(0, 0, 0, 0.9)',
-            // border: '2px solid #ffd700',
-            borderRadius: '10px',
-            color: '#ffd700',
-            textAlign: 'center',
-            fontFamily: 'Georgia, serif'
-          }}
-        >
-          {candleData.userAvatar && (
-            <img 
-              src={candleData.userAvatar} 
-              alt="User" 
-              style={{
-                width: window.innerWidth <= 768 ? '60px' : '40px',
-                height: window.innerWidth <= 768 ? '60px' : '40px',
-                borderRadius: '50%',
-                border: '2px solid #ffd700',
-                marginBottom: window.innerWidth <= 768 ? '15px' : '10px'
-              }}
-            />
-          )}
-          {candleData.username && (
-            <h2 style={{
-              fontSize: window.innerWidth <= 768 ? '24px' : '14px',
-              marginBottom: window.innerWidth <= 768 ? '10px' : '6px',
-              color: '#ffd700'
-            }}>
-              {candleData.username}
-            </h2>
-          )}
-          {candleData.message && (
-            <p style={{
-              fontSize: window.innerWidth <= 768 ? '16px' : '9px',
-              lineHeight: '1.4',
-              fontStyle: 'italic',
-              color: '#ffd700',
-              marginBottom: window.innerWidth <= 768 ? '15px' : '8px'
-            }}>
-              "{decodeHTMLEntities(candleData.message)}"
-            </p>
-          )}
-          {candleData.messageType && (
-            <div style={{
-              fontSize: window.innerWidth <= 768 ? '14px' : '6px',
-              color: '#00ff00',
-              marginBottom: window.innerWidth <= 768 ? '10px' : '6px'
-            }}>
-              {candleData.messageType.charAt(0).toUpperCase() + candleData.messageType.slice(1)}
-            </div>
-          )}
-          {candleData.burnedAmount && parseInt(candleData.burnedAmount) > 0 && (
-            <div style={{
-              fontSize: window.innerWidth <= 768 ? '18px' : '11px',
-              color: '#ff6600',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: window.innerWidth <= 768 ? '5px' : '3px'
-            }}>
-              🔥 {parseInt(candleData.burnedAmount).toLocaleString()} RL80
-            </div>
-          )}
-        </Html>
-      )}
       
-      {/* Camera controls - disabled on mobile */}
-      {window.innerWidth > 768 && (
-        <OrbitControls
-          enableDamping
-          dampingFactor={0.2}
-          enablePan={false}
-          enableZoom={true}
-          minDistance={2}
-          maxDistance={4}
-          target={[0, 0.4, -2]}
-          autoRotate={false}
-          minPolarAngle={Math.PI / 3}    // 60 degrees - prevents looking too high
-          maxPolarAngle={Math.PI / 2}  // ~82 degrees - prevents looking too low
-          minAzimuthAngle={-Math.PI / 12}  // ~90 degrees - prevents looking too far left
-          maxAzimuthAngle={Math.PI / 12}   // ~90 degrees - prevents looking too far right
-        />
-      )}
+      {/* Camera controls disabled entirely for SingleCandleDisplay */}
     </>
   );
 }
 
 // Main component for single candle display
 export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
-  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'my', or 'summary'
   const [allCandles, setAllCandles] = useState([]);
   const [myCandles, setMyCandles] = useState([]);
   const [currentAllCandleIndex, setCurrentAllCandleIndex] = useState(0);
@@ -620,6 +424,17 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
   const [filteredCandles, setFilteredCandles] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [summaryPeriod, setSummaryPeriod] = useState('daily'); // 'daily', 'weekly', 'monthly'
+  const [summaryData, setSummaryData] = useState({
+    sentimentScore: 75,
+    totalCandles: 0,
+    petitions: 0,
+    praise: 0,
+    confessions: 0,
+    trend: 'up',
+    summary: '',
+    themes: []
+  });
   const { user, isSignedIn } = useUser();
   
   // Handle responsive behavior
@@ -756,6 +571,211 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
       fetchMyCandles();
     }
   }, [activeTab, isSignedIn, user]);
+  
+  // Fetch and analyze summary data
+  useEffect(() => {
+    if (activeTab !== 'summary') return;
+    
+    const fetchSummaryData = async () => {
+      try {
+        // First, check if we have a cached summary for today
+        const today = new Date();
+        const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const summaryDocId = `${summaryPeriod}_${dateKey}`;
+        
+        // Try to get cached summary from Firestore
+        const cachedSummaryRef = doc(db, 'summaries', summaryDocId);
+        const cachedSummary = await getDoc(cachedSummaryRef);
+        
+        if (cachedSummary.exists()) {
+          // Use cached data
+          const cached = cachedSummary.data();
+          setSummaryData({
+            sentimentScore: cached.sentimentScore || 75,
+            totalCandles: cached.totalCandles || 0,
+            petitions: cached.petitions || 0,
+            praise: cached.praise || 0,
+            confessions: cached.confessions || 0,
+            trend: cached.trend || 'up',
+            summary: cached.summary || '',
+            themes: cached.themes || []
+          });
+          console.log('Using cached summary from Firestore');
+          return;
+        }
+        
+        // No cache found, fetch and analyze data
+        console.log('No cached summary found, fetching fresh data...');
+        const candlesRef = collection(db, 'candles');
+        
+        // Calculate date range based on period
+        const now = new Date();
+        let startDate = new Date();
+        
+        if (summaryPeriod === 'daily') {
+          startDate.setDate(now.getDate() - 1);
+        } else if (summaryPeriod === 'weekly') {
+          startDate.setDate(now.getDate() - 7);
+        } else {
+          startDate.setMonth(now.getMonth() - 1);
+        }
+        
+        // Fetch candles from the time period
+        const q = query(candlesRef, orderBy('createdAt', 'desc'), limit(100));
+        const snapshot = await getDocs(q);
+        
+        // Process the data
+        let petitions = 0;
+        let praise = 0;
+        let confessions = 0;
+        let totalBurned = 0;
+        const messages = [];
+        
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const messageType = data.messageType?.toLowerCase() || '';
+          
+          if (messageType.includes('petition') || messageType.includes('prayer')) {
+            petitions++;
+          } else if (messageType.includes('praise') || messageType.includes('gratitude') || messageType.includes('thanks')) {
+            praise++;
+          } else if (messageType.includes('confession')) {
+            confessions++;
+          }
+          
+          if (data.message) {
+            messages.push(data.message);
+          }
+          
+          if (data.burnedAmount) {
+            totalBurned += parseInt(data.burnedAmount) || 0;
+          }
+        });
+        
+        // Try to use OpenAI for sentiment analysis if available
+        let sentimentScore = 75;
+        let aiSummary = '';
+        let extractedThemes = ['Faith', 'Family', 'Growth', 'Healing', 'Success'];
+        
+        // Check if we should use AI (limit to daily to save API calls)
+        if (summaryPeriod === 'daily' && messages.length > 0) {
+          try {
+            const openAIKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+            
+            if (openAIKey) {
+              const prompt = `Analyze the following ${messages.length} temple candle messages and provide:
+1. A sentiment score from 0-100 (where 100 is most positive)
+2. A 2-3 sentence summary of the overall mood and themes
+3. List 5 key themes (single words)
+
+Messages:
+${messages.slice(0, 30).join('\n')}
+
+Respond in JSON format like:
+{"sentiment": 75, "summary": "...", "themes": ["word1", "word2", "word3", "word4", "word5"]}`;
+
+              const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${openAIKey}`
+                },
+                body: JSON.stringify({
+                  model: 'gpt-3.5-turbo',
+                  messages: [
+                    {
+                      role: 'system',
+                      content: 'You are analyzing spiritual messages from a digital temple. Be respectful and insightful.'
+                    },
+                    {
+                      role: 'user',
+                      content: prompt
+                    }
+                  ],
+                  temperature: 0.7,
+                  max_tokens: 200
+                })
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content;
+                
+                try {
+                  const parsed = JSON.parse(aiResponse);
+                  sentimentScore = parsed.sentiment || 75;
+                  aiSummary = parsed.summary || '';
+                  extractedThemes = parsed.themes || extractedThemes;
+                } catch (parseError) {
+                  console.log('Could not parse AI response, using defaults');
+                }
+              }
+            }
+          } catch (aiError) {
+            console.log('OpenAI analysis failed, using fallback:', aiError);
+          }
+        }
+        
+        // Fallback sentiment calculation if AI fails
+        if (!aiSummary) {
+          const positiveWords = ['thank', 'grateful', 'blessed', 'happy', 'love', 'amazing', 'wonderful'];
+          const negativeWords = ['sad', 'worried', 'fear', 'anxious', 'stressed', 'difficult', 'struggle'];
+          
+          let positiveCount = 0;
+          let negativeCount = 0;
+          
+          messages.forEach(msg => {
+            const lower = msg.toLowerCase();
+            positiveWords.forEach(word => {
+              if (lower.includes(word)) positiveCount++;
+            });
+            negativeWords.forEach(word => {
+              if (lower.includes(word)) negativeCount++;
+            });
+          });
+          
+          sentimentScore = Math.min(100, Math.max(0, 
+            50 + (positiveCount - negativeCount) * 5
+          ));
+          
+          aiSummary = `The temple received ${snapshot.size} candles this ${summaryPeriod === 'daily' ? 'day' : summaryPeriod === 'weekly' ? 'week' : 'month'}. ${praise > petitions ? 'Gratitude and praise dominate the messages' : 'The community is actively seeking guidance and support'}. Total offerings reached ${totalBurned.toLocaleString()} RL80.`;
+        }
+        
+        // Prepare the summary data
+        const summaryDataToSave = {
+          sentimentScore,
+          totalCandles: snapshot.size,
+          petitions,
+          praise,
+          confessions,
+          trend: sentimentScore > 50 ? 'up' : 'down',
+          summary: aiSummary,
+          themes: extractedThemes,
+          createdAt: Timestamp.now(),
+          period: summaryPeriod,
+          date: dateKey
+        };
+        
+        // Save to Firestore for other users (only if we got real data)
+        if (snapshot.size > 0) {
+          try {
+            await setDoc(cachedSummaryRef, summaryDataToSave);
+            console.log('Summary saved to Firestore for other users');
+          } catch (saveError) {
+            console.error('Error saving summary to Firestore:', saveError);
+          }
+        }
+        
+        // Update local state
+        setSummaryData(summaryDataToSave);
+        
+      } catch (error) {
+        console.error('Error fetching summary data:', error);
+      }
+    };
+    
+    fetchSummaryData();
+  }, [activeTab, summaryPeriod]);
   
   // Apply filtering/sorting based on filterMode
   useEffect(() => {
@@ -926,9 +946,9 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      width: isMobile ? '100%' : '25rem',
+      width: isMobile ? '100%' : '26rem',
       height: isMobile ? '100vh' : '35rem',
-      maxWidth: isMobile ? '100%' : '25rem',
+      maxWidth: isMobile ? '100%' : '26rem',
       maxHeight: isMobile ? '100vh' : '35rem',
       margin: isMobile ? 0 : 'auto',
       background: '#1a1a1a',
@@ -1021,6 +1041,23 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
           >
             My Candle
           </button>
+          <button
+            onClick={() => setActiveTab('summary')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: activeTab === 'summary' ? '#1a1a1a' : 'transparent',
+              color: activeTab === 'summary' ? '#00ff00' : '#666',
+              border: 'none',
+              borderBottom: activeTab === 'summary' ? '2px solid #00ff00' : 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: activeTab === 'summary' ? 'bold' : 'normal',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            Summary
+          </button>
         </div>
         
         {/* Filter dropdown for All Candles tab */}
@@ -1086,13 +1123,251 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
         )}
       </div>
       
-      {/* 3D viewer */}
+      {/* 3D viewer or Summary Dashboard */}
       <div style={{ 
         flex: 1,
         position: 'relative',
-        background: '#0f0f0f'
+        background: '#0f0f0f',
+        display: 'flex',
+        width: '100%',
+        minHeight: 0
       }}>
-        {(loading && activeTab === 'all') || (loadingMyCandles && activeTab === 'my') ? (
+        {activeTab === 'summary' ? (
+          // Summary Dashboard
+          <div style={{
+            width: '100%',
+            height: '100%',
+            overflowY: 'auto',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}>
+            {/* Time Period Selector */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '10px'
+            }}>
+              {['daily', 'weekly', 'monthly'].map(period => (
+                <button
+                  key={period}
+                  onClick={() => setSummaryPeriod(period)}
+                  style={{
+                    padding: '8px 16px',
+                    background: summaryPeriod === period ? '#00ff00' : 'transparent',
+                    color: summaryPeriod === period ? '#000' : '#666',
+                    border: `1px solid ${summaryPeriod === period ? '#00ff00' : '#333'}`,
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: summaryPeriod === period ? 'bold' : 'normal',
+                    transition: 'all 0.3s ease',
+                    textTransform: 'capitalize'
+                  }}
+                >
+                  {period}
+                </button>
+              ))}
+            </div>
+
+            {/* Sentiment Score Circle */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <div style={{
+                position: 'relative',
+                width: '150px',
+                height: '150px'
+              }}>
+                <svg width="150" height="150" style={{ transform: 'rotate(-90deg)' }}>
+                  <circle
+                    cx="75"
+                    cy="75"
+                    r="65"
+                    stroke="#333"
+                    strokeWidth="10"
+                    fill="none"
+                  />
+                  <circle
+                    cx="75"
+                    cy="75"
+                    r="65"
+                    stroke={`hsl(${summaryData.sentimentScore * 1.2}, 100%, 50%)`}
+                    strokeWidth="10"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 65 * summaryData.sentimentScore / 100} ${2 * Math.PI * 65}`}
+                    strokeLinecap="round"
+                    style={{
+                      transition: 'stroke-dasharray 1s ease'
+                    }}
+                  />
+                </svg>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center'
+                }}>
+                  <div style={{
+                    fontSize: '36px',
+                    fontWeight: 'bold',
+                    color: `hsl(${summaryData.sentimentScore * 1.2}, 100%, 50%)`
+                  }}>
+                    {summaryData.sentimentScore}
+                  </div>
+                  <div style={{ color: '#666', fontSize: '12px' }}>
+                    {summaryData.sentimentScore >= 90 ? 'Joyful' :
+                     summaryData.sentimentScore >= 70 ? 'Hopeful' :
+                     summaryData.sentimentScore >= 50 ? 'Seeking' :
+                     summaryData.sentimentScore >= 30 ? 'Struggling' : 'Crisis'}
+                  </div>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                gap: '5px',
+                alignItems: 'center'
+              }}>
+                <span style={{ 
+                  color: summaryData.trend === 'up' ? '#00ff00' : '#ff0000',
+                  fontSize: '14px'
+                }}>
+                  {summaryData.trend === 'up' ? '↑' : '↓'}
+                </span>
+                <span style={{ color: '#888', fontSize: '12px' }}>
+                  vs {summaryPeriod === 'daily' ? 'yesterday' : summaryPeriod === 'weekly' ? 'last week' : 'last month'}
+                </span>
+              </div>
+            </div>
+
+            {/* Message Type Breakdown */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '10px'
+            }}>
+              <div style={{
+                background: 'rgba(0, 255, 136, 0.1)',
+                border: '1px solid rgba(0, 255, 136, 0.3)',
+                borderRadius: '8px',
+                padding: '15px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#00ff88' }}>
+                  {summaryData.praise}
+                </div>
+                <div style={{ color: '#888', fontSize: '12px', marginTop: '5px' }}>
+                  ✨ Praise
+                </div>
+              </div>
+              <div style={{
+                background: 'rgba(255, 176, 0, 0.1)',
+                border: '1px solid rgba(255, 176, 0, 0.3)',
+                borderRadius: '8px',
+                padding: '15px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffb000' }}>
+                  {summaryData.petitions}
+                </div>
+                <div style={{ color: '#888', fontSize: '12px', marginTop: '5px' }}>
+                  🙏 Petitions
+                </div>
+              </div>
+              <div style={{
+                background: 'rgba(150, 100, 255, 0.1)',
+                border: '1px solid rgba(150, 100, 255, 0.3)',
+                borderRadius: '8px',
+                padding: '15px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#9664ff' }}>
+                  {summaryData.confessions}
+                </div>
+                <div style={{ color: '#888', fontSize: '12px', marginTop: '5px' }}>
+                  💭 Confessions
+                </div>
+              </div>
+            </div>
+
+            {/* AI Summary */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid #333',
+              borderRadius: '10px',
+              padding: '20px'
+            }}>
+              <h3 style={{
+                color: '#00ff00',
+                fontSize: '16px',
+                marginBottom: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                🤖 AI Insight
+              </h3>
+              <p style={{
+                color: '#ccc',
+                fontSize: '14px',
+                lineHeight: '1.6',
+                marginBottom: '15px'
+              }}>
+                {summaryData.summary || `Today's temple shows a strong sense of gratitude and hope. The community is actively seeking guidance, with ${summaryData.petitions} petitions focusing on financial stability and personal growth. The ${summaryData.praise} messages of praise reflect deep appreciation for answered prayers and unexpected blessings. Notable themes include family healing, career breakthroughs, and spiritual awakening.`}
+              </p>
+              
+              {/* Key Themes */}
+              <div style={{ marginTop: '15px' }}>
+                <div style={{ color: '#888', fontSize: '12px', marginBottom: '8px' }}>
+                  Key Themes:
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {(summaryData.themes.length ? summaryData.themes : ['Gratitude', 'Hope', 'Family', 'Success', 'Healing']).map((theme, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        background: 'rgba(0, 255, 136, 0.2)',
+                        border: '1px solid rgba(0, 255, 136, 0.4)',
+                        borderRadius: '15px',
+                        padding: '4px 12px',
+                        color: '#00ff88',
+                        fontSize: '11px'
+                      }}
+                    >
+                      {theme}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Total Candles Footer */}
+            <div style={{
+              textAlign: 'center',
+              padding: '10px',
+              borderTop: '1px solid #333'
+            }}>
+              <div style={{
+                color: '#666',
+                fontSize: '12px'
+              }}>
+                Total Candles ({summaryPeriod})
+              </div>
+              <div style={{
+                color: '#00ff00',
+                fontSize: '24px',
+                fontWeight: 'bold'
+              }}>
+                {summaryData.totalCandles || '42'}
+              </div>
+            </div>
+          </div>
+        ) : (loading && activeTab === 'all') || (loadingMyCandles && activeTab === 'my') ? (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -1132,10 +1407,10 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
         ) : (
           <Canvas
             camera={{ 
-              position: isFlipped ? [0, 0, -6] : (isMobile ? [0, -0.3, 6] : [0, -0.5, 6]), 
-              fov: isMobile ? 40 : 40 
+              position: isFlipped ? [0, 0, -6] : (isMobile ? [0, 0, 5] : [0, 0, 5]), 
+              fov: isMobile ? 45 : 45 
             }}
-            style={{ width: '100%', height: '100%' }}
+            style={{ width: '100%', height: '100%', display: 'block' }}
             shadows
             gl={{
               antialias: true,
@@ -1171,13 +1446,176 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
           </Canvas>
         )}
         
+        {/* Info Overlay - positioned on top of the canvas */}
+        {currentCandle && showPlaque && !isRevealing && !loading && !loadingMyCandles && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            zIndex: 10
+          }}>
+            {/* Username and avatar at top */}
+            <div style={{
+              marginTop: isMobile ? '60px' : '40px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              {currentCandle.userAvatar && (
+                <img 
+                  src={currentCandle.userAvatar} 
+                  alt="User" 
+                  style={{
+                    width: isMobile ? '3rem' : '3rem',
+                    height: isMobile ? '3rem' : '3rem',
+                    borderRadius: '50%',
+                    border: '2px solid #eaea0b',
+                    boxShadow: '0 0 8px rgba(234, 234, 11, 0.6)'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              )}
+              {currentCandle.username && (
+                <div style={{
+                  color: '#eaea0b',
+                  fontSize: isMobile ? '1rem' : '1rem',
+                  fontWeight: 'bold',
+                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+                  letterSpacing: '0.5px'
+                }}>
+                  {currentCandle.username}
+                </div>
+              )}
+            </div>
+            
+            {/* Message in center/upper area */}
+            {currentCandle.message && !isFlipped && (
+              <div style={{
+                marginTop: '20px',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                maxWidth: isMobile ? '280px' : '240px',
+                textAlign: 'center',
+                padding: '12px',
+                background: 'rgba(0, 0, 0, 0.4)',
+                borderRadius: '8px',
+                backdropFilter: 'blur(8px)'
+              }}>
+                <div style={{
+                  color: '#eaea0b',
+                  fontSize: isMobile ? '14px' : '12px',
+                  fontStyle: 'italic',
+                  lineHeight: '1.4',
+                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.9)'
+                }}>
+                  "{decodeHTMLEntities(currentCandle.message)}"
+                </div>
+              </div>
+            )}
+            
+            {/* Burned amount at bottom center */}
+            {currentCandle.burnedAmount && parseInt(currentCandle.burnedAmount) > 0 && (
+              <div style={{
+                position: 'absolute',
+                bottom: isMobile ? '140px' : '100px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(0, 0, 0, 0.6)',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                backdropFilter: 'blur(8px)'
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '14px' : '12px',
+                  filter: 'drop-shadow(0 0 4px rgba(255, 100, 0, 0.8))'
+                }}>🔥</span>
+                <span style={{
+                  color: '#ffb000',
+                  fontSize: isMobile ? '14px' : '12px',
+                  fontWeight: 'bold',
+                  textShadow: '0 0 4px rgba(255, 176, 0, 0.6)'
+                }}>
+                  {parseInt(currentCandle.burnedAmount).toLocaleString()} RL80
+                </span>
+              </div>
+            )}
+            
+            {/* Flipped view - larger display */}
+            {isFlipped && (
+              <div style={{
+                marginTop: '60px',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                padding: '24px',
+                textAlign: 'center',
+                maxWidth: isMobile ? '320px' : '280px'
+              }}>
+                {currentCandle.username && (
+                  <h2 style={{
+                    fontSize: isMobile ? '24px' : '20px',
+                    marginBottom: '12px',
+                    color: '#ffd700'
+                  }}>
+                    {currentCandle.username}
+                  </h2>
+                )}
+                {currentCandle.message && (
+                  <p style={{
+                    fontSize: isMobile ? '16px' : '14px',
+                    lineHeight: '1.5',
+                    fontStyle: 'italic',
+                    color: '#ffd700',
+                    marginBottom: '12px'
+                  }}>
+                    "{decodeHTMLEntities(currentCandle.message)}"
+                  </p>
+                )}
+                {currentCandle.messageType && (
+                  <div style={{
+                    fontSize: isMobile ? '14px' : '12px',
+                    color: '#00ff00',
+                    marginBottom: '8px'
+                  }}>
+                    {currentCandle.messageType.charAt(0).toUpperCase() + currentCandle.messageType.slice(1)}
+                  </div>
+                )}
+                {currentCandle.burnedAmount && parseInt(currentCandle.burnedAmount) > 0 && (
+                  <div style={{
+                    fontSize: isMobile ? '18px' : '16px',
+                    color: '#ff6600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}>
+                    🔥 {parseInt(currentCandle.burnedAmount).toLocaleString()} RL80
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        
         {/* Reveal Effect Curtains */}
         {!loading && !loadingMyCandles && (
           <>
             <div style={{
               position: 'absolute',
               top: 0,
-              left: 0,
+              left: '-1px',
               width: '50%',
               height: '100%',
               background: 'linear-gradient(135deg, #dc143c 0%, #ff1744 100%)',
@@ -1190,7 +1628,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
             <div style={{
               position: 'absolute',
               top: 0,
-              right: 0,
+              right: '-1px',
               width: '50%',
               height: '100%',
               background: 'linear-gradient(135deg, #ff1744 0%, #dc143c 100%)',
@@ -1318,10 +1756,11 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
               </div>
             )}
             
-            {/* Diagonal Corner Flip Tab */}
-            <button
-              onClick={() => setIsFlipped(!isFlipped)}
-              onMouseEnter={(e) => {
+            {/* Diagonal Corner Flip Tab - Hide on Summary tab */}
+            {activeTab !== 'summary' && (
+              <button
+                onClick={() => setIsFlipped(!isFlipped)}
+                onMouseEnter={(e) => {
                 const ribbon = e.currentTarget.querySelector('div');
                 if (ribbon && !isMobile) {
                   ribbon.style.transform = 'rotate(45deg) scale(1.1)';
@@ -1374,6 +1813,7 @@ export default function SingleCandleDisplay({ onOpenCompactModal, onClose }) {
                 </span>
               </div>
             </button>
+            )}
             
             {/* Pause/Play Button */}
             {((activeTab === 'all' && filteredCandles.length > 1) || (activeTab === 'my' && myCandles.length > 1)) && (
