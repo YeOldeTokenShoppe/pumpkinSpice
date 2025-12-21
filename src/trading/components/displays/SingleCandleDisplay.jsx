@@ -1539,12 +1539,12 @@ Respond in JSON format like:
                 backdropFilter: 'blur(8px)'
               }}>
                 <span style={{
-                  fontSize: isMobile ? '14px' : '12px',
+                  fontSize: isMobile ? '1rem' : '1rem',
                   filter: 'drop-shadow(0 0 4px rgba(255, 100, 0, 0.8))'
                 }}>🔥</span>
                 <span style={{
                   color: '#ffb000',
-                  fontSize: isMobile ? '14px' : '12px',
+                  fontSize: isMobile ? '1rem' : '1rem',
                   fontWeight: 'bold',
                   textShadow: '0 0 4px rgba(255, 176, 0, 0.6)'
                 }}>
@@ -1561,47 +1561,26 @@ Respond in JSON format like:
                 marginRight: 'auto',
                 padding: '24px',
                 textAlign: 'center',
-                maxWidth: isMobile ? '320px' : '280px'
+                maxWidth: isMobile ? '80%' : '80%'
               }}>
-                {currentCandle.username && (
-                  <h2 style={{
-                    fontSize: isMobile ? '24px' : '20px',
-                    marginBottom: '12px',
-                    color: '#ffd700'
-                  }}>
-                    {currentCandle.username}
-                  </h2>
-                )}
                 {currentCandle.message && (
                   <p style={{
-                    fontSize: isMobile ? '16px' : '14px',
+                    fontSize: isMobile ? '1rem' : '1rem',
                     lineHeight: '1.5',
                     fontStyle: 'italic',
                     color: '#ffd700',
-                    marginBottom: '12px'
+                    margin: '0 0 12px 0'
                   }}>
                     "{decodeHTMLEntities(currentCandle.message)}"
                   </p>
                 )}
                 {currentCandle.messageType && (
                   <div style={{
-                    fontSize: isMobile ? '14px' : '12px',
+                    fontSize: isMobile ? '1rem' : '1rem',
                     color: '#00ff00',
-                    marginBottom: '8px'
+                    marginBottom: '0'
                   }}>
                     {currentCandle.messageType.charAt(0).toUpperCase() + currentCandle.messageType.slice(1)}
-                  </div>
-                )}
-                {currentCandle.burnedAmount && parseInt(currentCandle.burnedAmount) > 0 && (
-                  <div style={{
-                    fontSize: isMobile ? '18px' : '16px',
-                    color: '#ff6600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px'
-                  }}>
-                    🔥 {parseInt(currentCandle.burnedAmount).toLocaleString()} RL80
                   </div>
                 )}
               </div>

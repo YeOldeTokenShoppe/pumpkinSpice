@@ -71,8 +71,13 @@ exports.generateSummaryManual = onRequest(async (request, response) => {
     let aiSummary = '';
     let extractedThemes = ['Faith', 'Family', 'Growth', 'Healing', 'Success'];
     
-    if (messages.length > 0 && process.env.OPENAI_API_KEY) {
-      const openAIKey = process.env.OPENAI_API_KEY;
+    // Try multiple ways to get the API key
+    const openAIKey = process.env.OPENAI_API_KEY || 
+                      process.env.openai_key || 
+                      (require("firebase-functions").config().openai && require("firebase-functions").config().openai.key);
+    
+    if (messages.length > 0 && openAIKey) {
+      console.log('Using OpenAI to analyze messages...');
       
       const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -122,7 +127,14 @@ Respond in JSON: {"sentiment": 75, "summary": "...", "themes": ["word1", "word2"
         } catch (e) {
           console.log('Could not parse AI response');
         }
+      } else {
+        console.log('OpenAI response not OK:', aiResponse.status);
       }
+    } else {
+      console.log('Skipping OpenAI:', {
+        hasMessages: messages.length > 0,
+        hasKey: !!openAIKey
+      });
     }
     
     // Prepare summary data
