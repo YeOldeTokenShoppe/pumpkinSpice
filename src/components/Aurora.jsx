@@ -252,35 +252,10 @@ export default function Aurora() {
     animationId = requestAnimationFrame(render);
 
     return () => {
-      // Clean up event listeners
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('resize', checkMobile);
-      
-      // Stop animation
       if (animationId) {
         cancelAnimationFrame(animationId);
-      }
-      
-      // Clean up WebGL resources
-      if (gl && program) {
-        gl.deleteProgram(program);
-      }
-      if (gl && vertexShader) {
-        gl.deleteShader(vertexShader);
-      }
-      if (gl && fragmentShader) {
-        gl.deleteShader(fragmentShader);
-      }
-      if (gl && positionBuffer) {
-        gl.deleteBuffer(positionBuffer);
-      }
-      
-      // Lose WebGL context to free GPU memory
-      if (gl) {
-        const loseContext = gl.getExtension('WEBGL_lose_context');
-        if (loseContext) {
-          loseContext.loseContext();
-        }
       }
     };
   }, []);
