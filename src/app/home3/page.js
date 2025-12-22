@@ -17,7 +17,7 @@ import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import CyberNav from '../../components/CyberNav';
 // import SocialBar from '../../components/SocialBar';
 import EnhancedVolumetricLight from '@/components/EnhancedVolumetricLight';
-import DropInTitle from '../../components/DropInTitle';
+import TranslatableDropInTitle from '../../components/TranslatableDropInTitle';
 // import Coin from '../../components/Coin';
 // import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
@@ -47,6 +47,8 @@ import ThirdwebBuyModal from '@/components/ThirdwebBuyModal';
 // import { WatchlistSlide, Illumin80Slide, TradingDeskSlide, TokenomicsSlide } from "@/components/FeatureSlides";
 import Footer from "@/components/Footer";
 import AnnunciationIntro from '@/components/AnnunciationIntro';
+import { getDroneText } from '@/utils/droneTranslations';
+import { useLanguage } from '@/components/LanguageProvider';
 
 // import VideoScreens from "@/components/VideoScreens";
 // import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
@@ -498,7 +500,7 @@ const CSS3DScreenManager = () => {
 };
 
 // Drone component with built-in hover animation and scroll-based appearance
-const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrollY, scrollProgress, isMobile = false, isSignedIn = false, onOpenBuyModal }) {
+const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrollY, scrollProgress, isMobile = false, isSignedIn = false, onOpenBuyModal, language = 'en' }) {
   const modelPath = isMobile ? '/models/drone_mobile.glb' : '/models/drone.glb';
   const { scene, animations } = useGLTF(modelPath);
   const groupRef = useRef();
@@ -550,6 +552,9 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
           // Set up interactive navigation/video system for Screen1
           if (object.isMesh) {
             console.log('Setting up interactive screen on Screen1:', object.name);
+            
+            // Store language in userData so drawing functions can access it
+            object.userData.language = language;
             
             // CRT Terminal system (instead of video)
             let crtTerminal = null;
@@ -693,7 +698,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               const centerX = 256; // Center of 512px canvas
               
               ctx.textAlign = 'center';
-              ctx.fillText('CLOUD_TERMINAL_v2.1', centerX, y);
+              ctx.fillText(getDroneText('CLOUD_TERMINAL_v2.1', object.userData.language || 'en'), centerX, y);
               y += 30;
               
               // Switch to left align for message content
@@ -1061,7 +1066,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.fillStyle = '#00ff41';
               ctx.font = 'bold 28px Courier New, monospace';
               ctx.textAlign = 'center';
-              ctx.fillText('[ MAIN MENU ]', 256, 75);
+              ctx.fillText(getDroneText('[ MAIN MENU ]', object.userData.language || 'en'), 256, 75);
               ctx.shadowBlur = 0;
               
               // Welcome terminal button with cyberpunk style
@@ -1114,7 +1119,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.fillStyle = isTerminalHovered ? '#ffffff' : '#72bfbe';  // Cyber blue
               ctx.font = 'bold 20px Courier New';
               ctx.textAlign = 'center';
-              ctx.fillText('▶ ACQUIRE TOKENS', terminalBtnX + terminalBtnWidth/2, terminalBtnY + terminalBtnHeight/2 + 7);
+              ctx.fillText(getDroneText('▶ ACQUIRE TOKENS', object.userData.language || 'en'), terminalBtnX + terminalBtnWidth/2, terminalBtnY + terminalBtnHeight/2 + 7);
               
               ctx.shadowBlur = 0;
               ctx.textAlign = 'left';
@@ -1334,7 +1339,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.fillStyle = '#00ff41';
               ctx.shadowBlur = 8;
               ctx.textAlign = 'center';
-              ctx.fillText('BUY RL80 TOKENS?', centerX, centerY + 20);
+              ctx.fillText(getDroneText('BUY RL80 TOKENS?', object.userData.language || 'en'), centerX, centerY + 20);
               
               // Clear click areas and define new ones for yes/no buttons
               clickAreas = [];
@@ -1365,7 +1370,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.font = yesHovered ? 'bold 20px Courier New, monospace' : '18px Courier New, monospace';
               ctx.shadowBlur = yesHovered ? 12 : 6;
               ctx.textAlign = 'center';
-              ctx.fillText('YES', yesX + buttonWidth/2, buttonY + buttonHeight/2 - 8);
+              ctx.fillText(getDroneText('YES', object.userData.language || 'en'), yesX + buttonWidth/2, buttonY + buttonHeight/2 - 8);
               
               // Add YES click area
               clickAreas.push({
@@ -1394,7 +1399,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               ctx.font = noHovered ? 'bold 20px Courier New, monospace' : '18px Courier New, monospace';
               ctx.shadowBlur = noHovered ? 12 : 6;
               ctx.textAlign = 'center';
-              ctx.fillText('NO', noX + buttonWidth/2, buttonY + buttonHeight/2 - 8);
+              ctx.fillText(getDroneText('NO', object.userData.language || 'en'), noX + buttonWidth/2, buttonY + buttonHeight/2 - 8);
               
               // Add NO click area
               clickAreas.push({
@@ -1447,7 +1452,7 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
               
               // Access denied text
               ctx.font = 'bold 24px Courier New, monospace';
-              ctx.fillText('ACCESS DENIED', 256, 180);
+              ctx.fillText(getDroneText('ACCESS DENIED', object.userData.language || 'en'), 256, 180);
               
               ctx.font = '16px Courier New, monospace';
               ctx.fillStyle = '#ff6600';
@@ -2142,6 +2147,17 @@ const DroneModel = React.memo(function DroneModel({ position = [0, 0, 10], scrol
       }
     };
   }, [scene]);
+  
+  // Update language in screen object when it changes
+  useEffect(() => {
+    if (screenRef.current) {
+      screenRef.current.userData.language = language;
+      // Redraw the current screen with new language
+      if (screenRef.current.userData.updateTexture) {
+        screenRef.current.userData.updateTexture();
+      }
+    }
+  }, [language]);
   
   // Update animation and handle scroll-based appearance
   useFrame((state, delta) => {
@@ -3105,8 +3121,8 @@ function GradientSkySphere() {
   );
 }
 
-// ScrollTriggeredTitle - DropInTitle that animates when in view
-function ScrollTriggeredTitle({ isMobile, scrollProgress }) {
+// ScrollTriggeredTitle - TranslatableDropInTitle that animates when in view
+function ScrollTriggeredTitle({ isMobile, scrollProgress, language = 'en' }) {
   const titleRef = useRef(null);
   const titleInView = useInView(titleRef, { 
     threshold: 0.01, // Very low threshold - just 1% visible
@@ -3120,12 +3136,13 @@ function ScrollTriggeredTitle({ isMobile, scrollProgress }) {
       position: 'relative',
       zIndex: 100
     }}>
-      <DropInTitle
+      <TranslatableDropInTitle
         lines={["BEHOLD!", "OUR LADY!", "HOLD RL80!"]}
         colors={["#d4af37", "#f4e4c1", "#00fffbff"]}
         fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
         isMobile={isMobile}
         triggerAnimation={titleInView} // Will trigger whenever in view
+        language={language}
         instanceId="welcome-title"
       />
       
@@ -3318,6 +3335,9 @@ const TickerCurve = ({ scrollY = 0, scrollProgress = 0, scale = 3, position = [0
 };
 
 export default function Home3() {
+  // Get language from context
+  const { locale: language, t } = useLanguage();
+  
   // Firestore data
   const topBurners = useFirestoreResults("burnedAmount");
   
@@ -3382,8 +3402,8 @@ export default function Home3() {
     return desktop; // Simplified for test page
   };
 
-  // Font loading effect
-  
+  // Get language from context - this will be handled by LanguageProvider now
+
   // Font loading effect
   useEffect(() => {
     let timeoutId;
@@ -3743,6 +3763,7 @@ export default function Home3() {
               scrollProgress={scrollProgress}
               isMobile={isMobile}
               isSignedIn={isSignedIn}
+              language={language}
               onOpenBuyModal={() => setShowBuyModal(true)}
             />
             
@@ -3870,7 +3891,7 @@ export default function Home3() {
               marginTop: isMobile ? '1rem' : '3rem',
               pointerEvents: 'auto',
             }}>
-              <span className="title-line" style={{ display: 'block', position: 'relative' }}>Our Lady</span>
+              <span className="title-line" style={{ display: 'block', position: 'relative' }}>{t('home.ourLady')}</span>
               <span className="title-line" style={{ display: 'block', position: 'relative' }}>
                 <span style={{ fontSize: isMobile ? "1.2rem" : "3rem" }}>of    </span>
                 Perpetual
@@ -4142,7 +4163,7 @@ export default function Home3() {
           }}
         >
           {/* Animated Drop-In Title with scroll trigger */}
-          <ScrollTriggeredTitle isMobile={isMobile} scrollProgress={scrollProgress} />
+          <ScrollTriggeredTitle isMobile={isMobile} scrollProgress={scrollProgress} language={language} />
         </div>
 
        
@@ -4227,13 +4248,14 @@ export default function Home3() {
                                   margin: '0 auto',
                                 }}>
                                   {/* Animated Drop-In Title */}
-                                  <DropInTitle
+                                  <TranslatableDropInTitle
                                     lines={["PROSPER80", "FOR ALL", "HUMAN80!"]}
                                     colors={["#00ff00", "#f4e4c1", "#ffd700"]}
                                     fontSize={{ mobile: "2.5rem", desktop: "4rem" }}
                                     isMobile={isMobile}
                                     triggerAnimation={secondTitleInView}
-                                    key={`dropintitle-${isMobile ? 'mobile' : 'desktop'}`}
+                                    language={language}
+                                    key={`dropintitle-${isMobile ? 'mobile' : 'desktop'}-${language}`}
                                   />
                                   {/* Debug info - remove after testing */}
                                   {/* <div style={{color: '#fff', fontSize: '12px', marginTop: '10px'}}>

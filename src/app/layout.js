@@ -2,6 +2,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MusicProvider } from "@/components/MusicContext";
 import { ThirdwebProvider } from "thirdweb/react";
+import { LanguageProvider } from "@/components/LanguageProvider";
 
 import { dark, shadesOfPurple } from '@clerk/themes';
 import ConditionalIllumin80 from "@/components/ConditionalIllumin80"
@@ -299,10 +300,12 @@ export default function RootLayout({ children }) {
           }
         }}>
      
-              <MusicProvider>
-                <ConditionalIllumin80 />
-                {children}
-              </MusicProvider>
+              <LanguageProvider>
+                <MusicProvider>
+                  <ConditionalIllumin80 />
+                  {children}
+                </MusicProvider>
+              </LanguageProvider>
 
           </ClerkProvider>
         </ThirdwebProvider>

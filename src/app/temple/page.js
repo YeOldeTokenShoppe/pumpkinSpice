@@ -3,25 +3,20 @@ import React, { Suspense, useState, useEffect, useRef } from 'react';
 import CleanCanvas from '@/components/CleanCanvas';
 import { OrbitControls, Stats } from '@react-three/drei';
 import ConstellationModel from '@/components/ConstellationModel';
+import Aurora from '@/components/Aurora';
 import StarField from '@/components/StarField';
 import Link from 'next/link';
 import PostProcessingEffects from '@/components/PostProcessingEffects';
 import CyborgTempleScene from '@/components/CyborgTempleScene';
-import TestCyborgScene from '@/components/TestCyborgScene';
-import TestCyborgScene2 from '@/components/TestCyborgScene2';
 import VideoScreens from "@/components/VideoScreens";
 import TickerDisplay3 from "@/components/TickerDisplay3";
 import { useMusic } from '@/components/MusicContext';
 import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import CyberNav from '@/components/CyberNav';
-import SocialBar from '@/components/SocialBar';
 import SimpleTextLoader from '@/components/SimpleTextLoader';
-import MemoryMonitor from '@/components/MemoryMonitor';
 import { TradingOverlay } from '@/trading';
 // import { useLighterTrading } from '@/hooks/useLighterTrading'; // Direct Lighter integration
 import { useLighterAPI } from '@/hooks/useLighterAPI'; // API-based Lighter integration
-// import PolaroidSnapshot from '@/components/PolaroidSnapshot';
-// import NeuralNetworkR3F from '@/components/NeuralNetworkR3F'
 import DevModePanel from '@/components/DevModePanel';
 // import AgentChatDisplay from '@/components/AgentChatDisplay'; // Using existing Trading Team Chat instead
 // import MobileDevTabs from '@/components/MobileDevTabs';
@@ -51,6 +46,7 @@ export default function CyborgTemple() {
   const [shouldRenderCanvas, setShouldRenderCanvas] = useState(true);
   const [focusedAgent, setFocusedAgent] = useState(null); // Track which agent is focused
   const [showAgentCard, setShowAgentCard] = useState(false); // Track card visibility separately
+  const [useAurora, setUseAurora] = useState(true); // Toggle between Aurora and StarField
   
   // Connect to Lighter trading API
   // Initial balance will be fetched from the actual account
@@ -466,6 +462,17 @@ export default function CyborgTemple() {
             }
           }}
         />
+        {/* Aurora Background - Only render when Aurora is selected */}
+        {canvasReady && useAurora && !isCandleModalOpen && (
+          <div style={{ 
+            position: 'absolute', 
+            inset: 0, 
+            zIndex: 1 
+          }}>
+            <Aurora />
+          </div>
+        )}
+
         {/* Main Canvas - Unmounted when modal is open for memory optimization */}
         {canvasReady && shouldRenderCanvas && !isCandleModalOpen && (
         <CleanCanvas
@@ -480,7 +487,8 @@ export default function CyborgTemple() {
             powerPreference: isMobileView ? "low-power" : "high-performance",
             precision: isMobileView ? "mediump" : "highp",
             stencil: false,
-            depth: true
+            depth: true,
+            preserveDrawingBuffer: true
           }}
           dpr={isMobileView ? 
             (typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1) : 
@@ -489,7 +497,7 @@ export default function CyborgTemple() {
           performance={{ min: 0.5 }}
           frameloop="always"
           style={{ 
-            background: 'transparent', 
+            background: useAurora ? 'transparent' : '#000', 
             position: 'absolute',
             top: 0,
             left: 0,
@@ -503,15 +511,15 @@ export default function CyborgTemple() {
             <ambientLight intensity={0.3} />
             <PostProcessingEffects />
             
-            
-            {/* Starry background */}
-            <StarField 
-              radius={150} 
-              count1={isMobileView ? 200 : 500} 
-              count2={isMobileView ? 150 : 300} 
-              is80sMode={false} 
-            />
-            
+            {/* Starfield background - only show when Aurora is off */}
+            {!useAurora && (
+              <StarField 
+                radius={150} 
+                count1={isMobileView ? 200 : 500} 
+                count2={isMobileView ? 150 : 300} 
+                is80sMode={false} 
+              />
+            )}
             
             {/* CyborgTempleScene with the RL80 model */}
             <CyborgTempleScene
@@ -571,7 +579,7 @@ export default function CyborgTemple() {
               enableDamping={true}
               dampingFactor={0.1}
               minDistance={0.1}
-              maxDistance={20}
+              maxDistance={10}
               minPolarAngle={0}
               maxPolarAngle={Math.PI / 1.9}
               zoomToCursor={true}
@@ -580,7 +588,7 @@ export default function CyborgTemple() {
               target={isMobileView ? [0, 4.2, 0] : [0, 0, 0]}
             />
           </Suspense>
-          {/* <Stats className="stats-monitor" /> */}
+          <Stats className="stats-monitor" />
         </CleanCanvas>
         )}
   {/* Dev Panel Only - Chat is in TradingOverlay */}
@@ -601,9 +609,47 @@ export default function CyborgTemple() {
           />
         )}
         
+
         {/* Top Controls Container - Music, User, and Nav */}
         {mounted && (
           <>
+            {/* Background Toggle - Small B&W button */}
+            {sceneReady && (
+              <button
+                onClick={() => setUseAurora(!useAurora)}
+                style={{
+                  position: "fixed",
+                  top: "1rem",
+                  right: isMobileView ? "4.5rem" : "5rem",
+                  width: isMobileView ? "2.5rem" : "3rem",
+                  height: isMobileView ? "2.5rem" : "3rem",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  borderRadius: "0.25rem",
+                  color: "#ffffff",
+                  fontSize: isMobileView ? "0.7rem" : "0.8rem",
+                  fontWeight: "normal",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  backdropFilter: "blur(10px)",
+                  zIndex: 10001,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0.25rem"
+                }}
+                title={`Switch to ${useAurora ? 'StarField' : 'Aurora'} background`}
+              >
+                <span style={{ 
+                  fontSize: isMobileView ? "0.6rem" : "0.7rem",
+                  textAlign: "center",
+                  lineHeight: "1.1"
+                }}>
+                  {useAurora ? "AUR" : "STR"}
+                </span>
+              </button>
+            )}
+            
             {/* CyberNav Menu with integrated buttons */}
             <div
               style={{
