@@ -1,18 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function Aurora() {
   const canvasRef = useRef(null);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Check if mobile
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -37,6 +30,9 @@ export default function Aurora() {
     uniform vec3 iResolution;
     uniform float iTime;
     uniform float isMobile;
+    uniform float timeModulation;  // Precomputed sin(iTime * 0.05) * cos(iTime * 0.01)
+    uniform float renderScale;     // Resolution scale factor
+    uniform float maxAuroraLayers; // Configurable aurora layers
     out vec4 fragColor;
 
     #define u_time iTime
@@ -120,7 +116,7 @@ export default function Aurora() {
             p *= 1.21 + (rz-1.0)*.02;
             
             rz += tri(p.x+tri(p.y))*z;
-            p*= sin(u_time * 0.05) * cos(u_time * 0.01);
+            p *= timeModulation;  // Use precomputed value
         }
         return clamp(1. / pow(rz * 20., 1.3), 0.,1.);
     }
@@ -129,12 +125,12 @@ export default function Aurora() {
         vec4 col = vec4(0);
         vec4 avgCol = vec4(0);    
         
-        // Use fewer layers on mobile for better performance
-        float maxLayers = isMobile > 0.5 ? 25. : 50.;
+        // Hoist random calculation outside the loop
+        float randOffset = 0.006 * random(gl_FragCoord.xy);
         
         for (float i=0.; i < 50.; i++) {
-            if (i >= maxLayers) break;
-            float of = 0.006*random(gl_FragCoord.xy)*smoothstep(0.,15., i);
+            if (i >= maxAuroraLayers) break;  // Use configurable layer count
+            float of = randOffset * smoothstep(0.,15., i);
             // Adjust the divisor based on mobile - smaller divisor = aurora extends further
             float yDivisor = isMobile > 0.5 ? (rd.y * 1.0 + 0.2) : (rd.y * 2. + 0.4);
             float pt = ((.8+pow(i,1.4)*.002)) / yDivisor;
@@ -223,6 +219,9 @@ export default function Aurora() {
     const resolutionUniformLocation = gl.getUniformLocation(program, 'iResolution');
     const timeUniformLocation = gl.getUniformLocation(program, 'iTime');
     const mobileUniformLocation = gl.getUniformLocation(program, 'isMobile');
+    const timeModulationLocation = gl.getUniformLocation(program, 'timeModulation');
+    const renderScaleLocation = gl.getUniformLocation(program, 'renderScale');
+    const maxAuroraLayersLocation = gl.getUniformLocation(program, 'maxAuroraLayers');
 
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -235,8 +234,12 @@ export default function Aurora() {
     gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
     function resizeCanvas() {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      // Apply resolution scaling based on device
+      const isMobile = window.innerWidth <= 768;
+      const scale = isMobile ? 0.75 : 1.0;  // 75% resolution on mobile
+      
+      canvas.width = canvas.offsetWidth * scale;
+      canvas.height = canvas.offsetHeight * scale;
       gl.viewport(0, 0, canvas.width, canvas.height);
     }
 
@@ -245,9 +248,23 @@ export default function Aurora() {
 
     let animationId;
     function render(time) {
+      const normalizedTime = time * 0.001;
+      const isMobile = window.innerWidth <= 768;
+      
+      // Precompute time-based calculations
+      const timeModulation = Math.sin(normalizedTime * 0.05) * Math.cos(normalizedTime * 0.01);
+      
+      // Configure performance settings
+      const renderScale = isMobile ? 0.75 : 1.0;
+      const maxLayers = isMobile ? 25.0 : 50.0;
+      
       gl.uniform3f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height, 1.0);
-      gl.uniform1f(timeUniformLocation, time * 0.001);
-      gl.uniform1f(mobileUniformLocation, window.innerWidth <= 768 ? 1.0 : 0.0);
+      gl.uniform1f(timeUniformLocation, normalizedTime);
+      gl.uniform1f(mobileUniformLocation, isMobile ? 1.0 : 0.0);
+      gl.uniform1f(timeModulationLocation, timeModulation);
+      gl.uniform1f(renderScaleLocation, renderScale);
+      gl.uniform1f(maxAuroraLayersLocation, maxLayers);
+      
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       animationId = requestAnimationFrame(render);
     }
@@ -256,7 +273,6 @@ export default function Aurora() {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
-      window.removeEventListener('resize', checkMobile);
       if (animationId) {
         cancelAnimationFrame(animationId);
       }

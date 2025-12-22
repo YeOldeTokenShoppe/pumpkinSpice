@@ -633,20 +633,17 @@ export default function CyborgTemple() {
                       style={{
                     width: isMobileView ? "3rem" : "3.5rem",
                             height: isMobileView ? "3rem" : "3.5rem",
-                        backgroundColor: "rgba(0, 0, 0, 0.7)",
-                        border: "1px solid rgba(255, 255, 255, 0.2)",
-                        borderRadius: "0.25rem",
-                        color: "#ffffff",
-                        fontSize: isMobileView ? "0.7rem" : "0.8rem",
-                        fontWeight: "normal",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                        backdropFilter: "blur(10px)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "0.25rem",
-                        boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)"
+                      borderRadius: "0.5rem",
+                      backgroundColor: is80sMode ? "rgba(217, 70, 239, 0.2)" : "rgba(0, 0, 0, 0.7)",
+                      border: is80sMode ? "2px solid #D946EF" : "2px solid rgba(255, 255, 255, 0.2)",
+                      color: is80sMode ? "#67e8f9" : "#ffffff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      backdropFilter: "blur(10px)",
+                      boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)",
                       }}
                       title={`Switch to ${useAurora ? 'StarField' : 'Aurora'} background`}
                     >

@@ -12,14 +12,18 @@ const DataCubeScreen = () => {
     const connections = [];
     
     // Create layers of nodes - smaller and more centered
-    const layers = [3, 4, 3, 2]; // Input, hidden1, hidden2, output
-    const layerSpacing = 120; // Reduced from 180
-    const nodeSpacing = 35; // Reduced from 60
+    const layers = [3, 4, 4, 3]; // More symmetrical: Input, hidden1, hidden2, output
+    const layerSpacing = 90; // Reduced from 140 for smaller network
+    const nodeSpacing = 25; // Reduced from 35 for tighter spacing
+    
+    // Center the network better on screen
+    const networkWidth = layerSpacing;
+    const startX = 35; // Shifted right for better centering
     
     layers.forEach((count, layerIndex) => {
-      const x = 20 + layerIndex * layerSpacing / (layers.length - 1); // Shifted left from 60 to 40
+      const x = startX + layerIndex * layerSpacing / (layers.length - 1);
       const layerHeight = count * nodeSpacing;
-      const startY = 100 + (80 - layerHeight / 2); // Moved up from 180 to 140
+      const startY = 100 + (60 - layerHeight / 2); // Center vertically around y=150
       
       for (let i = 0; i < count; i++) {
         const y = startY + i * nodeSpacing;
@@ -85,7 +89,7 @@ const DataCubeScreen = () => {
       // Header - smaller and more padding
       ctx.fillStyle = '#00ffff';
       ctx.font = 'bold 10px monospace';
-      ctx.fillText('◇ NEURAL NET ◇', 20, 30); // More padding, moved down
+      ctx.fillText('◇ NEURAL NET ◇', 30, 30); // More padding, moved down
 
       // Draw divider
       ctx.strokeStyle = '#00ffff';
@@ -100,9 +104,12 @@ const DataCubeScreen = () => {
         node.activation = (Math.sin(t * 2 + node.pulsePhase) + 1) / 2;
       });
 
-      // Update connection flows
-      connectionsRef.current.forEach(conn => {
-        conn.flow = (Math.sin(t * 3 + conn.from + conn.to) + 1) / 2;
+      // Update connection flows with smoother, slower waves
+      connectionsRef.current.forEach((conn, idx) => {
+        // Create wave patterns that flow through the network
+        const waveSpeed = 0.5; // Much slower
+        const phaseOffset = idx * 0.2; // Stagger the flows
+        conn.flow = (Math.sin(t * waveSpeed + phaseOffset) + 1) / 2;
       });
 
       // Draw connections with flowing data
@@ -124,15 +131,31 @@ const DataCubeScreen = () => {
         ctx.lineTo(toNode.x, toNode.y);
         ctx.stroke();
         
-        // Draw flowing particles along connections
-        if (conn.flow > 0.7) {
-          const particleX = fromNode.x + (toNode.x - fromNode.x) * ((t * 2) % 1);
-          const particleY = fromNode.y + (toNode.y - fromNode.y) * ((t * 2) % 1);
+        // Draw flowing particles along connections - slower and bidirectional
+        if (conn.flow > 0.5) {
+          // Create oscillating movement (back and forth)
+          const oscillation = (Math.sin(t * 0.8 + conn.from) + 1) / 2; // Slower with 0.8 multiplier
+          
+          // Particles move from edges toward center and back
+          let particlePos;
+          if (fromNode.layer < toNode.layer) {
+            // Forward direction (toward output)
+            particlePos = oscillation;
+          } else {
+            // For same layer connections, just oscillate
+            particlePos = oscillation;
+          }
+          
+          const particleX = fromNode.x + (toNode.x - fromNode.x) * particlePos;
+          const particleY = fromNode.y + (toNode.y - fromNode.y) * particlePos;
+          
+          // Particle size based on position (smaller at edges, larger in center)
+          const particleSize = 1 + Math.sin(particlePos * Math.PI) * 1.5;
           
           ctx.fillStyle = '#ffffff';
-          ctx.globalAlpha = conn.flow;
+          ctx.globalAlpha = conn.flow * 0.8;
           ctx.beginPath();
-          ctx.arc(particleX, particleY, 2, 0, Math.PI * 2);
+          ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
           ctx.fill();
           ctx.globalAlpha = 1;
         }
@@ -140,7 +163,7 @@ const DataCubeScreen = () => {
 
       // Draw nodes - smaller size
       nodesRef.current.forEach((node, index) => {
-        const radius = 5 + node.activation * 2; // Reduced from 8 + activation * 4
+        const radius = 2 + node.activation * 1; // Reduced from 8 + activation * 4
         
         // Node glow effect
         const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, radius * 2);
@@ -172,15 +195,23 @@ const DataCubeScreen = () => {
         ctx.globalAlpha = 1;
       });
 
-      // Layer labels - adjusted for new positions
-      ctx.fillStyle = '#00ff00';
+      // Layer labels - adjusted for smaller network
+      const labelY = 250; // Moved up due to smaller network
       ctx.font = '8px monospace';
-      ctx.fillText('INPUT', 25, 290);
+      
+      // Calculate label positions based on actual node positions (startX = 55, spacing = 90)
+      const inputX = 55 - 8; // First layer x position
+      const hidden1X = 55 + 90/3 - 8;
+      const hidden2X = 55 + 2*90/3 - 8;
+      const outputX = 55 + 90 - 7;
+      
+      ctx.fillStyle = '#00ff00';
+      ctx.fillText('INPUT', inputX, labelY);
       ctx.fillStyle = '#00ffff';
-      ctx.fillText('HID1', 75, 290);
-      ctx.fillText('HID2', 115, 290);
+      ctx.fillText('HID1', hidden1X, labelY);
+      ctx.fillText('HID2', hidden2X, labelY);
       ctx.fillStyle = '#ff00ff';
-      ctx.fillText('OUT', 160, 290);
+      ctx.fillText('OUT', outputX, labelY);
 
       // Neural network metrics - more padding and smaller
       ctx.font = '9px monospace';
@@ -194,7 +225,7 @@ const DataCubeScreen = () => {
       ];
 
       metrics.forEach((metric, i) => {
-        const y = 320 + i * 20; // Moved up from 370 to 320
+        const y = 280 + i * 20; // Adjusted for smaller network
         ctx.fillStyle = metric.color;
         ctx.fillText(metric.label, 20, y); // More padding from edge
         
@@ -214,21 +245,21 @@ const DataCubeScreen = () => {
       // Training status - adjusted position with more padding
       ctx.fillStyle = '#666666';
       ctx.font = '8px monospace';
-      ctx.fillText('Epoch: ' + Math.floor(t / 10), 20, 410);
-      ctx.fillText('Loss: ' + (0.1 + Math.sin(t * 0.2) * 0.05).toFixed(3), 100, 410);
+      ctx.fillText('Epoch: ' + Math.floor(t / 10), 20, 360);
+      ctx.fillText('Loss: ' + (0.1 + Math.sin(t * 0.2) * 0.05).toFixed(3), 100, 360);
 
       // Footer status with pulse - more padding
       const pulseAlpha = (Math.sin(t * 4) + 1) / 2;
       ctx.fillStyle = `rgba(0, 255, 255, ${pulseAlpha})`;
       ctx.font = 'bold 9px monospace';
-      ctx.fillText('◆ LEARNING', 20, 435);
+      ctx.fillText('◆ LEARNING', 20, 385);
       
       // Activity indicator dots
       for (let i = 0; i < 3; i++) {
         const dotAlpha = (Math.sin(t * 3 - i * 0.5) + 1) / 2;
         ctx.fillStyle = `rgba(255, 255, 255, ${dotAlpha})`;
         ctx.beginPath();
-        ctx.arc(100 + i * 6, 433, 1.5, 0, Math.PI * 2);
+        ctx.arc(100 + i * 6, 383, 1.5, 0, Math.PI * 2);
         ctx.fill();
       }
 

@@ -7,6 +7,12 @@ import TeknoScreen from './TeknoScreen';
 import RL80Screen from './RL80Screen';
 import AgentChatScreen from './AgentChatScreen';
 import DataCubeScreen from './DataCubeScreen';
+import OrderBookScreen from './OrderBookScreen';
+import MarketDepthScreen from './MarketDepthScreen';
+import PriceChartScreen from './PriceChartScreen';
+import VolumeAnalysisScreen from './VolumeAnalysisScreen';
+import RiskMetricsScreen from './RiskMetricsScreen';
+import PortfolioScreen from './PortfolioScreen';
 
 function VideoScreens() {
   const { scene } = useThree();
@@ -119,10 +125,16 @@ function VideoScreens() {
       let screen1RFound = false;
       let screen2Found = false;
       let screen2SmallFound = false;
+      let screen2LFound = false;
+      let screen2RFound = false;
       let screen3Found = false;
       let screen3SmallFound = false;
+      let screen3LFound = false;
+      let screen3RFound = false;
       let screen4Found = false;
       let screen4SmallFound = false;
+      let screen4LFound = false;
+      let screen4RFound = false;
       let screen5Found = false;
 
       // console.log('[VideoScreens] Starting scene traversal to find screens...');
@@ -321,6 +333,68 @@ function VideoScreens() {
           video1.play().catch(e => {});
         }
         
+        // Screen2_LScreen - Setup canvas for Order Book
+        if (child.isMesh && child.name === 'Screen2_LScreen' && !screen2LFound) {
+          screen2LFound = true;
+          
+          const canvas2L = document.createElement('canvas');
+          canvas2L.width = 256;
+          canvas2L.height = 512;
+          
+          const canvasTexture2L = new THREE.CanvasTexture(canvas2L);
+          canvasTexture2L.minFilter = THREE.LinearFilter;
+          canvasTexture2L.magFilter = THREE.LinearFilter;
+          canvasTexture2L.flipY = false;
+          canvasTexture2L.repeat.x = 1;
+          canvasTexture2L.center.set(0.5, 0.5);
+          
+          const material2L = new THREE.MeshBasicMaterial({
+            map: canvasTexture2L,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = material2L;
+          
+          // @ts-ignore
+          window['__screen2LCanvas'] = canvas2L;
+          // @ts-ignore
+          window['__screen2LTexture'] = canvasTexture2L;
+          // @ts-ignore
+          window['__screen2LMesh'] = child;
+        }
+        
+        // Screen2_RScreen - Setup canvas for Market Depth
+        if (child.isMesh && child.name === 'Screen2_RScreen' && !screen2RFound) {
+          screen2RFound = true;
+          
+          const canvas2R = document.createElement('canvas');
+          canvas2R.width = 256;
+          canvas2R.height = 512;
+          
+          const canvasTexture2R = new THREE.CanvasTexture(canvas2R);
+          canvasTexture2R.minFilter = THREE.LinearFilter;
+          canvasTexture2R.magFilter = THREE.LinearFilter;
+          canvasTexture2R.flipY = false;
+          canvasTexture2R.repeat.x = 1;
+          canvasTexture2R.center.set(0.5, 0.5);
+          
+          const material2R = new THREE.MeshBasicMaterial({
+            map: canvasTexture2R,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = material2R;
+          
+          // @ts-ignore
+          window['__screen2RCanvas'] = canvas2R;
+          // @ts-ignore
+          window['__screen2RTexture'] = canvasTexture2R;
+          // @ts-ignore
+          window['__screen2RMesh'] = child;
+        }
+        
         // Screen3 - Setup canvas texture for TeknoScreen
         if (child.isMesh && child.name === 'Screen3' && !screen3Found) {
           // console.log('[VideoScreens] Found Screen3, setting up canvas texture for TeknoScreen');
@@ -369,6 +443,68 @@ function VideoScreens() {
           child.material = material;
           screen3SmallFound = true;
           video1.play().catch(e => {});
+        }
+        
+        // Screen3_LScreen - Setup canvas for Price Chart
+        if (child.isMesh && child.name === 'Screen3_LScreen' && !screen3LFound) {
+          screen3LFound = true;
+          
+          const canvas3L = document.createElement('canvas');
+          canvas3L.width = 256;
+          canvas3L.height = 512;
+          
+          const canvasTexture3L = new THREE.CanvasTexture(canvas3L);
+          canvasTexture3L.minFilter = THREE.LinearFilter;
+          canvasTexture3L.magFilter = THREE.LinearFilter;
+          canvasTexture3L.flipY = false;
+          canvasTexture3L.repeat.x = 1;
+          canvasTexture3L.center.set(0.5, 0.5);
+          
+          const material3L = new THREE.MeshBasicMaterial({
+            map: canvasTexture3L,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = material3L;
+          
+          // @ts-ignore
+          window['__screen3LCanvas'] = canvas3L;
+          // @ts-ignore
+          window['__screen3LTexture'] = canvasTexture3L;
+          // @ts-ignore
+          window['__screen3LMesh'] = child;
+        }
+        
+        // Screen3_RScreen - Setup canvas for Volume Analysis
+        if (child.isMesh && child.name === 'Screen3_RScreen' && !screen3RFound) {
+          screen3RFound = true;
+          
+          const canvas3R = document.createElement('canvas');
+          canvas3R.width = 256;
+          canvas3R.height = 512;
+          
+          const canvasTexture3R = new THREE.CanvasTexture(canvas3R);
+          canvasTexture3R.minFilter = THREE.LinearFilter;
+          canvasTexture3R.magFilter = THREE.LinearFilter;
+          canvasTexture3R.flipY = false;
+          canvasTexture3R.repeat.x = 1;
+          canvasTexture3R.center.set(0.5, 0.5);
+          
+          const material3R = new THREE.MeshBasicMaterial({
+            map: canvasTexture3R,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = material3R;
+          
+          // @ts-ignore
+          window['__screen3RCanvas'] = canvas3R;
+          // @ts-ignore
+          window['__screen3RTexture'] = canvasTexture3R;
+          // @ts-ignore
+          window['__screen3RMesh'] = child;
         }
         
         // Screen4 - Setup canvas texture for RL80Screen
@@ -421,6 +557,68 @@ function VideoScreens() {
           video1.play().catch(e => {});
         }
         
+        // Screen4_LScreen - Setup canvas for Risk Metrics
+        if (child.isMesh && child.name === 'Screen4_LScreen' && !screen4LFound) {
+          screen4LFound = true;
+          
+          const canvas4L = document.createElement('canvas');
+          canvas4L.width = 256;
+          canvas4L.height = 512;
+          
+          const canvasTexture4L = new THREE.CanvasTexture(canvas4L);
+          canvasTexture4L.minFilter = THREE.LinearFilter;
+          canvasTexture4L.magFilter = THREE.LinearFilter;
+          canvasTexture4L.flipY = false;
+          canvasTexture4L.repeat.x = 1;
+          canvasTexture4L.center.set(0.5, 0.5);
+          
+          const material4L = new THREE.MeshBasicMaterial({
+            map: canvasTexture4L,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = material4L;
+          
+          // @ts-ignore
+          window['__screen4LCanvas'] = canvas4L;
+          // @ts-ignore
+          window['__screen4LTexture'] = canvasTexture4L;
+          // @ts-ignore
+          window['__screen4LMesh'] = child;
+        }
+        
+        // Screen4_RScreen - Setup canvas for Portfolio
+        if (child.isMesh && child.name === 'Screen4_RScreen' && !screen4RFound) {
+          screen4RFound = true;
+          
+          const canvas4R = document.createElement('canvas');
+          canvas4R.width = 256;
+          canvas4R.height = 512;
+          
+          const canvasTexture4R = new THREE.CanvasTexture(canvas4R);
+          canvasTexture4R.minFilter = THREE.LinearFilter;
+          canvasTexture4R.magFilter = THREE.LinearFilter;
+          canvasTexture4R.flipY = false;
+          canvasTexture4R.repeat.x = 1;
+          canvasTexture4R.center.set(0.5, 0.5);
+          
+          const material4R = new THREE.MeshBasicMaterial({
+            map: canvasTexture4R,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = material4R;
+          
+          // @ts-ignore
+          window['__screen4RCanvas'] = canvas4R;
+          // @ts-ignore
+          window['__screen4RTexture'] = canvasTexture4R;
+          // @ts-ignore
+          window['__screen4RMesh'] = child;
+        }
+        
         if (child.isMesh && child.name === 'Screen5' && !screen5Found) {
           const material = new THREE.MeshBasicMaterial({
             map: texture5,
@@ -435,7 +633,11 @@ function VideoScreens() {
         // Removed fallback material code - it was interfering with Screen1 setup
       });
 
-      const allScreensFound = screen1Found || screen1SmallFound || screen1LFound || screen1RFound || screen2Found || screen2SmallFound || screen3Found || screen3SmallFound || screen4Found || screen4SmallFound || screen5Found;
+      const allScreensFound = screen1Found || screen1SmallFound || screen1LFound || screen1RFound || 
+                             screen2Found || screen2SmallFound || screen2LFound || screen2RFound ||
+                             screen3Found || screen3SmallFound || screen3LFound || screen3RFound ||
+                             screen4Found || screen4SmallFound || screen4LFound || screen4RFound || 
+                             screen5Found;
       
       // console.log('[VideoScreens] Search results:', {
       //   screen1Found, screen2Found, screen3Found, screen4Found,
@@ -628,6 +830,12 @@ function VideoScreens() {
       <RL80Screen />
       <AgentChatScreen />
       <DataCubeScreen />
+      <OrderBookScreen />
+      <MarketDepthScreen />
+      <PriceChartScreen />
+      <VolumeAnalysisScreen />
+      <RiskMetricsScreen />
+      <PortfolioScreen />
     </>
   );
 }
