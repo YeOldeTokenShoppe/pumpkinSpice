@@ -506,7 +506,7 @@ const CyborgTempleScene = ({
       const gridHelper = new THREE.GridHelper(50, 50, 0x00ff41, 0x00ff41);
       gridHelper.material.opacity = 0.3;
       gridHelper.material.transparent = true;
-      gridHelper.position.y = -.06; // Position the grid below the scene
+      gridHelper.position.y = isOnMobile ? -6.5 : -0.06; // Lower grid on mobile
       anchorGroup.add(gridHelper);
       
       // Add the anchor group to our captured group ref

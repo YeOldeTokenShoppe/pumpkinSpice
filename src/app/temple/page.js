@@ -7,8 +7,8 @@ import Aurora from '@/components/Aurora';
 import StarField from '@/components/StarField';
 import Link from 'next/link';
 import PostProcessingEffects from '@/components/PostProcessingEffects';
-// import CyborgTempleScene from '@/components/CyborgTempleScene';
-import CyborgTempleSceneOptimized from '@/components/CyborgTempleSceneOptimized';
+import CyborgTempleScene from '@/components/CyborgTempleScene';
+
 import VideoScreens from "@/components/VideoScreens";
 import TickerDisplay3 from "@/components/TickerDisplay3";
 import { useMusic } from '@/components/MusicContext';
@@ -478,8 +478,8 @@ export default function CyborgTemple() {
         <CleanCanvas
           key="temple-canvas"
           camera={{ 
-            position: isMobileView ? [0, 0.5, 0] : [0, 0.5, 6.5], 
-            fov: isMobileView ? 40 : 50 
+            position: isMobileView ? [0, 0, 2] : [0, 0.5, 6.5], 
+            fov: isMobileView ? 35 : 50 
           }}
           gl={{ 
             antialias: !isMobileView,
@@ -522,8 +522,8 @@ export default function CyborgTemple() {
             )}
             
             {/* CyborgTempleScene with the RL80 model */}
-            <CyborgTempleSceneOptimized
-              position={isMobileView ? [0, 1.5, 0] : [0, -1.5, 0]}
+            <CyborgTempleScene
+              position={isMobileView ? [0, -1.2, 0] : [0, -1.5, 0]}
               scale={[1.2, 1.2, 1.2]}
               rotation={[0, 0, 0]}
               isPlaying={false}
@@ -581,12 +581,12 @@ export default function CyborgTemple() {
               dampingFactor={0.1}
               minDistance={0.1}
               maxDistance={10}
-              minPolarAngle={isMobileView ? Math.PI / 3 : 0}  // Limit looking up on mobile (60 degrees)
-              maxPolarAngle={isMobileView ? Math.PI / 2.5 : Math.PI / 1.9}  // Limit looking down on mobile (72 degrees)
+              // minPolarAngle={isMobileView ? Math.PI / 3 : 0}  // Limit looking up on mobile (60 degrees)
+              // maxPolarAngle={isMobileView ? Math.PI / 2.5 : Math.PI / 1.9}  // Limit looking down on mobile (72 degrees)
               zoomToCursor={true}
               autoRotate={isMobileView ? false : true}
               autoRotateSpeed={0.2}
-              target={isMobileView ? [0, 3, 0] : [0, 0, 0]}
+              target={isMobileView ? [0, 0, 0] : [0, 0, 0]}
             />
           </Suspense>
           <Stats className="stats-monitor" />
@@ -614,43 +614,6 @@ export default function CyborgTemple() {
         {/* Top Controls Container - Music, User, and Nav */}
         {mounted && (
           <>
-            {/* Background Toggle - Small B&W button */}
-            {sceneReady && (
-              <button
-                onClick={() => setUseAurora(!useAurora)}
-                style={{
-                  position: "fixed",
-                  top: "1rem",
-                  right: isMobileView ? "4.5rem" : "5rem",
-                  width: isMobileView ? "2.5rem" : "3rem",
-                  height: isMobileView ? "2.5rem" : "3rem",
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
-                  borderRadius: "0.25rem",
-                  color: "#ffffff",
-                  fontSize: isMobileView ? "0.7rem" : "0.8rem",
-                  fontWeight: "normal",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  backdropFilter: "blur(10px)",
-                  zIndex: 10001,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "0.25rem"
-                }}
-                title={`Switch to ${useAurora ? 'StarField' : 'Aurora'} background`}
-              >
-                <span style={{ 
-                  fontSize: isMobileView ? "0.6rem" : "0.7rem",
-                  textAlign: "center",
-                  lineHeight: "1.1"
-                }}>
-                  {useAurora ? "AUR" : "STR"}
-                </span>
-              </button>
-            )}
-            
             {/* CyberNav Menu with integrated buttons */}
             <div
               style={{
@@ -663,6 +626,40 @@ export default function CyborgTemple() {
               <CyberNav 
                 is80sMode={is80sMode} 
                 position="fixed"
+                auroraButton={
+                  sceneReady && (
+                    <button
+                      onClick={() => setUseAurora(!useAurora)}
+                      style={{
+                    width: isMobileView ? "3rem" : "3.5rem",
+                            height: isMobileView ? "3rem" : "3.5rem",
+                        backgroundColor: "rgba(0, 0, 0, 0.7)",
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
+                        borderRadius: "0.25rem",
+                        color: "#ffffff",
+                        fontSize: isMobileView ? "0.7rem" : "0.8rem",
+                        fontWeight: "normal",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        backdropFilter: "blur(10px)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "0.25rem",
+                        boxShadow: "0 0.125rem 0.5rem rgba(0, 0, 0, 0.3)"
+                      }}
+                      title={`Switch to ${useAurora ? 'StarField' : 'Aurora'} background`}
+                    >
+                      <span style={{ 
+                        fontSize: isMobileView ? "1.6rem" : "1.7rem",
+                        textAlign: "center",
+                        lineHeight: "1.1"
+                      }}>
+                        {useAurora ? "🦄" : "✨"}
+                      </span>
+                    </button>
+                  )
+                }
                 musicButton={
                   !showMusicControls ? (
                 <button

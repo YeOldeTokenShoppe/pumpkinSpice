@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const CyberNav = ({ is80sMode = false, position = "fixed", musicButton = null, userButton = null, extra80sButton = null }) => {
+const CyberNav = ({ is80sMode = false, position = "fixed", musicButton = null, userButton = null, extra80sButton = null, auroraButton = null }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hoveredItemPath, setHoveredItemPath] = useState('');
   const [isMobile, setIsMobile] = useState(false);
@@ -87,6 +87,25 @@ const CyberNav = ({ is80sMode = false, position = "fixed", musicButton = null, u
   // Always use mobile-style menu
   return (
       <>
+        {/* Aurora Button - flies out to the left from CyberNav */}
+        {auroraButton && (
+          <div
+            style={{
+              position: position === "relative" ? "relative" : position,
+              top: position === "relative" ? "0" : (position === "absolute" ? "10px" : "20px"),
+              right: position === "relative" ? (showExtraButtons ? (isMobile ? "8rem" : "9rem") : "0") : (showExtraButtons ? (isMobile ? "9rem" : "10rem") : "20px"),
+              zIndex: position === "relative" ? 1 : 9992,
+              opacity: showExtraButtons ? 1 : 0,
+              pointerEvents: showExtraButtons ? "auto" : "none",
+              transform: showExtraButtons ? "translateX(0) scale(1)" : "translateX(100%) scale(0)",
+              transformOrigin: "right center",
+              transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            }}
+          >
+            {auroraButton}
+          </div>
+        )}
+        
         {/* Music Button - flies out to the left from CyberNav */}
         {musicButton && (
           <div
@@ -99,7 +118,7 @@ const CyberNav = ({ is80sMode = false, position = "fixed", musicButton = null, u
               pointerEvents: showExtraButtons ? "auto" : "none",
               transform: showExtraButtons ? "translateX(0) scale(1)" : "translateX(100%) scale(0)",
               transformOrigin: "right center",
-              transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s",
             }}
           >
             {musicButton}

@@ -5,6 +5,8 @@ import MacroAgentScreen from './MacroAgentScreen';
 import SentimentScreen from './SentimentScreen';
 import TeknoScreen from './TeknoScreen';
 import RL80Screen from './RL80Screen';
+import AgentChatScreen from './AgentChatScreen';
+import DataCubeScreen from './DataCubeScreen';
 
 function VideoScreens() {
   const { scene } = useThree();
@@ -113,6 +115,8 @@ function VideoScreens() {
     const findAndSetupScreens = () => {
       let screen1Found = false;
       let screen1SmallFound = false;
+      let screen1LFound = false;
+      let screen1RFound = false;
       let screen2Found = false;
       let screen2SmallFound = false;
       let screen3Found = false;
@@ -186,6 +190,82 @@ function VideoScreens() {
           child.material = material;
           screen1SmallFound = true;
           video1.play().catch(e => {});
+        }
+        
+        // Screen1_LScreen - Setup canvas for Agent Chat
+        if (child.isMesh && child.name === 'Screen1_LScreen' && !screen1LFound) {
+          // console.log('[VideoScreens] Found Screen1_LScreen, setting up agent chat canvas');
+          screen1LFound = true;
+          
+          // Create canvas for agent chat
+          const canvasL = document.createElement('canvas');
+          canvasL.width = 256;
+          canvasL.height = 512;
+          
+          // Create texture from canvas
+          const canvasTextureL = new THREE.CanvasTexture(canvasL);
+          canvasTextureL.minFilter = THREE.LinearFilter;
+          canvasTextureL.magFilter = THREE.LinearFilter;
+          canvasTextureL.flipY = false;
+          canvasTextureL.repeat.x = 1;
+          canvasTextureL.center.set(0.5, 0.5);
+          
+          // Apply to Screen1_LScreen
+          const materialL = new THREE.MeshBasicMaterial({
+            map: canvasTextureL,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = materialL;
+          
+          // Store refs globally for AgentChatScreen to use
+          // @ts-ignore
+          window['__screen1LCanvas'] = canvasL;
+          // @ts-ignore
+          window['__screen1LTexture'] = canvasTextureL;
+          // @ts-ignore
+          window['__screen1LMesh'] = child;
+          
+          // console.log('[VideoScreens] Screen1_LScreen canvas setup complete');
+        }
+        
+        // Screen1_RScreen - Setup canvas for Data Cube
+        if (child.isMesh && child.name === 'Screen1_RScreen' && !screen1RFound) {
+          // console.log('[VideoScreens] Found Screen1_RScreen, setting up data cube canvas');
+          screen1RFound = true;
+          
+          // Create canvas for data visualization
+          const canvasR = document.createElement('canvas');
+          canvasR.width = 256;
+          canvasR.height = 512;
+          
+          // Create texture from canvas
+          const canvasTextureR = new THREE.CanvasTexture(canvasR);
+          canvasTextureR.minFilter = THREE.LinearFilter;
+          canvasTextureR.magFilter = THREE.LinearFilter;
+          canvasTextureR.flipY = false;
+          canvasTextureR.repeat.x = 1;
+          canvasTextureR.center.set(0.5, 0.5);
+          
+          // Apply to Screen1_RScreen
+          const materialR = new THREE.MeshBasicMaterial({
+            map: canvasTextureR,
+            side: THREE.FrontSide,
+            toneMapped: false,
+          });
+          
+          child.material = materialR;
+          
+          // Store refs globally for DataCubeScreen to use
+          // @ts-ignore
+          window['__screen1RCanvas'] = canvasR;
+          // @ts-ignore
+          window['__screen1RTexture'] = canvasTextureR;
+          // @ts-ignore
+          window['__screen1RMesh'] = child;
+          
+          // console.log('[VideoScreens] Screen1_RScreen canvas setup complete');
         }
         
         // Screen2 - Setup canvas texture for MacroAgentScreen  
@@ -355,7 +435,7 @@ function VideoScreens() {
         // Removed fallback material code - it was interfering with Screen1 setup
       });
 
-      const allScreensFound = screen1Found || screen1SmallFound || screen2Found || screen2SmallFound || screen3Found || screen3SmallFound || screen4Found || screen4SmallFound || screen5Found;
+      const allScreensFound = screen1Found || screen1SmallFound || screen1LFound || screen1RFound || screen2Found || screen2SmallFound || screen3Found || screen3SmallFound || screen4Found || screen4SmallFound || screen5Found;
       
       // console.log('[VideoScreens] Search results:', {
       //   screen1Found, screen2Found, screen3Found, screen4Found,
@@ -443,6 +523,44 @@ function VideoScreens() {
         delete window.__screen1Mesh;
       }
       
+      // Clean up Screen1 Left
+      // @ts-ignore
+      if (window.__screen1LCanvas) {
+        // @ts-ignore
+        delete window.__screen1LCanvas;
+      }
+      // @ts-ignore
+      if (window.__screen1LTexture) {
+        // @ts-ignore
+        window.__screen1LTexture.dispose();
+        // @ts-ignore
+        delete window.__screen1LTexture;
+      }
+      // @ts-ignore
+      if (window.__screen1LMesh) {
+        // @ts-ignore
+        delete window.__screen1LMesh;
+      }
+      
+      // Clean up Screen1 Right
+      // @ts-ignore
+      if (window.__screen1RCanvas) {
+        // @ts-ignore
+        delete window.__screen1RCanvas;
+      }
+      // @ts-ignore
+      if (window.__screen1RTexture) {
+        // @ts-ignore
+        window.__screen1RTexture.dispose();
+        // @ts-ignore
+        delete window.__screen1RTexture;
+      }
+      // @ts-ignore
+      if (window.__screen1RMesh) {
+        // @ts-ignore
+        delete window.__screen1RMesh;
+      }
+      
       // Clean up Screen2
       // @ts-ignore
       if (window.__screen2Canvas) {
@@ -508,6 +626,8 @@ function VideoScreens() {
       <MacroAgentScreen />
       <TeknoScreen />
       <RL80Screen />
+      <AgentChatScreen />
+      <DataCubeScreen />
     </>
   );
 }
