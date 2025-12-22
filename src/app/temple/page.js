@@ -7,7 +7,8 @@ import Aurora from '@/components/Aurora';
 import StarField from '@/components/StarField';
 import Link from 'next/link';
 import PostProcessingEffects from '@/components/PostProcessingEffects';
-import CyborgTempleScene from '@/components/CyborgTempleScene';
+// import CyborgTempleScene from '@/components/CyborgTempleScene';
+import CyborgTempleSceneOptimized from '@/components/CyborgTempleSceneOptimized';
 import VideoScreens from "@/components/VideoScreens";
 import TickerDisplay3 from "@/components/TickerDisplay3";
 import { useMusic } from '@/components/MusicContext';
@@ -17,7 +18,6 @@ import SimpleTextLoader from '@/components/SimpleTextLoader';
 import { TradingOverlay } from '@/trading';
 // import { useLighterTrading } from '@/hooks/useLighterTrading'; // Direct Lighter integration
 import { useLighterAPI } from '@/hooks/useLighterAPI'; // API-based Lighter integration
-import DevModePanel from '@/components/DevModePanel';
 // import AgentChatDisplay from '@/components/AgentChatDisplay'; // Using existing Trading Team Chat instead
 // import MobileDevTabs from '@/components/MobileDevTabs';
 import RotatingPnL from '@/components/RotatingPnL';
@@ -478,8 +478,8 @@ export default function CyborgTemple() {
         <CleanCanvas
           key="temple-canvas"
           camera={{ 
-            position: isMobileView ? [0, 4.2, 2] : [0, 0.5, 6.5], 
-            fov: isMobileView ? 35 : 50 
+            position: isMobileView ? [0, 0.5, 0] : [0, 0.5, 6.5], 
+            fov: isMobileView ? 40 : 50 
           }}
           gl={{ 
             antialias: !isMobileView,
@@ -522,8 +522,8 @@ export default function CyborgTemple() {
             )}
             
             {/* CyborgTempleScene with the RL80 model */}
-            <CyborgTempleScene
-              position={[0, -1.5, 0]}
+            <CyborgTempleSceneOptimized
+              position={isMobileView ? [0, 1.5, 0] : [0, -1.5, 0]}
               scale={[1.2, 1.2, 1.2]}
               rotation={[0, 0, 0]}
               isPlaying={false}
@@ -544,9 +544,10 @@ export default function CyborgTemple() {
               }}
             />
 
-            {tickerReady && !isCandleModalOpen && !isMobileView ? (
+            {/* TickerDisplay3 - Only load on desktop with RL80_4anims.glb model */}
+            {!isMobileView && tickerReady && !isCandleModalOpen && (
               <TickerDisplay3 modelRef={null} onLoad={handleTickerLoad} />
-            ) : null}
+            )}
 
           
             {/* Constellation */}
@@ -580,12 +581,12 @@ export default function CyborgTemple() {
               dampingFactor={0.1}
               minDistance={0.1}
               maxDistance={10}
-              minPolarAngle={0}
-              maxPolarAngle={Math.PI / 1.9}
+              minPolarAngle={isMobileView ? Math.PI / 3 : 0}  // Limit looking up on mobile (60 degrees)
+              maxPolarAngle={isMobileView ? Math.PI / 2.5 : Math.PI / 1.9}  // Limit looking down on mobile (72 degrees)
               zoomToCursor={true}
               autoRotate={isMobileView ? false : true}
               autoRotateSpeed={0.2}
-              target={isMobileView ? [0, 4.2, 0] : [0, 0, 0]}
+              target={isMobileView ? [0, 3, 0] : [0, 0, 0]}
             />
           </Suspense>
           <Stats className="stats-monitor" />

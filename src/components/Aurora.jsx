@@ -42,7 +42,6 @@ export default function Aurora() {
     #define u_time iTime
     #define u_resolution iResolution
 
-    #define AURORA_LAYERS 50.
     #define AURORA_SPEED 0.06
     #define AURORA_HUE_SPEED 0.043
 
@@ -129,8 +128,12 @@ export default function Aurora() {
     vec4 aurora(vec3 rd) {
         vec4 col = vec4(0);
         vec4 avgCol = vec4(0);    
-
-        for (float i=0.; i < AURORA_LAYERS; i++) {
+        
+        // Use fewer layers on mobile for better performance
+        float maxLayers = isMobile > 0.5 ? 25. : 50.;
+        
+        for (float i=0.; i < 50.; i++) {
+            if (i >= maxLayers) break;
             float of = 0.006*random(gl_FragCoord.xy)*smoothstep(0.,15., i);
             // Adjust the divisor based on mobile - smaller divisor = aurora extends further
             float yDivisor = isMobile > 0.5 ? (rd.y * 1.0 + 0.2) : (rd.y * 2. + 0.4);
