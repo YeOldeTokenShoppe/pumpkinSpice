@@ -157,8 +157,6 @@ const PalmsScene = ({ onLoadingChange }) => {
     );
     
     if (allResolved && anyLoaded) {
-      console.log('[PalmTreeDrive] All models resolved (loaded or errored), hiding loader');
-      console.log('Final model states:', modelsLoadState);
       setIsSceneLoading(false);
     } else if (allResolved && !anyLoaded) {
       console.error('[PalmTreeDrive] All models failed to load:', modelsLoadState);
@@ -186,9 +184,8 @@ const PalmsScene = ({ onLoadingChange }) => {
   const wavyTargetState = useRef({ mousePosition: { x: 0, y: 0 }, waveIntensity: 0.005 });
   
   // Debug effect to track button state changes
-  useEffect(() => {
-    console.log(`[Button State Changed] showEnterButton is now: ${showEnterButton}`);
-  }, [showEnterButton]);
+  // useEffect(() => {
+  // }, [showEnterButton]);
   const audioRef = useRef(null);
   const musicPlayerRef = useRef(null); // Local ref if needed
   
@@ -293,7 +290,6 @@ const PalmsScene = ({ onLoadingChange }) => {
       const isPhone = /iphone|android.*mobile/.test(userAgent);
       const isNarrowScreen = window.innerWidth <= 768;
       const mobileDetected = isPhone && isNarrowScreen;
-      console.log(`[Mobile Detection] isPhone: ${isPhone}, isNarrowScreen: ${isNarrowScreen}, result: ${mobileDetected}`);
       setIsMobile(mobileDetected);
     };
     
@@ -360,12 +356,12 @@ const PalmsScene = ({ onLoadingChange }) => {
       setIsLowEndDevice(isLowEnd);
       
       // Log detection results for debugging
-      console.log('Device Performance Detection:', {
-        isLowEnd,
-        cores,
-        isMobile: isMobileDevice,
-        screenSize: { width: window.screen.width, height: window.screen.height }
-      });
+      // console.log('Device Performance Detection:', {
+      //   isLowEnd,
+      //   cores,
+      //   isMobile: isMobileDevice,
+      //   screenSize: { width: window.screen.width, height: window.screen.height }
+      // });
     };
     
     detectDevicePerformance();
@@ -521,7 +517,7 @@ const PalmsScene = ({ onLoadingChange }) => {
     // Fallback timer to ensure loading completes
     const loadingFallback = setTimeout(() => {
       if (isSceneLoadingInternal) {
-        console.log('Loading fallback triggered - forcing scene to show');
+        // console.log('Loading fallback triggered - forcing scene to show');
         setIsSceneLoading(false);
       }
     }, 8000); // 8 seconds fallback to match home3
@@ -896,18 +892,16 @@ const PalmsScene = ({ onLoadingChange }) => {
     let modelsLoaded = 0;
     
     loadingManager.onStart = () => {
-      // console.log('Loading started');
       modelsToLoad++;
     };
     
-    loadingManager.onLoad = () => {
-      console.log('All assets loaded via LoadingManager');
-      // Don't hide loader here - wait for individual model callbacks
-    };
+    // loadingManager.onLoad = () => {
+    //   // Don't hide loader here - wait for individual model callbacks
+    // };
     
-    loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
-      // console.log(`Loading: ${url} - ${itemsLoaded}/${itemsTotal}`);
-    };
+    // loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+    //   // console.log(`Loading: ${url} - ${itemsLoaded}/${itemsTotal}`);
+    // };
     
     loadingManager.onError = (url) => {
       console.error(`Error loading: ${url}`);
@@ -936,27 +930,15 @@ const PalmsScene = ({ onLoadingChange }) => {
       const palmModel = gltf.scene;
       
       // Mark palm model as loaded
-      console.log('[PalmTreeDrive] Palm model loaded');
+      // console.log('[PalmTreeDrive] Palm model loaded');
       setModelsLoadState(prev => ({ ...prev, palm: 'loaded' }));
       
-      // Debug: Log model structure
-      // console.log('=== Palm Tree Model Debug ===');
-      // console.log('Model loaded:', palmModel);
-      // console.log('Model children:', palmModel.children);
+
       
       // Find all meshes for debugging
       const allMeshes = [];
       palmModel.traverse((child) => {
-        // console.log('Child:', {
-        //   name: child.name,
-        //   type: child.type,
-        //   isMesh: child.isMesh,
-        //   visible: child.visible,
-        //   position: child.position,
-        //   scale: child.scale,
-        //   material: child.material,
-        //   geometry: child.geometry
-        // });
+
         if (child.isMesh) {
           allMeshes.push(child);
         }
@@ -967,16 +949,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       // Use the first mesh or try to use the whole scene
       let palmMesh = allMeshes[0];
       
-      // if (!palmMesh) {
-      //   console.error('No mesh found in palm GLB model');
-      //   // Try using the entire scene as fallback
-      //   if (palmModel.children.length > 0) {
-      //     console.log('Trying to use entire model scene');
-      //     palmMesh = palmModel;
-      //   } else {
-      //     return;
-      //   }
-      // }
+
       
       // Get geometry and material from the loaded model
       let palmGeometry, palmMaterial;
@@ -985,14 +958,7 @@ const PalmsScene = ({ onLoadingChange }) => {
         palmGeometry = palmMesh.geometry.clone();
         palmMaterial = palmMesh.material.clone();
         
-        // Check material properties
-        // console.log('Material properties:', {
-        //   type: palmMaterial.type,
-        //   transparent: palmMaterial.transparent,
-        //   opacity: palmMaterial.opacity,
-        //   side: palmMaterial.side,
-        //   visible: palmMaterial.visible
-        // });
+
         
         // Ensure material is visible
         palmMaterial.transparent = false;
@@ -1013,12 +979,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       // Debug geometry bounds
       palmGeometry.computeBoundingBox();
       const bbox = palmGeometry.boundingBox;
-      // console.log('Geometry bounds:', {
-      //   min: bbox.min,
-      //   max: bbox.max,
-      //   size: new THREE.Vector3().subVectors(bbox.max, bbox.min),
-      //   center: new THREE.Vector3().addVectors(bbox.max, bbox.min).multiplyScalar(0.5)
-      // });
+
       
       // Create instanced mesh
       const instanceCount = palmPositions.length / 3;
@@ -1112,7 +1073,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       const signModel = gltf.scene;
       
       // Mark sign model as loaded
-      console.log('[PalmTreeDrive] Sign model loaded');
+      // console.log('[PalmTreeDrive] Sign model loaded');
       setModelsLoadState(prev => ({ ...prev, sign: 'loaded' }));
       
       // Find the first mesh in the sign model
@@ -1242,7 +1203,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       const sun = gltf.scene;
       
       // Mark sun model as loaded
-      console.log('[PalmTreeDrive] Sun model loaded');
+      // console.log('[PalmTreeDrive] Sun model loaded');
       setModelsLoadState(prev => ({ ...prev, sun: 'loaded' }));
       
       // Position and scale the sun
@@ -1262,7 +1223,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       scene.add(sun);
     }, 
     (progress) => {
-      console.log('Loading sun:', (progress.loaded / progress.total * 100) + '%');
+      // console.log('Loading sun:', (progress.loaded / progress.total * 100) + '%');
     },
     (error) => {
       console.error('Error loading sun model:', error);
@@ -1301,37 +1262,12 @@ const PalmsScene = ({ onLoadingChange }) => {
     loader.load('/models/lambo5k3.glb', (gltf) => {
       const carScene = gltf.scene;
       
-      // Mark car model as loaded
-      console.log('[PalmTreeDrive] Car/UFO model loaded');
       setModelsLoadState(prev => ({ ...prev, car: 'loaded' }));
-      
-      // Enhanced logging for model contents
-      // console.log('=== Model Loading Debug ===');
-      // console.log('Total objects in scene:', carScene.children.length);
-      
-      // Track UFO-related objects
-      const ufoObjects = [];
       const carParts = [];
       const unknownObjects = [];
       
       // Log all objects in the scene hierarchy
       carScene.traverse((child) => {
-        // console.log('Object:', {
-        //   name: child.name,
-        //   type: child.type,
-        //   visible: child.visible,
-        //   position: child.position,
-        //   parent: child.parent?.name,
-        //   isMesh: child.isMesh,
-        //   material: child.material ? {
-        //     type: child.material.type,
-        //     color: child.material.color?.getHexString(),
-        //     transparent: child.material.transparent,
-        //     opacity: child.material.opacity
-        //   } : 'No material'
-        // });
-        
-        // More intelligent object detection
         const lowerName = child.name.toLowerCase();
         
         // Check if object name contains car-related keywords
@@ -1346,26 +1282,6 @@ const PalmsScene = ({ onLoadingChange }) => {
           // Ensure car parts are visible
           child.visible = true;
         }
-        // Check for UFO-related objects by position or other characteristics
-        // else if (child.name === 'Object_10' || 
-        //          child.name === 'Object_11' || 
-        //          child.name === 'Object_12' ||
-        //          child.name === 'Object_13' ||
-        //          child.name === 'Object_14' ||
-        //          child.name === 'Object_15' ||
-        //          child.name === 'Object_16' ||
-        //          child.name === 'Object_17' ||
-        //          child.name === 'Object_18') {
-        //   // Only hide if the object is above the car (Y > 2) or far from center
-        //   if (child.position.y > 2 || Math.abs(child.position.x) > 5 || Math.abs(child.position.z) > 5) {
-        //     console.log('Found UFO object (by position), hiding:', child.name, 'at position:', child.position);
-        //     child.visible = false;
-        //     ufoObjects.push(child);
-        //   } else {
-        //     console.log('Object might be car part, keeping visible:', child.name, 'at position:', child.position);
-        //     unknownObjects.push(child);
-        //   }
-        // }
         
         // Look for Mary specifically and ensure she's visible
         if (child.name.toLowerCase().includes('mary')) {
@@ -1390,12 +1306,6 @@ const PalmsScene = ({ onLoadingChange }) => {
         }
       });
       
-      // console.log('=== Model Loading Summary ===');
-      // console.log(`Hidden ${ufoObjects.length} UFO-related objects`);
-      // console.log(`Found ${carParts.length} car parts`);
-      // console.log(`Found ${unknownObjects.length} unknown objects that might be car parts`);
-      
-      // Log details of unknown objects
       if (unknownObjects.length > 0) {
         // console.log('Unknown objects that were kept visible:');
         unknownObjects.forEach(obj => {
@@ -1646,272 +1556,6 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     const observer = new IntersectionObserver(handleIntersection, observerOptions);
     
-
-    
-    
-
-    
-    // Start observing after a small delay to ensure DOM is ready
-    // setTimeout(startObserving, 100);
-    
-
-    
-    // Keyboard controls for camera tuning
-    const handleKeyPress = (e) => {
-      if (e.key === 'i' || e.key === 'I') {
-        // Log current camera position for debugging
-        if (cameraRef.current && controlsRef.current) {
-          const pos = cameraRef.current.position;
-          const target = controlsRef.current.target;
-          const fov = cameraRef.current.fov;
-          
-          console.log('=== Current Camera Info ===');
-          console.log('Position:', `${pos.x.toFixed(4)}, ${pos.y.toFixed(4)}, ${pos.z.toFixed(4)}`);
-          console.log('Target:', `${target.x.toFixed(4)}, ${target.y.toFixed(4)}, ${target.z.toFixed(4)}`);
-          console.log('FOV:', fov);
-          console.log('Scroll Progress:', scrollProgressRef.current);
-          
-          // Copy-paste ready format
-          console.log('\n// Copy for keyframe:');
-          console.log(`{ x: ${pos.x.toFixed(4)}, y: ${pos.y.toFixed(4)}, z: ${pos.z.toFixed(4)}, targetX: ${target.x.toFixed(4)}, targetY: ${target.y.toFixed(4)}, targetZ: ${target.z.toFixed(4)}, fov: ${fov} }`);
-        }
-      } else if (e.key === 'o' || e.key === 'O') {
-        // Toggle OrbitControls for finding good positions
-        if (controlsRef.current) {
-          controlsRef.current.enabled = !controlsRef.current.enabled;
-          scrollCameraEnabledRef.current = !controlsRef.current.enabled;
-          console.log('OrbitControls:', controlsRef.current.enabled ? 'ENABLED' : 'DISABLED');
-          console.log('ScrollCamera:', scrollCameraEnabledRef.current ? 'ENABLED' : 'DISABLED');
-        }
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyPress);
-
-    // Create GSAP timeline for cinematic intro
-    const createCinematicTimeline = (reverse = false) => {
-      let keyframes = recordedKeyframesRef.current.length > 0 ? recordedKeyframesRef.current : defaultCinematicKeyframes;
-      
-      // If reverse is true, reverse the keyframes array and adjust times
-      if (reverse) {
-        keyframes = [...keyframes].reverse().map((kf, index, arr) => ({
-          ...kf,
-          time: 1 - kf.time, // Invert the time values
-          label: kf.label ? `REVERSE: ${kf.label}` : ''
-        }));
-      }
-      
-      // Kill any existing timeline
-      if (cinematicTimelineRef.current) {
-        cinematicTimelineRef.current.kill();
-      }
-      
-      // Create new timeline
-      const tl = gsap.timeline({
-        onStart: () => {
-          // Set initial label
-          setCurrentKeyframeLabel(keyframes[0].label || '');
-        },
-        onComplete: () => {
-          // Cinematic complete - removed
-          // Don't enable controls - scroll camera is always active
-          // controls.enabled = true;
-          // controls.update();
-          
-          // Start Mary glowing effect
-          setMaryGlowing(true);
-          maryGlowingRef.current = true;
-          
-          // Create and animate a blue point light for Mary
-          if (maryMeshRef.current) {
-            // console.log('Creating Mary glow effect!');
-            // Get Mary's world position
-            const maryWorldPos = new THREE.Vector3();
-            maryMeshRef.current.getWorldPosition(maryWorldPos);
-            // console.log('Mary world position:', maryWorldPos);
-            
-            // Create a bright blue point light with larger radius
-            const maryLight = new THREE.PointLight(0x00ffff, 0, 10); // Cyan blue, larger radius
-            maryLight.position.copy(maryWorldPos);
-            maryLight.position.y += 0.2; // Slightly above Mary
-            scene.add(maryLight);
-            maryLightRef.current = maryLight;
-            
-            // Create pulsing light animation with higher intensity
-            gsap.to(maryLight, {
-              intensity: 5,
-              duration: 1,
-              ease: "sine.inOut",
-              yoyo: true,
-              repeat: -1
-            });
-            
-            // Also add a spot light pointing at Mary for more visibility
-            const marySpotlight = new THREE.SpotLight(0x00ffff, 0, 10, Math.PI / 6, 0.5);
-            marySpotlight.position.copy(maryWorldPos);
-            marySpotlight.position.y += 2;
-            marySpotlight.target.position.copy(maryWorldPos);
-            scene.add(marySpotlight);
-            scene.add(marySpotlight.target);
-            
-            // Animate the spotlight too
-            gsap.to(marySpotlight, {
-              intensity: 3,
-              duration: 1,
-              ease: "sine.inOut",
-              yoyo: true,
-              repeat: -1
-            });
-            
-            // Create a "Click Me" sprite above Mary
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            
-            // Draw rounded rectangle background
-            ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
-            ctx.fillRect(10, 10, 236, 44);
-            
-            // Draw text
-            ctx.fillStyle = '#000000';
-            ctx.font = 'bold 30px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Click to Enter', 128, 32);
-            
-            // Create sprite
-            const texture = new THREE.CanvasTexture(canvas);
-            const spriteMaterial = new THREE.SpriteMaterial({ 
-              map: texture,
-              transparent: true,
-              opacity: 0
-            });
-            const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.scale.set(2, 0.5, 1);
-            sprite.position.copy(maryWorldPos);
-            sprite.position.y += 1.5;
-            scene.add(sprite);
-            
-            // Fade in the sprite
-            gsap.to(spriteMaterial, {
-              opacity: 1,
-              duration: 1,
-              delay: 0.5
-            });
-            
-            // Make sprite bob up and down
-            gsap.to(sprite.position, {
-              y: sprite.position.y + 0.2,
-              duration: 2,
-              ease: "sine.inOut",
-              yoyo: true,
-              repeat: -1
-            });
-            
-            // Also add a subtle glow to Mary's material if it exists
-            if (maryMeshRef.current.material) {
-              const material = maryMeshRef.current.material;
-              if (!material.emissive) material.emissive = new THREE.Color(0x000000);
-              material.emissive.setHex(0x00ffff);
-              
-              gsap.to(material, {
-                emissiveIntensity: 0.3,
-                duration: 1,
-                ease: "sine.inOut",
-                yoyo: true,
-                repeat: -1
-              });
-            }
-          }
-        }
-      });
-      
-      // Create a proxy object for smooth interpolation
-      const startKeyframe = keyframes[0];
-      const cameraProxy = {
-        x: startKeyframe.position.x,
-        y: startKeyframe.position.y,
-        z: startKeyframe.position.z,
-        targetX: startKeyframe.target.x,
-        targetY: startKeyframe.target.y,
-        targetZ: startKeyframe.target.z,
-        fov: startKeyframe.fov
-      };
-      
-      // Set camera to starting position
-      camera.position.set(cameraProxy.x, cameraProxy.y, cameraProxy.z);
-      camera.lookAt(cameraProxy.targetX, cameraProxy.targetY, cameraProxy.targetZ);
-      camera.fov = cameraProxy.fov;
-      camera.updateProjectionMatrix();
-      controls.target.set(cameraProxy.targetX, cameraProxy.targetY, cameraProxy.targetZ);
-      
-      // Add each keyframe to the timeline
-      keyframes.forEach((keyframe, index) => {
-        if (index === 0) return; // Skip first keyframe as it's the starting position
-        
-        const totalDuration = 15; // Total animation duration in seconds
-        const duration = index === 1 
-          ? keyframe.time * totalDuration // First segment duration
-          : (keyframe.time - keyframes[index - 1].time) * totalDuration; // Subsequent segments
-        
-        tl.to(cameraProxy, {
-          duration: duration,
-          x: keyframe.position.x,
-          y: keyframe.position.y,
-          z: keyframe.position.z,
-          targetX: keyframe.target.x,
-          targetY: keyframe.target.y,
-          targetZ: keyframe.target.z,
-          fov: keyframe.fov,
-          // Use linear easing for continuous motion, except for the last keyframe
-          ease: index === keyframes.length - 1 ? "power2.inOut" : "none",
-          onUpdate: () => {
-            camera.position.set(cameraProxy.x, cameraProxy.y, cameraProxy.z);
-            camera.lookAt(cameraProxy.targetX, cameraProxy.targetY, cameraProxy.targetZ);
-            camera.fov = cameraProxy.fov;
-            camera.updateProjectionMatrix();
-            controls.target.set(cameraProxy.targetX, cameraProxy.targetY, cameraProxy.targetZ);
-          }
-        }, index === 1 ? 0 : `>`); // No overlap for continuous motion
-      });
-      
-      // Update progress for UI
-      tl.eventCallback("onUpdate", () => {
-        const progress = tl.progress();
-        // Cinematic progress removed
-        
-        // Find current keyframe label based on progress
-        const currentTime = progress * keyframes[keyframes.length - 1].time;
-        let currentLabel = keyframes[0].label || '';
-        
-        for (let i = 0; i < keyframes.length - 1; i++) {
-          if (currentTime >= keyframes[i].time && currentTime < keyframes[i + 1].time) {
-            currentLabel = keyframes[i].label || '';
-            break;
-          }
-        }
-        
-        // Check if we're at or past the last keyframe
-        if (currentTime >= keyframes[keyframes.length - 1].time) {
-          currentLabel = keyframes[keyframes.length - 1].label || '';
-        }
-        
-        setCurrentKeyframeLabel(currentLabel);
-      });
-      
-      cinematicTimelineRef.current = tl;
-      return tl;
-    };
-    
-    // DISABLED CINEMATIC - Start cinematic intro if not in design mode
-    // if (cinematicModeRef.current !== 'design') {
-    //   const timeline = createCinematicTimeline(cinematicReverse);
-    //   timeline.play();
-    // }
-    
-    // Controls work immediately since cinematic is removed
-    
     // Also trigger Mary glow effect
     setMaryGlowing(true);
     maryGlowingRef.current = true;
@@ -2112,13 +1756,6 @@ const PalmsScene = ({ onLoadingChange }) => {
   
       // Single onUpdate for the entire timeline
       tl.eventCallback("onUpdate", () => {
-        // Debug log camera position
-        if (tl.progress() % 0.1 < 0.01) {  // Log every 10% of progress
-          console.log(`[Timeline ${Math.round(tl.progress() * 100)}%] Camera:`, 
-            `x:${cameraPath.x.toFixed(2)}, y:${cameraPath.y.toFixed(2)}, z:${cameraPath.z.toFixed(2)}`);
-        }
-        
-        // Try updating the local camera variable instead of cameraRef
         if (camera) {
           // Always update camera during scroll animation, regardless of controls state
           camera.position.set(cameraPath.x, cameraPath.y, cameraPath.z);
@@ -2171,7 +1808,6 @@ const PalmsScene = ({ onLoadingChange }) => {
         }
         
         // Show the "Take me there" button after a short delay
-        console.log('[Timeline onComplete] Starting 1.5s timer to show button...');
         setTimeout(() => {
 
           setShowEnterButton(true);
@@ -2199,7 +1835,7 @@ const PalmsScene = ({ onLoadingChange }) => {
             
             // Manually set timeline progress to match scroll (debugging)
             if (Math.abs(tlProg - self.progress) > 0.01) {
-              console.log(`[WARNING] Timeline out of sync! Setting timeline progress to ${self.progress}`);
+              // console.log(`[WARNING] Timeline out of sync! Setting timeline progress to ${self.progress}`);
               tl.progress(self.progress);
             }
           }
@@ -2222,7 +1858,7 @@ const PalmsScene = ({ onLoadingChange }) => {
           
           // Show button when we reach final stage on mobile
           if (isMobile && stage === 4 && !window.mobileButtonTriggered) {
-            console.log('[Mobile] Reached final stage 4, showing button');
+            // console.log('[Mobile] Reached final stage 4, showing button');
             window.mobileButtonTriggered = true;
             setTimeout(() => {
               setShowEnterButton(true);
@@ -2396,14 +2032,14 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     // Handle mouse move for hover effect
     const handleMouseMove = (event) => {
-      // Debug logging
-      if (!maryGlowingRef.current || !mountRef.current) {
-        console.log('Mouse move blocked:', {
-          maryGlowing: maryGlowingRef.current,
-          mountExists: !!mountRef.current
-        });
-        return;
-      }
+      // // Debug logging
+      // if (!maryGlowingRef.current || !mountRef.current) {
+      //   console.log('Mouse move blocked:', {
+      //     maryGlowing: maryGlowingRef.current,
+      //     mountExists: !!mountRef.current
+      //   });
+      //   return;
+      // }
       
       const rect = mountRef.current.getBoundingClientRect();
       mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -2452,7 +2088,6 @@ const PalmsScene = ({ onLoadingChange }) => {
     
     // Handle click on Mary
     const handleClick = (event) => {
-      // console.log('Click event - maryGlowing:', maryGlowingRef.current);
       if (!maryGlowingRef.current || !mountRef.current) return;
       
       const rect = mountRef.current.getBoundingClientRect();
@@ -2464,14 +2099,11 @@ const PalmsScene = ({ onLoadingChange }) => {
       
       // Check for intersection with Mary or the entire car (as fallback)
       if (maryMeshRef.current) {
-        // console.log('Checking Mary intersection, mesh exists:', !!maryMeshRef.current);
         const intersects = raycaster.current.intersectObject(maryMeshRef.current, true);
-        // console.log('Mary intersects found:', intersects.length);
         
         if (intersects.length > 0) {
           const isMobile = detectMobileDevice();
           const destination = isMobile ? '/home3' : '/home3';
-          console.log(`Mary clicked! Navigating to ${destination}...`);
           
           // Add fade out transition before navigating
           gsap.to(mountRef.current, {
@@ -2489,19 +2121,16 @@ const PalmsScene = ({ onLoadingChange }) => {
       // Fallback: check intersection with entire car model
       if (carModelRef.current) {
         const carIntersects = raycaster.current.intersectObject(carModelRef.current, true);
-        // console.log('Car intersects found:', carIntersects.length);
         
         // Check if any of the intersected objects is near Mary's position
         if (carIntersects.length > 0) {
           const maryPos = new THREE.Vector3(1.1811263369229998, 0.9999999999999805, 12.355272021071679);
           for (const intersect of carIntersects) {
             const distance = intersect.point.distanceTo(maryPos);
-            // console.log('Intersection distance from Mary position:', distance);
             if (distance < 2) { // Within 2 units of Mary's position
               const isMobile = detectMobileDevice();
               const destination = isMobile ? '/home3' : '/home3';
-              console.log(`Close to Mary! Navigating to ${destination}...`);
-              
+
               // Add fade out transition before navigating
               gsap.to(mountRef.current, {
                 opacity: 0,
@@ -2538,7 +2167,7 @@ const PalmsScene = ({ onLoadingChange }) => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('click', handleClick);
-      window.removeEventListener('keydown', handleKeyPress);
+      // window.removeEventListener('keydown', handleKeyPress);
 
       // Kill GSAP timeline
       if (cinematicTimelineRef.current) {
@@ -2674,143 +2303,9 @@ const PalmsScene = ({ onLoadingChange }) => {
           }}
         />
         
-        {/* Camera mode indicator removed for production */}
+
         
-        
-        
-        {/* Cinematic design mode removed for production */}
-        {false && (
-          <div style={{
-            position: 'absolute',
-            top: '20px',
-            left: '20px',
-            padding: '20px',
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            color: 'white',
-            fontSize: '14px',
-            fontFamily: 'monospace',
-            borderRadius: '8px',
-            backdropFilter: 'blur(10px)',
-            zIndex: 200,
-            maxWidth: '400px'
-          }}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#00ff41' }}>Cinematic Design Mode</h3>
-            <div style={{ marginBottom: '10px' }}>
-              <strong>Controls:</strong>
-              <ul style={{ margin: '5px 0', paddingLeft: '20px', fontSize: '12px' }}>
-                <li>Use mouse to position camera</li>
-                <li><kbd>K</kbd> - Add keyframe at current position</li>
-                <li><kbd>P</kbd> - Play recorded cinematic</li>
-                <li><kbd>R</kbd> - Reset all keyframes</li>
-                <li><kbd>L</kbd> - Log keyframes to console</li>
-                <li><kbd>V</kbd> - Toggle reverse mode</li>
-                <li><kbd>Ctrl+C</kbd> - Exit design mode</li>
-              </ul>
-            </div>
-            <div style={{ marginTop: '10px', fontSize: '12px', color: '#67e8f9' }}>
-              Keyframes: {recordedKeyframes.length}
-            </div>
-            <button
-              onClick={() => {
-                if (controlsRef.current) {
-                  controlsRef.current.enabled = !controlsRef.current.enabled;
-                  // console.log('Toggled controls:', controlsRef.current.enabled);
-                }
-              }}
-              style={{
-                marginTop: '10px',
-                padding: '5px 10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: 'white',
-                fontSize: '12px',
-                cursor: 'pointer',
-                borderRadius: '4px'
-              }}
-            >
-              Toggle Camera Controls
-            </button>
-          </div>
-        )}
-        
-        {false && (
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            pointerEvents: 'none',
-            zIndex: 100
-          }}>
-            {/* Reverse mode indicator */}
-            {cinematicReverse && (
-              <div style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                padding: '8px 16px',
-                backgroundColor: 'rgba(255, 0, 0, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.5)',
-                borderRadius: '4px',
-                color: '#ffffff',
-                fontSize: '14px',
-                fontFamily: 'monospace',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 2px 8px rgba(255, 0, 0, 0.5)',
-              }}>
-                ⏪ REVERSE MODE
-              </div>
-            )}
-            
-            {/* Keyframe label display */}
-            {currentKeyframeLabel && (
-              <div style={{
-                position: 'absolute',
-                top: '40px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                padding: '12px 24px',
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '8px',
-                color: '#ffffff',
-                fontSize: '16px',
-                fontFamily: 'monospace',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-                animation: 'fadeIn 0.5s ease-out'
-              }}>
-                {currentKeyframeLabel}
-              </div>
-            )}
-            
-            {/* Progress bar */}
-            <div style={{
-              position: 'absolute',
-              bottom: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '200px',
-              height: '2px',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '1px'
-            }}>
-              <div style={{
-                width: `${cinematicProgress * 100}%`,
-                height: '100%',
-                backgroundColor: '#00ff41',
-                borderRadius: '1px',
-                transition: 'width 0.1s ease-out'
-              }} />
-            </div>
-          </div>
-        )}
+
       </div>
 
       {!isSceneLoading && scrollCameraActive && (
@@ -2851,42 +2346,6 @@ const PalmsScene = ({ onLoadingChange }) => {
               className="mb-4"
             />
           </div>
-          {/* Old text display - commented out in favor of WebGL text */}
-          {/* <div style={{
-            minHeight: isMobile ? '220px' : '320px', // Fixed height for text container
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            marginTop: isMobile ? '-2rem' : '-3rem',
-            
-
-          }}>
-            <p 
-              ref={scrollTextRef}
-              lang="en"
-              translate="yes"
-              style={{
-                fontSize: isMobile ? '1rem' : '28px',
-                color: 'white',
-                lineHeight: isMobile ? '1.4' : '1.6',
-                fontFamily: 'monospace',
-                margin: 0,
-                textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
-                fontWeight: '300',
-                textAlign: 'center',
-              }}
-            >
-              {textBlocks[currentCameraStage].map((line, index) => (
-                <React.Fragment key={index}>
-                  <span className="scroll-text-line">{line}</span>
-                  {index < textBlocks[currentCameraStage].length - 1 && <br />}
-                </React.Fragment>
-              ))}
-            </p>
-          </div> */}
-          
-          {/* Progress indicators */}
           <div 
             className="progress-dots"
             style={{
@@ -2962,10 +2421,8 @@ const PalmsScene = ({ onLoadingChange }) => {
         }}>
           <button
             onClick={() => {
-              console.log('[Enter Button] Clicked!');
               const isMobile = detectMobileDevice();
               const destination = isMobile ? '/home3' : '/home3';
-              console.log('[Enter Button] Navigating to:', destination);
               router.push(destination);
             }}
             style={{

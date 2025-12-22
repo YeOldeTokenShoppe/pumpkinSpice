@@ -619,6 +619,7 @@ function SimpleCandleViewer({ modelPath, customImageUrl, backgroundTexturePath, 
               console.log('Applying to mesh:', boxMeshRef.current.name, 'for model:', modelPath);
               
               texture.colorSpace = THREE.SRGBColorSpace;
+              texture.flipY = false; // Don't flip the background texture
               texture.wrapS = THREE.ClampToEdgeWrapping;
               texture.wrapT = THREE.ClampToEdgeWrapping;
               texture.needsUpdate = true;
@@ -1576,22 +1577,22 @@ const BACKGROUND_TEXTURES = [{
   name: 'Temple Scene',
   type: 'image'
 }, {
-  id: 'gradient-sunset-dynamic',
+  id: 'sunset',
   path: '/gradient-sunset.webp',
   name: 'Sunset Sky',
   type: 'image'
 }, {
-  id: 'gradient-ethereal-dynamic',
-  path: '/gradient-ethereal.webp',
-  name: 'Ethereal Mist',
+  id: 'chart',
+  path: '/chart.webp',
+  name: 'Chart Patterns',
   type: 'image'
 }, {
-  id: 'gradient-aurora-dynamic',
-  path: '/gradient-aurora.webp',
-  name: 'Aurora Borealis',
+  id: 'collectibles',
+  path: '/pokemon2.webp',
+  name: 'Collectibles',
   type: 'image'
 }, {
-  id: 'gradient-lava-flow',
+  id: 'dreams',
   path: '/gradient-dreams.webp',
   name: 'Dream Waves',
   type: 'image'
@@ -2096,7 +2097,7 @@ export default function CompactCandleModal({
       setCandleWasCreated(true);
       setSavedCandleData({
         username: formData.username || 'Anonymous',
-        imageUrl: imagePreview || imageUrl,  // Use imagePreview (selected image) for snapshot, fallback to uploaded URL
+        image: imagePreview || imageUrl,  // Use imagePreview (selected image) for snapshot, fallback to uploaded URL
         message: formData.message,
         burnedAmount: docData.burnedAmount,
         candleType: formData.candleType,
@@ -2797,19 +2798,6 @@ export default function CompactCandleModal({
                         width: '100%',
                         height: '100%',
                         background: bg.gradient,
-                        opacity: formData.background === bg.id ? 1 : 0.8
-                      }} />
-                    ) : bg.type === 'gradient-dynamic' ? (
-                      <div style={{
-                        width: '100%',
-                        height: '100%',
-                        background: bg.id === 'gradient-aurora-dynamic' 
-                          ? 'linear-gradient(135deg, #000520 0%, #9400ff 25%, #00ff88 50%, #ff00ff 75%, #000033 100%)'
-                          : bg.id === 'gradient-lava-flow'
-                          ? 'linear-gradient(135deg, #330000 0%, #ff3300 25%, #ffaa00 50%, #ff6600 75%, #660000 100%)'
-                          : bg.id === 'gradient-sunset-dynamic'
-                          ? 'linear-gradient(135deg, #191970 0%, #4B0082 20%, #FF5E4D 40%, #FF8C00 60%, #FF4500 100%)'
-                          : 'linear-gradient(135deg, #0A001E 0%, #96C8FF 30%, #FFC8FF 60%, #C896FF 100%)',
                         opacity: formData.background === bg.id ? 1 : 0.8
                       }} />
                     ) : (

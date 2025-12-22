@@ -165,7 +165,7 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
           if (isBoxMesh && candleData && candleData.background && candleData.background !== 'none') {
             boxMeshRef.current = child;
             
-            // Map background IDs to texture paths - now includes gradient images
+            // Map background IDs to texture paths
             const BACKGROUND_TEXTURES = {
               'cyberpunk': '/cyberpunk.webp',
               'synthwave': '/synthwave.webp',
@@ -173,11 +173,10 @@ function ModelViewer({ modelPath, candleData = null, showPlaque = true, isFlippe
               'neoTokyo': '/neoTokyo.webp',
               'aurora': '/aurora.webp',
               'templeScene': '/templeScene.webp',
-              // Gradient backgrounds as static images
-              'gradient-aurora-dynamic': '/gradient-aurora.webp',
-              'gradient-lava-flow': '/gradient-dreams.webp',
-              'gradient-sunset-dynamic': '/gradient-sunset.webp',
-              'gradient-ethereal-dynamic': '/gradient-ethereal.webp'
+              'sunset': '/gradient-sunset.webp',
+              'chart': '/chart.webp',
+              'collectibles': '/pokemon2.webp',
+              'dreams': '/gradient-dreams.webp'
             };
             
             const texturePath = BACKGROUND_TEXTURES[candleData.background];
@@ -1374,6 +1373,29 @@ Respond in JSON format like:
                   {currentCandle.username}
                 </div>
               )}
+              
+              {/* Burned amount below username */}
+              {currentCandle.burnedAmount && parseInt(currentCandle.burnedAmount) > 0 && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  marginTop: '8px'
+                }}>
+                  <span style={{
+                    fontSize: isMobile ? '0.9rem' : '0.9rem',
+                    filter: 'drop-shadow(0 0 4px rgba(255, 100, 0, 0.8))'
+                  }}>🔥</span>
+                  <span style={{
+                    color: '#ffb000',
+                    fontSize: isMobile ? '0.9rem' : '0.9rem',
+                    fontWeight: 'bold',
+                    textShadow: '0 0 4px rgba(255, 176, 0, 0.6)'
+                  }}>
+                    {parseInt(currentCandle.burnedAmount).toLocaleString()} RL80
+                  </span>
+                </div>
+              )}
             </div>
             
             {/* Message in center/upper area */}
@@ -1401,35 +1423,6 @@ Respond in JSON format like:
               </div>
             )}
             
-            {/* Burned amount at bottom center */}
-            {currentCandle.burnedAmount && parseInt(currentCandle.burnedAmount) > 0 && (
-              <div style={{
-                position: 'absolute',
-                bottom: isMobile ? '140px' : '100px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(0, 0, 0, 0.6)',
-                padding: '6px 12px',
-                borderRadius: '20px',
-                backdropFilter: 'blur(8px)'
-              }}>
-                <span style={{
-                  fontSize: isMobile ? '1rem' : '1rem',
-                  filter: 'drop-shadow(0 0 4px rgba(255, 100, 0, 0.8))'
-                }}>🔥</span>
-                <span style={{
-                  color: '#ffb000',
-                  fontSize: isMobile ? '1rem' : '1rem',
-                  fontWeight: 'bold',
-                  textShadow: '0 0 4px rgba(255, 176, 0, 0.6)'
-                }}>
-                  {parseInt(currentCandle.burnedAmount).toLocaleString()} RL80
-                </span>
-              </div>
-            )}
             
             {/* Flipped view - larger display */}
             {isFlipped && (

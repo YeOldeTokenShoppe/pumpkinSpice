@@ -11,7 +11,9 @@ import {
   query,
   where,
   orderBy,
-  limit 
+  limit,
+  getDoc,
+  setDoc 
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -62,5 +64,7 @@ export {
   query,
   where,
   orderBy,
-  limit 
+  limit,
+  getDoc,
+  setDoc 
 };

@@ -14,11 +14,10 @@ const SKYBOX_TEXTURES = {
   neoTokyo: '/neoTokyo.webp',
   aurora: '/aurora.webp',
   templeScene: '/templeScene.webp',
-  // Gradient backgrounds as static images
-  'gradient-ethereal-dynamic': '/gradient-ethereal.webp',
-  'gradient-aurora-dynamic': '/gradient-aurora.webp',
-  'gradient-lava-flow': '/gradient-dreams.webp',
-  'gradient-sunset-dynamic': '/gradient-sunset.webp'
+  sunset: '/gradient-sunset.webp',
+  chart: '/chart.webp',
+  collectibles: '/pokemon2.webp',
+  dreams: '/gradient-dreams.webp'
 };
 
 // Preload models to prevent loading issues
@@ -84,7 +83,7 @@ function CandleScene({ userData, onReady }) {
     let roomMeshFound = false;
     
     // Apply user's image to senora mesh for votive candles (matching SimpleCandleViewer logic)
-    if (userData?.imageUrl && userData?.candleType === 'votive') {
+    if (userData?.image && userData?.candleType === 'votive') {
       const textureLoader = new THREE.TextureLoader();
       
       clonedScene.traverse((child) => {
@@ -97,7 +96,7 @@ function CandleScene({ userData, onReady }) {
           console.log('Found senora mesh in snapshot, applying user image');
           
           textureLoader.load(
-            userData.imageUrl,
+            userData.image,
             (texture) => {
               texture.colorSpace = THREE.SRGBColorSpace;
               texture.flipY = false;
@@ -272,14 +271,14 @@ function CandleScene({ userData, onReady }) {
     });
     
     // Apply user image to label if provided (votive candles only)
-    if (userData?.imageUrl) {
+    if (userData?.image) {
       let labelFound = false;
       clonedScene.traverse((child) => {
         if (child.name.includes("Label2") && child.isMesh) {
           labelFound = true;
           // Create texture from user image
           const textureLoader = new THREE.TextureLoader();
-          textureLoader.load(userData.imageUrl, (texture) => {
+          textureLoader.load(userData.image, (texture) => {
             texture.wrapS = THREE.ClampToEdgeWrapping;
             texture.wrapT = THREE.ClampToEdgeWrapping;
             texture.repeat.set(1, -1); // Flip vertically to fix upside-down issue

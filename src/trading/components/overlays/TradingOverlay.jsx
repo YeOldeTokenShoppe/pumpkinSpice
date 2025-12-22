@@ -4,6 +4,7 @@ import { useRandomCandles } from '@/utilities/useRandomCandles';
 import CompactCandleModal from '@/components/CompactCandleModal';
 import NotificationBadge from '@/components/NotificationBadge';
 import TradingCardsDisplay from '@/components/TradingCardsDisplay';
+import PerformanceDashboard from '../PerformanceDashboard';
 import { useUser } from '@clerk/nextjs';
 import { db, collection, onSnapshot, query, orderBy, limit } from '@/utilities/firebaseClient';
 
@@ -30,7 +31,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
   const [activeTab, setActiveTab] = useState(null); // for mobile view - start with no tab selected
   const [desktopPositionsTab, setDesktopPositionsTab] = useState('positions'); // for desktop tabbed interface
   const [mainTab, setMainTab] = useState('overview'); // main tabs: overview, chat
-  const [leftPanelTab, setLeftPanelTab] = useState('summary'); // tabs for left panel
+  const [leftPanelTab, setLeftPanelTab] = useState('performance'); // tabs for left panel - default to performance dashboard
   const [rightTopTab, setRightTopTab] = useState('macro'); // tabs for top right panel
   const [showMobileMenu, setShowMobileMenu] = useState(false); // for mobile menu display
   const [candleTab, setCandleTab] = useState('community'); // 'mine' or 'community'
@@ -51,6 +52,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
   const lastCandleTimestamp = useRef(null);
   
   // Simulate notifications for demo (remove in production)
+  // DISABLED - Fake notifications turned off
+  /*
   useEffect(() => {
     if (!show) return;
     
@@ -80,6 +83,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
     
     return () => clearInterval(notificationInterval);
   }, [show]);
+  */
   
   // Debug initial state
   // console.log('TradingOverlay initial render, showCompactCandleModal:', showCompactCandleModal);
@@ -583,8 +587,19 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
               boxSizing: 'border-box'
             }}
             onClick={(e) => e.stopPropagation()}>
-          {/* Stats Tab */}
+          {/* Stats Tab - Show Performance Dashboard */}
           {activeTab === 'stats' && (
+            <div style={{ 
+              margin: '-20px',
+              width: 'calc(100% + 40px)',
+              height: 'calc(100% + 40px)'
+            }}>
+              <PerformanceDashboard show={true} />
+            </div>
+          )}
+          
+          {/* Old Stats Tab (disabled) */}
+          {activeTab === 'stats_old' && (
             <>
               {/* Header */}
               <div style={{
@@ -1702,6 +1717,16 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
           minHeight: '150px'
         }}>
         
+        {/* Performance Tab - New clean dashboard */}
+        {leftPanelTab === 'performance' && (
+          <div style={{ 
+            margin: '-20px', // Remove parent padding
+            height: '100%'
+          }}>
+            <PerformanceDashboard show={true} />
+          </div>
+        )}
+        
         {/* Summary Tab */}
         {leftPanelTab === 'summary' && (
           <div style={{ marginBottom: '30px' }}>
@@ -1865,42 +1890,6 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
               }}>
                 {tradingData.dailyPnl > 0 ? '+' : ''}{tradingData.dailyPnlPercent}%
               </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Performance Metrics Grid */}
-        <div style={{
-          background: 'rgba(0, 255, 0, 0.05)',
-          padding: '10px',
-          borderRadius: '5px',
-          marginBottom: '15px',
-          border: '1px solid rgba(0, 255, 0, 0.2)'
-        }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>WIN RATE</div>
-              <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
-                {tradingData.winRate}%
-              </div>
-            </div>
-            <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>SHARPE</div>
-              <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
-                {tradingData.sharpeRatio}
-              </div>
-            </div>
-            <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>MAX DD</div>
-              <div style={{ color: '#ff3333', fontSize: '14px', fontWeight: 'bold' }}>
-                {tradingData.maxDrawdown}%
-              </div>
-            </div>
-            <div>
-              <div style={{ color: '#888', fontSize: '10px' }}>PROFIT FACTOR</div>
-              <div style={{ color: '#00ff00', fontSize: '14px', fontWeight: 'bold' }}>
-                {tradingData.profitFactor}
-              </div>
             </div>
           </div>
         </div>

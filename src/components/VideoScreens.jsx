@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 import MacroAgentScreen from './MacroAgentScreen';
 import SentimentScreen from './SentimentScreen';
+import TeknoScreen from './TeknoScreen';
+import RL80Screen from './RL80Screen';
 
 function VideoScreens() {
   const { scene } = useThree();
@@ -239,16 +241,42 @@ function VideoScreens() {
           video1.play().catch(e => {});
         }
         
-        // Screen3 - Keep using video texture
+        // Screen3 - Setup canvas texture for TeknoScreen
         if (child.isMesh && child.name === 'Screen3' && !screen3Found) {
-          const material = new THREE.MeshBasicMaterial({
-            map: texture3,
+          // console.log('[VideoScreens] Found Screen3, setting up canvas texture for TeknoScreen');
+          screen3Found = true;
+          
+          // Create canvas for drawing
+          const canvas3 = document.createElement('canvas');
+          canvas3.width = 512;
+          canvas3.height = 320;
+          
+          // Create texture from canvas
+          const canvasTexture3 = new THREE.CanvasTexture(canvas3);
+          canvasTexture3.minFilter = THREE.LinearFilter;
+          canvasTexture3.magFilter = THREE.LinearFilter;
+          canvasTexture3.flipY = false;
+          canvasTexture3.repeat.x = 1;
+          canvasTexture3.center.set(0.5, 0.5);
+          
+          // Apply to Screen3
+          const material3 = new THREE.MeshBasicMaterial({
+            map: canvasTexture3,
             side: THREE.FrontSide,
             toneMapped: false,
           });
-          child.material = material;
-          screen3Found = true;
-          video3.play().catch(e => {});
+          
+          child.material = material3;
+          
+          // Store refs globally for TeknoScreen to use
+          // @ts-ignore
+          window['__screen3Canvas'] = canvas3;
+          // @ts-ignore
+          window['__screen3Texture'] = canvasTexture3;
+          // @ts-ignore
+          window['__screen3Mesh'] = child;
+          
+          // console.log('[VideoScreens] Screen3 canvas setup complete for TeknoScreen');
         }
         
         // Screen3_small - Apply video texture
@@ -263,15 +291,42 @@ function VideoScreens() {
           video1.play().catch(e => {});
         }
         
+        // Screen4 - Setup canvas texture for RL80Screen
         if (child.isMesh && child.name === 'Screen4' && !screen4Found) {
-          const material = new THREE.MeshBasicMaterial({
-            map: texture4,
+          // console.log('[VideoScreens] Found Screen4, setting up canvas texture for RL80Screen');
+          screen4Found = true;
+          
+          // Create canvas for drawing
+          const canvas4 = document.createElement('canvas');
+          canvas4.width = 512;
+          canvas4.height = 320;
+          
+          // Create texture from canvas
+          const canvasTexture4 = new THREE.CanvasTexture(canvas4);
+          canvasTexture4.minFilter = THREE.LinearFilter;
+          canvasTexture4.magFilter = THREE.LinearFilter;
+          canvasTexture4.flipY = false;
+          canvasTexture4.repeat.x = 1;
+          canvasTexture4.center.set(0.5, 0.5);
+          
+          // Apply to Screen4
+          const material4 = new THREE.MeshBasicMaterial({
+            map: canvasTexture4,
             side: THREE.FrontSide,
             toneMapped: false,
           });
-          child.material = material;
-          screen4Found = true;
-          video4.play().catch(e => {});
+          
+          child.material = material4;
+          
+          // Store refs globally for RL80Screen to use
+          // @ts-ignore
+          window['__screen4Canvas'] = canvas4;
+          // @ts-ignore
+          window['__screen4Texture'] = canvasTexture4;
+          // @ts-ignore
+          window['__screen4Mesh'] = child;
+          
+          // console.log('[VideoScreens] Screen4 canvas setup complete for RL80Screen');
         }
         
         // Screen4_small - Apply video texture
@@ -406,6 +461,44 @@ function VideoScreens() {
         // @ts-ignore
         delete window.__screen2Mesh;
       }
+      
+      // Clean up Screen3
+      // @ts-ignore
+      if (window.__screen3Canvas) {
+        // @ts-ignore
+        delete window.__screen3Canvas;
+      }
+      // @ts-ignore
+      if (window.__screen3Texture) {
+        // @ts-ignore
+        window.__screen3Texture.dispose();
+        // @ts-ignore
+        delete window.__screen3Texture;
+      }
+      // @ts-ignore
+      if (window.__screen3Mesh) {
+        // @ts-ignore
+        delete window.__screen3Mesh;
+      }
+      
+      // Clean up Screen4
+      // @ts-ignore
+      if (window.__screen4Canvas) {
+        // @ts-ignore
+        delete window.__screen4Canvas;
+      }
+      // @ts-ignore
+      if (window.__screen4Texture) {
+        // @ts-ignore
+        window.__screen4Texture.dispose();
+        // @ts-ignore
+        delete window.__screen4Texture;
+      }
+      // @ts-ignore
+      if (window.__screen4Mesh) {
+        // @ts-ignore
+        delete window.__screen4Mesh;
+      }
     };
   }, []);
 
@@ -413,6 +506,8 @@ function VideoScreens() {
     <>
       <SentimentScreen />
       <MacroAgentScreen />
+      <TeknoScreen />
+      <RL80Screen />
     </>
   );
 }

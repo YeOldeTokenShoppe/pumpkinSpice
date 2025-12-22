@@ -561,3 +561,6 @@ Respond in JSON: {"sentiment": 75, "summary": "...", "themes": ["word1", "word2"
   }
 });
 
+// Import and export the scheduled technical data updater
+const { updateTechnicalData } = require('./scheduledTechnical');
+exports.updateTechnicalData = updateTechnicalData;
