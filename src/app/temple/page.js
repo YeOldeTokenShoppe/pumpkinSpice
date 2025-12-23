@@ -478,12 +478,18 @@ export default function CyborgTemple() {
               setUserHasInteracted(true);
             }
           }}
+          onTouchStart={() => {
+            if (!userHasInteracted) {
+              console.log('Panel touched, collapsing');
+              setUserHasInteracted(true);
+            }
+          }}
           style={{
           position: "fixed",
-          // Mobile: always 5.5rem from bottom to clear navigation buttons
-          // Desktop: left side when expanded, bottom left when collapsed
-          top: isMobileView ? "auto" : (userHasInteracted ? "auto" : "120px"),
-          bottom: isMobileView ? "5.5rem" : (userHasInteracted ? "1.25rem" : "auto"),
+          // Mobile: always 5.5rem from bottom
+          // Desktop: stays in same position (120px from top) even when collapsed
+          top: isMobileView ? "auto" : "120px",
+          bottom: isMobileView ? "5.5rem" : "auto",
           left: isMobileView ? "0.625rem" : "1.25rem",
           right: isMobileView ? "0.625rem" : "auto",
           maxWidth: userHasInteracted ? 
@@ -493,6 +499,8 @@ export default function CyborgTemple() {
           zIndex: 10,
           transition: "all 0.5s ease-in-out",
           cursor: userHasInteracted ? "default" : "pointer",
+          // Allow touch events to pass through when collapsed
+          pointerEvents: "auto",
         }}>
           {!userHasInteracted && (
             <>

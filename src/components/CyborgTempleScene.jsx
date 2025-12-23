@@ -853,9 +853,11 @@ const CyborgTempleScene = ({
       }
     };
     
-    // Touch events for mobile
+    // Touch events for mobile and tablets
     const handleTouchStart = (event) => {
-      event.preventDefault();
+      // Don't prevent default for better touch compatibility
+      // event.preventDefault();
+      
       // For touchend events, use changedTouches instead of touches
       const touch = event.touches ? event.touches[0] : event.changedTouches[0];
       if (!touch) return; // Safety check
@@ -871,6 +873,9 @@ const CyborgTempleScene = ({
         const object = intersects[i].object;
         
         if (object.userData.isCoin) {
+          // Prevent default only when we're actually interacting with a coin
+          event.preventDefault();
+          
           // Trigger coin animation
           const coinName = object.userData.agentId;
           triggerCoinAnimation(coinName);
@@ -1222,6 +1227,36 @@ const CyborgTempleScene = ({
       handleTouchStart(event);
     });
     
+    // Add pointer events for better tablet support
+    const handlePointerDown = (event) => {
+      // Only handle if it's a touch/pen input (not mouse)
+      if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+        const rect = gl.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(groupRef.current.children, true);
+        
+        for (let i = 0; i < intersects.length; i++) {
+          const object = intersects[i].object;
+          
+          if (object.userData.isCoin) {
+            event.preventDefault();
+            const coinName = object.userData.agentId;
+            triggerCoinAnimation(coinName);
+            
+            if (onAgentClick) {
+              onAgentClick(coinName);
+            }
+            break;
+          }
+        }
+      }
+    };
+    
+    gl.domElement.addEventListener('pointerdown', handlePointerDown);
+    
     window.addEventListener('keydown', handleKeyDown);
     
     return () => {
@@ -1229,6 +1264,7 @@ const CyborgTempleScene = ({
       gl.domElement.removeEventListener('pointermove', handlePointerMove);
       gl.domElement.removeEventListener('touchstart', handleTouchStart);
       gl.domElement.removeEventListener('touchend', handleTouchStart);
+      gl.domElement.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleKeyDown);
       gl.domElement.style.cursor = 'default';
     };
