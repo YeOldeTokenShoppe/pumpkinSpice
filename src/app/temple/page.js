@@ -532,7 +532,6 @@ export default function CyborgTemple() {
               is80sMode={false}
               isMobile={isMobileView}
               onAgentClick={(agentId) => {
-                // console.log('Agent clicked:', agentId);
                 if (agentId) {
                   setFocusedAgent(agentId);
                   setShowAgentCard(true);
@@ -571,23 +570,24 @@ export default function CyborgTemple() {
               nodeSize={0.06}  
             /> */}
             
-            <OrbitControls 
-              makeDefault
-              enabled={!focusedAgent}  // Disable when focusing on an agent
-              enablePan={true}
-              enableZoom={true}
-              zoomSpeed={0.2}
-              enableDamping={true}
-              dampingFactor={0.1}
-              minDistance={0.1}
-              maxDistance={10}
-              // minPolarAngle={isMobileView ? Math.PI / 3 : 0}  // Limit looking up on mobile (60 degrees)
-              // maxPolarAngle={isMobileView ? Math.PI / 2.5 : Math.PI / 1.9}  // Limit looking down on mobile (72 degrees)
-              zoomToCursor={true}
-              autoRotate={isMobileView ? false : true}
-              autoRotateSpeed={0.2}
-              target={isMobileView ? [0, 0, 0] : [0, 0, 0]}
-            />
+            {/* OrbitControls - Disabled on mobile */}
+            {!isMobileView && (
+              <OrbitControls 
+                makeDefault
+                enabled={!focusedAgent}  // Disable when focusing on an agent
+                enablePan={true}
+                enableZoom={true}
+                zoomSpeed={0.2}
+                enableDamping={true}
+                dampingFactor={0.1}
+                minDistance={0.1}
+                maxDistance={10}
+                zoomToCursor={true}
+                autoRotate={true}
+                autoRotateSpeed={0.2}
+                target={[0, 0, 0]}
+              />
+            )}
           </Suspense>
           <Stats className="stats-monitor" />
         </CleanCanvas>
@@ -600,6 +600,7 @@ export default function CyborgTemple() {
         )}
         
         {/* Focused Agent Card - Shows when an agent is clicked */}
+        {/* {console.log('[Temple] FocusedAgentCard render check - focusedAgent:', focusedAgent, 'showAgentCard:', showAgentCard)} */}
         {focusedAgent && showAgentCard && (
           <FocusedAgentCard 
             agentId={focusedAgent}

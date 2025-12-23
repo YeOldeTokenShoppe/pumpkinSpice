@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { db, collection, onSnapshot, query, orderBy, limit, where } from '@/utilities/firebaseClient';
+import { useEffect, useState, useRef } from 'react';
+import { db, collection, onSnapshot, query, orderBy, limit } from '@/utilities/firebaseClient';
 
-const PerformanceDashboard = ({ show = true }) => {
+const PerformanceDashboard = ({ show = true, onClose }) => {
   const [isMobile, setIsMobile] = useState(false);
+  const dashboardRef = useRef(null);
   const [metrics, setMetrics] = useState({
     totalPnL: 0,
     winRate: 0,
@@ -264,17 +265,71 @@ const PerformanceDashboard = ({ show = true }) => {
 
   if (!show) return null;
 
+  // Add floating animation after initial mount
+  useEffect(() => {
+    // Small delay to ensure proper positioning before animation
+    const timer = setTimeout(() => {
+      if (dashboardRef.current) {
+        dashboardRef.current.style.opacity = '1';
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div style={{
-      maxWidth: isMobile ? '100%' : '1200px',
+    <div 
+      ref={dashboardRef}
+      style={{
+      width: isMobile ? '100vw' : 'auto',
+      maxWidth: isMobile ? '100vw' : '1200px',
       margin: '0 auto',
-      padding: isMobile ? '10px' : '15px',
-      background: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)',
-      borderRadius: isMobile ? '0' : '10px',
-      border: '1px solid rgba(255, 215, 0, 0.2)',
+      padding: isMobile ? '15px' : '15px',
+      background: 'rgba(0, 20, 15, 0.1)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderRadius: isMobile ? '0' : '20px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      boxShadow: isMobile ? '0 8px 32px rgba(0, 255, 255, 0.1)' : '0 8px 32px rgba(0, 255, 255, 0.1), inset 0 0 32px rgba(255, 215, 0, 0.03)',
       color: '#fff',
-      fontFamily: 'monospace'
+      fontFamily: 'monospace',
+      position: 'fixed',
+      top: isMobile ? '0' : '50%',
+      left: isMobile ? '0' : '50%',
+      transform: isMobile ? 'none' : 'translate(-50%, -50%)',
+      zIndex: 1000,
+      height: isMobile ? '100vh' : 'auto',
+      maxHeight: isMobile ? '100vh' : '90vh',
+      overflowY: 'auto',
+      scrollbarWidth: 'thin',
+      scrollbarColor: 'rgba(255, 215, 0, 0.3) transparent',
+      overflow: isMobile ? 'auto' : 'hidden',
+      opacity: '0',
+      animation: isMobile ? 'fadeInMobile 0.5s ease-out forwards' : 'fadeIn 0.5s ease-out forwards, float 6s ease-in-out 0.5s infinite'
+    }}
+    onMouseEnter={(e) => {
+      if (!isMobile) {
+        e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 255, 255, 0.2), inset 0 0 40px rgba(255, 215, 0, 0.05)';
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (!isMobile) {
+        e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 255, 255, 0.1), inset 0 0 32px rgba(255, 215, 0, 0.03)';
+      }
     }}>
+      {/* Add animated background gradient */}
+      {!isMobile && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 50% 50%, rgba(0, 255, 255, 0.03) 0%, transparent 70%)',
+          animation: 'pulse 4s ease-in-out infinite',
+          pointerEvents: 'none',
+          borderRadius: 'inherit'
+        }} />
+      )}
       {/* Header */}
       <div style={{
         display: 'flex',
@@ -282,20 +337,57 @@ const PerformanceDashboard = ({ show = true }) => {
         justifyContent: 'space-between',
         alignItems: isMobile ? 'stretch' : 'center',
         marginBottom: isMobile ? '10px' : '15px',
+        borderBottom: '1px solid rgba(0, 255, 200, 0.1)',
+        background: 'linear-gradient(90deg, rgba(0, 255, 200, 0.03) 0%, transparent 100%)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        borderRadius: '10px',
+        paddingTop: '10px',
+        paddingRight: '10px',
         paddingBottom: isMobile ? '8px' : '10px',
-        borderBottom: '1px solid rgba(255, 215, 0, 0.3)',
-        gap: isMobile ? '10px' : '0'
+        paddingLeft: '10px',
+        gap: isMobile ? '10px' : '0',
+        position: 'relative'
       }}>
+        {/* Close Button - Mobile Only */}
+        {onClose && isMobile && (
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              background: 'rgba(255, 0, 0, 0.1)',
+              border: '1px solid rgba(255, 0, 0, 0.3)',
+              borderRadius: '50%',
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: '18px',
+              color: '#ff6666',
+              transition: 'all 0.2s',
+              zIndex: 10
+            }}
+          >
+            ✕
+          </button>
+        )}
+        
         <div>
           <h2 style={{ 
-            color: '#FFD700', 
+            color: '#00FFB8', 
             margin: 0, 
             fontSize: isMobile ? '16px' : '20px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            textShadow: '0 0 20px rgba(0, 255, 184, 0.5)',
+            letterSpacing: '1px'
           }}>
-            ⚡ {isMobile ? 'RL80 Dashboard' : 'RL80 Performance Dashboard'}
+            ⚡ {isMobile ? 'RL80 Dashboard' : 'RL80 Dashboard'}
           </h2>
           {!isMobile && (
             <div style={{ color: '#888', fontSize: '11px', marginTop: '2px' }}>
@@ -305,16 +397,19 @@ const PerformanceDashboard = ({ show = true }) => {
         </div>
         
         {/* Timeframe Selector */}
-        <div style={{ display: 'flex', gap: isMobile ? '4px' : '8px', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
+        <div style={{ display: 'flex', gap: isMobile ? '4px' : '8px', justifyContent: isMobile ? 'space-between' : 'flex-end', paddingRight: isMobile ? '40px' : '0' }}>
           {['24h', '7d', '30d', 'all'].map(tf => (
             <button
               key={tf}
               onClick={() => setTimeFrame(tf)}
               style={{
                 padding: isMobile ? '5px 10px' : '6px 12px',
-                background: timeFrame === tf ? '#FFD700' : 'rgba(255, 215, 0, 0.1)',
-                color: timeFrame === tf ? '#000' : '#FFD700',
-                border: `1px solid #FFD700`,
+                background: timeFrame === tf ? 'rgba(0, 255, 184, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                color: timeFrame === tf ? '#00FFB8' : 'rgba(255, 255, 255, 0.7)',
+                border: `1px solid ${timeFrame === tf ? 'rgba(0, 255, 184, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
+                boxShadow: timeFrame === tf ? '0 0 15px rgba(0, 255, 184, 0.3)' : 'none',
                 borderRadius: '5px',
                 cursor: 'pointer',
                 fontSize: isMobile ? '11px' : '12px',
@@ -338,10 +433,13 @@ const PerformanceDashboard = ({ show = true }) => {
         <div>
           {/* Main P&L Card - Full Width */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%)',
+            background: 'rgba(0, 40, 30, 0.3)',
+            backdropFilter: 'blur(15px)',
+            WebkitBackdropFilter: 'blur(15px)',
             padding: isMobile ? '12px' : '15px',
-            borderRadius: '8px',
-            border: '1px solid rgba(255, 215, 0, 0.4)',
+            borderRadius: '15px',
+            border: '1px solid rgba(0, 255, 184, 0.1)',
+            boxShadow: '0 4px 20px rgba(0, 255, 184, 0.1), inset 0 0 20px rgba(0, 255, 184, 0.02)',
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
             gap: isMobile ? '12px' : '15px'
@@ -355,14 +453,15 @@ const PerformanceDashboard = ({ show = true }) => {
                 fontSize: isMobile ? '24px' : '28px',
                 fontWeight: 'bold',
                 color: metrics.totalPnL >= 0 ? '#00ff00' : '#ff3333',
-                marginBottom: '4px'
+                marginBottom: '4px',
+                textShadow: metrics.totalPnL >= 0 ? '0 0 15px rgba(0, 255, 0, 0.6)' : '0 0 15px rgba(255, 51, 51, 0.6)'
               }}>
                 {metrics.totalPnL >= 0 ? '+' : ''}{metrics.totalPnL.toFixed(2)}%
               </div>
               <div style={{ 
                 display: 'flex', 
                 gap: '8px', 
-                color: '#666', 
+                color: 'rgba(255, 255, 255, 0.3)', 
                 fontSize: '10px',
                 alignItems: 'center'
               }}>
@@ -408,10 +507,13 @@ const PerformanceDashboard = ({ show = true }) => {
 
             {/* Current Streak */}
             <div style={{
-              background: metrics.currentStreak > 0 ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
+              background: metrics.currentStreak > 0 ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
               padding: isMobile ? '10px' : '12px',
-              borderRadius: '6px',
-              border: `1px solid ${metrics.currentStreak > 0 ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'}`
+              borderRadius: '10px',
+              border: `1px solid ${metrics.currentStreak > 0 ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)'}`,
+              boxShadow: metrics.currentStreak > 0 ? '0 0 20px rgba(0, 255, 0, 0.15)' : '0 0 20px rgba(255, 0, 0, 0.15)'
             }}>
               <div style={{ color: '#888', fontSize: isMobile ? '9px' : '10px', marginBottom: '6px', textTransform: 'uppercase' }}>
                 Current Streak
@@ -445,10 +547,13 @@ const PerformanceDashboard = ({ show = true }) => {
           }}>
             {/* Council Performance */}
             <div style={{
-            background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(147, 51, 234, 0.02) 100%)',
+            background: 'rgba(147, 51, 234, 0.05)',
+            backdropFilter: 'blur(15px)',
+            WebkitBackdropFilter: 'blur(15px)',
             padding: isMobile ? '12px' : '15px',
-            borderRadius: '10px',
-            border: '1px solid rgba(147, 51, 234, 0.3)'
+            borderRadius: '15px',
+            border: '1px solid rgba(147, 51, 234, 0.2)',
+            boxShadow: '0 4px 20px rgba(147, 51, 234, 0.15), inset 0 0 20px rgba(147, 51, 234, 0.05)'
           }}>
             <div style={{ 
               color: '#9333ea', 
@@ -468,11 +573,14 @@ const PerformanceDashboard = ({ show = true }) => {
             }}>
               {/* EMO */}
               <div style={{
-                background: 'rgba(147, 51, 234, 0.1)',
+                background: 'rgba(147, 51, 234, 0.03)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
                 padding: '10px',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 textAlign: 'center',
-                border: '1px solid rgba(147, 51, 234, 0.2)'
+                border: '1px solid rgba(147, 51, 234, 0.15)',
+                boxShadow: '0 0 15px rgba(147, 51, 234, 0.1)'
               }}>
                 <div style={{ color: '#9333ea', fontSize: '10px', marginBottom: '6px' }}>
                   EMO
@@ -501,11 +609,14 @@ const PerformanceDashboard = ({ show = true }) => {
 
               {/* TEKNO */}
               <div style={{
-                background: 'rgba(0, 255, 255, 0.1)',
+                background: 'rgba(0, 255, 255, 0.03)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
                 padding: '10px',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 textAlign: 'center',
-                border: '1px solid rgba(0, 255, 255, 0.2)'
+                border: '1px solid rgba(0, 255, 255, 0.15)',
+                boxShadow: '0 0 15px rgba(0, 255, 255, 0.1)'
               }}>
                 <div style={{ color: '#00ffff', fontSize: '10px', marginBottom: '6px' }}>
                   TEKNO
@@ -533,11 +644,14 @@ const PerformanceDashboard = ({ show = true }) => {
 
               {/* MACRO */}
               <div style={{
-                background: 'rgba(0, 255, 0, 0.1)',
+                background: 'rgba(0, 255, 0, 0.03)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
                 padding: '10px',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 textAlign: 'center',
-                border: '1px solid rgba(0, 255, 0, 0.2)'
+                border: '1px solid rgba(0, 255, 0, 0.15)',
+                boxShadow: '0 0 15px rgba(0, 255, 0, 0.1)'
               }}>
                 <div style={{ color: '#00ff00', fontSize: '10px', marginBottom: '6px' }}>
                   MACRO
@@ -565,11 +679,14 @@ const PerformanceDashboard = ({ show = true }) => {
 
               {/* RL80 */}
               <div style={{
-                background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%)',
+                background: 'rgba(255, 215, 0, 0.05)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
                 padding: '10px',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 textAlign: 'center',
-                border: '1px solid rgba(255, 215, 0, 0.3)'
+                border: '1px solid rgba(255, 215, 0, 0.2)',
+                boxShadow: isMobile ? '0 0 10px rgba(255, 215, 0, 0.1)' : '0 0 20px rgba(255, 215, 0, 0.15)'
               }}>
                 <div style={{ color: '#FFD700', fontSize: '10px', marginBottom: '6px' }}>
                   RL80 ⚡
@@ -599,10 +716,13 @@ const PerformanceDashboard = ({ show = true }) => {
 
             {/* Risk Metrics Card */}
             <div style={{
-            background: 'rgba(255, 255, 255, 0.03)',
+            background: 'rgba(255, 255, 255, 0.02)',
+            backdropFilter: 'blur(15px)',
+            WebkitBackdropFilter: 'blur(15px)',
             padding: isMobile ? '15px' : '20px',
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            borderRadius: '15px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 4px 20px rgba(0, 255, 255, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02)'
           }}>
             <div style={{ 
               color: '#888', 
@@ -686,10 +806,13 @@ const PerformanceDashboard = ({ show = true }) => {
 
             {/* Recent Trades Card */}
             <div style={{
-            background: 'rgba(255, 255, 255, 0.03)',
+            background: 'rgba(255, 255, 255, 0.02)',
+            backdropFilter: 'blur(15px)',
+            WebkitBackdropFilter: 'blur(15px)',
             padding: isMobile ? '15px' : '20px',
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '15px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 4px 20px rgba(0, 255, 255, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02)',
             maxHeight: isMobile ? '250px' : '300px',
             overflowY: 'auto'
           }}>
@@ -717,14 +840,29 @@ const PerformanceDashboard = ({ show = true }) => {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '10px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '6px',
+                    background: 'rgba(255, 255, 255, 0.01)',
+                    backdropFilter: 'blur(5px)',
+                    WebkitBackdropFilter: 'blur(5px)',
+                    borderRadius: '10px',
                     borderLeft: `3px solid ${trade.result?.success ? '#00ff00' : '#ff3333'}`,
-                    transition: 'all 0.2s',
-                    cursor: 'pointer'
+                    transition: 'all 0.3s',
+                    cursor: 'pointer',
+                    boxShadow: trade.result?.success ? '0 0 10px rgba(0, 255, 0, 0.1)' : '0 0 10px rgba(255, 51, 51, 0.1)'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)'}
+                  onMouseEnter={(e) => {
+                    if (!isMobile) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                      e.currentTarget.style.transform = 'translateX(5px)';
+                      e.currentTarget.style.boxShadow = trade.result?.success ? '0 0 20px rgba(0, 255, 0, 0.2)' : '0 0 20px rgba(255, 51, 51, 0.2)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isMobile) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.01)';
+                      e.currentTarget.style.transform = 'translateX(0)';
+                      e.currentTarget.style.boxShadow = trade.result?.success ? '0 0 10px rgba(0, 255, 0, 0.1)' : '0 0 10px rgba(255, 51, 51, 0.1)';
+                    }
+                  }}
                   >
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                       <div style={{ 
@@ -754,7 +892,7 @@ const PerformanceDashboard = ({ show = true }) => {
               </div>
             ) : (
               <div style={{ 
-                color: '#666', 
+                color: 'rgba(255, 255, 255, 0.3)', 
                 textAlign: 'center', 
                 padding: '40px 20px',
                 fontSize: '12px'
@@ -766,10 +904,13 @@ const PerformanceDashboard = ({ show = true }) => {
 
           {/* Best/Worst Trades Card */}
           <div style={{
-            background: 'rgba(255, 255, 255, 0.03)',
+            background: 'rgba(255, 255, 255, 0.02)',
+            backdropFilter: 'blur(15px)',
+            WebkitBackdropFilter: 'blur(15px)',
             padding: isMobile ? '15px' : '20px',
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            borderRadius: '15px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 4px 20px rgba(0, 255, 255, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02)'
           }}>
             <div style={{ 
               color: '#888', 
@@ -786,9 +927,12 @@ const PerformanceDashboard = ({ show = true }) => {
               <div style={{
                 marginBottom: '20px',
                 padding: '12px',
-                background: 'rgba(0, 255, 0, 0.05)',
-                borderRadius: '8px',
-                borderLeft: '3px solid #00ff00'
+                background: 'rgba(0, 255, 0, 0.03)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                borderLeft: '3px solid #00ff00',
+                boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)'
               }}>
                 <div style={{ color: '#00ff00', fontSize: '10px', marginBottom: '6px', textTransform: 'uppercase' }}>
                   Best Performance
@@ -809,7 +953,8 @@ const PerformanceDashboard = ({ show = true }) => {
                   <div style={{
                     fontSize: isMobile ? '18px' : '20px',
                     fontWeight: 'bold',
-                    color: '#00ff00'
+                    color: '#00ff00',
+                    textShadow: '0 0 10px rgba(0, 255, 0, 0.6)'
                   }}>
                     +{metrics.bestTrade.pnl?.toFixed(2)}%
                   </div>
@@ -821,9 +966,12 @@ const PerformanceDashboard = ({ show = true }) => {
             {metrics.worstTrade && (
               <div style={{
                 padding: '12px',
-                background: 'rgba(255, 0, 0, 0.05)',
-                borderRadius: '8px',
-                borderLeft: '3px solid #ff3333'
+                background: 'rgba(255, 0, 0, 0.03)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                borderLeft: '3px solid #ff3333',
+                boxShadow: '0 0 20px rgba(255, 0, 0, 0.1)'
               }}>
                 <div style={{ color: '#ff3333', fontSize: '10px', marginBottom: '6px', textTransform: 'uppercase' }}>
                   Worst Performance
@@ -844,7 +992,8 @@ const PerformanceDashboard = ({ show = true }) => {
                   <div style={{
                     fontSize: isMobile ? '18px' : '20px',
                     fontWeight: 'bold',
-                    color: '#ff3333'
+                    color: '#ff3333',
+                    textShadow: '0 0 10px rgba(255, 51, 51, 0.6)'
                   }}>
                     {metrics.worstTrade.pnl?.toFixed(2)}%
                   </div>
@@ -854,7 +1003,7 @@ const PerformanceDashboard = ({ show = true }) => {
             
             {!metrics.bestTrade && !metrics.worstTrade && (
               <div style={{ 
-                color: '#666', 
+                color: 'rgba(255, 255, 255, 0.3)', 
                 textAlign: 'center', 
                 padding: '40px 20px',
                 fontSize: '12px'
@@ -871,3 +1020,52 @@ const PerformanceDashboard = ({ show = true }) => {
 };
 
 export default PerformanceDashboard;
+
+// Add CSS animations
+if (typeof document !== 'undefined' && !document.getElementById('dashboard-animations')) {
+  const style = document.createElement('style');
+  style.id = 'dashboard-animations';
+  style.innerHTML = `
+    @keyframes float {
+      0%, 100% { transform: translate(-50%, -50%); }
+      50% { transform: translate(-50%, calc(-50% - 10px)); }
+    }
+    
+    @keyframes fadeIn {
+      0% { 
+        opacity: 0; 
+        transform: translate(-50%, -50%) scale(0.95);
+      }
+      100% { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+    
+    @keyframes fadeInMobile {
+      0% { 
+        opacity: 0; 
+        transform: scale(0.95);
+      }
+      100% { 
+        opacity: 1; 
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.8; }
+    }
+    
+    @keyframes glow {
+      0%, 100% { 
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+      }
+      50% { 
+        box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}

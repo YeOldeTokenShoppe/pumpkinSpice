@@ -57,6 +57,15 @@ const CyborgTempleScene = ({
   const coin4OriginalScale = useRef(null);
   const coin4OriginalEmissive = useRef(null);
   
+  // Click animation state for coins
+  const [clickedCoin, setClickedCoin] = useState(null);
+  const coinAnimationState = useRef({
+    Coin1: { isAnimating: false, startTime: 0, flutterIntensity: 0 },
+    Coin2: { isAnimating: false, startTime: 0, flutterIntensity: 0 },
+    Coin3: { isAnimating: false, startTime: 0, flutterIntensity: 0 },
+    Coin4: { isAnimating: false, startTime: 0, flutterIntensity: 0 }
+  });
+  
   // Eye mesh refs for blinking animation
   const leftEyeRef = useRef();
   const rightEyeRef = useRef();
@@ -528,6 +537,7 @@ const CyborgTempleScene = ({
       
       // Find the specific meshes and add click handlers
       templeScene.traverse((child) => {
+        
         if (child.name === 'Cylinder043_0') {
           cylinderMeshRef.current = child;
         }
@@ -610,6 +620,8 @@ const CyborgTempleScene = ({
           if (child.name === 'angel' || child.name === 'Angel') {
             angelRef.current = child;
           }
+          
+          // Coins only exist in MOBILE.glb, so only set them up on mobile
           if (child.name === 'Coin1') {
             coin1Ref.current = child;
             
@@ -841,6 +853,55 @@ const CyborgTempleScene = ({
       }
     };
     
+    // Touch events for mobile
+    const handleTouchStart = (event) => {
+      event.preventDefault();
+      // For touchend events, use changedTouches instead of touches
+      const touch = event.touches ? event.touches[0] : event.changedTouches[0];
+      if (!touch) return; // Safety check
+      
+      const rect = gl.domElement.getBoundingClientRect();
+      mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(groupRef.current.children, true);
+      
+      for (let i = 0; i < intersects.length; i++) {
+        const object = intersects[i].object;
+        
+        if (object.userData.isCoin) {
+          // Trigger coin animation
+          const coinName = object.userData.agentId;
+          triggerCoinAnimation(coinName);
+          
+          // Also trigger the card display
+          if (onAgentClick) {
+            onAgentClick(coinName);
+          }
+          break;
+        }
+      }
+    };
+    
+    // Function to trigger coin click animation
+    const triggerCoinAnimation = (coinName) => {
+      const animState = coinAnimationState.current[coinName];
+      if (animState) {
+        animState.isAnimating = true;
+        animState.startTime = Date.now();
+        animState.flutterIntensity = 1.0;
+        setClickedCoin(coinName);
+        
+        // Reset after animation completes
+        setTimeout(() => {
+          animState.isAnimating = false;
+          animState.flutterIntensity = 0;
+          setClickedCoin(null);
+        }, 1500); // 1.5 second animation
+      }
+    };
+    
     // Also set up hover detection for visual feedback
     const handlePointerMove = (event) => {
       const rect = gl.domElement.getBoundingClientRect();
@@ -915,19 +976,19 @@ const CyborgTempleScene = ({
               // Set hover emissive with different colors for each coin
               if (child.material.emissive) {
                 const colors = {
-                  'Coin1': 0xffdd00, // Gold
+                  'Coin1': 0x00ff00, // Green
                   'Coin2': 0x00ffff, // Cyan
                   'Coin3': 0xff00ff, // Magenta
-                  'Coin4': 0x00ff00  // Green
+                  'Coin4': 0xffdd00  // Gold
                 };
                 child.material.emissive = new THREE.Color(colors[foundCoin] || 0xffdd00);
               }
-              child.material.emissiveIntensity = 2; // Increase emission
+              child.material.emissiveIntensity = 3; // Increased emission for better visibility
             }
           });
           
-          // Scale up slightly
-          coinRef.current.scale.multiplyScalar(1.1);
+          // Scale up more noticeably
+          coinRef.current.scale.multiplyScalar(1.2);
         }
       } else if (!foundCoin && hoveredCoin) {
         // Stop hovering on any coin
@@ -995,8 +1056,6 @@ const CyborgTempleScene = ({
       // Calculate objects intersecting the picking ray
       const intersects = raycaster.intersectObjects(groupRef.current.children, true);
       
-
-      
       let clickedOnAgent = false;
       
       for (let i = 0; i < intersects.length; i++) {
@@ -1005,8 +1064,12 @@ const CyborgTempleScene = ({
         if (object.userData.clickable) {
           clickedOnAgent = true;
 
-          // Special handling for coins - directly trigger the FocusedAgentCard
+          // Special handling for coins - trigger animation and show FocusedAgentCard
           if (object.userData.isCoin) {
+            
+            // Trigger the coin animation
+            triggerCoinAnimation(object.userData.agentId);
+            
             // Call the parent callback to show FocusedAgentCard
             if (onAgentClick) {
               onAgentClick(object.userData.agentId); // This will trigger the FocusedAgentCard to show
@@ -1152,17 +1215,27 @@ const CyborgTempleScene = ({
     
     gl.domElement.addEventListener('click', handleClick);
     gl.domElement.addEventListener('pointermove', handlePointerMove);
+    gl.domElement.addEventListener('touchstart', handleTouchStart);
+    
+    // Also add touchend as a backup
+    gl.domElement.addEventListener('touchend', (event) => {
+      handleTouchStart(event);
+    });
+    
     window.addEventListener('keydown', handleKeyDown);
     
     return () => {
       gl.domElement.removeEventListener('click', handleClick);
       gl.domElement.removeEventListener('pointermove', handlePointerMove);
+      gl.domElement.removeEventListener('touchstart', handleTouchStart);
+      gl.domElement.removeEventListener('touchend', handleTouchStart);
       window.removeEventListener('keydown', handleKeyDown);
       gl.domElement.style.cursor = 'default';
     };
   }, [gl, camera, onAgentClick, loadedModel, focusTarget, originalCameraPosition, hoveredCoin, 
       coin1OriginalScale, coin1OriginalEmissive, coin2OriginalScale, coin2OriginalEmissive,
-      coin3OriginalScale, coin3OriginalEmissive, coin4OriginalScale, coin4OriginalEmissive, isOnMobile]); // Added dependencies
+      coin3OriginalScale, coin3OriginalEmissive, coin4OriginalScale, coin4OriginalEmissive, 
+      isOnMobile, clickedCoin]); // Added dependencies
 
   
 
@@ -1335,7 +1408,7 @@ const CyborgTempleScene = ({
         const availableAnimations = Object.keys(rl80Actions);
         
         // Filter animations based on what's actually available
-        // RL80 has Idle, Typing, and Clap as loop animations
+        // RL80 has Idle, Typing, Clap, and prayer animations
         const loopAnimations = availableAnimations.filter(anim => 
           anim === 'Typing' || anim === 'Idle' || anim === 'Clap');
         const specialAnimations = availableAnimations.filter(anim => 
@@ -1558,7 +1631,7 @@ const CyborgTempleScene = ({
         const availableAnimations = Object.keys(teknoActions);
         
         // Filter animations based on what's actually available
-        // RL80 has Idle, Typing, and Clap as loop animations
+        // Tekno has Idle, Typing, Clap, and Pray.001/Pray001 as loop animations
         const loopAnimations = availableAnimations.filter(anim => 
           anim === 'Typing' || anim === 'Idle' || anim === 'Clap');
         const specialAnimations = availableAnimations.filter(anim => 
@@ -1740,35 +1813,96 @@ const CyborgTempleScene = ({
       // Coin animations - subtle individual hovering
       const time = state.clock.getElapsedTime();
       
-      // Helper function for individual coin hovering
-      const hoverCoin = (coinRef, phaseOffset, speed = 1.2, amplitude = 0.01) => {
+      // Helper function for individual coin hovering with click effects
+      const hoverCoin = (coinRef, coinName, phaseOffset, speed = 1.2, amplitude = 0.01) => {
         if (!coinRef.current) return;
+        
+        const animState = coinAnimationState.current[coinName];
         
         // Store initial Y position if not set
         if (coinRef.current.userData.initialY === undefined) {
           coinRef.current.userData.initialY = coinRef.current.position.y;
-          // Debug log for Coin3
-          if (coinRef.current.name === 'Coin3') {
+        }
+        
+        // Calculate base hover
+        let yOffset = Math.sin(time * speed + phaseOffset) * amplitude;
+        
+        // Add flutter animation if coin was clicked
+        if (animState && animState.isAnimating) {
+          const elapsed = (Date.now() - animState.startTime) / 1000; // Convert to seconds
+          const flutterDecay = Math.exp(-elapsed * 2); // Slower decay over time
+          
+          // Remove the vertical bounce - just keep the base hover
+          // yOffset is already set from the base hover calculation above
+          
+          // Add rotation tilt on Y-axis - back and forth a couple times
+          if (coinRef.current.rotation) {
+            // Use a moderate speed for a nice spin effect
+            const tiltSpeed = 6; // Speed of the rotation oscillation
+            const tiltAmount = 0.6; // About 34 degrees max tilt - more pronounced
+            // Sin wave creates smooth back and forth motion that decays
+            coinRef.current.rotation.y = Math.sin(elapsed * tiltSpeed) * tiltAmount * flutterDecay;
+            
+            // Optional: Add a slight continuous spin as well
+            // coinRef.current.rotation.y += elapsed * 2 * flutterDecay; // Continuous spin overlay
+          }
+          
+          // Add glow effect by modifying emissive
+          coinRef.current.traverse((child) => {
+            if (child.isMesh && child.material) {
+              if (!child.material.userData.originalEmissive) {
+                child.material.userData.originalEmissive = child.material.emissive ? 
+                  child.material.emissive.clone() : new THREE.Color(0x000000);
+                child.material.userData.originalIntensity = child.material.emissiveIntensity || 0;
+              }
+              
+              // Pulse the emissive glow
+              const glowIntensity = 5 * flutterDecay * (0.5 + 0.5 * Math.sin(elapsed * 10));
+              const colors = {
+                'Coin1': 0x00ff00, // Green
+                'Coin2': 0x00ffff, // Cyan
+                'Coin3': 0xff00ff, // Magenta
+                'Coin4': 0xffdd00  // Gold
+              };
+              
+              if (child.material.emissive) {
+                child.material.emissive = new THREE.Color(colors[coinName] || 0xffdd00);
+              }
+              child.material.emissiveIntensity = child.material.userData.originalIntensity + glowIntensity;
+            }
+          });
+        } else {
+          // Reset rotation when not animating
+          if (coinRef.current.rotation) {
+            coinRef.current.rotation.y *= 0.95; // Smooth return to zero on Y-axis
+          }
+          
+          // Reset emissive if not hovering
+          if (!hoveredCoin || hoveredCoin !== coinName) {
+            coinRef.current.traverse((child) => {
+              if (child.isMesh && child.material && child.material.userData.originalEmissive) {
+                child.material.emissive = child.material.userData.originalEmissive;
+                child.material.emissiveIntensity = child.material.userData.originalIntensity;
+              }
+            });
           }
         }
         
-        // Special handling for Coin3 since it's a Group
+        // Apply position with special handling for Group coins
         if (coinRef.current.name === 'Coin3' && coinRef.current.type === 'Group') {
           // Use much smaller amplitude for the Group
-          coinRef.current.position.y = coinRef.current.userData.initialY + 
-            Math.sin(time * speed + phaseOffset) * (amplitude * 0.1); // Reduce amplitude by 70%
+          coinRef.current.position.y = coinRef.current.userData.initialY + yOffset * 0.1;
         } else {
           // Normal handling for Mesh coins
-          coinRef.current.position.y = coinRef.current.userData.initialY + 
-            Math.sin(time * speed + phaseOffset) * amplitude;
+          coinRef.current.position.y = coinRef.current.userData.initialY + yOffset;
         }
       };
       
       // Apply hovering to each coin with different phases and speeds
-      hoverCoin(coin1Ref, 0, 1.2, 0.015);           // Base hover
-      hoverCoin(coin2Ref, Math.PI * 0.5, 1.0, 0.012);  // Quarter phase offset, slower
-      hoverCoin(coin3Ref, Math.PI * 1.5, 1.1, 0.01);        // Opposite phase, faster
-      hoverCoin(coin4Ref, Math.PI * 1.5, 1.1, 0.01);   // Three-quarter phase, smallest amplitude
+      hoverCoin(coin1Ref, 'Coin1', 0, 1.2, 0.015);           // Base hover
+      hoverCoin(coin2Ref, 'Coin2', Math.PI * 0.5, 1.0, 0.012);  // Quarter phase offset, slower
+      hoverCoin(coin3Ref, 'Coin3', Math.PI * 1.5, 1.1, 0.01);        // Opposite phase, faster
+      hoverCoin(coin4Ref, 'Coin4', Math.PI * 1.5, 1.1, 0.01);   // Three-quarter phase, smallest amplitude
     }
   });
 

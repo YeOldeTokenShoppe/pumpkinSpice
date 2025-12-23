@@ -559,8 +559,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                 right: '0',
                 bottom: '0',
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
+                // backdropFilter: 'blur(20px)',
+                // WebkitBackdropFilter: 'blur(20px)',
                 zIndex: 999998,
                 transition: 'all 0.3s ease'
               }}
@@ -570,32 +570,43 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
             {/* Content Panel */}
             <div style={{
               position: 'fixed',
-              left: '20px',
-              top: '120px',
-              right: '20px',
-              maxHeight: 'calc(100vh - 160px)',
-              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
-              border: '1px solid rgba(0, 255, 0, 0.3)',
-              borderRadius: '12px',
-              padding: '15px',
-              boxShadow: '0 0 30px rgba(0, 0, 0, 0.5)',
+              // Different positioning for chat modal on desktop - bottom right corner
+              left: activeTab === 'chat' && !isMobile ? 'auto' : 
+                    activeTab === 'stats' || (activeTab === 'chat' && isMobile) ? '8px' : '20px',
+              top: activeTab === 'chat' && !isMobile ? 'auto' : 
+                   activeTab === 'chat' && isMobile ? '80px' : '120px',  // Moved lower on mobile
+              right: activeTab === 'chat' && !isMobile ? '20px' : 
+                     activeTab === 'stats' || (activeTab === 'chat' && isMobile) ? '8px' : '20px',
+              bottom: activeTab === 'chat' && !isMobile ? '20px' : 'auto',
+              transform: 'none',
+              maxHeight: activeTab === 'chat' && isMobile ? 'calc(100vh - 100px)' :  // Adjusted for new top position
+                        activeTab === 'chat' && !isMobile ? '600px' : 'calc(100vh - 160px)',
+              background: activeTab === 'stats' ? 'rgba(0, 0, 0, 0.3)' :
+                        activeTab === 'chat' ? 'transparent' :  // No background for chat
+                        'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+              border: activeTab === 'stats' || activeTab === 'chat' ? 'none' : '1px solid rgba(0, 255, 0, 0.3)',
+              borderRadius: activeTab === 'chat' && isMobile ? '0' : '12px',
+              padding: activeTab === 'stats' || activeTab === 'chat' ? '0' : '15px',
+              boxShadow: activeTab === 'stats' || activeTab === 'chat' ? 'none' :
+                        '0 0 30px rgba(0, 0, 0, 0.5)',
               zIndex: 999999,
               overflowY: 'auto',
               fontFamily: 'monospace',
               fontSize: '11px',
-              width: 'calc(100vw - 40px)',
+              width: activeTab === 'chat' && !isMobile ? '450px' :
+                     activeTab === 'stats' || (activeTab === 'chat' && isMobile) ? 'calc(100vw - 16px)' : 
+                     'calc(100vw - 40px)',
+              height: activeTab === 'chat' && isMobile ? '100vh' : 'auto',
               boxSizing: 'border-box'
             }}
             onClick={(e) => e.stopPropagation()}>
           {/* Stats Tab - Show Performance Dashboard */}
           {activeTab === 'stats' && (
-            <div style={{ 
-              margin: '-20px',
-              width: 'calc(100% + 40px)',
-              height: 'calc(100% + 40px)'
-            }}>
-              <PerformanceDashboard show={true} />
-            </div>
+            <PerformanceDashboard 
+              show={true} 
+              embedded={true}
+              onClose={() => setActiveTab(null)}
+            />
           )}
           
           {/* Old Stats Tab (disabled) */}
@@ -1382,89 +1393,281 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
           )}
           
           {/* Candle Tab - Mobile View - Full Screen with Portal */}
-          {/* Chat Panel */}
+          {/* Chat Panel - Redesigned to match PerformanceDashboard */}
           {activeTab === 'chat' && (
             <>
+              {/* Invisible backdrop for desktop to detect clicks outside */}
+              {!isMobile && (
+                <div
+                  onClick={() => setActiveTab(null)}
+                  style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'transparent',
+                    zIndex: 999998
+                  }}
+                />
+              )}
+              
               <div style={{
-                marginBottom: '12px',
-                paddingBottom: '8px',
-                borderBottom: '1px solid rgba(255, 0, 255, 0.3)',
+                width: '100%',
+                height: '100%',
+                background: isMobile ? 'rgba(10, 10, 20, 0.1)' : 'rgba(10, 10, 20, 0.1)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderRadius: isMobile ? '0' : '20px',
+                border: !isMobile ? '1px solid rgba(147, 51, 234, 0.3)' : 'none',
+                padding: '0',
+                overflowY: 'auto',
+                boxShadow: !isMobile ? 'inset 0 0 30px rgba(147, 51, 234, 0.1)' : 'none',
+                position: 'relative',
+                zIndex: 999999
+              }}>
+              {/* Header */}
+              <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                marginBottom: '15px',
+                borderBottom: '1px solid rgba(147, 51, 234, 0.2)',
+                background: 'linear-gradient(90deg, rgba(147, 51, 234, 0.05) 0%, transparent 100%)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                borderRadius: isMobile ? '10px' : '20px 20px 10px 10px',
+                paddingTop: '12px',
+                paddingRight: '12px',
+                paddingBottom: '12px',
+                paddingLeft: '12px',
+                position: 'relative'
               }}>
-                <div style={{ color: '#ff00ff', fontWeight: 'bold', fontSize: '13px' }}>
-                  💬 4-AGENT TEAM CHAT
+                {/* Close Button - Mobile Only */}
+                {isMobile && (
+                  <button
+                    onClick={() => setActiveTab(null)}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      background: 'rgba(255, 0, 0, 0.1)',
+                      border: '1px solid rgba(255, 0, 0, 0.3)',
+                      borderRadius: '50%',
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      color: '#ff6666',
+                      transition: 'all 0.2s',
+                      zIndex: 10
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+                
+                <div>
+                  <h2 style={{ 
+                    color: '#9333ea',
+                    margin: 0,
+                    fontSize: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    textShadow: '0 0 20px rgba(147, 51, 234, 0.5)',
+                    letterSpacing: '0.5px'
+                  }}>
+                    💬 AI TEAM CHAT
+                  </h2>
+                  <div style={{ color: '#888', fontSize: '10px', marginTop: '2px' }}>
+                    Real-time agent coordination
+                  </div>
                 </div>
+                
+                {/* Live indicator */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '3px'
+                  gap: '5px',
+                  paddingRight: isMobile ? '40px' : '0'
                 }}>
                   <div style={{
-                    width: '5px',
-                    height: '5px',
+                    width: '6px',
+                    height: '6px',
                     borderRadius: '50%',
-                    background: '#ff00ff',
+                    background: '#00ff00',
+                    boxShadow: '0 0 8px rgba(0, 255, 0, 0.8)',
                     animation: 'pulse 2s infinite'
                   }} />
-                  <span style={{ color: '#ff00ff', fontSize: '9px' }}>LIVE</span>
+                  <span style={{ color: '#00ff00', fontSize: '10px', fontWeight: 'bold' }}>LIVE</span>
                 </div>
               </div>
               
-              {/* Chat Messages */}
+              {/* Agent Indicators */}
               <div style={{
-                maxHeight: 'calc(100vh - 240px)',
-                overflowY: 'auto',
-                paddingRight: '5px'
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '8px',
+                marginBottom: '15px',
+                padding: '0 12px'
               }}>
-                {tradingData.modelThoughts.map((thought, idx) => (
-                  <div key={idx} style={{
-                    marginBottom: '10px',
+                {[
+                  { name: 'RL80', icon: '⚡', color: '#FFD700' },
+                  { name: 'EMO', icon: '🔮', color: '#9333ea' },
+                  { name: 'TEKNO', icon: '📊', color: '#00ffff' },
+                  { name: 'MACRO', icon: '🌍', color: '#00ff00' }
+                ].map(agent => (
+                  <div key={agent.name} style={{
+                    background: `rgba(${
+                      agent.color === '#FFD700' ? '255, 215, 0' : 
+                      agent.color === '#9333ea' ? '147, 51, 234' :
+                      agent.color === '#00ffff' ? '0, 255, 255' : '0, 255, 0'
+                    }, 0.05)`,
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
                     padding: '8px',
-                    background: thought.type === 'learning' ? 'rgba(255, 221, 0, 0.05)' :
-                               thought.type === 'trading' ? 'rgba(0, 255, 0, 0.05)' :
-                               thought.type === 'market' ? 'rgba(0, 150, 255, 0.05)' :
-                               thought.type === 'sentiment' ? 'rgba(255, 0, 255, 0.05)' :
-                               'rgba(255, 255, 255, 0.02)',
-                    borderLeft: `2px solid ${
-                      thought.type === 'learning' ? '#ffdd00' :
-                      thought.type === 'trading' ? '#00ff00' :
-                      thought.type === 'market' ? '#0096ff' :
-                      thought.type === 'sentiment' ? '#ff00ff' :
-                      '#888'
-                    }`,
-                    borderRadius: '4px'
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    border: `1px solid ${agent.color}33`,
+                    boxShadow: `0 0 10px ${agent.color}1A`
                   }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '4px'
-                    }}>
-                      <span style={{ 
-                        color: thought.type === 'learning' ? '#ffdd00' :
-                               thought.type === 'trading' ? '#00ff00' :
-                               thought.type === 'market' ? '#0096ff' :
-                               thought.type === 'sentiment' ? '#ff00ff' :
-                               '#888',
-                        fontSize: '10px',
-                        fontWeight: 'bold'
-                      }}>
-                        {thought.agent}
-                      </span>
-                      <span style={{ color: '#666', fontSize: '9px' }}>
-                        {new Date(thought.timestamp).toLocaleTimeString('en-US', { 
-                          hour: '2-digit', 
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    <div style={{ color: '#ddd', fontSize: '10px', lineHeight: '1.3' }}>
-                      {thought.message}
+                    <div style={{ fontSize: '14px', marginBottom: '2px' }}>{agent.icon}</div>
+                    <div style={{ color: agent.color, fontSize: '9px', fontWeight: 'bold' }}>
+                      {agent.name}
                     </div>
                   </div>
                 ))}
               </div>
+              
+              {/* Chat Messages Container */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                backdropFilter: 'blur(15px)',
+                WebkitBackdropFilter: 'blur(15px)',
+                borderRadius: '12px',
+                padding: '12px',
+                margin: '0 12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: '0 4px 20px rgba(147, 51, 234, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02)',
+                maxHeight: 'calc(100vh - 350px)',
+                overflowY: 'auto',
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(147, 51, 234, 0.3) transparent'
+              }}>
+                {tradingData.modelThoughts.length === 0 ? (
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '30px 15px',
+                    color: 'rgba(255, 255, 255, 0.3)',
+                    fontSize: '11px'
+                  }}>
+                    Waiting for agent communications...
+                  </div>
+                ) : (
+                  tradingData.modelThoughts.map((thought, idx) => (
+                    <div key={idx} style={{
+                      marginBottom: '10px',
+                      padding: '10px',
+                      background: thought.type === 'learning' ? 'rgba(255, 215, 0, 0.03)' :
+                                 thought.type === 'trading' ? 'rgba(0, 255, 0, 0.03)' :
+                                 thought.type === 'market' ? 'rgba(0, 255, 255, 0.03)' :
+                                 thought.type === 'sentiment' ? 'rgba(147, 51, 234, 0.03)' :
+                                 'rgba(255, 255, 255, 0.01)',
+                      backdropFilter: 'blur(5px)',
+                      WebkitBackdropFilter: 'blur(5px)',
+                      borderLeft: `3px solid ${
+                        thought.type === 'learning' ? '#FFD700' :
+                        thought.type === 'trading' ? '#00ff00' :
+                        thought.type === 'market' ? '#00ffff' :
+                        thought.type === 'sentiment' ? '#9333ea' :
+                        '#888'
+                      }`,
+                      borderRadius: '8px',
+                      boxShadow: `0 0 8px ${
+                        thought.type === 'learning' ? 'rgba(255, 215, 0, 0.1)' :
+                        thought.type === 'trading' ? 'rgba(0, 255, 0, 0.1)' :
+                        thought.type === 'market' ? 'rgba(0, 255, 255, 0.1)' :
+                        thought.type === 'sentiment' ? 'rgba(147, 51, 234, 0.1)' :
+                        'rgba(255, 255, 255, 0.05)'
+                      }`,
+                      transition: 'all 0.3s'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '6px'
+                      }}>
+                        <span style={{ 
+                          color: thought.type === 'learning' ? '#FFD700' :
+                                 thought.type === 'trading' ? '#00ff00' :
+                                 thought.type === 'market' ? '#00ffff' :
+                                 thought.type === 'sentiment' ? '#9333ea' :
+                                 '#888',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {thought.icon} {thought.agent}
+                        </span>
+                        <span style={{ color: '#666', fontSize: '9px' }}>
+                          {new Date(thought.timestamp).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <div style={{ 
+                        color: '#ddd', 
+                        fontSize: '10px', 
+                        lineHeight: '1.4',
+                        opacity: 0.9
+                      }}>
+                        {thought.message}
+                      </div>
+                      {thought.confidence && (
+                        <div style={{
+                          marginTop: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <span style={{ color: '#666', fontSize: '8px' }}>Confidence:</span>
+                          <div style={{
+                            flex: 1,
+                            height: '3px',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            borderRadius: '2px',
+                            overflow: 'hidden'
+                          }}>
+                            <div style={{
+                              width: `${thought.confidence}%`,
+                              height: '100%',
+                              background: thought.confidence > 70 ? '#00ff00' : 
+                                         thought.confidence > 40 ? '#FFD700' : '#ff3333',
+                              transition: 'width 0.5s ease'
+                            }} />
+                          </div>
+                          <span style={{ 
+                            color: thought.confidence > 70 ? '#00ff00' : 
+                                   thought.confidence > 40 ? '#FFD700' : '#ff3333',
+                            fontSize: '8px',
+                            fontWeight: 'bold'
+                          }}>
+                            {thought.confidence}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
             </>
           )}
 
@@ -1626,10 +1829,12 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
         position: 'fixed',
         top: '120px',
         left: '20px',
-        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
-        border: '1px solid #00ff00',
+        background: leftPanelTab === 'performance' 
+          ? 'rgba(0, 0, 0, 0.3)' 
+          : 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 0, 0.9) 100%)',
+        border: leftPanelTab === 'performance' ? 'none' : '1px solid #00ff00',
         borderRadius: '8px',
-        padding: '12px',
+        padding: leftPanelTab === 'performance' ? '0' : '12px',
         fontFamily: 'monospace',
         fontSize: '11px',
         zIndex: 9999,
@@ -1647,7 +1852,7 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
       }}>
         {/* Tab Navigation */}
         <div style={{
-          display: 'flex',
+          display: leftPanelTab === 'performance' ? 'none' : 'flex',
           marginBottom: '12px',
           borderBottom: '1px solid rgba(0, 255, 0, 0.3)'
         }}>
@@ -1720,10 +1925,20 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
         {/* Performance Tab - New clean dashboard */}
         {leftPanelTab === 'performance' && (
           <div style={{ 
-            margin: '-20px', // Remove parent padding
-            height: '100%'
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            overflow: 'hidden'
           }}>
-            <PerformanceDashboard show={true} />
+            <PerformanceDashboard 
+              show={true} 
+              embedded={true}
+              onClose={() => setLeftPanelTab('summary')}
+            />
           </div>
         )}
         
