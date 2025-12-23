@@ -19,6 +19,7 @@ const PerformanceDashboard = ({ show = true, onClose }) => {
     bestTrade: null,
     worstTrade: null,
     recentTrades: [],
+    equityCurve: [],
     agentScores: {
       emo: { accuracy: 0, contribution: 0 },
       tekno: { accuracy: 0, contribution: 0 },
@@ -74,48 +75,70 @@ const PerformanceDashboard = ({ show = true, onClose }) => {
           let worstTrade = null;
           let currentStreak = 0;
           let streakType = null;
+          const equityCurve = [];
 
+          // First collect all trades
+          const allTrades = [];
           snapshot.forEach(doc => {
             const trade = { id: doc.id, ...doc.data() };
-            
-            // Filter by timeframe
             if (trade.timestamp && trade.timestamp >= timeAgo) {
-              trades.push(trade);
+              allTrades.push(trade);
+            }
+          });
+
+          // Sort trades by timestamp (oldest first) for equity curve
+          const sortedTrades = [...allTrades].sort((a, b) => a.timestamp - b.timestamp);
+          let cumPnL = 0;
+
+          sortedTrades.forEach(trade => {
+            if (trade.result) {
+              const pnl = trade.result.pnl || 0;
+              cumPnL += pnl;
+              equityCurve.push({
+                timestamp: trade.timestamp,
+                value: cumPnL,
+                pnl: pnl
+              });
+            }
+          });
+
+          // Now process trades in reverse order (newest first) for other metrics
+          allTrades.reverse().forEach(trade => {
+            trades.push(trade);
+            
+            // Calculate metrics if trade has a result
+            if (trade.result) {
+              const pnl = trade.result.pnl || 0;
+              totalPnL += pnl;
               
-              // Calculate metrics if trade has a result
-              if (trade.result) {
-                const pnl = trade.result.pnl || 0;
-                totalPnL += pnl;
-                
-                if (trade.result.success) {
-                  wins++;
-                  winSum += pnl;
-                  if (streakType === 'win' || streakType === null) {
-                    currentStreak = streakType === 'win' ? currentStreak + 1 : 1;
-                    streakType = 'win';
-                  } else {
-                    streakType = 'win';
-                    currentStreak = 1;
-                  }
+              if (trade.result.success) {
+                wins++;
+                winSum += pnl;
+                if (streakType === 'win' || streakType === null) {
+                  currentStreak = streakType === 'win' ? currentStreak + 1 : 1;
+                  streakType = 'win';
                 } else {
-                  losses++;
-                  lossSum += Math.abs(pnl);
-                  if (streakType === 'loss' || streakType === null) {
-                    currentStreak = streakType === 'loss' ? currentStreak - 1 : -1;
-                    streakType = 'loss';
-                  } else {
-                    streakType = 'loss';
-                    currentStreak = -1;
-                  }
+                  streakType = 'win';
+                  currentStreak = 1;
                 }
-                
-                // Track best and worst trades
-                if (!bestTrade || pnl > bestTrade.pnl) {
-                  bestTrade = { ...trade, pnl };
+              } else {
+                losses++;
+                lossSum += Math.abs(pnl);
+                if (streakType === 'loss' || streakType === null) {
+                  currentStreak = streakType === 'loss' ? currentStreak - 1 : -1;
+                  streakType = 'loss';
+                } else {
+                  streakType = 'loss';
+                  currentStreak = -1;
                 }
-                if (!worstTrade || pnl < worstTrade.pnl) {
-                  worstTrade = { ...trade, pnl };
-                }
+              }
+              
+              // Track best and worst trades
+              if (!bestTrade || pnl > bestTrade.pnl) {
+                bestTrade = { ...trade, pnl };
+              }
+              if (!worstTrade || pnl < worstTrade.pnl) {
+                worstTrade = { ...trade, pnl };
               }
             }
           });
@@ -145,6 +168,7 @@ const PerformanceDashboard = ({ show = true, onClose }) => {
             bestTrade: bestTrade,
             worstTrade: worstTrade,
             recentTrades: trades.slice(0, 5),
+            equityCurve: equityCurve,
             agentScores: agentScores
           });
           
@@ -304,7 +328,7 @@ const PerformanceDashboard = ({ show = true, onClose }) => {
       scrollbarColor: 'rgba(255, 215, 0, 0.3) transparent',
       overflow: isMobile ? 'auto' : 'hidden',
       opacity: '0',
-      animation: isMobile ? 'fadeInMobile 0.5s ease-out forwards' : 'fadeIn 0.5s ease-out forwards, float 6s ease-in-out 0.5s infinite'
+      animation: isMobile ? 'fadeInMobile 0.5s ease-out forwards' : 'fadeIn 0.4s ease-out forwards, float 6s ease-in-out infinite'
     }}
     onMouseEnter={(e) => {
       if (!isMobile) {
@@ -538,19 +562,253 @@ const PerformanceDashboard = ({ show = true, onClose }) => {
             </div>
           </div>
 
+          {/* Equity Curve Chart - Compact */}
+          <div style={{
+              background: 'rgba(0, 20, 40, 0.3)',
+              backdropFilter: 'blur(15px)',
+              WebkitBackdropFilter: 'blur(15px)',
+              padding: isMobile ? '10px' : '12px',
+              borderRadius: '15px',
+              border: '1px solid rgba(0, 255, 184, 0.1)',
+              boxShadow: '0 4px 20px rgba(0, 255, 184, 0.05), inset 0 0 20px rgba(0, 20, 40, 0.05)',
+              marginTop: isMobile ? '10px' : '12px'
+            }}>
+              <div style={{ 
+                color: '#888', 
+                fontSize: isMobile ? '9px' : '10px', 
+                marginBottom: '8px', 
+                textTransform: 'uppercase',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span>📈 Equity Curve</span>
+                <span style={{ color: '#00FFB8', fontSize: '12px' }}>
+                  {metrics.equityCurve.length > 0 ? 
+                    `${metrics.equityCurve[metrics.equityCurve.length - 1].value >= 0 ? '+' : ''}${metrics.equityCurve[metrics.equityCurve.length - 1].value.toFixed(2)}%` :
+                    'No data yet'
+                  }
+                </span>
+              </div>
+              
+              {/* SVG Chart */}
+              {metrics.equityCurve.length > 0 ? (
+              <>
+              <div style={{ position: 'relative', width: '100%', height: isMobile ? '100px' : '120px' }}>
+                <svg 
+                  width="100%" 
+                  height="100%" 
+                  viewBox={`0 0 ${isMobile ? 350 : 800} ${isMobile ? 100 : 120}`}
+                  preserveAspectRatio="none"
+                  style={{ overflow: 'visible' }}
+                >
+                  {/* Grid lines */}
+                  {[0, 25, 50, 75, 100].map((y) => (
+                    <line
+                      key={y}
+                      x1="0"
+                      y1={`${y}%`}
+                      x2="100%"
+                      y2={`${y}%`}
+                      stroke="rgba(255, 255, 255, 0.05)"
+                      strokeDasharray="2,4"
+                    />
+                  ))}
+                  
+                  {/* Zero line */}
+                  <line
+                    x1="0"
+                    y1="50%"
+                    x2="100%"
+                    y2="50%"
+                    stroke="rgba(255, 255, 255, 0.1)"
+                    strokeWidth="1"
+                  />
+                  
+                  {/* Create path for equity curve */}
+                  {(() => {
+                    const width = isMobile ? 350 : 800;
+                    const height = isMobile ? 100 : 120;
+                    const padding = 10;
+                    
+                    // Find min and max values for scaling
+                    const values = metrics.equityCurve.map(d => d.value);
+                    const minValue = Math.min(...values, 0);
+                    const maxValue = Math.max(...values, 0);
+                    const range = maxValue - minValue || 1;
+                    
+                    // Create points for the line
+                    const points = metrics.equityCurve.map((data, index) => {
+                      const x = (index / (metrics.equityCurve.length - 1 || 1)) * (width - 2 * padding) + padding;
+                      const y = height - ((data.value - minValue) / range * (height - 2 * padding) + padding);
+                      return `${x},${y}`;
+                    }).join(' ');
+                    
+                    // Create area under curve
+                    const areaPoints = metrics.equityCurve.map((data, index) => {
+                      const x = (index / (metrics.equityCurve.length - 1 || 1)) * (width - 2 * padding) + padding;
+                      const y = height - ((data.value - minValue) / range * (height - 2 * padding) + padding);
+                      return { x, y };
+                    });
+                    
+                    const zeroY = height - ((0 - minValue) / range * (height - 2 * padding) + padding);
+                    const areaPath = areaPoints.length > 0 ? 
+                      `M ${areaPoints[0].x},${zeroY} ` +
+                      areaPoints.map(p => `L ${p.x},${p.y}`).join(' ') +
+                      ` L ${areaPoints[areaPoints.length - 1].x},${zeroY} Z` : '';
+                    
+                    const isPositive = metrics.equityCurve[metrics.equityCurve.length - 1]?.value >= 0;
+                    
+                    return (
+                      <>
+                        {/* Gradient definition */}
+                        <defs>
+                          <linearGradient id="equityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop 
+                              offset="0%" 
+                              stopColor={isPositive ? '#00ff00' : '#ff3333'} 
+                              stopOpacity="0.3"
+                            />
+                            <stop 
+                              offset="100%" 
+                              stopColor={isPositive ? '#00ff00' : '#ff3333'} 
+                              stopOpacity="0.02"
+                            />
+                          </linearGradient>
+                        </defs>
+                        
+                        {/* Area under curve */}
+                        <path
+                          d={areaPath}
+                          fill="url(#equityGradient)"
+                        />
+                        
+                        {/* Main curve line */}
+                        <polyline
+                          points={points}
+                          fill="none"
+                          stroke={isPositive ? '#00ff00' : '#ff3333'}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{
+                            filter: `drop-shadow(0 0 8px ${isPositive ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 51, 51, 0.5)'})`
+                          }}
+                        />
+                        
+                        {/* Points on the line */}
+                        {metrics.equityCurve.length <= 20 && metrics.equityCurve.map((data, index) => {
+                          const x = (index / (metrics.equityCurve.length - 1 || 1)) * (width - 2 * padding) + padding;
+                          const y = height - ((data.value - minValue) / range * (height - 2 * padding) + padding);
+                          return (
+                            <circle
+                              key={index}
+                              cx={x}
+                              cy={y}
+                              r="3"
+                              fill={data.pnl >= 0 ? '#00ff00' : '#ff3333'}
+                              stroke="rgba(0, 0, 0, 0.5)"
+                              strokeWidth="1"
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <title>{`P&L: ${data.pnl >= 0 ? '+' : ''}${data.pnl.toFixed(2)}%\nCumulative: ${data.value >= 0 ? '+' : ''}${data.value.toFixed(2)}%`}</title>
+                            </circle>
+                          );
+                        })}
+                      </>
+                    );
+                  })()}
+                </svg>
+                
+                {/* Y-axis labels */}
+                <div style={{
+                  position: 'absolute',
+                  left: '-30px',
+                  top: '0',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  fontSize: '8px',
+                  color: '#666'
+                }}>
+                  {(() => {
+                    const values = metrics.equityCurve.map(d => d.value);
+                    const minValue = Math.min(...values, 0);
+                    const maxValue = Math.max(...values, 0);
+                    return (
+                      <>
+                        <span>{maxValue.toFixed(0)}%</span>
+                        <span>{((maxValue + minValue) / 2).toFixed(0)}%</span>
+                        <span>{minValue.toFixed(0)}%</span>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+              {/* Statistics below chart */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-around',
+                marginTop: '6px',
+                paddingTop: '6px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '9px'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#666' }}>Start</div>
+                  <div style={{ color: '#fff', fontWeight: 'bold' }}>0%</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#666' }}>Peak</div>
+                  <div style={{ color: '#00ff00', fontWeight: 'bold' }}>
+                    +{Math.max(...metrics.equityCurve.map(d => d.value), 0).toFixed(1)}%
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#666' }}>Trough</div>
+                  <div style={{ color: '#ff3333', fontWeight: 'bold' }}>
+                    {Math.min(...metrics.equityCurve.map(d => d.value), 0).toFixed(1)}%
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#666' }}>Current</div>
+                  <div style={{ 
+                    color: metrics.equityCurve[metrics.equityCurve.length - 1]?.value >= 0 ? '#00ff00' : '#ff3333', 
+                    fontWeight: 'bold' 
+                  }}>
+                    {metrics.equityCurve[metrics.equityCurve.length - 1]?.value >= 0 ? '+' : ''}
+                    {metrics.equityCurve[metrics.equityCurve.length - 1]?.value.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+              </>
+            ) : (
+              <div style={{
+                color: 'rgba(255, 255, 255, 0.3)',
+                textAlign: 'center',
+                padding: isMobile ? '20px 15px' : '25px 20px',
+                fontSize: '11px'
+              }}>
+                <div style={{ fontSize: '20px', marginBottom: '8px' }}>📊</div>
+                No equity curve data yet. Start trading to see your performance!
+              </div>
+            )}
+          </div>
+
           {/* 2x2 Grid Section - Stacks on mobile */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-            gap: isMobile ? '12px' : '15px',
-            marginTop: isMobile ? '12px' : '15px'
+            gap: isMobile ? '10px' : '12px',
+            marginTop: isMobile ? '10px' : '12px'
           }}>
             {/* Council Performance */}
             <div style={{
             background: 'rgba(147, 51, 234, 0.05)',
             backdropFilter: 'blur(15px)',
             WebkitBackdropFilter: 'blur(15px)',
-            padding: isMobile ? '12px' : '15px',
+            padding: isMobile ? '10px' : '12px',
             borderRadius: '15px',
             border: '1px solid rgba(147, 51, 234, 0.2)',
             boxShadow: '0 4px 20px rgba(147, 51, 234, 0.15), inset 0 0 20px rgba(147, 51, 234, 0.05)'
@@ -719,7 +977,7 @@ const PerformanceDashboard = ({ show = true, onClose }) => {
             background: 'rgba(255, 255, 255, 0.02)',
             backdropFilter: 'blur(15px)',
             WebkitBackdropFilter: 'blur(15px)',
-            padding: isMobile ? '15px' : '20px',
+            padding: isMobile ? '12px' : '15px',
             borderRadius: '15px',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             boxShadow: '0 4px 20px rgba(0, 255, 255, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02)'
@@ -809,11 +1067,11 @@ const PerformanceDashboard = ({ show = true, onClose }) => {
             background: 'rgba(255, 255, 255, 0.02)',
             backdropFilter: 'blur(15px)',
             WebkitBackdropFilter: 'blur(15px)',
-            padding: isMobile ? '15px' : '20px',
+            padding: isMobile ? '12px' : '15px',
             borderRadius: '15px',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             boxShadow: '0 4px 20px rgba(0, 255, 255, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02)',
-            maxHeight: isMobile ? '250px' : '300px',
+            maxHeight: isMobile ? '150px' : '160px',
             overflowY: 'auto'
           }}>
             <div style={{ 
@@ -907,7 +1165,7 @@ const PerformanceDashboard = ({ show = true, onClose }) => {
             background: 'rgba(255, 255, 255, 0.02)',
             backdropFilter: 'blur(15px)',
             WebkitBackdropFilter: 'blur(15px)',
-            padding: isMobile ? '15px' : '20px',
+            padding: isMobile ? '12px' : '15px',
             borderRadius: '15px',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             boxShadow: '0 4px 20px rgba(0, 255, 255, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02)'
@@ -1034,7 +1292,7 @@ if (typeof document !== 'undefined' && !document.getElementById('dashboard-anima
     @keyframes fadeIn {
       0% { 
         opacity: 0; 
-        transform: translate(-50%, -50%) scale(0.95);
+        transform: translate(-50%, -50%) scale(0.98);
       }
       100% { 
         opacity: 1; 

@@ -25,7 +25,7 @@ const SingleCandleDisplay = dynamic(() => import('../displays/SingleCandleDispla
   )
 });
 
-const TradingOverlay = ({ show = false, data = null, isConnected = false, onModalStateChange = null }) => {
+const TradingOverlay = ({ show = false, data = null, isConnected = false, onModalStateChange = null, onNavigationClick = null }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [activeTab, setActiveTab] = useState(null); // for mobile view - start with no tab selected
@@ -435,6 +435,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                 setActiveTab('stats');  // Go directly to stats instead of showing menu
                 // Clear trade notifications when viewing
                 setNotifications(prev => ({ ...prev, trades: 0 }));
+                // Trigger panel collapse callback
+                if (onNavigationClick) onNavigationClick();
               }}
               style={{
                 position: 'relative',
@@ -472,6 +474,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                 setActiveTab('chat');
                 // Clear message notifications when viewing
                 setNotifications(prev => ({ ...prev, messages: 0 }));
+                // Trigger panel collapse callback
+                if (onNavigationClick) onNavigationClick();
               }}
               style={{
                 position: 'relative',
@@ -509,6 +513,8 @@ const TradingOverlay = ({ show = false, data = null, isConnected = false, onModa
                 setShowSingleCandleDisplay(true);
                 // Clear candle notifications when viewing
                 setNotifications(prev => ({ ...prev, candles: 0 }));
+                // Trigger panel collapse callback
+                if (onNavigationClick) onNavigationClick();
               }}
               style={{
                 position: 'relative',

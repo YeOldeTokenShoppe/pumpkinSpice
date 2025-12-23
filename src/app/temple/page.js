@@ -20,7 +20,7 @@ import { TradingOverlay } from '@/trading';
 import { useLighterAPI } from '@/hooks/useLighterAPI'; // API-based Lighter integration
 // import AgentChatDisplay from '@/components/AgentChatDisplay'; // Using existing Trading Team Chat instead
 // import MobileDevTabs from '@/components/MobileDevTabs';
-import RotatingPnL from '@/components/RotatingPnL';
+// import RotatingPnL from '@/components/RotatingPnL'; // Replaced with stats panel
 import FocusedAgentCard from '@/components/FocusedAgentCard';
 
 
@@ -47,6 +47,7 @@ export default function CyborgTemple() {
   const [focusedAgent, setFocusedAgent] = useState(null); // Track which agent is focused
   const [showAgentCard, setShowAgentCard] = useState(false); // Track card visibility separately
   const [useAurora, setUseAurora] = useState(true); // Toggle between Aurora and StarField
+  const [userHasInteracted, setUserHasInteracted] = useState(false); // Track if user has clicked around
   
   // Connect to Lighter trading API
   // Initial balance will be fetched from the actual account
@@ -121,6 +122,8 @@ export default function CyborgTemple() {
       };
     }
   }, []);
+
+  // Removed auto-collapse timer - only manual interaction collapses the panel
 
   // Check if mobile on mount
   useEffect(() => {
@@ -312,6 +315,8 @@ export default function CyborgTemple() {
     return <SimpleTextLoader loading={true} progress={0} message="Loading" />;
   }
 
+  // Removed inline handler - using global listener instead
+
   return (
     <>
       {/* Loading Screen */}
@@ -321,7 +326,8 @@ export default function CyborgTemple() {
         message={loadingMessage}
       />
           
-      <div style={{ 
+      <div 
+        style={{ 
         width: '100vw', 
         height: '100vh', 
         margin: 0, 
@@ -363,12 +369,32 @@ export default function CyborgTemple() {
           visibility: visible !important;
         }
         
+        /* Override h3 color for mainnet readiness heading */
+        .mainnet-readiness-heading {
+          color: #00FFB8 !important;
+        }
+        
         @keyframes spin {
           from {
             transform: rotate(0deg);
           }
           to {
             transform: rotate(360deg);
+          }
+        } 
+        
+        @keyframes pulse {
+          0% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.2);
+          }
+          100% {
+            opacity: 0.6;
+            transform: scale(1);
           }
         }
         
@@ -391,7 +417,7 @@ export default function CyborgTemple() {
         position: "relative",
         overflow: "hidden"
       }}>
-        {/* RL80 Title */}
+        {/* RL80 Title and Description */}
         <div style={{
           position: "fixed",
           top: "20px", 
@@ -443,6 +469,274 @@ export default function CyborgTemple() {
             })}
           </div>
         </div>
+        
+        {/* Temple Description Panel - Separate from RL80 logo */}
+        <div 
+          onClick={() => {
+            if (!userHasInteracted) {
+              console.log('Panel clicked, collapsing');
+              setUserHasInteracted(true);
+            }
+          }}
+          style={{
+          position: "fixed",
+          // Mobile: always 5.5rem from bottom to clear navigation buttons
+          // Desktop: left side when expanded, bottom left when collapsed
+          top: isMobileView ? "auto" : (userHasInteracted ? "auto" : "120px"),
+          bottom: isMobileView ? "5.5rem" : (userHasInteracted ? "1.25rem" : "auto"),
+          left: isMobileView ? "0.625rem" : "1.25rem",
+          right: isMobileView ? "0.625rem" : "auto",
+          maxWidth: userHasInteracted ? 
+            (isMobileView ? "100%" : "350px") : 
+            (isMobileView ? "100%" : "380px"),
+          padding: isMobileView ? "0.5rem" : "1rem",
+          zIndex: 10,
+          transition: "all 0.5s ease-in-out",
+          cursor: userHasInteracted ? "default" : "pointer",
+        }}>
+          {!userHasInteracted && (
+            <>
+              <p style={{
+                fontSize: isMobileView ? "0.9rem" : "1rem",
+                lineHeight: "1.2",
+                color: "rgba(255, 255, 255, 0.95)",
+                margin: 0,
+                marginBottom: isMobileView ? "0.75rem" : "1rem",
+                fontWeight: "700",
+                textAlign: "center",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                paddingBottom: isMobileView ? "0.75rem" : "1rem",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
+              }}>
+                Live multi-agent AI trading on the<br/>
+                Lighter Perp DEX
+              </p>
+              
+              <p style={{
+                fontSize: isMobileView ? "0.85rem" : "0.9rem",
+                lineHeight: "1.2",
+                color: "rgba(255, 255, 255, 0.8)",
+                margin: 0,
+                marginBottom: isMobileView ? "0.5rem" : "0.75rem",
+                textAlign: "center",
+                fontStyle: "italic",
+              }}>
+                Featuring RL80 and 3 wise mechs
+              </p>
+              
+              {!isMobileView && (
+                <p style={{
+                  fontSize: "0.85rem",
+                  lineHeight: "1.4",
+                  color: "rgba(255, 255, 255, 0.7)",
+                  margin: 0,
+                  marginBottom: "1rem",
+                }}>
+                  RL80 (more 'trade life' than trad wife) is learning to trade perpetuals. 
+                  Once she hits 100+ trades with a 60%+ win rate and keeps drawdown under 
+                  15% for 30 days, the team ascends to the mainnet.
+                </p>
+              )}
+                    
+              {/* <p style={{
+                fontSize: isMobileView ? "0.8rem" : "0.9rem",
+                lineHeight: "1.1",
+                color: "rgba(255, 255, 255, 0.8)",
+                margin: 0,
+                marginBottom: isMobileView ? "0.75rem" : "1rem",
+                textAlign: isMobileView ? "center" : "left",
+              }}>
+                {isMobileView ? "Tap agents to view more stats" : "Click on any agent to view their individual performance and trading philosophy."}
+              </p> */}
+            </>
+          )}
+
+          {/* Mainnet Readiness Stats */}
+          <div style={{
+            backgroundColor: isMobileView ? "transparent" : "rgba(0, 0, 0, 0.3)",
+            backdropFilter: isMobileView ? "none" : "blur(12px)",
+            WebkitBackdropFilter: isMobileView ? "none" : "blur(12px)",
+            border: isMobileView ? "none" : "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: isMobileView ? "0" : "8px",
+            padding: isMobileView ? "0" : (userHasInteracted ? "0.75rem" : "1rem"),
+            marginTop: isMobileView ? "0" : "0.5rem",
+          }}>
+            <h3 
+              className="mainnet-readiness-heading"
+              style={{
+              fontSize: userHasInteracted && !isMobileView ? "0.8rem" : (isMobileView ? "0.85rem" : "0.9rem"),
+              fontWeight: "500",
+              textAlign: userHasInteracted && !isMobileView ? "center" : (isMobileView ? "center" : "center"),
+              marginBottom: userHasInteracted ? "0.5rem" : (isMobileView ? "0.75rem" : "1rem"),
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+            }}>
+              Mainnet Readiness
+            </h3>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: isMobileView && userHasInteracted ? "repeat(4, 1fr)" : "repeat(2, minmax(130px, 1fr))",
+              gap: userHasInteracted ? 
+                (isMobileView ? "0.5rem" : "0.75rem") : 
+                (isMobileView ? "0.5rem" : "1rem"),
+              marginBottom: userHasInteracted ? 0 : (isMobileView ? "0.5rem" : "1rem"),
+            }}>
+            <div style={{
+              textAlign: "center",
+              padding: isMobileView && userHasInteracted ? "0.25rem" : "0.5rem",
+              borderRadius: "6px",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              background: isMobileView ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.05)",
+              backdropFilter: isMobileView ? "blur(12px)" : "none",
+              WebkitBackdropFilter: isMobileView ? "blur(12px)" : "none",
+            }}>
+              <div style={{
+                fontWeight: "bold",
+                marginBottom: "0.1rem",
+              }}>
+                <span style={{
+                  fontSize: "1.5rem",
+                  color: "#ffffff",
+                }}>47</span>
+                <span style={{
+                  fontSize: isMobileView && userHasInteracted ? "0.7rem" : (isMobileView ? "0.9rem" : "1rem"),
+                  color: "rgba(255, 255, 255, 0.5)",
+                }}> / 100</span>
+              </div>
+              <div style={{
+                fontSize: isMobileView && userHasInteracted ? "0.6rem" : (isMobileView ? "0.7rem" : "0.75rem"),
+                color: "rgba(255, 255, 255, 0.6)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                Total Trades
+              </div>
+            </div>
+            
+            <div style={{
+              textAlign: "center",
+              padding: isMobileView && userHasInteracted ? "0.25rem" : "0.5rem",
+              borderRadius: "6px",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              background: isMobileView ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.05)",
+              backdropFilter: isMobileView ? "blur(12px)" : "none",
+              WebkitBackdropFilter: isMobileView ? "blur(12px)" : "none",
+            }}>
+              <div style={{
+                fontWeight: "bold",
+                marginBottom: "0.1rem",
+              }}>
+                <span style={{
+                  fontSize: "1.5rem",
+                  color: "#ffffff",
+                }}>52%</span>
+                <span style={{
+                  fontSize: isMobileView && userHasInteracted ? "0.7rem" : (isMobileView ? "0.9rem" : "1rem"),
+                  color: "rgba(255, 255, 255, 0.5)",
+                }}> / 60%</span>
+              </div>
+              <div style={{
+                fontSize: isMobileView && userHasInteracted ? "0.6rem" : (isMobileView ? "0.7rem" : "0.75rem"),
+                color: "rgba(255, 255, 255, 0.6)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                Win Rate
+              </div>
+            </div>
+            
+            <div style={{
+              textAlign: "center",
+              padding: isMobileView && userHasInteracted ? "0.25rem" : "0.5rem",
+              borderRadius: "6px",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              background: isMobileView ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.05)",
+              backdropFilter: isMobileView ? "blur(12px)" : "none",
+              WebkitBackdropFilter: isMobileView ? "blur(12px)" : "none",
+            }}>
+              <div style={{
+                fontWeight: "bold",
+                marginBottom: "0.1rem",
+              }}>
+                <span style={{
+                  fontSize: "1.5rem",
+                  color: "#ffffff",
+                }}>8.2%</span>
+                <span style={{
+                  fontSize: isMobileView && userHasInteracted ? "0.7rem" : (isMobileView ? "0.9rem" : "1rem"),
+                  color: "rgba(255, 255, 255, 0.5)",
+                }}> / 15%</span>
+              </div>
+              <div style={{
+                fontSize: isMobileView && userHasInteracted ? "0.6rem" : (isMobileView ? "0.7rem" : "0.75rem"),
+                color: "rgba(255, 255, 255, 0.6)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                Max Drawdown
+              </div>
+            </div>
+            
+            <div style={{
+              textAlign: "center",
+              padding: isMobileView && userHasInteracted ? "0.25rem" : "0.5rem",
+              borderRadius: "6px",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              background: isMobileView ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.05)",
+              backdropFilter: isMobileView ? "blur(12px)" : "none",
+              WebkitBackdropFilter: isMobileView ? "blur(12px)" : "none",
+            }}>
+              <div style={{
+                fontWeight: "bold",
+                marginBottom: "0.1rem",
+              }}>
+                <span style={{
+                  fontSize: "1.5rem",
+                  color: "#ffffff",
+                }}>7</span>
+                <span style={{
+                  fontSize: isMobileView && userHasInteracted ? "0.7rem" : (isMobileView ? "0.9rem" : "1rem"),
+                  color: "rgba(255, 255, 255, 0.5)",
+                }}> / 30</span>
+              </div>
+              <div style={{
+                fontSize: isMobileView && userHasInteracted ? "0.6rem" : (isMobileView ? "0.7rem" : "0.75rem"),
+                color: "rgba(255, 255, 255, 0.6)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                Days Live
+              </div>
+            </div>
+            </div>
+          </div>
+          
+          {!userHasInteracted && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              marginTop: "0.75rem",
+            }}>
+              <div style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: "#00ff00",
+                boxShadow: "0 0 10px rgba(0, 255, 0, 0.8)",
+                animation: "pulse 2s infinite",
+              }}/>
+              <span style={{
+                fontSize: isMobileView ? "0.75rem" : "0.85rem",
+                color: "rgba(255, 255, 255, 0.7)",
+                fontStyle: "italic",
+              }}>
+                Testnet Training Mode
+              </span>
+            </div>
+          )}
+        </div>
      {/* <MemoryMonitor show={true} /> */}
         <TradingOverlay 
           show={showTrading} 
@@ -459,6 +753,13 @@ export default function CyborgTemple() {
             } else {
               // When closing modal, wait a bit before showing canvas again
               setTimeout(() => setShouldRenderCanvas(true), 100);
+            }
+          }}
+          onNavigationClick={() => {
+            // Collapse the intro panel when any nav button is clicked
+            if (!userHasInteracted) {
+              console.log('Navigation button clicked, collapsing panel');
+              setUserHasInteracted(true);
             }
           }}
         />
@@ -533,8 +834,15 @@ export default function CyborgTemple() {
               isMobile={isMobileView}
               onAgentClick={(agentId) => {
                 if (agentId) {
+                  console.log('Agent clicked:', agentId);
                   setFocusedAgent(agentId);
                   setShowAgentCard(true);
+                  // Also collapse the intro panel when an agent is clicked
+                  if (!userHasInteracted) {
+                    setTimeout(() => {
+                      setUserHasInteracted(true);
+                    }, 500); // Delay to allow animation to start
+                  }
                 } else {
                   // Agent was deselected (clicked on empty space or pressed Escape)
                   setFocusedAgent(null);
@@ -589,15 +897,12 @@ export default function CyborgTemple() {
               />
             )}
           </Suspense>
-          <Stats className="stats-monitor" />
+          {/* <Stats className="stats-monitor" /> */}
         </CleanCanvas>
         )}
   {/* Dev Panel Only - Chat is in TradingOverlay */}
   {/* <DevModePanel show={true} /> */}
-        {/* Rotating P&L Display for Mobile */}
-        {mounted && isMobileView && sceneReady && (
-          <RotatingPnL tradingData={tradingData} />
-        )}
+        {/* Removed RotatingPnL - stats are now in the main panel */}
         
         {/* Focused Agent Card - Shows when an agent is clicked */}
         {/* {console.log('[Temple] FocusedAgentCard render check - focusedAgent:', focusedAgent, 'showAgentCard:', showAgentCard)} */}
